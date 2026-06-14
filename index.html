@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-side-gallery-v1 -->
+<!-- whatimado build: 2026-06-14-no-free-bar-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-side-gallery-v1">
+  <meta name="whatimado-build" content="2026-06-14-no-free-bar-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,8 +36,7 @@
       --radius-md: 14px;
       --radius-lg: 20px;
       --header-nav-h: 56px;
-      --header-free-h: 68px;
-      --header-h: 124px;
+      --header-h: 56px;
     }
 
     html {
@@ -115,79 +114,6 @@
       gap: 1rem;
     }
 
-    .header-free-row {
-      width: 100%;
-      border-top: 1px solid rgba(78, 205, 196, .14);
-      background: linear-gradient(90deg, rgba(78, 205, 196, .07) 0%, rgba(124, 111, 205, .05) 50%, rgba(78, 205, 196, .07) 100%);
-      padding-top: 1.25rem;
-      padding-bottom: 1.35rem;
-    }
-
-    .header-free-inner {
-      width: min(100%, 1180px);
-      margin: 0 auto;
-      display: flex;
-      align-items: flex-start;
-      gap: .85rem 1.1rem;
-    }
-
-    .header-free-chip {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-      margin-top: .12rem;
-      padding: .22rem .62rem;
-      border: 1px solid rgba(78, 205, 196, .35);
-      border-radius: 999px;
-      color: #90e8df;
-      background: rgba(78, 205, 196, .1);
-      font-size: .58rem;
-      font-weight: 800;
-      letter-spacing: .05em;
-      text-transform: uppercase;
-    }
-
-    .header-free-chip::before {
-      content: "";
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: currentColor;
-      box-shadow: 0 0 8px currentColor;
-    }
-
-    .header-free-copy {
-      min-width: 0;
-    }
-
-    .header-free-lead {
-      margin: 0 0 .35rem;
-      color: #e8f2ff;
-      font-size: .74rem;
-      font-weight: 700;
-      line-height: 1.35;
-      letter-spacing: -.01em;
-    }
-
-    .header-free-detail {
-      margin: 0;
-      color: rgba(168, 196, 232, .78);
-      font-size: .66rem;
-      font-weight: 500;
-      line-height: 1.45;
-    }
-
-    @media (min-width: 900px) {
-      .header-free-lead {
-        font-size: .78rem;
-      }
-
-      .header-free-detail {
-        font-size: .68rem;
-      }
-    }
-
     @media (min-width: 1200px) {
       .app-header-nav-wrap {
         padding: 0 2rem;
@@ -211,11 +137,13 @@
       }
 
       .status-wall--compact {
+        flex: none;
         min-height: 10.5rem;
       }
 
       .status-wall--compact .status-wall-card {
         flex: 0 0 min(260px, 78vw);
+        min-height: 9.5rem;
       }
 
       .hero h1 {
@@ -458,21 +386,23 @@
     .main-workspace {
       width: min(100%, 1180px);
       margin: 0 auto;
-      padding: .65rem 1.25rem 1.25rem;
+      padding: 1rem 1.25rem 1.25rem;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
       gap: 1rem 1.65rem;
-      align-items: start;
+      align-items: stretch;
     }
 
     .main-gallery-panel {
       min-width: 0;
-      padding-top: .15rem;
+      display: flex;
+      flex-direction: column;
     }
 
     .main-gallery-panel .how-it-works-heading-wrap {
       padding: 0;
       margin-bottom: .55rem;
+      flex-shrink: 0;
     }
 
     .main-gallery-panel .how-it-works-heading {
@@ -480,30 +410,39 @@
     }
 
     .status-wall--compact {
-      min-height: 11.5rem;
+      flex: 1 1 auto;
+      min-height: 12rem;
+      display: flex;
+      flex-direction: column;
       -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 82%, transparent 100%);
       mask-image: linear-gradient(90deg, #000 0%, #000 82%, transparent 100%);
     }
 
     .status-wall--compact .status-wall-track {
       gap: .75rem;
+      align-items: stretch;
+      height: 100%;
+      min-height: 100%;
     }
 
     .status-wall--compact .status-wall-card {
       flex: 0 0 228px;
-      min-height: 8.75rem;
-      padding: .85rem .92rem .9rem;
+      min-height: 100%;
+      height: auto;
+      padding: .95rem .92rem 1rem;
+      display: flex;
+      flex-direction: column;
     }
 
     .status-wall--compact .status-wall-title {
-      margin-bottom: .4rem;
+      margin-bottom: .45rem;
       font-size: .82rem;
       line-height: 1.32;
     }
 
     .status-wall--compact .status-wall-text {
       font-size: .72rem;
-      line-height: 1.48;
+      line-height: 1.5;
     }
 
     .how-it-works-heading-wrap {
@@ -2314,32 +2253,8 @@
     }
 
     @media (max-width: 760px) {
-      :root {
-        --header-free-h: 84px;
-        --header-h: 140px;
-      }
-
       .app-header-nav-wrap {
         padding: 0 .65rem;
-      }
-
-      .how-it-works-heading-wrap {
-        padding-left: .65rem;
-        padding-right: .65rem;
-      }
-
-      .header-free-inner {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: .45rem;
-      }
-
-      .header-free-lead {
-        font-size: .7rem;
-      }
-
-      .header-free-detail {
-        font-size: .64rem;
       }
 
       .logo-text {
@@ -2450,16 +2365,6 @@
               </span>
             </div>
           </nav>
-        </div>
-      </div>
-    </div>
-
-    <div class="app-header-nav-wrap header-free-row" aria-label="Mission">
-      <div class="header-free-inner">
-        <span class="header-free-chip">Free for everyone</span>
-        <div class="header-free-copy">
-          <p class="header-free-lead">whatimado is built to stay free — no matter where you're starting from.</p>
-          <p class="header-free-detail">This site and the upcoming app stay free for everyone: whether you're barely getting by, holding steady, or building something bigger. We're funded by sponsors and voluntary gifts — not subscriptions or paywalls.</p>
         </div>
       </div>
     </div>
@@ -4407,6 +4312,7 @@
 
         normalizeOffset();
         applyTransform();
+        syncGalleryHeight();
       }
 
       function normalizeOffset() {
@@ -4529,10 +4435,27 @@
       window.addEventListener("resize", measure);
     }
 
+    function syncGalleryHeight() {
+      const hero = document.querySelector(".main-workspace .hero");
+      const wall = document.getElementById("status-wall");
+      const headingWrap = document.querySelector(".main-gallery-panel .how-it-works-heading-wrap");
+      if (!hero || !wall) return;
+
+      if (window.innerWidth <= 960) {
+        wall.style.removeProperty("min-height");
+        return;
+      }
+
+      const headingH = headingWrap ? headingWrap.offsetHeight + 12 : 0;
+      const target = hero.offsetHeight - headingH;
+      if (target > 0) wall.style.minHeight = `${target}px`;
+    }
+
     function syncHeaderHeight() {
       const header = document.querySelector(".app-header");
       if (!header) return;
       document.documentElement.style.setProperty("--header-h", `${header.offsetHeight}px`);
+      syncGalleryHeight();
     }
 
     function bindEvents() {
@@ -4597,6 +4520,7 @@
       initNetworkCanvas();
       initDonation();
       initStatusWall();
+      syncGalleryHeight();
       await initAuth();
       setTimeout(() => {
         $("#loader").classList.add("hidden");
