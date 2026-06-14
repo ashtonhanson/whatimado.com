@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-roadmap-loading-v1 -->
+<!-- whatimado build: 2026-06-14-mobile-keyboard-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-roadmap-loading-v1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+  <meta name="whatimado-build" content="2026-06-14-mobile-keyboard-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1240,19 +1240,32 @@
       text-transform: uppercase;
     }
 
+    #screen-roadmap {
+      position: relative;
+    }
+
+    #screen-roadmap.is-loading .roadmap-page {
+      display: none !important;
+    }
+
     .roadmap-loading {
-      position: fixed;
-      inset: var(--header-h) 0 0;
-      z-index: 15;
+      position: absolute;
+      inset: 0;
+      z-index: 20;
       display: grid;
       place-items: center;
       align-content: center;
       gap: 1.1rem;
+      min-height: calc(100dvh - var(--header-h));
       padding: 1.5rem;
       text-align: center;
-      background: rgba(7, 11, 20, .88);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: rgba(7, 11, 20, .94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    #screen-roadmap.is-loading .roadmap-loading {
+      display: grid !important;
     }
 
     .roadmap-loading .loader-dot {
@@ -1262,7 +1275,7 @@
     }
 
     .roadmap-loading[hidden] {
-      display: none;
+      display: none !important;
     }
 
     .roadmap-loading-text {
@@ -1274,8 +1287,12 @@
       line-height: 1.45;
     }
 
+    body.roadmap-loading-active {
+      overflow: hidden;
+    }
+
     .roadmap-page[hidden] {
-      display: none;
+      display: none !important;
     }
 
     .roadmap-content[hidden] {
@@ -2400,6 +2417,18 @@
         width: 100%;
       }
 
+      #screen-main .main-workspace {
+        padding-bottom: calc(2rem + var(--keyboard-inset, 0px));
+      }
+
+      .convo-wrap {
+        padding-bottom: calc(3rem + var(--keyboard-inset, 0px));
+      }
+
+      #screen-roadmap .page {
+        padding-bottom: calc(5rem + var(--keyboard-inset, 0px));
+      }
+
       .roadmap-side {
         position: static;
       }
@@ -3251,25 +3280,101 @@
       if (!$("#screen-convo")?.classList.contains("active")) return;
       const spacer = $("#convo-spacer");
       const anchor = getConvoAnchor();
-      if (!spacer || !anchor) return;
+      const replyBox = $("#reply-box");
+      if (!spacer) return;
 
       const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10) || 60;
-      const centerLine = headerH + (window.innerHeight - headerH) / 2;
+      const view = getVisibleViewport();
+      const centerLine = view.top + headerH + (view.height - headerH) / 2;
 
       spacer.style.minHeight = "0px";
       void spacer.offsetHeight;
 
-      let anchorBottom = anchor.getBoundingClientRect().bottom;
-      if (anchorBottom < centerLine) {
-        spacer.style.minHeight = `${Math.ceil(centerLine - anchorBottom + 16)}px`;
-        void spacer.offsetHeight;
-        anchorBottom = anchor.getBoundingClientRect().bottom;
+      if (anchor) {
+        let anchorBottom = anchor.getBoundingClientRect().bottom;
+        if (anchorBottom < centerLine) {
+          spacer.style.minHeight = `${Math.ceil(centerLine - anchorBottom + 16)}px`;
+          void spacer.offsetHeight;
+          anchorBottom = anchor.getBoundingClientRect().bottom;
+        }
+
+        const scrollDelta = anchorBottom - centerLine;
+        if (Math.abs(scrollDelta) > 2) {
+          window.scrollBy({ top: scrollDelta, behavior });
+        }
       }
 
-      const scrollDelta = anchorBottom - centerLine;
-      if (Math.abs(scrollDelta) > 2) {
-        window.scrollBy({ top: scrollDelta, behavior });
+      if (replyBox && getComputedStyle(replyBox).display !== "none") {
+        keepFieldVisible(replyBox.querySelector(".reply-textarea") || replyBox, "auto");
       }
+    }
+
+    function getVisibleViewport() {
+      const vv = window.visualViewport;
+      const top = vv?.offsetTop ?? 0;
+      const height = vv?.height ?? window.innerHeight;
+      return { top, height, bottom: top + height };
+    }
+
+    function keepFieldVisible(field, behavior = "smooth") {
+      if (!field || window.innerWidth > 760) return;
+
+      const rect = field.getBoundingClientRect();
+      const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10) || 56;
+      const view = getVisibleViewport();
+      const padding = 14;
+      const minTop = view.top + headerH + padding;
+      const maxBottom = view.bottom - padding;
+
+      if (rect.bottom > maxBottom) {
+        window.scrollBy({ top: rect.bottom - maxBottom, behavior });
+      } else if (rect.top < minTop) {
+        window.scrollBy({ top: rect.top - minTop, behavior });
+      }
+    }
+
+    function syncKeyboardInset() {
+      const vv = window.visualViewport;
+      if (!vv || window.innerWidth > 760) {
+        document.documentElement.style.setProperty("--keyboard-inset", "0px");
+        return;
+      }
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty("--keyboard-inset", `${Math.round(inset)}px`);
+    }
+
+    function scheduleKeepFieldVisible(field) {
+      keepFieldVisible(field, "auto");
+      setTimeout(() => keepFieldVisible(field, "smooth"), 120);
+      setTimeout(() => keepFieldVisible(field, "auto"), 350);
+      setTimeout(() => keepFieldVisible(field, "auto"), 650);
+    }
+
+    function initMobileKeyboardAssist() {
+      const isField = (element) =>
+        element instanceof HTMLTextAreaElement ||
+        (element instanceof HTMLInputElement && !["hidden", "checkbox", "radio", "file"].includes(element.type));
+
+      document.addEventListener("focusin", (event) => {
+        if (!isField(event.target)) return;
+        scheduleKeepFieldVisible(event.target);
+      });
+
+      const onViewportChange = () => {
+        syncKeyboardInset();
+        const active = document.activeElement;
+        if (isField(active)) {
+          keepFieldVisible(active, "auto");
+        }
+        if ($("#screen-convo")?.classList.contains("active")) {
+          alignConvoViewport("auto");
+        }
+      };
+
+      window.addEventListener("resize", onViewportChange);
+      window.visualViewport?.addEventListener("resize", onViewportChange);
+      window.visualViewport?.addEventListener("scroll", syncKeyboardInset);
+      syncKeyboardInset();
     }
 
     function scrollConversation() {
@@ -3565,8 +3670,16 @@
     }
 
     function setRoadmapLoading(loading) {
-      $("#roadmap-loading").hidden = !loading;
-      $("#roadmap-page").hidden = loading;
+      const screen = $("#screen-roadmap");
+      const overlay = $("#roadmap-loading");
+      const page = $("#roadmap-page");
+      if (screen) screen.classList.toggle("is-loading", loading);
+      if (overlay) overlay.hidden = !loading;
+      if (page) {
+        page.hidden = loading;
+        page.setAttribute("aria-hidden", loading ? "true" : "false");
+      }
+      document.body.classList.toggle("roadmap-loading-active", loading);
     }
 
     function clearProgressMap() {
@@ -3582,38 +3695,45 @@
       $("#nav-roadmap-btn").hidden = false;
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = idea.title;
-      showScreen("roadmap");
 
       const cached = state.allRoadmaps[state.roadmapKey];
       if (cached?.stages?.length) {
+        setRoadmapLoading(false);
+        showScreen("roadmap");
         state.roadmapStages = cached.stages;
         $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
-        setRoadmapLoading(false);
         schedulePersist();
         return;
       }
 
-      setRoadmapLoading(true);
       clearProgressMap();
       $("#roadmap-sub").textContent = "Building your personalised roadmap...";
       $("#stage-list").innerHTML = "";
       $("#momentum-card").style.display = "none";
+      setRoadmapLoading(true);
+      showScreen("roadmap");
 
-      const context = state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
-      const response = await callAdvisor(
-        `You are whatimado, a practical roadmap coach. Generate a 4-stage roadmap for someone pursuing "${idea.title}" (${idea.tagline || idea.type}).\n\nUser context from conversation:\n${context}\n\nCRITICAL: Every task must be specific to THIS person's situation. Reference their actual constraints, skills, location hints, and resources from the conversation. No vague tasks like "create a website" or "network with people" without naming concrete tools, platforms, numbers, or next steps.\n\nEach stage has 3 tasks. Tasks should be completable in a day or week — name specific actions, not categories.\n\nRespond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence tied to their situation","tasks":["specific task 1","specific task 2","specific task 3"]}]`,
-        1200
-      );
+      try {
+        const context = state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
+        const response = await callAdvisor(
+          `You are whatimado, a practical roadmap coach. Generate a 4-stage roadmap for someone pursuing "${idea.title}" (${idea.tagline || idea.type}).\n\nUser context from conversation:\n${context}\n\nCRITICAL: Every task must be specific to THIS person's situation. Reference their actual constraints, skills, location hints, and resources from the conversation. No vague tasks like "create a website" or "network with people" without naming concrete tools, platforms, numbers, or next steps.\n\nEach stage has 3 tasks. Tasks should be completable in a day or week — name specific actions, not categories.\n\nRespond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence tied to their situation","tasks":["specific task 1","specific task 2","specific task 3"]}]`,
+          1200
+        );
 
-      state.roadmapStages = extractJsonArray(response, fallbackStages);
-      state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages };
-      $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
-      $("#momentum-card").style.display = "flex";
-      renderStages(state.roadmapStages);
-      setRoadmapLoading(false);
-      schedulePersist();
+        state.roadmapStages = extractJsonArray(response, fallbackStages);
+        state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages };
+        $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
+        $("#momentum-card").style.display = "flex";
+        renderStages(state.roadmapStages);
+        schedulePersist();
+      } catch (error) {
+        console.error(error);
+        $("#roadmap-sub").textContent = "Could not build your roadmap. Go back and try again.";
+      } finally {
+        setRoadmapLoading(false);
+      }
     }
 
     function bindTaskPersistence() {
@@ -4380,6 +4500,7 @@
     function bindEvents() {
       syncHeaderHeight();
       initMobileNav();
+      initMobileKeyboardAssist();
       window.addEventListener("resize", syncHeaderHeight);
       $$("[data-screen-link]").forEach((element) => {
         element.addEventListener("click", (event) => {
