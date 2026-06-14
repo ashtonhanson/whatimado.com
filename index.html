@@ -1963,6 +1963,16 @@
       background: #ffc439;
     }
 
+    .donate-footnote a {
+      color: var(--teal);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .donate-footnote a:hover {
+      color: #8de0d8;
+    }
+
     .donate-footnote {
       margin: 1rem 0 0;
       color: var(--muted);
@@ -2313,7 +2323,7 @@
         <button class="donate-pay-btn stripe" id="donate-pay-stripe" type="button" disabled>Pay with card (Stripe)</button>
         <button class="donate-pay-btn paypal" id="donate-pay-paypal" type="button" disabled>Pay with PayPal</button>
       </div>
-      <p class="donate-footnote">Payments are processed securely by Stripe. One-time gifts complete in a single checkout; monthly support continues until you cancel through Stripe.</p>
+      <p class="donate-footnote" id="donate-footnote">Payments are processed securely by Stripe. One-time gifts complete in a single checkout; monthly support continues until you cancel through Stripe.</p>
     </div>
   </div>
 
@@ -2329,6 +2339,8 @@
     // 2. Deploy stripe-checkout.js as /api/stripe-checkout (same pattern as claude.js).
     // 3. For monthly support, create a recurring Price in Stripe Dashboard and paste price_... below.
     // 4. Optional: paste Stripe Payment Links per tier as stripeLink fallback (works without the API).
+    // 5. Customer portal login URL (https://billing.stripe.com/p/login/...) — NOT the bpc_... config ID.
+    const STRIPE_CUSTOMER_PORTAL_URL = "https://billing.stripe.com/p/login/00weVd0YQ2Cja37dvX0co00";
     const DONATION_OPTIONS = [
       {
         id: "coffee",
@@ -3676,7 +3688,13 @@
 
         window.location.href = data.url;
       } catch (error) {
-        showDonateMessage(error.message || "Stripe checkout failed.", "error");
+        let message = error.message || "Stripe checkout failed.";
+        if (/invalid api key/i.test(message)) {
+          message = message.includes("pk_") || message.includes("mk_")
+            ? "Wrong key type in Vercel. STRIPE_SECRET_KEY must be your Secret key (starts with sk_test_ or sk_live_) from Stripe → Developers → API keys. Redeploy after fixing."
+            : "Stripe secret key is invalid. In Vercel, set STRIPE_SECRET_KEY to sk_test_... from Stripe → Developers → API keys, then redeploy.";
+        }
+        showDonateMessage(message, "error");
         if (stripeBtn) {
           stripeBtn.disabled = false;
           stripeBtn.textContent = "Pay with card (Stripe)";
@@ -3704,7 +3722,17 @@
       }
     }
 
+    function renderDonationFootnote() {
+      const el = $("#donate-footnote");
+      if (!el) return;
+      const portal = STRIPE_CUSTOMER_PORTAL_URL.trim();
+      if (portal) {
+        el.innerHTML = `Payments are processed securely by Stripe. One-time gifts complete in a single checkout; monthly support continues until you <a href="${portal}" target="_blank" rel="noopener noreferrer">cancel or manage it here</a>.`;
+      }
+    }
+
     function initDonation() {
+      renderDonationFootnote();
       renderDonationOptions();
       updateDonationCartUI();
 
