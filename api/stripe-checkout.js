@@ -7,8 +7,8 @@
  * Optional:
  *   SITE_URL=https://whatimado.com
  *
- * Monthly support uses stripePriceId from the client (create a recurring Price in Stripe Dashboard).
- * All other tiers use dynamic one-time amounts ù including custom donations.
+ * Monthly support can use a recurring Price ID (price_...) or a dynamic amount from the client.
+ * All other tiers use dynamic one-time amounts ? including custom donations.
  */
 
 export default async function handler(req, res) {
@@ -37,20 +37,31 @@ export default async function handler(req, res) {
     params.append("allow_promotion_codes", "true");
 
     if (recurring) {
-      if (!stripePriceId) {
+      const cents = Math.round(Number(amount) * 100);
+      const canUseDynamic = Number.isFinite(cents) && cents >= 100;
+
+      if (canUseDynamic) {
+        const productName = label ? `whatimado - ${label}` : "whatimado monthly support";
+        params.append("line_items[0][price_data][currency]", "usd");
+        params.append("line_items[0][price_data][product_data][name]", productName);
+        params.append("line_items[0][price_data][unit_amount]", String(cents));
+        params.append("line_items[0][price_data][recurring][interval]", "month");
+        params.append("line_items[0][quantity]", "1");
+      } else if (stripePriceId) {
+        params.append("line_items[0][price]", stripePriceId);
+        params.append("line_items[0][quantity]", "1");
+      } else {
         return res.status(400).json({
-          error: "Monthly support needs a Stripe Price ID. Add stripePriceId to the supporter option in DONATION_OPTIONS."
+          error: "Monthly support needs an amount or a Stripe Price ID."
         });
       }
-      params.append("line_items[0][price]", stripePriceId);
-      params.append("line_items[0][quantity]", "1");
     } else {
       const cents = Math.round(Number(amount) * 100);
       if (!Number.isFinite(cents) || cents < 100) {
         return res.status(400).json({ error: "Minimum donation is $1." });
       }
 
-      const productName = label ? `whatimado ó ${label}` : "whatimado donation";
+      const productName = label ? `whatimado ? ${label}` : "whatimado donation";
       params.append("line_items[0][price_data][currency]", "usd");
       params.append("line_items[0][price_data][product_data][name]", productName);
       params.append("line_items[0][price_data][unit_amount]", String(cents));
