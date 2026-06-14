@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-gallery-wrap-fix-v1 -->
+<!-- whatimado build: 2026-06-14-free-row-full-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-gallery-wrap-fix-v1">
+  <meta name="whatimado-build" content="2026-06-14-free-row-full-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,8 +36,8 @@
       --radius-md: 14px;
       --radius-lg: 20px;
       --header-nav-h: 56px;
-      --header-free-h: 30px;
-      --header-h: 86px;
+      --header-free-h: 52px;
+      --header-h: 108px;
     }
 
     html {
@@ -82,8 +82,9 @@
       position: fixed;
       inset: 0 0 auto;
       z-index: 20;
-      height: var(--header-h);
-      padding: 0 1.25rem;
+      height: auto;
+      min-height: var(--header-h);
+      padding: 0;
       background: linear-gradient(180deg, rgba(12, 15, 28, .88) 0%, rgba(8, 10, 18, .78) 100%);
       border-bottom: 1px solid rgba(140, 150, 210, .1);
       backdrop-filter: blur(22px) saturate(150%);
@@ -93,18 +94,21 @@
         0 10px 40px rgba(0, 0, 0, .22);
     }
 
+    .app-header-nav-wrap {
+      padding: 0 1.25rem;
+    }
+
     .app-header-stack {
       width: min(100%, 1180px);
-      height: 100%;
+      height: var(--header-nav-h);
       margin: 0 auto;
       display: flex;
-      flex-direction: column;
+      align-items: center;
     }
 
     .app-header-inner {
       width: 100%;
-      height: var(--header-nav-h);
-      flex-shrink: 0;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -112,13 +116,20 @@
     }
 
     .header-free-row {
-      display: flex;
-      align-items: center;
-      gap: .55rem;
-      min-height: var(--header-free-h);
-      padding-bottom: .4rem;
-      border-top: 1px solid rgba(140, 150, 210, .08);
-      overflow: hidden;
+      width: 100%;
+      border-top: 1px solid rgba(78, 205, 196, .14);
+      background: linear-gradient(90deg, rgba(78, 205, 196, .07) 0%, rgba(124, 111, 205, .05) 50%, rgba(78, 205, 196, .07) 100%);
+      padding: .55rem 1.25rem .6rem;
+    }
+
+    .header-free-inner {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: .65rem 1rem;
+      align-items: start;
     }
 
     .header-free-chip {
@@ -126,15 +137,22 @@
       display: inline-flex;
       align-items: center;
       gap: .35rem;
-      padding: .18rem .55rem;
-      border: 1px solid rgba(78, 205, 196, .32);
+      padding: .22rem .62rem;
+      border: 1px solid rgba(78, 205, 196, .35);
       border-radius: 999px;
       color: #90e8df;
-      background: rgba(78, 205, 196, .08);
+      background: rgba(78, 205, 196, .1);
       font-size: .58rem;
       font-weight: 800;
       letter-spacing: .05em;
       text-transform: uppercase;
+      animation: header-free-pulse 3.2s ease-in-out infinite;
+    }
+
+    @keyframes header-free-pulse {
+      50% {
+        box-shadow: 0 0 0 1px rgba(78, 205, 196, .22), 0 0 14px rgba(78, 205, 196, .18);
+      }
     }
 
     .header-free-chip::before {
@@ -146,17 +164,77 @@
       box-shadow: 0 0 8px currentColor;
     }
 
-    .header-free-text {
-      margin: 0;
+    .header-free-copy {
       min-width: 0;
-      color: rgba(168, 196, 232, .82);
-      font-size: .68rem;
-      font-weight: 500;
+    }
+
+    .header-free-lead {
+      margin: 0 0 .2rem;
+      color: #e8f2ff;
+      font-size: .74rem;
+      font-weight: 700;
       line-height: 1.35;
       letter-spacing: -.01em;
+    }
+
+    .header-free-detail {
+      margin: 0;
+      color: rgba(168, 196, 232, .78);
+      font-size: .66rem;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    .header-free-points {
+      display: none;
+      flex-wrap: wrap;
+      gap: .35rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .header-free-points li {
+      padding: .2rem .55rem;
+      border: 1px solid rgba(124, 111, 205, .28);
+      border-radius: 999px;
+      color: #c8deff;
+      background: rgba(124, 111, 205, .1);
+      font-size: .58rem;
+      font-weight: 700;
+      letter-spacing: .02em;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+
+    @media (min-width: 900px) {
+      .header-free-inner {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: .75rem 1.25rem;
+      }
+
+      .header-free-points {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .header-free-lead {
+        font-size: .78rem;
+      }
+
+      .header-free-detail {
+        font-size: .68rem;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .header-free-row {
+        padding: .6rem 2rem .65rem;
+      }
+
+      .app-header-nav-wrap {
+        padding: 0 2rem;
+      }
     }
 
     .logo {
@@ -2182,17 +2260,33 @@
 
     @media (max-width: 760px) {
       :root {
-        --header-free-h: 34px;
-        --header-h: 90px;
+        --header-free-h: 72px;
+        --header-h: 128px;
       }
 
-      .app-header {
+      .app-header-nav-wrap {
         padding: 0 .65rem;
       }
 
-      .header-free-text {
-        white-space: normal;
-        font-size: .62rem;
+      .header-free-row {
+        padding: .5rem .65rem .55rem;
+      }
+
+      .header-free-inner {
+        grid-template-columns: 1fr;
+        gap: .4rem;
+      }
+
+      .header-free-lead {
+        font-size: .7rem;
+      }
+
+      .header-free-detail {
+        font-size: .64rem;
+      }
+
+      .header-free-points {
+        display: flex;
       }
 
       .logo-text {
@@ -2266,47 +2360,59 @@
   <canvas id="network-canvas" aria-hidden="true"></canvas>
 
   <header class="app-header">
-    <div class="app-header-stack">
-      <div class="app-header-inner">
-        <a class="logo" href="#main" data-screen-link="main">
-          <span class="logo-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>
-          </span>
-          <span class="logo-text">whatimado<span>.com</span></span>
-        </a>
-
-        <nav class="nav" aria-label="Main navigation">
-          <div class="nav-group nav-group--scroll">
-            <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
-            <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
-            <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
-            <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
-          </div>
-
-          <div class="nav-group nav-group--actions">
-            <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
-            <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
-              Cart
-              <span class="nav-cart-badge" id="nav-cart-badge">1</span>
-            </button>
-          </div>
-
-          <span class="nav-divider" aria-hidden="true"></span>
-
-          <div class="nav-group nav-group--auth">
-            <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
-            <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
-            <span class="nav-user" id="nav-user">
-              <span id="nav-username"></span>
-              <button class="nav-btn" id="signout-btn">Sign out</button>
+    <div class="app-header-nav-wrap">
+      <div class="app-header-stack">
+        <div class="app-header-inner">
+          <a class="logo" href="#main" data-screen-link="main">
+            <span class="logo-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>
             </span>
-          </div>
-        </nav>
-      </div>
+            <span class="logo-text">whatimado<span>.com</span></span>
+          </a>
 
-      <div class="header-free-row" aria-label="Mission">
+          <nav class="nav" aria-label="Main navigation">
+            <div class="nav-group nav-group--scroll">
+              <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
+              <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
+              <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
+              <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
+            </div>
+
+            <div class="nav-group nav-group--actions">
+              <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
+              <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
+                Cart
+                <span class="nav-cart-badge" id="nav-cart-badge">1</span>
+              </button>
+            </div>
+
+            <span class="nav-divider" aria-hidden="true"></span>
+
+            <div class="nav-group nav-group--auth">
+              <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
+              <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
+              <span class="nav-user" id="nav-user">
+                <span id="nav-username"></span>
+                <button class="nav-btn" id="signout-btn">Sign out</button>
+              </span>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-free-row" aria-label="Mission">
+      <div class="header-free-inner">
         <span class="header-free-chip">Free for everyone</span>
-        <p class="header-free-text">whatimado is built to stay free — no matter where you're starting from.</p>
+        <div class="header-free-copy">
+          <p class="header-free-lead">whatimado is built to stay free — no matter where you're starting from.</p>
+          <p class="header-free-detail">This site and the upcoming app stay free for everyone: whether you're barely getting by, holding steady, or building something bigger. We're funded by sponsors and voluntary gifts — not subscriptions or paywalls.</p>
+        </div>
+        <ul class="header-free-points" aria-label="Our promise">
+          <li>No paywall</li>
+          <li>Any income level</li>
+          <li>Free when the app launches</li>
+        </ul>
       </div>
     </div>
   </header>
@@ -4361,7 +4467,15 @@
       window.addEventListener("resize", measure);
     }
 
+    function syncHeaderHeight() {
+      const header = document.querySelector(".app-header");
+      if (!header) return;
+      document.documentElement.style.setProperty("--header-h", `${header.offsetHeight}px`);
+    }
+
     function bindEvents() {
+      syncHeaderHeight();
+      window.addEventListener("resize", syncHeaderHeight);
       $$("[data-screen-link]").forEach((element) => {
         element.addEventListener("click", (event) => {
           event.preventDefault();
@@ -4417,6 +4531,7 @@
 
     window.addEventListener("load", async () => {
       bindEvents();
+      syncHeaderHeight();
       initNetworkCanvas();
       initDonation();
       initStatusWall();
