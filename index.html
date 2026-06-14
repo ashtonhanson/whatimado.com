@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-free-row-align-v1 -->
+<!-- whatimado build: 2026-06-14-how-it-works-divider-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-free-row-align-v1">
+  <meta name="whatimado-build" content="2026-06-14-how-it-works-divider-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,8 +36,8 @@
       --radius-md: 14px;
       --radius-lg: 20px;
       --header-nav-h: 56px;
-      --header-free-h: 48px;
-      --header-h: 104px;
+      --header-free-h: 56px;
+      --header-h: 112px;
     }
 
     html {
@@ -119,16 +119,16 @@
       width: 100%;
       border-top: 1px solid rgba(78, 205, 196, .14);
       background: linear-gradient(90deg, rgba(78, 205, 196, .07) 0%, rgba(124, 111, 205, .05) 50%, rgba(78, 205, 196, .07) 100%);
-      padding-top: .55rem;
-      padding-bottom: .6rem;
+      padding-top: .9rem;
+      padding-bottom: .95rem;
     }
 
     .header-free-inner {
       width: min(100%, 1180px);
       margin: 0 auto;
       display: flex;
-      align-items: flex-start;
-      gap: .75rem 1rem;
+      align-items: center;
+      gap: .85rem 1.1rem;
     }
 
     .header-free-chip {
@@ -190,6 +190,11 @@
     @media (min-width: 1200px) {
       .app-header-nav-wrap {
         padding: 0 2rem;
+      }
+
+      .how-it-works-heading-wrap {
+        padding-left: 2rem;
+        padding-right: 2rem;
       }
     }
 
@@ -427,18 +432,41 @@
 
     .status-wall-wrap {
       width: 100%;
-      padding: .75rem 0 1rem;
+      padding: .85rem 0 1rem;
+    }
+
+    .how-it-works-heading-wrap {
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+      margin-bottom: .65rem;
+    }
+
+    .how-it-works-heading {
+      width: min(100%, 1180px);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+    }
+
+    .how-it-works-line {
+      flex: 1 1 auto;
+      height: 1px;
+      min-width: 1rem;
+      background: rgba(140, 150, 210, .25);
     }
 
     .how-it-works-label {
-      width: min(calc(100% - 2.5rem), 720px);
-      margin: 0 auto .55rem;
-      padding-left: .15rem;
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 0 .15rem;
       color: rgba(123, 130, 176, .9);
       font-size: .66rem;
       font-weight: 800;
       letter-spacing: .08em;
       text-transform: uppercase;
+      text-align: center;
+      white-space: nowrap;
     }
 
     .status-wall {
@@ -2224,9 +2252,15 @@
         padding: 0 .65rem;
       }
 
+      .how-it-works-heading-wrap {
+        padding-left: .65rem;
+        padding-right: .65rem;
+      }
+
       .header-free-inner {
         flex-direction: column;
-        gap: .35rem;
+        align-items: flex-start;
+        gap: .45rem;
       }
 
       .header-free-lead {
@@ -2363,7 +2397,13 @@
   <main>
     <section class="screen active" id="screen-main">
       <div class="status-wall-wrap">
-        <p class="how-it-works-label">How it works</p>
+        <div class="how-it-works-heading-wrap">
+          <div class="how-it-works-heading">
+            <span class="how-it-works-line" aria-hidden="true"></span>
+            <span class="how-it-works-label">How it works</span>
+            <span class="how-it-works-line" aria-hidden="true"></span>
+          </div>
+        </div>
         <div class="status-wall" id="status-wall" aria-label="How whatimado works">
           <div class="status-wall-track" id="status-wall-track"></div>
         </div>
@@ -4276,8 +4316,8 @@
           setWidth = cardsPerSet * cardWidth + (cardsPerSet - 1) * gap;
         }
 
-        const labelWidth = Math.min(wall.clientWidth - 40, 720);
-        const edgePad = Math.max(16, (wall.clientWidth - labelWidth) / 2);
+        const contentWidth = Math.min(wall.clientWidth - 40, 1180);
+        const edgePad = Math.max(16, (wall.clientWidth - contentWidth) / 2);
         track.style.paddingLeft = `${edgePad}px`;
         track.style.paddingRight = `${edgePad}px`;
 
