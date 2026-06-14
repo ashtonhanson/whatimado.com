@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-no-free-bar-v1 -->
+<!-- whatimado build: 2026-06-14-hero-free-text-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-no-free-bar-v1">
+  <meta name="whatimado-build" content="2026-06-14-hero-free-text-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -126,26 +126,6 @@
     }
 
     @media (max-width: 960px) {
-      .main-workspace {
-        grid-template-columns: 1fr;
-        gap: 1.25rem;
-        padding-bottom: 1.5rem;
-      }
-
-      .main-gallery-panel {
-        order: 2;
-      }
-
-      .status-wall--compact {
-        flex: none;
-        min-height: 10.5rem;
-      }
-
-      .status-wall--compact .status-wall-card {
-        flex: 0 0 min(260px, 78vw);
-        min-height: 9.5rem;
-      }
-
       .hero h1 {
         font-size: clamp(2rem, 7vw, 3rem);
       }
@@ -386,252 +366,16 @@
     .main-workspace {
       width: min(100%, 1180px);
       margin: 0 auto;
-      padding: 1rem 1.25rem 1.25rem;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
-      gap: 1rem 1.65rem;
-      align-items: stretch;
-    }
-
-    .main-gallery-panel {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .main-gallery-panel .how-it-works-heading-wrap {
-      padding: 0;
-      margin-bottom: .55rem;
-      flex-shrink: 0;
-    }
-
-    .main-gallery-panel .how-it-works-heading {
-      width: 100%;
-    }
-
-    .status-wall--compact {
-      flex: 1 1 auto;
-      min-height: 12rem;
-      display: flex;
-      flex-direction: column;
-      -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 82%, transparent 100%);
-      mask-image: linear-gradient(90deg, #000 0%, #000 82%, transparent 100%);
-    }
-
-    .status-wall--compact .status-wall-track {
-      gap: .75rem;
-      align-items: stretch;
-      height: 100%;
-      min-height: 100%;
-    }
-
-    .status-wall--compact .status-wall-card {
-      flex: 0 0 228px;
-      min-height: 100%;
-      height: auto;
-      padding: .95rem .92rem 1rem;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .status-wall--compact .status-wall-title {
-      margin-bottom: .45rem;
-      font-size: .82rem;
-      line-height: 1.32;
-    }
-
-    .status-wall--compact .status-wall-text {
-      font-size: .72rem;
-      line-height: 1.5;
-    }
-
-    .how-it-works-heading-wrap {
-      padding-left: 1.25rem;
-      padding-right: 1.25rem;
-      margin-bottom: .65rem;
-    }
-
-    .how-it-works-heading {
-      width: min(100%, 1180px);
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      gap: .85rem;
-    }
-
-    .how-it-works-line {
-      flex: 1 1 auto;
-      height: 1px;
-      min-width: 1rem;
-      background: rgba(140, 150, 210, .25);
-    }
-
-    .how-it-works-label {
-      flex: 0 0 auto;
-      margin: 0;
-      padding: 0 .15rem;
-      color: rgba(123, 130, 176, .9);
-      font-size: .66rem;
-      font-weight: 800;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .status-wall {
-      position: relative;
-      width: 100%;
-      overflow: hidden;
-      cursor: grab;
-      touch-action: pan-y;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-mask-image: linear-gradient(
-        90deg,
-        transparent 0%,
-        #000 12%,
-        #000 88%,
-        transparent 100%
-      );
-      mask-image: linear-gradient(
-        90deg,
-        transparent 0%,
-        #000 12%,
-        #000 88%,
-        transparent 100%
-      );
-      -webkit-mask-size: 100% 100%;
-      mask-size: 100% 100%;
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-    }
-
-    .status-wall.is-dragging {
-      cursor: grabbing;
-      transition: none;
-    }
-
-    .status-wall.is-dragging .status-wall-track {
-      transition: none;
-    }
-
-    .status-wall-track {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      width: max-content;
-      will-change: transform;
-    }
-
-    .status-wall-card {
-      flex: 0 0 min(300px, 78vw);
-      min-height: 9.5rem;
-      height: auto;
-      padding: 1rem 1.1rem 1.05rem;
-      text-align: left;
-    }
-
-    .status-wall-title {
-      margin: 0 0 .5rem;
-      color: #e8f2ff;
-      font-size: .9rem;
-      font-weight: 800;
-      line-height: 1.35;
-      letter-spacing: -.01em;
-    }
-
-    .status-wall-text {
-      margin: 0;
-      color: #a8c4e8;
-      font-size: .82rem;
-      line-height: 1.55;
-    }
-
-    .status-wall-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: .45rem;
-      margin-bottom: .65rem;
-      padding: .35rem .8rem;
-      border: 1px solid rgba(78, 205, 196, .38);
-      border-radius: 999px;
-      color: #90e8df;
-      background: rgba(78, 205, 196, .1);
-      font-size: .66rem;
-      font-weight: 800;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-    }
-
-    .status-wall-chip::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      box-shadow: 0 0 10px currentColor;
-    }
-
-    .status-wall-lead {
-      margin: 0 0 .55rem;
-      color: #e8f2ff;
-      font-size: .92rem;
-      font-weight: 800;
-      line-height: 1.4;
-      letter-spacing: -.01em;
-    }
-
-    .status-wall-asks {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .45rem;
-      margin-top: .85rem;
-      position: relative;
-      z-index: 2;
-    }
-
-    .status-wall-tag {
-      border: 1px solid rgba(124, 111, 205, .35);
-      border-radius: 999px;
-      padding: .35rem .75rem;
-      color: #c8deff;
-      background: rgba(124, 111, 205, .12);
-      font-size: .68rem;
-      font-weight: 800;
-      letter-spacing: .03em;
-      touch-action: manipulation;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    button.status-wall-tag {
-      cursor: pointer;
-      transition: .16s ease;
-    }
-
-    button.status-wall-tag:hover {
-      border-color: rgba(124, 111, 205, .55);
-      background: rgba(124, 111, 205, .2);
-      color: #fff;
-    }
-
-    button.status-wall-tag:active {
-      transform: scale(.98);
-    }
-
-    button.status-wall-tag:focus-visible {
-      outline: 2px solid rgba(78, 205, 196, .75);
-      outline-offset: 2px;
+      padding: 1rem 1.25rem 1.5rem;
     }
 
     .hero {
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      width: 100%;
+      width: min(100%, 580px);
       min-width: 0;
-      margin: 0;
+      margin: 0 auto;
       padding: 0;
     }
 
@@ -2374,6 +2118,7 @@
     <section class="screen active" id="screen-main">
       <div class="main-workspace">
         <div class="hero">
+          <p class="hero-copy">whatimado is built to stay free — no matter where you're starting from. This site and the upcoming app stay free for everyone: whether you're barely getting by, holding steady, or building something bigger. We're funded by sponsors and voluntary gifts — not subscriptions or paywalls.</p>
           <div class="hero-chip">Start here</div>
           <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
           <p class="hero-copy">Tell us your situation, skills, interests, or goals. We'll map out paths you may never have considered.</p>
@@ -2394,19 +2139,6 @@
             <button class="pill" data-prompt="I have no money but I have time and hustle">starting from zero</button>
           </div>
         </div>
-
-        <aside class="main-gallery-panel" aria-label="How whatimado works">
-          <div class="how-it-works-heading-wrap">
-            <div class="how-it-works-heading">
-              <span class="how-it-works-line" aria-hidden="true"></span>
-              <span class="how-it-works-label">How it works</span>
-              <span class="how-it-works-line" aria-hidden="true"></span>
-            </div>
-          </div>
-          <div class="status-wall status-wall--compact" id="status-wall">
-            <div class="status-wall-track" id="status-wall-track"></div>
-          </div>
-        </aside>
       </div>
     </section>
 
@@ -4209,253 +3941,10 @@
       window.addEventListener("resize", resize);
     }
 
-    function initStatusWall() {
-      const HOW_IT_WORKS = [
-        {
-          title: "Share your situation",
-          text: "Tell us what you know, what you enjoy, and what you're aiming for. Use the prompt below or tap a starter pill — there is no wrong answer."
-        },
-        {
-          title: "A short conversation",
-          text: "We ask one or two clarifying questions based on what you wrote — about your skills, constraints, and whether you want to get hired, learn, or build something."
-        },
-        {
-          title: "Your opportunity map",
-          text: "You get three tailored paths visualized on a map. Each one is a real direction you could take, not a generic career quiz result."
-        },
-        {
-          title: "Explore and refine",
-          text: "Request more paths or open a chat to steer the map — for example, more local, more hands-on, or less online."
-        },
-        {
-          title: "Pick a roadmap",
-          text: "Tap any opportunity to open a four-stage roadmap with concrete tasks shaped around your conversation — not vague advice."
-        },
-        {
-          title: "Ask as you go",
-          text: "Each task has its own AI thread. Ask follow-ups, get links to tools, and keep the conversation going while you work through the plan."
-        },
-        {
-          title: "Pick up where you left off",
-          text: "Your session saves automatically on this device. Sign in to sync your map, roadmaps, and task chats across devices."
-        }
-      ];
-
-      function renderHowCard(slide) {
-        return `
-          <article class="status-wall-card surface-card">
-            <h3 class="status-wall-title">${slide.title}</h3>
-            <p class="status-wall-text">${slide.text}</p>
-          </article>
-        `;
-      }
-
-      const wall = $("#status-wall");
-      const track = $("#status-wall-track");
-      if (!wall || !track) return;
-
-      track.innerHTML = Array.from({ length: 3 }, () =>
-        HOW_IT_WORKS.map(renderHowCard).join("")
-      ).join("");
-
-      let offset = 0;
-      let velocity = 0;
-      let dragStartX = 0;
-      let dragStartOffset = 0;
-      let lastMoveX = 0;
-      let lastMoveTs = 0;
-      let dragging = false;
-      let paused = false;
-      let pauseUntil = 0;
-      let autoBlend = 1;
-      let setWidth = 0;
-      let lastTs = 0;
-      let trackReady = false;
-      const AUTO_SPEED = 24;
-      const RIGHT_UNLOCK = 48;
-      const MIN_VELOCITY = 2;
-      const FLICK_GAIN = 1.08;
-      const FRICTION = 5.2;
-      const AUTO_RAMP = 1.35;
-
-      function measure() {
-        const cards = track.querySelectorAll(".status-wall-card");
-        if (!cards.length) return;
-
-        const cardsPerSet = HOW_IT_WORKS.length;
-        const firstCard = cards[0];
-        const lastInSet = cards[cardsPerSet - 1];
-        const gap = parseFloat(getComputedStyle(track).gap) || 16;
-
-        if (lastInSet) {
-          setWidth = lastInSet.offsetLeft + lastInSet.offsetWidth - firstCard.offsetLeft;
-        } else {
-          const cardWidth = firstCard.offsetWidth || 300;
-          setWidth = cardsPerSet * cardWidth + (cardsPerSet - 1) * gap;
-        }
-
-        const isCompact = wall.classList.contains("status-wall--compact");
-        if (isCompact) {
-          track.style.paddingLeft = "0";
-          track.style.paddingRight = "10px";
-        } else {
-          const contentWidth = Math.min(wall.clientWidth - 40, 1180);
-          const edgePad = Math.max(16, (wall.clientWidth - contentWidth) / 2);
-          track.style.paddingLeft = `${edgePad}px`;
-          track.style.paddingRight = `${edgePad}px`;
-        }
-
-        if (!trackReady && setWidth > 0) {
-          offset = -setWidth;
-          trackReady = true;
-        }
-
-        normalizeOffset();
-        applyTransform();
-        syncGalleryHeight();
-      }
-
-      function normalizeOffset() {
-        if (!setWidth) return;
-        while (offset <= -2 * setWidth) offset += setWidth;
-        while (offset > 0) offset -= setWidth;
-      }
-
-      function canScrollRight() {
-        return offset < -RIGHT_UNLOCK;
-      }
-
-      function clampOffset(value) {
-        if (value > 0) return canScrollRight() ? Math.min(value, 0) : 0;
-        return value;
-      }
-
-      function applyTransform() {
-        track.style.transform = `translate3d(${offset}px, 0, 0)`;
-      }
-
-      function tick(ts) {
-        if (!lastTs) lastTs = ts;
-        const dt = Math.min((ts - lastTs) / 1000, 0.032);
-        lastTs = ts;
-
-        if (!dragging) {
-          if (Math.abs(velocity) > MIN_VELOCITY) {
-            autoBlend = 0;
-            let next = offset + velocity * dt;
-            if (next > 0 && !canScrollRight()) {
-              next = 0;
-              velocity = 0;
-            } else if (next > 0) {
-              next = 0;
-              velocity *= 0.35;
-            }
-            offset = next;
-            velocity *= Math.exp(-FRICTION * dt);
-            normalizeOffset();
-            applyTransform();
-          } else {
-            velocity = 0;
-            if (!paused && ts >= pauseUntil) {
-              autoBlend = Math.min(1, autoBlend + dt * AUTO_RAMP);
-              offset -= AUTO_SPEED * dt * autoBlend;
-              normalizeOffset();
-              applyTransform();
-            } else {
-              autoBlend = Math.max(0, autoBlend - dt * 2.4);
-            }
-          }
-        }
-
-        requestAnimationFrame(tick);
-      }
-
-      function endDrag() {
-        if (!dragging) return;
-        dragging = false;
-        wall.classList.remove("is-dragging");
-        velocity = pointerVelocity * FLICK_GAIN;
-        pauseUntil = performance.now() + 1400;
-        paused = false;
-      }
-
-      let pointerVelocity = 0;
-
-      wall.addEventListener("pointerdown", (event) => {
-        if (event.target.closest("[data-donate-preset], button, a, input, textarea, select, label")) {
-          return;
-        }
-        dragging = true;
-        paused = true;
-        autoBlend = 0;
-        velocity = 0;
-        pointerVelocity = 0;
-        wall.classList.add("is-dragging");
-        dragStartX = event.clientX;
-        dragStartOffset = offset;
-        lastMoveX = event.clientX;
-        lastMoveTs = performance.now();
-        wall.setPointerCapture(event.pointerId);
-      });
-
-      wall.addEventListener("pointermove", (event) => {
-        if (!dragging) return;
-        const now = performance.now();
-        const dt = Math.max(now - lastMoveTs, 1);
-        const dx = event.clientX - lastMoveX;
-        pointerVelocity = (dx / dt) * 1000;
-        lastMoveX = event.clientX;
-        lastMoveTs = now;
-        offset = clampOffset(dragStartOffset + (event.clientX - dragStartX));
-        normalizeOffset();
-        applyTransform();
-      });
-
-      wall.addEventListener("pointerup", endDrag);
-      wall.addEventListener("pointercancel", endDrag);
-      wall.addEventListener("lostpointercapture", endDrag);
-
-      wall.addEventListener("mouseenter", () => {
-        paused = true;
-        autoBlend = Math.max(0, autoBlend - 0.25);
-      });
-
-      wall.addEventListener("mouseleave", () => {
-        if (!dragging) {
-          pauseUntil = performance.now() + 600;
-          paused = false;
-        }
-      });
-
-      measure();
-      requestAnimationFrame(() => {
-        measure();
-        requestAnimationFrame(tick);
-      });
-      window.addEventListener("resize", measure);
-    }
-
-    function syncGalleryHeight() {
-      const hero = document.querySelector(".main-workspace .hero");
-      const wall = document.getElementById("status-wall");
-      const headingWrap = document.querySelector(".main-gallery-panel .how-it-works-heading-wrap");
-      if (!hero || !wall) return;
-
-      if (window.innerWidth <= 960) {
-        wall.style.removeProperty("min-height");
-        return;
-      }
-
-      const headingH = headingWrap ? headingWrap.offsetHeight + 12 : 0;
-      const target = hero.offsetHeight - headingH;
-      if (target > 0) wall.style.minHeight = `${target}px`;
-    }
-
     function syncHeaderHeight() {
       const header = document.querySelector(".app-header");
       if (!header) return;
       document.documentElement.style.setProperty("--header-h", `${header.offsetHeight}px`);
-      syncGalleryHeight();
     }
 
     function bindEvents() {
@@ -4519,8 +4008,6 @@
       syncHeaderHeight();
       initNetworkCanvas();
       initDonation();
-      initStatusWall();
-      syncGalleryHeight();
       await initAuth();
       setTimeout(() => {
         $("#loader").classList.add("hidden");
