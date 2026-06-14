@@ -345,7 +345,7 @@
       width: 100%;
       overflow: hidden;
       cursor: grab;
-      touch-action: none;
+      touch-action: pan-y;
       user-select: none;
       -webkit-user-select: none;
       -webkit-mask-image: linear-gradient(
@@ -452,6 +452,8 @@
       flex-wrap: wrap;
       gap: .45rem;
       margin-top: .85rem;
+      position: relative;
+      z-index: 2;
     }
 
     .status-wall-tag {
@@ -463,6 +465,9 @@
       font-size: .68rem;
       font-weight: 800;
       letter-spacing: .03em;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     button.status-wall-tag {
@@ -473,6 +478,16 @@
     button.status-wall-tag:hover {
       border-color: rgba(124, 111, 205, .55);
       background: rgba(124, 111, 205, .2);
+      color: #fff;
+    }
+
+    button.status-wall-tag:active {
+      transform: scale(.98);
+    }
+
+    button.status-wall-tag:focus-visible {
+      outline: 2px solid rgba(78, 205, 196, .75);
+      outline-offset: 2px;
     }
 
     .hero {
@@ -3830,6 +3845,11 @@
       }
     }
 
+    function openDonateFromPreset(presetId) {
+      selectDonationOption(presetId);
+      showDonateModal();
+    }
+
     function initDonation() {
       renderDonationFootnote();
       renderDonationOptions();
@@ -3860,8 +3880,7 @@
         const tag = event.target.closest("[data-donate-preset]");
         if (!tag) return;
         event.stopPropagation();
-        selectDonationOption(tag.dataset.donatePreset);
-        showDonateModal();
+        openDonateFromPreset(tag.dataset.donatePreset);
       });
       handleDonationReturn();
     }
@@ -4091,12 +4110,12 @@
               <div class="status-wall-asks" aria-label="Ways to support">
                 ${slide.tags.map((tag) => {
                   const presets = {
-                    "Sponsors welcome": "champion",
-                    "One-time gifts": "coffee",
-                    "Monthly support": "supporter"
+                    "Sponsors welcome": { id: "champion", label: "Open sponsor tier ($50)" },
+                    "One-time gifts": { id: "coffee", label: "Open one-time gift options" },
+                    "Monthly support": { id: "supporter", label: "Open monthly supporter ($10/mo)" }
                   };
-                  const preset = presets[tag] || "coffee";
-                  return `<button class="status-wall-tag" type="button" data-donate-preset="${preset}">${tag}</button>`;
+                  const preset = presets[tag] || { id: "coffee", label: `Support via ${tag}` };
+                  return `<button class="status-wall-tag" type="button" data-donate-preset="${preset.id}" aria-label="${preset.label}">${tag}</button>`;
                 }).join("")}
               </div>
             </article>
@@ -4118,6 +4137,14 @@
       track.innerHTML = Array.from({ length: 3 }, () =>
         HOW_IT_WORKS.map(renderHowCard).join("")
       ).join("");
+
+      track.addEventListener("click", (event) => {
+        const tag = event.target.closest("[data-donate-preset]");
+        if (!tag) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openDonateFromPreset(tag.dataset.donatePreset);
+      });
 
       let offset = 0;
       let velocity = 0;
@@ -4217,6 +4244,9 @@
       let pointerVelocity = 0;
 
       wall.addEventListener("pointerdown", (event) => {
+        if (event.target.closest("[data-donate-preset], button, a, input, textarea, select, label")) {
+          return;
+        }
         dragging = true;
         paused = true;
         autoBlend = 0;
