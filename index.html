@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-free-promise-v1 -->
+<!-- whatimado build: 2026-06-14-gallery-wrap-fix-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-free-promise-v1">
+  <meta name="whatimado-build" content="2026-06-14-gallery-wrap-fix-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,7 +35,9 @@
       --radius-sm: 8px;
       --radius-md: 14px;
       --radius-lg: 20px;
-      --header-h: 60px;
+      --header-nav-h: 56px;
+      --header-free-h: 30px;
+      --header-h: 86px;
     }
 
     html {
@@ -82,7 +84,7 @@
       z-index: 20;
       height: var(--header-h);
       padding: 0 1.25rem;
-      background: linear-gradient(180deg, rgba(12, 15, 28, .82) 0%, rgba(8, 10, 18, .68) 100%);
+      background: linear-gradient(180deg, rgba(12, 15, 28, .88) 0%, rgba(8, 10, 18, .78) 100%);
       border-bottom: 1px solid rgba(140, 150, 210, .1);
       backdrop-filter: blur(22px) saturate(150%);
       -webkit-backdrop-filter: blur(22px) saturate(150%);
@@ -91,14 +93,70 @@
         0 10px 40px rgba(0, 0, 0, .22);
     }
 
-    .app-header-inner {
+    .app-header-stack {
       width: min(100%, 1180px);
       height: 100%;
       margin: 0 auto;
       display: flex;
+      flex-direction: column;
+    }
+
+    .app-header-inner {
+      width: 100%;
+      height: var(--header-nav-h);
+      flex-shrink: 0;
+      display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
+    }
+
+    .header-free-row {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      min-height: var(--header-free-h);
+      padding-bottom: .4rem;
+      border-top: 1px solid rgba(140, 150, 210, .08);
+      overflow: hidden;
+    }
+
+    .header-free-chip {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .18rem .55rem;
+      border: 1px solid rgba(78, 205, 196, .32);
+      border-radius: 999px;
+      color: #90e8df;
+      background: rgba(78, 205, 196, .08);
+      font-size: .58rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .header-free-chip::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .header-free-text {
+      margin: 0;
+      min-width: 0;
+      color: rgba(168, 196, 232, .82);
+      font-size: .68rem;
+      font-weight: 500;
+      line-height: 1.35;
+      letter-spacing: -.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .logo {
@@ -330,49 +388,12 @@
     }
 
     #screen-main.active {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      display: block;
     }
 
     .status-wall-wrap {
       width: 100%;
-      padding: 1.15rem 0 0;
-    }
-
-    .free-promise-bar {
-      width: min(calc(100% - 2.5rem), 720px);
-      margin: 0 auto 1rem;
-      padding: .95rem 1.1rem;
-      display: grid;
-      gap: .75rem;
-      border-color: rgba(78, 205, 196, .24);
-      background: rgba(18, 28, 48, .9);
-      text-align: left;
-    }
-
-    .free-promise-lead {
-      margin: 0 0 .35rem;
-      color: #e8f2ff;
-      font-size: .86rem;
-      font-weight: 800;
-      line-height: 1.35;
-      letter-spacing: -.01em;
-    }
-
-    .free-promise-body {
-      margin: 0;
-      color: #a8c4e8;
-      font-size: .76rem;
-      line-height: 1.5;
-    }
-
-    .free-promise-bar .status-wall-chip {
-      margin-bottom: .45rem;
-    }
-
-    .free-promise-bar .status-wall-asks {
-      margin-top: 0;
+      padding: .75rem 0 1rem;
     }
 
     .how-it-works-label {
@@ -532,35 +553,21 @@
       outline-offset: 2px;
     }
 
-    @media (min-width: 720px) {
-      .free-promise-bar {
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        gap: 1rem 1.5rem;
-        padding: 1rem 1.2rem;
-      }
-
-      .free-promise-bar .status-wall-asks {
-        justify-content: flex-end;
-        max-width: 15rem;
-      }
-    }
-
     .hero {
-      flex: 1;
+      flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       width: min(100%, 580px);
       margin: 0 auto;
-      padding: 1.5rem 1.5rem 3rem;
+      padding: 1rem 1.5rem 1.5rem;
     }
 
     .hero-chip {
       display: inline-flex;
       align-items: center;
       gap: .45rem;
-      margin-bottom: 1rem;
+      margin-bottom: .75rem;
       padding: .4rem .9rem;
       border: 1px solid rgba(144, 212, 255, .42);
       border-radius: 999px;
@@ -582,7 +589,7 @@
     }
 
     .hero h1 {
-      margin: 0 0 .9rem;
+      margin: 0 0 .65rem;
       color: #e8f4ff;
       font-size: clamp(2rem, 7vw, 3rem);
       line-height: 1.05;
@@ -602,7 +609,7 @@
 
     .hero-copy {
       max-width: 440px;
-      margin: 0 0 1.35rem;
+      margin: 0 0 1rem;
       color: rgba(210, 232, 255, .88);
       line-height: 1.55;
     }
@@ -2174,8 +2181,18 @@
     }
 
     @media (max-width: 760px) {
+      :root {
+        --header-free-h: 34px;
+        --header-h: 90px;
+      }
+
       .app-header {
         padding: 0 .65rem;
+      }
+
+      .header-free-text {
+        white-space: normal;
+        font-size: .62rem;
       }
 
       .logo-text {
@@ -2249,60 +2266,54 @@
   <canvas id="network-canvas" aria-hidden="true"></canvas>
 
   <header class="app-header">
-    <div class="app-header-inner">
-      <a class="logo" href="#main" data-screen-link="main">
-        <span class="logo-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>
-        </span>
-        <span class="logo-text">whatimado<span>.com</span></span>
-      </a>
-
-      <nav class="nav" aria-label="Main navigation">
-        <div class="nav-group nav-group--scroll">
-          <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
-          <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
-          <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
-          <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
-        </div>
-
-        <div class="nav-group nav-group--actions">
-          <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
-          <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
-            Cart
-            <span class="nav-cart-badge" id="nav-cart-badge">1</span>
-          </button>
-        </div>
-
-        <span class="nav-divider" aria-hidden="true"></span>
-
-        <div class="nav-group nav-group--auth">
-          <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
-          <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
-          <span class="nav-user" id="nav-user">
-            <span id="nav-username"></span>
-            <button class="nav-btn" id="signout-btn">Sign out</button>
+    <div class="app-header-stack">
+      <div class="app-header-inner">
+        <a class="logo" href="#main" data-screen-link="main">
+          <span class="logo-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>
           </span>
-        </div>
-      </nav>
+          <span class="logo-text">whatimado<span>.com</span></span>
+        </a>
+
+        <nav class="nav" aria-label="Main navigation">
+          <div class="nav-group nav-group--scroll">
+            <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
+            <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
+            <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
+            <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
+          </div>
+
+          <div class="nav-group nav-group--actions">
+            <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
+            <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
+              Cart
+              <span class="nav-cart-badge" id="nav-cart-badge">1</span>
+            </button>
+          </div>
+
+          <span class="nav-divider" aria-hidden="true"></span>
+
+          <div class="nav-group nav-group--auth">
+            <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
+            <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
+            <span class="nav-user" id="nav-user">
+              <span id="nav-username"></span>
+              <button class="nav-btn" id="signout-btn">Sign out</button>
+            </span>
+          </div>
+        </nav>
+      </div>
+
+      <div class="header-free-row" aria-label="Mission">
+        <span class="header-free-chip">Free for everyone</span>
+        <p class="header-free-text">whatimado is built to stay free — no matter where you're starting from.</p>
+      </div>
     </div>
   </header>
 
   <main>
     <section class="screen active" id="screen-main">
       <div class="status-wall-wrap">
-        <div class="free-promise-bar surface-card">
-          <div class="free-promise-copy">
-            <div class="status-wall-chip">Free for everyone</div>
-            <p class="free-promise-lead">whatimado is built to stay free — no matter where you're starting from.</p>
-            <p class="free-promise-body">I'm keeping this website free so anyone can use it. When the app launches, that same promise carries over. Instead of charging you, I'm asking for help from sponsors — and from anyone who can give once or chip in monthly.</p>
-          </div>
-          <div class="status-wall-asks" aria-label="Ways to support">
-            <button class="status-wall-tag" type="button" data-donate-preset="champion" aria-label="Open sponsor tier ($50)">Sponsors welcome</button>
-            <button class="status-wall-tag" type="button" data-donate-preset="coffee" aria-label="Open one-time gift options">One-time gifts</button>
-            <button class="status-wall-tag" type="button" data-donate-preset="supporter" aria-label="Open monthly supporter ($10/mo)">Monthly support</button>
-          </div>
-        </div>
-
         <p class="how-it-works-label">How it works</p>
         <div class="status-wall" id="status-wall" aria-label="How whatimado works">
           <div class="status-wall-track" id="status-wall-track"></div>
@@ -4192,6 +4203,7 @@
       let autoBlend = 1;
       let setWidth = 0;
       let lastTs = 0;
+      let trackReady = false;
       const AUTO_SPEED = 24;
       const RIGHT_UNLOCK = 48;
       const MIN_VELOCITY = 2;
@@ -4201,19 +4213,37 @@
 
       function measure() {
         const cards = track.querySelectorAll(".status-wall-card");
-        const cardWidth = cards[0]?.offsetWidth || 300;
+        if (!cards.length) return;
+
+        const cardsPerSet = HOW_IT_WORKS.length;
+        const firstCard = cards[0];
+        const lastInSet = cards[cardsPerSet - 1];
         const gap = parseFloat(getComputedStyle(track).gap) || 16;
-        setWidth = HOW_IT_WORKS.length * (cardWidth + gap);
-        const pad = Math.max(0, (wall.clientWidth - cardWidth) / 2);
-        track.style.paddingLeft = `${pad}px`;
-        track.style.paddingRight = `${pad}px`;
+
+        if (lastInSet) {
+          setWidth = lastInSet.offsetLeft + lastInSet.offsetWidth - firstCard.offsetLeft;
+        } else {
+          const cardWidth = firstCard.offsetWidth || 300;
+          setWidth = cardsPerSet * cardWidth + (cardsPerSet - 1) * gap;
+        }
+
+        const labelWidth = Math.min(wall.clientWidth - 40, 720);
+        const edgePad = Math.max(16, (wall.clientWidth - labelWidth) / 2);
+        track.style.paddingLeft = `${edgePad}px`;
+        track.style.paddingRight = `${edgePad}px`;
+
+        if (!trackReady && setWidth > 0) {
+          offset = -setWidth;
+          trackReady = true;
+        }
+
         normalizeOffset();
         applyTransform();
       }
 
       function normalizeOffset() {
         if (!setWidth) return;
-        while (offset <= -setWidth) offset += setWidth;
+        while (offset <= -2 * setWidth) offset += setWidth;
         while (offset > 0) offset -= setWidth;
       }
 
