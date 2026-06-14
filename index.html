@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-more-paths-btn-v1 -->
+<!-- whatimado build: 2026-06-14-mobile-nav-v2 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-14-more-paths-btn-v1">
+  <meta name="whatimado-build" content="2026-06-14-mobile-nav-v2">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -349,42 +349,56 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 5px;
-      width: 38px;
-      height: 38px;
+      gap: 6px;
+      width: 42px;
+      height: 42px;
       padding: 0;
-      border: 1px solid rgba(120, 130, 200, .22);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(120, 130, 200, .18);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .06);
       cursor: pointer;
       flex-shrink: 0;
-      transition: background .16s ease, border-color .16s ease;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
     }
 
     .nav-hamburger:hover {
-      background: rgba(255, 255, 255, .08);
-      border-color: rgba(120, 130, 200, .35);
+      background: rgba(255, 255, 255, .1);
+      border-color: rgba(120, 130, 200, .32);
+    }
+
+    .nav-hamburger[aria-expanded="true"] {
+      background: rgba(124, 111, 205, .16);
+      border-color: rgba(155, 143, 224, .35);
     }
 
     .nav-hamburger-line {
       display: block;
-      width: 18px;
+      width: 17px;
       height: 2px;
-      border-radius: 1px;
-      background: rgba(200, 204, 238, .92);
-      transition: transform .2s ease, opacity .2s ease;
+      border-radius: 999px;
+      background: rgba(232, 236, 255, .92);
+      transition: transform .22s cubic-bezier(.4, 0, .2, 1), opacity .18s ease, width .18s ease;
     }
 
     .nav-hamburger[aria-expanded="true"] .nav-hamburger-line:nth-child(1) {
-      transform: translateY(7px) rotate(45deg);
+      transform: translateY(8px) rotate(45deg);
     }
 
     .nav-hamburger[aria-expanded="true"] .nav-hamburger-line:nth-child(2) {
       opacity: 0;
+      width: 0;
     }
 
     .nav-hamburger[aria-expanded="true"] .nav-hamburger-line:nth-child(3) {
-      transform: translateY(-7px) rotate(-45deg);
+      transform: translateY(-8px) rotate(-45deg);
+    }
+
+    .nav-drawer-label {
+      display: none;
+    }
+
+    .nav-drawer-section {
+      display: contents;
     }
 
     .nav-overlay {
@@ -2247,7 +2261,11 @@
       }
 
       .nav-drawer {
-        display: none;
+        display: flex;
+        visibility: hidden;
+        opacity: 0;
+        transform: translateY(-6px);
+        pointer-events: none;
         position: fixed;
         top: var(--header-h);
         left: 0;
@@ -2256,17 +2274,21 @@
         flex: none;
         flex-direction: column;
         align-items: stretch;
-        gap: .5rem;
-        padding: .75rem;
-        border-bottom: 1px solid rgba(140, 150, 210, .12);
-        background: linear-gradient(180deg, rgba(12, 15, 28, .97) 0%, rgba(8, 10, 18, .95) 100%);
-        backdrop-filter: blur(22px);
-        -webkit-backdrop-filter: blur(22px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+        gap: .85rem;
+        padding: .85rem .85rem 1rem;
+        border-bottom: 1px solid rgba(140, 150, 210, .14);
+        background: rgba(10, 13, 24, .94);
+        backdrop-filter: blur(24px) saturate(160%);
+        -webkit-backdrop-filter: blur(24px) saturate(160%);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, .38);
+        transition: opacity .22s ease, transform .22s cubic-bezier(.4, 0, .2, 1), visibility .22s ease;
       }
 
       .nav-drawer.is-open {
-        display: flex;
+        visibility: visible;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
       }
 
       .nav-overlay {
@@ -2276,10 +2298,10 @@
         z-index: 18;
         border: 0;
         padding: 0;
-        background: rgba(4, 6, 12, .45);
+        background: rgba(4, 6, 12, .52);
         opacity: 0;
         pointer-events: none;
-        transition: opacity .2s ease;
+        transition: opacity .22s ease;
         cursor: pointer;
       }
 
@@ -2288,36 +2310,128 @@
         pointer-events: auto;
       }
 
+      .nav-drawer-section {
+        display: flex;
+        flex-direction: column;
+        gap: .4rem;
+      }
+
+      .nav-drawer-label {
+        display: block;
+        margin: 0;
+        padding: 0 .35rem;
+        color: rgba(123, 130, 176, .82);
+        font-size: .62rem;
+        font-weight: 800;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+      }
+
       .nav-drawer .nav-group {
         width: 100%;
         flex-direction: column;
         align-items: stretch;
-        gap: .25rem;
-        padding: .35rem;
-        border-radius: var(--radius-md);
+        gap: .4rem;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
       }
 
       .nav-drawer .nav-group--auth {
-        padding: .35rem;
-        background: rgba(255, 255, 255, .03);
-        border: 1px solid rgba(120, 130, 200, .1);
+        padding: 0;
+        background: transparent;
+        border: 0;
       }
 
       .nav-drawer .nav-btn {
         width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .65rem;
         text-align: left;
-        padding: .72rem 1rem;
-        font-size: .88rem;
+        padding: .88rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(120, 130, 200, .1);
+        background: rgba(255, 255, 255, .04);
+        color: rgba(228, 234, 255, .92);
+        font-size: .9rem;
+        font-weight: 600;
+        letter-spacing: -.01em;
+        transition: background .16s ease, border-color .16s ease, transform .12s ease;
+      }
+
+      .nav-drawer .nav-btn:active {
+        transform: scale(.985);
+      }
+
+      .nav-drawer .nav-btn[data-screen-link]::after {
+        content: "";
+        flex-shrink: 0;
+        width: 7px;
+        height: 7px;
+        border-top: 1.5px solid rgba(200, 204, 238, .45);
+        border-right: 1.5px solid rgba(200, 204, 238, .45);
+        transform: rotate(45deg);
+      }
+
+      .nav-drawer .nav-btn.active {
+        color: #fff;
+        font-weight: 700;
+        background: rgba(124, 111, 205, .2);
+        border-color: rgba(155, 143, 224, .38);
+        box-shadow: inset 3px 0 0 rgba(124, 111, 205, .95);
+      }
+
+      .nav-drawer .nav-btn.active[data-screen-link]::after {
+        border-color: rgba(200, 204, 238, .75);
+      }
+
+      .nav-drawer .nav-btn.primary {
+        justify-content: center;
+        margin-top: .15rem;
+        padding: .92rem 1rem;
+        border: 0;
+        border-radius: 12px;
+        font-weight: 700;
+        box-shadow: 0 4px 18px rgba(124, 111, 205, .28);
+      }
+
+      .nav-drawer .nav-btn.primary::after {
+        display: none;
+      }
+
+      .nav-drawer .nav-btn.nav-cart {
+        color: rgba(228, 234, 255, .92);
+        font-weight: 600;
+        background: rgba(78, 205, 196, .08);
+        border-color: rgba(78, 205, 196, .22);
+      }
+
+      .nav-drawer .nav-btn.nav-cart.has-items {
+        color: #fff;
+        background: rgba(78, 205, 196, .14);
+        border-color: rgba(78, 205, 196, .35);
+      }
+
+      .nav-drawer .nav-btn.nav-cart::after {
+        display: none;
+      }
+
+      .nav-drawer .nav-btn.save-btn.is-saved {
+        border-color: rgba(82, 196, 122, .35);
+        background: rgba(82, 196, 122, .1);
+        color: #b8f0cc;
       }
 
       .nav-drawer .nav-btn.donate-btn {
-        padding: .72rem 1rem;
+        padding: .88rem 1rem;
       }
 
       .nav-drawer .nav-divider {
-        width: 100%;
-        height: 1px;
-        margin: .25rem 0;
+        display: none;
       }
 
       .nav-drawer .nav-group--scroll {
@@ -2328,17 +2442,22 @@
         flex-direction: column;
         align-items: stretch;
         width: 100%;
-        gap: .25rem;
+        gap: .4rem;
         padding: 0;
       }
 
       .nav-drawer .nav-user #nav-username {
         display: block;
         max-width: none;
-        padding: .45rem 1rem .15rem;
-        color: rgba(168, 196, 232, .78);
-        font-size: .78rem;
-        font-weight: 500;
+        padding: .35rem .35rem .1rem;
+        color: rgba(168, 196, 232, .72);
+        font-size: .74rem;
+        font-weight: 600;
+        letter-spacing: .02em;
+      }
+
+      .nav-drawer #signout-btn::after {
+        display: none;
       }
 
       .nav-btn.donate-btn {
@@ -2524,29 +2643,38 @@
             <button class="nav-overlay" id="nav-overlay" type="button" aria-label="Close menu" tabindex="-1"></button>
 
             <div class="nav-drawer" id="nav-drawer">
-              <div class="nav-group nav-group--scroll">
-                <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
-                <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
-                <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
-                <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
+              <div class="nav-drawer-section">
+                <p class="nav-drawer-label">Navigate</p>
+                <div class="nav-group nav-group--scroll">
+                  <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
+                  <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
+                  <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
+                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
+                </div>
               </div>
 
-              <div class="nav-group nav-group--actions">
-                <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
-                  Cart
-                  <span class="nav-cart-badge" id="nav-cart-badge">1</span>
-                </button>
+              <div class="nav-drawer-section">
+                <p class="nav-drawer-label">Support</p>
+                <div class="nav-group nav-group--actions">
+                  <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
+                    Cart
+                    <span class="nav-cart-badge" id="nav-cart-badge">1</span>
+                  </button>
+                </div>
               </div>
 
               <span class="nav-divider" aria-hidden="true"></span>
 
-              <div class="nav-group nav-group--auth">
-                <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
-                <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
-                <span class="nav-user" id="nav-user">
-                  <span id="nav-username"></span>
-                  <button class="nav-btn" id="signout-btn">Sign out</button>
-                </span>
+              <div class="nav-drawer-section">
+                <p class="nav-drawer-label">Account</p>
+                <div class="nav-group nav-group--auth">
+                  <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
+                  <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
+                  <span class="nav-user" id="nav-user">
+                    <span id="nav-username"></span>
+                    <button class="nav-btn" id="signout-btn">Sign out</button>
+                  </span>
+                </div>
               </div>
             </div>
           </nav>
