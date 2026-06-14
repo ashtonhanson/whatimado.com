@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-map-section-v1 -->
+<!-- whatimado build: 2026-06-14-roadmap-loading-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-map-section-v1">
+  <meta name="whatimado-build" content="2026-06-14-roadmap-loading-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1243,14 +1243,22 @@
     .roadmap-loading {
       position: fixed;
       inset: var(--header-h) 0 0;
-      z-index: 12;
+      z-index: 15;
       display: grid;
       place-items: center;
       align-content: center;
       gap: 1.1rem;
       padding: 1.5rem;
       text-align: center;
-      pointer-events: none;
+      background: rgba(7, 11, 20, .88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .roadmap-loading .loader-dot {
+      width: 46px;
+      height: 46px;
+      box-shadow: 0 0 32px rgba(124, 111, 205, .35);
     }
 
     .roadmap-loading[hidden] {
@@ -1259,8 +1267,15 @@
 
     .roadmap-loading-text {
       margin: 0;
-      color: #a8c4e8;
-      font-size: .88rem;
+      max-width: 16rem;
+      color: #c8deff;
+      font-size: .92rem;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .roadmap-page[hidden] {
+      display: none;
     }
 
     .roadmap-content[hidden] {
@@ -2570,7 +2585,7 @@
         <p class="roadmap-loading-text">Building your personalised roadmap...</p>
       </div>
 
-      <div class="page roadmap-layout">
+      <div class="page roadmap-layout roadmap-page" id="roadmap-page">
         <div>
           <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
@@ -3551,7 +3566,14 @@
 
     function setRoadmapLoading(loading) {
       $("#roadmap-loading").hidden = !loading;
-      $("#roadmap-content").hidden = loading;
+      $("#roadmap-page").hidden = loading;
+    }
+
+    function clearProgressMap() {
+      const chain = $("#progress-chain");
+      if (chain) chain.innerHTML = "";
+      const pct = $("#progress-pct");
+      if (pct) pct.textContent = "0%";
     }
 
     async function viewRoadmap(idea, ideaIndex) {
@@ -3560,7 +3582,6 @@
       $("#nav-roadmap-btn").hidden = false;
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = idea.title;
-      setRoadmapLoading(true);
       showScreen("roadmap");
 
       const cached = state.allRoadmaps[state.roadmapKey];
@@ -3574,6 +3595,8 @@
         return;
       }
 
+      setRoadmapLoading(true);
+      clearProgressMap();
       $("#roadmap-sub").textContent = "Building your personalised roadmap...";
       $("#stage-list").innerHTML = "";
       $("#momentum-card").style.display = "none";
