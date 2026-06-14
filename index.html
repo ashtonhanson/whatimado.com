@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-header-v2 -->
+<!-- whatimado build: 2026-06-14-free-promise-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-header-v2">
+  <meta name="whatimado-build" content="2026-06-14-free-promise-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -337,7 +337,53 @@
 
     .status-wall-wrap {
       width: 100%;
-      padding: 1.35rem 0 0;
+      padding: 1.15rem 0 0;
+    }
+
+    .free-promise-bar {
+      width: min(calc(100% - 2.5rem), 720px);
+      margin: 0 auto 1rem;
+      padding: .95rem 1.1rem;
+      display: grid;
+      gap: .75rem;
+      border-color: rgba(78, 205, 196, .24);
+      background: rgba(18, 28, 48, .9);
+      text-align: left;
+    }
+
+    .free-promise-lead {
+      margin: 0 0 .35rem;
+      color: #e8f2ff;
+      font-size: .86rem;
+      font-weight: 800;
+      line-height: 1.35;
+      letter-spacing: -.01em;
+    }
+
+    .free-promise-body {
+      margin: 0;
+      color: #a8c4e8;
+      font-size: .76rem;
+      line-height: 1.5;
+    }
+
+    .free-promise-bar .status-wall-chip {
+      margin-bottom: .45rem;
+    }
+
+    .free-promise-bar .status-wall-asks {
+      margin-top: 0;
+    }
+
+    .how-it-works-label {
+      width: min(calc(100% - 2.5rem), 720px);
+      margin: 0 auto .55rem;
+      padding-left: .15rem;
+      color: rgba(123, 130, 176, .9);
+      font-size: .66rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
 
     .status-wall {
@@ -348,7 +394,6 @@
       touch-action: pan-y;
       user-select: none;
       -webkit-user-select: none;
-      transition: height .38s cubic-bezier(.22, 1, .36, 1);
       -webkit-mask-image: linear-gradient(
         90deg,
         transparent 0%,
@@ -388,15 +433,10 @@
 
     .status-wall-card {
       flex: 0 0 min(300px, 78vw);
+      min-height: 9.5rem;
       height: auto;
       padding: 1rem 1.1rem 1.05rem;
       text-align: left;
-      align-self: flex-start;
-    }
-
-    .status-wall-card--founder {
-      border-color: rgba(78, 205, 196, .28);
-      background: rgba(18, 28, 48, .94);
     }
 
     .status-wall-title {
@@ -490,6 +530,20 @@
     button.status-wall-tag:focus-visible {
       outline: 2px solid rgba(78, 205, 196, .75);
       outline-offset: 2px;
+    }
+
+    @media (min-width: 720px) {
+      .free-promise-bar {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 1rem 1.5rem;
+        padding: 1rem 1.2rem;
+      }
+
+      .free-promise-bar .status-wall-asks {
+        justify-content: flex-end;
+        max-width: 15rem;
+      }
     }
 
     .hero {
@@ -2236,6 +2290,20 @@
   <main>
     <section class="screen active" id="screen-main">
       <div class="status-wall-wrap">
+        <div class="free-promise-bar surface-card">
+          <div class="free-promise-copy">
+            <div class="status-wall-chip">Free for everyone</div>
+            <p class="free-promise-lead">whatimado is built to stay free — no matter where you're starting from.</p>
+            <p class="free-promise-body">I'm keeping this website free so anyone can use it. When the app launches, that same promise carries over. Instead of charging you, I'm asking for help from sponsors — and from anyone who can give once or chip in monthly.</p>
+          </div>
+          <div class="status-wall-asks" aria-label="Ways to support">
+            <button class="status-wall-tag" type="button" data-donate-preset="champion" aria-label="Open sponsor tier ($50)">Sponsors welcome</button>
+            <button class="status-wall-tag" type="button" data-donate-preset="coffee" aria-label="Open one-time gift options">One-time gifts</button>
+            <button class="status-wall-tag" type="button" data-donate-preset="supporter" aria-label="Open monthly supporter ($10/mo)">Monthly support</button>
+          </div>
+        </div>
+
+        <p class="how-it-works-label">How it works</p>
         <div class="status-wall" id="status-wall" aria-label="How whatimado works">
           <div class="status-wall-track" id="status-wall-track"></div>
         </div>
@@ -4066,13 +4134,6 @@
     function initStatusWall() {
       const HOW_IT_WORKS = [
         {
-          type: "founder",
-          chip: "Free for everyone",
-          lead: "whatimado is built to stay free — no matter where you're starting from.",
-          body: "I'm keeping this website free so anyone can use it. When the app launches, that same promise carries over. Instead of charging you, I'm asking for help from sponsors who believe in the mission — and from anyone who can give once or chip in monthly to keep the lights on.",
-          tags: ["Sponsors welcome", "One-time gifts", "Monthly support"]
-        },
-        {
           title: "Share your situation",
           text: "Tell us what you know, what you enjoy, and what you're aiming for. Use the prompt below or tap a starter pill — there is no wrong answer."
         },
@@ -4103,27 +4164,6 @@
       ];
 
       function renderHowCard(slide) {
-        if (slide.type === "founder") {
-          return `
-            <article class="status-wall-card status-wall-card--founder surface-card">
-              <div class="status-wall-chip">${slide.chip}</div>
-              <p class="status-wall-lead">${slide.lead}</p>
-              <p class="status-wall-text">${slide.body}</p>
-              <div class="status-wall-asks" aria-label="Ways to support">
-                ${slide.tags.map((tag) => {
-                  const presets = {
-                    "Sponsors welcome": { id: "champion", label: "Open sponsor tier ($50)" },
-                    "One-time gifts": { id: "coffee", label: "Open one-time gift options" },
-                    "Monthly support": { id: "supporter", label: "Open monthly supporter ($10/mo)" }
-                  };
-                  const preset = presets[tag] || { id: "coffee", label: `Support via ${tag}` };
-                  return `<button class="status-wall-tag" type="button" data-donate-preset="${preset.id}" aria-label="${preset.label}">${tag}</button>`;
-                }).join("")}
-              </div>
-            </article>
-          `;
-        }
-
         return `
           <article class="status-wall-card surface-card">
             <h3 class="status-wall-title">${slide.title}</h3>
@@ -4139,14 +4179,6 @@
       track.innerHTML = Array.from({ length: 3 }, () =>
         HOW_IT_WORKS.map(renderHowCard).join("")
       ).join("");
-
-      track.addEventListener("click", (event) => {
-        const tag = event.target.closest("[data-donate-preset]");
-        if (!tag) return;
-        event.preventDefault();
-        event.stopPropagation();
-        openDonateFromPreset(tag.dataset.donatePreset);
-      });
 
       let offset = 0;
       let velocity = 0;
@@ -4167,28 +4199,6 @@
       const FRICTION = 5.2;
       const AUTO_RAMP = 1.35;
 
-      function updateWallHeight() {
-        const wallRect = wall.getBoundingClientRect();
-        const wallCenter = wallRect.left + wallRect.width / 2;
-        let bestCard = null;
-        let bestDist = Infinity;
-
-        track.querySelectorAll(".status-wall-card").forEach((card) => {
-          const rect = card.getBoundingClientRect();
-          if (rect.right < wallRect.left || rect.left > wallRect.right) return;
-          const cardCenter = rect.left + rect.width / 2;
-          const dist = Math.abs(cardCenter - wallCenter);
-          if (dist < bestDist) {
-            bestDist = dist;
-            bestCard = card;
-          }
-        });
-
-        if (bestCard) {
-          wall.style.height = `${bestCard.offsetHeight}px`;
-        }
-      }
-
       function measure() {
         const cards = track.querySelectorAll(".status-wall-card");
         const cardWidth = cards[0]?.offsetWidth || 300;
@@ -4199,7 +4209,6 @@
         track.style.paddingRight = `${pad}px`;
         normalizeOffset();
         applyTransform();
-        updateWallHeight();
       }
 
       function normalizeOffset() {
@@ -4219,7 +4228,6 @@
 
       function applyTransform() {
         track.style.transform = `translate3d(${offset}px, 0, 0)`;
-        updateWallHeight();
       }
 
       function tick(ts) {
