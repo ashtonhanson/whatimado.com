@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-how-it-works-divider-v1 -->
+<!-- whatimado build: 2026-06-14-side-gallery-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-how-it-works-divider-v1">
+  <meta name="whatimado-build" content="2026-06-14-side-gallery-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,8 +36,8 @@
       --radius-md: 14px;
       --radius-lg: 20px;
       --header-nav-h: 56px;
-      --header-free-h: 56px;
-      --header-h: 112px;
+      --header-free-h: 68px;
+      --header-h: 124px;
     }
 
     html {
@@ -119,15 +119,15 @@
       width: 100%;
       border-top: 1px solid rgba(78, 205, 196, .14);
       background: linear-gradient(90deg, rgba(78, 205, 196, .07) 0%, rgba(124, 111, 205, .05) 50%, rgba(78, 205, 196, .07) 100%);
-      padding-top: .9rem;
-      padding-bottom: .95rem;
+      padding-top: 1.25rem;
+      padding-bottom: 1.35rem;
     }
 
     .header-free-inner {
       width: min(100%, 1180px);
       margin: 0 auto;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: .85rem 1.1rem;
     }
 
@@ -136,6 +136,7 @@
       display: inline-flex;
       align-items: center;
       gap: .35rem;
+      margin-top: .12rem;
       padding: .22rem .62rem;
       border: 1px solid rgba(78, 205, 196, .35);
       border-radius: 999px;
@@ -161,7 +162,7 @@
     }
 
     .header-free-lead {
-      margin: 0 0 .2rem;
+      margin: 0 0 .35rem;
       color: #e8f2ff;
       font-size: .74rem;
       font-weight: 700;
@@ -192,9 +193,33 @@
         padding: 0 2rem;
       }
 
-      .how-it-works-heading-wrap {
+      .main-workspace {
         padding-left: 2rem;
         padding-right: 2rem;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .main-workspace {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        padding-bottom: 1.5rem;
+      }
+
+      .main-gallery-panel {
+        order: 2;
+      }
+
+      .status-wall--compact {
+        min-height: 10.5rem;
+      }
+
+      .status-wall--compact .status-wall-card {
+        flex: 0 0 min(260px, 78vw);
+      }
+
+      .hero h1 {
+        font-size: clamp(2rem, 7vw, 3rem);
       }
     }
 
@@ -430,9 +455,55 @@
       display: block;
     }
 
-    .status-wall-wrap {
+    .main-workspace {
+      width: min(100%, 1180px);
+      margin: 0 auto;
+      padding: .65rem 1.25rem 1.25rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+      gap: 1rem 1.65rem;
+      align-items: start;
+    }
+
+    .main-gallery-panel {
+      min-width: 0;
+      padding-top: .15rem;
+    }
+
+    .main-gallery-panel .how-it-works-heading-wrap {
+      padding: 0;
+      margin-bottom: .55rem;
+    }
+
+    .main-gallery-panel .how-it-works-heading {
       width: 100%;
-      padding: .85rem 0 1rem;
+    }
+
+    .status-wall--compact {
+      min-height: 11.5rem;
+      -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 82%, transparent 100%);
+      mask-image: linear-gradient(90deg, #000 0%, #000 82%, transparent 100%);
+    }
+
+    .status-wall--compact .status-wall-track {
+      gap: .75rem;
+    }
+
+    .status-wall--compact .status-wall-card {
+      flex: 0 0 228px;
+      min-height: 8.75rem;
+      padding: .85rem .92rem .9rem;
+    }
+
+    .status-wall--compact .status-wall-title {
+      margin-bottom: .4rem;
+      font-size: .82rem;
+      line-height: 1.32;
+    }
+
+    .status-wall--compact .status-wall-text {
+      font-size: .72rem;
+      line-height: 1.48;
     }
 
     .how-it-works-heading-wrap {
@@ -616,13 +687,13 @@
     }
 
     .hero {
-      flex: 1 1 auto;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      width: min(100%, 580px);
-      margin: 0 auto;
-      padding: 1rem 1.5rem 1.5rem;
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
     }
 
     .hero-chip {
@@ -651,9 +722,9 @@
     }
 
     .hero h1 {
-      margin: 0 0 .65rem;
+      margin: 0 0 .55rem;
       color: #e8f4ff;
-      font-size: clamp(2rem, 7vw, 3rem);
+      font-size: clamp(1.85rem, 4.2vw, 2.65rem);
       line-height: 1.05;
       letter-spacing: -.03em;
     }
@@ -670,8 +741,8 @@
     }
 
     .hero-copy {
-      max-width: 440px;
-      margin: 0 0 1rem;
+      max-width: 36rem;
+      margin: 0 0 .85rem;
       color: rgba(210, 232, 255, .88);
       line-height: 1.55;
     }
@@ -2244,8 +2315,8 @@
 
     @media (max-width: 760px) {
       :root {
-        --header-free-h: 64px;
-        --header-h: 120px;
+        --header-free-h: 84px;
+        --header-h: 140px;
       }
 
       .app-header-nav-wrap {
@@ -2396,39 +2467,41 @@
 
   <main>
     <section class="screen active" id="screen-main">
-      <div class="status-wall-wrap">
-        <div class="how-it-works-heading-wrap">
-          <div class="how-it-works-heading">
-            <span class="how-it-works-line" aria-hidden="true"></span>
-            <span class="how-it-works-label">How it works</span>
-            <span class="how-it-works-line" aria-hidden="true"></span>
+      <div class="main-workspace">
+        <div class="hero">
+          <div class="hero-chip">Start here</div>
+          <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
+          <p class="hero-copy">Tell us your situation, skills, interests, or goals. We'll map out paths you may never have considered.</p>
+
+          <div class="prompt-box">
+            <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="Tell us your situation: what you know, what you enjoy, what you want..."></textarea>
+            <div class="prompt-footer">
+              <span class="hint">Be honest. There's no wrong answer.</span>
+              <button class="action-btn" id="start-btn">Continue</button>
+            </div>
           </div>
-        </div>
-        <div class="status-wall" id="status-wall" aria-label="How whatimado works">
-          <div class="status-wall-track" id="status-wall-track"></div>
-        </div>
-      </div>
 
-      <div class="hero">
-        <div class="hero-chip">Start here</div>
-        <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
-        <p class="hero-copy">Tell us your situation, skills, interests, or goals. We'll map out paths you may never have considered.</p>
-
-        <div class="prompt-box">
-          <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="Tell us your situation: what you know, what you enjoy, what you want..."></textarea>
-          <div class="prompt-footer">
-            <span class="hint">Be honest. There's no wrong answer.</span>
-            <button class="action-btn" id="start-btn">Continue</button>
+          <div class="pills" aria-label="Prompt starters">
+            <button class="pill" data-prompt="I love working with my hands and fixing things">hands-on</button>
+            <button class="pill" data-prompt="I am good with technology and computers">tech</button>
+            <button class="pill" data-prompt="I enjoy helping and talking to people">people</button>
+            <button class="pill" data-prompt="I am creative and artistic">creative</button>
+            <button class="pill" data-prompt="I have no money but I have time and hustle">starting from zero</button>
           </div>
         </div>
 
-        <div class="pills" aria-label="Prompt starters">
-          <button class="pill" data-prompt="I love working with my hands and fixing things">hands-on</button>
-          <button class="pill" data-prompt="I am good with technology and computers">tech</button>
-          <button class="pill" data-prompt="I enjoy helping and talking to people">people</button>
-          <button class="pill" data-prompt="I am creative and artistic">creative</button>
-          <button class="pill" data-prompt="I have no money but I have time and hustle">starting from zero</button>
-        </div>
+        <aside class="main-gallery-panel" aria-label="How whatimado works">
+          <div class="how-it-works-heading-wrap">
+            <div class="how-it-works-heading">
+              <span class="how-it-works-line" aria-hidden="true"></span>
+              <span class="how-it-works-label">How it works</span>
+              <span class="how-it-works-line" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="status-wall status-wall--compact" id="status-wall">
+            <div class="status-wall-track" id="status-wall-track"></div>
+          </div>
+        </aside>
       </div>
     </section>
 
@@ -4316,10 +4389,16 @@
           setWidth = cardsPerSet * cardWidth + (cardsPerSet - 1) * gap;
         }
 
-        const contentWidth = Math.min(wall.clientWidth - 40, 1180);
-        const edgePad = Math.max(16, (wall.clientWidth - contentWidth) / 2);
-        track.style.paddingLeft = `${edgePad}px`;
-        track.style.paddingRight = `${edgePad}px`;
+        const isCompact = wall.classList.contains("status-wall--compact");
+        if (isCompact) {
+          track.style.paddingLeft = "0";
+          track.style.paddingRight = "10px";
+        } else {
+          const contentWidth = Math.min(wall.clientWidth - 40, 1180);
+          const edgePad = Math.max(16, (wall.clientWidth - contentWidth) / 2);
+          track.style.paddingLeft = `${edgePad}px`;
+          track.style.paddingRight = `${edgePad}px`;
+        }
 
         if (!trackReady && setWidth > 0) {
           offset = -setWidth;
