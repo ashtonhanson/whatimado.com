@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-mission-lead-v1 -->
+<!-- whatimado build: 2026-06-14-mobile-nav-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="whatimado-build" content="2026-06-14-mission-lead-v1">
+  <meta name="whatimado-build" content="2026-06-14-mobile-nav-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -338,6 +338,105 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       color: rgba(200, 204, 238, .85);
+    }
+
+    .nav-header-mobile {
+      display: contents;
+    }
+
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border: 1px solid rgba(120, 130, 200, .22);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .05);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .16s ease, border-color .16s ease;
+    }
+
+    .nav-hamburger:hover {
+      background: rgba(255, 255, 255, .08);
+      border-color: rgba(120, 130, 200, .35);
+    }
+
+    .nav-hamburger-line {
+      display: block;
+      width: 18px;
+      height: 2px;
+      border-radius: 1px;
+      background: rgba(200, 204, 238, .92);
+      transition: transform .2s ease, opacity .2s ease;
+    }
+
+    .nav-hamburger[aria-expanded="true"] .nav-hamburger-line:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    .nav-hamburger[aria-expanded="true"] .nav-hamburger-line:nth-child(2) {
+      opacity: 0;
+    }
+
+    .nav-hamburger[aria-expanded="true"] .nav-hamburger-line:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+
+    .nav-overlay {
+      display: none;
+    }
+
+    .nav-drawer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: .55rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    body.nav-menu-open {
+      overflow: hidden;
+    }
+
+    @media (min-width: 761px) {
+      .nav-header-mobile {
+        display: contents;
+      }
+
+      .nav-hamburger,
+      .nav-overlay {
+        display: none;
+      }
+
+      .nav-drawer {
+        display: contents;
+      }
+
+      .nav-group--scroll {
+        order: 1;
+      }
+
+      #nav-donate-btn {
+        order: 2;
+      }
+
+      .nav-group--actions {
+        order: 3;
+      }
+
+      .nav-divider {
+        order: 4;
+      }
+
+      .nav-group--auth {
+        order: 5;
+      }
     }
 
     .surface-card {
@@ -2011,28 +2110,120 @@
       }
 
       .nav {
-        gap: .35rem;
+        position: relative;
+        flex: 0 0 auto;
+        gap: .45rem;
       }
 
-      .nav-group {
-        padding: .15rem;
+      .nav-header-mobile {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        flex-shrink: 0;
       }
 
-      .nav-group--auth {
-        padding: .15rem .1rem;
+      .nav-hamburger {
+        display: flex;
       }
 
-      .nav-btn {
-        padding: .38rem .58rem;
-        font-size: .76rem;
+      .nav-drawer {
+        display: none;
+        position: fixed;
+        top: var(--header-h);
+        left: 0;
+        right: 0;
+        z-index: 19;
+        flex: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .5rem;
+        padding: .75rem;
+        border-bottom: 1px solid rgba(140, 150, 210, .12);
+        background: linear-gradient(180deg, rgba(12, 15, 28, .97) 0%, rgba(8, 10, 18, .95) 100%);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+      }
+
+      .nav-drawer.is-open {
+        display: flex;
+      }
+
+      .nav-overlay {
+        display: block;
+        position: fixed;
+        inset: var(--header-h) 0 0;
+        z-index: 18;
+        border: 0;
+        padding: 0;
+        background: rgba(4, 6, 12, .45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease;
+        cursor: pointer;
+      }
+
+      .nav-overlay.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .nav-drawer .nav-group {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .25rem;
+        padding: .35rem;
+        border-radius: var(--radius-md);
+      }
+
+      .nav-drawer .nav-group--auth {
+        padding: .35rem;
+        background: rgba(255, 255, 255, .03);
+        border: 1px solid rgba(120, 130, 200, .1);
+      }
+
+      .nav-drawer .nav-btn {
+        width: 100%;
+        text-align: left;
+        padding: .72rem 1rem;
+        font-size: .88rem;
+      }
+
+      .nav-drawer .nav-btn.donate-btn {
+        padding: .72rem 1rem;
+      }
+
+      .nav-drawer .nav-divider {
+        width: 100%;
+        height: 1px;
+        margin: .25rem 0;
+      }
+
+      .nav-drawer .nav-group--scroll {
+        overflow: visible;
+      }
+
+      .nav-drawer .nav-user {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: .25rem;
+        padding: 0;
+      }
+
+      .nav-drawer .nav-user #nav-username {
+        display: block;
+        max-width: none;
+        padding: .45rem 1rem .15rem;
+        color: rgba(168, 196, 232, .78);
+        font-size: .78rem;
+        font-weight: 500;
       }
 
       .nav-btn.donate-btn {
         padding: .4rem .68rem;
-      }
-
-      .nav-user #nav-username {
-        display: none;
+        font-size: .76rem;
       }
 
       .map-panel,
@@ -2088,30 +2279,42 @@
           </a>
 
           <nav class="nav" aria-label="Main navigation">
-            <div class="nav-group nav-group--scroll">
-              <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
-              <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
-              <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
-              <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
-            </div>
-
-            <div class="nav-group nav-group--actions">
+            <div class="nav-header-mobile">
               <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
-              <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
-                Cart
-                <span class="nav-cart-badge" id="nav-cart-badge">1</span>
+              <button class="nav-hamburger" id="nav-hamburger-btn" type="button" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
+                <span class="nav-hamburger-line" aria-hidden="true"></span>
+                <span class="nav-hamburger-line" aria-hidden="true"></span>
+                <span class="nav-hamburger-line" aria-hidden="true"></span>
               </button>
             </div>
 
-            <span class="nav-divider" aria-hidden="true"></span>
+            <button class="nav-overlay" id="nav-overlay" type="button" aria-label="Close menu" tabindex="-1"></button>
 
-            <div class="nav-group nav-group--auth">
-              <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
-              <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
-              <span class="nav-user" id="nav-user">
-                <span id="nav-username"></span>
-                <button class="nav-btn" id="signout-btn">Sign out</button>
-              </span>
+            <div class="nav-drawer" id="nav-drawer">
+              <div class="nav-group nav-group--scroll">
+                <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
+                <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
+                <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
+                <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
+              </div>
+
+              <div class="nav-group nav-group--actions">
+                <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
+                  Cart
+                  <span class="nav-cart-badge" id="nav-cart-badge">1</span>
+                </button>
+              </div>
+
+              <span class="nav-divider" aria-hidden="true"></span>
+
+              <div class="nav-group nav-group--auth">
+                <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
+                <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
+                <span class="nav-user" id="nav-user">
+                  <span id="nav-username"></span>
+                  <button class="nav-btn" id="signout-btn">Sign out</button>
+                </span>
+              </div>
             </div>
           </nav>
         </div>
@@ -3952,8 +4155,52 @@
       document.documentElement.style.setProperty("--header-h", `${header.offsetHeight}px`);
     }
 
+    function initMobileNav() {
+      const hamburger = $("#nav-hamburger-btn");
+      const drawer = $("#nav-drawer");
+      const overlay = $("#nav-overlay");
+      if (!hamburger || !drawer || !overlay) return;
+
+      function setMenuOpen(open) {
+        drawer.classList.toggle("is-open", open);
+        overlay.classList.toggle("is-visible", open);
+        hamburger.setAttribute("aria-expanded", String(open));
+        hamburger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+        document.body.classList.toggle("nav-menu-open", open);
+        overlay.tabIndex = open ? 0 : -1;
+      }
+
+      function closeMenu() {
+        setMenuOpen(false);
+      }
+
+      function toggleMenu() {
+        setMenuOpen(!drawer.classList.contains("is-open"));
+      }
+
+      hamburger.addEventListener("click", toggleMenu);
+      overlay.addEventListener("click", closeMenu);
+      $("#nav-donate-btn")?.addEventListener("click", closeMenu);
+
+      drawer.querySelectorAll("button, a[data-screen-link]").forEach((element) => {
+        element.addEventListener("click", closeMenu);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && drawer.classList.contains("is-open")) {
+          closeMenu();
+          hamburger.focus();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 760) closeMenu();
+      });
+    }
+
     function bindEvents() {
       syncHeaderHeight();
+      initMobileNav();
       window.addEventListener("resize", syncHeaderHeight);
       $$("[data-screen-link]").forEach((element) => {
         element.addEventListener("click", (event) => {
