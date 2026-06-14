@@ -337,7 +337,7 @@
 
     .status-wall-wrap {
       width: 100%;
-      padding: 1.35rem 0 .25rem;
+      padding: 1.35rem 0 0;
     }
 
     .status-wall {
@@ -348,6 +348,7 @@
       touch-action: pan-y;
       user-select: none;
       -webkit-user-select: none;
+      transition: height .38s cubic-bezier(.22, 1, .36, 1);
       -webkit-mask-image: linear-gradient(
         90deg,
         transparent 0%,
@@ -390,6 +391,7 @@
       height: auto;
       padding: 1rem 1.1rem 1.05rem;
       text-align: left;
+      align-self: flex-start;
     }
 
     .status-wall-card--founder {
@@ -4165,6 +4167,28 @@
       const FRICTION = 5.2;
       const AUTO_RAMP = 1.35;
 
+      function updateWallHeight() {
+        const wallRect = wall.getBoundingClientRect();
+        const wallCenter = wallRect.left + wallRect.width / 2;
+        let bestCard = null;
+        let bestDist = Infinity;
+
+        track.querySelectorAll(".status-wall-card").forEach((card) => {
+          const rect = card.getBoundingClientRect();
+          if (rect.right < wallRect.left || rect.left > wallRect.right) return;
+          const cardCenter = rect.left + rect.width / 2;
+          const dist = Math.abs(cardCenter - wallCenter);
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestCard = card;
+          }
+        });
+
+        if (bestCard) {
+          wall.style.height = `${bestCard.offsetHeight}px`;
+        }
+      }
+
       function measure() {
         const cards = track.querySelectorAll(".status-wall-card");
         const cardWidth = cards[0]?.offsetWidth || 300;
@@ -4175,6 +4199,7 @@
         track.style.paddingRight = `${pad}px`;
         normalizeOffset();
         applyTransform();
+        updateWallHeight();
       }
 
       function normalizeOffset() {
@@ -4194,6 +4219,7 @@
 
       function applyTransform() {
         track.style.transform = `translate3d(${offset}px, 0, 0)`;
+        updateWallHeight();
       }
 
       function tick(ts) {
