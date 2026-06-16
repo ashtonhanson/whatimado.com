@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-14-hero-spacing-v1 -->
+<!-- whatimado build: 2026-06-15-paths-ui-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-14-hero-spacing-v1">
+  <meta name="whatimado-build" content="2026-06-15-paths-ui-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -738,6 +738,14 @@
       text-transform: uppercase;
     }
 
+    .typing-status {
+      margin: 0 0 .4rem;
+      color: rgba(200, 204, 238, .9);
+      font-size: .82rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
     .typing-dots {
       display: flex;
       gap: 4px;
@@ -985,20 +993,45 @@
       display: none;
     }
 
-    .map-plans-divider {
+    .map-plans-toolbar {
       display: flex;
       align-items: center;
-      gap: .85rem;
+      justify-content: center;
+      gap: .75rem;
       margin: 1.65rem 0 1.15rem;
+      flex-wrap: wrap;
     }
 
-    .map-plans-divider::before,
-    .map-plans-divider::after {
-      content: "";
-      flex: 1 1 auto;
+    .map-plans-toolbar-line {
+      flex: 1 1 1.5rem;
       height: 1px;
-      min-width: 1rem;
+      min-width: .75rem;
       background: rgba(140, 150, 210, .25);
+    }
+
+    .map-toolbar-btn {
+      flex: 0 1 auto;
+      white-space: nowrap;
+    }
+
+    .map-toolbar-btn .btn-spinner {
+      display: none;
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(200, 204, 238, .25);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: btn-spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .map-toolbar-btn.is-loading {
+      cursor: wait;
+      opacity: .85;
+    }
+
+    .map-toolbar-btn.is-loading .btn-spinner {
+      display: inline-block;
     }
 
     .map-plans-divider-label {
@@ -1012,6 +1045,73 @@
       text-transform: uppercase;
       text-align: center;
       white-space: nowrap;
+    }
+
+    .site-suggestions {
+      margin-top: .25rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid rgba(120, 130, 200, .16);
+      border-radius: var(--radius-md);
+      background: rgba(14, 18, 32, .55);
+    }
+
+    .site-suggestions-title {
+      margin: 0 0 .35rem;
+      color: rgba(200, 230, 255, .95);
+      font-size: .88rem;
+      font-weight: 700;
+    }
+
+    .site-suggestions-copy {
+      margin: 0 0 .75rem;
+      color: rgba(168, 196, 232, .78);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+
+    .site-suggestions-input {
+      width: 100%;
+      min-height: 72px;
+      resize: vertical;
+      border: 1px solid rgba(120, 130, 200, .2);
+      border-radius: var(--radius-sm);
+      padding: .75rem .85rem;
+      color: var(--ink);
+      background: rgba(8, 10, 18, .65);
+      font: inherit;
+      font-size: .82rem;
+      line-height: 1.45;
+    }
+
+    .site-suggestions-input:focus {
+      outline: 0;
+      border-color: rgba(124, 111, 205, .45);
+      box-shadow: 0 0 0 3px rgba(124, 111, 205, .12);
+    }
+
+    .site-suggestions-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      margin-top: .65rem;
+      flex-wrap: wrap;
+    }
+
+    .site-suggestions-hint {
+      color: rgba(123, 130, 176, .82);
+      font-size: .72rem;
+    }
+
+    .site-suggestions-msg {
+      margin: .55rem 0 0;
+      color: var(--green);
+      font-size: .74rem;
+      font-weight: 600;
+    }
+
+    .site-suggestions-msg.error {
+      color: var(--rose);
     }
 
     .opp-plans-section {
@@ -2581,8 +2681,26 @@
         font-size: .86rem;
       }
 
-      .map-plans-divider {
+      .map-plans-toolbar {
         margin: 1.25rem 0 1rem;
+        gap: .55rem;
+      }
+
+      .map-plans-toolbar-line {
+        display: none;
+      }
+
+      .map-plans-toolbar .map-plans-divider-label {
+        width: 100%;
+        order: -1;
+        text-align: center;
+      }
+
+      .map-toolbar-btn {
+        flex: 1 1 calc(50% - .35rem);
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
       }
 
       .opp-grid {
@@ -2601,16 +2719,6 @@
       .opp-name {
         min-height: auto;
         font-size: .95rem;
-      }
-
-      .map-actions {
-        margin-top: 1.25rem;
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .map-action-btn {
-        width: 100%;
       }
 
       #screen-main .main-workspace {
@@ -2742,6 +2850,17 @@
             <button class="pill" data-prompt="I am creative and artistic">creative</button>
             <button class="pill" data-prompt="I have no money but I have time and hustle">starting from zero</button>
           </div>
+
+          <section class="site-suggestions" aria-label="Suggest a site improvement">
+            <h3 class="site-suggestions-title">Suggest an improvement</h3>
+            <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion.</p>
+            <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
+            <div class="site-suggestions-footer">
+              <span class="site-suggestions-hint">Saved locally until we add a feedback inbox.</span>
+              <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
+            </div>
+            <p class="site-suggestions-msg" id="site-suggestion-msg" hidden></p>
+          </section>
         </div>
       </div>
     </section>
@@ -2793,18 +2912,18 @@
           </div>
         </div>
 
-        <div class="map-plans-divider" aria-hidden="true">
+        <div class="map-plans-toolbar">
+          <span class="map-plans-toolbar-line" aria-hidden="true"></span>
+          <button class="back-btn map-toolbar-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
           <span class="map-plans-divider-label">Full path details</span>
+          <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Chat to alter path</button>
+          <span class="map-plans-toolbar-line" aria-hidden="true"></span>
         </div>
 
         <div class="opp-plans-section">
           <div class="opp-grid" id="opp-grid"></div>
         </div>
 
-        <div class="map-actions">
-          <button class="map-action-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
-          <button class="map-action-btn alter-path-btn" id="alter-path-btn" type="button">Chat to alter path</button>
-        </div>
         <div class="save-status-bar" id="save-status-bar">
           <span id="save-status-text"></span>
           <button type="button" id="save-signin-link" hidden>Sign in to sync</button>
@@ -3067,6 +3186,8 @@
     };
 
     const STORAGE_GUEST = "whatimado_journey_guest";
+    const SUGGESTIONS_KEY = "whatimado_site_suggestions";
+    const PATH_BUILDING_MSG = "Building your custom path to success…";
     let persistTimer = null;
     let saveToastTimer = null;
 
@@ -3359,8 +3480,6 @@
     }
 
     async function submitAlterPathReply() {
-      showReplyBox(false);
-      addTypingBubble();
       const summary = getConversationSummary();
       const response = await callAdvisor(
         `${buildIdeasPrompt(summary, 3)}\n\nThe user is revising their path options — previous paths did not fully fit. Generate 3 NEW ideas that reflect their latest feedback. Reference what they want changed.`,
@@ -3606,7 +3725,11 @@
       scrollConversation();
     }
 
-    function addTypingBubble() {
+    function addTypingBubble(statusMessage = "") {
+      $("#typing-pair")?.remove();
+      const statusHtml = statusMessage
+        ? `<p class="typing-status">${escapeHtml(statusMessage)}</p>`
+        : "";
       const wrapper = document.createElement("div");
       wrapper.className = "bubble-pair";
       wrapper.id = "typing-pair";
@@ -3614,7 +3737,7 @@
         <div class="bubble-ai">
           <div>
             <div class="ai-label">whatimado</div>
-            <div class="bubble ai"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+            <div class="bubble ai">${statusHtml}<div class="typing-dots"><span></span><span></span><span></span></div></div>
           </div>
         </div>`;
       $("#bubble-chain").append(wrapper);
@@ -3681,7 +3804,7 @@
         "You are whatimado, a practical possibility advisor. Read this entire conversation carefully.\n\nConversation:\n" +
         summary +
         excludeBlock +
-        " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\nEach idea should be something they could realistically start given their stated resources. Include a mix when appropriate: zero-cost options, skill-building paths, gig/local work, or unconventional paths — but only if they fit THIS person.\n\nBAD: \"Freelance web developer\" (too generic)\nGOOD: \"Weekend furniture refinishing side gig — you mentioned loving hands-on work and having a garage; start by fixing one thrift-store piece and listing it on Facebook Marketplace\"\n\nRespond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. $500-1500/mo\"}]"
+        " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\nEach idea should be something they could realistically start given their stated resources. Include a mix when appropriate: zero-cost options, skill-building paths, gig/local work, or unconventional paths — but only if they fit THIS person.\n\nPricing realism: When suggesting monetization, use bootstrapped, believable numbers. Prefer free tiers, pay-what-you-can, donations, and micro-pricing ($3–15/mo individual). Avoid inflated B2B SaaS pricing ($99+/mo, $300–500/mo white-label) unless the user explicitly targets enterprise buyers. Always include at least one $0 or near-$0 path. Keep income projections conservative.\n\nBAD: \"Freelance web developer\" (too generic)\nGOOD: \"Weekend furniture refinishing side gig — you mentioned loving hands-on work and having a garage; start by fixing one thrift-store piece and listing it on Facebook Marketplace\"\n\nRespond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. $500-1500/mo\"}]"
       );
     }
 
@@ -3748,15 +3871,17 @@
       if (!text) return;
       textarea.value = "";
       addUserBubble(text);
-      addTypingBubble();
       state.history.push({ role: "user", content: text });
 
       if (state.alterPathMode) {
+        showReplyBox(false);
+        addTypingBubble(PATH_BUILDING_MSG);
         await submitAlterPathReply();
         return;
       }
 
       if (state.step === 2) {
+        addTypingBubble();
         const reply = "May I ask your name?";
         resolveTyping(reply);
         state.history.push({ role: "assistant", content: reply });
@@ -3767,6 +3892,7 @@
       }
 
       showReplyBox(false);
+      addTypingBubble(PATH_BUILDING_MSG);
       const summary = getConversationSummary();
       const response = await callAdvisor(buildIdeasPrompt(summary, 3), 900);
 
@@ -4701,6 +4827,40 @@
       });
     }
 
+    function submitSiteSuggestion() {
+      const input = $("#site-suggestion-input");
+      const msg = $("#site-suggestion-msg");
+      const text = input?.value.trim();
+      if (!text) {
+        if (msg) {
+          msg.hidden = false;
+          msg.classList.add("error");
+          msg.textContent = "Type a suggestion first.";
+        }
+        return;
+      }
+
+      try {
+        const existing = JSON.parse(localStorage.getItem(SUGGESTIONS_KEY) || "[]");
+        existing.push({ text, at: Date.now() });
+        localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(existing));
+      } catch {
+        if (msg) {
+          msg.hidden = false;
+          msg.classList.add("error");
+          msg.textContent = "Could not save — check browser storage settings.";
+        }
+        return;
+      }
+
+      if (input) input.value = "";
+      if (msg) {
+        msg.hidden = false;
+        msg.classList.remove("error");
+        msg.textContent = "Thanks — suggestion saved.";
+      }
+    }
+
     function bindEvents() {
       syncHeaderHeight();
       initMobileNav();
@@ -4744,6 +4904,13 @@
       $("#reset-btn").addEventListener("click", resetAll);
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
+      $("#site-suggestion-submit")?.addEventListener("click", submitSiteSuggestion);
+      $("#site-suggestion-input")?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          submitSiteSuggestion();
+        }
+      });
       $("#nav-save-btn").addEventListener("click", manualSave);
       $("#save-signin-link")?.addEventListener("click", () => showAuth("signin"));
       $("#stage-list")?.addEventListener("click", handleTaskThreadClick);
