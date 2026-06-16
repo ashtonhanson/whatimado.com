@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-15-paths-ui-v2 -->
+<!-- whatimado build: 2026-06-15-paths-page-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-15-paths-ui-v2">
+  <meta name="whatimado-build" content="2026-06-15-paths-page-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -917,19 +917,19 @@
     }
 
     .map-overview {
-      border: 1px solid rgba(120, 130, 200, .16);
+      border: 1px solid rgba(120, 130, 200, .14);
       border-radius: var(--radius-lg);
-      background: linear-gradient(180deg, rgba(14, 20, 38, .72) 0%, rgba(10, 14, 28, .55) 100%);
-      box-shadow: 0 14px 40px rgba(0, 0, 0, .22);
-      padding: 1.1rem;
+      background: linear-gradient(180deg, rgba(13, 19, 36, .64) 0%, rgba(8, 13, 26, .46) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 14px 40px rgba(0, 0, 0, .18);
+      padding: .95rem;
       overflow: hidden;
     }
 
     .map-panel {
       display: grid;
-      grid-template-columns: 1fr 260px;
-      min-height: 380px;
-      gap: 1rem;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 250px);
+      min-height: 350px;
+      gap: .9rem;
     }
 
     .map-visual {
@@ -937,7 +937,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 340px;
+      min-height: 320px;
     }
 
     .map-node-glow {
@@ -958,22 +958,22 @@
       z-index: 1;
       width: 100%;
       height: auto;
-      min-height: 360px;
-      max-height: 480px;
+      min-height: 330px;
+      max-height: 450px;
     }
 
     .opp-labels {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: .65rem;
+      gap: .55rem;
       padding: .25rem 0;
     }
 
     .opp-label {
       border: 0;
-      border-radius: var(--radius-md);
-      padding: .8rem .9rem;
+      border-radius: 12px;
+      padding: .72rem .82rem;
       background: transparent;
       text-align: left;
       cursor: pointer;
@@ -981,9 +981,9 @@
     }
 
     .opp-label.surface-card {
-      border: 1px solid rgba(120, 130, 200, .18);
-      background: rgba(18, 21, 42, .82);
-      box-shadow: 0 6px 22px rgba(0, 0, 0, .18);
+      border: 1px solid rgba(120, 130, 200, .13);
+      background: rgba(12, 16, 30, .52);
+      box-shadow: none;
     }
 
     .opp-label.surface-card:hover,
@@ -996,22 +996,22 @@
     .opp-label-title {
       display: flex;
       align-items: flex-start;
-      gap: .65rem;
+      gap: .58rem;
       color: #d4e6ff;
-      font-size: .84rem;
+      font-size: .8rem;
       font-weight: 700;
       line-height: 1.4;
     }
 
     .opp-number {
-      width: 26px;
-      height: 26px;
+      width: 23px;
+      height: 23px;
       display: inline-grid;
       place-items: center;
       flex: 0 0 auto;
       border-radius: 50%;
       color: #fff;
-      font-size: .72rem;
+      font-size: .66rem;
       font-weight: 800;
       margin-top: .05rem;
       box-shadow: 0 0 0 2px rgba(8, 10, 18, .55);
@@ -1025,8 +1025,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: .75rem;
-      margin: 1.65rem 0 1.15rem;
+      gap: .65rem;
+      margin: 1.25rem 0 .9rem;
       flex-wrap: wrap;
     }
 
@@ -1040,6 +1040,11 @@
     .map-toolbar-btn {
       flex: 0 1 auto;
       white-space: nowrap;
+      min-height: 32px;
+      padding: .36rem .72rem;
+      background: rgba(18, 21, 42, .58);
+      border-color: rgba(120, 130, 200, .2);
+      font-size: .72rem;
     }
 
     .map-toolbar-btn .btn-spinner {
@@ -1065,9 +1070,9 @@
     .map-plans-divider-label {
       flex: 0 0 auto;
       margin: 0;
-      padding: 0 .15rem;
+      padding: 0 .05rem;
       color: rgba(123, 130, 176, .9);
-      font-size: .66rem;
+      font-size: .62rem;
       font-weight: 800;
       letter-spacing: .08em;
       text-transform: uppercase;
@@ -1149,33 +1154,39 @@
     .opp-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1rem;
+      gap: .85rem;
       margin-top: 0;
     }
 
     .opp-card {
-      padding: 1.1rem;
+      position: relative;
+      overflow: hidden;
+      padding: .95rem;
       text-align: left;
-      transition: .18s ease;
+      background: linear-gradient(180deg, rgba(18, 22, 42, .82) 0%, rgba(11, 15, 30, .78) 100%);
+      border-color: rgba(120, 130, 200, .14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 8px 24px rgba(0, 0, 0, .18);
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
     }
 
     .opp-card-inner {
       display: flex;
       align-items: flex-start;
-      gap: .85rem;
+      gap: .75rem;
     }
 
     .opp-card-number {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       display: grid;
       place-items: center;
       flex: 0 0 auto;
       border-radius: 50%;
       color: #fff;
-      font-size: .82rem;
+      font-size: .75rem;
       font-weight: 800;
-      margin-top: .1rem;
+      margin-top: .05rem;
+      box-shadow: 0 0 0 3px rgba(8, 10, 18, .5);
     }
 
     .opp-card-body {
@@ -1286,6 +1297,25 @@
       transform: translateY(-1px);
     }
 
+    .map-toolbar-btn.more-ideas-btn {
+      color: var(--muted);
+      background: var(--surface);
+      border-color: var(--line);
+      box-shadow: none;
+    }
+
+    .map-toolbar-btn.more-ideas-btn:hover:not(:disabled):not(.is-loading) {
+      color: var(--ink);
+      background: var(--surface);
+      border-color: rgba(124, 111, 205, .4);
+      transform: none;
+    }
+
+    .map-toolbar-btn.more-ideas-btn .btn-spinner {
+      border-color: rgba(200, 204, 238, .25);
+      border-top-color: currentColor;
+    }
+
     .more-ideas-btn:disabled {
       opacity: .94;
     }
@@ -1379,13 +1409,14 @@
     }
 
     .opp-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-1px);
       border-color: rgba(124, 111, 205, .45);
+      background: linear-gradient(180deg, rgba(22, 26, 48, .9) 0%, rgba(12, 17, 32, .84) 100%);
     }
 
     .opp-type {
       color: var(--teal);
-      font-size: .66rem;
+      font-size: .6rem;
       font-weight: 800;
       letter-spacing: .07em;
       text-transform: uppercase;
@@ -1393,44 +1424,54 @@
     }
 
     .opp-card-head {
-      min-height: 5rem;
+      min-height: auto;
     }
 
     .opp-name {
-      margin-top: .5rem;
-      min-height: calc(1rem * 1.45 * 3);
+      margin-top: .38rem;
+      min-height: calc(1rem * 1.34 * 2);
       color: #e8f2ff;
-      font-size: 1rem;
+      font-size: .95rem;
       font-weight: 800;
-      line-height: 1.45;
+      line-height: 1.34;
     }
 
     .opp-tagline {
-      margin-top: .4rem;
+      margin-top: .5rem;
       color: #a8c4e8;
-      font-size: .82rem;
+      font-size: .78rem;
       line-height: 1.45;
     }
 
     .opp-meta {
       display: flex;
       flex-wrap: wrap;
-      gap: .55rem;
+      gap: .35rem;
       min-height: 1.15rem;
-      margin-top: .8rem;
-      color: var(--muted);
-      font-size: .72rem;
+      margin-top: .7rem;
+      color: rgba(200, 204, 238, .78);
+      font-size: .66rem;
       font-weight: 700;
     }
 
+    .opp-meta span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      border: 1px solid rgba(120, 130, 200, .14);
+      border-radius: 999px;
+      padding: .18rem .48rem;
+      background: rgba(255, 255, 255, .035);
+    }
+
     .opp-why {
-      margin-top: .8rem;
-      border-left: 2px solid var(--purple);
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      padding: .6rem .75rem;
-      color: #a8c4e8;
-      background: var(--surface-2);
-      font-size: .76rem;
+      margin-top: .7rem;
+      border-left: 2px solid rgba(124, 111, 205, .85);
+      border-radius: 0 10px 10px 0;
+      padding: .55rem .7rem;
+      color: rgba(190, 214, 245, .86);
+      background: rgba(30, 34, 53, .55);
+      font-size: .72rem;
       line-height: 1.45;
     }
 
