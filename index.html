@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-15-paths-page-v1 -->
+<!-- whatimado build: 2026-06-15-map-header-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-15-paths-page-v1">
+  <meta name="whatimado-build" content="2026-06-15-map-header-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -871,6 +871,36 @@
       margin-bottom: 1.5rem;
     }
 
+    #screen-map .page-header {
+      margin-bottom: .9rem;
+    }
+
+    .map-heading {
+      min-width: 0;
+      text-align: center;
+    }
+
+    .map-heading-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      margin: 0 0 .35rem;
+      color: #90d4ff;
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .map-heading-kicker::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+    }
+
     .back-btn {
       display: inline-flex;
       align-items: center;
@@ -910,19 +940,37 @@
       font-size: 1.2rem;
     }
 
+    #screen-map .page-title {
+      font-size: clamp(1.35rem, 2.8vw, 2rem);
+      line-height: 1.05;
+      letter-spacing: -.035em;
+      color: #e8f4ff;
+    }
+
+    #screen-map .page-title em {
+      color: #90d4ff;
+      font-style: normal;
+    }
+
     .page-subtitle {
       margin: .2rem 0 0;
       color: #a8c4e8;
       font-size: .82rem;
     }
 
+    #screen-map .page-subtitle {
+      margin-top: .45rem;
+      color: rgba(168, 196, 232, .82);
+      font-size: .84rem;
+    }
+
     .map-overview {
-      border: 1px solid rgba(120, 130, 200, .14);
-      border-radius: var(--radius-lg);
-      background: linear-gradient(180deg, rgba(13, 19, 36, .64) 0%, rgba(8, 13, 26, .46) 100%);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 14px 40px rgba(0, 0, 0, .18);
-      padding: .95rem;
-      overflow: hidden;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: .15rem 0 0;
+      overflow: visible;
     }
 
     .map-panel {
@@ -2750,7 +2798,7 @@
       }
 
       .map-overview {
-        padding: .85rem .75rem 1rem;
+        padding: 0;
       }
 
       .map-panel {
@@ -2990,9 +3038,10 @@
       <div class="page">
         <div class="page-header">
           <button class="back-btn" data-screen-link="convo">Back</button>
-          <div>
-            <h2 class="page-title">Your Possibility Map</h2>
-            <p class="page-subtitle">Tap any opportunity to explore its roadmap</p>
+          <div class="map-heading">
+            <p class="map-heading-kicker">Generated paths</p>
+            <h2 class="page-title">Your <em>Possibility Map</em></h2>
+            <p class="page-subtitle">Tap a path to turn it into a step-by-step roadmap.</p>
           </div>
           <button class="back-btn" id="reset-btn">Start over</button>
         </div>
