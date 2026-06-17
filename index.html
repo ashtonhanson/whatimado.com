@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-15-map-header-v1 -->
+<!-- whatimado build: 2026-06-16-analytics-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-15-map-header-v1">
+  <meta name="whatimado-build" content="2026-06-16-analytics-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -3344,12 +3344,64 @@
 
     const STORAGE_GUEST = "whatimado_journey_guest";
     const SUGGESTIONS_KEY = "whatimado_site_suggestions";
+    const ANALYTICS_SESSION_KEY = "whatimado_analytics_session_id";
     const PATH_BUILDING_MSG = "Building your custom path to success…";
     let persistTimer = null;
     let saveToastTimer = null;
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+    function getAnalyticsSessionId() {
+      try {
+        let id = sessionStorage.getItem(ANALYTICS_SESSION_KEY);
+        if (!id) {
+          id = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          sessionStorage.setItem(ANALYTICS_SESSION_KEY, id);
+        }
+        return id;
+      } catch {
+        return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      }
+    }
+
+    function getBuildTag() {
+      return document.querySelector('meta[name="whatimado-build"]')?.content || "unknown";
+    }
+
+    function cleanAnalyticsMetadata(metadata = {}) {
+      return Object.fromEntries(
+        Object.entries(metadata)
+          .filter(([, value]) => value !== undefined && value !== null)
+          .map(([key, value]) => {
+            if (typeof value === "string") return [key, value.slice(0, 160)];
+            if (typeof value === "number" || typeof value === "boolean") return [key, value];
+            if (Array.isArray(value)) return [key, value.slice(0, 12)];
+            return [key, value];
+          })
+      );
+    }
+
+    function trackEvent(eventName, metadata = {}) {
+      if (!supabaseClient) return;
+      const payload = {
+        event_name: eventName,
+        session_id: getAnalyticsSessionId(),
+        user_id: state.currentUser?.id ?? null,
+        last_screen: state.lastScreen,
+        page_path: `${window.location.pathname}${window.location.hash || ""}`,
+        metadata: cleanAnalyticsMetadata({
+          build: getBuildTag(),
+          ...metadata
+        })
+      };
+
+      supabaseClient
+        .from("site_events")
+        .insert(payload)
+        .then(() => {})
+        .catch(() => {});
+    }
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -3544,6 +3596,7 @@
     }
 
     async function manualSave() {
+      trackEvent("manual_save_clicked", { has_user: Boolean(state.currentUser) });
       await persistSession({ manual: true });
     }
 
@@ -3625,6 +3678,7 @@
     function startAlterPathChat() {
       if (!state.ideas.length) return;
       state.alterPathMode = true;
+      trackEvent("alter_path_started", { ideas_count: state.ideas.length });
       showScreen("convo");
       const prompt = "What would you like to change about these paths? Tell me what's not fitting — or what direction you'd rather explore.";
       addTypingBubble();
@@ -3638,6 +3692,10 @@
 
     async function submitAlterPathReply() {
       const summary = getConversationSummary();
+      trackEvent("alter_path_submitted", {
+        history_count: state.history.length,
+        previous_ideas_count: state.ideas.length
+      });
       const response = await callAdvisor(
         `${buildIdeasPrompt(summary, 3)}\n\nThe user is revising their path options — previous paths did not fully fit. Generate 3 NEW ideas that reflect their latest feedback. Reference what they want changed.`,
         900
@@ -3661,6 +3719,7 @@
       setTimeout(() => {
         buildOpportunityMap(state.ideas);
         $("#nav-map-btn").hidden = false;
+        trackEvent("map_regenerated", { ideas_count: state.ideas.length });
         showScreen("map");
       }, 550);
     }
@@ -3862,6 +3921,7 @@
     }
 
     function showScreen(name, options = {}) {
+      const previousScreen = state.lastScreen;
       state.lastScreen = name;
       $$(".screen").forEach((screen) => screen.classList.toggle("active", screen.id === `screen-${name}`));
       $$(".nav-btn[data-screen-link]").forEach((button) => button.classList.remove("active"));
@@ -3872,6 +3932,9 @@
         window.scrollTo({ top: 0, behavior: options.skipPersist ? "auto" : "smooth" });
       }
       if (!options.skipPersist) schedulePersist();
+      if (!options.skipTrack && previousScreen !== name) {
+        trackEvent("screen_view", { screen: name, from: previousScreen });
+      }
     }
 
     function addUserBubble(text) {
@@ -3968,6 +4031,7 @@
     async function fetchMoreIdeas() {
       const button = $("#more-ideas-btn");
       if (!button || button.disabled) return;
+      trackEvent("more_paths_requested", { existing_ideas_count: state.ideas.length });
 
       const labelEl = button.querySelector(".btn-label") || button;
       const label = labelEl.textContent;
@@ -3984,6 +4048,7 @@
       );
 
       if (!newIdeas.length) {
+        trackEvent("more_paths_failed", { existing_ideas_count: state.ideas.length });
         labelEl.textContent = "Couldn't find new paths — try again";
         setTimeout(() => {
           labelEl.textContent = label;
@@ -3995,6 +4060,10 @@
 
       state.ideas = [...state.ideas, ...newIdeas];
       buildOpportunityMap(state.ideas);
+      trackEvent("more_paths_added", {
+        added_count: newIdeas.length,
+        total_ideas_count: state.ideas.length
+      });
       labelEl.textContent = label;
       button.disabled = false;
       button.classList.remove("is-loading");
@@ -4004,6 +4073,7 @@
     async function startFlow() {
       const text = $("#main-input").value.trim();
       if (!text) return;
+      trackEvent("prompt_submitted", { prompt_length: text.length });
       showScreen("convo");
       addUserBubble(text);
       addTypingBubble();
@@ -4017,6 +4087,7 @@
       resolveTyping(answer || "What are you naturally good at, and would you rather get hired, learn a new skill, or build your own thing?");
       state.history.push({ role: "assistant", content: answer || "What are you naturally good at, and would you rather get hired, learn a new skill, or build your own thing?" });
       state.step = 2;
+      trackEvent("clarifying_question_shown", { prompt_length: text.length });
       showReplyBox(true);
       updateSaveButtonVisibility();
       schedulePersist();
@@ -4043,6 +4114,7 @@
         resolveTyping(reply);
         state.history.push({ role: "assistant", content: reply });
         state.step = 3;
+        trackEvent("name_prompt_shown", { reply_length: text.length });
         showReplyBox(true);
         schedulePersist();
         return;
@@ -4050,6 +4122,10 @@
 
       showReplyBox(false);
       addTypingBubble(PATH_BUILDING_MSG);
+      trackEvent("path_generation_started", {
+        reply_length: text.length,
+        history_count: state.history.length
+      });
       const summary = getConversationSummary();
       const response = await callAdvisor(buildIdeasPrompt(summary, 3), 900);
 
@@ -4063,6 +4139,7 @@
       setTimeout(() => {
         buildOpportunityMap(state.ideas);
         $("#nav-map-btn").hidden = false;
+        trackEvent("map_generated", { ideas_count: state.ideas.length });
         showScreen("map");
       }, 550);
     }
@@ -4179,6 +4256,11 @@
     async function viewRoadmap(idea, ideaIndex) {
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
+      trackEvent("roadmap_opened", {
+        idea_index: ideaIndex,
+        idea_type: idea.type || "Opportunity",
+        cached: Boolean(state.allRoadmaps[slugify(idea.title)]?.stages?.length)
+      });
       $("#nav-roadmap-btn").hidden = false;
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = idea.title;
@@ -4191,6 +4273,10 @@
         $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
+        trackEvent("roadmap_loaded_cached", {
+          idea_index: ideaIndex,
+          stages_count: state.roadmapStages.length
+        });
         schedulePersist();
         return;
       }
@@ -4214,9 +4300,15 @@
         $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
+        trackEvent("roadmap_generated", {
+          idea_index: ideaIndex,
+          stages_count: state.roadmapStages.length,
+          task_count: state.roadmapStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0)
+        });
         schedulePersist();
       } catch (error) {
         console.error(error);
+        trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
         $("#roadmap-sub").textContent = "Could not build your roadmap. Go back and try again.";
       } finally {
         setRoadmapLoading(false);
@@ -4233,10 +4325,17 @@
         if (notes) notes.value = data.notes || "";
         check?.addEventListener("change", () => {
           data.checked = check.checked;
+          trackEvent("task_check_toggled", {
+            task_id: taskId,
+            checked: check.checked
+          });
           schedulePersist();
           updateMomentum();
         });
         notes?.addEventListener("input", () => {
+          if (!data.notes && notes.value.trim()) {
+            trackEvent("task_notes_started", { task_id: taskId });
+          }
           data.notes = notes.value;
           schedulePersist();
         });
@@ -4344,6 +4443,10 @@
       const questionEl = $(`#question-${taskId}`);
       const question = questionEl?.value.trim();
       if (!question) return;
+      trackEvent("task_ai_question_submitted", {
+        task_id: taskId,
+        question_length: question.length
+      });
 
       if (state.activeTaskId && state.activeTaskId !== taskId) {
         collapseAllThreads(null);
@@ -4389,11 +4492,17 @@
         role: "assistant",
         content: text || "Try one small step today, note what happens, and ask a follow-up if you get stuck."
       });
+      trackEvent("task_ai_answer_shown", { task_id: taskId });
       renderTaskThreads(taskId);
       schedulePersist();
     }
 
     function resetAll() {
+      trackEvent("journey_reset", {
+        history_count: state.history.length,
+        ideas_count: state.ideas.length,
+        had_roadmap: Boolean(state.roadmapStages.length)
+      });
       state.step = 1;
       state.history = [];
       state.ideas = [];
@@ -4434,6 +4543,7 @@
 
     function showAuth(tab) {
       $("#auth-overlay").classList.add("open");
+      trackEvent("auth_modal_opened", { tab });
       switchAuthTab(tab);
     }
 
@@ -4587,6 +4697,13 @@
         amount,
         recurring: Boolean(option.recurring)
       }, { skipOptionsRender: option.id === "custom" });
+      if (option.id !== "custom" || customAmount === undefined) {
+        trackEvent("donation_option_selected", {
+          option_id: option.id,
+          amount,
+          recurring: Boolean(option.recurring)
+        });
+      }
     }
 
     function showDonateMessage(message, tone = "info") {
@@ -4610,6 +4727,7 @@
       updateDonationCartUI();
       hideDonateMessage();
       $("#donate-overlay")?.classList.add("open");
+      trackEvent("donate_modal_opened", { has_cart: Boolean(getDonationCart()?.optionId) });
     }
 
     function closeDonateModal() {
@@ -4625,6 +4743,12 @@
       }
 
       const option = getDonationOption(cart.optionId);
+      trackEvent("donation_checkout_started", {
+        provider,
+        option_id: cart.optionId,
+        amount: cart.amount,
+        recurring: Boolean(cart.recurring)
+      });
 
       if (provider === "stripe") {
         await startStripeCheckout(cart, option);
@@ -4633,6 +4757,7 @@
 
       const url = option?.paypalLink;
       if (!url) {
+        trackEvent("donation_checkout_failed", { provider, reason: "missing_paypal_url" });
         showDonateMessage("Add your PayPal URL in DONATION_OPTIONS first.", "error");
         return;
       }
@@ -4643,6 +4768,12 @@
     async function startStripeCheckout(cart, option) {
       const stripeBtn = $("#donate-pay-stripe");
       if (option?.stripeLink) {
+        trackEvent("stripe_checkout_redirected", {
+          option_id: cart.optionId,
+          amount: cart.amount,
+          recurring: Boolean(cart.recurring),
+          source: "payment_link"
+        });
         window.location.href = option.stripeLink;
         return;
       }
@@ -4674,6 +4805,12 @@
           throw new Error("Stripe did not return a checkout URL.");
         }
 
+        trackEvent("stripe_checkout_redirected", {
+          option_id: cart.optionId,
+          amount: cart.amount,
+          recurring: Boolean(cart.recurring),
+          source: "api"
+        });
         window.location.href = data.url;
       } catch (error) {
         let message = error.message || "Stripe checkout failed.";
@@ -4682,6 +4819,11 @@
             ? "Wrong key type in Vercel. STRIPE_SECRET_KEY must be your Secret key (starts with sk_test_ or sk_live_) from Stripe → Developers → API keys. Redeploy after fixing."
             : "Stripe secret key is invalid. In Vercel, set STRIPE_SECRET_KEY to sk_test_... from Stripe → Developers → API keys, then redeploy.";
         }
+        trackEvent("donation_checkout_failed", {
+          provider: "stripe",
+          option_id: cart.optionId,
+          amount: cart.amount
+        });
         showDonateMessage(message, "error");
         if (stripeBtn) {
           stripeBtn.disabled = false;
@@ -4704,9 +4846,11 @@
         saveDonationCart(null);
         showDonateModal();
         showDonateMessage("Thank you — your donation is complete. Your support helps keep whatimado free for everyone.", "success");
+        trackEvent("donation_return_success");
       } else if (status === "cancel") {
         showDonateModal();
         showDonateMessage("Checkout cancelled. Your donation is still in the cart if you want to try again.", "error");
+        trackEvent("donation_return_cancel");
       }
     }
 
@@ -4806,6 +4950,11 @@
       if (nextId && !previousId && hasSavableProgress()) {
         await persistSession({ manual: true });
       }
+      if (nextId !== previousId) {
+        trackEvent(nextId ? "auth_signed_in" : "auth_signed_out", {
+          restored_progress: hasSavableProgress()
+        });
+      }
     }
 
     async function initAuth() {
@@ -4838,18 +4987,24 @@
           emailRedirectTo: getAuthRedirectUrl()
         }
       });
-      if (error) return showAuthMessage(error.message, true);
+      if (error) {
+        trackEvent("auth_signup_failed");
+        return showAuthMessage(error.message, true);
+      }
 
       if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+        trackEvent("auth_signup_duplicate");
         return showAuthMessage("An account with this email may already exist. Try signing in instead.", true);
       }
 
       if (data.session) {
+        trackEvent("auth_signup_completed", { immediate_session: true });
         setUser(data.session.user);
         closeAuth();
         return;
       }
 
+      trackEvent("auth_signup_completed", { immediate_session: false });
       showAuthMessage("Account created. If you don't see a confirmation email within a few minutes, check spam — or ask the site owner to enable email delivery in Supabase.");
     }
 
@@ -4874,7 +5029,11 @@
       const password = $("#si-pass").value;
       if (!email || !password) return showAuthMessage("Please fill in all fields.", true);
       const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) return showAuthMessage(error.message, true);
+      if (error) {
+        trackEvent("auth_signin_failed");
+        return showAuthMessage(error.message, true);
+      }
+      trackEvent("auth_signin_completed");
       closeAuth();
     }
 
@@ -5011,6 +5170,7 @@
       }
 
       if (input) input.value = "";
+      trackEvent("suggestion_submitted", { suggestion_length: text.length });
       if (msg) {
         msg.hidden = false;
         msg.classList.remove("error");
@@ -5094,6 +5254,12 @@
       initNetworkCanvas();
       initDonation();
       await initAuth();
+      trackEvent("app_loaded", {
+        has_progress: hasSavableProgress(),
+        ideas_count: state.ideas.length,
+        last_screen: state.lastScreen,
+        has_user: Boolean(state.currentUser)
+      });
       setTimeout(() => {
         $("#loader").classList.add("hidden");
         setTimeout(() => $("#loader").remove(), 650);
