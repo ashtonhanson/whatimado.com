@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-16-roadmap-complete-v1 -->
+<!-- whatimado build: 2026-06-16-roadmap-complete-sidebar-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-16-roadmap-complete-v1">
+  <meta name="whatimado-build" content="2026-06-16-roadmap-complete-sidebar-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1533,6 +1533,9 @@
     .roadmap-side {
       position: sticky;
       top: 84px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
     .roadmap-type {
@@ -1627,7 +1630,7 @@
 
     .roadmap-complete-card {
       display: none;
-      margin-bottom: 1rem;
+      margin: 0;
       padding: 1rem;
       border: 1px solid rgba(78, 205, 196, .22);
       border-radius: var(--radius-md);
@@ -1650,14 +1653,15 @@
     .roadmap-complete-title {
       margin: 0;
       color: #e8f2ff;
-      font-size: 1rem;
+      font-size: .95rem;
       font-weight: 800;
+      line-height: 1.35;
     }
 
     .roadmap-complete-copy {
       margin: .45rem 0 .85rem;
       color: #a8c4e8;
-      font-size: .82rem;
+      font-size: .78rem;
       line-height: 1.5;
     }
 
@@ -1667,9 +1671,19 @@
       gap: .55rem;
     }
 
+    .roadmap-side .roadmap-complete-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
     .complete-action-btn {
       min-height: 34px;
       padding: .45rem .8rem;
+    }
+
+    .roadmap-side .complete-action-btn {
+      justify-content: center;
+      width: 100%;
     }
 
     .complete-action-btn.primary {
@@ -3182,6 +3196,15 @@
             </div>
           </div>
 
+          <div class="stage-list" id="stage-list"></div>
+          </div>
+        </div>
+
+        <aside class="roadmap-side">
+          <div class="progress-map">
+            <div class="progress-title">Progress Map <span id="progress-pct">0%</span></div>
+            <div class="pm-chain" id="progress-chain"></div>
+          </div>
           <div class="roadmap-complete-card" id="roadmap-complete-card" hidden>
             <p class="roadmap-complete-kicker">Path complete</p>
             <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
@@ -3191,16 +3214,6 @@
               <button class="back-btn complete-action-btn" id="complete-map-btn" type="button">Explore another path</button>
               <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
             </div>
-          </div>
-
-          <div class="stage-list" id="stage-list"></div>
-          </div>
-        </div>
-
-        <aside class="roadmap-side">
-          <div class="progress-map">
-            <div class="progress-title">Progress Map <span id="progress-pct">0%</span></div>
-            <div class="pm-chain" id="progress-chain"></div>
           </div>
         </aside>
       </div>
