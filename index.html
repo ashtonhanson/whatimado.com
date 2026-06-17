@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-color-schemes-v1 -->
+<!-- whatimado build: 2026-06-17-color-picker-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-17-color-schemes-v1">
+  <meta name="whatimado-build" content="2026-06-17-color-picker-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -22,10 +22,10 @@
   <meta name="theme-color" content="#07080f">
   <script>
     (() => {
-      const storageKey = "whatimado_color_scheme";
+      const key = "whatimado_color_scheme";
       const schemes = ["midnight", "ocean", "sunset"];
       try {
-        const saved = localStorage.getItem(storageKey);
+        const saved = localStorage.getItem(key);
         document.documentElement.dataset.colorScheme = schemes.includes(saved) ? saved : "midnight";
       } catch {
         document.documentElement.dataset.colorScheme = "midnight";
@@ -65,8 +65,11 @@
       --header-bg: linear-gradient(180deg, rgba(12, 15, 28, .88) 0%, rgba(8, 10, 18, .78) 100%);
       --header-border: rgba(140, 150, 210, .1);
       --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 10px 40px rgba(0, 0, 0, .22);
+      --logo-gradient: linear-gradient(135deg, #c4b8f5 0%, #8b7fd4 42%, #4ecdc4 100%);
       --network-line-rgb: 124, 111, 205;
       --browser-theme-color: #07080f;
+      --theme-active-bg: rgba(124, 111, 205, .26);
+      --theme-active-border: rgba(155, 143, 224, .36);
       --shadow: 0 18px 60px rgba(0, 0, 0, .42);
       --radius-sm: 8px;
       --radius-md: 14px;
@@ -94,9 +97,12 @@
       --html-bg: #041d26;
       --bg-gradient: linear-gradient(180deg, #0c4d5b 0%, #041d26 100%);
       --header-bg: linear-gradient(180deg, rgba(3, 24, 32, .9) 0%, rgba(2, 16, 22, .78) 100%);
-      --header-border: rgba(116, 214, 226, .12);
+      --header-border: rgba(116, 214, 226, .14);
+      --logo-gradient: linear-gradient(135deg, #d7fbff 0%, #73b7ff 42%, #4dded4 100%);
       --network-line-rgb: 77, 222, 212;
       --browser-theme-color: #041d26;
+      --theme-active-bg: rgba(61, 139, 253, .22);
+      --theme-active-border: rgba(115, 183, 255, .38);
     }
 
     [data-color-scheme="sunset"] {
@@ -118,9 +124,12 @@
       --html-bg: #1b0f20;
       --bg-gradient: linear-gradient(180deg, #583045 0%, #1b0f20 100%);
       --header-bg: linear-gradient(180deg, rgba(34, 18, 38, .9) 0%, rgba(22, 12, 26, .78) 100%);
-      --header-border: rgba(255, 180, 210, .12);
+      --header-border: rgba(255, 180, 210, .14);
+      --logo-gradient: linear-gradient(135deg, #ffe0ef 0%, #ff9dc8 42%, #ff9f80 100%);
       --network-line-rgb: 207, 111, 189;
       --browser-theme-color: #1b0f20;
+      --theme-active-bg: rgba(207, 111, 189, .24);
+      --theme-active-border: rgba(255, 157, 200, .38);
     }
 
     html {
@@ -242,7 +251,7 @@
       font-weight: 700;
       letter-spacing: -.025em;
       line-height: 1;
-      background: linear-gradient(135deg, #c4b8f5 0%, #8b7fd4 42%, #4ecdc4 100%);
+      background: var(--logo-gradient);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -359,9 +368,9 @@
 
     .nav-theme-btn[aria-pressed="true"] {
       color: #fff;
-      background: color-mix(in srgb, var(--purple) 26%, transparent);
+      background: var(--theme-active-bg);
       box-shadow:
-        inset 0 0 0 1px color-mix(in srgb, var(--purple-2) 38%, transparent),
+        inset 0 0 0 1px var(--theme-active-border),
         0 2px 10px rgba(0, 0, 0, .16);
     }
 
@@ -792,6 +801,64 @@
     .pill:hover {
       color: #fff;
       background: rgba(26, 106, 191, .82);
+    }
+
+    .ai-difference {
+      padding: 1rem 1.1rem;
+      border: 1px solid rgba(120, 130, 200, .16);
+      border-radius: var(--radius-md);
+      background: rgba(14, 18, 32, .5);
+    }
+
+    .ai-difference-kicker {
+      margin: 0 0 .35rem;
+      color: #90d4ff;
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .ai-difference-title {
+      margin: 0;
+      color: rgba(232, 244, 255, .98);
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .ai-difference-copy {
+      margin: .45rem 0 .85rem;
+      color: rgba(168, 196, 232, .86);
+      font-size: .82rem;
+      line-height: 1.55;
+    }
+
+    .ai-difference-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .55rem;
+    }
+
+    .ai-difference-item {
+      border: 1px solid rgba(120, 130, 200, .14);
+      border-radius: 12px;
+      padding: .7rem;
+      background: rgba(8, 10, 18, .42);
+    }
+
+    .ai-difference-item strong {
+      display: block;
+      margin-bottom: .25rem;
+      color: #dceaff;
+      font-size: .76rem;
+    }
+
+    .ai-difference-item span {
+      display: block;
+      color: rgba(168, 196, 232, .78);
+      font-size: .72rem;
+      line-height: 1.4;
     }
 
     #screen-convo.active {
@@ -1361,13 +1428,14 @@
       color: #fff;
       font-size: .75rem;
       font-weight: 800;
-      margin-top: .05rem;
+      margin-top: 0;
       box-shadow: 0 0 0 3px rgba(8, 10, 18, .5);
     }
 
     .opp-card-body {
       flex: 1;
       min-width: 0;
+      padding-top: .02rem;
     }
 
     .map-actions {
@@ -1579,9 +1647,9 @@
     }
 
     .opp-card {
-      padding: 1.1rem;
+      padding: .95rem;
       text-align: left;
-      transition: .18s ease;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
     }
 
     .opp-card:hover {
@@ -1591,6 +1659,7 @@
     }
 
     .opp-type {
+      min-height: .82rem;
       color: var(--teal);
       font-size: .6rem;
       font-weight: 800;
@@ -1600,12 +1669,11 @@
     }
 
     .opp-card-head {
-      min-height: auto;
+      min-height: 3.9rem;
     }
 
     .opp-name {
       margin-top: .38rem;
-      min-height: calc(1rem * 1.34 * 2);
       color: #e8f2ff;
       font-size: .95rem;
       font-weight: 800;
@@ -1661,6 +1729,9 @@
     .roadmap-side {
       position: sticky;
       top: 84px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
     .roadmap-type {
@@ -1755,7 +1826,7 @@
 
     .roadmap-complete-card {
       display: none;
-      margin-bottom: 1rem;
+      margin: 0;
       padding: 1rem;
       border: 1px solid rgba(78, 205, 196, .22);
       border-radius: var(--radius-md);
@@ -1778,14 +1849,15 @@
     .roadmap-complete-title {
       margin: 0;
       color: #e8f2ff;
-      font-size: 1rem;
+      font-size: .95rem;
       font-weight: 800;
+      line-height: 1.35;
     }
 
     .roadmap-complete-copy {
       margin: .45rem 0 .85rem;
       color: #a8c4e8;
-      font-size: .82rem;
+      font-size: .78rem;
       line-height: 1.5;
     }
 
@@ -1795,9 +1867,19 @@
       gap: .55rem;
     }
 
+    .roadmap-side .roadmap-complete-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
     .complete-action-btn {
       min-height: 34px;
       padding: .45rem .8rem;
+    }
+
+    .roadmap-side .complete-action-btn {
+      justify-content: center;
+      width: 100%;
     }
 
     .complete-action-btn.primary {
@@ -2832,8 +2914,8 @@
       }
 
       .nav-drawer .nav-theme-btn[aria-pressed="true"] {
-        border-color: color-mix(in srgb, var(--purple-2) 42%, transparent);
-        background: color-mix(in srgb, var(--purple) 24%, transparent);
+        border-color: var(--theme-active-border);
+        background: var(--theme-active-bg);
       }
 
       .nav-drawer .nav-btn {
@@ -2954,6 +3036,10 @@
       .nav-btn.donate-btn {
         padding: .4rem .68rem;
         font-size: .76rem;
+      }
+
+      .ai-difference-grid {
+        grid-template-columns: 1fr;
       }
 
       .map-panel,
@@ -3215,6 +3301,26 @@
             <button class="pill" data-prompt="I have no money but I have time and hustle">starting from zero</button>
           </div>
 
+          <section class="ai-difference" aria-label="How whatimado is different from general AI chatbots">
+            <p class="ai-difference-kicker">Not just another chatbot</p>
+            <h3 class="ai-difference-title">ChatGPT gives answers. Whatimado builds a path.</h3>
+            <p class="ai-difference-copy">General AI tools start with a blank chat box. Whatimado is built for one job: helping you turn your real situation into options, a map, and steps you can actually follow.</p>
+            <div class="ai-difference-grid">
+              <div class="ai-difference-item">
+                <strong>Guided intake</strong>
+                <span>You do not need to know the perfect prompt. The flow pulls out what matters.</span>
+              </div>
+              <div class="ai-difference-item">
+                <strong>Visual map</strong>
+                <span>Your options become a possibility map instead of a long generic answer.</span>
+              </div>
+              <div class="ai-difference-item">
+                <strong>Roadmap workspace</strong>
+                <span>Pick a path, track tasks, save notes, and keep asking for help as you go.</span>
+              </div>
+            </div>
+          </section>
+
           <section class="site-suggestions" aria-label="Suggest a site improvement">
             <h3 class="site-suggestions-title">Suggest an improvement</h3>
             <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion.</p>
@@ -3341,6 +3447,15 @@
             </div>
           </div>
 
+          <div class="stage-list" id="stage-list"></div>
+          </div>
+        </div>
+
+        <aside class="roadmap-side">
+          <div class="progress-map">
+            <div class="progress-title">Progress Map <span id="progress-pct">0%</span></div>
+            <div class="pm-chain" id="progress-chain"></div>
+          </div>
           <div class="roadmap-complete-card" id="roadmap-complete-card" hidden>
             <p class="roadmap-complete-kicker">Path complete</p>
             <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
@@ -3350,16 +3465,6 @@
               <button class="back-btn complete-action-btn" id="complete-map-btn" type="button">Explore another path</button>
               <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
             </div>
-          </div>
-
-          <div class="stage-list" id="stage-list"></div>
-          </div>
-        </div>
-
-        <aside class="roadmap-side">
-          <div class="progress-map">
-            <div class="progress-title">Progress Map <span id="progress-pct">0%</span></div>
-            <div class="pm-chain" id="progress-chain"></div>
           </div>
         </aside>
       </div>
@@ -3572,6 +3677,8 @@
     const PATH_BUILDING_MSG = "Building your custom path to success…";
     let persistTimer = null;
     let saveToastTimer = null;
+    let themeRenderColors = null;
+    let themeNetworkLineRgb = "124, 111, 205";
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -3580,11 +3687,22 @@
       return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     }
 
-    function getOpportunityColors() {
+    function refreshThemeRenderColors() {
       const styles = getComputedStyle(document.documentElement);
-      return OPPORTUNITY_COLOR_VARS.map((name, index) => (
+      themeRenderColors = OPPORTUNITY_COLOR_VARS.map((name, index) => (
         styles.getPropertyValue(name).trim() || FALLBACK_OPPORTUNITY_COLORS[index]
       ));
+      themeNetworkLineRgb = styles.getPropertyValue("--network-line-rgb").trim() || "124, 111, 205";
+    }
+
+    function getOpportunityColors() {
+      if (!themeRenderColors) refreshThemeRenderColors();
+      return themeRenderColors;
+    }
+
+    function getNetworkLineRgb() {
+      if (!themeRenderColors) refreshThemeRenderColors();
+      return themeNetworkLineRgb;
     }
 
     function getSavedColorScheme() {
@@ -3620,6 +3738,7 @@
     function applyColorScheme(scheme, options = {}) {
       const nextScheme = COLOR_SCHEMES.includes(scheme) ? scheme : "midnight";
       document.documentElement.dataset.colorScheme = nextScheme;
+      refreshThemeRenderColors();
       updateThemeMetaColor();
       syncSvgThemeColors();
       updateColorSchemeControls(nextScheme);
@@ -3640,7 +3759,7 @@
     }
 
     function initColorScheme() {
-      applyColorScheme(getSavedColorScheme(), { skipAnalytics: true });
+      applyColorScheme(getSavedColorScheme(), { skipAnalytics: true, skipStorage: true });
     }
 
     function bindColorSchemeControls() {
@@ -5442,7 +5561,7 @@
       function draw() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         const opportunityColors = getOpportunityColors();
-        const networkLineRgb = getCssVar("--network-line-rgb") || "124, 111, 205";
+        const networkLineRgb = getNetworkLineRgb();
         nodes.forEach((node) => {
           node.x += node.vx;
           node.y += node.vy;
