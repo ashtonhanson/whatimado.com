@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-16-loader-logo-v1 -->
+<!-- whatimado build: 2026-06-16-roadmap-complete-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-16-loader-logo-v1">
+  <meta name="whatimado-build" content="2026-06-16-roadmap-complete-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1625,6 +1625,64 @@
       padding: 1rem;
     }
 
+    .roadmap-complete-card {
+      display: none;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border: 1px solid rgba(78, 205, 196, .22);
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, rgba(78, 205, 196, .1) 0%, rgba(124, 111, 205, .08) 100%);
+    }
+
+    .roadmap-complete-card.visible {
+      display: block;
+    }
+
+    .roadmap-complete-kicker {
+      margin: 0 0 .35rem;
+      color: var(--teal);
+      font-size: .64rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .roadmap-complete-title {
+      margin: 0;
+      color: #e8f2ff;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .roadmap-complete-copy {
+      margin: .45rem 0 .85rem;
+      color: #a8c4e8;
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+
+    .roadmap-complete-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+    }
+
+    .complete-action-btn {
+      min-height: 34px;
+      padding: .45rem .8rem;
+    }
+
+    .complete-action-btn.primary {
+      color: #07111f;
+      border-color: rgba(78, 205, 196, .45);
+      background: var(--teal);
+    }
+
+    .complete-action-btn:disabled {
+      opacity: .7;
+      cursor: wait;
+    }
+
     .momentum-ring-wrap {
       position: relative;
       width: 64px;
@@ -3124,6 +3182,17 @@
             </div>
           </div>
 
+          <div class="roadmap-complete-card" id="roadmap-complete-card" hidden>
+            <p class="roadmap-complete-kicker">Path complete</p>
+            <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
+            <p class="roadmap-complete-copy">If this plan still has room to grow, continue into the next phase. Or jump back to your map and explore another option.</p>
+            <div class="roadmap-complete-actions">
+              <button class="back-btn complete-action-btn primary" id="continue-plan-btn" type="button">Continue this plan</button>
+              <button class="back-btn complete-action-btn" id="complete-map-btn" type="button">Explore another path</button>
+              <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
+            </div>
+          </div>
+
           <div class="stage-list" id="stage-list"></div>
           </div>
         </div>
@@ -4278,6 +4347,11 @@
       $("#roadmap-sub").textContent = "Building your personalised roadmap...";
       $("#stage-list").innerHTML = "";
       $("#momentum-card").style.display = "none";
+      const completeCard = $("#roadmap-complete-card");
+      if (completeCard) {
+        completeCard.hidden = true;
+        completeCard.classList.remove("visible");
+      }
       setRoadmapLoading(true);
       showScreen("roadmap");
 
@@ -4402,7 +4476,85 @@
       else if (percent < 100) status.textContent = "You're building real momentum now.";
       else status.textContent = "Path complete!";
 
+      const completeCard = $("#roadmap-complete-card");
+      if (completeCard) {
+        const complete = total > 0 && percent === 100;
+        completeCard.hidden = !complete;
+        completeCard.classList.toggle("visible", complete);
+      }
+
       updateProgressMap();
+    }
+
+    async function continueCompletedPlan() {
+      if (!state.currentIdea || !state.roadmapStages.length) return;
+      const button = $("#continue-plan-btn");
+      if (button?.disabled) return;
+
+      const originalText = button?.textContent || "Continue this plan";
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Building next phase…";
+      }
+      trackEvent("continue_plan_requested", {
+        roadmap_key: state.roadmapKey,
+        existing_stages_count: state.roadmapStages.length
+      });
+
+      const context = state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
+      const completedStages = state.roadmapStages.map((stage, index) => {
+        const tasks = (stage.tasks || []).map((task) => `- ${task}`).join("\n");
+        return `Stage ${index + 1}: ${stage.label}\n${stage.desc || ""}\n${tasks}`;
+      }).join("\n\n");
+
+      try {
+        const response = await callAdvisor(
+          `You are whatimado, a practical next-phase roadmap coach.\n\nThe user completed this roadmap for "${state.currentIdea.title}" (${state.currentIdea.tagline || state.currentIdea.type || "path"}).\n\nUser context:\n${context}\n\nCompleted roadmap:\n${completedStages}\n\nIf continuing this business/life/project plan realistically makes sense, generate the NEXT 4 stages that come after this completed roadmap. If the plan should not simply grow, generate practical sustain/refine/review stages instead. Keep tasks specific, grounded, and doable. Do not repeat completed tasks.\n\nRespond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence tied to the next phase","tasks":["specific task 1","specific task 2","specific task 3"]}]`,
+          1200
+        );
+
+        const nextStages = extractJsonArray(response, [
+          {
+            label: "Review & Decide",
+            desc: "Look at what worked and decide whether this path deserves another round.",
+            tasks: ["Write down the best result from the completed roadmap", "List what felt confusing or too hard", "Choose one adjustment before repeating the plan"]
+          },
+          {
+            label: "Strengthen The System",
+            desc: "Turn the finished plan into something easier to repeat.",
+            tasks: ["Create a simple checklist from the steps that worked", "Remove one task that did not create value", "Set a realistic weekly rhythm for this path"]
+          },
+          {
+            label: "Reach The Next Group",
+            desc: "Test the improved version with a slightly wider audience.",
+            tasks: ["Ask three new people for honest feedback", "Share one clear story or result from the first round", "Track every response in one simple note"]
+          },
+          {
+            label: "Choose The Next Move",
+            desc: "Decide whether to keep building, pause, or switch paths.",
+            tasks: ["Compare effort against results", "Pick one next milestone for the next 30 days", "Decide whether this path is still worth pursuing"]
+          }
+        ]);
+
+        state.roadmapStages = [...state.roadmapStages, ...nextStages];
+        if (state.roadmapKey) {
+          state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
+        }
+        renderStages(state.roadmapStages);
+        schedulePersist();
+        trackEvent("continue_plan_added", {
+          added_stages_count: nextStages.length,
+          total_stages_count: state.roadmapStages.length
+        });
+        setTimeout(() => $("#stage-list")?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+      } catch {
+        trackEvent("continue_plan_failed", { roadmap_key: state.roadmapKey });
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      }
     }
 
     function initProgressMap(stages) {
@@ -5215,6 +5367,13 @@
       $("#reset-btn").addEventListener("click", resetAll);
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
+      $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
+      $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
+      $("#complete-reset-btn")?.addEventListener("click", () => {
+        if (confirm("Start fresh? This clears the current conversation, map, and roadmap.")) {
+          resetAll();
+        }
+      });
       $("#site-suggestion-submit")?.addEventListener("click", submitSiteSuggestion);
       $("#site-suggestion-input")?.addEventListener("keydown", (event) => {
         if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
