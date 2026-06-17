@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-16-roadmap-complete-v1 -->
-<html lang="en">
+<!-- whatimado build: 2026-06-17-color-schemes-v1 -->
+<html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-16-roadmap-complete-v1">
+  <meta name="whatimado-build" content="2026-06-17-color-schemes-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -20,6 +20,18 @@
   <meta name="twitter:description" content="What I'ma do? Free AI paths and roadmaps from your situation and skills.">
   <meta name="twitter:image" content="https://whatimado.com/og-image.png">
   <meta name="theme-color" content="#07080f">
+  <script>
+    (() => {
+      const storageKey = "whatimado_color_scheme";
+      const schemes = ["midnight", "ocean", "sunset"];
+      try {
+        const saved = localStorage.getItem(storageKey);
+        document.documentElement.dataset.colorScheme = schemes.includes(saved) ? saved : "midnight";
+      } catch {
+        document.documentElement.dataset.colorScheme = "midnight";
+      }
+    })();
+  </script>
   <link rel="icon" href="/favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,6 +44,7 @@
     }
 
     :root {
+      color-scheme: dark;
       --bg: #07080f;
       --bg-soft: #0d0f1a;
       --surface: #161929;
@@ -47,6 +60,13 @@
       --gold: #f7c948;
       --green: #52c47a;
       --rose: #e06c75;
+      --html-bg: #07111f;
+      --bg-gradient: linear-gradient(180deg, #1a3a5c 0%, #07111f 100%);
+      --header-bg: linear-gradient(180deg, rgba(12, 15, 28, .88) 0%, rgba(8, 10, 18, .78) 100%);
+      --header-border: rgba(140, 150, 210, .1);
+      --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 10px 40px rgba(0, 0, 0, .22);
+      --network-line-rgb: 124, 111, 205;
+      --browser-theme-color: #07080f;
       --shadow: 0 18px 60px rgba(0, 0, 0, .42);
       --radius-sm: 8px;
       --radius-md: 14px;
@@ -55,11 +75,59 @@
       --header-h: 56px;
     }
 
+    [data-color-scheme="ocean"] {
+      --bg: #03131a;
+      --bg-soft: #061e27;
+      --surface: #0b2b36;
+      --surface-2: #103845;
+      --surface-3: #164958;
+      --ink: #effcff;
+      --ink-muted: #c9eef4;
+      --muted: #8bb9c5;
+      --line: rgba(88, 177, 201, .22);
+      --purple: #3d8bfd;
+      --purple-2: #73b7ff;
+      --teal: #4dded4;
+      --gold: #ffd166;
+      --green: #63d98d;
+      --rose: #ff7a90;
+      --html-bg: #041d26;
+      --bg-gradient: linear-gradient(180deg, #0c4d5b 0%, #041d26 100%);
+      --header-bg: linear-gradient(180deg, rgba(3, 24, 32, .9) 0%, rgba(2, 16, 22, .78) 100%);
+      --header-border: rgba(116, 214, 226, .12);
+      --network-line-rgb: 77, 222, 212;
+      --browser-theme-color: #041d26;
+    }
+
+    [data-color-scheme="sunset"] {
+      --bg: #120b16;
+      --bg-soft: #1b1021;
+      --surface: #28172f;
+      --surface-2: #351f3d;
+      --surface-3: #44274d;
+      --ink: #fff3f8;
+      --ink-muted: #f4ccd9;
+      --muted: #c391a8;
+      --line: rgba(244, 156, 190, .2);
+      --purple: #cf6fbd;
+      --purple-2: #ff9dc8;
+      --teal: #ff9f80;
+      --gold: #ffd166;
+      --green: #70d68b;
+      --rose: #ff6b6b;
+      --html-bg: #1b0f20;
+      --bg-gradient: linear-gradient(180deg, #583045 0%, #1b0f20 100%);
+      --header-bg: linear-gradient(180deg, rgba(34, 18, 38, .9) 0%, rgba(22, 12, 26, .78) 100%);
+      --header-border: rgba(255, 180, 210, .12);
+      --network-line-rgb: 207, 111, 189;
+      --browser-theme-color: #1b0f20;
+    }
+
     html {
       min-height: 100%;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
-      background: #07111f;
+      background: var(--html-bg);
       -webkit-font-smoothing: antialiased;
     }
 
@@ -73,7 +141,7 @@
       position: fixed;
       inset: 0;
       z-index: 0;
-      background: linear-gradient(180deg, #1a3a5c 0%, #07111f 100%);
+      background: var(--bg-gradient);
       pointer-events: none;
     }
 
@@ -100,13 +168,11 @@
       height: auto;
       min-height: var(--header-h);
       padding: 0;
-      background: linear-gradient(180deg, rgba(12, 15, 28, .88) 0%, rgba(8, 10, 18, .78) 100%);
-      border-bottom: 1px solid rgba(140, 150, 210, .1);
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--header-border);
       backdrop-filter: blur(22px) saturate(150%);
       -webkit-backdrop-filter: blur(22px) saturate(150%);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .05),
-        0 10px 40px rgba(0, 0, 0, .22);
+      box-shadow: var(--header-shadow);
     }
 
     .app-header-nav-wrap {
@@ -239,6 +305,64 @@
       gap: .35rem;
       padding: .22rem;
       background: rgba(255, 255, 255, .02);
+    }
+
+    .nav-group--theme {
+      gap: .16rem;
+      padding: .2rem;
+    }
+
+    .nav-theme-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .34rem;
+      border: 0;
+      border-radius: 999px;
+      padding: .38rem .58rem;
+      color: rgba(200, 204, 238, .72);
+      background: transparent;
+      font-size: .74rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      white-space: nowrap;
+      transition: color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+
+    .nav-theme-btn::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--swatch-a), var(--swatch-b));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24), 0 0 0 1px rgba(0, 0, 0, .18);
+    }
+
+    .nav-theme-btn[data-theme-option="midnight"] {
+      --swatch-a: #7c6fcd;
+      --swatch-b: #4ecdc4;
+    }
+
+    .nav-theme-btn[data-theme-option="ocean"] {
+      --swatch-a: #3d8bfd;
+      --swatch-b: #4dded4;
+    }
+
+    .nav-theme-btn[data-theme-option="sunset"] {
+      --swatch-a: #cf6fbd;
+      --swatch-b: #ffd166;
+    }
+
+    .nav-theme-btn:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .nav-theme-btn[aria-pressed="true"] {
+      color: #fff;
+      background: color-mix(in srgb, var(--purple) 26%, transparent);
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--purple-2) 38%, transparent),
+        0 2px 10px rgba(0, 0, 0, .16);
     }
 
     .nav-group--auth {
@@ -474,12 +598,16 @@
         order: 3;
       }
 
-      .nav-divider {
+      .nav-group--theme {
         order: 4;
       }
 
-      .nav-group--auth {
+      .nav-divider {
         order: 5;
+      }
+
+      .nav-group--auth {
+        order: 6;
       }
     }
 
@@ -2617,8 +2745,8 @@
         align-items: stretch;
         gap: .85rem;
         padding: .85rem .85rem 1rem;
-        border-bottom: 1px solid rgba(140, 150, 210, .14);
-        background: rgba(10, 13, 24, .94);
+        border-bottom: 1px solid var(--header-border);
+        background: var(--header-bg);
         backdrop-filter: blur(24px) saturate(160%);
         -webkit-backdrop-filter: blur(24px) saturate(160%);
         box-shadow: 0 18px 48px rgba(0, 0, 0, .38);
@@ -2684,6 +2812,28 @@
         padding: 0;
         background: transparent;
         border: 0;
+      }
+
+      .nav-drawer .nav-group--theme {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .4rem;
+      }
+
+      .nav-drawer .nav-theme-btn {
+        justify-content: center;
+        min-height: 42px;
+        border: 1px solid rgba(120, 130, 200, .12);
+        border-radius: 12px;
+        padding: .72rem .45rem;
+        background: rgba(255, 255, 255, .04);
+        color: rgba(228, 234, 255, .9);
+        font-size: .78rem;
+      }
+
+      .nav-drawer .nav-theme-btn[aria-pressed="true"] {
+        border-color: color-mix(in srgb, var(--purple-2) 42%, transparent);
+        background: color-mix(in srgb, var(--purple) 24%, transparent);
       }
 
       .nav-drawer .nav-btn {
@@ -3011,6 +3161,15 @@
                 </div>
               </div>
 
+              <div class="nav-drawer-section">
+                <p class="nav-drawer-label">Appearance</p>
+                <div class="nav-group nav-group--theme" aria-label="Color scheme">
+                  <button class="nav-theme-btn" type="button" data-theme-option="midnight" aria-pressed="true">Dark</button>
+                  <button class="nav-theme-btn" type="button" data-theme-option="ocean" aria-pressed="false">Ocean</button>
+                  <button class="nav-theme-btn" type="button" data-theme-option="sunset" aria-pressed="false">Sunset</button>
+                </div>
+              </div>
+
               <span class="nav-divider" aria-hidden="true"></span>
 
               <div class="nav-drawer-section">
@@ -3332,7 +3491,10 @@
 
     const DONATION_CART_KEY = "whatimado_donation_cart";
 
-    const opportunityColors = ["#e06c75", "#4ecdc4", "#f7c948", "#52c47a", "#9b8fe0"];
+    const COLOR_SCHEME_KEY = "whatimado_color_scheme";
+    const COLOR_SCHEMES = ["midnight", "ocean", "sunset"];
+    const OPPORTUNITY_COLOR_VARS = ["--rose", "--teal", "--gold", "--green", "--purple-2"];
+    const FALLBACK_OPPORTUNITY_COLORS = ["#e06c75", "#4ecdc4", "#f7c948", "#52c47a", "#9b8fe0"];
     const fallbackIdeas = [
       {
         title: "Local Help-for-Hire Service",
@@ -3413,6 +3575,79 @@
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+    function getCssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function getOpportunityColors() {
+      const styles = getComputedStyle(document.documentElement);
+      return OPPORTUNITY_COLOR_VARS.map((name, index) => (
+        styles.getPropertyValue(name).trim() || FALLBACK_OPPORTUNITY_COLORS[index]
+      ));
+    }
+
+    function getSavedColorScheme() {
+      try {
+        const saved = localStorage.getItem(COLOR_SCHEME_KEY);
+        return COLOR_SCHEMES.includes(saved) ? saved : "midnight";
+      } catch {
+        return "midnight";
+      }
+    }
+
+    function updateColorSchemeControls(activeScheme) {
+      $$("[data-theme-option]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.themeOption === activeScheme));
+      });
+    }
+
+    function updateThemeMetaColor() {
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.content = getCssVar("--browser-theme-color") || getCssVar("--bg") || "#07080f";
+    }
+
+    function syncSvgThemeColors() {
+      const userStops = $$("#user-gradient stop");
+      if (userStops[0]) userStops[0].setAttribute("stop-color", getCssVar("--purple-2") || "#9b8fe0");
+      if (userStops[1]) userStops[1].setAttribute("stop-color", getCssVar("--purple") || "#7c6fcd");
+
+      const ringStops = $$("#ring-gradient stop");
+      if (ringStops[0]) ringStops[0].setAttribute("stop-color", getCssVar("--purple") || "#7c6fcd");
+      if (ringStops[1]) ringStops[1].setAttribute("stop-color", getCssVar("--teal") || "#4ecdc4");
+    }
+
+    function applyColorScheme(scheme, options = {}) {
+      const nextScheme = COLOR_SCHEMES.includes(scheme) ? scheme : "midnight";
+      document.documentElement.dataset.colorScheme = nextScheme;
+      updateThemeMetaColor();
+      syncSvgThemeColors();
+      updateColorSchemeControls(nextScheme);
+
+      if (!options.skipStorage) {
+        try {
+          localStorage.setItem(COLOR_SCHEME_KEY, nextScheme);
+        } catch {}
+      }
+
+      if (state.ideas.length) {
+        buildOpportunityMap(state.ideas, { skipPersist: true });
+      }
+
+      if (!options.skipAnalytics) {
+        trackEvent("color_scheme_changed", { scheme: nextScheme });
+      }
+    }
+
+    function initColorScheme() {
+      applyColorScheme(getSavedColorScheme(), { skipAnalytics: true });
+    }
+
+    function bindColorSchemeControls() {
+      $$("[data-theme-option]").forEach((button) => {
+        button.addEventListener("click", () => applyColorScheme(button.dataset.themeOption));
+      });
+    }
 
     function getAnalyticsSessionId() {
       try {
@@ -4217,12 +4452,13 @@
       };
     }
 
-    function buildOpportunityMap(ideas) {
+    function buildOpportunityMap(ideas, options = {}) {
       const nodes = $("#svg-nodes");
       const connections = $("#svg-connections");
       const labels = $("#opp-labels");
       const grid = $("#opp-grid");
       const svg = $("#opportunity-svg");
+      const opportunityColors = getOpportunityColors();
       nodes.innerHTML = "";
       connections.innerHTML = "";
       labels.innerHTML = "";
@@ -4292,7 +4528,7 @@
         card.addEventListener("click", () => viewRoadmap(idea, index));
         grid.append(card);
       });
-      schedulePersist();
+      if (!options.skipPersist) schedulePersist();
     }
 
     function setRoadmapLoading(loading) {
@@ -5191,6 +5427,7 @@
       function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        const opportunityColors = getOpportunityColors();
         const count = Math.max(14, Math.floor(window.innerWidth / 95));
         nodes = Array.from({ length: count }, () => ({
           x: Math.random() * canvas.width,
@@ -5198,12 +5435,14 @@
           vx: (Math.random() - .5) * .25,
           vy: (Math.random() - .5) * .25,
           r: Math.random() * 2.2 + 1.8,
-          color: opportunityColors[Math.floor(Math.random() * opportunityColors.length)]
+          colorIndex: Math.floor(Math.random() * opportunityColors.length)
         }));
       }
 
       function draw() {
         context.clearRect(0, 0, canvas.width, canvas.height);
+        const opportunityColors = getOpportunityColors();
+        const networkLineRgb = getCssVar("--network-line-rgb") || "124, 111, 205";
         nodes.forEach((node) => {
           node.x += node.vx;
           node.y += node.vy;
@@ -5211,7 +5450,7 @@
           if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
           context.beginPath();
           context.arc(node.x, node.y, node.r, 0, Math.PI * 2);
-          context.fillStyle = node.color;
+          context.fillStyle = opportunityColors[node.colorIndex % opportunityColors.length];
           context.fill();
         });
 
@@ -5222,7 +5461,7 @@
             context.beginPath();
             context.moveTo(a.x, a.y);
             context.lineTo(b.x, b.y);
-            context.strokeStyle = `rgba(124,111,205,${(1 - distance / 120) * .16})`;
+            context.strokeStyle = `rgba(${networkLineRgb},${(1 - distance / 120) * .16})`;
             context.stroke();
           });
         });
@@ -5269,6 +5508,7 @@
       $("#nav-donate-btn")?.addEventListener("click", closeMenu);
 
       drawer.querySelectorAll("button, a[data-screen-link]").forEach((element) => {
+        if (element.matches("[data-theme-option]")) return;
         element.addEventListener("click", closeMenu);
       });
 
@@ -5322,6 +5562,7 @@
     function bindEvents() {
       syncHeaderHeight();
       initMobileNav();
+      bindColorSchemeControls();
       initMobileKeyboardAssist();
       window.addEventListener("resize", syncHeaderHeight);
       $$("[data-screen-link]").forEach((element) => {
@@ -5397,6 +5638,7 @@
     }
 
     window.addEventListener("load", async () => {
+      initColorScheme();
       bindEvents();
       syncHeaderHeight();
       initNetworkCanvas();
