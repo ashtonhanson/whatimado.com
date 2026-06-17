@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-16-analytics-v1 -->
+<!-- whatimado build: 2026-06-16-donate-stripe-only-v1 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-16-analytics-v1">
+  <meta name="whatimado-build" content="2026-06-16-donate-stripe-only-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -2440,12 +2440,6 @@
       background: linear-gradient(135deg, #635bff, #7a73ff);
     }
 
-    .donate-pay-btn.paypal {
-      color: #001435;
-      border-color: rgba(255, 196, 57, .55);
-      background: #ffc439;
-    }
-
     .donate-footnote a {
       color: var(--teal);
       text-decoration: underline;
@@ -3199,11 +3193,10 @@
         </div>
       </div>
 
-      <p class="donate-section-label">Payment options</p>
+      <p class="donate-section-label">Secure checkout</p>
       <p class="donate-checkout-hint">Tap Pay with card to finish on Stripe’s secure checkout page. When payment goes through, you’ll return here automatically — no account needed.</p>
       <div class="donate-payments">
         <button class="donate-pay-btn stripe" id="donate-pay-stripe" type="button" disabled>Pay with card (Stripe)</button>
-        <button class="donate-pay-btn paypal" id="donate-pay-paypal" type="button" disabled>Pay with PayPal</button>
       </div>
       <p class="donate-footnote" id="donate-footnote">Payments are processed securely by Stripe. One-time gifts complete in a single checkout; monthly support continues until you cancel through Stripe.</p>
     </div>
@@ -4605,7 +4598,6 @@
       const amountEl = $("#donate-cart-amount");
       const noteEl = $("#donate-cart-note");
       const stripeBtn = $("#donate-pay-stripe");
-      const paypalBtn = $("#donate-pay-paypal");
 
       if (!cartBtn) return;
 
@@ -4627,13 +4619,11 @@
         }
         const option = getDonationOption(cart.optionId);
         if (stripeBtn) stripeBtn.disabled = false;
-        if (paypalBtn) paypalBtn.disabled = !option?.paypalLink;
       } else {
         cartBtn.classList.remove("has-items");
         if (empty) empty.style.display = "";
         if (summary) summary.classList.remove("visible");
         if (stripeBtn) stripeBtn.disabled = true;
-        if (paypalBtn) paypalBtn.disabled = true;
       }
 
       if (!options.skipOptionsRender) renderDonationOptions();
@@ -4893,7 +4883,6 @@
         selectDonationOption(button.dataset.donateOption, event.target.value);
       });
       $("#donate-pay-stripe")?.addEventListener("click", () => startDonationCheckout("stripe"));
-      $("#donate-pay-paypal")?.addEventListener("click", () => startDonationCheckout("paypal"));
       document.addEventListener("click", (event) => {
         const tag = event.target.closest("[data-donate-preset]");
         if (!tag) return;
