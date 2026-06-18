@@ -71,9 +71,9 @@
       --theme-active-bg: rgba(124, 111, 205, .26);
       --theme-active-border: rgba(155, 143, 224, .36);
       --brand-purple-dark: #241235;
-      --pastel-yellow-bg: linear-gradient(180deg, #fff8c9 0%, #f6e39f 100%);
-      --pastel-yellow-bg-hover: linear-gradient(180deg, #fffbdc 0%, #f9e9ac 100%);
-      --pastel-yellow-border: rgba(255, 248, 202, .9);
+      --pastel-yellow-bg: linear-gradient(180deg, #fffef4 0%, #fff8d8 100%);
+      --pastel-yellow-bg-hover: linear-gradient(180deg, #ffffff 0%, #fffbe4 100%);
+      --pastel-yellow-border: rgba(255, 252, 226, .95);
       --light-blue-bg: linear-gradient(180deg, #c7edff 0%, #93cfee 100%);
       --light-blue-bg-hover: linear-gradient(180deg, #ddf5ff 0%, #adddf5 100%);
       --light-blue-border: rgba(216, 245, 255, .9);
@@ -787,8 +787,8 @@
       border: 0;
       border-radius: 10px;
       padding: .6rem 1rem;
-      color: var(--brand-purple-dark);
-      background: var(--light-blue-bg);
+      color: #fffdf2;
+      background: var(--brand-purple-dark);
       font-size: .83rem;
       font-weight: 700;
       box-shadow: 0 8px 22px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .55);
@@ -796,7 +796,7 @@
     }
 
     .action-btn:hover {
-      background: var(--light-blue-bg-hover);
+      background: color-mix(in srgb, var(--brand-purple-dark) 88%, #ffffff);
       transform: translateY(-1px);
     }
 
@@ -824,9 +824,9 @@
 
     .ai-difference {
       padding: 1rem 1.1rem;
-      border: 1px solid var(--pastel-yellow-border);
+      border: 1px solid var(--light-blue-border);
       border-radius: var(--radius-md);
-      background: var(--pastel-yellow-bg);
+      background: var(--light-blue-bg);
       box-shadow: var(--plan-card-shadow);
     }
 
@@ -1149,19 +1149,30 @@
       border-color: rgba(124, 111, 205, .4);
     }
 
-    #reset-btn,
-    .site-suggestions .back-btn {
+    #reset-btn {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg);
       border-color: var(--light-blue-border);
       box-shadow: 0 8px 22px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .55);
     }
 
-    #reset-btn:hover,
-    .site-suggestions .back-btn:hover {
+    #reset-btn:hover {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg-hover);
       border-color: var(--light-blue-border);
+    }
+
+    .site-suggestions .back-btn {
+      color: #fffdf2;
+      background: var(--brand-purple-dark);
+      border-color: color-mix(in srgb, var(--brand-purple-dark) 78%, #ffffff);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .55);
+    }
+
+    .site-suggestions .back-btn:hover {
+      color: #fffdf2;
+      background: color-mix(in srgb, var(--brand-purple-dark) 88%, #ffffff);
+      border-color: color-mix(in srgb, var(--brand-purple-dark) 68%, #ffffff);
     }
 
     .page-title {
@@ -1489,7 +1500,7 @@
       position: relative;
       overflow: hidden;
       border-radius: var(--radius-md);
-      padding: 1.25rem 1.25rem 1.2rem;
+      padding: 1.25rem 1.25rem 1.2rem 4.05rem;
       text-align: left;
       background: var(--plan-card-bg);
       border-color: var(--plan-card-border);
@@ -1498,18 +1509,17 @@
     }
 
     .opp-card-inner {
-      display: grid;
-      grid-template-columns: 28px minmax(0, 1fr);
-      align-items: start;
-      gap: .88rem;
+      display: block;
     }
 
     .opp-card-number {
+      position: absolute;
+      top: 1.25rem;
+      left: 1.25rem;
       width: 28px;
       height: 28px;
       display: grid;
       place-items: center;
-      flex: 0 0 auto;
       border-radius: 50%;
       color: #fff;
       font-size: .75rem;
@@ -1519,7 +1529,6 @@
     }
 
     .opp-card-body {
-      flex: 1;
       min-width: 0;
       padding-top: 0;
     }
@@ -1737,7 +1746,7 @@
       border: 1px solid var(--plan-card-border);
       background: var(--plan-card-bg);
       box-shadow: var(--plan-card-shadow);
-      padding: 1.25rem 1.25rem 1.2rem;
+      padding: 1.25rem 1.25rem 1.2rem 4.05rem;
       text-align: left;
       transition: transform .18s ease, border-color .18s ease, background .18s ease;
     }
@@ -1751,6 +1760,7 @@
     }
 
     .opp-type {
+      display: block;
       color: color-mix(in srgb, var(--plan-card-ink) 72%, var(--teal));
       font-size: .6rem;
       font-weight: 800;
@@ -3247,11 +3257,16 @@
       }
 
       .opp-card {
-        padding: 1rem;
+        padding: 1.15rem 1rem 1rem 3.75rem;
       }
 
       .opp-card-head {
         min-height: auto;
+      }
+
+      .opp-card-number {
+        top: 1.15rem;
+        left: 1rem;
       }
 
       .opp-name {
