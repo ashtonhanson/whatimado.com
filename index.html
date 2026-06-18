@@ -878,7 +878,21 @@
       display: block;
       color: rgba(36, 18, 53, .72);
       font-size: .72rem;
-      line-height: 1.4;
+      line-height: 1.45;
+    }
+
+    .ai-difference-item--map {
+      border-color: rgba(36, 18, 53, .2);
+      box-shadow: inset 0 0 0 1px rgba(36, 18, 53, .04);
+    }
+
+    .ai-difference-item--map strong::after {
+      content: " · not in ChatGPT";
+      color: rgba(36, 18, 53, .48);
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      text-transform: lowercase;
     }
 
     #screen-convo.active {
@@ -3681,20 +3695,20 @@
 
           <section class="ai-difference" aria-label="How whatimado is different from general AI chatbots">
             <p class="ai-difference-kicker">Not just another chatbot</p>
-            <h3 class="ai-difference-title">ChatGPT gives answers. Whatimado builds a path.</h3>
-            <p class="ai-difference-copy">General AI tools start with a blank chat box. Whatimado is built for one job: helping you turn your real situation into options, a map, and steps you can actually follow.</p>
+            <h3 class="ai-difference-title">ChatGPT gives text. Whatimado builds an interactive map.</h3>
+            <p class="ai-difference-copy">General AI tools leave you scrolling through paragraphs in a chat box. Whatimado turns your situation into paths you can see, click, and follow — a visual possibility map and step-by-step roadmaps that ChatGPT does not create.</p>
             <div class="ai-difference-grid">
               <div class="ai-difference-item">
                 <strong>Guided intake</strong>
-                <span>You do not need to know the perfect prompt. The flow pulls out what matters.</span>
+                <span>You do not need the perfect prompt. The flow pulls out what matters about your situation.</span>
               </div>
-              <div class="ai-difference-item">
-                <strong>Visual map</strong>
-                <span>Your options become a possibility map instead of a long generic answer.</span>
+              <div class="ai-difference-item ai-difference-item--map">
+                <strong>Interactive possibility map</strong>
+                <span>Your options appear as a visual, clickable map — not a wall of text. Explore paths, compare them, and open the one that fits.</span>
               </div>
               <div class="ai-difference-item">
                 <strong>Roadmap workspace</strong>
-                <span>Pick a path, track tasks, save notes, and keep asking for help as you go.</span>
+                <span>Pick a path, track tasks, save notes, and keep asking for help as you go — all in one place.</span>
               </div>
             </div>
           </section>
@@ -3704,7 +3718,7 @@
             <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion.</p>
             <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
             <div class="site-suggestions-footer">
-              <span class="site-suggestions-hint">Saved locally until we add a feedback inbox.</span>
+              <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
               <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
             </div>
             <p class="site-suggestions-msg" id="site-suggestion-msg" hidden></p>
@@ -6329,9 +6343,16 @@
       });
     }
 
-    function submitSiteSuggestion() {
+    function saveSuggestionLocally(text) {
+      const existing = JSON.parse(localStorage.getItem(SUGGESTIONS_KEY) || "[]");
+      existing.push({ text, at: Date.now(), synced: false });
+      localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(existing));
+    }
+
+    async function submitSiteSuggestion() {
       const input = $("#site-suggestion-input");
       const msg = $("#site-suggestion-msg");
+      const button = $("#site-suggestion-submit");
       const text = input?.value.trim();
       if (!text) {
         if (msg) {
@@ -6341,26 +6362,62 @@
         }
         return;
       }
+      if (button?.disabled) return;
 
-      try {
-        const existing = JSON.parse(localStorage.getItem(SUGGESTIONS_KEY) || "[]");
-        existing.push({ text, at: Date.now() });
-        localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(existing));
-      } catch {
-        if (msg) {
-          msg.hidden = false;
-          msg.classList.add("error");
-          msg.textContent = "Could not save — check browser storage settings.";
+      const originalLabel = button?.textContent || "Send suggestion";
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Sending...";
+      }
+      if (msg) msg.hidden = true;
+
+      const payload = {
+        suggestion: text,
+        session_id: getAnalyticsSessionId(),
+        user_id: state.currentUser?.id ?? null,
+        page_path: `${window.location.pathname}${window.location.hash || ""}`,
+        build_tag: getBuildTag()
+      };
+
+      let savedRemotely = false;
+      if (supabaseClient) {
+        const { error } = await supabaseClient.from("site_suggestions").insert(payload);
+        savedRemotely = !error;
+        if (error) console.error("Suggestion insert failed:", error);
+      }
+
+      if (!savedRemotely) {
+        try {
+          saveSuggestionLocally(text);
+        } catch {
+          if (msg) {
+            msg.hidden = false;
+            msg.classList.add("error");
+            msg.textContent = "Could not send your suggestion. Try again in a moment.";
+          }
+          if (button) {
+            button.disabled = false;
+            button.textContent = originalLabel;
+          }
+          return;
         }
-        return;
       }
 
       if (input) input.value = "";
-      trackEvent("suggestion_submitted", { suggestion_length: text.length });
+      trackEvent("suggestion_submitted", {
+        suggestion_length: text.length,
+        synced: savedRemotely
+      });
       if (msg) {
         msg.hidden = false;
         msg.classList.remove("error");
-        msg.textContent = "Thanks — suggestion saved.";
+        msg.textContent = savedRemotely
+          ? "Thanks — we got your suggestion."
+          : "Thanks — saved locally. We will sync when connection is back.";
+      }
+      if (button) {
+        button.disabled = false;
+        button.textContent = originalLabel;
       }
     }
 
