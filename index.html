@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-intake-flow-v2 -->
+<!-- whatimado build: 2026-06-17-init-fix-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-intake-flow-v2">
+  <meta name="whatimado-build" content="2026-06-17-init-fix-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1871,6 +1871,52 @@
       background: var(--plan-card-note-bg);
       font-size: .72rem;
       line-height: 1.45;
+    }
+
+    .opp-card {
+      scroll-margin-top: calc(var(--header-h) + 14px);
+    }
+
+    .opp-card.is-scroll-target {
+      animation: path-detail-flash 1.35s ease;
+    }
+
+    @keyframes path-detail-flash {
+      0%, 100% {
+        border-color: var(--plan-card-border);
+        box-shadow: var(--plan-card-shadow);
+      }
+      40% {
+        border-color: var(--theme-active-border);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-purple-dark) 22%, transparent), var(--plan-card-shadow);
+      }
+    }
+
+    .opp-card-actions {
+      margin-top: 1rem;
+      padding-top: .85rem;
+      border-top: 1px solid rgba(20, 30, 60, .1);
+    }
+
+    .opp-card-open-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      width: 100%;
+      border: 1px solid color-mix(in srgb, var(--brand-purple-dark) 78%, #ffffff);
+      border-radius: 10px;
+      padding: .62rem 1rem;
+      background: var(--brand-purple-dark);
+      color: #fff;
+      font-size: .82rem;
+      font-weight: 700;
+      transition: background .16s ease, transform .16s ease;
+    }
+
+    .opp-card-open-btn:hover {
+      background: color-mix(in srgb, var(--brand-purple-dark) 88%, #ffffff);
+      transform: translateY(-1px);
     }
 
     .roadmap-layout {
@@ -3755,7 +3801,7 @@
           <div class="map-heading">
             <p class="map-heading-kicker">Generated paths</p>
             <h2 class="page-title">Your <em>Possibility Map</em></h2>
-            <p class="page-subtitle">Tap a path to turn it into a step-by-step roadmap.</p>
+            <p class="page-subtitle">Tap a numbered path above to read the full details below, then open a step-by-step roadmap.</p>
           </div>
           <button class="back-btn" id="reset-btn">Start over</button>
         </div>
@@ -5012,6 +5058,7 @@
         if (state.roadmapKey && !state.allRoadmaps[state.roadmapKey]) {
           state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
         }
+        const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
         $("#nav-roadmap-btn").hidden = false;
         $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
         $("#roadmap-title").textContent = state.currentIdea.title || "";
@@ -5675,6 +5722,27 @@
       });
     }
 
+    let pathDetailScrollTimer = null;
+
+    function scrollToPathDetail(index) {
+      const card = document.getElementById(`opp-detail-${index}`);
+      if (!card || !$("#screen-map")?.classList.contains("active")) return;
+
+      trackEvent("path_detail_scrolled", { path_index: index });
+      setMapPathHighlight(index, true);
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      card.classList.remove("is-scroll-target");
+      void card.offsetWidth;
+      card.classList.add("is-scroll-target");
+
+      clearTimeout(pathDetailScrollTimer);
+      pathDetailScrollTimer = setTimeout(() => {
+        setMapPathHighlight(index, false);
+        card.classList.remove("is-scroll-target");
+      }, 1600);
+    }
+
     function bindMapPathHover(element, index) {
       element.dataset.pathIndex = String(index);
       element.addEventListener("mouseenter", () => setMapPathHighlight(index, true));
@@ -5723,33 +5791,36 @@
         node.classList.add("map-node");
         node.setAttribute("role", "button");
         node.setAttribute("tabindex", "0");
-        node.setAttribute("aria-label", `Open path ${number}: ${idea.title || "Opportunity"}`);
+        node.setAttribute("aria-label", `Read details for path ${number}: ${idea.title || "Opportunity"}`);
         node.style.cursor = "pointer";
         node.style.color = color;
         node.innerHTML = `
           <circle class="map-node-circle" cx="${x}" cy="${y}" r="32" fill="${color}" fill-opacity=".18" stroke="${color}" stroke-width="1.5"></circle>
           <text class="map-node-text" x="${x}" y="${y + 5}" text-anchor="middle" fill="${color}" font-size="14" font-weight="800">${number}</text>`;
-        node.addEventListener("click", () => viewRoadmap(idea, index));
+        node.addEventListener("click", () => scrollToPathDetail(index));
         node.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            viewRoadmap(idea, index);
+            scrollToPathDetail(index);
           }
         });
         bindMapPathHover(node, index);
         nodes.append(node);
 
         const label = document.createElement("button");
+        label.type = "button";
         label.className = "opp-label surface-card";
+        label.setAttribute("aria-label", `Read details for path ${number}: ${idea.title || "Opportunity"}`);
         label.innerHTML = `
           <div class="opp-label-title"><span class="opp-number">${number}</span>${escapeHtml(idea.title)}</div>`;
         label.querySelector(".opp-number").style.background = color;
-        label.addEventListener("click", () => viewRoadmap(idea, index));
+        label.addEventListener("click", () => scrollToPathDetail(index));
         bindMapPathHover(label, index);
         labels.append(label);
 
-        const card = document.createElement("button");
+        const card = document.createElement("article");
         card.className = "opp-card";
+        card.id = `opp-detail-${index}`;
         card.innerHTML = `
           <div class="opp-card-inner">
             <span class="opp-card-number">${number}</span>
@@ -5765,10 +5836,16 @@
             ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
           </div>
               ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
+              <div class="opp-card-actions">
+                <button type="button" class="opp-card-open-btn">Open step-by-step roadmap</button>
+              </div>
             </div>
           </div>`;
         card.querySelector(".opp-card-number").style.background = color;
-        card.addEventListener("click", () => viewRoadmap(idea, index));
+        card.querySelector(".opp-card-open-btn").addEventListener("click", (event) => {
+          event.stopPropagation();
+          viewRoadmap(idea, index);
+        });
         bindMapPathHover(card, index);
         grid.append(card);
       });
@@ -7045,22 +7122,27 @@
     }
 
     window.addEventListener("load", async () => {
-      initColorScheme();
-      bindEvents();
-      syncHeaderHeight();
-      initNetworkCanvas();
-      initDonation();
-      await initAuth();
-      trackEvent("app_loaded", {
-        has_progress: hasSavableProgress(),
-        ideas_count: state.ideas.length,
-        last_screen: state.lastScreen,
-        has_user: Boolean(state.currentUser)
-      });
-      setTimeout(() => {
-        $("#loader").classList.add("hidden");
-        setTimeout(() => $("#loader").remove(), 650);
-      }, 650);
+      try {
+        initColorScheme();
+        bindEvents();
+        syncHeaderHeight();
+        initNetworkCanvas();
+        initDonation();
+        await initAuth();
+        trackEvent("app_loaded", {
+          has_progress: hasSavableProgress(),
+          ideas_count: state.ideas.length,
+          last_screen: state.lastScreen,
+          has_user: Boolean(state.currentUser)
+        });
+      } catch (error) {
+        console.error("App init failed:", error);
+      } finally {
+        setTimeout(() => {
+          $("#loader")?.classList.add("hidden");
+          setTimeout(() => $("#loader")?.remove(), 650);
+        }, 650);
+      }
     });
   </script>
 </body>
