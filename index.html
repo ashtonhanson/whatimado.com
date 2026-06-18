@@ -1155,14 +1155,6 @@
     }
 
     .roadmap-back-btn {
-      margin-bottom: 0;
-    }
-
-    .roadmap-header-actions {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: .65rem;
       margin-bottom: 1.35rem;
     }
 
@@ -2277,7 +2269,6 @@
     }
 
     #screen-roadmap .roadmap-back-btn,
-    #screen-roadmap .roadmap-regen-btn,
     #screen-roadmap .complete-action-btn {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg);
@@ -2286,7 +2277,6 @@
     }
 
     #screen-roadmap .roadmap-back-btn:hover,
-    #screen-roadmap .roadmap-regen-btn:hover,
     #screen-roadmap .complete-action-btn:hover {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg-hover);
@@ -3807,13 +3797,10 @@
 
       <div class="page roadmap-layout roadmap-page" id="roadmap-page">
         <div>
-          <div class="roadmap-header-actions">
-            <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
-              Back to map
-            </button>
-            <button class="back-btn roadmap-regen-btn" id="regenerate-roadmap-btn" type="button">Regenerate roadmap</button>
-          </div>
+          <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+            Back to map
+          </button>
 
           <div class="roadmap-content" id="roadmap-content">
           <div class="roadmap-type" id="roadmap-type"></div>
@@ -4155,30 +4142,77 @@
       return (stage.tasks || []).map((text, taskIndex) => ({ stageIndex, taskIndex, text }));
     }
 
+    function isTaskChangeRequest(question) {
+      const q = question.toLowerCase();
+      return (
+        /\b(change|switch|swap|replace|rewrite|update|instead of|rather than|use .+ instead|can we use|could we use|make it|make this)\b/.test(q) ||
+        /\b(not .+ but|don't want|do not want)\b/.test(q)
+      );
+    }
+
+    function inferAdjustScope(taskId, question) {
+      const parsed = parseTaskId(taskId);
+      if (!parsed) return "current";
+
+      const q = question.toLowerCase();
+      if (/\b(all tasks|following tasks|rest of the tasks|other tasks|every task|remaining tasks|subsequent tasks)\b/.test(q)) {
+        return "following";
+      }
+
+      const fromCurrent = getTasksFromPosition(parsed.stageIndex, parsed.taskIndex);
+      if (fromCurrent.length <= 1) return "current";
+
+      const laterTasks = fromCurrent.slice(1);
+      const mentionsReddit = (text) => /\breddit\b|\bsubreddit\b|r\//.test(text.toLowerCase());
+      const mentionsFacebook = (text) => /\bfacebook\b|\bfb group\b|\bfb page\b/.test(text.toLowerCase());
+
+      if (/\bfacebook\b/.test(q) && laterTasks.some((task) => mentionsReddit(task.text))) return "following";
+      if (/\breddit\b/.test(q) && laterTasks.some((task) => mentionsFacebook(task.text))) return "following";
+
+      return "current";
+    }
+
     function getAdjustScopeDescription(scope, targets) {
       if (scope === "current") return "Rewrite ONLY the current task (#1 below).";
-      if (scope === "stage") return `Rewrite ALL ${targets.length} tasks in the current stage.`;
       return `Rewrite ALL ${targets.length} tasks below (#1 through #${targets.length}), starting from the current task through every following task.`;
     }
 
     function getAdjustSuccessMessage(scope, targets) {
-      if (scope === "current") return "Done — I updated this task to better match your path.";
-      if (scope === "stage") return `Done — I updated all ${targets.length} tasks in this stage.`;
+      if (scope === "current") return "Done — I updated this task to match what you asked for.";
       return `Done — I updated this task and ${targets.length - 1} following task${targets.length - 1 === 1 ? "" : "s"}.`;
     }
 
-    const TASK_ADJUST_LABELS = {
-      current: "Update this task",
-      stage: "Update entire stage",
-      following: "Update this & following tasks"
-    };
+    function normalizeTaskTextItem(item) {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") {
+        return String(item.task || item.text || item.description || item.title || "").trim();
+      }
+      return String(item ?? "").trim();
+    }
 
     function parseTaskTextArray(response, expectedCount) {
       if (!response?.trim()) return null;
-      const parsed = extractJsonArray(response, null);
-      if (!Array.isArray(parsed) || parsed.length !== expectedCount) return null;
-      const texts = parsed.map((item) => String(item).trim()).filter(Boolean);
-      return texts.length === expectedCount ? texts : null;
+
+      let parsed = extractJsonArray(response, null);
+      if (!Array.isArray(parsed)) {
+        const fenced = response.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        if (fenced) parsed = extractJsonArray(fenced[1], null);
+      }
+      if (!Array.isArray(parsed)) return null;
+
+      let texts = parsed.map(normalizeTaskTextItem).filter(Boolean);
+      if (texts.length === expectedCount) return texts;
+      if (texts.length > expectedCount) return texts.slice(0, expectedCount);
+
+      if (expectedCount > 1 && texts.length === 1 && texts[0].includes("\n")) {
+        const split = texts[0]
+          .split(/\n+/)
+          .map((line) => line.replace(/^\d+[\).\s-]+/, "").trim())
+          .filter(Boolean);
+        if (split.length === expectedCount) return split;
+      }
+
+      return null;
     }
 
     function buildTaskAdjustPrompt(taskId, scope, thread, targets, context) {
@@ -4205,12 +4239,14 @@
         `Update scope: ${getAdjustScopeDescription(scope, targets)}\n\n` +
         `Tasks to rewrite:\n${targetList}\n\n` +
         `Rules:\n` +
+        `- Apply the user's requested change directly. If they ask for Facebook instead of Reddit, replace Reddit/subreddit references with Facebook groups/pages.\n` +
         `- Use the chat above to understand what does not fit.\n` +
         `- Each rewritten task must be 1-2 sentences, specific, and tied to this person's situation.\n` +
         `- Name platforms, tools, audiences, numbers, or time boxes when relevant.\n` +
         `- Do NOT write generic tasks like "tell five people" or "create an online presence".\n` +
-        `- Return exactly ${targets.length} task string${targets.length === 1 ? "" : "s"} in the same order.\n\n` +
-        `Respond only with a raw JSON array of strings, e.g. ["rewritten task 1", "rewritten task 2"]`
+        `- Return exactly ${targets.length} task string${targets.length === 1 ? "" : "s"} in the same order.\n` +
+        `- Output ONLY a raw JSON array of strings with no markdown, no commentary.\n\n` +
+        `Example: ["Rewritten task one", "Rewritten task two"]`
       );
     }
 
@@ -4753,15 +4789,6 @@
         const messages = (thread.messages || []).map((message) => `
           <div class="task-thread-msg ${message.role} rich-text">${formatRichText(message.content)}</div>
         `).join("");
-        const hasAnswer = (thread.messages || []).some(
-          (message) => message.role === "assistant" && message.content !== "Thinking..."
-        );
-        const actionsHtml = hasAnswer ? `
-          <div class="task-thread-actions">
-            <button type="button" class="task-adjust-btn" data-task-id="${taskId}" data-thread-id="${thread.id}" data-scope="current">Update this task</button>
-            <button type="button" class="task-adjust-btn" data-task-id="${taskId}" data-thread-id="${thread.id}" data-scope="stage">Update entire stage</button>
-            <button type="button" class="task-adjust-btn" data-task-id="${taskId}" data-thread-id="${thread.id}" data-scope="following">Update this &amp; following tasks</button>
-          </div>` : "";
 
         return `
           <div class="task-thread-expanded" data-thread-id="${thread.id}">
@@ -4770,7 +4797,6 @@
               <button type="button" class="task-thread-collapse" data-task-id="${taskId}" data-thread-id="${thread.id}" aria-label="Collapse chat">−</button>
             </div>
             <div class="task-thread-msgs rich-text">${messages}</div>
-            ${actionsHtml}
           </div>`;
       }).join("");
     }
@@ -4795,16 +4821,6 @@
       if (collapseBtn) {
         collapseAllThreads(null);
         schedulePersist();
-        return;
-      }
-      const adjustBtn = event.target.closest(".task-adjust-btn");
-      if (adjustBtn) {
-        adjustTasksFromThread(
-          adjustBtn.dataset.taskId,
-          adjustBtn.dataset.threadId,
-          adjustBtn.dataset.scope,
-          adjustBtn
-        );
       }
     }
 
@@ -5353,32 +5369,6 @@
       }
     }
 
-    async function regenerateRoadmap() {
-      if (!state.currentIdea || !state.roadmapKey) return;
-      const button = $("#regenerate-roadmap-btn");
-      if (button?.disabled) return;
-      if (!confirm("Regenerate this roadmap? Task notes and AI chats will be cleared, but your overall conversation stays.")) return;
-
-      const label = button.textContent;
-      button.disabled = true;
-      button.textContent = "Regenerating...";
-
-      const ideaIndex = state.ideas.findIndex((idea) => slugify(idea.title) === state.roadmapKey);
-      delete state.allRoadmaps[state.roadmapKey];
-      delete state.allTaskChats[state.roadmapKey];
-      state.roadmapStages = [];
-      state.activeTaskId = null;
-      state.expandedThreadId = null;
-
-      try {
-        await viewRoadmap(state.currentIdea, ideaIndex >= 0 ? ideaIndex : 0, { force: true });
-        trackEvent("roadmap_regenerated", { roadmap_key: state.roadmapKey });
-      } finally {
-        button.disabled = false;
-        button.textContent = label;
-      }
-    }
-
     function bindTaskPersistence() {
       $$(".task-item").forEach((item) => {
         const taskId = item.dataset.taskId;
@@ -5426,7 +5416,7 @@
               <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
               <div class="task-threads" id="threads-${id}"></div>
               <div class="task-ask-row">
-                <textarea class="task-question" id="question-${id}" rows="1" placeholder="Ask AI about this task..."></textarea>
+                <textarea class="task-question" id="question-${id}" rows="1" placeholder="Ask a question or request a change (e.g. use Facebook instead of Reddit)..."></textarea>
                 <button class="task-ask-btn" type="button" data-task-id="${id}" data-task="${escapeHtml(task)}">Ask</button>
               </div>
             </div>`;
@@ -5561,88 +5551,59 @@
       });
     }
 
-    async function adjustTasksFromThread(taskId, threadId, scope, button) {
+    async function applyTaskAdjustments(taskId, threadId, scope) {
       const parsed = parseTaskId(taskId);
-      if (!parsed || !button || button.disabled) return;
+      if (!parsed) return { ok: false };
 
       const taskData = getRoadmapTaskData(taskId);
       const thread = taskData.threads?.find((item) => item.id === threadId);
-      if (!thread) return;
+      if (!thread) return { ok: false };
 
       const targets = scope === "current"
         ? getTasksFromPosition(parsed.stageIndex, parsed.taskIndex).slice(0, 1)
-        : scope === "stage"
-          ? getTasksInStage(parsed.stageIndex)
-          : getTasksFromPosition(parsed.stageIndex, parsed.taskIndex);
-      if (!targets.length) return;
+        : getTasksFromPosition(parsed.stageIndex, parsed.taskIndex);
+      if (!targets.length) return { ok: false };
 
-      const originalLabel = button.textContent;
-      $$(".task-adjust-btn").forEach((item) => { item.disabled = true; });
-      button.textContent = "Updating...";
       trackEvent("task_adjust_requested", {
         task_id: taskId,
         scope,
         target_count: targets.length
       });
 
-      try {
-        const response = await callAdvisor(
-          buildTaskAdjustPrompt(taskId, scope, thread, targets, getConversationSummary()),
-          1400
-        );
-        const newTexts = parseTaskTextArray(response, targets.length);
-        if (!newTexts) throw new Error("Invalid task update response");
+      const response = await callAdvisor(
+        buildTaskAdjustPrompt(taskId, scope, thread, targets, getConversationSummary()),
+        2000
+      );
+      const newTexts = parseTaskTextArray(response, targets.length);
+      if (!newTexts) return { ok: false, targets, scope };
 
-        targets.forEach((target, index) => {
-          state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = newTexts[index];
-        });
+      targets.forEach((target, index) => {
+        state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = newTexts[index];
+      });
 
-        if (state.roadmapKey) {
-          state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
-        }
-
-        renderStages(state.roadmapStages);
-        expandThread(taskId, threadId);
-
-        const refreshedTaskData = getRoadmapTaskData(taskId);
-        const refreshedThread = refreshedTaskData.threads?.find((item) => item.id === threadId);
-        if (refreshedThread) {
-          refreshedThread.messages.push({
-            role: "assistant",
-            content: getAdjustSuccessMessage(scope, targets)
-          });
-          renderTaskThreads(taskId);
-        }
-
-        schedulePersist();
-        trackEvent("tasks_adjusted", {
-          task_id: taskId,
-          scope,
-          count: targets.length
-        });
-      } catch (error) {
-        console.error(error);
-        thread.messages.push({
-          role: "assistant",
-          content: "Could not update those tasks right now. Try again, or use Regenerate roadmap for a full refresh."
-        });
-        renderTaskThreads(taskId);
-        schedulePersist();
-      } finally {
-        $$(".task-adjust-btn").forEach((item) => {
-          item.disabled = false;
-          if (TASK_ADJUST_LABELS[item.dataset.scope]) {
-            item.textContent = TASK_ADJUST_LABELS[item.dataset.scope];
-          }
-        });
-        if (button.textContent === "Updating...") button.textContent = originalLabel;
+      if (state.roadmapKey) {
+        state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
       }
+
+      renderStages(state.roadmapStages);
+      expandThread(taskId, threadId);
+      schedulePersist();
+      trackEvent("tasks_adjusted", {
+        task_id: taskId,
+        scope,
+        count: targets.length
+      });
+
+      return { ok: true, targets, scope };
     }
 
     async function askTask(taskId, taskText) {
       const questionEl = $(`#question-${taskId}`);
+      const askBtn = document.querySelector(`.task-ask-btn[data-task-id="${taskId}"]`);
       const question = questionEl?.value.trim();
       if (!question) return;
+      if (askBtn?.disabled) return;
+
       trackEvent("task_ai_question_submitted", {
         task_id: taskId,
         question_length: question.length
@@ -5671,28 +5632,50 @@
 
       thread.messages.push({ role: "user", content: question });
       questionEl.value = "";
+      if (askBtn) askBtn.disabled = true;
       renderTaskThreads(taskId);
       schedulePersist();
 
-      thread.messages.push({ role: "assistant", content: "Thinking..." });
+      const wantsChange = isTaskChangeRequest(question);
+      const pendingMessage = wantsChange ? "Got it — updating your task now..." : "Thinking...";
+      thread.messages.push({ role: "assistant", content: pendingMessage });
       renderTaskThreads(taskId);
 
-      const threadHistory = thread.messages
-        .filter((message) => message.content !== "Thinking...")
-        .map((message) => `${message.role === "user" ? "User" : "Advisor"}: ${message.content}`)
-        .join("\n");
+      if (wantsChange) {
+        const scope = inferAdjustScope(taskId, question);
+        const result = await applyTaskAdjustments(taskId, thread.id, scope);
+        thread.messages = thread.messages.filter((message) => message.content !== pendingMessage);
+        thread.messages.push({
+          role: "assistant",
+          content: result.ok
+            ? getAdjustSuccessMessage(scope, result.targets)
+            : "I understood what you want changed, but couldn't rewrite the task right now. Try asking again in a moment."
+        });
+        trackEvent("task_ai_change_applied", {
+          task_id: taskId,
+          scope,
+          ok: result.ok
+        });
+      } else {
+        const threadHistory = thread.messages
+          .filter((message) => message.content !== "Thinking...")
+          .map((message) => `${message.role === "user" ? "User" : "Advisor"}: ${message.content}`)
+          .join("\n");
 
-      const text = await callAdvisor(
-        `You are whatimado, a practical task coach. Answer helpfully in 2-5 sentences.\nWhen mentioning websites, tools, or platforms, always include the full URL starting with https:// so the user can click it.\nIf the task does not fit their situation, acknowledge that and suggest what should change.\nAfter you reply, they can click "Update this task", "Update entire stage", or "Update this & following tasks" to rewrite the roadmap steps.\n\nIdea: ${$("#roadmap-title").textContent}\nTask: ${taskText}\n\nConversation so far:\n${threadHistory}`,
-        450
-      );
+        const text = await callAdvisor(
+          `You are whatimado, a practical task coach. Answer helpfully in 2-5 sentences.\nWhen mentioning websites, tools, or platforms, always include the full URL starting with https:// so the user can click it.\nIf the user asks to change the task itself, tell them to rephrase as a change request (for example: "change this to Facebook instead of Reddit") and the task will update automatically.\n\nIdea: ${$("#roadmap-title").textContent}\nTask: ${taskText}\n\nConversation so far:\n${threadHistory}`,
+          450
+        );
 
-      thread.messages = thread.messages.filter((message) => message.content !== "Thinking...");
-      thread.messages.push({
-        role: "assistant",
-        content: text || "Try one small step today, note what happens, and ask a follow-up if you get stuck."
-      });
-      trackEvent("task_ai_answer_shown", { task_id: taskId });
+        thread.messages = thread.messages.filter((message) => message.content !== "Thinking...");
+        thread.messages.push({
+          role: "assistant",
+          content: text || "Try one small step today, note what happens, and ask a follow-up if you get stuck."
+        });
+        trackEvent("task_ai_answer_shown", { task_id: taskId });
+      }
+
+      if (askBtn) askBtn.disabled = false;
       renderTaskThreads(taskId);
       schedulePersist();
     }
@@ -6471,7 +6454,6 @@
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
       $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
-      $("#regenerate-roadmap-btn")?.addEventListener("click", regenerateRoadmap);
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
       $("#complete-reset-btn")?.addEventListener("click", () => {
         if (confirm("Start fresh? This clears the current conversation, map, and roadmap.")) {
