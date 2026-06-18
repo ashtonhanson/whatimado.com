@@ -71,9 +71,9 @@
       --theme-active-bg: rgba(124, 111, 205, .26);
       --theme-active-border: rgba(155, 143, 224, .36);
       --brand-purple-dark: #241235;
-      --pastel-yellow-bg: linear-gradient(180deg, #fffef4 0%, #fff8d8 100%);
-      --pastel-yellow-bg-hover: linear-gradient(180deg, #ffffff 0%, #fffbe4 100%);
-      --pastel-yellow-border: rgba(255, 252, 226, .95);
+      --pastel-yellow-bg: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+      --pastel-yellow-bg-hover: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+      --pastel-yellow-border: rgba(255, 255, 255, .95);
       --light-blue-bg: linear-gradient(180deg, #c7edff 0%, #93cfee 100%);
       --light-blue-bg-hover: linear-gradient(180deg, #ddf5ff 0%, #adddf5 100%);
       --light-blue-border: rgba(216, 245, 255, .9);
@@ -864,7 +864,7 @@
       border: 1px solid rgba(36, 18, 53, .12);
       border-radius: 12px;
       padding: .7rem;
-      background: rgba(255, 255, 255, .22);
+      background: #fff;
     }
 
     .ai-difference-item strong {
@@ -1350,7 +1350,7 @@
       align-items: center;
       justify-content: center;
       gap: .65rem;
-      margin: 1.25rem 0 .9rem;
+      margin: 1.45rem 0 1rem;
       flex-wrap: wrap;
     }
 
@@ -1403,14 +1403,23 @@
     .map-plans-divider-label {
       flex: 0 0 auto;
       margin: 0;
-      padding: 0 .05rem;
-      color: rgba(218, 226, 255, .76);
-      font-size: .62rem;
+      padding: 0 .2rem;
+      color: #e8f4ff;
+      font-size: clamp(1.25rem, 2.4vw, 1.8rem);
       font-weight: 800;
-      letter-spacing: .08em;
-      text-transform: uppercase;
+      letter-spacing: -.03em;
+      text-transform: none;
       text-align: center;
       white-space: nowrap;
+    }
+
+    .map-plans-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      flex: 0 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .site-suggestions {
@@ -1818,7 +1827,7 @@
     .opp-why {
       margin-top: .7rem;
       border-left: 2px solid rgba(124, 111, 205, .85);
-      border-radius: 0 10px 10px 0;
+      border-radius: 0;
       padding: .55rem .7rem;
       color: var(--plan-card-muted);
       background: var(--plan-card-note-bg);
@@ -3664,9 +3673,11 @@
 
         <div class="map-plans-toolbar">
           <span class="map-plans-toolbar-line" aria-hidden="true"></span>
-          <button class="back-btn map-toolbar-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
           <span class="map-plans-divider-label">Full path details</span>
-          <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Chat to alter path</button>
+          <div class="map-plans-actions">
+            <button class="back-btn map-toolbar-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
+            <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Chat to alter path</button>
+          </div>
           <span class="map-plans-toolbar-line" aria-hidden="true"></span>
         </div>
 
