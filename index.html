@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-init-fix-v1 -->
+<!-- whatimado build: 2026-06-17-task-ask-v2 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-init-fix-v1">
+  <meta name="whatimado-build" content="2026-06-17-task-ask-v2">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4442,11 +4442,20 @@
     }
 
     function isTaskChangeRequest(question) {
-      const q = question.toLowerCase();
+      const q = question.toLowerCase().trim();
+      const looksLikeQuestion = /^(how|what|why|when|where|who|which|should i|is there|are there|can you explain|could you explain|help me understand|any tips|any advice)\b/.test(q);
+
+      const strongChangeSignal =
+        /\b(change this|change the task|change it to|rewrite this|rewrite the task|update this task|update the task|switch to|swap .+ for|replace .+ with|use .+ instead of|instead of .+ use)\b/.test(q) ||
+        /\b(not .+ but .+|don't want .+ want|do not want .+ want)\b/.test(q);
+
+      if (strongChangeSignal) return true;
+      if (looksLikeQuestion && !/\b(change|rewrite|update|replace|switch|instead of)\b/.test(q)) return false;
+
       return (
-        /\b(change|switch|swap|replace|rewrite|update|instead of|rather than|use .+ instead|can we use|could we use|make it|make this)\b/.test(q) ||
-        /\b(not .+ but|don't want|do not want)\b/.test(q)
-      );
+        /\b(change|switch|swap|replace|rewrite|update|instead of|rather than|use .+ instead|can we use|could we use)\b/.test(q) &&
+        !/\?\s*$/.test(q)
+      ) || /\b(make this task|make the task)\b/.test(q);
     }
 
     function inferAdjustScope(taskId, question) {
@@ -4562,6 +4571,61 @@
     function rewriteTasksLocally(targets, question) {
       const rewritten = targets.map((target) => tryLocalTaskRewrite(target.text, question));
       return rewritten.every(Boolean) ? rewritten : null;
+    }
+
+    function buildCompactTaskCoachPrompt(taskText, question) {
+      return (
+        `You are whatimado, a practical task coach. Answer in 2-5 specific sentences.\n\n` +
+        `Task: ${taskText}\nQuestion: ${question}\n\n` +
+        `Give concrete help for this exact question — not generic motivation. Include https:// URLs when naming websites.`
+      );
+    }
+
+    function buildTaskCoachPrompt({ taskText, thread, question, context, stage }) {
+      const threadHistory = (thread.messages || [])
+        .filter((message) => !["Thinking...", "Got it — updating your task now..."].includes(message.content))
+        .map((message) => `${message.role === "user" ? "User" : "Advisor"}: ${message.content}`)
+        .join("\n");
+      const contextTail = context.length > 1400 ? context.slice(-1400) : context;
+
+      return (
+        `You are whatimado, a practical task coach helping someone execute a roadmap step.\n\n` +
+        `Path: ${state.currentIdea?.title || $("#roadmap-title")?.textContent || "their plan"}\n` +
+        `${state.currentIdea?.tagline ? `Path summary: ${state.currentIdea.tagline}\n` : ""}` +
+        `${stage?.label ? `Stage: ${stage.label}\n` : ""}` +
+        `${stage?.desc ? `Stage goal: ${stage.desc}\n` : ""}` +
+        `Current task: ${taskText}\n\n` +
+        `Latest question: ${question}\n\n` +
+        (threadHistory ? `Task chat so far:\n${threadHistory}\n\n` : "") +
+        `Broader conversation context:\n${contextTail}\n\n` +
+        `Answer helpfully in 2-5 sentences. Be specific to THIS task and THIS question.\n` +
+        `When mentioning websites, tools, or platforms, include full https:// URLs.\n` +
+        `If they want to change the task wording, tell them to say what to change (for example: "change Reddit to Facebook") and the task will update automatically.\n` +
+        `Do NOT reply with vague advice like "try one small step today" unless that is truly the best specific answer.`
+      );
+    }
+
+    function getTaskAnswerFallback(question, taskText) {
+      return (
+        `I couldn't get a full answer just now for "${abbreviateQuestion(question, 72)}". ` +
+        `Try sending the question again in a moment. For this step — "${abbreviateQuestion(taskText, 90)}" — ` +
+        `pick one concrete 30-minute action, do it, and note what happened so we can refine from there.`
+      );
+    }
+
+    async function answerTaskQuestion(taskId, taskText, thread, question) {
+      const parsed = parseTaskId(taskId);
+      const stage = parsed ? state.roadmapStages[parsed.stageIndex] : null;
+      const context = getConversationSummary();
+
+      const fullPrompt = buildTaskCoachPrompt({ taskText, thread, question, context, stage });
+      let text = await callAdvisor(fullPrompt, 900);
+      if (text) return { text, source: "ai-full" };
+
+      text = await callAdvisor(buildCompactTaskCoachPrompt(taskText, question), 700);
+      if (text) return { text, source: "ai-compact" };
+
+      return { text: getTaskAnswerFallback(question, taskText), source: "fallback" };
     }
 
     function buildCompactTaskAdjustPrompt(targets, userRequest) {
@@ -5382,6 +5446,16 @@
       scrollConversation();
     }
 
+    function extractAdvisorText(data) {
+      if (!data?.content) return "";
+      if (typeof data.content === "string") return data.content.trim();
+      return (data.content || [])
+        .filter((block) => block?.type === "text" && block.text)
+        .map((block) => block.text)
+        .join("")
+        .trim();
+    }
+
     async function callAdvisor(prompt, maxTokens = 700) {
       try {
         const response = await fetch("/api/claude", {
@@ -5394,15 +5468,13 @@
           })
         });
         const data = await response.json();
-        if (!response.ok || data.error) {
+        if (!response.ok || data.type === "error" || data.error) {
           console.error("Advisor API error:", data.error || data);
           return "";
         }
-        return (data.content || [])
-          .filter((block) => block.type === "text")
-          .map((block) => block.text)
-          .join("")
-          .trim();
+        const text = extractAdvisorText(data);
+        if (!text) console.warn("Advisor API returned no text:", data);
+        return text;
       } catch (error) {
         console.error("Advisor request failed:", error);
         return "";
@@ -6279,22 +6351,16 @@
           ok: result.ok
         });
       } else {
-        const threadHistory = thread.messages
-          .filter((message) => message.content !== "Thinking...")
-          .map((message) => `${message.role === "user" ? "User" : "Advisor"}: ${message.content}`)
-          .join("\n");
-
-        const text = await callAdvisor(
-          `You are whatimado, a practical task coach. Answer helpfully in 2-5 sentences.\nWhen mentioning websites, tools, or platforms, always include the full URL starting with https:// so the user can click it.\nIf the user asks to change the task itself, tell them to rephrase as a change request (for example: "change this to Facebook instead of Reddit") and the task will update automatically.\n\nIdea: ${$("#roadmap-title").textContent}\nTask: ${taskText}\n\nConversation so far:\n${threadHistory}`,
-          450
-        );
-
+        const answer = await answerTaskQuestion(taskId, taskText, thread, question);
         thread.messages = thread.messages.filter((message) => message.content !== "Thinking...");
         thread.messages.push({
           role: "assistant",
-          content: text || "Try one small step today, note what happens, and ask a follow-up if you get stuck."
+          content: answer.text
         });
-        trackEvent("task_ai_answer_shown", { task_id: taskId });
+        trackEvent("task_ai_answer_shown", {
+          task_id: taskId,
+          source: answer.source
+        });
       }
 
       if (askBtn) askBtn.disabled = false;
