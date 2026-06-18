@@ -1,10 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-color-picker-v1 -->
+<!-- whatimado build: 2026-06-17-task-update-v2 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-  <meta name="whatimado-build" content="2026-06-17-color-picker-v1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="whatimado-build" content="2026-06-17-task-update-v2">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -2189,6 +2190,20 @@
 
     .task-item:focus-within {
       border-color: rgba(124, 111, 205, .42);
+    }
+
+    .task-item--updated {
+      animation: task-updated-flash 1.5s ease;
+    }
+
+    #screen-roadmap .task-item--updated {
+      border-color: var(--light-blue-border);
+      box-shadow: 0 0 0 2px rgba(147, 207, 238, .45);
+    }
+
+    @keyframes task-updated-flash {
+      0% { box-shadow: 0 0 0 0 rgba(147, 207, 238, .55); }
+      100% { box-shadow: 0 0 0 0 rgba(147, 207, 238, 0); }
     }
 
     .task-top {
@@ -5551,6 +5566,45 @@
       updateMomentum();
     }
 
+    function highlightUpdatedTasks(taskIds) {
+      taskIds.forEach((taskId) => {
+        const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+        if (!item) return;
+        item.classList.add("task-item--updated");
+        setTimeout(() => item.classList.remove("task-item--updated"), 1800);
+      });
+
+      const first = document.querySelector(`.task-item[data-task-id="${taskIds[0]}"]`);
+      if (!first) return;
+
+      requestAnimationFrame(() => {
+        first.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+
+    function applyTaskTextUpdates(targets, newTexts) {
+      targets.forEach((target, index) => {
+        const text = newTexts[index];
+        state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = text;
+        const id = `task-${target.stageIndex}-${target.taskIndex}`;
+        const label = document.querySelector(`label.task-text[for="${id}"]`);
+        const askBtn = document.querySelector(`.task-ask-btn[data-task-id="${id}"]`);
+        if (label) label.textContent = text;
+        if (askBtn) askBtn.dataset.task = text;
+      });
+
+      if (state.roadmapKey) {
+        state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
+      }
+
+      const firstTarget = targets[0];
+      if (firstTarget) {
+        $("#stage-list")?.children[firstTarget.stageIndex]?.classList.add("open");
+      }
+
+      highlightUpdatedTasks(targets.map((target) => `task-${target.stageIndex}-${target.taskIndex}`));
+    }
+
     function updateMomentum() {
       const checks = $$(".task-check");
       const done = checks.filter((check) => check.checked).length;
@@ -5680,18 +5734,10 @@
       const resolved = await resolveTaskRewrite(taskId, scope, thread, targets);
       if (!resolved) return { ok: false, targets, scope };
 
-      resolved.texts.forEach((text, index) => {
-        const target = targets[index];
-        state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = text;
-      });
-
-      if (state.roadmapKey) {
-        state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
-      }
-
-      renderStages(state.roadmapStages);
+      applyTaskTextUpdates(targets, resolved.texts);
       expandThread(taskId, threadId);
-      schedulePersist();
+      document.activeElement?.blur?.();
+      await persistSession({ silent: true });
       trackEvent("tasks_adjusted", {
         task_id: taskId,
         scope,
@@ -6428,6 +6474,23 @@
 
       window.addEventListener("resize", () => {
         if (window.innerWidth > 760) closeMenu();
+      });
+
+      window.addEventListener("pageshow", (event) => {
+        if (!event.persisted) return;
+        try {
+          const raw = localStorage.getItem(getStorageKey());
+          if (!raw) return;
+          const data = JSON.parse(raw);
+          if (!Array.isArray(data?.roadmapStages) || !data.roadmapStages.length) return;
+          applySession(data);
+          if (state.lastScreen === "roadmap" && $("#screen-roadmap")?.classList.contains("active")) {
+            renderStages(state.roadmapStages);
+            renderAllTaskThreads();
+          }
+        } catch {
+          /* ignore restore errors */
+        }
       });
     }
 
