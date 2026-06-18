@@ -4215,6 +4215,91 @@
       return null;
     }
 
+    function getLastUserMessage(thread) {
+      return [...(thread?.messages || [])]
+        .reverse()
+        .find((message) => message.role === "user" && message.content?.trim())
+        ?.content
+        .trim() || "";
+    }
+
+    function tryLocalTaskRewrite(text, question) {
+      const q = question.toLowerCase();
+      if (!text || !question) return null;
+
+      if (/\bfacebook\b/.test(q) && /\b(reddit|subreddit|r\/)/i.test(text)) {
+        let out = text;
+        out = out.replace(/'([^']*?)'/g, (match, inner) => {
+          if (!/\breddit\b|\bsubreddit\b/i.test(inner)) return match;
+          return `'${inner
+            .replace(/\bReddit\b/g, "Facebook")
+            .replace(/\breddit\b/g, "Facebook")
+            .replace(/\bsubreddits?\b/gi, "Facebook groups")}'`;
+        });
+        out = out.replace(
+          /\bPost whatimado\.com in 5-10 subreddits where stuck people gather \([^)]*\)/gi,
+          "Post whatimado.com in 5-10 Facebook groups where stuck people gather (career change, side hustle, motivation, and local community groups)"
+        );
+        out = out.replace(/\(([^)]*r\/[^)]*)\)/gi, "(career change, side hustle, motivation, and local community Facebook groups)");
+        out = out.replace(/\b(\d+[-–]\d+|\d+)\s*subreddits?\b/gi, "$1 Facebook groups");
+        out = out.replace(/\bsubreddits?\b/gi, "Facebook groups");
+        out = out.replace(/\bReddit\b/g, "Facebook");
+        out = out.replace(/\breddit\b/g, "Facebook");
+        out = out.replace(/r\/[a-zA-Z0-9_]+/g, "relevant Facebook groups");
+        return out !== text ? out : null;
+      }
+
+      if (/\breddit\b/.test(q) && /\bfacebook\b/i.test(text)) {
+        let out = text;
+        out = out.replace(/\bFacebook groups?\b/gi, "subreddits");
+        out = out.replace(/\bFacebook\b/g, "Reddit");
+        out = out.replace(/\bfacebook\b/g, "Reddit");
+        return out !== text ? out : null;
+      }
+
+      return null;
+    }
+
+    function rewriteTasksLocally(targets, question) {
+      const rewritten = targets.map((target) => tryLocalTaskRewrite(target.text, question));
+      return rewritten.every(Boolean) ? rewritten : null;
+    }
+
+    function buildCompactTaskAdjustPrompt(targets, userRequest) {
+      const taskLines = targets.map((target, index) => `${index + 1}. ${target.text}`).join("\n");
+      return (
+        `Rewrite the roadmap task${targets.length === 1 ? "" : "s"} below based on the user's request.\n\n` +
+        `User request: ${userRequest}\n\n` +
+        `Tasks:\n${taskLines}\n\n` +
+        `Apply the requested change directly. Keep each task to 1-2 specific sentences.\n` +
+        `Return ONLY a JSON array with exactly ${targets.length} string${targets.length === 1 ? "" : "s"}, in the same order.`
+      );
+    }
+
+    async function resolveTaskRewrite(taskId, scope, thread, targets) {
+      const userRequest = getLastUserMessage(thread);
+      const context = getConversationSummary();
+
+      const fullResponse = await callAdvisor(
+        buildTaskAdjustPrompt(taskId, scope, thread, targets, context),
+        2000
+      );
+      let texts = parseTaskTextArray(fullResponse, targets.length);
+      if (texts) return { texts, source: "ai-full" };
+
+      const compactResponse = await callAdvisor(
+        buildCompactTaskAdjustPrompt(targets, userRequest),
+        1200
+      );
+      texts = parseTaskTextArray(compactResponse, targets.length);
+      if (texts) return { texts, source: "ai-compact" };
+
+      texts = rewriteTasksLocally(targets, userRequest);
+      if (texts) return { texts, source: "local" };
+
+      return null;
+    }
+
     function buildTaskAdjustPrompt(taskId, scope, thread, targets, context) {
       const parsed = parseTaskId(taskId);
       const stage = state.roadmapStages[parsed?.stageIndex];
@@ -5006,22 +5091,44 @@
             messages: [{ role: "user", content: prompt }]
           })
         });
-        if (!response.ok) throw new Error(`API returned ${response.status}`);
         const data = await response.json();
-        return (data.content || []).filter((block) => block.type === "text").map((block) => block.text).join("").trim();
-      } catch {
+        if (!response.ok || data.error) {
+          console.error("Advisor API error:", data.error || data);
+          return "";
+        }
+        return (data.content || [])
+          .filter((block) => block.type === "text")
+          .map((block) => block.text)
+          .join("")
+          .trim();
+      } catch (error) {
+        console.error("Advisor request failed:", error);
         return "";
       }
     }
 
     function extractJsonArray(text, fallback) {
-      const match = text.match(/\[[\s\S]*\]/);
-      if (!match) return fallback;
-      try {
-        return JSON.parse(match[0]);
-      } catch {
-        return fallback;
+      if (!text) return fallback;
+
+      const starts = [];
+      for (let index = 0; index < text.length; index++) {
+        if (text[index] === "[") starts.push(index);
       }
+
+      for (let startIndex = starts.length - 1; startIndex >= 0; startIndex--) {
+        const start = starts[startIndex];
+        for (let end = text.length - 1; end > start; end--) {
+          if (text[end] !== "]") continue;
+          try {
+            const parsed = JSON.parse(text.slice(start, end + 1));
+            if (Array.isArray(parsed)) return parsed;
+          } catch {
+            /* try next slice */
+          }
+        }
+      }
+
+      return fallback;
     }
 
     function getConversationSummary() {
@@ -5570,15 +5677,12 @@
         target_count: targets.length
       });
 
-      const response = await callAdvisor(
-        buildTaskAdjustPrompt(taskId, scope, thread, targets, getConversationSummary()),
-        2000
-      );
-      const newTexts = parseTaskTextArray(response, targets.length);
-      if (!newTexts) return { ok: false, targets, scope };
+      const resolved = await resolveTaskRewrite(taskId, scope, thread, targets);
+      if (!resolved) return { ok: false, targets, scope };
 
-      targets.forEach((target, index) => {
-        state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = newTexts[index];
+      resolved.texts.forEach((text, index) => {
+        const target = targets[index];
+        state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = text;
       });
 
       if (state.roadmapKey) {
@@ -5591,7 +5695,8 @@
       trackEvent("tasks_adjusted", {
         task_id: taskId,
         scope,
-        count: targets.length
+        count: targets.length,
+        source: resolved.source
       });
 
       return { ok: true, targets, scope };
