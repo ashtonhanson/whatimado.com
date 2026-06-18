@@ -1141,6 +1141,14 @@
     }
 
     .roadmap-back-btn {
+      margin-bottom: 0;
+    }
+
+    .roadmap-header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .65rem;
       margin-bottom: 1.35rem;
     }
 
@@ -2123,11 +2131,13 @@
       height: 30px;
       display: grid;
       place-items: center;
-      border: 1px solid rgba(120, 130, 200, .35);
+      border: 2px solid var(--brand-purple-dark);
       border-radius: 50%;
-      color: var(--muted);
-      font-size: .7rem;
+      color: #fff;
+      background: var(--brand-purple-dark);
+      font-size: .72rem;
       font-weight: 800;
+      flex: 0 0 auto;
     }
 
     .stage-label {
@@ -2253,6 +2263,7 @@
     }
 
     #screen-roadmap .roadmap-back-btn,
+    #screen-roadmap .roadmap-regen-btn,
     #screen-roadmap .complete-action-btn {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg);
@@ -2261,6 +2272,7 @@
     }
 
     #screen-roadmap .roadmap-back-btn:hover,
+    #screen-roadmap .roadmap-regen-btn:hover,
     #screen-roadmap .complete-action-btn:hover {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg-hover);
@@ -2306,9 +2318,9 @@
     }
 
     #screen-roadmap .stage-num {
-      color: var(--brand-purple-dark);
-      border-color: rgba(36, 18, 53, .22);
-      background: var(--light-blue-bg);
+      color: #fff;
+      border-color: var(--brand-purple-dark);
+      background: var(--brand-purple-dark);
     }
 
     #screen-roadmap .stage-body {
@@ -2475,6 +2487,37 @@
       font-style: italic;
     }
 
+    .task-thread-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+      margin-top: .75rem;
+      padding-top: .65rem;
+      border-top: 1px solid rgba(120, 130, 200, .14);
+    }
+
+    .task-adjust-btn {
+      border: 1px solid rgba(120, 130, 200, .22);
+      border-radius: 999px;
+      padding: .42rem .78rem;
+      color: #dceaff;
+      background: rgba(124, 111, 205, .14);
+      font-size: .72rem;
+      font-weight: 700;
+      transition: .16s ease;
+    }
+
+    .task-adjust-btn:hover:not(:disabled) {
+      color: #fff;
+      background: rgba(124, 111, 205, .28);
+      border-color: rgba(155, 143, 224, .45);
+    }
+
+    .task-adjust-btn:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
+
     .rich-text a {
       color: #6ee7de;
       text-decoration: underline;
@@ -2535,26 +2578,29 @@
     }
 
     .pm-node {
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       display: grid;
       place-items: center;
-      border: 2px solid rgba(120, 130, 200, .25);
+      border: 2px solid var(--brand-purple-dark);
       border-radius: 50%;
-      font-size: .68rem;
+      color: var(--brand-purple-dark);
+      background: transparent;
+      font-size: .72rem;
       font-weight: 800;
+      flex: 0 0 auto;
     }
 
     .pm-node.active {
-      border-color: var(--purple);
-      color: var(--purple-2);
-      background: rgba(124, 111, 205, .1);
+      border-color: var(--brand-purple-dark);
+      color: var(--brand-purple-dark);
+      background: transparent;
     }
 
     .pm-node.done {
-      border-color: transparent;
+      border-color: var(--brand-purple-dark);
       color: #fff;
-      background: linear-gradient(135deg, var(--purple), var(--teal));
+      background: var(--brand-purple-dark);
     }
 
     .pm-name {
@@ -2598,17 +2644,38 @@
       background: rgba(36, 18, 53, .08);
     }
 
-    #screen-roadmap .pm-node {
-      color: var(--brand-purple-dark);
-      border-color: rgba(36, 18, 53, .22);
-      background: rgba(255, 255, 255, .28);
+    #screen-roadmap .task-thread-actions {
+      border-top-color: rgba(36, 18, 53, .12);
     }
 
-    #screen-roadmap .pm-node.active,
-    #screen-roadmap .pm-node.done {
+    #screen-roadmap .task-adjust-btn {
       color: var(--brand-purple-dark);
-      border-color: var(--light-blue-border);
-      background: var(--light-blue-bg);
+      border-color: rgba(36, 18, 53, .18);
+      background: rgba(36, 18, 53, .06);
+    }
+
+    #screen-roadmap .task-adjust-btn:hover:not(:disabled) {
+      color: #fff;
+      border-color: var(--brand-purple-dark);
+      background: var(--brand-purple-dark);
+    }
+
+    #screen-roadmap .pm-node {
+      color: var(--brand-purple-dark);
+      border-color: var(--brand-purple-dark);
+      background: transparent;
+    }
+
+    #screen-roadmap .pm-node.active {
+      color: var(--brand-purple-dark);
+      border-color: var(--brand-purple-dark);
+      background: transparent;
+    }
+
+    #screen-roadmap .pm-node.done {
+      color: #fff;
+      border-color: var(--brand-purple-dark);
+      background: var(--brand-purple-dark);
     }
 
     .loader {
@@ -3130,11 +3197,9 @@
         align-items: stretch;
         gap: .85rem;
         padding: .85rem .85rem 1rem;
-        border-bottom: 1px solid var(--header-border);
-        background: var(--header-bg);
-        backdrop-filter: blur(24px) saturate(160%);
-        -webkit-backdrop-filter: blur(24px) saturate(160%);
-        box-shadow: 0 18px 48px rgba(0, 0, 0, .38);
+        border-bottom: 1px solid rgba(140, 150, 210, .22);
+        background: linear-gradient(180deg, #0d101c 0%, #090b14 100%);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, .55);
         transition: opacity .22s ease, transform .22s cubic-bezier(.4, 0, .2, 1), visibility .22s ease;
       }
 
@@ -3174,7 +3239,7 @@
         display: block;
         margin: 0;
         padding: 0 .35rem;
-        color: rgba(123, 130, 176, .82);
+        color: rgba(168, 176, 220, .95);
         font-size: .62rem;
         font-weight: 800;
         letter-spacing: .1em;
@@ -3208,11 +3273,11 @@
       .nav-drawer .nav-theme-btn {
         justify-content: center;
         min-height: 42px;
-        border: 1px solid rgba(120, 130, 200, .12);
+        border: 1px solid rgba(120, 130, 200, .28);
         border-radius: 12px;
         padding: .72rem .45rem;
-        background: rgba(255, 255, 255, .04);
-        color: rgba(228, 234, 255, .9);
+        background: rgba(24, 28, 46, .96);
+        color: rgba(240, 242, 255, .96);
         font-size: .78rem;
       }
 
@@ -3230,9 +3295,9 @@
         text-align: left;
         padding: .88rem 1rem;
         border-radius: 12px;
-        border: 1px solid rgba(120, 130, 200, .1);
-        background: rgba(255, 255, 255, .04);
-        color: rgba(228, 234, 255, .92);
+        border: 1px solid rgba(120, 130, 200, .28);
+        background: rgba(24, 28, 46, .96);
+        color: rgba(240, 242, 255, .96);
         font-size: .9rem;
         font-weight: 600;
         letter-spacing: -.01em;
@@ -3256,8 +3321,8 @@
       .nav-drawer .nav-btn.active {
         color: #fff;
         font-weight: 700;
-        background: rgba(124, 111, 205, .2);
-        border-color: rgba(155, 143, 224, .38);
+        background: rgba(124, 111, 205, .42);
+        border-color: rgba(155, 143, 224, .55);
         box-shadow: inset 3px 0 0 rgba(124, 111, 205, .95);
       }
 
@@ -3280,16 +3345,16 @@
       }
 
       .nav-drawer .nav-btn.nav-cart {
-        color: rgba(228, 234, 255, .92);
+        color: rgba(240, 242, 255, .96);
         font-weight: 600;
-        background: rgba(78, 205, 196, .08);
-        border-color: rgba(78, 205, 196, .22);
+        background: rgba(24, 48, 46, .96);
+        border-color: rgba(78, 205, 196, .35);
       }
 
       .nav-drawer .nav-btn.nav-cart.has-items {
         color: #fff;
-        background: rgba(78, 205, 196, .14);
-        border-color: rgba(78, 205, 196, .35);
+        background: rgba(36, 88, 82, .96);
+        border-color: rgba(78, 205, 196, .5);
       }
 
       .nav-drawer .nav-btn.nav-cart::after {
@@ -3520,14 +3585,14 @@
     <div class="app-header-nav-wrap">
       <div class="app-header-stack">
         <div class="app-header-inner">
-          <a class="logo" href="#main" data-screen-link="main">
-            <span class="logo-icon" aria-hidden="true">
+    <a class="logo" href="#main" data-screen-link="main">
+      <span class="logo-icon" aria-hidden="true">
               <img src="/logo-icon.png" alt="" width="86" height="86">
-            </span>
-            <span class="logo-text">whatimado<span>.com</span></span>
-          </a>
+      </span>
+      <span class="logo-text">whatimado<span>.com</span></span>
+    </a>
 
-          <nav class="nav" aria-label="Main navigation">
+    <nav class="nav" aria-label="Main navigation">
             <div class="nav-header-mobile">
               <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
               <button class="nav-hamburger" id="nav-hamburger-btn" type="button" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
@@ -3543,9 +3608,9 @@
               <div class="nav-drawer-section">
                 <p class="nav-drawer-label">Navigate</p>
                 <div class="nav-group nav-group--scroll">
-                  <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
-                  <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
-                  <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
+      <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
+      <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
+      <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
                   <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
                 </div>
               </div>
@@ -3569,21 +3634,21 @@
                 </div>
               </div>
 
-              <span class="nav-divider" aria-hidden="true"></span>
+      <span class="nav-divider" aria-hidden="true"></span>
 
               <div class="nav-drawer-section">
                 <p class="nav-drawer-label">Account</p>
                 <div class="nav-group nav-group--auth">
-                  <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
-                  <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
-                  <span class="nav-user" id="nav-user">
-                    <span id="nav-username"></span>
-                    <button class="nav-btn" id="signout-btn">Sign out</button>
-                  </span>
+      <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
+      <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
+      <span class="nav-user" id="nav-user">
+        <span id="nav-username"></span>
+        <button class="nav-btn" id="signout-btn">Sign out</button>
+      </span>
                 </div>
               </div>
             </div>
-          </nav>
+    </nav>
         </div>
       </div>
     </div>
@@ -3592,26 +3657,26 @@
   <main>
     <section class="screen active" id="screen-main">
       <div class="main-workspace">
-        <div class="hero">
+      <div class="hero">
           <p class="hero-copy"><span class="hero-copy-lead">Whatimado.com is built to stay free</span> — for everyone, no matter where you're starting. Funded by voluntary gifts and sponsors, not subscriptions or paywalls.</p>
-          <div class="hero-chip">Start here</div>
-          <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
-          <p class="hero-copy">Tell us your situation, skills, interests, or goals. We'll map out paths you may never have considered.</p>
+        <div class="hero-chip">Start here</div>
+        <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
+        <p class="hero-copy">Tell us your situation, skills, interests, or goals. We'll map out paths you may never have considered.</p>
 
-          <div class="prompt-box">
-            <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="Tell us your situation: what you know, what you enjoy, what you want..."></textarea>
-            <div class="prompt-footer">
-              <span class="hint">Be honest. There's no wrong answer.</span>
-              <button class="action-btn" id="start-btn">Continue</button>
-            </div>
+        <div class="prompt-box">
+          <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="Tell us your situation: what you know, what you enjoy, what you want..."></textarea>
+          <div class="prompt-footer">
+            <span class="hint">Be honest. There's no wrong answer.</span>
+            <button class="action-btn" id="start-btn">Continue</button>
           </div>
+        </div>
 
-          <div class="pills" aria-label="Prompt starters">
-            <button class="pill" data-prompt="I love working with my hands and fixing things">hands-on</button>
-            <button class="pill" data-prompt="I am good with technology and computers">tech</button>
-            <button class="pill" data-prompt="I enjoy helping and talking to people">people</button>
-            <button class="pill" data-prompt="I am creative and artistic">creative</button>
-            <button class="pill" data-prompt="I have no money but I have time and hustle">starting from zero</button>
+        <div class="pills" aria-label="Prompt starters">
+          <button class="pill" data-prompt="I love working with my hands and fixing things">hands-on</button>
+          <button class="pill" data-prompt="I am good with technology and computers">tech</button>
+          <button class="pill" data-prompt="I enjoy helping and talking to people">people</button>
+          <button class="pill" data-prompt="I am creative and artistic">creative</button>
+          <button class="pill" data-prompt="I have no money but I have time and hustle">starting from zero</button>
           </div>
 
           <section class="ai-difference" aria-label="How whatimado is different from general AI chatbots">
@@ -3651,11 +3716,11 @@
     <section class="screen" id="screen-convo">
       <div class="convo-wrap">
         <div class="convo-spacer" id="convo-spacer" aria-hidden="true"></div>
-        <div class="conversation" id="bubble-chain"></div>
+      <div class="conversation" id="bubble-chain"></div>
         <div class="reply-box surface-card" id="reply-box">
-          <div class="reply-inner">
-            <textarea class="reply-textarea" id="reply-textarea" rows="1" placeholder="Type your response..."></textarea>
-            <button class="send-btn" id="reply-send-btn">Send</button>
+        <div class="reply-inner">
+          <textarea class="reply-textarea" id="reply-textarea" rows="1" placeholder="Type your response..."></textarea>
+          <button class="send-btn" id="reply-send-btn">Send</button>
           </div>
           <div class="reply-actions">
             <button class="reset-pill" id="reply-reset-btn" type="button">Reset current plans</button>
@@ -3677,23 +3742,23 @@
         </div>
 
         <div class="map-overview">
-          <div class="map-panel">
+        <div class="map-panel">
             <div class="map-visual">
               <div class="map-node-glow" aria-hidden="true"></div>
-              <svg id="opportunity-svg" viewBox="0 0 560 420" role="img" aria-label="Opportunity map">
-              <defs>
-                <radialGradient id="user-gradient" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="#9b8fe0"></stop>
-                  <stop offset="100%" stop-color="#7c6fcd"></stop>
-                </radialGradient>
-                <filter id="svg-glow">
-                  <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
-                  <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-                </filter>
-              </defs>
-              <g id="svg-connections"></g>
-              <g id="svg-nodes"></g>
-            </svg>
+          <svg id="opportunity-svg" viewBox="0 0 560 420" role="img" aria-label="Opportunity map">
+            <defs>
+              <radialGradient id="user-gradient" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#9b8fe0"></stop>
+                <stop offset="100%" stop-color="#7c6fcd"></stop>
+              </radialGradient>
+              <filter id="svg-glow">
+                <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
+                <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+              </filter>
+            </defs>
+            <g id="svg-connections"></g>
+            <g id="svg-nodes"></g>
+          </svg>
             </div>
             <div class="opp-labels" id="opp-labels" aria-label="Path overview"></div>
           </div>
@@ -3710,7 +3775,7 @@
         </div>
 
         <div class="opp-plans-section">
-          <div class="opp-grid" id="opp-grid"></div>
+        <div class="opp-grid" id="opp-grid"></div>
         </div>
 
         <div class="save-status-bar" id="save-status-bar">
@@ -3728,10 +3793,13 @@
 
       <div class="page roadmap-layout roadmap-page" id="roadmap-page">
         <div>
-          <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
-            Back to map
-          </button>
+          <div class="roadmap-header-actions">
+            <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+              Back to map
+            </button>
+            <button class="back-btn roadmap-regen-btn" id="regenerate-roadmap-btn" type="button">Regenerate roadmap</button>
+          </div>
 
           <div class="roadmap-content" id="roadmap-content">
           <div class="roadmap-type" id="roadmap-type"></div>
@@ -3945,28 +4013,192 @@
       }
     ];
 
-    const fallbackStages = [
-      {
-        label: "First Win",
-        desc: "Get one real signal that this path can work.",
-        tasks: ["Write the simplest version of your offer", "Tell five people what you are trying", "Record what people ask for or push back on"]
-      },
-      {
-        label: "Proof",
-        desc: "Turn the first response into repeatable evidence.",
-        tasks: ["Complete one small project or test", "Ask for feedback or a testimonial", "Adjust your offer based on what happened"]
-      },
-      {
-        label: "Consistency",
-        desc: "Make the path easier to repeat every week.",
-        tasks: ["Set a weekly target", "Create a simple tracking sheet", "Repeat the best outreach channel three times"]
-      },
-      {
-        label: "Growth",
-        desc: "Build from a small win into a sustainable plan.",
-        tasks: ["Raise the quality or price of the offer", "Create a basic online presence", "Set a 90-day goal"]
-      }
-    ];
+    const GENERIC_FALLBACK_SIGNATURE = "Write the simplest version of your offer";
+
+    function getFallbackStages(idea) {
+      const title = idea?.title || "this path";
+      const tagline = idea?.tagline || "";
+      const why = idea?.why || "";
+      const type = idea?.type || "path";
+      const anchor = tagline || why || title;
+
+      return [
+        {
+          label: "Launch the first test",
+          desc: `Run one small, real-world test for "${title}" before over-planning.`,
+          tasks: [
+            `Open a notes doc titled "${title}" and write the exact problem you solve for one specific person — use details from: ${anchor}`,
+            `Name 5 real people, groups, or communities who would care about "${title}" and write one sentence on why each fits`,
+            `Complete one 30–45 minute action for "${title}" today (post, message, prototype, or outreach) and capture 3 reactions or questions people had`
+          ]
+        },
+        {
+          label: "Turn feedback into proof",
+          desc: `Use what you learned in week one to sharpen "${title}".`,
+          tasks: [
+            `Review your notes from the first test and rewrite your pitch for "${title}" in under 120 words — fix the part that confused people`,
+            `Ask 2 people from your list for 10 minutes of feedback on whether "${title}" solves a real need — send the exact message you will use`,
+            `Change one concrete thing about "${title}" (wording, audience, channel, or offer) based on what they said and retry once`
+          ]
+        },
+        {
+          label: "Build a repeatable rhythm",
+          desc: `Make "${title}" easier to repeat every week without burning out.`,
+          tasks: [
+            `Pick one channel that worked best for "${title}" (Facebook group, email, in-person, etc.) and schedule 2 repeating time blocks this week`,
+            `Create a simple tracker with 4 columns: date, action taken, response, next tweak — log every step for "${title}"`,
+            `Repeat your best-performing outreach or test 3 times this week for "${title}" and note which version got the strongest response`
+          ]
+        },
+        {
+          label: "Decide the next 30 days",
+          desc: `Choose whether "${title}" deserves more time, a pivot, or a pause.`,
+          tasks: [
+            `Compare effort vs. results for "${title}" — list what cost time, what created signal, and what felt pointless`,
+            `Set one measurable 30-day goal for "${type}" tied to "${title}" (signups, conversations, revenue, or completed pilots)`,
+            `Decide keep / pivot / pause for "${title}" and write the single next milestone that makes that decision obvious`
+          ]
+        }
+      ];
+    }
+
+    function isGenericFallbackRoadmap(stages) {
+      return Boolean(
+        stages?.[0]?.tasks?.some((task) => task.includes(GENERIC_FALLBACK_SIGNATURE))
+      );
+    }
+
+    function buildRoadmapPrompt(idea, context, { phase = "initial" } = {}) {
+      const ideaBlock = [
+        `Title: ${idea.title}`,
+        idea.type ? `Type: ${idea.type}` : "",
+        idea.tagline ? `Tagline: ${idea.tagline}` : "",
+        idea.why ? `Why it fits them: ${idea.why}` : "",
+        idea.cost ? `Budget: ${idea.cost}` : "",
+        idea.timeline ? `Timeline: ${idea.timeline}` : "",
+        idea.income ? `Income goal: ${idea.income}` : ""
+      ].filter(Boolean).join("\n");
+
+      const phaseNote = phase === "continue"
+        ? "Generate the NEXT 4 stages after their completed roadmap. Do not repeat completed tasks."
+        : "Generate the FIRST 4 stages to get this path off the ground.";
+
+      return (
+        `You are whatimado, a practical roadmap coach. ${phaseNote}\n\n` +
+        `Chosen path:\n${ideaBlock}\n\n` +
+        `Full conversation:\n${context}\n\n` +
+        `CRITICAL RULES FOR TASKS:\n` +
+        `- Every task must be 1–2 sentences and SPECIFIC to this person and this exact path.\n` +
+        `- Name real platforms, tools, audiences, numbers, time boxes, and deliverables.\n` +
+        `- Reference details they actually said (skills, location, constraints, goals, industry, budget).\n` +
+        `- Each task should be doable in a day or a week — not a vague category.\n` +
+        `- Stage labels and descriptions must also reference their situation, not generic startup language.\n\n` +
+        `BAD TASKS (never write these):\n` +
+        `- "Write the simplest version of your offer"\n` +
+        `- "Tell five people what you are trying"\n` +
+        `- "Create a basic online presence"\n` +
+        `- "Network with people in your field"\n\n` +
+        `GOOD TASKS (match this level of detail):\n` +
+        `- "Draft a 150-word Facebook post explaining why you built whatimado.com for people stuck on career direction — include one screenshot of the map screen and publish to your profile"\n` +
+        `- "Email 3 recovery-center program directors you can name locally, attach a 1-page pilot outline for a free whatimado workshop, and ask for a 15-minute call"\n` +
+        `- "Spend 45 minutes in r/Findapath or a local career-change Facebook group, reply helpfully to 5 posts, and note which questions match your tool"\n\n` +
+        `Return exactly 4 stages with 3 tasks each.\n` +
+        `Respond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence tied to their situation","tasks":["specific task 1","specific task 2","specific task 3"]}]`
+      );
+    }
+
+    function parseRoadmapResponse(response, idea) {
+      if (!response?.trim()) return null;
+      const parsed = extractJsonArray(response, null);
+      if (!Array.isArray(parsed) || parsed.length < 1) return null;
+      const stages = parsed.filter((stage) => stage?.label && Array.isArray(stage.tasks) && stage.tasks.length > 0);
+      if (!stages.length) return null;
+      if (isGenericFallbackRoadmap(stages)) return null;
+      return stages;
+    }
+
+    function parseTaskId(taskId) {
+      const match = String(taskId).match(/^task-(\d+)-(\d+)$/);
+      if (!match) return null;
+      return { stageIndex: Number(match[1]), taskIndex: Number(match[2]) };
+    }
+
+    function getTasksFromPosition(stageIndex, taskIndex) {
+      const items = [];
+      state.roadmapStages.forEach((stage, stageIdx) => {
+        if (stageIdx < stageIndex) return;
+        (stage.tasks || []).forEach((text, taskIdx) => {
+          if (stageIdx === stageIndex && taskIdx < taskIndex) return;
+          items.push({ stageIndex: stageIdx, taskIndex: taskIdx, text });
+        });
+      });
+      return items;
+    }
+
+    function getTasksInStage(stageIndex) {
+      const stage = state.roadmapStages[stageIndex];
+      if (!stage) return [];
+      return (stage.tasks || []).map((text, taskIndex) => ({ stageIndex, taskIndex, text }));
+    }
+
+    function getAdjustScopeDescription(scope, targets) {
+      if (scope === "current") return "Rewrite ONLY the current task (#1 below).";
+      if (scope === "stage") return `Rewrite ALL ${targets.length} tasks in the current stage.`;
+      return `Rewrite ALL ${targets.length} tasks below (#1 through #${targets.length}), starting from the current task through every following task.`;
+    }
+
+    function getAdjustSuccessMessage(scope, targets) {
+      if (scope === "current") return "Done — I updated this task to better match your path.";
+      if (scope === "stage") return `Done — I updated all ${targets.length} tasks in this stage.`;
+      return `Done — I updated this task and ${targets.length - 1} following task${targets.length - 1 === 1 ? "" : "s"}.`;
+    }
+
+    const TASK_ADJUST_LABELS = {
+      current: "Update this task",
+      stage: "Update entire stage",
+      following: "Update this & following tasks"
+    };
+
+    function parseTaskTextArray(response, expectedCount) {
+      if (!response?.trim()) return null;
+      const parsed = extractJsonArray(response, null);
+      if (!Array.isArray(parsed) || parsed.length !== expectedCount) return null;
+      const texts = parsed.map((item) => String(item).trim()).filter(Boolean);
+      return texts.length === expectedCount ? texts : null;
+    }
+
+    function buildTaskAdjustPrompt(taskId, scope, thread, targets, context) {
+      const parsed = parseTaskId(taskId);
+      const stage = state.roadmapStages[parsed?.stageIndex];
+      const threadHistory = (thread.messages || [])
+        .filter((message) => message.content !== "Thinking...")
+        .map((message) => `${message.role === "user" ? "User" : "Advisor"}: ${message.content}`)
+        .join("\n");
+      const targetList = targets.map((target, index) => {
+        const stageLabel = state.roadmapStages[target.stageIndex]?.label || `Stage ${target.stageIndex + 1}`;
+        return `${index + 1}. [${stageLabel}] ${target.text}`;
+      }).join("\n");
+
+      return (
+        `You are whatimado, a practical roadmap editor.\n\n` +
+        `Path: ${state.currentIdea?.title || $("#roadmap-title")?.textContent || "this path"}\n` +
+        `${state.currentIdea?.tagline ? `Tagline: ${state.currentIdea.tagline}\n` : ""}` +
+        `${state.currentIdea?.why ? `Why it fits: ${state.currentIdea.why}\n` : ""}` +
+        `Current stage: ${stage?.label || "Roadmap stage"}\n` +
+        `${stage?.desc ? `Stage goal: ${stage.desc}\n` : ""}` +
+        `\nConversation context:\n${context}\n\n` +
+        `Task chat about what needs to change:\n${threadHistory}\n\n` +
+        `Update scope: ${getAdjustScopeDescription(scope, targets)}\n\n` +
+        `Tasks to rewrite:\n${targetList}\n\n` +
+        `Rules:\n` +
+        `- Use the chat above to understand what does not fit.\n` +
+        `- Each rewritten task must be 1-2 sentences, specific, and tied to this person's situation.\n` +
+        `- Name platforms, tools, audiences, numbers, or time boxes when relevant.\n` +
+        `- Do NOT write generic tasks like "tell five people" or "create an online presence".\n` +
+        `- Return exactly ${targets.length} task string${targets.length === 1 ? "" : "s"} in the same order.\n\n` +
+        `Respond only with a raw JSON array of strings, e.g. ["rewritten task 1", "rewritten task 2"]`
+      );
+    }
 
     const state = {
       step: 1,
@@ -4507,6 +4739,15 @@
         const messages = (thread.messages || []).map((message) => `
           <div class="task-thread-msg ${message.role} rich-text">${formatRichText(message.content)}</div>
         `).join("");
+        const hasAnswer = (thread.messages || []).some(
+          (message) => message.role === "assistant" && message.content !== "Thinking..."
+        );
+        const actionsHtml = hasAnswer ? `
+          <div class="task-thread-actions">
+            <button type="button" class="task-adjust-btn" data-task-id="${taskId}" data-thread-id="${thread.id}" data-scope="current">Update this task</button>
+            <button type="button" class="task-adjust-btn" data-task-id="${taskId}" data-thread-id="${thread.id}" data-scope="stage">Update entire stage</button>
+            <button type="button" class="task-adjust-btn" data-task-id="${taskId}" data-thread-id="${thread.id}" data-scope="following">Update this &amp; following tasks</button>
+          </div>` : "";
 
         return `
           <div class="task-thread-expanded" data-thread-id="${thread.id}">
@@ -4515,6 +4756,7 @@
               <button type="button" class="task-thread-collapse" data-task-id="${taskId}" data-thread-id="${thread.id}" aria-label="Collapse chat">−</button>
             </div>
             <div class="task-thread-msgs rich-text">${messages}</div>
+            ${actionsHtml}
           </div>`;
       }).join("");
     }
@@ -4539,6 +4781,16 @@
       if (collapseBtn) {
         collapseAllThreads(null);
         schedulePersist();
+        return;
+      }
+      const adjustBtn = event.target.closest(".task-adjust-btn");
+      if (adjustBtn) {
+        adjustTasksFromThread(
+          adjustBtn.dataset.taskId,
+          adjustBtn.dataset.threadId,
+          adjustBtn.dataset.scope,
+          adjustBtn
+        );
       }
     }
 
@@ -4972,15 +5224,15 @@
             <span class="opp-card-number">${number}</span>
             <div class="opp-card-body">
               <div class="opp-card-head">
-                <div class="opp-type">${escapeHtml(idea.type || "Opportunity")}</div>
-                <div class="opp-name">${escapeHtml(idea.title)}</div>
+          <div class="opp-type">${escapeHtml(idea.type || "Opportunity")}</div>
+          <div class="opp-name">${escapeHtml(idea.title)}</div>
               </div>
-              <div class="opp-tagline">${escapeHtml(idea.tagline || "")}</div>
-              <div class="opp-meta">
-                ${idea.cost ? `<span>${escapeHtml(idea.cost)}</span>` : ""}
-                ${idea.timeline ? `<span>${escapeHtml(idea.timeline)}</span>` : ""}
-                ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
-              </div>
+          <div class="opp-tagline">${escapeHtml(idea.tagline || "")}</div>
+          <div class="opp-meta">
+            ${idea.cost ? `<span>${escapeHtml(idea.cost)}</span>` : ""}
+            ${idea.timeline ? `<span>${escapeHtml(idea.timeline)}</span>` : ""}
+            ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
+          </div>
               ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
             </div>
           </div>`;
@@ -5012,20 +5264,21 @@
       if (pct) pct.textContent = "0%";
     }
 
-    async function viewRoadmap(idea, ideaIndex) {
+    async function viewRoadmap(idea, ideaIndex, options = {}) {
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
       trackEvent("roadmap_opened", {
         idea_index: ideaIndex,
         idea_type: idea.type || "Opportunity",
-        cached: Boolean(state.allRoadmaps[slugify(idea.title)]?.stages?.length)
+        cached: !options.force && Boolean(state.allRoadmaps[slugify(idea.title)]?.stages?.length),
+        forced: Boolean(options.force)
       });
       $("#nav-roadmap-btn").hidden = false;
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = idea.title;
 
-      const cached = state.allRoadmaps[state.roadmapKey];
-      if (cached?.stages?.length) {
+      const cached = !options.force ? state.allRoadmaps[state.roadmapKey] : null;
+      if (cached?.stages?.length && !isGenericFallbackRoadmap(cached.stages)) {
         setRoadmapLoading(false);
         showScreen("roadmap");
         state.roadmapStages = cached.stages;
@@ -5053,17 +5306,19 @@
       showScreen("roadmap");
 
       try {
-        const context = state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
-        const response = await callAdvisor(
-          `You are whatimado, a practical roadmap coach. Generate a 4-stage roadmap for someone pursuing "${idea.title}" (${idea.tagline || idea.type}).\n\nUser context from conversation:\n${context}\n\nCRITICAL: Every task must be specific to THIS person's situation. Reference their actual constraints, skills, location hints, and resources from the conversation. No vague tasks like "create a website" or "network with people" without naming concrete tools, platforms, numbers, or next steps.\n\nEach stage has 3 tasks. Tasks should be completable in a day or week — name specific actions, not categories.\n\nRespond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence tied to their situation","tasks":["specific task 1","specific task 2","specific task 3"]}]`,
-          1200
-        );
+      const context = getConversationSummary();
+      const response = await callAdvisor(buildRoadmapPrompt(idea, context), 1800);
+      const stages = parseRoadmapResponse(response, idea);
 
-        state.roadmapStages = extractJsonArray(response, fallbackStages);
+      if (!stages) {
+        throw new Error("Roadmap response was empty or too generic");
+      }
+
+      state.roadmapStages = stages;
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages };
-        $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
-        $("#momentum-card").style.display = "flex";
-        renderStages(state.roadmapStages);
+      $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
+      $("#momentum-card").style.display = "flex";
+      renderStages(state.roadmapStages);
         trackEvent("roadmap_generated", {
           idea_index: ideaIndex,
           stages_count: state.roadmapStages.length,
@@ -5073,9 +5328,40 @@
       } catch (error) {
         console.error(error);
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
-        $("#roadmap-sub").textContent = "Could not build your roadmap. Go back and try again.";
+        state.roadmapStages = getFallbackStages(idea);
+        state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages };
+        $("#roadmap-sub").textContent = "Using a backup roadmap — tasks are tailored to your path, but run through the flow again for a fully custom plan.";
+        $("#momentum-card").style.display = "flex";
+        renderStages(state.roadmapStages);
+        schedulePersist();
       } finally {
         setRoadmapLoading(false);
+      }
+    }
+
+    async function regenerateRoadmap() {
+      if (!state.currentIdea || !state.roadmapKey) return;
+      const button = $("#regenerate-roadmap-btn");
+      if (button?.disabled) return;
+      if (!confirm("Regenerate this roadmap? Task notes and AI chats will be cleared, but your overall conversation stays.")) return;
+
+      const label = button.textContent;
+      button.disabled = true;
+      button.textContent = "Regenerating...";
+
+      const ideaIndex = state.ideas.findIndex((idea) => slugify(idea.title) === state.roadmapKey);
+      delete state.allRoadmaps[state.roadmapKey];
+      delete state.allTaskChats[state.roadmapKey];
+      state.roadmapStages = [];
+      state.activeTaskId = null;
+      state.expandedThreadId = null;
+
+      try {
+        await viewRoadmap(state.currentIdea, ideaIndex >= 0 ? ideaIndex : 0, { force: true });
+        trackEvent("roadmap_regenerated", { roadmap_key: state.roadmapKey });
+      } finally {
+        button.disabled = false;
+        button.textContent = label;
       }
     }
 
@@ -5198,7 +5484,7 @@
         existing_stages_count: state.roadmapStages.length
       });
 
-      const context = state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
+      const context = getConversationSummary();
       const completedStages = state.roadmapStages.map((stage, index) => {
         const tasks = (stage.tasks || []).map((task) => `- ${task}`).join("\n");
         return `Stage ${index + 1}: ${stage.label}\n${stage.desc || ""}\n${tasks}`;
@@ -5206,32 +5492,12 @@
 
       try {
         const response = await callAdvisor(
-          `You are whatimado, a practical next-phase roadmap coach.\n\nThe user completed this roadmap for "${state.currentIdea.title}" (${state.currentIdea.tagline || state.currentIdea.type || "path"}).\n\nUser context:\n${context}\n\nCompleted roadmap:\n${completedStages}\n\nIf continuing this business/life/project plan realistically makes sense, generate the NEXT 4 stages that come after this completed roadmap. If the plan should not simply grow, generate practical sustain/refine/review stages instead. Keep tasks specific, grounded, and doable. Do not repeat completed tasks.\n\nRespond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence tied to the next phase","tasks":["specific task 1","specific task 2","specific task 3"]}]`,
-          1200
+          `${buildRoadmapPrompt(state.currentIdea, context, { phase: "continue" })}\n\nCompleted roadmap:\n${completedStages}`,
+          1800
         );
 
-        const nextStages = extractJsonArray(response, [
-          {
-            label: "Review & Decide",
-            desc: "Look at what worked and decide whether this path deserves another round.",
-            tasks: ["Write down the best result from the completed roadmap", "List what felt confusing or too hard", "Choose one adjustment before repeating the plan"]
-          },
-          {
-            label: "Strengthen The System",
-            desc: "Turn the finished plan into something easier to repeat.",
-            tasks: ["Create a simple checklist from the steps that worked", "Remove one task that did not create value", "Set a realistic weekly rhythm for this path"]
-          },
-          {
-            label: "Reach The Next Group",
-            desc: "Test the improved version with a slightly wider audience.",
-            tasks: ["Ask three new people for honest feedback", "Share one clear story or result from the first round", "Track every response in one simple note"]
-          },
-          {
-            label: "Choose The Next Move",
-            desc: "Decide whether to keep building, pause, or switch paths.",
-            tasks: ["Compare effort against results", "Pick one next milestone for the next 30 days", "Decide whether this path is still worth pursuing"]
-          }
-        ]);
+        const nextStages = parseRoadmapResponse(response, state.currentIdea);
+        if (!nextStages) throw new Error("Continue roadmap response was empty or too generic");
 
         state.roadmapStages = [...state.roadmapStages, ...nextStages];
         if (state.roadmapKey) {
@@ -5281,6 +5547,84 @@
       });
     }
 
+    async function adjustTasksFromThread(taskId, threadId, scope, button) {
+      const parsed = parseTaskId(taskId);
+      if (!parsed || !button || button.disabled) return;
+
+      const taskData = getRoadmapTaskData(taskId);
+      const thread = taskData.threads?.find((item) => item.id === threadId);
+      if (!thread) return;
+
+      const targets = scope === "current"
+        ? getTasksFromPosition(parsed.stageIndex, parsed.taskIndex).slice(0, 1)
+        : scope === "stage"
+          ? getTasksInStage(parsed.stageIndex)
+          : getTasksFromPosition(parsed.stageIndex, parsed.taskIndex);
+      if (!targets.length) return;
+
+      const originalLabel = button.textContent;
+      $$(".task-adjust-btn").forEach((item) => { item.disabled = true; });
+      button.textContent = "Updating...";
+      trackEvent("task_adjust_requested", {
+        task_id: taskId,
+        scope,
+        target_count: targets.length
+      });
+
+      try {
+        const response = await callAdvisor(
+          buildTaskAdjustPrompt(taskId, scope, thread, targets, getConversationSummary()),
+          1400
+        );
+        const newTexts = parseTaskTextArray(response, targets.length);
+        if (!newTexts) throw new Error("Invalid task update response");
+
+        targets.forEach((target, index) => {
+          state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = newTexts[index];
+        });
+
+        if (state.roadmapKey) {
+          state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
+        }
+
+        renderStages(state.roadmapStages);
+        expandThread(taskId, threadId);
+
+        const refreshedTaskData = getRoadmapTaskData(taskId);
+        const refreshedThread = refreshedTaskData.threads?.find((item) => item.id === threadId);
+        if (refreshedThread) {
+          refreshedThread.messages.push({
+            role: "assistant",
+            content: getAdjustSuccessMessage(scope, targets)
+          });
+          renderTaskThreads(taskId);
+        }
+
+        schedulePersist();
+        trackEvent("tasks_adjusted", {
+          task_id: taskId,
+          scope,
+          count: targets.length
+        });
+      } catch (error) {
+        console.error(error);
+        thread.messages.push({
+          role: "assistant",
+          content: "Could not update those tasks right now. Try again, or use Regenerate roadmap for a full refresh."
+        });
+        renderTaskThreads(taskId);
+        schedulePersist();
+      } finally {
+        $$(".task-adjust-btn").forEach((item) => {
+          item.disabled = false;
+          if (TASK_ADJUST_LABELS[item.dataset.scope]) {
+            item.textContent = TASK_ADJUST_LABELS[item.dataset.scope];
+          }
+        });
+        if (button.textContent === "Updating...") button.textContent = originalLabel;
+      }
+    }
+
     async function askTask(taskId, taskText) {
       const questionEl = $(`#question-${taskId}`);
       const question = questionEl?.value.trim();
@@ -5325,7 +5669,7 @@
         .join("\n");
 
       const text = await callAdvisor(
-        `You are whatimado, a practical task coach. Answer helpfully in 2-5 sentences.\nWhen mentioning websites, tools, or platforms, always include the full URL starting with https:// so the user can click it.\n\nIdea: ${$("#roadmap-title").textContent}\nTask: ${taskText}\n\nConversation so far:\n${threadHistory}`,
+        `You are whatimado, a practical task coach. Answer helpfully in 2-5 sentences.\nWhen mentioning websites, tools, or platforms, always include the full URL starting with https:// so the user can click it.\nIf the task does not fit their situation, acknowledge that and suggest what should change.\nAfter you reply, they can click "Update this task", "Update entire stage", or "Update this & following tasks" to rewrite the roadmap steps.\n\nIdea: ${$("#roadmap-title").textContent}\nTask: ${taskText}\n\nConversation so far:\n${threadHistory}`,
         450
       );
 
@@ -6070,6 +6414,7 @@
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
       $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
+      $("#regenerate-roadmap-btn")?.addEventListener("click", regenerateRoadmap);
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
       $("#complete-reset-btn")?.addEventListener("click", () => {
         if (confirm("Start fresh? This clears the current conversation, map, and roadmap.")) {
