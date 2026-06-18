@@ -1156,7 +1156,15 @@
       box-shadow: 0 8px 22px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .55);
     }
 
-    #reset-btn:hover {
+    #screen-map .page-header .back-btn:first-of-type {
+      color: var(--brand-purple-dark);
+      background: var(--light-blue-bg);
+      border-color: var(--light-blue-border);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .55);
+    }
+
+    #reset-btn:hover,
+    #screen-map .page-header .back-btn:first-of-type:hover {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg-hover);
       border-color: var(--light-blue-border);
@@ -1335,6 +1343,7 @@
       flex: 0 0 auto;
       border-radius: 50%;
       color: #fff;
+      background: var(--brand-purple-dark) !important;
       font-size: .66rem;
       font-weight: 800;
       margin-top: .05rem;
@@ -1509,7 +1518,7 @@
       position: relative;
       overflow: hidden;
       border-radius: var(--radius-md);
-      padding: 1.25rem 1.25rem 1.2rem 4.05rem;
+      padding: 1.55rem 1.25rem 1.2rem;
       text-align: left;
       background: var(--plan-card-bg);
       border-color: var(--plan-card-border);
@@ -1523,14 +1532,16 @@
 
     .opp-card-number {
       position: absolute;
-      top: 1.25rem;
-      left: 1.25rem;
+      top: 1rem;
+      left: 1rem;
+      z-index: 2;
       width: 28px;
       height: 28px;
       display: grid;
       place-items: center;
       border-radius: 50%;
       color: #fff;
+      background: var(--brand-purple-dark) !important;
       font-size: .75rem;
       font-weight: 800;
       margin-top: 0;
@@ -1755,7 +1766,7 @@
       border: 1px solid var(--plan-card-border);
       background: var(--plan-card-bg);
       box-shadow: var(--plan-card-shadow);
-      padding: 1.25rem 1.25rem 1.2rem 4.05rem;
+      padding: 1.55rem 1.25rem 1.2rem;
       text-align: left;
       transition: transform .18s ease, border-color .18s ease, background .18s ease;
     }
@@ -1770,6 +1781,7 @@
 
     .opp-type {
       display: block;
+      padding-left: 2.25rem;
       color: color-mix(in srgb, var(--plan-card-ink) 72%, var(--teal));
       font-size: .6rem;
       font-weight: 800;
@@ -1790,6 +1802,7 @@
 
     .opp-name {
       margin-top: 0;
+      padding-left: 2.25rem;
       color: var(--plan-card-ink);
       font-size: 1rem;
       font-weight: 800;
@@ -1822,6 +1835,16 @@
       border-radius: 999px;
       padding: .18rem .48rem;
       background: var(--plan-card-chip-bg);
+    }
+
+    .opp-meta span:nth-child(n+3) {
+      width: 100%;
+      min-height: 0;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      background: transparent;
+      display: block;
     }
 
     .opp-why {
@@ -3430,7 +3453,7 @@
       }
 
       .opp-card {
-        padding: 1.15rem 1rem 1rem 3.75rem;
+        padding: 1.45rem 1rem 1rem;
       }
 
       .opp-card-head {
@@ -3438,8 +3461,13 @@
       }
 
       .opp-card-number {
-        top: 1.15rem;
+        top: .9rem;
         left: 1rem;
+      }
+
+      .opp-type,
+      .opp-name {
+        padding-left: 2.15rem;
       }
 
       .opp-name {
