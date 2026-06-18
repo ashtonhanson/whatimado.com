@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-founder-roadmap-v1 -->
+<!-- whatimado build: 2026-06-17-intake-flow-v2 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-founder-roadmap-v1">
+  <meta name="whatimado-build" content="2026-06-17-intake-flow-v2">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4603,7 +4603,6 @@
       lastScreen: "main",
       journeyId: null,
       alterPathMode: false,
-      skipStandardIntake: false,
       saveStatus: "idle"
     };
 
@@ -5419,17 +5418,6 @@
       return value.length > 520 || (value.split(/\n+/).filter(Boolean).length >= 3 && value.length > 280);
     }
 
-    function shouldSkipStandardIntake(text) {
-      return isFounderOrProjectPrompt(text) || isDetailedPrompt(text);
-    }
-
-    function buildDetailedIntakeAck(text) {
-      if (isFounderOrProjectPrompt(text)) {
-        return "Got it — you're building whatimado.com into something sustainable without losing free access. I'll map realistic launch, validation, donation, and partnership paths from what you shared.";
-      }
-      return "You gave me a lot to work with already — I'll map paths tailored to your situation instead of asking generic intake questions.";
-    }
-
     function getClarifyingFallback(userText) {
       if (isFounderOrProjectPrompt(userText)) {
         return "What's your tightest constraint right now — time, budget, or getting your first real users to try the site?";
@@ -5443,7 +5431,14 @@
     function buildClarifyingPrompt(userText) {
       if (isFounderOrProjectPrompt(userText)) {
         return (
-          "You are whatimado, a practical advisor to the founder of whatimado.com. They are NOT asking for a personal job path — they are planning how to grow the site itself. Read their message carefully. Ask ONE short follow-up question that references something specific they said about launch, sustainability, users, donations, partnerships, or constraints. Plain text only.\n\nFounder message:\n" +
+          "You are whatimado, a practical advisor to the founder of whatimado.com. They are NOT asking for a personal job path — they are planning how to grow the site itself. Read their message carefully. Even if it is long and detailed, ask ONE short follow-up question that references something specific they said about launch, sustainability, users, donations, partnerships, or constraints — to narrow what they should focus on first. Plain text only.\n\nFounder message:\n" +
+          userText
+        );
+      }
+
+      if (isDetailedPrompt(userText)) {
+        return (
+          "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Even though they gave a lot of detail, ask ONE short clarifying question that references something specific they mentioned and helps you prioritize the best paths for them. Plain text only.\n\nUser: " +
           userText
         );
       }
@@ -5603,17 +5598,6 @@
       addTypingBubble();
       state.history.push({ role: "user", content: text });
 
-      if (shouldSkipStandardIntake(text)) {
-        const ack = buildDetailedIntakeAck(text);
-        resolveTyping(ack);
-        state.history.push({ role: "assistant", content: ack });
-        state.skipStandardIntake = true;
-        showReplyBox(false);
-        addTypingBubble(PATH_BUILDING_MSG);
-        await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(text) });
-        return;
-      }
-
       const answer = await callAdvisor(buildClarifyingPrompt(text), 450);
       const fallback = getClarifyingFallback(text);
       const finalAnswer = answer || fallback;
@@ -5643,16 +5627,8 @@
       }
 
       if (state.step === 2) {
-        if (state.skipStandardIntake || shouldSkipStandardIntake(getFirstUserMessage())) {
-          showReplyBox(false);
-          addTypingBubble(PATH_BUILDING_MSG);
-          await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(getFirstUserMessage()) });
-          schedulePersist();
-          return;
-        }
-
         addTypingBubble();
-        const reply = "May I ask your name?";
+        const reply = "May I ask what your name is?";
         resolveTyping(reply);
         state.history.push({ role: "assistant", content: reply });
         state.step = 3;
@@ -6267,7 +6243,6 @@
       state.expandedThreadId = null;
       state.lastScreen = "main";
       state.alterPathMode = false;
-      state.skipStandardIntake = false;
       setSaveStatus("idle");
       $("#save-status-bar")?.classList.remove("visible");
       try {
