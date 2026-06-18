@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-task-update-v2 -->
+<!-- whatimado build: 2026-06-17-founder-roadmap-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-task-update-v2">
+  <meta name="whatimado-build" content="2026-06-17-founder-roadmap-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4031,7 +4031,181 @@
 
     const GENERIC_FALLBACK_SIGNATURE = "Write the simplest version of your offer";
 
+    function getFounderPathTemplate(idea) {
+      const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""}`.toLowerCase();
+      if (/donat|revenue|sustain|stripe|supporter|pay-what/.test(blob)) return "donation";
+      if (/partner|nonprofit|grant|library|shelter|workforce|pilot|community org/.test(blob)) return "partnership";
+      if (/launch|valid|community|social|user|reddit|facebook/.test(blob)) return "launch";
+      return "general";
+    }
+
+    function getFounderFallbackStages(idea) {
+      const title = idea?.title || "whatimado.com growth";
+      const template = getFounderPathTemplate(idea);
+
+      const templates = {
+        launch: [
+          {
+            label: "Prep your launch story",
+            desc: `Write the honest whatimado.com story once, then reuse it across channels for "${title}".`,
+            tasks: [
+              "Open Notes and write a 120-word founder story: who whatimado.com is for (stuck, under-resourced, rebuilding), why it stays free, and one sentence on what makes the map different from ChatGPT",
+              "Take 3 mobile screenshots — home screen, possibility map, and one roadmap with tasks — crop them square for Reddit and Facebook",
+              "Save two post drafts: (A) Reddit help-first intro for r/Findapath or r/careerchange, and (B) personal Facebook post with your story plus whatimado.com link"
+            ]
+          },
+          {
+            label: "Post in 5 communities (week 1)",
+            desc: "Get your first strangers to try the site — help first, pitch second.",
+            tasks: [
+              "Post in r/Findapath with a title like \"I built a free tool for people stuck on what's next\" — follow sub rules; if links aren't allowed in the post body, put whatimado.com in your first comment",
+              "Spend 45 minutes in r/careerchange or r/Unemployed: reply helpfully to 5 posts without pitching; note 3 recurring pain points that match your tool",
+              "Share on your Facebook profile and one local job-search, mutual-aid, or career-change Facebook group using your personal story draft and link"
+            ]
+          },
+          {
+            label: "Watch 5 real users",
+            desc: "Learn where people actually get stuck — fix that before scaling outreach.",
+            tasks: [
+              "Ask 3 people from those threads (or friends who fit your mission) to use whatimado.com for 10 minutes while you watch — note the exact step where they hesitate",
+              "Log every friction point in a spreadsheet with columns: date, user type, step stuck, fix idea — also check your Supabase suggestions inbox for patterns",
+              "Fix the #1 friction point this week (homepage copy, confusing button, or mobile bug), redeploy index.html, and ask one prior tester to retry"
+            ]
+          },
+          {
+            label: "Measure and iterate (weeks 2–4)",
+            desc: "Use analytics and feedback to decide what to double down on.",
+            tasks: [
+              "In Supabase site_events, count this week's prompt_submitted, map_generated, and roadmap_opened events — write the numbers in your tracker",
+              "In your next community post, ask one question after people try the map: \"Did this help? What would make it better?\" — point them to the suggestions box on the site",
+              "Publish one honest update post with what you learned and a soft donate line: \"Free forever — optional tips keep it running for others\" with your existing Stripe link"
+            ]
+          }
+        ],
+        donation: [
+          {
+            label: "Clarify the mission ask",
+            desc: "Make donations feel like keeping the tool free — not paying for premium access.",
+            tasks: [
+              "Estimate monthly costs (hosting + AI API + domain) and divide by expected weekly sessions — write copy like: \"whatimado.com stays free. $5 helps cover ~10 sessions for someone else\"",
+              "Run a $1 test through your existing Stripe checkout (one-time tier) to confirm donations work end-to-end on mobile",
+              "Add or sharpen one visible line near the map or donate button: \"Personal use is free — pay what you can if this helped you\""
+            ]
+          },
+          {
+            label: "Make the ask visible without guilt",
+            desc: "Test soft asks at natural moments — never block free access.",
+            tasks: [
+              "Draft 3 mission-first asks (80 words max each): after map generated, in donate modal, and in a social post — no \"upgrade\" language, only \"keep it free for others\"",
+              "Share whatimado.com with 10 people who already tried it, explicitly framing support as optional: \"Use it free — tip only if it genuinely helped\"",
+              "Track donation_option_selected and stripe_checkout_redirected in Supabase site_events for 7 days — note which ask moment gets clicks"
+            ]
+          },
+          {
+            label: "Build a supporter loop",
+            desc: "Turn grateful users into recurring supporters at a very low price.",
+            tasks: [
+              "Message or email 5 people who completed a roadmap: ask for 2 minutes of feedback and mention your optional $2/mo supporter tier if you have one in Stripe",
+              "Write one transparent cost post for social: monthly hosting, API usage, your time — show the math without begging",
+              "Set a 90-day goal (e.g. $50/mo covers hosting) and celebrate the first milestone publicly when you hit it"
+            ]
+          },
+          {
+            label: "Sustainability math",
+            desc: "Decide whether donations, grants, or partnerships should lead — not user paywalls.",
+            tasks: [
+              "Calculate cost per active session: monthly spend ÷ map_generated events — write whether donations could realistically cover it at current traffic",
+              "Document one decision page: \"We will never paywall personal users; next funding lever is donations, then grants/sponsors, then org pilots\"",
+              "If donations are below costs, prioritize one free nonprofit/library pilot before considering any paid individual tier above pay-what-you-can"
+            ]
+          }
+        ],
+        partnership: [
+          {
+            label: "Pick one pilot partner type",
+            desc: "Focus on a single org category before spraying outreach everywhere.",
+            tasks: [
+              "Choose ONE target for the next 30 days: public library, workforce program, shelter, community college career center, or nonprofit re-entry org",
+              "List 10 local organizations with a program director name and email from their website — put them in a spreadsheet",
+              "Create a 1-page pilot outline (Google Doc or PDF): free whatimado.com access, what staff get, what feedback you need, zero cost to clients, no paywall"
+            ]
+          },
+          {
+            label: "Send 5 outreach emails",
+            desc: "Personal beats bulk — one org type, five tailored messages.",
+            tasks: [
+              "Send this email to 5 directors (customize org name and one sentence about their mission): \"Hi [Name] — I built whatimado.com, a free AI possibility map for people stuck on what's next. I'd love a 4-week free pilot with [org]: your clients use it at no cost, I collect anonymized feedback to improve it. Could we do a 15-minute call?\"",
+              "Follow up once after 5 business days with a 2-sentence bump and link to whatimado.com",
+              "Prepare a 20-minute live demo using a realistic scenario (career change, housing instability, workforce re-entry) so you're ready if someone says yes"
+            ]
+          },
+          {
+            label: "Run the pilot",
+            desc: "One working partnership beats ten maybes.",
+            tasks: [
+              "If an org agrees: schedule a short intro for staff or clients — share a simple handout with QR code to whatimado.com and 3 steps to start",
+              "Tag feedback in your notes by org name; ask users to submit suggestions through the on-site box when something confuses them",
+              "After 2 weeks, document 3 outcomes: sessions started, quotes (with permission), and one thing you improved from their feedback"
+            ]
+          },
+          {
+            label: "Expand or fund",
+            desc: "Turn a pilot into testimonials, grants, or ethical sponsorship.",
+            tasks: [
+              "Ask your pilot partner for a short testimonial or letter of support you can put on the site (still free for end users)",
+              "Research 2 grants that fit digital equity, workforce development, or homeless services tech — note deadlines and one-sentence fit",
+              "Draft a 1-page sponsor outline: logo on site, co-branded landing page optional, end users always free — for local businesses or foundations, not user subscriptions"
+            ]
+          }
+        ],
+        general: [
+          {
+            label: "Ship week 1 validation",
+            desc: `Turn "${title}" into one measurable test for whatimado.com this week.`,
+            tasks: [
+              "Write a one-page 30-day plan doc with 3 metrics: sessions started, maps generated, and feedback submissions — baseline all three at zero today",
+              "Share whatimado.com in one community where stuck people actually post (Reddit career sub, Facebook job group, or local mutual aid) using a help-first message, not an ad",
+              "Block 2 hours on your calendar for fixing the top user friction point from suggestions or live tests"
+            ]
+          },
+          {
+            label: "Feedback loop",
+            desc: "Make it easy for users to tell you what's broken or missing.",
+            tasks: [
+              "Read every row in your Supabase site_suggestions table and group issues into: bugs, confusing copy, missing paths, praise",
+              "Fix or clarify the #1 issue this week and note the change in your next social post",
+              "Ask 3 testers: \"Would you recommend this to someone in a worse spot than you?\" — write their answers verbatim"
+            ]
+          },
+          {
+            label: "Mission-safe revenue test",
+            desc: "Test sustainability without charging regular users.",
+            tasks: [
+              "Try one donation ask tied to a real cost number — use existing Stripe checkout, keep personal access free",
+              "Identify one nonprofit, library, or workforce program contact for a free pilot conversation this month",
+              "Log which funding lever fits best so far: donations, grants, sponsors, or org partnerships — pick one to prioritize for days 31–60"
+            ]
+          },
+          {
+            label: "90-day checkpoint",
+            desc: "Decide keep, pivot, or pause based on evidence.",
+            tasks: [
+              "Compare analytics (prompt_submitted, map_generated, roadmap_opened, donations) against your day-1 baseline",
+              "Write a short public update: what worked, what didn't, what's next — invite community input via suggestions box",
+              "Set the single next milestone for days 61–90 (e.g. 100 map sessions, first $50 in donations, or one signed pilot MOU)"
+            ]
+          }
+        ]
+      };
+
+      return templates[template] || templates.general;
+    }
+
     function getFallbackStages(idea) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) {
+        return getFounderFallbackStages(idea);
+      }
+
       const title = idea?.title || "this path";
       const tagline = idea?.tagline || "";
       const why = idea?.why || "";
@@ -4078,13 +4252,77 @@
       ];
     }
 
+    function isFounderRoadmap(stages) {
+      const blob = (stages || []).flatMap((stage) => stage.tasks || []).join(" ").toLowerCase();
+      return /whatimado|stripe|supabase|reddit|r\/|donation|nonprofit|pilot|site_events|suggestions/.test(blob);
+    }
+
     function isGenericFallbackRoadmap(stages) {
       return Boolean(
         stages?.[0]?.tasks?.some((task) => task.includes(GENERIC_FALLBACK_SIGNATURE))
       );
     }
 
-    function buildRoadmapPrompt(idea, context, { phase = "initial" } = {}) {
+    function buildFounderRoadmapPrompt(idea, context, { phase = "initial" } = {}) {
+      const ideaBlock = [
+        `Title: ${idea.title}`,
+        idea.type ? `Type: ${idea.type}` : "",
+        idea.tagline ? `Tagline: ${idea.tagline}` : "",
+        idea.why ? `Why it fits: ${idea.why}` : "",
+        idea.cost ? `Budget: ${idea.cost}` : "",
+        idea.timeline ? `Timeline: ${idea.timeline}` : "",
+        idea.income ? `Funding model: ${idea.income}` : ""
+      ].filter(Boolean).join("\n");
+
+      const phaseNote = phase === "continue"
+        ? "Generate the NEXT 4 stages after their completed roadmap for growing whatimado.com. Do not repeat completed tasks."
+        : "Generate the FIRST 4 stages to execute this founder path for whatimado.com.";
+
+      const pathFocus = {
+        launch: "community validation, Reddit/Facebook launch posts, first real users, analytics from Supabase site_events, suggestions box feedback",
+        donation: "Stripe donation copy, pay-what-you-can framing, soft asks without paywalls, supporter loop, cost-per-session math",
+        partnership: "nonprofit/library/workforce/shelter pilot outreach, email templates, demo script, grant/sponsor paths that keep end users free",
+        general: "low-cost 30-90 day founder milestones mixing validation, feedback, donations, and partnerships"
+      }[getFounderPathTemplate(idea)];
+
+      return (
+        `You are whatimado, a practical advisor to the FOUNDER of whatimado.com — a free AI possibility map for people asking "What I'm'a do?"\n\n` +
+        `${phaseNote}\n\n` +
+        `Site facts you can reference in tasks:\n` +
+        `- Live single-page app at whatimado.com with AI chat intake, visual possibility map, roadmaps with tasks/notes/checkboxes, Ask AI per task\n` +
+        `- Guest progress saves locally; Supabase accounts/cloud save exist\n` +
+        `- Stripe donations (one-time + optional monthly) already set up — personal use must stay FREE, donation-based, or pay-what-you-can only\n` +
+        `- Suggestions box writes to Supabase site_suggestions; analytics in site_events (prompt_submitted, map_generated, roadmap_opened, donation clicks, etc.)\n` +
+        `- Mission: free for under-resourced, stuck, low-income, homeless, or rebuilding users — never suggest premium SaaS tiers for individuals\n\n` +
+        `Chosen founder path:\n${ideaBlock}\n\n` +
+        `Founder conversation:\n${context}\n\n` +
+        `Focus this roadmap on: ${pathFocus}.\n\n` +
+        `CRITICAL RULES FOR TASKS:\n` +
+        `- Every task is for the FOUNDER building whatimado.com — NOT for a random user finding a job.\n` +
+        `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real deliverables, time boxes, email subject lines, and copy snippets.\n` +
+        `- Include ready-to-use templates where helpful (Reddit post title, outreach email opening, donation ask line, demo script bullet).\n` +
+        `- Reference Stripe, Supabase analytics/suggestions, and social launch — not generic "build an audience" advice.\n` +
+        `- Each task doable in one sitting (30–90 min) or one week max.\n` +
+        `- Never suggest paywalling personal users or $9+/mo individual subscriptions.\n\n` +
+        `BAD TASKS:\n` +
+        `- "Build your online presence"\n` +
+        `- "Network with entrepreneurs"\n` +
+        `- "Define your target market"\n\n` +
+        `GOOD TASKS:\n` +
+        `- "Post in r/Findapath with title 'I built a free possibility map for people stuck on what's next' — follow sub rules; put whatimado.com in comment if links banned in body"\n` +
+        `- "Email workforce director at [local org]: 'Hi [Name], I built whatimado.com — free AI roadmaps for clients rebuilding careers. 4-week pilot, zero cost. 15-min call?'"\n` +
+        `- "Add donate line after map: 'Free forever — $3 optional tip covers ~6 sessions for someone else' and track stripe_checkout_redirected in Supabase for 7 days"\n\n` +
+        `Return exactly 4 stages with 3 tasks each.\n` +
+        `Respond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence for this founder path","tasks":["specific task 1","specific task 2","specific task 3"]}]`
+      );
+    }
+
+    function buildRoadmapPrompt(idea, context, { phase = "initial", founderMode = false } = {}) {
+      const founder = founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
+      if (founder) {
+        return buildFounderRoadmapPrompt(idea, context, { phase });
+      }
+
       const ideaBlock = [
         `Title: ${idea.title}`,
         idea.type ? `Type: ${idea.type}` : "",
@@ -4365,6 +4603,7 @@
       lastScreen: "main",
       journeyId: null,
       alterPathMode: false,
+      skipStandardIntake: false,
       saveStatus: "idle"
     };
 
@@ -4777,7 +5016,9 @@
         $("#nav-roadmap-btn").hidden = false;
         $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
         $("#roadmap-title").textContent = state.currentIdea.title || "";
-        $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
+        $("#roadmap-sub").textContent = founderMode
+          ? "Mission-driven steps for whatimado.com — each task includes concrete copy, channels, or templates."
+          : "Follow these stages to get this off the ground.";
         $("#momentum-card").style.display = "flex";
         setRoadmapLoading(false);
         renderStages(state.roadmapStages);
@@ -5150,6 +5391,144 @@
       return state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
     }
 
+    function getFirstUserMessage() {
+      return state.history.find((entry) => entry.role === "user")?.content?.trim() || "";
+    }
+
+    function isFounderOrProjectPrompt(text) {
+      const q = String(text || "").toLowerCase();
+      const score = [
+        /\bwhatimado\b/,
+        /\bbuilding\b.*\b(site|app|product|platform|project|business)\b/,
+        /\bbusiness plan\b/,
+        /\bmission[- ]driven\b/,
+        /\bsustainabl(e|ity)\b/,
+        /\b(stripe|supabase|donation|sponsor|grant|nonprofit|workforce program)\b/,
+        /\bearly users\b/,
+        /\bsocial (media|launch)\b/,
+        /\bfree for everyone\b/,
+        /\broadmap(s)? with tasks\b/,
+        /\bpossibility map\b/
+      ].filter((pattern) => pattern.test(q)).length;
+
+      return score >= 2 || (/\bwhatimado\b/.test(q) && text.length > 350);
+    }
+
+    function isDetailedPrompt(text) {
+      const value = String(text || "").trim();
+      return value.length > 520 || (value.split(/\n+/).filter(Boolean).length >= 3 && value.length > 280);
+    }
+
+    function shouldSkipStandardIntake(text) {
+      return isFounderOrProjectPrompt(text) || isDetailedPrompt(text);
+    }
+
+    function buildDetailedIntakeAck(text) {
+      if (isFounderOrProjectPrompt(text)) {
+        return "Got it — you're building whatimado.com into something sustainable without losing free access. I'll map realistic launch, validation, donation, and partnership paths from what you shared.";
+      }
+      return "You gave me a lot to work with already — I'll map paths tailored to your situation instead of asking generic intake questions.";
+    }
+
+    function getClarifyingFallback(userText) {
+      if (isFounderOrProjectPrompt(userText)) {
+        return "What's your tightest constraint right now — time, budget, or getting your first real users to try the site?";
+      }
+      if (isDetailedPrompt(userText)) {
+        return "What's the single most important outcome you want in the next 30 days?";
+      }
+      return "What are you naturally good at, and would you rather get hired, learn a new skill, or build your own thing?";
+    }
+
+    function buildClarifyingPrompt(userText) {
+      if (isFounderOrProjectPrompt(userText)) {
+        return (
+          "You are whatimado, a practical advisor to the founder of whatimado.com. They are NOT asking for a personal job path — they are planning how to grow the site itself. Read their message carefully. Ask ONE short follow-up question that references something specific they said about launch, sustainability, users, donations, partnerships, or constraints. Plain text only.\n\nFounder message:\n" +
+          userText
+        );
+      }
+
+      return (
+        "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Ask ONE short clarifying question that references something specific they mentioned — their situation, skills, constraints, or goals. Do not ask generic questions like 'what are you good at?' unless they gave you almost nothing to work with. Your question should uncover whether they want to get hired, learn something new, or build their own thing, and what resources (time, money, skills) they actually have. Plain text only.\n\nUser: " +
+        userText
+      );
+    }
+
+    function buildFounderIdeasPrompt(summary) {
+      return (
+        "You are whatimado, a practical advisor helping the FOUNDER grow whatimado.com into a sustainable mission-driven project without paywalling regular users.\n\n" +
+        "Conversation:\n" +
+        summary +
+        "\n\nGenerate exactly 3 realistic path options for whatimado.com over the next 30-90 days and beyond.\n" +
+        "Focus on low-cost validation, social launch, donations (Stripe is already set up), sponsors/grants, nonprofit/community partnerships, feedback loops, and analytics.\n" +
+        "Personal user pricing must stay free, donation-based, pay-what-you-can, or very low — never premium SaaS tiers for individuals.\n" +
+        "Each idea must be specific to whatimado.com and reference details from what they said.\n\n" +
+        "BAD: \"Start a business\" or \"Build an audience\"\n" +
+        "GOOD: \"30-day Reddit + Facebook validation sprint — post in 5 career-change communities, collect 100 email signups, ask for $1-3 donations via existing Stripe checkout\"\n\n" +
+        "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. donations / grants / sponsorship\"}]"
+      );
+    }
+
+    function getFounderFallbackIdeas() {
+      return [
+        {
+          title: "30-Day Community Launch Sprint",
+          type: "Validation",
+          tagline: "Test whatimado.com with real stuck people before scaling anything.",
+          why: "You already have a working app — the next step is proof that strangers find it useful enough to return or donate.",
+          cost: "$0-50",
+          timeline: "30 days",
+          income: "Donations + feedback"
+        },
+        {
+          title: "Donation-First Sustainability Loop",
+          type: "Revenue",
+          tagline: "Use the existing Stripe setup to learn what supporters will actually pay for.",
+          why: "This keeps the mission free while testing whether pay-what-you-can or monthly support can cover hosting and AI costs.",
+          cost: "$0",
+          timeline: "2-6 weeks",
+          income: "$100-1000/mo early"
+        },
+        {
+          title: "Partnership Pilot Outreach",
+          type: "Partnerships",
+          tagline: "Pitch shelters, libraries, workforce programs, or nonprofits on a free pilot.",
+          why: "Mission-driven organizations can send you users, feedback, and later grant or sponsor conversations without charging the people who need help.",
+          cost: "$0",
+          timeline: "4-8 weeks",
+          income: "Grants / sponsorship"
+        }
+      ];
+    }
+
+    async function generateAndShowMap(options = {}) {
+      const founderMode = options.founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
+      const summary = getConversationSummary();
+      const response = await callAdvisor(
+        founderMode ? buildFounderIdeasPrompt(summary) : buildIdeasPrompt(summary, 3),
+        1200
+      );
+
+      state.ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : fallbackIdeas);
+      const closing = founderMode
+        ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
+        : "Here are your paths. Tap any opportunity to see your full roadmap.";
+      resolveTyping(closing);
+      state.history.push({ role: "assistant", content: closing });
+      state.step = 4;
+      updateSaveButtonVisibility();
+      schedulePersist();
+      setTimeout(() => {
+        buildOpportunityMap(state.ideas);
+        $("#nav-map-btn").hidden = false;
+        trackEvent("map_generated", {
+          ideas_count: state.ideas.length,
+          founder_mode: founderMode
+        });
+        showScreen("map");
+      }, 550);
+    }
+
     function buildIdeasPrompt(summary, count, excludeTitles = []) {
       const excludeBlock = excludeTitles.length
         ? `\n\nDO NOT repeat or closely resemble these ideas already shown:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n\nGenerate exactly ${count} completely NEW and different ideas that are SPECIFIC to this person`
@@ -5176,7 +5555,13 @@
 
       const summary = getConversationSummary();
       const existingTitles = state.ideas.map((idea) => idea.title);
-      const response = await callAdvisor(buildIdeasPrompt(summary, 3, existingTitles), 900);
+      const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
+      const response = await callAdvisor(
+        founderMode
+          ? `${buildFounderIdeasPrompt(summary)}\n\nGenerate 3 NEW path options different from these existing titles: ${existingTitles.join(", ")}`
+          : buildIdeasPrompt(summary, 3, existingTitles),
+        900
+      );
       const seen = new Set(existingTitles.map((title) => title.toLowerCase()));
       const newIdeas = extractJsonArray(response, []).filter(
         (idea) => idea.title && !seen.has(idea.title.toLowerCase())
@@ -5208,19 +5593,33 @@
     async function startFlow() {
       const text = $("#main-input").value.trim();
       if (!text) return;
-      trackEvent("prompt_submitted", { prompt_length: text.length });
+      trackEvent("prompt_submitted", {
+        prompt_length: text.length,
+        founder_mode: isFounderOrProjectPrompt(text),
+        detailed_prompt: isDetailedPrompt(text)
+      });
       showScreen("convo");
       addUserBubble(text);
       addTypingBubble();
       state.history.push({ role: "user", content: text });
 
-      const answer = await callAdvisor(
-        "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Ask ONE short clarifying question that references something specific they mentioned — their situation, skills, constraints, or goals. Do not ask generic questions like 'what are you good at?' unless they gave you almost nothing to work with. Your question should uncover whether they want to get hired, learn something new, or build their own thing, and what resources (time, money, skills) they actually have. Plain text only.\n\nUser: " + text,
-        300
-      );
+      if (shouldSkipStandardIntake(text)) {
+        const ack = buildDetailedIntakeAck(text);
+        resolveTyping(ack);
+        state.history.push({ role: "assistant", content: ack });
+        state.skipStandardIntake = true;
+        showReplyBox(false);
+        addTypingBubble(PATH_BUILDING_MSG);
+        await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(text) });
+        return;
+      }
 
-      resolveTyping(answer || "What are you naturally good at, and would you rather get hired, learn a new skill, or build your own thing?");
-      state.history.push({ role: "assistant", content: answer || "What are you naturally good at, and would you rather get hired, learn a new skill, or build your own thing?" });
+      const answer = await callAdvisor(buildClarifyingPrompt(text), 450);
+      const fallback = getClarifyingFallback(text);
+      const finalAnswer = answer || fallback;
+
+      resolveTyping(finalAnswer);
+      state.history.push({ role: "assistant", content: finalAnswer });
       state.step = 2;
       trackEvent("clarifying_question_shown", { prompt_length: text.length });
       showReplyBox(true);
@@ -5244,6 +5643,14 @@
       }
 
       if (state.step === 2) {
+        if (state.skipStandardIntake || shouldSkipStandardIntake(getFirstUserMessage())) {
+          showReplyBox(false);
+          addTypingBubble(PATH_BUILDING_MSG);
+          await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(getFirstUserMessage()) });
+          schedulePersist();
+          return;
+        }
+
         addTypingBubble();
         const reply = "May I ask your name?";
         resolveTyping(reply);
@@ -5255,28 +5662,24 @@
         return;
       }
 
+      if (state.step === 3) {
+        showReplyBox(false);
+        addTypingBubble(PATH_BUILDING_MSG);
+        trackEvent("path_generation_started", {
+          reply_length: text.length,
+          history_count: state.history.length
+        });
+        await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(getFirstUserMessage()) });
+        return;
+      }
+
       showReplyBox(false);
       addTypingBubble(PATH_BUILDING_MSG);
       trackEvent("path_generation_started", {
         reply_length: text.length,
         history_count: state.history.length
       });
-      const summary = getConversationSummary();
-      const response = await callAdvisor(buildIdeasPrompt(summary, 3), 900);
-
-      state.ideas = extractJsonArray(response, fallbackIdeas);
-      const closing = "Here are your paths. Tap any opportunity to see your full roadmap.";
-      resolveTyping(closing);
-      state.history.push({ role: "assistant", content: closing });
-      state.step = 4;
-      updateSaveButtonVisibility();
-      schedulePersist();
-      setTimeout(() => {
-        buildOpportunityMap(state.ideas);
-        $("#nav-map-btn").hidden = false;
-        trackEvent("map_generated", { ideas_count: state.ideas.length });
-        showScreen("map");
-      }, 550);
+      await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(getFirstUserMessage()) });
     }
 
     function getNodePosition(index, count, center) {
@@ -5419,22 +5822,29 @@
     async function viewRoadmap(idea, ideaIndex, options = {}) {
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
+      const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
       trackEvent("roadmap_opened", {
         idea_index: ideaIndex,
         idea_type: idea.type || "Opportunity",
         cached: !options.force && Boolean(state.allRoadmaps[slugify(idea.title)]?.stages?.length),
-        forced: Boolean(options.force)
+        forced: Boolean(options.force),
+        founder_mode: founderMode
       });
       $("#nav-roadmap-btn").hidden = false;
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = idea.title;
 
       const cached = !options.force ? state.allRoadmaps[state.roadmapKey] : null;
-      if (cached?.stages?.length && !isGenericFallbackRoadmap(cached.stages)) {
+      const cachedIsUsable = cached?.stages?.length
+        && !isGenericFallbackRoadmap(cached.stages)
+        && (!founderMode || isFounderRoadmap(cached.stages));
+      if (cachedIsUsable) {
         setRoadmapLoading(false);
         showScreen("roadmap");
         state.roadmapStages = cached.stages;
-        $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
+        $("#roadmap-sub").textContent = founderMode
+          ? "Mission-driven steps for whatimado.com — each task includes concrete copy, channels, or templates."
+          : "Follow these stages to get this off the ground.";
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
         trackEvent("roadmap_loaded_cached", {
@@ -5446,7 +5856,9 @@
       }
 
       clearProgressMap();
-      $("#roadmap-sub").textContent = "Building your personalised roadmap...";
+      $("#roadmap-sub").textContent = founderMode
+        ? "Building your whatimado.com launch roadmap..."
+        : "Building your personalised roadmap...";
       $("#stage-list").innerHTML = "";
       $("#momentum-card").style.display = "none";
       const completeCard = $("#roadmap-complete-card");
@@ -5459,7 +5871,7 @@
 
       try {
       const context = getConversationSummary();
-      const response = await callAdvisor(buildRoadmapPrompt(idea, context), 1800);
+      const response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode }), founderMode ? 2200 : 1800);
       const stages = parseRoadmapResponse(response, idea);
 
       if (!stages) {
@@ -5468,13 +5880,16 @@
 
       state.roadmapStages = stages;
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages };
-      $("#roadmap-sub").textContent = "Follow these stages to get this off the ground.";
+      $("#roadmap-sub").textContent = founderMode
+        ? "Mission-driven steps for whatimado.com — each task includes concrete copy, channels, or templates."
+        : "Follow these stages to get this off the ground.";
       $("#momentum-card").style.display = "flex";
       renderStages(state.roadmapStages);
         trackEvent("roadmap_generated", {
           idea_index: ideaIndex,
           stages_count: state.roadmapStages.length,
-          task_count: state.roadmapStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0)
+          task_count: state.roadmapStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0),
+          founder_mode: founderMode
         });
         schedulePersist();
       } catch (error) {
@@ -5482,7 +5897,9 @@
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
         state.roadmapStages = getFallbackStages(idea);
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages };
-        $("#roadmap-sub").textContent = "Using a backup roadmap — tasks are tailored to your path, but run through the flow again for a fully custom plan.";
+        $("#roadmap-sub").textContent = founderMode
+          ? "Using a detailed backup roadmap for whatimado.com — tasks include Reddit posts, donation copy, and outreach templates."
+          : "Using a backup roadmap — tasks are tailored to your path, but run through the flow again for a fully custom plan.";
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
         schedulePersist();
@@ -5650,6 +6067,7 @@
       });
 
       const context = getConversationSummary();
+      const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
       const completedStages = state.roadmapStages.map((stage, index) => {
         const tasks = (stage.tasks || []).map((task) => `- ${task}`).join("\n");
         return `Stage ${index + 1}: ${stage.label}\n${stage.desc || ""}\n${tasks}`;
@@ -5657,8 +6075,8 @@
 
       try {
         const response = await callAdvisor(
-          `${buildRoadmapPrompt(state.currentIdea, context, { phase: "continue" })}\n\nCompleted roadmap:\n${completedStages}`,
-          1800
+          `${buildRoadmapPrompt(state.currentIdea, context, { phase: "continue", founderMode })}\n\nCompleted roadmap:\n${completedStages}`,
+          founderMode ? 2200 : 1800
         );
 
         const nextStages = parseRoadmapResponse(response, state.currentIdea);
@@ -5849,6 +6267,7 @@
       state.expandedThreadId = null;
       state.lastScreen = "main";
       state.alterPathMode = false;
+      state.skipStandardIntake = false;
       setSaveStatus("idle");
       $("#save-status-bar")?.classList.remove("visible");
       try {
