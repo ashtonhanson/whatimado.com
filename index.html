@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-22-intake-polish-v3 -->
+<!-- whatimado build: 2026-06-22-intake-polish-v5 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-22-intake-polish-v3">
+  <meta name="whatimado-build" content="2026-06-22-intake-polish-v5">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4252,12 +4252,12 @@
       <div class="main-workspace">
       <div class="hero">
         <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
-        <p class="hero-sub">Type one sentence below. You'll get a visual map in about a minute, not a chat wall. Free for everyone.</p>
+        <p class="hero-sub">Share your situation below — skills, constraints, and what you want next. The more honest detail you give, the better your paths. Free for everyone.</p>
 
         <div class="prompt-box">
-          <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="e.g. I feel stuck, I'm good with people, and I need income soon."></textarea>
+          <textarea class="prompt-textarea" id="main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
           <div class="prompt-footer">
-            <span class="hint">One sentence is enough · <button type="button" class="hero-example-btn" id="hero-example-btn">Test Demo Prompt to See Process</button></span>
+            <span class="hint">More detail helps · <button type="button" class="hero-example-btn" id="hero-example-btn">Test Demo Prompt to See Process</button></span>
             <div class="prompt-actions">
               <button class="action-btn" id="start-btn">Continue</button>
             </div>
@@ -4374,6 +4374,7 @@
           <div class="map-plans-actions">
             <button class="back-btn map-toolbar-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
             <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Chat to alter path</button>
+            <button class="back-btn map-toolbar-btn" id="map-toolbar-reset-btn" type="button">Start over</button>
           </div>
           <span class="map-plans-toolbar-line" aria-hidden="true"></span>
         </div>
@@ -5425,6 +5426,7 @@
     let themeRenderColors = null;
     let themeNetworkLineRgb = "124, 111, 205";
     let intakeAbandonTracked = false;
+    let intakeInProgress = false;
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -6704,7 +6706,9 @@
 
     async function startFlow() {
       const text = $("#main-input").value.trim();
-      if (!text) return;
+      if (!text || intakeInProgress) return;
+      intakeInProgress = true;
+      clearIntakeSession();
       intakeAbandonTracked = false;
       state.intakeMode = "standard";
       trackEvent("prompt_submitted", {
@@ -6718,23 +6722,28 @@
       addTypingBubble();
       state.history.push({ role: "user", content: text });
 
-      const answer = await callAdvisor(buildClarifyingPrompt(text), 450);
-      const fallback = getClarifyingFallback(text);
-      const finalAnswer = answer || fallback;
+      try {
+        const answer = await callAdvisor(buildClarifyingPrompt(text), 450);
+        const fallback = getClarifyingFallback(text);
+        const finalAnswer = answer || fallback;
 
-      resolveTyping(finalAnswer);
-      state.history.push({ role: "assistant", content: finalAnswer });
-      state.step = 2;
-      trackEvent("clarifying_question_shown", {
-        prompt_length: text.length,
-        intake_mode: "standard"
-      });
-      showReplyBox(true);
-      updateSaveButtonVisibility();
-      schedulePersist();
+        resolveTyping(finalAnswer);
+        state.history.push({ role: "assistant", content: finalAnswer });
+        state.step = 2;
+        trackEvent("clarifying_question_shown", {
+          prompt_length: text.length,
+          intake_mode: "standard"
+        });
+        showReplyBox(true);
+        updateSaveButtonVisibility();
+        schedulePersist();
+      } finally {
+        intakeInProgress = false;
+      }
     }
 
     async function startQuickFlow() {
+      if (intakeInProgress) return;
       let text = $("#main-input").value.trim();
       if (!text) {
         text = QUICK_TRY_EXAMPLE;
@@ -6744,6 +6753,8 @@
         return startFlow();
       }
 
+      intakeInProgress = true;
+      clearIntakeSession();
       state.intakeMode = "quick";
       intakeAbandonTracked = false;
       trackEvent("prompt_submitted", {
@@ -6767,7 +6778,12 @@
       });
       updateSaveButtonVisibility();
       schedulePersist();
-      await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
+
+      try {
+        await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
+      } finally {
+        intakeInProgress = false;
+      }
     }
 
     async function submitReply() {
@@ -7454,12 +7470,7 @@
       schedulePersist();
     }
 
-    function resetAll() {
-      trackEvent("journey_reset", {
-        history_count: state.history.length,
-        ideas_count: state.ideas.length,
-        had_roadmap: Boolean(state.roadmapStages.length)
-      });
+    function clearIntakeSession(options = {}) {
       state.step = 1;
       state.history = [];
       state.ideas = [];
@@ -7470,12 +7481,31 @@
       state.allRoadmaps = {};
       state.activeTaskId = null;
       state.expandedThreadId = null;
-      state.lastScreen = "main";
       state.alterPathMode = false;
       state.mapFeedbackGiven = false;
       state.mapFeedbackSentiment = null;
       state.intakeMode = "standard";
-      intakeAbandonTracked = false;
+      $("#bubble-chain").innerHTML = "";
+      $("#typing-pair")?.remove();
+      $("#nav-map-btn").hidden = true;
+      $("#nav-roadmap-btn").hidden = true;
+      showReplyBox(false);
+      if (options.clearMainInput) {
+        $("#main-input").value = "";
+      }
+      updateMapAuxiliaryPanels();
+      updateSaveButtonVisibility();
+    }
+
+    function resetAll() {
+      trackEvent("journey_reset", {
+        history_count: state.history.length,
+        ideas_count: state.ideas.length,
+        had_roadmap: Boolean(state.roadmapStages.length)
+      });
+      intakeInProgress = false;
+      clearIntakeSession({ clearMainInput: true });
+      state.lastScreen = "main";
       setSaveStatus("idle");
       $("#save-status-bar")?.classList.remove("visible");
       try {
@@ -7486,10 +7516,6 @@
       if (state.currentUser && supabaseClient) {
         supabaseClient.from("user_journeys").delete().eq("user_id", state.currentUser.id).then(() => {});
       }
-      $("#main-input").value = "";
-      $("#bubble-chain").innerHTML = "";
-      $("#nav-map-btn").hidden = true;
-      $("#nav-roadmap-btn").hidden = true;
       const moreBtn = $("#more-ideas-btn");
       if (moreBtn) {
         moreBtn.disabled = false;
@@ -7497,8 +7523,6 @@
         const moreLabel = moreBtn.querySelector(".btn-label");
         if (moreLabel) moreLabel.textContent = "Show me more paths";
       }
-      showReplyBox(false);
-      updateSaveButtonVisibility();
       showScreen("main");
     }
 
@@ -8253,6 +8277,7 @@
       });
 
       $("#reset-btn").addEventListener("click", resetAll);
+      $("#map-toolbar-reset-btn")?.addEventListener("click", resetAll);
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
       $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
