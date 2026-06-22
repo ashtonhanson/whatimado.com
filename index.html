@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-launch-polish-v1 -->
+<!-- whatimado build: 2026-06-22-founder-stats-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-launch-polish-v1">
+  <meta name="whatimado-build" content="2026-06-22-founder-stats-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -3351,6 +3351,261 @@
       }
     }
 
+    #screen-stats .stats-page {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    .stats-kicker {
+      margin: 0 0 .35rem;
+      color: var(--brand-teal);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .stats-title {
+      margin: 0;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      line-height: 1.15;
+    }
+
+    .stats-sub {
+      margin: .55rem 0 0;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.5;
+      max-width: 42rem;
+    }
+
+    .stats-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      align-items: center;
+      margin: 1.35rem 0 1rem;
+    }
+
+    .stats-period-btn {
+      border: 1px solid rgba(120, 130, 200, .18);
+      border-radius: 999px;
+      padding: .45rem .85rem;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .03);
+      font-size: .78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .stats-period-btn.active {
+      color: #fff;
+      border-color: rgba(124, 111, 205, .55);
+      background: rgba(124, 111, 205, .22);
+    }
+
+    .stats-refresh-btn {
+      margin-left: auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .85rem;
+    }
+
+    .stats-card {
+      padding: 1rem 1.05rem;
+      border: 1px solid rgba(120, 130, 200, .14);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .stats-card-label {
+      color: var(--muted);
+      font-size: .74rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .stats-card-value {
+      margin-top: .35rem;
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .stats-card-value--maps {
+      color: var(--brand-teal);
+    }
+
+    .stats-card-value--started {
+      color: #f0c674;
+    }
+
+    .stats-panel {
+      margin-top: 1rem;
+      padding: 1rem 1.05rem;
+      border: 1px solid rgba(120, 130, 200, .14);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .stats-panel-title {
+      margin: 0 0 .75rem;
+      font-size: .95rem;
+      font-weight: 800;
+    }
+
+    .stats-funnel-track {
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .stats-funnel-seg {
+      height: 100%;
+    }
+
+    .stats-funnel-seg--maps {
+      background: var(--brand-teal);
+    }
+
+    .stats-funnel-seg--started {
+      background: #f0c674;
+    }
+
+    .stats-funnel-caption {
+      margin-top: .55rem;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.45;
+    }
+
+    .stats-chart {
+      display: grid;
+      gap: .65rem;
+    }
+
+    .stats-chart-row {
+      display: grid;
+      grid-template-columns: 4.5rem 1fr 2.2rem;
+      gap: .55rem;
+      align-items: center;
+    }
+
+    .stats-chart-day {
+      color: var(--muted);
+      font-size: .74rem;
+      font-weight: 700;
+    }
+
+    .stats-chart-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .stats-chart-bar {
+      height: 7px;
+      border-radius: 999px;
+      min-width: 2px;
+    }
+
+    .stats-chart-bar--visits {
+      background: rgba(116, 214, 226, .85);
+    }
+
+    .stats-chart-bar--started {
+      background: rgba(240, 198, 116, .9);
+    }
+
+    .stats-chart-bar--maps {
+      background: rgba(78, 205, 196, .95);
+    }
+
+    .stats-chart-val {
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .stats-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      margin-top: .75rem;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 700;
+    }
+
+    .stats-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+    }
+
+    .stats-legend i {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .stats-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .65rem;
+      margin-top: 1.25rem;
+    }
+
+    .stats-msg {
+      margin-top: 1rem;
+      padding: .85rem 1rem;
+      border-radius: 12px;
+      font-size: .86rem;
+      line-height: 1.5;
+    }
+
+    .stats-msg.error {
+      color: #ffb4b4;
+      background: rgba(255, 80, 80, .1);
+      border: 1px solid rgba(255, 120, 120, .25);
+    }
+
+    .stats-msg.loading {
+      color: var(--muted);
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(120, 130, 200, .12);
+    }
+
+    .stats-updated {
+      margin-top: .75rem;
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+    @media (max-width: 760px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-chart-row {
+        grid-template-columns: 3.5rem 1fr 1.8rem;
+      }
+
+      .stats-refresh-btn {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+
     @media (max-width: 760px) {
       .app-header-nav-wrap {
         padding: 0 .65rem;
@@ -3812,6 +4067,7 @@
       <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
       <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
       <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
+      <button class="nav-btn" data-screen-link="stats" id="nav-stats-btn" hidden>Launch stats</button>
                   <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
                 </div>
               </div>
@@ -4079,6 +4335,60 @@
         </aside>
       </div>
     </section>
+
+    <section class="screen" id="screen-stats">
+      <div class="stats-page">
+        <p class="stats-kicker">Founder dashboard</p>
+        <h2 class="stats-title">Launch stats</h2>
+        <p class="stats-sub">Real visitors only. Any session where you signed in is excluded, even the parts before login.</p>
+
+        <div class="stats-toolbar">
+          <button type="button" class="stats-period-btn active" data-stats-period="post">Since Jun 21 post</button>
+          <button type="button" class="stats-period-btn" data-stats-period="week">Last 7 days</button>
+          <button type="button" class="stats-period-btn" data-stats-period="all">All time</button>
+          <button type="button" class="back-btn stats-refresh-btn" id="stats-refresh-btn">Refresh</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stats-card">
+            <div class="stats-card-label">Visits</div>
+            <div class="stats-card-value" id="stats-visits">—</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-card-label">Started</div>
+            <div class="stats-card-value stats-card-value--started" id="stats-started">—</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-card-label">Got a map</div>
+            <div class="stats-card-value stats-card-value--maps" id="stats-maps">—</div>
+          </div>
+        </div>
+
+        <div class="stats-panel">
+          <h3 class="stats-panel-title">Funnel</h3>
+          <div class="stats-funnel-track" id="stats-funnel-track"></div>
+          <p class="stats-funnel-caption" id="stats-funnel-caption">Loading…</p>
+        </div>
+
+        <div class="stats-panel">
+          <h3 class="stats-panel-title">Daily activity (Central time)</h3>
+          <div class="stats-chart" id="stats-chart"></div>
+          <div class="stats-legend">
+            <span><i style="background: rgba(116, 214, 226, .85);"></i> Visits</span>
+            <span><i style="background: rgba(240, 198, 116, .9);"></i> Started</span>
+            <span><i style="background: rgba(78, 205, 196, .95);"></i> Got map</span>
+          </div>
+        </div>
+
+        <p class="stats-updated" id="stats-updated"></p>
+        <div class="stats-msg loading" id="stats-status" hidden></div>
+
+        <div class="stats-actions">
+          <button type="button" class="back-btn" data-screen-link="main">Back to home</button>
+          <button type="button" class="action-btn" id="stats-continue-btn" hidden>Continue where I left off</button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <div class="auth-overlay" id="auth-overlay">
@@ -4151,6 +4461,10 @@
     const SUPABASE_URL = "https://acgjcnhcjgtpoztntcyb.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjZ2pjbmhjamd0cG96dG50Y3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDU1MTgsImV4cCI6MjA5Njg4MTUxOH0.gEJfMFWjmsLTw2aKbjQhYDlPl_zvpjfxP8QskAN6ghQ";
     const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const FOUNDER_USER_ID = "3a861ded-c448-4662-9e27-9f4fc90966cf";
+    const FOUNDER_EMAILS = new Set(["ashtonsemailis@gmail.com"]);
+    const LAUNCH_POST_SINCE = "2026-06-21T23:50:00.000Z";
+    let launchStatsPeriod = "post";
 
     // Stripe setup:
     // 1. Add STRIPE_SECRET_KEY to your host env (same place as ANTHROPIC_API_KEY).
@@ -5112,6 +5426,168 @@
         .catch(() => {});
     }
 
+    function isFounderUser(user = state.currentUser) {
+      if (!user) return false;
+      if (user.id === FOUNDER_USER_ID) return true;
+      const email = String(user.email || "").trim().toLowerCase();
+      return FOUNDER_EMAILS.has(email);
+    }
+
+    function updateFounderNav() {
+      const founder = isFounderUser();
+      const statsBtn = $("#nav-stats-btn");
+      if (statsBtn) statsBtn.hidden = !founder;
+      if (!founder && state.lastScreen === "stats") {
+        showScreen("main", { skipPersist: true, skipTrack: true });
+      }
+    }
+
+    function getStatsPeriodSince(period = launchStatsPeriod) {
+      if (period === "post") return LAUNCH_POST_SINCE;
+      if (period === "week") return new Date(Date.now() - 7 * 86400000).toISOString();
+      return null;
+    }
+
+    function getFounderContinueScreen() {
+      if (state.currentIdea && state.roadmapStages.length) return "roadmap";
+      if (state.ideas.length) return "map";
+      if (state.history.length) return "convo";
+      return "main";
+    }
+
+    function updateStatsContinueButton() {
+      const button = $("#stats-continue-btn");
+      if (!button) return;
+      const screen = getFounderContinueScreen();
+      button.hidden = screen === "main";
+      button.dataset.continueScreen = screen;
+    }
+
+    function formatStatsUpdated(iso) {
+      if (!iso) return "";
+      try {
+        return `Updated ${new Date(iso).toLocaleString("en-US", {
+          timeZone: "America/Chicago",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit"
+        })} Central`;
+      } catch {
+        return "";
+      }
+    }
+
+    function renderLaunchStats(data) {
+      const visits = Number(data?.visits) || 0;
+      const started = Number(data?.started) || 0;
+      const maps = Number(data?.got_map) || 0;
+      const daily = Array.isArray(data?.daily) ? data.daily : [];
+
+      $("#stats-visits").textContent = String(visits);
+      $("#stats-started").textContent = String(started);
+      $("#stats-maps").textContent = String(maps);
+
+      const funnel = $("#stats-funnel-track");
+      if (funnel) {
+        funnel.innerHTML = "";
+        if (visits > 0) {
+          const mapPct = Math.max(2, Math.round((maps / visits) * 100));
+          const startedOnlyPct = Math.max(0, Math.round(((Math.max(started - maps, 0)) / visits) * 100));
+          if (maps > 0) {
+            const mapSeg = document.createElement("div");
+            mapSeg.className = "stats-funnel-seg stats-funnel-seg--maps";
+            mapSeg.style.width = `${mapPct}%`;
+            mapSeg.title = `${maps} got a map`;
+            funnel.appendChild(mapSeg);
+          }
+          if (started > maps) {
+            const startSeg = document.createElement("div");
+            startSeg.className = "stats-funnel-seg stats-funnel-seg--started";
+            startSeg.style.width = `${startedOnlyPct}%`;
+            startSeg.title = `${started - maps} started but no map yet`;
+            funnel.appendChild(startSeg);
+          }
+        }
+      }
+
+      const funnelCaption = $("#stats-funnel-caption");
+      if (funnelCaption) {
+        if (!visits) {
+          funnelCaption.textContent = "No guest visits in this period yet.";
+        } else {
+          const pct = Math.round((maps / visits) * 100);
+          funnelCaption.textContent = `${maps} of ${visits} visits reached a map (${pct}%). Most others bounced after loading.`;
+        }
+      }
+
+      const chart = $("#stats-chart");
+      if (chart) {
+        chart.innerHTML = "";
+        if (!daily.length) {
+          chart.innerHTML = `<p class="stats-funnel-caption">No daily activity in this period.</p>`;
+        } else {
+          const maxVisits = Math.max(...daily.map((row) => Number(row.visits) || 0), 1);
+          daily.forEach((row) => {
+            const rowVisits = Number(row.visits) || 0;
+            const rowStarted = Number(row.started) || 0;
+            const rowMaps = Number(row.maps) || 0;
+            const wrap = document.createElement("div");
+            wrap.className = "stats-chart-row";
+            wrap.innerHTML = `
+              <div class="stats-chart-day">${escapeHtml(row.day || "")}</div>
+              <div class="stats-chart-bar-wrap">
+                <div class="stats-chart-bar stats-chart-bar--visits" style="width:${Math.max(4, Math.round((rowVisits / maxVisits) * 100))}%"></div>
+                <div class="stats-chart-bar stats-chart-bar--started" style="width:${Math.max(4, Math.round((rowStarted / maxVisits) * 100))}%"></div>
+                <div class="stats-chart-bar stats-chart-bar--maps" style="width:${Math.max(4, Math.round((rowMaps / maxVisits) * 100))}%"></div>
+              </div>
+              <div class="stats-chart-val">${rowMaps}/${rowVisits}</div>`;
+            chart.appendChild(wrap);
+          });
+        }
+      }
+
+      const status = $("#stats-status");
+      if (status) status.hidden = true;
+      const updated = $("#stats-updated");
+      if (updated) updated.textContent = formatStatsUpdated(data?.generated_at);
+      updateStatsContinueButton();
+    }
+
+    async function refreshLaunchStats() {
+      if (!isFounderUser() || !supabaseClient) return;
+
+      const status = $("#stats-status");
+      if (status) {
+        status.hidden = false;
+        status.className = "stats-msg loading";
+        status.textContent = "Loading stats…";
+      }
+
+      const sinceAt = getStatsPeriodSince();
+      const { data, error } = await supabaseClient.rpc("get_launch_stats", { since_at: sinceAt });
+
+      if (error) {
+        if (status) {
+          status.hidden = false;
+          status.className = "stats-msg error";
+          status.textContent =
+            "Could not load stats. Run supabase/migrations/004_launch_stats.sql in the Supabase SQL Editor, then tap Refresh.";
+        }
+        return;
+      }
+
+      renderLaunchStats(data);
+    }
+
+    function setLaunchStatsPeriod(period) {
+      launchStatsPeriod = period;
+      $$(".stats-period-btn").forEach((button) => {
+        button.classList.toggle("active", button.dataset.statsPeriod === period);
+      });
+      refreshLaunchStats();
+    }
+
     function escapeHtml(value) {
       return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -5654,6 +6130,10 @@
         trackEvent("screen_view", { screen: name, from: previousScreen });
       }
       if (name === "map") updateMapAuxiliaryPanels();
+      if (name === "stats") {
+        updateStatsContinueButton();
+        refreshLaunchStats();
+      }
     }
 
     function addUserBubble(text) {
@@ -7186,12 +7666,14 @@
     async function setUser(user, options = {}) {
       const previousId = state.currentUser?.id ?? null;
       const nextId = user?.id ?? null;
+      const freshSignIn = Boolean(nextId && !previousId);
       state.currentUser = user;
       $("#nav-signin-btn").hidden = Boolean(user);
       $("#nav-signup-btn").hidden = Boolean(user);
       $("#nav-user").style.display = user ? "flex" : "none";
       if (user) $("#nav-username").textContent = user.email.split("@")[0];
       updateSaveButtonVisibility();
+      updateFounderNav();
 
       if (nextId && !previousId) {
         await mergeGuestSessionIntoAccount();
@@ -7208,6 +7690,9 @@
         trackEvent(nextId ? "auth_signed_in" : "auth_signed_out", {
           restored_progress: hasSavableProgress()
         });
+      }
+      if (freshSignIn && isFounderUser(user)) {
+        showScreen("stats", { skipPersist: true });
       }
       updateMapAuxiliaryPanels();
     }
@@ -7579,6 +8064,14 @@
       $("#signup-form").addEventListener("submit", signUp);
       $("#resend-confirm-btn").addEventListener("click", resendConfirmation);
       $("#signout-btn").addEventListener("click", signOut);
+      $$(".stats-period-btn").forEach((button) => {
+        button.addEventListener("click", () => setLaunchStatsPeriod(button.dataset.statsPeriod));
+      });
+      $("#stats-refresh-btn")?.addEventListener("click", refreshLaunchStats);
+      $("#stats-continue-btn")?.addEventListener("click", () => {
+        const screen = $("#stats-continue-btn")?.dataset.continueScreen || getFounderContinueScreen();
+        showScreen(screen);
+      });
     }
 
     window.addEventListener("load", async () => {
