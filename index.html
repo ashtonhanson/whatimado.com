@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-task-ask-v2 -->
+<!-- whatimado build: 2026-06-17-task-ask-placeholder-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-task-ask-v2">
+  <meta name="whatimado-build" content="2026-06-17-task-ask-placeholder-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="Tell us your situation, skills, and goals. Get personalized career paths, side hustles, and step-by-step roadmaps — free for everyone, no paywall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4573,6 +4573,74 @@
       return rewritten.every(Boolean) ? rewritten : null;
     }
 
+    function getApiOrigin() {
+      const { origin, hostname } = window.location;
+      if (hostname === "whatimado.com") return "https://www.whatimado.com";
+      return origin;
+    }
+
+    function getAdvisorErrorMessage(data) {
+      if (!data) return "";
+      if (typeof data.error === "string") return data.error;
+      if (data.error?.message) return data.error.message;
+      if (data.message) return data.message;
+      return "";
+    }
+
+    function answerTaskQuestionLocally(question, taskText) {
+      const q = question.toLowerCase();
+      const task = taskText.toLowerCase();
+
+      if (
+        /\b(stuck|help|how|what).*(write|writing|post|story|caption|intro|draft)\b/.test(q) ||
+        /\bengaging post\b/.test(q) ||
+        /\bhow do i (say|share|explain)\b/.test(q)
+      ) {
+        return (
+          "Use this 4-part post skeleton in Notes: (1) Hook — one line about who whatimado.com is for, e.g. \"I kept seeing people stuck on 'what am I gonna do?' with no free tool that maps real paths.\" " +
+          "(2) Problem — 2 sentences on what felt broken. (3) What the site does — mention the possibility map plus step-by-step roadmaps, not just another chatbot. " +
+          "(4) Soft ask — \"Try it free at https://whatimado.com and tell me what confused you.\" Read it aloud once, trim anything that sounds salesy, then post."
+        );
+      }
+
+      if (/\b120-word\b/.test(task) || /\bfounder story\b/.test(task) || /\bfounder story\b/.test(q)) {
+        return (
+          "Structure your 120-word founder story in Notes: Line 1 — who it's for (stuck, rebuilding, under-resourced). Lines 2–3 — why you built it and why it stays free. " +
+          "Line 4 — what's different (visual map + roadmaps with tasks). Last line — invite people to try https://whatimado.com. Count words in Notes and trim until you're close to 120."
+        );
+      }
+
+      if (/\bscreenshot\b/.test(task) || /\bscreenshot\b/.test(q)) {
+        return (
+          "On your phone, open https://whatimado.com and capture three screenshots: (1) the home/intro screen, (2) your possibility map with paths visible, and (3) one roadmap with tasks listed. " +
+          "Crop each square in Photos, then keep them in Notes below your story so they're ready when you post."
+        );
+      }
+
+      if (/\breddit\b/.test(task) || /\breddit\b/.test(q) || /\bsubreddit\b/.test(q)) {
+        return (
+          "Start with r/Findapath or r/careerchange — read a few recent posts and match their tone. Title idea: \"I built a free tool for people stuck on what's next.\" " +
+          "If the sub doesn't allow links in the post body, put https://whatimado.com in your first comment. Lead with helping, not pitching."
+        );
+      }
+
+      if (/\bfacebook\b/.test(task) || /\bfacebook\b/.test(q)) {
+        return (
+          "For Facebook, write like you're telling one friend — short paragraphs, your founder story first, link last. Share on your profile, then one relevant group (career change, side hustle, or local mutual aid). " +
+          "Ask a question at the end: \"What would make this more useful for someone in your situation?\""
+        );
+      }
+
+      if (/\bdonat(e|ion)\b/.test(task) || /\bdonat(e|ion)\b/.test(q) || /\bstripe\b/.test(q)) {
+        return (
+          "Keep the ask mission-first: \"whatimado.com stays free — tips help cover hosting and AI costs for the next person.\" " +
+          "Mention one concrete number if you can (e.g. \"$5 helps keep it running for several sessions\"). Link to your existing Stripe checkout only after you've explained the free mission."
+        );
+      }
+
+      return null;
+    }
+
     function buildCompactTaskCoachPrompt(taskText, question) {
       return (
         `You are whatimado, a practical task coach. Answer in 2-5 specific sentences.\n\n` +
@@ -4606,10 +4674,19 @@
     }
 
     function getTaskAnswerFallback(question, taskText) {
+      if (/api key is missing/i.test(lastAdvisorError)) {
+        return (
+          "The AI helper is not connected on the live site yet — the Anthropic API key needs to be added in your Vercel project settings (ANTHROPIC_API_KEY), then redeployed. " +
+          "Until then, here's a starting point for your question: open Notes and draft a short, honest post about who whatimado.com helps, what makes the map different, and invite feedback at https://whatimado.com."
+        );
+      }
+
+      const local = answerTaskQuestionLocally(question, taskText);
+      if (local) return local;
+
       return (
-        `I couldn't get a full answer just now for "${abbreviateQuestion(question, 72)}". ` +
-        `Try sending the question again in a moment. For this step — "${abbreviateQuestion(taskText, 90)}" — ` +
-        `pick one concrete 30-minute action, do it, and note what happened so we can refine from there.`
+        `I couldn't reach the AI helper just now${lastAdvisorError ? ` (${abbreviateQuestion(lastAdvisorError, 80)})` : ""}. ` +
+        `Try your question again in a moment. For this step — "${abbreviateQuestion(taskText, 90)}" — pick one concrete 30-minute action, do it, and note what happened.`
       );
     }
 
@@ -4624,6 +4701,9 @@
 
       text = await callAdvisor(buildCompactTaskCoachPrompt(taskText, question), 700);
       if (text) return { text, source: "ai-compact" };
+
+      const local = answerTaskQuestionLocally(question, taskText);
+      if (local) return { text: local, source: "local" };
 
       return { text: getTaskAnswerFallback(question, taskText), source: "fallback" };
     }
@@ -4722,6 +4802,7 @@
     const PATH_BUILDING_MSG = "Building your custom path to success…";
     let persistTimer = null;
     let saveToastTimer = null;
+    let lastAdvisorError = "";
     let themeRenderColors = null;
     let themeNetworkLineRgb = "124, 111, 205";
 
@@ -5457,8 +5538,9 @@
     }
 
     async function callAdvisor(prompt, maxTokens = 700) {
+      lastAdvisorError = "";
       try {
-        const response = await fetch("/api/claude", {
+        const response = await fetch(`${getApiOrigin()}/api/claude`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -5467,15 +5549,27 @@
             messages: [{ role: "user", content: prompt }]
           })
         });
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          lastAdvisorError = `Invalid response (${response.status})`;
+          console.error("Advisor API returned non-JSON:", response.status);
+          return "";
+        }
         if (!response.ok || data.type === "error" || data.error) {
+          lastAdvisorError = getAdvisorErrorMessage(data) || `Request failed (${response.status})`;
           console.error("Advisor API error:", data.error || data);
           return "";
         }
         const text = extractAdvisorText(data);
-        if (!text) console.warn("Advisor API returned no text:", data);
+        if (!text) {
+          lastAdvisorError = "AI returned an empty answer";
+          console.warn("Advisor API returned no text:", data);
+        }
         return text;
       } catch (error) {
+        lastAdvisorError = error.message || "Network error";
         console.error("Advisor request failed:", error);
         return "";
       }
@@ -6061,6 +6155,40 @@
       });
     }
 
+    function getTaskAskPlaceholder(taskText) {
+      const task = String(taskText || "").toLowerCase();
+
+      if (/\b(write|draft|story|post|notes doc|120-word|founder story|pitch|caption)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. I'm stuck on how to start writing this)...";
+      }
+      if (/\b(bookkeep|business|client|customer|offer|service|freelance|gig|accounting)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. how do I land my first client with no budget?)...";
+      }
+      if (/\b(reddit|facebook|social|post in|community|group|outreach|subreddit)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. which platform or group fits me better?)...";
+      }
+      if (/\b(interview|job|hired|resume|apply|career)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. what if I don't have much experience yet?)...";
+      }
+      if (/\b(donat|stripe|sponsor|grant|pay-what)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. how do I word this without sounding pushy?)...";
+      }
+      if (/\b(screenshot|photo|capture|screenshots)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. what exactly should I capture?)...";
+      }
+      if (/\b(email|call|meet|demo|workshop|pilot|director|outreach)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. help me draft what I'd say)...";
+      }
+      if (/\b(name 5|list 5|find 5|communities|people, groups)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. I don't know anyone yet, where do I start?)...";
+      }
+      if (/\b(30.?min|45.?min|hour|today|this week)\b/.test(task)) {
+        return "Ask a question or request a change (e.g. break this into smaller steps)...";
+      }
+
+      return "Ask a question or request a change (e.g. how do I start this, or make it fit my situation?)...";
+    }
+
     function renderStages(stages) {
       const list = $("#stage-list");
       list.innerHTML = "";
@@ -6080,7 +6208,7 @@
               <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
               <div class="task-threads" id="threads-${id}"></div>
               <div class="task-ask-row">
-                <textarea class="task-question" id="question-${id}" rows="1" placeholder="Ask a question or request a change (e.g. use Facebook instead of Reddit)..."></textarea>
+                <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(task))}"></textarea>
                 <button class="task-ask-btn" type="button" data-task-id="${id}" data-task="${escapeHtml(task)}">Ask</button>
               </div>
             </div>`;
@@ -6653,7 +6781,7 @@
       showDonateMessage("Opening secure Stripe checkout…");
 
       try {
-        const response = await fetch("/api/stripe-checkout", {
+        const response = await fetch(`${getApiOrigin()}/api/stripe-checkout`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
