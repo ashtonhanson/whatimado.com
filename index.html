@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-22-intake-polish-v1 -->
+<!-- whatimado build: 2026-06-22-intake-polish-v2 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-22-intake-polish-v1">
+  <meta name="whatimado-build" content="2026-06-22-intake-polish-v2">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -723,6 +723,15 @@
       font-style: normal;
     }
 
+    .hero-sub {
+      max-width: 34rem;
+      margin: .65rem auto 1.1rem;
+      color: var(--ink-muted, rgba(210, 232, 255, .82));
+      font-size: .92rem;
+      line-height: 1.55;
+      text-align: center;
+    }
+
     .hero-copy {
       max-width: 36rem;
       margin: 0;
@@ -1381,25 +1390,6 @@
     .hero-meaning strong {
       color: var(--ink);
       font-weight: 800;
-    }
-
-    .hero-hook {
-      max-width: 38rem;
-      margin: .75rem auto 0;
-      color: var(--ink);
-      font-size: 1rem;
-      font-weight: 700;
-      line-height: 1.5;
-      text-align: center;
-    }
-
-    .hero-example {
-      max-width: 38rem;
-      margin: .55rem auto 0;
-      color: var(--ink-muted);
-      font-size: .84rem;
-      line-height: 1.5;
-      text-align: center;
     }
 
     .hero-example-btn {
@@ -4265,17 +4255,13 @@
     <section class="screen active" id="screen-main">
       <div class="main-workspace">
       <div class="hero">
-          <p class="hero-copy"><span class="hero-copy-lead">whatimado.com is built to stay free</span> for everyone, no matter where you're starting. Funded by voluntary gifts and sponsors, not subscriptions or paywalls.</p>
-        <div class="hero-chip">Start here</div>
         <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
-        <p class="hero-meaning"><strong>whatimado</strong> / <strong>what Ima do</strong> means landing on your own version of that question: "this is what I'm gonna do."</p>
-        <p class="hero-hook">Type one sentence about where you are stuck. You'll get a visual possibility map in about a minute, not a wall of chat text.</p>
-        <p class="hero-example">Example: <button type="button" class="hero-example-btn" id="hero-example-btn">I feel stuck, I'm good with people, and I need income soon.</button></p>
+        <p class="hero-sub">Type one sentence below. You'll get a visual map in about a minute, not a chat wall. Free for everyone.</p>
 
         <div class="prompt-box">
-          <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="e.g. I lost my job, I'm good with my hands, and I need something local I can start this month."></textarea>
+          <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="e.g. I feel stuck, I'm good with people, and I need income soon."></textarea>
           <div class="prompt-footer">
-            <span class="hint">One honest sentence is enough. Quick try skips extra questions.</span>
+            <span class="hint">One sentence is enough · <button type="button" class="hero-example-btn" id="hero-example-btn">Try an example</button></span>
             <div class="prompt-actions">
               <button class="back-btn quick-try-btn" id="quick-try-btn" type="button">Quick try</button>
               <button class="action-btn" id="start-btn">Continue</button>
