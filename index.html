@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-22-founder-stats-v1 -->
+<!-- whatimado build: 2026-06-22-founder-stats-v2 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-22-founder-stats-v1">
+  <meta name="whatimado-build" content="2026-06-22-founder-stats-v2">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -3437,8 +3437,12 @@
       line-height: 1;
     }
 
+    .stats-card-value--visits {
+      color: #8eb8ff;
+    }
+
     .stats-card-value--maps {
-      color: var(--brand-teal);
+      color: #5fd38d;
     }
 
     .stats-card-value--started {
@@ -3447,115 +3451,204 @@
 
     .stats-panel {
       margin-top: 1rem;
-      padding: 1rem 1.05rem;
+      padding: 1.05rem 1.1rem;
       border: 1px solid rgba(120, 130, 200, .14);
       border-radius: 14px;
       background: rgba(255, 255, 255, .03);
     }
 
     .stats-panel-title {
-      margin: 0 0 .75rem;
+      margin: 0 0 .85rem;
       font-size: .95rem;
       font-weight: 800;
     }
 
-    .stats-funnel-track {
-      height: 14px;
-      border-radius: 999px;
-      overflow: hidden;
+    .stats-funnel-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: .5rem;
+      align-items: stretch;
+    }
+
+    .stats-funnel-step {
+      padding: .9rem .75rem;
+      border-radius: 12px;
+      border: 1px solid rgba(120, 130, 200, .16);
+      text-align: center;
+    }
+
+    .stats-funnel-step--visits {
+      background: rgba(110, 181, 255, .12);
+      border-color: rgba(110, 181, 255, .35);
+    }
+
+    .stats-funnel-step--started {
+      background: rgba(240, 198, 116, .12);
+      border-color: rgba(240, 198, 116, .35);
+    }
+
+    .stats-funnel-step--maps {
+      background: rgba(95, 211, 141, .12);
+      border-color: rgba(95, 211, 141, .35);
+    }
+
+    .stats-funnel-step-num {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .stats-funnel-step--visits .stats-funnel-step-num {
+      color: #8eb8ff;
+    }
+
+    .stats-funnel-step--started .stats-funnel-step-num {
+      color: #f0c674;
+    }
+
+    .stats-funnel-step--maps .stats-funnel-step-num {
+      color: #5fd38d;
+    }
+
+    .stats-funnel-step-label {
+      margin-top: .35rem;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+
+    .stats-funnel-connector {
       display: flex;
-      background: rgba(255, 255, 255, .06);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .15rem;
+      color: var(--muted);
+      font-size: .68rem;
+      font-weight: 800;
+      min-width: 2.4rem;
     }
 
-    .stats-funnel-seg {
-      height: 100%;
-    }
-
-    .stats-funnel-seg--maps {
-      background: var(--brand-teal);
-    }
-
-    .stats-funnel-seg--started {
-      background: #f0c674;
+    .stats-funnel-connector-arrow {
+      color: rgba(255, 255, 255, .35);
+      font-size: 1rem;
+      line-height: 1;
     }
 
     .stats-funnel-caption {
-      margin-top: .55rem;
+      margin-top: .75rem;
       color: var(--muted);
-      font-size: .82rem;
-      line-height: 1.45;
+      font-size: .86rem;
+      line-height: 1.5;
     }
 
     .stats-chart {
       display: grid;
-      gap: .65rem;
+      gap: .85rem;
     }
 
-    .stats-chart-row {
+    .stats-day-card {
+      padding: .85rem .9rem;
+      border-radius: 12px;
+      border: 1px solid rgba(120, 130, 200, .12);
+      background: rgba(0, 0, 0, .12);
+    }
+
+    .stats-day-head {
+      margin-bottom: .65rem;
+      font-size: .88rem;
+      font-weight: 800;
+      color: #dce6ff;
+    }
+
+    .stats-metric-rows {
       display: grid;
-      grid-template-columns: 4.5rem 1fr 2.2rem;
       gap: .55rem;
+    }
+
+    .stats-metric-row {
+      display: grid;
+      grid-template-columns: 4.8rem 1fr 2rem;
+      gap: .6rem;
       align-items: center;
     }
 
-    .stats-chart-day {
-      color: var(--muted);
+    .stats-metric-label {
       font-size: .74rem;
-      font-weight: 700;
-    }
-
-    .stats-chart-bar-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .stats-chart-bar {
-      height: 7px;
-      border-radius: 999px;
-      min-width: 2px;
-    }
-
-    .stats-chart-bar--visits {
-      background: rgba(116, 214, 226, .85);
-    }
-
-    .stats-chart-bar--started {
-      background: rgba(240, 198, 116, .9);
-    }
-
-    .stats-chart-bar--maps {
-      background: rgba(78, 205, 196, .95);
-    }
-
-    .stats-chart-val {
+      font-weight: 800;
       color: var(--muted);
-      font-size: .72rem;
-      font-weight: 700;
+    }
+
+    .stats-metric-bar-track {
+      height: 22px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .stats-metric-bar {
+      height: 100%;
+      border-radius: 8px;
+      min-width: 0;
+      transition: width .35s ease;
+    }
+
+    .stats-metric-bar--visits {
+      background: #6eb5ff;
+    }
+
+    .stats-metric-bar--started {
+      background: #f0c674;
+    }
+
+    .stats-metric-bar--maps {
+      background: #5fd38d;
+    }
+
+    .stats-metric-num {
+      font-size: .92rem;
+      font-weight: 800;
       text-align: right;
+      color: #fff;
     }
 
     .stats-legend {
       display: flex;
       flex-wrap: wrap;
-      gap: .75rem;
-      margin-top: .75rem;
+      gap: 1rem;
+      margin-top: .85rem;
+      padding-top: .75rem;
+      border-top: 1px solid rgba(120, 130, 200, .1);
       color: var(--muted);
-      font-size: .72rem;
+      font-size: .78rem;
       font-weight: 700;
     }
 
     .stats-legend span {
       display: inline-flex;
       align-items: center;
-      gap: .35rem;
+      gap: .4rem;
     }
 
     .stats-legend i {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
       display: inline-block;
+    }
+
+    .stats-legend i.legend-visits {
+      background: #6eb5ff;
+    }
+
+    .stats-legend i.legend-started {
+      background: #f0c674;
+    }
+
+    .stats-legend i.legend-maps {
+      background: #5fd38d;
     }
 
     .stats-actions {
@@ -3596,8 +3689,18 @@
         grid-template-columns: 1fr;
       }
 
-      .stats-chart-row {
-        grid-template-columns: 3.5rem 1fr 1.8rem;
+      .stats-funnel-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-funnel-connector {
+        flex-direction: row;
+        min-width: 0;
+        padding: .15rem 0;
+      }
+
+      .stats-metric-row {
+        grid-template-columns: 4.2rem 1fr 1.8rem;
       }
 
       .stats-refresh-btn {
@@ -4352,7 +4455,7 @@
         <div class="stats-grid">
           <div class="stats-card">
             <div class="stats-card-label">Visits</div>
-            <div class="stats-card-value" id="stats-visits">—</div>
+            <div class="stats-card-value stats-card-value--visits" id="stats-visits">—</div>
           </div>
           <div class="stats-card">
             <div class="stats-card-label">Started</div>
@@ -4366,7 +4469,7 @@
 
         <div class="stats-panel">
           <h3 class="stats-panel-title">Funnel</h3>
-          <div class="stats-funnel-track" id="stats-funnel-track"></div>
+          <div class="stats-funnel-flow" id="stats-funnel-flow"></div>
           <p class="stats-funnel-caption" id="stats-funnel-caption">Loading…</p>
         </div>
 
@@ -4374,9 +4477,9 @@
           <h3 class="stats-panel-title">Daily activity (Central time)</h3>
           <div class="stats-chart" id="stats-chart"></div>
           <div class="stats-legend">
-            <span><i style="background: rgba(116, 214, 226, .85);"></i> Visits</span>
-            <span><i style="background: rgba(240, 198, 116, .9);"></i> Started</span>
-            <span><i style="background: rgba(78, 205, 196, .95);"></i> Got map</span>
+            <span><i class="legend-visits" aria-hidden="true"></i> Visits (blue)</span>
+            <span><i class="legend-started" aria-hidden="true"></i> Started (gold)</span>
+            <span><i class="legend-maps" aria-hidden="true"></i> Got map (green)</span>
           </div>
         </div>
 
@@ -5478,6 +5581,18 @@
       }
     }
 
+    function renderStatsMetricRow(label, value, max, barClass) {
+      const width = max > 0 && value > 0 ? Math.max(10, Math.round((value / max) * 100)) : 0;
+      return `
+        <div class="stats-metric-row">
+          <div class="stats-metric-label">${escapeHtml(label)}</div>
+          <div class="stats-metric-bar-track">
+            <div class="stats-metric-bar ${barClass}" style="width:${width}%"></div>
+          </div>
+          <div class="stats-metric-num">${value}</div>
+        </div>`;
+    }
+
     function renderLaunchStats(data) {
       const visits = Number(data?.visits) || 0;
       const started = Number(data?.started) || 0;
@@ -5488,27 +5603,31 @@
       $("#stats-started").textContent = String(started);
       $("#stats-maps").textContent = String(maps);
 
-      const funnel = $("#stats-funnel-track");
+      const funnel = $("#stats-funnel-flow");
       if (funnel) {
-        funnel.innerHTML = "";
-        if (visits > 0) {
-          const mapPct = Math.max(2, Math.round((maps / visits) * 100));
-          const startedOnlyPct = Math.max(0, Math.round(((Math.max(started - maps, 0)) / visits) * 100));
-          if (maps > 0) {
-            const mapSeg = document.createElement("div");
-            mapSeg.className = "stats-funnel-seg stats-funnel-seg--maps";
-            mapSeg.style.width = `${mapPct}%`;
-            mapSeg.title = `${maps} got a map`;
-            funnel.appendChild(mapSeg);
-          }
-          if (started > maps) {
-            const startSeg = document.createElement("div");
-            startSeg.className = "stats-funnel-seg stats-funnel-seg--started";
-            startSeg.style.width = `${startedOnlyPct}%`;
-            startSeg.title = `${started - maps} started but no map yet`;
-            funnel.appendChild(startSeg);
-          }
-        }
+        const visitToStart = visits ? Math.round((started / visits) * 100) : 0;
+        const startToMap = started ? Math.round((maps / started) * 100) : 0;
+        funnel.innerHTML = `
+          <div class="stats-funnel-step stats-funnel-step--visits">
+            <div class="stats-funnel-step-num">${visits}</div>
+            <div class="stats-funnel-step-label">Visits</div>
+          </div>
+          <div class="stats-funnel-connector" aria-hidden="true">
+            <span class="stats-funnel-connector-arrow">→</span>
+            <span>${visitToStart}%</span>
+          </div>
+          <div class="stats-funnel-step stats-funnel-step--started">
+            <div class="stats-funnel-step-num">${started}</div>
+            <div class="stats-funnel-step-label">Started</div>
+          </div>
+          <div class="stats-funnel-connector" aria-hidden="true">
+            <span class="stats-funnel-connector-arrow">→</span>
+            <span>${startToMap}%</span>
+          </div>
+          <div class="stats-funnel-step stats-funnel-step--maps">
+            <div class="stats-funnel-step-num">${maps}</div>
+            <div class="stats-funnel-step-label">Got map</div>
+          </div>`;
       }
 
       const funnelCaption = $("#stats-funnel-caption");
@@ -5517,7 +5636,7 @@
           funnelCaption.textContent = "No guest visits in this period yet.";
         } else {
           const pct = Math.round((maps / visits) * 100);
-          funnelCaption.textContent = `${maps} of ${visits} visits reached a map (${pct}%). Most others bounced after loading.`;
+          funnelCaption.textContent = `${maps} of ${visits} visits reached a map (${pct}%). The arrows show how many move to the next step.`;
         }
       }
 
@@ -5532,17 +5651,16 @@
             const rowVisits = Number(row.visits) || 0;
             const rowStarted = Number(row.started) || 0;
             const rowMaps = Number(row.maps) || 0;
-            const wrap = document.createElement("div");
-            wrap.className = "stats-chart-row";
-            wrap.innerHTML = `
-              <div class="stats-chart-day">${escapeHtml(row.day || "")}</div>
-              <div class="stats-chart-bar-wrap">
-                <div class="stats-chart-bar stats-chart-bar--visits" style="width:${Math.max(4, Math.round((rowVisits / maxVisits) * 100))}%"></div>
-                <div class="stats-chart-bar stats-chart-bar--started" style="width:${Math.max(4, Math.round((rowStarted / maxVisits) * 100))}%"></div>
-                <div class="stats-chart-bar stats-chart-bar--maps" style="width:${Math.max(4, Math.round((rowMaps / maxVisits) * 100))}%"></div>
-              </div>
-              <div class="stats-chart-val">${rowMaps}/${rowVisits}</div>`;
-            chart.appendChild(wrap);
+            const card = document.createElement("div");
+            card.className = "stats-day-card";
+            card.innerHTML = `
+              <div class="stats-day-head">${escapeHtml(row.day || "")}</div>
+              <div class="stats-metric-rows">
+                ${renderStatsMetricRow("Visits", rowVisits, maxVisits, "stats-metric-bar--visits")}
+                ${renderStatsMetricRow("Started", rowStarted, maxVisits, "stats-metric-bar--started")}
+                ${renderStatsMetricRow("Got map", rowMaps, maxVisits, "stats-metric-bar--maps")}
+              </div>`;
+            chart.appendChild(card);
           });
         }
       }
