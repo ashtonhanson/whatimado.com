@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-22-founder-stats-v2 -->
+<!-- whatimado build: 2026-06-22-intake-polish-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-22-founder-stats-v2">
+  <meta name="whatimado-build" content="2026-06-22-intake-polish-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1381,6 +1381,53 @@
     .hero-meaning strong {
       color: var(--ink);
       font-weight: 800;
+    }
+
+    .hero-hook {
+      max-width: 38rem;
+      margin: .75rem auto 0;
+      color: var(--ink);
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .hero-example {
+      max-width: 38rem;
+      margin: .55rem auto 0;
+      color: var(--ink-muted);
+      font-size: .84rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .hero-example-btn {
+      display: inline;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--brand-teal, #4ecdc4);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+
+    .hero-example-btn:hover {
+      color: #90d4ff;
+    }
+
+    .prompt-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      align-items: center;
+    }
+
+    .quick-try-btn {
+      white-space: nowrap;
     }
 
     .map-how-it-works {
@@ -4222,13 +4269,17 @@
         <div class="hero-chip">Start here</div>
         <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
         <p class="hero-meaning"><strong>whatimado</strong> / <strong>what Ima do</strong> means landing on your own version of that question: "this is what I'm gonna do."</p>
-        <p class="hero-copy">Tell us your situation, skills, interests, or goals. We'll map paths from where you are now, what you understand today, and where you hope to go.</p>
+        <p class="hero-hook">Type one sentence about where you are stuck. You'll get a visual possibility map in about a minute, not a wall of chat text.</p>
+        <p class="hero-example">Example: <button type="button" class="hero-example-btn" id="hero-example-btn">I feel stuck, I'm good with people, and I need income soon.</button></p>
 
         <div class="prompt-box">
-          <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="Tell us your situation: what you know, what you enjoy, what you want..."></textarea>
+          <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="e.g. I lost my job, I'm good with my hands, and I need something local I can start this month."></textarea>
           <div class="prompt-footer">
-            <span class="hint">Be honest. There's no wrong answer.</span>
-            <button class="action-btn" id="start-btn">Continue</button>
+            <span class="hint">One honest sentence is enough. Quick try skips extra questions.</span>
+            <div class="prompt-actions">
+              <button class="back-btn quick-try-btn" id="quick-try-btn" type="button">Quick try</button>
+              <button class="action-btn" id="start-btn">Continue</button>
+            </div>
           </div>
         </div>
 
@@ -5377,8 +5428,11 @@
       alterPathMode: false,
       mapFeedbackGiven: false,
       mapFeedbackSentiment: null,
+      intakeMode: "standard",
       saveStatus: "idle"
     };
+
+    const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
 
     const STORAGE_GUEST = "whatimado_journey_guest";
     const SUGGESTIONS_KEY = "whatimado_site_suggestions";
@@ -5389,6 +5443,7 @@
     let lastAdvisorError = "";
     let themeRenderColors = null;
     let themeNetworkLineRgb = "124, 111, 205";
+    let intakeAbandonTracked = false;
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -5760,6 +5815,7 @@
         lastScreen: state.lastScreen,
         mapFeedbackGiven: state.mapFeedbackGiven,
         mapFeedbackSentiment: state.mapFeedbackSentiment,
+        intakeMode: state.intakeMode || "standard",
         savedAt: Date.now()
       };
     }
@@ -5779,6 +5835,17 @@
       state.lastScreen = data.lastScreen ?? "main";
       state.mapFeedbackGiven = Boolean(data.mapFeedbackGiven);
       state.mapFeedbackSentiment = data.mapFeedbackSentiment ?? null;
+      state.intakeMode = data.intakeMode || "standard";
+    }
+
+    function trackIntakeAbandonment() {
+      if (intakeAbandonTracked || state.step < 2 || state.step >= 4 || state.ideas.length > 0) return;
+      intakeAbandonTracked = true;
+      trackEvent("intake_abandoned", {
+        step: state.step,
+        intake_mode: state.intakeMode || "standard",
+        history_count: state.history.length
+      });
     }
 
     function hasSavableProgress() {
@@ -6503,7 +6570,8 @@
         $("#nav-map-btn").hidden = false;
         trackEvent("map_generated", {
           ideas_count: state.ideas.length,
-          founder_mode: founderMode
+          founder_mode: founderMode,
+          intake_mode: options.intakeMode || state.intakeMode || "standard"
         });
         updateMapAuxiliaryPanels();
         showScreen("map");
@@ -6656,10 +6724,13 @@
     async function startFlow() {
       const text = $("#main-input").value.trim();
       if (!text) return;
+      intakeAbandonTracked = false;
+      state.intakeMode = "standard";
       trackEvent("prompt_submitted", {
         prompt_length: text.length,
         founder_mode: isFounderOrProjectPrompt(text),
-        detailed_prompt: isDetailedPrompt(text)
+        detailed_prompt: isDetailedPrompt(text),
+        intake_mode: "standard"
       });
       showScreen("convo");
       addUserBubble(text);
@@ -6673,10 +6744,49 @@
       resolveTyping(finalAnswer);
       state.history.push({ role: "assistant", content: finalAnswer });
       state.step = 2;
-      trackEvent("clarifying_question_shown", { prompt_length: text.length });
+      trackEvent("clarifying_question_shown", {
+        prompt_length: text.length,
+        intake_mode: "standard"
+      });
       showReplyBox(true);
       updateSaveButtonVisibility();
       schedulePersist();
+    }
+
+    async function startQuickFlow() {
+      let text = $("#main-input").value.trim();
+      if (!text) {
+        text = QUICK_TRY_EXAMPLE;
+        $("#main-input").value = text;
+      }
+      if (isFounderOrProjectPrompt(text)) {
+        return startFlow();
+      }
+
+      state.intakeMode = "quick";
+      intakeAbandonTracked = false;
+      trackEvent("prompt_submitted", {
+        prompt_length: text.length,
+        founder_mode: false,
+        detailed_prompt: isDetailedPrompt(text),
+        intake_mode: "quick"
+      });
+      trackEvent("quick_try_started", { prompt_length: text.length });
+      showScreen("convo");
+      addUserBubble(text);
+      state.history.push({ role: "user", content: text });
+      state.step = 3;
+      showReplyBox(false);
+      addTypingBubble(PATH_BUILDING_MSG);
+      trackEvent("path_generation_started", {
+        reply_length: 0,
+        history_count: state.history.length,
+        intake_mode: "quick",
+        quick_skip: true
+      });
+      updateSaveButtonVisibility();
+      schedulePersist();
+      await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
     }
 
     async function submitReply() {
@@ -6695,23 +6805,35 @@
       }
 
       if (state.step === 2) {
+        trackEvent("clarifying_answer_submitted", {
+          reply_length: text.length,
+          intake_mode: state.intakeMode || "standard"
+        });
         addTypingBubble();
         const reply = "May I ask what your name is?";
         resolveTyping(reply);
         state.history.push({ role: "assistant", content: reply });
         state.step = 3;
-        trackEvent("name_prompt_shown", { reply_length: text.length });
+        trackEvent("name_prompt_shown", {
+          reply_length: text.length,
+          intake_mode: state.intakeMode || "standard"
+        });
         showReplyBox(true);
         schedulePersist();
         return;
       }
 
       if (state.step === 3) {
+        trackEvent("name_answer_submitted", {
+          reply_length: text.length,
+          intake_mode: state.intakeMode || "standard"
+        });
         showReplyBox(false);
         addTypingBubble(PATH_BUILDING_MSG);
         trackEvent("path_generation_started", {
           reply_length: text.length,
-          history_count: state.history.length
+          history_count: state.history.length,
+          intake_mode: state.intakeMode || "standard"
         });
         await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(getFirstUserMessage()) });
         return;
@@ -7371,6 +7493,8 @@
       state.alterPathMode = false;
       state.mapFeedbackGiven = false;
       state.mapFeedbackSentiment = null;
+      state.intakeMode = "standard";
+      intakeAbandonTracked = false;
       setSaveStatus("idle");
       $("#save-status-bar")?.classList.remove("visible");
       try {
@@ -8126,6 +8250,13 @@
         }
       });
       $("#start-btn").addEventListener("click", startFlow);
+      $("#quick-try-btn")?.addEventListener("click", startQuickFlow);
+      $("#hero-example-btn")?.addEventListener("click", () => {
+        const input = $("#main-input");
+        if (!input) return;
+        input.value = QUICK_TRY_EXAMPLE;
+        input.focus();
+      });
       $("#main-input").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
@@ -8200,6 +8331,10 @@
         initNetworkCanvas();
         initDonation();
         await initAuth();
+        window.addEventListener("pagehide", trackIntakeAbandonment);
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "hidden") trackIntakeAbandonment();
+        });
         trackEvent("app_loaded", {
           has_progress: hasSavableProgress(),
           ideas_count: state.ideas.length,
