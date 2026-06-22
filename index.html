@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-22-intake-polish-v2 -->
+<!-- whatimado build: 2026-06-22-intake-polish-v3 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-22-intake-polish-v2">
+  <meta name="whatimado-build" content="2026-06-22-intake-polish-v3">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1414,10 +1414,6 @@
       flex-wrap: wrap;
       gap: .55rem;
       align-items: center;
-    }
-
-    .quick-try-btn {
-      white-space: nowrap;
     }
 
     .map-how-it-works {
@@ -4261,9 +4257,8 @@
         <div class="prompt-box">
           <textarea class="prompt-textarea" id="main-input" rows="3" placeholder="e.g. I feel stuck, I'm good with people, and I need income soon."></textarea>
           <div class="prompt-footer">
-            <span class="hint">One sentence is enough · <button type="button" class="hero-example-btn" id="hero-example-btn">Try an example</button></span>
+            <span class="hint">One sentence is enough · <button type="button" class="hero-example-btn" id="hero-example-btn">Test Demo Prompt to See Process</button></span>
             <div class="prompt-actions">
-              <button class="back-btn quick-try-btn" id="quick-try-btn" type="button">Quick try</button>
               <button class="action-btn" id="start-btn">Continue</button>
             </div>
           </div>
@@ -8236,13 +8231,7 @@
         }
       });
       $("#start-btn").addEventListener("click", startFlow);
-      $("#quick-try-btn")?.addEventListener("click", startQuickFlow);
-      $("#hero-example-btn")?.addEventListener("click", () => {
-        const input = $("#main-input");
-        if (!input) return;
-        input.value = QUICK_TRY_EXAMPLE;
-        input.focus();
-      });
+      $("#hero-example-btn")?.addEventListener("click", startQuickFlow);
       $("#main-input").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
