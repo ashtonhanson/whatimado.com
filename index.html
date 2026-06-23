@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-22-intake-polish-v6 -->
+<!-- whatimado build: 2026-06-17-multi-maps-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-22-intake-polish-v6">
+  <meta name="whatimado-build" content="2026-06-17-multi-maps-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1422,6 +1422,145 @@
       flex-wrap: wrap;
       gap: .55rem;
       align-items: center;
+    }
+
+    .saved-maps-home {
+      margin-top: 1.35rem;
+      padding: 1rem 1.05rem;
+      border: 1px solid rgba(120, 130, 200, .14);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .saved-maps-home-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      margin-bottom: .65rem;
+    }
+
+    .saved-maps-home-title {
+      margin: 0;
+      font-size: .95rem;
+      font-weight: 800;
+    }
+
+    .saved-maps-home-list {
+      display: grid;
+      gap: .55rem;
+    }
+
+    .saved-map-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .65rem;
+      width: 100%;
+      padding: .75rem .85rem;
+      border: 1px solid rgba(120, 130, 200, .16);
+      border-radius: 12px;
+      background: rgba(0, 0, 0, .14);
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .saved-map-chip.is-active {
+      border-color: rgba(124, 111, 205, .45);
+      background: rgba(124, 111, 205, .12);
+    }
+
+    .saved-map-chip-title {
+      font-size: .86rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .saved-map-chip-meta {
+      margin-top: .2rem;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 600;
+    }
+
+    #screen-maps .maps-page {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+
+    .maps-page-head {
+      display: grid;
+      gap: .85rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .maps-page-kicker {
+      margin: 0 0 .25rem;
+      color: var(--brand-teal);
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .maps-page-title {
+      margin: 0;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+    }
+
+    .maps-page-sub {
+      margin: .45rem 0 0;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.5;
+    }
+
+    .maps-library-list {
+      display: grid;
+      gap: .7rem;
+    }
+
+    .map-library-card {
+      display: grid;
+      gap: .75rem;
+      padding: 1rem;
+      border: 1px solid rgba(120, 130, 200, .14);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .map-library-card.is-active {
+      border-color: rgba(124, 111, 205, .45);
+      box-shadow: inset 3px 0 0 rgba(124, 111, 205, .85);
+    }
+
+    .map-library-card-title {
+      margin: 0;
+      font-size: .95rem;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .map-library-card-meta {
+      margin: .35rem 0 0;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 600;
+    }
+
+    .map-library-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+    }
+
+    .maps-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.5;
     }
 
     .map-how-it-works {
@@ -4223,6 +4362,7 @@
                 <div class="nav-group nav-group--scroll">
       <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
       <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
+      <button class="nav-btn" data-screen-link="maps" id="nav-maps-btn" hidden>My Maps</button>
       <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
       <button class="nav-btn" data-screen-link="stats" id="nav-stats-btn" hidden>Launch stats</button>
                   <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
@@ -4285,6 +4425,14 @@
           </div>
         </div>
 
+        <section class="saved-maps-home" id="saved-maps-home" hidden aria-label="Your saved maps">
+          <div class="saved-maps-home-head">
+            <h2 class="saved-maps-home-title">Your saved maps</h2>
+            <button type="button" class="back-btn" data-screen-link="maps" id="saved-maps-view-all">View all</button>
+          </div>
+          <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
+        </section>
+
         <div class="pills" aria-label="Prompt starters">
           <button class="pill" data-prompt="I love working with my hands and fixing things">hands-on</button>
           <button class="pill" data-prompt="I am good with technology and computers">tech</button>
@@ -4326,6 +4474,21 @@
             <p class="site-suggestions-msg" id="site-suggestion-msg" hidden></p>
           </section>
         </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-maps">
+      <div class="maps-page">
+        <div class="maps-page-head">
+          <button type="button" class="back-btn" data-screen-link="main">Back to home</button>
+          <div>
+            <p class="maps-page-kicker">Your library</p>
+            <h2 class="maps-page-title">My Maps</h2>
+            <p class="maps-page-sub">Each map keeps its paths, roadmaps, and task notes. Start a new one anytime without losing the others.</p>
+          </div>
+          <button type="button" class="action-btn" id="maps-new-btn">Start new map</button>
+        </div>
+        <div class="maps-library-list" id="maps-library-list"></div>
       </div>
     </section>
 
@@ -5435,10 +5598,13 @@
       mapFeedbackGiven: false,
       mapFeedbackSentiment: null,
       intakeMode: "standard",
+      activeMapId: null,
+      savedMaps: [],
       saveStatus: "idle"
     };
 
     const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
+    const MAX_SAVED_MAPS = 12;
 
     const STORAGE_GUEST = "whatimado_journey_guest";
     const SUGGESTIONS_KEY = "whatimado_site_suggestions";
@@ -5824,7 +5990,10 @@
     }
 
     function serializeSession() {
+      syncActiveMapIntoLibrary();
       return {
+        activeMapId: state.activeMapId,
+        savedMaps: state.savedMaps,
         step: state.step,
         history: state.history,
         ideas: state.ideas,
@@ -5843,7 +6012,26 @@
       };
     }
 
-    function applySession(data) {
+    function buildMapSnapshot(source = state) {
+      return {
+        step: source.step,
+        history: source.history,
+        ideas: source.ideas,
+        roadmapStages: source.roadmapStages,
+        currentIdea: source.currentIdea,
+        roadmapKey: source.roadmapKey,
+        allTaskChats: source.allTaskChats,
+        allRoadmaps: source.allRoadmaps,
+        expandedThreadId: source.expandedThreadId,
+        activeTaskId: source.activeTaskId,
+        lastScreen: source.lastScreen,
+        mapFeedbackGiven: source.mapFeedbackGiven,
+        mapFeedbackSentiment: source.mapFeedbackSentiment,
+        intakeMode: source.intakeMode || "standard"
+      };
+    }
+
+    function applyMapSnapshot(data) {
       if (!data) return;
       state.step = data.step ?? 1;
       state.history = Array.isArray(data.history) ? data.history : [];
@@ -5859,6 +6047,201 @@
       state.mapFeedbackGiven = Boolean(data.mapFeedbackGiven);
       state.mapFeedbackSentiment = data.mapFeedbackSentiment ?? null;
       state.intakeMode = data.intakeMode || "standard";
+    }
+
+    function createMapId() {
+      return window.crypto?.randomUUID
+        ? window.crypto.randomUUID()
+        : `map-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function deriveMapTitle(history = state.history) {
+      const first = history.find((entry) => entry.role === "user")?.content?.trim() || "Untitled map";
+      return first.length > 72 ? `${first.slice(0, 71)}…` : first;
+    }
+
+    function formatMapDate(timestamp) {
+      try {
+        return new Date(timestamp).toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit"
+        });
+      } catch {
+        return "";
+      }
+    }
+
+    function syncActiveMapIntoLibrary() {
+      if (!state.ideas.length && !state.history.length) return;
+
+      const snapshot = buildMapSnapshot();
+      const id = state.activeMapId || createMapId();
+      state.activeMapId = id;
+
+      const entry = {
+        id,
+        title: deriveMapTitle(snapshot.history),
+        updatedAt: Date.now(),
+        ...snapshot
+      };
+
+      const existingIndex = state.savedMaps.findIndex((map) => map.id === id);
+      if (existingIndex >= 0) {
+        state.savedMaps[existingIndex] = entry;
+      } else {
+        state.savedMaps.unshift(entry);
+      }
+
+      if (state.savedMaps.length > MAX_SAVED_MAPS) {
+        state.savedMaps = state.savedMaps
+          .filter((map) => map.id === state.activeMapId)
+          .concat(state.savedMaps.filter((map) => map.id !== state.activeMapId))
+          .slice(0, MAX_SAVED_MAPS);
+      }
+    }
+
+    function migrateLegacySessionPayload(data) {
+      if (!data || Array.isArray(data.savedMaps)) return;
+      if (!state.ideas.length && !state.history.length) {
+        state.savedMaps = [];
+        state.activeMapId = null;
+        return;
+      }
+      const id = createMapId();
+      state.activeMapId = id;
+      state.savedMaps = [{
+        id,
+        title: deriveMapTitle(state.history),
+        updatedAt: data.savedAt || Date.now(),
+        ...buildMapSnapshot()
+      }];
+    }
+
+    function applySession(data) {
+      if (!data) return;
+      applyMapSnapshot(data);
+      if (Array.isArray(data.savedMaps)) {
+        state.savedMaps = data.savedMaps;
+        state.activeMapId = data.activeMapId ?? null;
+      } else {
+        migrateLegacySessionPayload(data);
+      }
+    }
+
+    function beginNewIntake() {
+      syncActiveMapIntoLibrary();
+      state.activeMapId = null;
+      clearIntakeSession({ preserveLibrary: true });
+    }
+
+    function loadSavedMap(mapId) {
+      syncActiveMapIntoLibrary();
+      const entry = state.savedMaps.find((map) => map.id === mapId);
+      if (!entry) return;
+
+      state.activeMapId = mapId;
+      applyMapSnapshot(entry);
+      restoreSessionUI();
+      trackEvent("saved_map_opened", {
+        saved_maps_count: state.savedMaps.length,
+        ideas_count: state.ideas.length
+      });
+
+      if (state.ideas.length) {
+        showScreen("map");
+      } else if (state.history.length) {
+        showScreen("convo");
+      } else {
+        showScreen("main");
+      }
+      schedulePersist();
+    }
+
+    function deleteSavedMap(mapId) {
+      const entry = state.savedMaps.find((map) => map.id === mapId);
+      if (!entry) return;
+      if (!confirm(`Delete this map?\n\n"${entry.title}"`)) return;
+
+      state.savedMaps = state.savedMaps.filter((map) => map.id !== mapId);
+      if (state.activeMapId === mapId) {
+        state.activeMapId = null;
+        clearIntakeSession({ preserveLibrary: true });
+        showScreen("main");
+      }
+
+      trackEvent("saved_map_deleted", { saved_maps_count: state.savedMaps.length });
+      renderMapsLibrary();
+      renderSavedMapsHome();
+      updateMapsNav();
+      schedulePersist();
+    }
+
+    function updateMapsNav() {
+      const mapsBtn = $("#nav-maps-btn");
+      if (mapsBtn) mapsBtn.hidden = state.savedMaps.length === 0;
+    }
+
+    function renderSavedMapsHome() {
+      const panel = $("#saved-maps-home");
+      const list = $("#saved-maps-home-list");
+      if (!panel || !list) return;
+
+      syncActiveMapIntoLibrary();
+      const preview = state.savedMaps.slice(0, 3);
+      panel.hidden = preview.length === 0;
+      if (preview.length === 0) {
+        list.innerHTML = "";
+        return;
+      }
+
+      list.innerHTML = preview.map((map) => `
+        <button type="button" class="saved-map-chip ${map.id === state.activeMapId ? "is-active" : ""}" data-open-map="${escapeHtml(map.id)}">
+          <span>
+            <span class="saved-map-chip-title">${escapeHtml(map.title)}</span>
+            <span class="saved-map-chip-meta">${escapeHtml(formatMapDate(map.updatedAt))} · ${map.ideas?.length || 0} paths</span>
+          </span>
+        </button>
+      `).join("");
+    }
+
+    function renderMapsLibrary() {
+      const list = $("#maps-library-list");
+      if (!list) return;
+
+      syncActiveMapIntoLibrary();
+      if (!state.savedMaps.length) {
+        list.innerHTML = '<p class="maps-empty">No saved maps yet. Go to Home, share your situation, and your first map will appear here.</p>';
+        updateMapsNav();
+        return;
+      }
+
+      list.innerHTML = state.savedMaps.map((map) => `
+        <article class="map-library-card ${map.id === state.activeMapId ? "is-active" : ""}">
+          <div>
+            <h3 class="map-library-card-title">${escapeHtml(map.title)}</h3>
+            <p class="map-library-card-meta">${escapeHtml(formatMapDate(map.updatedAt))} · ${map.ideas?.length || 0} paths</p>
+          </div>
+          <div class="map-library-actions">
+            <button type="button" class="back-btn" data-open-map="${escapeHtml(map.id)}">Open</button>
+            <button type="button" class="back-btn" data-delete-map="${escapeHtml(map.id)}">Delete</button>
+          </div>
+        </article>
+      `).join("");
+      updateMapsNav();
+    }
+
+    function handleSavedMapAction(event) {
+      const openBtn = event.target.closest("[data-open-map]");
+      if (openBtn) {
+        loadSavedMap(openBtn.dataset.openMap);
+        return;
+      }
+      const deleteBtn = event.target.closest("[data-delete-map]");
+      if (deleteBtn) {
+        deleteSavedMap(deleteBtn.dataset.deleteMap);
+      }
     }
 
     function trackIntakeAbandonment() {
@@ -6074,6 +6457,8 @@
       }
       updateMapAuxiliaryPanels();
       updateSaveButtonVisibility();
+      updateMapsNav();
+      renderSavedMapsHome();
     }
 
     function startAlterPathChat() {
@@ -6338,6 +6723,8 @@
         trackEvent("screen_view", { screen: name, from: previousScreen });
       }
       if (name === "map") updateMapAuxiliaryPanels();
+      if (name === "main") renderSavedMapsHome();
+      if (name === "maps") renderMapsLibrary();
       if (name === "stats") {
         updateStatsContinueButton();
         refreshLaunchStats();
@@ -6591,10 +6978,14 @@
       setTimeout(() => {
         buildOpportunityMap(state.ideas);
         $("#nav-map-btn").hidden = false;
+        syncActiveMapIntoLibrary();
+        renderSavedMapsHome();
+        updateMapsNav();
         trackEvent("map_generated", {
           ideas_count: state.ideas.length,
           founder_mode: founderMode,
-          intake_mode: options.intakeMode || state.intakeMode || "standard"
+          intake_mode: options.intakeMode || state.intakeMode || "standard",
+          saved_maps_count: state.savedMaps.length
         });
         updateMapAuxiliaryPanels();
         showScreen("map");
@@ -6748,7 +7139,7 @@
       const text = $("#main-input").value.trim();
       if (!text || intakeInProgress) return;
       intakeInProgress = true;
-      clearIntakeSession();
+      beginNewIntake();
       intakeAbandonTracked = false;
       state.intakeMode = "standard";
       trackEvent("prompt_submitted", {
@@ -6794,7 +7185,7 @@
       }
 
       intakeInProgress = true;
-      clearIntakeSession();
+      beginNewIntake();
       state.intakeMode = "quick";
       intakeAbandonTracked = false;
       trackEvent("prompt_submitted", {
@@ -7541,9 +7932,12 @@
       trackEvent("journey_reset", {
         history_count: state.history.length,
         ideas_count: state.ideas.length,
-        had_roadmap: Boolean(state.roadmapStages.length)
+        had_roadmap: Boolean(state.roadmapStages.length),
+        saved_maps_count: state.savedMaps.length
       });
       intakeInProgress = false;
+      state.savedMaps = [];
+      state.activeMapId = null;
       clearIntakeSession({ clearMainInput: true });
       state.lastScreen = "main";
       setSaveStatus("idle");
@@ -7563,6 +7957,8 @@
         const moreLabel = moreBtn.querySelector(".btn-label");
         if (moreLabel) moreLabel.textContent = "Show me more paths";
       }
+      updateMapsNav();
+      renderSavedMapsHome();
       showScreen("main");
     }
 
@@ -8358,6 +8754,13 @@
         const screen = $("#stats-continue-btn")?.dataset.continueScreen || getFounderContinueScreen();
         showScreen(screen);
       });
+      $("#maps-new-btn")?.addEventListener("click", () => {
+        beginNewIntake();
+        showScreen("main");
+        $("#main-input")?.focus();
+      });
+      $("#maps-library-list")?.addEventListener("click", handleSavedMapAction);
+      $("#saved-maps-home-list")?.addEventListener("click", handleSavedMapAction);
     }
 
     window.addEventListener("load", async () => {
