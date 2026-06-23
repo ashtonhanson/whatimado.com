@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-scroll-progress-v1 -->
+<!-- whatimado build: 2026-06-23-jingle-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-scroll-progress-v1">
+  <meta name="whatimado-build" content="2026-06-23-jingle-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -3172,6 +3172,90 @@
       }
     }
 
+    .loader-jingle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .55rem;
+      width: 100%;
+      margin-top: .15rem;
+    }
+
+    .loader-jingle-play {
+      border: 1px solid rgba(155, 143, 224, .42);
+      border-radius: 999px;
+      padding: .5rem 1rem;
+      color: #dfe4ff;
+      background: rgba(124, 111, 205, .18);
+      font-size: .82rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      transition: background .16s ease, transform .16s ease;
+    }
+
+    .loader-jingle-play:hover:not(:disabled) {
+      background: rgba(124, 111, 205, .28);
+      transform: translateY(-1px);
+    }
+
+    .loader-jingle-play:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
+
+    .loader-jingle-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: .68rem;
+      opacity: .82;
+    }
+
+    .loader-jingle-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: .65rem 1rem;
+    }
+
+    .loader-jingle-skip,
+    .loader-jingle-mute {
+      border: 0;
+      padding: 0;
+      color: var(--muted);
+      background: transparent;
+      font-size: .72rem;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      opacity: .82;
+    }
+
+    .loader-jingle-skip:hover,
+    .loader-jingle-mute:hover {
+      color: var(--ink-muted);
+      opacity: 1;
+    }
+
+    .jingle-replay-btn {
+      display: block;
+      margin: -.35rem auto 0;
+      border: 0;
+      padding: 0;
+      color: var(--muted);
+      background: transparent;
+      font-size: .78rem;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      opacity: .85;
+    }
+
+    .jingle-replay-btn:hover {
+      color: var(--ink-muted);
+      opacity: 1;
+    }
+
     .auth-overlay {
       position: fixed;
       inset: 0;
@@ -4390,7 +4474,16 @@
       <img class="loader-logo" src="/logo.png" alt="whatimado.com" width="251" height="150">
       <p class="loader-quote">"The two most important days in your life are the day you are born and the day you find out why."</p>
       <small class="loader-tagline">Let us help figure out what ya gonna do.</small>
+      <div class="loader-jingle" id="loader-jingle" hidden>
+        <button type="button" class="loader-jingle-play" id="loader-jingle-play">Hear the jingle ♪</button>
+        <p class="loader-jingle-note">Sung by Ivy — tap once to play</p>
+        <div class="loader-jingle-actions">
+          <button type="button" class="loader-jingle-skip" id="loader-jingle-skip">Skip</button>
+          <button type="button" class="loader-jingle-mute" id="loader-jingle-mute">Don't play again</button>
+        </div>
+      </div>
     </div>
+    <audio id="site-jingle" preload="auto" src="/jingle.mp3"></audio>
   </div>
 
   <div id="bg-gradient" aria-hidden="true"></div>
@@ -4479,6 +4572,7 @@
       <div class="hero">
         <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
         <p class="hero-sub">Share your situation below — skills, constraints, and what you want next. The more honest detail you give, the better your paths. Free for everyone.</p>
+        <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden>Replay jingle ♪</button>
 
         <div class="prompt-box">
           <textarea class="prompt-textarea" id="main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
@@ -5676,6 +5770,9 @@
 
     const STORAGE_GUEST = "whatimado_journey_guest";
     const SUGGESTIONS_KEY = "whatimado_site_suggestions";
+    const JINGLE_MUTE_KEY = "whatimado_jingle_muted";
+    const JINGLE_HANDLED_KEY = "whatimado_jingle_handled";
+    const JINGLE_PLAYED_KEY = "whatimado_jingle_played";
     const ANALYTICS_SESSION_KEY = "whatimado_analytics_session_id";
     const PATH_BUILDING_MSG = "Building your custom path to success…";
     let persistTimer = null;
@@ -8791,6 +8888,161 @@
       }
     }
 
+    let loaderDismissTimer = null;
+
+    function dismissLoader() {
+      if (loaderDismissTimer) {
+        clearTimeout(loaderDismissTimer);
+        loaderDismissTimer = null;
+      }
+      const loader = $("#loader");
+      if (!loader || loader.classList.contains("hidden")) return;
+      loader.classList.add("hidden");
+      setTimeout(() => loader.remove(), 650);
+    }
+
+    function scheduleLoaderDismiss(delay = 650, onTimeout = null) {
+      if (loaderDismissTimer) clearTimeout(loaderDismissTimer);
+      loaderDismissTimer = setTimeout(() => {
+        onTimeout?.();
+        dismissLoader();
+      }, delay);
+    }
+
+    function isJingleMuted() {
+      try {
+        return localStorage.getItem(JINGLE_MUTE_KEY) === "1";
+      } catch {
+        return false;
+      }
+    }
+
+    function isJingleHandledThisSession() {
+      try {
+        return sessionStorage.getItem(JINGLE_HANDLED_KEY) === "1";
+      } catch {
+        return false;
+      }
+    }
+
+    function shouldOfferLoaderJingle() {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+      if (isJingleMuted()) return false;
+      if (isJingleHandledThisSession()) return false;
+      return Boolean($("#site-jingle"));
+    }
+
+    function markJingleHandled() {
+      try {
+        sessionStorage.setItem(JINGLE_HANDLED_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    }
+
+    function markJinglePlayed() {
+      markJingleHandled();
+      try {
+        sessionStorage.setItem(JINGLE_PLAYED_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+      updateJingleReplayVisibility();
+    }
+
+    function muteJinglePermanently() {
+      try {
+        localStorage.setItem(JINGLE_MUTE_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+      markJingleHandled();
+      updateJingleReplayVisibility();
+      trackEvent("jingle_muted");
+    }
+
+    function updateJingleReplayVisibility() {
+      const replay = $("#jingle-replay-btn");
+      if (!replay) return;
+      let played = false;
+      try {
+        played = sessionStorage.getItem(JINGLE_PLAYED_KEY) === "1";
+      } catch {
+        /* ignore */
+      }
+      replay.hidden = isJingleMuted() || !played;
+    }
+
+    function playSiteJingle(source = "loader") {
+      const audio = $("#site-jingle");
+      if (!audio || isJingleMuted()) return Promise.resolve(false);
+
+      audio.currentTime = 0;
+      return audio.play()
+        .then(() => {
+          markJinglePlayed();
+          trackEvent("jingle_played", { source });
+          return true;
+        })
+        .catch(() => false);
+    }
+
+    function initSiteJingle() {
+      const panel = $("#loader-jingle");
+      const audio = $("#site-jingle");
+      updateJingleReplayVisibility();
+      if (!panel || !audio) return { holdLoader: false };
+
+      if (!shouldOfferLoaderJingle()) {
+        panel.hidden = true;
+        return { holdLoader: false };
+      }
+
+      panel.hidden = false;
+      const playBtn = $("#loader-jingle-play");
+
+      function finishLoaderAfterJingle() {
+        panel.hidden = true;
+        const onDone = () => {
+          audio.removeEventListener("ended", onDone);
+          dismissLoader();
+        };
+        if (audio.paused || audio.ended) {
+          dismissLoader();
+          return;
+        }
+        audio.addEventListener("ended", onDone, { once: true });
+        setTimeout(onDone, 15000);
+      }
+
+      playBtn?.addEventListener("click", async () => {
+        if (playBtn.disabled) return;
+        playBtn.disabled = true;
+        const played = await playSiteJingle("loader");
+        if (played) {
+          finishLoaderAfterJingle();
+        } else {
+          playBtn.disabled = false;
+        }
+      });
+
+      $("#loader-jingle-skip")?.addEventListener("click", () => {
+        markJingleHandled();
+        trackEvent("jingle_skipped");
+        panel.hidden = true;
+        dismissLoader();
+      });
+
+      $("#loader-jingle-mute")?.addEventListener("click", () => {
+        audio.pause();
+        muteJinglePermanently();
+        panel.hidden = true;
+        dismissLoader();
+      });
+
+      return { holdLoader: true };
+    }
+
     function bindEvents() {
       syncHeaderHeight();
       initScrollProgress();
@@ -8893,6 +9145,9 @@
       });
       $("#maps-library-list")?.addEventListener("click", handleSavedMapAction);
       $("#saved-maps-home-list")?.addEventListener("click", handleSavedMapAction);
+      $("#jingle-replay-btn")?.addEventListener("click", () => {
+        playSiteJingle("replay");
+      });
     }
 
     window.addEventListener("load", async () => {
@@ -8916,10 +9171,20 @@
       } catch (error) {
         console.error("App init failed:", error);
       } finally {
-        setTimeout(() => {
-          $("#loader")?.classList.add("hidden");
-          setTimeout(() => $("#loader")?.remove(), 650);
-        }, 650);
+        const jingle = initSiteJingle();
+        scheduleLoaderDismiss(
+          jingle?.holdLoader ? 12000 : 650,
+          jingle?.holdLoader
+            ? () => {
+                const panel = $("#loader-jingle");
+                if (panel && !panel.hidden) {
+                  markJingleHandled();
+                  trackEvent("jingle_skipped", { reason: "timeout" });
+                  panel.hidden = true;
+                }
+              }
+            : null
+        );
       }
     });
   </script>
