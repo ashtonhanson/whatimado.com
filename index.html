@@ -356,6 +356,11 @@
       scrollbar-width: none;
       -ms-overflow-style: none;
       flex-shrink: 1;
+      min-width: 0;
+    }
+
+    .nav-group--scroll .nav-btn {
+      flex-shrink: 0;
     }
 
     .nav-group--scroll::-webkit-scrollbar {
@@ -665,6 +670,7 @@
 
       .nav-group--actions {
         order: 3;
+        flex-shrink: 0;
       }
 
       .nav-group--theme {
@@ -1155,6 +1161,14 @@
       margin-bottom: .9rem;
     }
 
+    .map-header-nav {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .35rem;
+      flex-shrink: 0;
+    }
+
     .map-heading {
       min-width: 0;
       text-align: center;
@@ -1221,7 +1235,7 @@
       box-shadow: 0 8px 22px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .55);
     }
 
-    #screen-map .page-header .back-btn:first-of-type {
+    #screen-map .page-header .map-header-nav .back-btn {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg);
       border-color: var(--light-blue-border);
@@ -1229,7 +1243,7 @@
     }
 
     #reset-btn:hover,
-    #screen-map .page-header .back-btn:first-of-type:hover {
+    #screen-map .page-header .map-header-nav .back-btn:hover {
       color: var(--brand-purple-dark);
       background: var(--light-blue-bg-hover);
       border-color: var(--light-blue-border);
@@ -2060,6 +2074,7 @@
     }
 
     .nav-btn.save-btn {
+      flex-shrink: 0;
       border: 1px solid rgba(78, 205, 196, .32);
       color: #90e8df;
     }
@@ -4229,12 +4244,12 @@
         margin-bottom: 1.1rem;
       }
 
-      #screen-map .page-header > div {
+      #screen-map .page-header > div.map-heading {
         grid-area: title;
         text-align: center;
       }
 
-      #screen-map .page-header .back-btn:first-of-type {
+      #screen-map .page-header .map-header-nav {
         grid-area: back;
         justify-self: start;
       }
@@ -4409,17 +4424,16 @@
                 <p class="nav-drawer-label">Navigate</p>
                 <div class="nav-group nav-group--scroll">
       <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
-      <button class="nav-btn" data-screen-link="map" id="nav-map-btn" hidden>My Map</button>
-      <button class="nav-btn" data-screen-link="maps" id="nav-maps-btn" hidden>My Maps</button>
+      <button class="nav-btn" type="button" id="nav-maps-btn" hidden>My Maps</button>
       <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
       <button class="nav-btn" data-screen-link="stats" id="nav-stats-btn" hidden>Launch stats</button>
-                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
                 </div>
               </div>
 
               <div class="nav-drawer-section">
                 <p class="nav-drawer-label">Support</p>
                 <div class="nav-group nav-group--actions">
+                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
                   <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
                     Cart
                     <span class="nav-cart-badge" id="nav-cart-badge">1</span>
@@ -4562,7 +4576,10 @@
     <section class="screen" id="screen-map">
       <div class="page">
         <div class="page-header">
-          <button class="back-btn" data-screen-link="convo">Back</button>
+          <div class="map-header-nav">
+            <button class="back-btn" data-screen-link="convo">Back</button>
+            <button class="back-btn" id="map-all-maps-btn" type="button" hidden>All maps</button>
+          </div>
           <div class="map-heading">
             <p class="map-heading-kicker">Generated paths</p>
             <h2 class="page-title">Your <em>Possibility Map</em></h2>
@@ -6231,7 +6248,33 @@
 
     function updateMapsNav() {
       const mapsBtn = $("#nav-maps-btn");
-      if (mapsBtn) mapsBtn.hidden = state.savedMaps.length === 0;
+      const allMapsBtn = $("#map-all-maps-btn");
+      syncActiveMapIntoLibrary();
+      const visible = state.savedMaps.length > 0 || state.ideas.length > 0;
+      if (mapsBtn) mapsBtn.hidden = !visible;
+      if (allMapsBtn) allMapsBtn.hidden = state.savedMaps.length <= 1;
+    }
+
+    function openMapsFromNav() {
+      syncActiveMapIntoLibrary();
+      if (state.ideas.length) {
+        showScreen("map");
+        return;
+      }
+
+      const preferredId = state.activeMapId || state.savedMaps[0]?.id;
+      const preferred = state.savedMaps.find((map) => map.id === preferredId);
+      if (preferred?.ideas?.length) {
+        loadSavedMap(preferred.id);
+        return;
+      }
+
+      if (state.savedMaps.length === 1 && state.savedMaps[0]?.ideas?.length) {
+        loadSavedMap(state.savedMaps[0].id);
+        return;
+      }
+
+      showScreen("maps");
     }
 
     function renderSavedMapsHome() {
@@ -6486,8 +6529,8 @@
       if (state.history.length) restoreConversationBubbles();
       if (state.ideas.length) {
         buildOpportunityMap(state.ideas);
-        $("#nav-map-btn").hidden = false;
       }
+      updateMapsNav();
       if (state.currentIdea && state.roadmapStages.length) {
         if (state.roadmapKey && !state.allRoadmaps[state.roadmapKey]) {
           state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
@@ -6555,7 +6598,7 @@
 
       setTimeout(() => {
         buildOpportunityMap(state.ideas);
-        $("#nav-map-btn").hidden = false;
+        updateMapsNav();
         trackEvent("map_regenerated", { ideas_count: state.ideas.length });
         updateMapAuxiliaryPanels();
         showScreen("map");
@@ -6764,6 +6807,7 @@
       $$(".screen").forEach((screen) => screen.classList.toggle("active", screen.id === `screen-${name}`));
       $$(".nav-btn[data-screen-link]").forEach((button) => button.classList.remove("active"));
       $(`[data-screen-link="${name}"]`)?.classList.add("active");
+      $("#nav-maps-btn")?.classList.toggle("active", name === "map" || name === "maps");
       if (name === "convo") {
         scrollConversation();
       } else {
@@ -7029,10 +7073,9 @@
       schedulePersist();
       setTimeout(() => {
         buildOpportunityMap(state.ideas);
-        $("#nav-map-btn").hidden = false;
+        updateMapsNav();
         syncActiveMapIntoLibrary();
         renderSavedMapsHome();
-        updateMapsNav();
         trackEvent("map_generated", {
           ideas_count: state.ideas.length,
           founder_mode: founderMode,
@@ -7970,8 +8013,8 @@
       state.intakeMode = "standard";
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
-      $("#nav-map-btn").hidden = true;
       $("#nav-roadmap-btn").hidden = true;
+      updateMapsNav();
       showReplyBox(false);
       if (options.clearMainInput) {
         $("#main-input").value = "";
@@ -8820,6 +8863,8 @@
           submitSiteSuggestion();
         }
       });
+      $("#nav-maps-btn")?.addEventListener("click", openMapsFromNav);
+      $("#map-all-maps-btn")?.addEventListener("click", () => showScreen("maps"));
       $("#nav-save-btn").addEventListener("click", manualSave);
       $("#save-signin-link")?.addEventListener("click", () => showAuth("signin"));
       $("#stage-list")?.addEventListener("click", handleTaskThreadClick);
