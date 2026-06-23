@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-22-intake-polish-v5 -->
+<!-- whatimado build: 2026-06-22-intake-polish-v6 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-22-intake-polish-v5">
+  <meta name="whatimado-build" content="2026-06-22-intake-polish-v6">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -512,6 +512,14 @@
       font-size: .82rem;
       font-weight: 600;
       letter-spacing: -.01em;
+    }
+
+    .nav-user.is-visible {
+      display: flex;
+    }
+
+    [hidden] {
+      display: none !important;
     }
 
     .nav-user #nav-username {
@@ -3789,6 +3797,10 @@
         align-items: stretch;
         gap: .85rem;
         padding: .85rem .85rem 1rem;
+        max-height: calc(100dvh - var(--header-h));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         border-bottom: 1px solid rgba(140, 150, 210, .22);
         background: linear-gradient(180deg, #0d101c 0%, #090b14 100%);
         box-shadow: 0 18px 48px rgba(0, 0, 0, .55);
@@ -3977,6 +3989,15 @@
         width: 100%;
         gap: .4rem;
         padding: 0;
+      }
+
+      .nav-drawer .nav-user.is-visible {
+        display: flex !important;
+      }
+
+      .nav-drawer .nav-btn[hidden],
+      .nav-drawer .nav-user[hidden] {
+        display: none !important;
       }
 
       .nav-drawer .nav-user #nav-username {
@@ -4598,7 +4619,10 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjZ2pjbmhjamd0cG96dG50Y3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDU1MTgsImV4cCI6MjA5Njg4MTUxOH0.gEJfMFWjmsLTw2aKbjQhYDlPl_zvpjfxP8QskAN6ghQ";
     const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const FOUNDER_USER_ID = "3a861ded-c448-4662-9e27-9f4fc90966cf";
-    const FOUNDER_EMAILS = new Set(["ashtonsemailis@gmail.com"]);
+    const FOUNDER_EMAILS = new Set([
+      "ashtonsemailis@gmail.com",
+      "ashtonemail@yahoo.com"
+    ]);
     const LAUNCH_POST_SINCE = "2026-06-21T23:50:00.000Z";
     let launchStatsPeriod = "post";
 
@@ -5565,6 +5589,22 @@
         .insert(payload)
         .then(() => {})
         .catch(() => {});
+    }
+
+    function updateAuthNavUI(user = state.currentUser) {
+      const signedIn = Boolean(user);
+      const signinBtn = $("#nav-signin-btn");
+      const signupBtn = $("#nav-signup-btn");
+      const navUser = $("#nav-user");
+      if (signinBtn) signinBtn.hidden = signedIn;
+      if (signupBtn) signupBtn.hidden = signedIn;
+      if (navUser) {
+        navUser.hidden = !signedIn;
+        navUser.classList.toggle("is-visible", signedIn);
+      }
+      if (signedIn) {
+        $("#nav-username").textContent = user.email.split("@")[0];
+      }
     }
 
     function isFounderUser(user = state.currentUser) {
@@ -7915,10 +7955,7 @@
       const nextId = user?.id ?? null;
       const freshSignIn = Boolean(nextId && !previousId);
       state.currentUser = user;
-      $("#nav-signin-btn").hidden = Boolean(user);
-      $("#nav-signup-btn").hidden = Boolean(user);
-      $("#nav-user").style.display = user ? "flex" : "none";
-      if (user) $("#nav-username").textContent = user.email.split("@")[0];
+      updateAuthNavUI(user);
       updateSaveButtonVisibility();
       updateFounderNav();
 
