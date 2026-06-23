@@ -3112,6 +3112,9 @@
       gap: 1.1rem;
       justify-items: center;
       text-align: center;
+      width: min(100%, 440px);
+      padding: 0 2rem;
+      box-sizing: border-box;
     }
 
     .loader-dot {
@@ -3127,19 +3130,31 @@
     }
 
     .loader-quote {
-      max-width: 380px;
+      max-width: 100%;
       margin: 0;
       color: var(--muted);
       font-size: .75rem;
       font-style: italic;
-      line-height: 1.5;
+      line-height: 1.55;
       opacity: .72;
+      text-wrap: pretty;
     }
 
     .loader-tagline {
-      max-width: 360px;
+      max-width: 100%;
       color: var(--muted);
       line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      .loader-inner {
+        padding: 0 2.75rem;
+      }
+
+      .loader-quote {
+        font-size: .78rem;
+        line-height: 1.6;
+      }
     }
 
     .auth-overlay {
