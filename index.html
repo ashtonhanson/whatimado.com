@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-multi-maps-v1 -->
+<!-- whatimado build: 2026-06-17-scroll-progress-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-multi-maps-v1">
+  <meta name="whatimado-build" content="2026-06-17-scroll-progress-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -201,6 +201,39 @@
       backdrop-filter: blur(22px) saturate(150%);
       -webkit-backdrop-filter: blur(22px) saturate(150%);
       box-shadow: var(--header-shadow);
+    }
+
+    .scroll-progress {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: rgba(124, 111, 205, .14);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 2;
+    }
+
+    .scroll-progress.is-scrollable {
+      opacity: 1;
+    }
+
+    .scroll-progress-bar {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--purple) 0%, var(--teal) 52%, var(--gold) 100%);
+      box-shadow: 0 0 10px rgba(78, 205, 196, .35);
+      transition: width .12s ease-out;
+      will-change: width;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scroll-progress-bar {
+        transition: none;
+      }
     }
 
     .app-header-nav-wrap {
@@ -4406,6 +4439,9 @@
         </div>
       </div>
     </div>
+    <div class="scroll-progress" id="scroll-progress" role="progressbar" aria-label="Page scroll progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-hidden="true">
+      <span class="scroll-progress-bar" id="scroll-progress-bar"></span>
+    </div>
   </header>
 
   <main>
@@ -4465,7 +4501,7 @@
 
           <section class="site-suggestions" aria-label="Suggest a site improvement">
             <h3 class="site-suggestions-title">Suggest an improvement</h3>
-            <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion.</p>
+            <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion. Signed-in users may get to vote on which ideas ship first.</p>
             <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
             <div class="site-suggestions-footer">
               <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
@@ -6729,6 +6765,7 @@
         updateStatsContinueButton();
         refreshLaunchStats();
       }
+      requestAnimationFrame(updateScrollProgress);
     }
 
     function addUserBubble(text) {
@@ -8521,6 +8558,40 @@
       const header = document.querySelector(".app-header");
       if (!header) return;
       document.documentElement.style.setProperty("--header-h", `${header.offsetHeight}px`);
+      updateScrollProgress();
+    }
+
+    function updateScrollProgress() {
+      const track = $("#scroll-progress");
+      const bar = $("#scroll-progress-bar");
+      if (!track || !bar) return;
+
+      const doc = document.documentElement;
+      const scrollTop = window.scrollY || doc.scrollTop || 0;
+      const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
+      const scrollable = maxScroll > 12;
+      const pct = scrollable ? Math.min(100, (scrollTop / maxScroll) * 100) : 0;
+
+      track.classList.toggle("is-scrollable", scrollable);
+      bar.style.width = `${pct}%`;
+      track.setAttribute("aria-valuenow", String(Math.round(pct)));
+    }
+
+    function initScrollProgress() {
+      let ticking = false;
+      function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          updateScrollProgress();
+          ticking = false;
+        });
+      }
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", updateScrollProgress);
+      window.visualViewport?.addEventListener("resize", updateScrollProgress);
+      updateScrollProgress();
     }
 
     function initMobileNav() {
@@ -8664,6 +8735,7 @@
 
     function bindEvents() {
       syncHeaderHeight();
+      initScrollProgress();
       initMobileNav();
       bindColorSchemeControls();
       initMobileKeyboardAssist();
