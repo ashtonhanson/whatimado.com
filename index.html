@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-nav-drawer-contrast-v1 -->
+<!-- whatimado build: 2026-06-24-menu-polish-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-nav-drawer-contrast-v1">
+  <meta name="whatimado-build" content="2026-06-24-menu-polish-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -266,6 +266,10 @@
       color: rgba(27, 27, 47, .72);
     }
 
+    [data-color-scheme="mario"] .logo-icon img {
+      mix-blend-mode: normal;
+    }
+
     [data-color-scheme="mario"] .nav-hamburger {
       border-color: rgba(27, 27, 47, .14);
       background: rgba(255, 255, 255, .88);
@@ -281,13 +285,38 @@
     }
 
     [data-color-scheme="mario"] .nav-drawer {
-      background: linear-gradient(180deg, #ffffff 0%, #e8f4ff 100%);
-      border-color: rgba(232, 35, 26, .15);
-      box-shadow: 0 18px 48px rgba(27, 27, 47, .18);
+      background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+      border-color: rgba(232, 35, 26, .18);
+      border-top: 3px solid #e8231a;
+      box-shadow: 0 20px 52px rgba(27, 27, 47, .2);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-head {
+      border-bottom-color: rgba(232, 35, 26, .14);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-head-logo {
+      background: #fff;
+      border-color: rgba(232, 35, 26, .22);
+      box-shadow: 0 4px 14px rgba(27, 27, 47, .08);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-head-title {
+      color: #1b1b2f;
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-head-sub {
+      color: rgba(27, 27, 47, .58);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-section {
+      background: rgba(255, 255, 255, .78);
+      border-color: rgba(27, 27, 47, .08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .92);
     }
 
     [data-color-scheme="mario"] .nav-drawer-label {
-      color: rgba(27, 27, 47, .55);
+      color: #c41e16;
     }
 
     [data-color-scheme="mario"] .nav-drawer .nav-btn {
@@ -319,19 +348,49 @@
       border-color: var(--pastel-yellow-border);
     }
 
+    [data-color-scheme="mario"] .nav-drawer .nav-btn:hover:not(.active):not(.donate-btn):not(.primary) {
+      background: #f4f9ff;
+      border-color: rgba(91, 170, 255, .42);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-theme-btn:hover {
+      background: #f4f9ff;
+      border-color: rgba(91, 170, 255, .42);
+    }
+
+    [data-color-scheme="mario"] .nav-hamburger[aria-expanded="true"] {
+      background: rgba(232, 35, 26, .1);
+      border-color: rgba(232, 35, 26, .34);
+    }
+
+    [data-color-scheme="mario"] .stats-kicker-light {
+      color: rgba(255, 255, 255, .94);
+    }
+
+    [data-color-scheme="mario"] .stats-kicker-accent {
+      color: #e8231a;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, .45);
+    }
+
+    [data-color-scheme="mario"] .stats-title-light {
+      color: #fff;
+      text-shadow: 1px 2px 0 rgba(27, 27, 47, .2);
+    }
+
+    [data-color-scheme="mario"] .stats-title-accent {
+      color: #e8231a;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, .55);
+    }
+
+    [data-color-scheme="mario"] .stats-sub {
+      color: rgba(255, 255, 255, .94);
+    }
+
     [data-color-scheme="mario"] #screen-stats .stats-card,
     [data-color-scheme="mario"] #screen-stats .stats-panel {
       background: rgba(255, 255, 255, .94);
       border-color: rgba(27, 27, 47, .12);
       box-shadow: 0 8px 24px rgba(27, 27, 47, .08);
-    }
-
-    [data-color-scheme="mario"] .stats-kicker {
-      color: #c41e16;
-    }
-
-    [data-color-scheme="mario"] .stats-title {
-      color: #1b1b2f;
     }
 
     [data-color-scheme="mario"] .stats-card-value--visits {
@@ -899,7 +958,7 @@
     .nav-drawer-label {
       display: block;
       margin: 0;
-      padding: 0 .35rem;
+      padding: 0 .15rem .15rem;
       color: rgba(168, 176, 220, .95);
       font-size: .62rem;
       font-weight: 800;
@@ -907,10 +966,63 @@
       text-transform: uppercase;
     }
 
+    .nav-drawer-head {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .1rem .35rem .85rem;
+      margin-bottom: .1rem;
+      border-bottom: 1px solid rgba(140, 150, 210, .2);
+    }
+
+    .nav-drawer-head-logo {
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 11px;
+      padding: 5px;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(140, 150, 210, .2);
+    }
+
+    .nav-drawer-head-logo img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      mix-blend-mode: normal;
+    }
+
+    .nav-drawer-head-copy {
+      min-width: 0;
+    }
+
+    .nav-drawer-head-title {
+      margin: 0;
+      font-size: .94rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      color: rgba(240, 242, 255, .96);
+    }
+
+    .nav-drawer-head-sub {
+      margin: .18rem 0 0;
+      font-size: .72rem;
+      font-weight: 600;
+      color: rgba(168, 176, 220, .82);
+    }
+
     .nav-drawer-section {
       display: flex;
       flex-direction: column;
-      gap: .4rem;
+      gap: .45rem;
+      padding: .7rem;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(140, 150, 210, .12);
     }
 
     .nav-overlay {
@@ -946,10 +1058,10 @@
       flex: none;
       flex-direction: column;
       align-items: stretch;
-      gap: .85rem;
+      gap: .65rem;
       width: min(100vw - 1rem, 380px);
       max-height: calc(100dvh - var(--header-h));
-      padding: .85rem .85rem 1rem;
+      padding: .95rem .95rem 1.1rem;
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
@@ -1028,6 +1140,16 @@
 
     .nav-drawer .nav-btn:active {
       transform: scale(.985);
+    }
+
+    .nav-drawer .nav-btn:hover:not(.active):not(.primary) {
+      background: rgba(255, 255, 255, .08);
+      border-color: rgba(155, 143, 224, .38);
+    }
+
+    .nav-drawer .nav-theme-btn:hover {
+      background: rgba(255, 255, 255, .08);
+      border-color: rgba(155, 143, 224, .38);
     }
 
     .nav-drawer .nav-btn[data-screen-link]::after {
@@ -4145,6 +4267,15 @@
       text-transform: uppercase;
     }
 
+    .stats-kicker-light,
+    .stats-kicker-accent,
+    .stats-title-light,
+    .stats-title-accent {
+      font: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+    }
+
     .stats-title {
       margin: 0;
       font-size: clamp(1.6rem, 4vw, 2.2rem);
@@ -4711,6 +4842,16 @@
             <button class="nav-overlay" id="nav-overlay" type="button" aria-label="Close menu" tabindex="-1"></button>
 
             <div class="nav-drawer" id="nav-drawer">
+              <div class="nav-drawer-head">
+                <span class="nav-drawer-head-logo" aria-hidden="true">
+                  <img src="/logo-icon.png" alt="" width="32" height="32">
+                </span>
+                <div class="nav-drawer-head-copy">
+                  <p class="nav-drawer-head-title">Menu</p>
+                  <p class="nav-drawer-head-sub">Navigate, support & account</p>
+                </div>
+              </div>
+
               <div class="nav-drawer-section">
                 <p class="nav-drawer-label">Navigate</p>
                 <div class="nav-group nav-group--scroll">
@@ -5028,8 +5169,8 @@
 
     <section class="screen" id="screen-stats">
       <div class="stats-page">
-        <p class="stats-kicker">Founder dashboard</p>
-        <h2 class="stats-title">Launch stats</h2>
+        <p class="stats-kicker"><span class="stats-kicker-light">Founder</span> <span class="stats-kicker-accent">dashboard</span></p>
+        <h2 class="stats-title"><span class="stats-title-light">Launch</span> <span class="stats-title-accent">stats</span></h2>
         <p class="stats-sub">Real visitors only. Any session where you signed in is excluded, even the parts before login.</p>
 
         <div class="stats-toolbar">
