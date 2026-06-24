@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-loader-pulse -->
+<!-- whatimado build: 2026-06-24-jingle-credit -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-loader-pulse">
+  <meta name="whatimado-build" content="2026-06-24-jingle-credit">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4669,12 +4669,12 @@
     .jingle-credit {
       margin: 0;
       color: var(--muted);
-      font-size: .56rem;
+      font-size: .58rem;
       font-weight: 600;
-      line-height: 1.25;
+      line-height: 1.3;
       letter-spacing: .01em;
       text-align: left;
-      max-width: 10.5rem;
+      max-width: 15rem;
       white-space: normal;
     }
 
@@ -4718,34 +4718,6 @@
       font-weight: 600;
       line-height: 1.25;
       white-space: nowrap;
-    }
-
-    .jingle-offer-actions {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: .45rem .65rem;
-    }
-
-    .jingle-offer-skip,
-    .jingle-offer-mute {
-      border: 0;
-      padding: 0;
-      color: var(--muted);
-      background: transparent;
-      font-size: .66rem;
-      font-weight: 600;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      opacity: .82;
-      white-space: nowrap;
-    }
-
-    .jingle-offer-skip:hover,
-    .jingle-offer-mute:hover {
-      color: var(--ink-muted);
-      opacity: 1;
     }
 
     .jingle-replay-btn {
@@ -4797,16 +4769,6 @@
       color: var(--muted);
     }
 
-    [data-color-scheme="mario"] .jingle-offer-skip,
-    [data-color-scheme="mario"] .jingle-offer-mute {
-      color: var(--plan-card-soft);
-    }
-
-    [data-color-scheme="mario"] .jingle-offer-skip:hover,
-    [data-color-scheme="mario"] .jingle-offer-mute:hover {
-      color: #e8231a;
-    }
-
     [data-color-scheme="mario"] .jingle-replay-btn {
       border: 1px solid rgba(42, 80, 136, .14);
       background: rgba(255, 255, 255, .78);
@@ -4833,10 +4795,6 @@
         max-width: none;
         flex: 0 1 auto;
         min-width: 0;
-      }
-
-      .jingle-offer-actions {
-        display: none !important;
       }
 
       .jingle-offer-note {
@@ -6084,17 +6042,13 @@
                   <div class="header-jingle-main">
                     <div class="header-jingle-stack">
                       <button type="button" class="jingle-offer-play" id="jingle-offer-play"><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
-                      <p class="jingle-credit">Sung by my daughter Ivy, age 8 <span class="jingle-credit-heart" aria-hidden="true">♥</span> · tap once to play</p>
+                      <p class="jingle-credit">Randomly created by my lovely daughter Ivy, age 8 <span class="jingle-credit-heart" aria-hidden="true">♥</span></p>
                     </div>
-                  </div>
-                  <div class="jingle-offer-actions">
-                    <button type="button" class="jingle-offer-skip" id="jingle-offer-skip">Skip</button>
-                    <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
                   </div>
                 </div>
                 <div class="header-jingle-stack" id="jingle-replay-stack" hidden>
                   <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
-                  <p class="jingle-credit">Sung by my daughter Ivy, age 8 <span class="jingle-credit-heart" aria-hidden="true">♥</span></p>
+                  <p class="jingle-credit">Randomly created by my lovely daughter Ivy, age 8 <span class="jingle-credit-heart" aria-hidden="true">♥</span></p>
                 </div>
               </div>
               <button class="nav-hamburger" id="nav-hamburger-btn" type="button" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
@@ -10865,17 +10819,6 @@
         }
       });
 
-      $("#jingle-offer-skip")?.addEventListener("click", () => {
-        markJingleHandled();
-        hideJingleOffer();
-        trackEvent("jingle_skipped");
-      });
-
-      $("#jingle-offer-mute")?.addEventListener("click", () => {
-        $("#site-jingle")?.pause();
-        muteJinglePermanently();
-        hideJingleOffer();
-      });
     }
 
     function markJingleHandled() {
