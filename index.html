@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-map-btn-text -->
+<!-- whatimado build: 2026-06-24-loader-clean -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-map-btn-text">
+  <meta name="whatimado-build" content="2026-06-24-loader-clean">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -373,21 +373,15 @@
       background: var(--bg-gradient);
     }
 
-    [data-color-scheme="mario"] .loader-inner {
-      background: rgba(255, 255, 255, .92);
-      border-color: rgba(42, 80, 136, .14);
-      box-shadow: 0 16px 48px rgba(42, 80, 136, .18);
-    }
-
-    [data-color-scheme="mario"] .loader-quote,
-    [data-color-scheme="mario"] .loader-tagline {
+    [data-color-scheme="mario"] .loader-quote {
       color: var(--ink-muted);
-      opacity: 1;
-      text-shadow: none;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, .65);
     }
 
     [data-color-scheme="mario"] .loader-tagline {
       color: var(--ink);
+      font-weight: 800;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, .55);
     }
 
     [data-color-scheme="mario"] .loader-logo {
@@ -4523,7 +4517,8 @@
       z-index: 100;
       display: grid;
       place-items: center;
-      background: var(--bg);
+      padding: 1.5rem;
+      background: var(--bg-gradient);
       transition: opacity .55s ease;
     }
 
@@ -4534,18 +4529,12 @@
 
     .loader-inner {
       display: grid;
-      gap: 1.1rem;
+      gap: 1.15rem;
       justify-items: center;
       text-align: center;
-      width: min(100%, 440px);
-      padding: 2rem 2.25rem;
+      width: min(100%, 22rem);
+      padding: 0 .5rem;
       box-sizing: border-box;
-      background: rgba(255, 255, 255, .78);
-      border: 1px solid rgba(255, 255, 255, .55);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(14px) saturate(140%);
-      -webkit-backdrop-filter: blur(14px) saturate(140%);
     }
 
     .loader-dot {
@@ -4564,28 +4553,44 @@
       max-width: 100%;
       margin: 0;
       color: var(--ink-muted);
-      font-size: .82rem;
+      font-size: .84rem;
       font-style: italic;
       line-height: 1.55;
-      opacity: 1;
       text-wrap: pretty;
+      text-shadow: 0 2px 18px rgba(0, 0, 0, .28);
     }
 
     .loader-tagline {
       max-width: 100%;
+      margin: 0;
       color: var(--ink);
-      font-weight: 500;
+      font-size: .88rem;
+      font-weight: 700;
       line-height: 1.5;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, .22);
     }
 
     @media (max-width: 600px) {
+      .loader {
+        padding: 1.25rem;
+      }
+
       .loader-inner {
-        padding: 1.75rem 1.5rem;
+        width: min(calc(100% - 1rem), 19rem);
+        gap: 1rem;
+      }
+
+      .loader-logo {
+        height: 68px;
       }
 
       .loader-quote {
         font-size: .78rem;
         line-height: 1.6;
+      }
+
+      .loader-tagline {
+        font-size: .82rem;
       }
     }
 
