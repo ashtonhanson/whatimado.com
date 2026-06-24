@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-23-jingle-v2 -->
+<!-- whatimado build: 2026-06-23-jingle-v3 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-23-jingle-v2">
+  <meta name="whatimado-build" content="2026-06-23-jingle-v3">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4477,7 +4477,7 @@
     </div>
   </div>
 
-  <audio id="site-jingle" preload="none" data-src="/Jingle/Jingle.mp3"></audio>
+  <audio id="site-jingle" preload="none" src="/jingle.mp3"></audio>
 
   <div id="bg-gradient" aria-hidden="true"></div>
   <canvas id="network-canvas" aria-hidden="true"></canvas>
@@ -5774,7 +5774,7 @@
     const JINGLE_MUTE_KEY = "whatimado_jingle_muted";
     const JINGLE_HANDLED_KEY = "whatimado_jingle_handled";
     const JINGLE_PLAYED_KEY = "whatimado_jingle_played";
-    const JINGLE_SRC = "/Jingle/Jingle.mp3";
+    const JINGLE_SRC = "/jingle.mp3";
     const ANALYTICS_SESSION_KEY = "whatimado_analytics_session_id";
     const PATH_BUILDING_MSG = "Building your custom path to success…";
     let persistTimer = null;
@@ -8951,8 +8951,9 @@
     function ensureJingleAudio() {
       const audio = $("#site-jingle");
       if (!audio) return null;
-      if (!audio.getAttribute("src")) {
-        audio.src = audio.dataset.src || JINGLE_SRC;
+      const src = audio.dataset.src || audio.getAttribute("src") || JINGLE_SRC;
+      if (!audio.src || audio.src.endsWith("/index.html") || !audio.src.includes(".mp3")) {
+        audio.src = src;
       }
       return audio;
     }
@@ -8981,7 +8982,7 @@
         const finish = (result) => {
           if (settled) return;
           settled = true;
-          audio.removeEventListener("canplaythrough", onReady);
+          audio.removeEventListener("canplay", onReady);
           audio.removeEventListener("error", onError);
           resolve(result);
         };
@@ -8989,10 +8990,10 @@
           attemptPlay().then(finish);
         };
         const onError = () => finish(false);
-        audio.addEventListener("canplaythrough", onReady, { once: true });
+        audio.addEventListener("canplay", onReady, { once: true });
         audio.addEventListener("error", onError, { once: true });
         audio.load();
-        setTimeout(() => finish(false), 8000);
+        setTimeout(() => finish(false), 12000);
       });
     }
 
@@ -9011,8 +9012,11 @@
         const playBtn = $("#jingle-offer-play");
         if (playBtn?.disabled) return;
         playBtn.disabled = true;
-        await playSiteJingle("offer");
-        playBtn.disabled = false;
+        const played = await playSiteJingle("offer");
+        if (!played && playBtn) {
+          playBtn.disabled = false;
+          playBtn.textContent = "Tap again to play ♪";
+        }
       });
 
       $("#jingle-offer-skip")?.addEventListener("click", () => {
