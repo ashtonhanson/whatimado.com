@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-sync-error-detail -->
+<!-- whatimado build: 2026-06-24-sync-menu-ui -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-sync-error-detail">
+  <meta name="whatimado-build" content="2026-06-24-sync-menu-ui">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1382,21 +1382,30 @@
     }
 
     .nav-sync-note {
+      display: block;
       margin: 0;
       width: 100%;
+      padding: .45rem .55rem;
+      border-radius: 10px;
       color: var(--muted);
-      font-size: .68rem;
+      font-size: .72rem;
       font-weight: 600;
       line-height: 1.35;
       text-wrap: pretty;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(120, 130, 200, .14);
     }
 
     .nav-sync-note.is-ok {
-      color: var(--teal);
+      color: #8ef0e4;
+      background: rgba(78, 205, 196, .12);
+      border-color: rgba(78, 205, 196, .32);
     }
 
     .nav-sync-note.is-error {
-      color: var(--rose);
+      color: #ffb4bc;
+      background: rgba(224, 108, 117, .1);
+      border-color: rgba(224, 108, 117, .28);
     }
 
     .nav-drawer .nav-user {
@@ -1407,6 +1416,18 @@
 
     .nav-drawer .nav-user #nav-username {
       max-width: none;
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-sync-note.is-ok {
+      color: #0f5a42;
+      background: rgba(255, 255, 255, .88);
+      border-color: rgba(82, 196, 122, .45);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-sync-note.is-error {
+      color: #8b1a14;
+      background: rgba(255, 255, 255, .88);
+      border-color: rgba(232, 35, 26, .28);
     }
 
     .nav-header-actions {
@@ -6115,7 +6136,7 @@
                 <div class="nav-group nav-group--actions">
                   <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
                   <button class="nav-btn" type="button" id="nav-suggest-btn">Suggest an improvement</button>
-                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
+                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Sync progress to your account">Sync now</button>
                   <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
                     Cart
                     <span class="nav-cart-badge" id="nav-cart-badge">1</span>
@@ -6140,11 +6161,11 @@
                 <div class="nav-group nav-group--auth">
       <button class="nav-btn" id="nav-signin-btn" data-auth-open="signin">Sign in</button>
       <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
-      <span class="nav-user" id="nav-user">
+      <div class="nav-user" id="nav-user" hidden>
         <span id="nav-username"></span>
-        <p class="nav-sync-note" id="nav-sync-note" hidden></p>
+        <div class="nav-sync-note" id="nav-sync-note" hidden role="status" aria-live="polite"></div>
         <button class="nav-btn" id="signout-btn">Sign out</button>
-      </span>
+      </div>
                 </div>
               </div>
             </div>
@@ -7617,29 +7638,43 @@
       }
 
       note.hidden = false;
+      note.removeAttribute("hidden");
       const mapCount = state.savedMaps.length;
 
       if (state.lastSyncStatus === "cloud-ok") {
         note.textContent = mapCount
-          ? `${mapCount} map${mapCount === 1 ? "" : "s"} synced to your account.`
-          : "Account synced.";
+          ? `✓ ${mapCount} map${mapCount === 1 ? "" : "s"} synced to your account`
+          : "✓ Synced to your account";
         note.className = "nav-sync-note is-ok";
       } else if (state.lastSyncStatus === "cloud-failed") {
         note.textContent = state.lastCloudSyncError
-          || "Cloud sync failed. Tap Save after fixing Supabase setup.";
+          || "Cloud sync failed. Tap Sync now after fixing Supabase setup.";
         note.className = "nav-sync-note is-error";
       } else if (state.lastSyncStatus === "local-only") {
         note.textContent = state.lastCloudSyncError
-          || "Saved on this device only — not on other devices yet.";
+          || "Saved on this device only — tap Sync now to upload.";
         note.className = "nav-sync-note is-error";
       } else if (mapCount || hasSavableProgress()) {
         note.textContent = mapCount
-          ? `${mapCount} map${mapCount === 1 ? "" : "s"} on this device. Tap Save to sync.`
-          : "Progress on this device. Tap Save to sync.";
+          ? `${mapCount} map${mapCount === 1 ? "" : "s"} on this device — tap Sync now.`
+          : "Progress on this device — tap Sync now.";
         note.className = "nav-sync-note";
       } else {
         note.textContent = "No saved maps in your account yet.";
         note.className = "nav-sync-note";
+      }
+      updateSaveButtonLabel();
+    }
+
+    function updateSaveButtonLabel() {
+      const saveBtn = $("#nav-save-btn");
+      if (!saveBtn || state.saveStatus === "saving") return;
+      if (state.currentUser) {
+        saveBtn.textContent = "Sync now";
+        saveBtn.title = "Upload your maps to your account";
+      } else {
+        saveBtn.textContent = "Save";
+        saveBtn.title = "Save progress on this device";
       }
     }
 
@@ -8304,19 +8339,15 @@
       saveBtn?.classList.remove("is-saving", "is-saved", "is-error");
       if (status === "saving") {
         saveBtn?.classList.add("is-saving");
-        if (saveBtn) saveBtn.textContent = "Saving…";
+        if (saveBtn) saveBtn.textContent = state.currentUser ? "Syncing…" : "Saving…";
       } else if (status === "saved-cloud") {
         saveBtn?.classList.add("is-saved");
-        if (saveBtn) saveBtn.textContent = "Saved";
       } else if (status === "saved-local") {
         saveBtn?.classList.add("is-saved");
-        if (saveBtn) saveBtn.textContent = "Saved";
       } else if (status === "error") {
         saveBtn?.classList.add("is-error");
-        if (saveBtn) saveBtn.textContent = "Save";
-      } else if (saveBtn) {
-        saveBtn.textContent = "Save";
       }
+      updateSaveButtonLabel();
 
       if (statusBar && statusText) {
         if (message && hasSavableProgress()) {
@@ -10850,6 +10881,7 @@
         hamburger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
         document.body.classList.toggle("nav-menu-open", open);
         overlay.tabIndex = open ? 0 : -1;
+        if (open) updateNavSyncStatus();
       }
 
       function closeMenu() {
@@ -10867,6 +10899,7 @@
 
       drawer.querySelectorAll("button, a[data-screen-link]").forEach((element) => {
         if (element.matches("[data-theme-option]")) return;
+        if (element.id === "nav-save-btn") return;
         element.addEventListener("click", closeMenu);
       });
 
