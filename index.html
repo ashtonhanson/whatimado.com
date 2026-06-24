@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-testimonials-v1 -->
+<!-- whatimado build: 2026-06-24-update-banner-jingle -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-testimonials-v1">
+  <meta name="whatimado-build" content="2026-06-24-update-banner-jingle">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -173,9 +173,9 @@
       --rose: #ff4757;
       --html-bg: #5baaff;
       --bg-gradient: linear-gradient(180deg, #9fd4ff 0%, #5baaff 52%, #4a96e8 100%);
-      --header-bg: linear-gradient(180deg, rgba(255, 255, 255, .95) 0%, rgba(240, 248, 255, .92) 100%);
-      --header-border: rgba(232, 35, 26, .16);
-      --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .88), 0 8px 28px rgba(42, 80, 136, .12);
+      --header-bg: #2a5088;
+      --header-border: rgba(255, 255, 255, .14);
+      --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 8px 28px rgba(18, 40, 72, .28);
       --logo-gradient: linear-gradient(135deg, #ffc926 0%, #e8231a 46%, #00a800 100%);
       --network-line-rgb: 255, 201, 38;
       --browser-theme-color: #5baaff;
@@ -227,10 +227,10 @@
 
     #mario-clouds {
       position: fixed;
-      inset: 0;
+      inset: -6vh -8vw 0;
       z-index: 0;
       pointer-events: none;
-      overflow: hidden;
+      overflow: visible;
       opacity: 0;
       visibility: hidden;
       transition: opacity .7s ease, visibility .7s ease;
@@ -270,6 +270,7 @@
       display: block;
       width: 100%;
       height: auto;
+      overflow: visible;
       filter: drop-shadow(0 10px 22px rgba(255, 255, 255, .55)) drop-shadow(0 4px 14px rgba(42, 80, 136, .18));
     }
 
@@ -285,7 +286,7 @@
 
     @keyframes mario-cloud-drift-ltr {
       0% {
-        transform: translate3d(-20vw, 0, 0);
+        transform: translate3d(-32vw, 0, 0);
         opacity: 0;
       }
 
@@ -295,14 +296,14 @@
       }
 
       100% {
-        transform: translate3d(calc(100vw + 20vw), var(--cloud-drift-y, 0), 0);
+        transform: translate3d(calc(100vw + 32vw), var(--cloud-drift-y, 0), 0);
         opacity: 0;
       }
     }
 
     @keyframes mario-cloud-drift-rtl {
       0% {
-        transform: translate3d(calc(100vw + 20vw), 0, 0);
+        transform: translate3d(calc(100vw + 32vw), 0, 0);
         opacity: 0;
       }
 
@@ -312,7 +313,7 @@
       }
 
       100% {
-        transform: translate3d(-20vw, var(--cloud-drift-y, 0), 0);
+        transform: translate3d(-32vw, var(--cloud-drift-y, 0), 0);
         opacity: 0;
       }
     }
@@ -427,8 +428,8 @@
     }
 
     [data-color-scheme="mario"] .logo-text span {
-      color: var(--muted);
-      -webkit-text-fill-color: var(--muted);
+      color: rgba(255, 255, 255, .72);
+      -webkit-text-fill-color: rgba(255, 255, 255, .72);
     }
 
     [data-color-scheme="mario"] .nav-drawer {
@@ -610,7 +611,33 @@
     }
 
     [data-color-scheme="mario"] .app-header {
-      border-bottom: 2px solid rgba(232, 35, 26, .22);
+      background: var(--map-node-royal-strong);
+      border-bottom: 2px solid rgba(232, 35, 26, .28);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    [data-color-scheme="mario"] .app-header .nav-group {
+      background: rgba(255, 255, 255, .08);
+      border-color: rgba(255, 255, 255, .12);
+    }
+
+    [data-color-scheme="mario"] .app-header .nav-btn {
+      color: rgba(255, 255, 255, .84);
+    }
+
+    [data-color-scheme="mario"] .app-header .nav-btn:hover:not(.active):not(.donate-btn):not(.nav-cart):not(.primary) {
+      color: #fff;
+      background: rgba(255, 255, 255, .12);
+    }
+
+    [data-color-scheme="mario"] .app-header .nav-theme-btn {
+      color: rgba(255, 255, 255, .72);
+    }
+
+    [data-color-scheme="mario"] .app-header .nav-user,
+    [data-color-scheme="mario"] .app-header .nav-user #nav-username {
+      color: rgba(255, 255, 255, .78);
     }
 
     [data-color-scheme="mario"] .scroll-progress {
@@ -657,7 +684,10 @@
     }
 
     [data-color-scheme="mario"] .action-btn {
-      background: #e8231a;
+      background: color-mix(in srgb, #e8231a 88%, transparent);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
+    }
       box-shadow: 0 8px 22px rgba(232, 35, 26, .28), inset 0 1px 0 rgba(255, 255, 255, .45);
     }
 
@@ -780,7 +810,7 @@
     }
 
     [data-color-scheme="mario"] .map-node-glow {
-      background: radial-gradient(circle, rgba(74, 101, 148, .28) 0%, rgba(42, 80, 136, .14) 42%, rgba(7, 17, 31, 0) 72%);
+      display: none;
     }
 
     [data-color-scheme="mario"] .map-connection-line {
@@ -789,7 +819,8 @@
     }
 
     [data-color-scheme="mario"] .map-center-circle {
-      fill: url(#user-gradient) !important;
+      fill: var(--map-node-royal-strong) !important;
+      filter: none !important;
     }
 
     [data-color-scheme="mario"] .map-center-label {
@@ -846,7 +877,7 @@
     [data-color-scheme="mario"] #reset-btn,
     [data-color-scheme="mario"] .map-toolbar-btn,
     [data-color-scheme="mario"] #screen-map .back-btn {
-      background: rgba(255, 255, 255, .78);
+      background: rgba(255, 255, 255, .72);
       border-color: rgba(42, 80, 136, .14);
       color: var(--ink-muted);
       box-shadow: 0 4px 14px rgba(42, 80, 136, .08);
@@ -890,7 +921,7 @@
 
     [data-color-scheme="mario"] #screen-roadmap .roadmap-back-btn,
     [data-color-scheme="mario"] #screen-roadmap .complete-action-btn {
-      background: rgba(255, 255, 255, .78);
+      background: rgba(255, 255, 255, .72);
       border-color: rgba(42, 80, 136, .14);
       color: var(--ink-muted);
       box-shadow: 0 4px 14px rgba(42, 80, 136, .08);
@@ -1027,12 +1058,13 @@
     }
 
     .app-header-nav-wrap {
-      padding: 0 1.25rem;
+      padding: .5rem 1.25rem .4rem;
     }
 
     .app-header-stack {
       width: min(100%, 1180px);
-      height: var(--header-nav-h);
+      min-height: var(--header-nav-h);
+      height: auto;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -1369,6 +1401,107 @@
       align-items: center;
       gap: .45rem;
       flex-shrink: 0;
+    }
+
+    .site-update-banner {
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid rgba(120, 130, 200, .14);
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .site-update-banner-viewport {
+      overflow: hidden;
+      padding: .42rem 0;
+      mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
+    }
+
+    .site-update-banner-track {
+      display: flex;
+      width: max-content;
+      animation: site-update-banner-scroll 52s linear infinite;
+      will-change: transform;
+    }
+
+    .site-update-banner-group {
+      display: flex;
+      align-items: center;
+      gap: 1.35rem;
+      padding-right: 1.35rem;
+      white-space: nowrap;
+    }
+
+    .site-update-banner-item {
+      color: rgba(210, 232, 255, .88);
+      font-size: .68rem;
+      font-weight: 600;
+      letter-spacing: .01em;
+    }
+
+    .site-update-banner-dot {
+      color: rgba(124, 111, 205, .72);
+      font-size: .52rem;
+      line-height: 1;
+    }
+
+    @keyframes site-update-banner-scroll {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+
+      100% {
+        transform: translate3d(-50%, 0, 0);
+      }
+    }
+
+    [data-color-scheme="mario"] .site-update-banner {
+      border-top-color: rgba(255, 255, 255, .12);
+      background: rgba(18, 40, 72, .34);
+    }
+
+    [data-color-scheme="mario"] .site-update-banner-item {
+      color: rgba(255, 255, 255, .9);
+    }
+
+    [data-color-scheme="mario"] .site-update-banner-dot {
+      color: #ffc926;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .site-update-banner-viewport {
+        mask-image: none;
+        -webkit-mask-image: none;
+      }
+
+      .site-update-banner-track {
+        animation: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        gap: .35rem;
+        padding: .15rem 1rem .25rem;
+      }
+
+      .site-update-banner-group {
+        flex-direction: column;
+        gap: .35rem;
+        padding-right: 0;
+        white-space: normal;
+        text-align: center;
+      }
+
+      .site-update-banner-group[aria-hidden="true"] {
+        display: none;
+      }
+
+      .site-update-banner-dot {
+        display: none;
+      }
+
+      .site-update-banner-item {
+        white-space: normal;
+      }
     }
 
     .header-jingle {
@@ -1907,7 +2040,9 @@
       border-radius: 10px;
       padding: .6rem 1rem;
       color: #fffdf2;
-      background: var(--brand-purple-dark);
+      background: color-mix(in srgb, var(--brand-purple-dark) 88%, transparent);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
       font-size: .83rem;
       font-weight: 700;
       box-shadow: 0 8px 22px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .55);
@@ -1931,7 +2066,9 @@
       border-radius: 999px;
       padding: .4rem .9rem;
       color: var(--brand-purple-dark);
-      background: var(--light-blue-bg);
+      background: color-mix(in srgb, var(--light-blue-bg) 84%, transparent);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
       font-size: .72rem;
       font-weight: 800;
     }
@@ -2322,7 +2459,9 @@
       border-radius: 999px;
       padding: .4rem .75rem;
       color: var(--muted);
-      background: var(--surface);
+      background: color-mix(in srgb, var(--surface) 84%, transparent);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
       font-size: .78rem;
       font-weight: 700;
     }
@@ -2349,7 +2488,9 @@
 
     #reset-btn {
       color: var(--brand-purple-dark);
-      background: var(--light-blue-bg);
+      background: color-mix(in srgb, var(--light-blue-bg) 84%, transparent);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
       border-color: var(--light-blue-border);
       box-shadow: 0 8px 22px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .55);
     }
@@ -2432,7 +2573,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 320px;
+      min-height: 380px;
     }
 
     .map-node-glow {
@@ -2453,8 +2594,8 @@
       z-index: 1;
       width: 100%;
       height: auto;
-      min-height: 330px;
-      max-height: 450px;
+      min-height: 380px;
+      max-height: 520px;
     }
 
     .map-node,
@@ -2570,7 +2711,7 @@
       font-size: .66rem;
       font-weight: 800;
       margin-top: .05rem;
-      box-shadow: 0 0 0 2px rgba(8, 10, 18, .55);
+      box-shadow: none;
     }
 
     .opp-label-type {
@@ -2883,6 +3024,7 @@
       gap: .65rem;
       margin: 1.45rem 0 1rem;
       flex-wrap: wrap;
+      width: 100%;
     }
 
     .map-plans-toolbar-line {
@@ -2898,7 +3040,9 @@
       min-height: 36px;
       padding: .48rem .9rem;
       color: var(--plan-card-ink);
-      background: var(--map-control-bg);
+      background: color-mix(in srgb, var(--map-control-bg) 84%, transparent);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
       border-color: var(--map-control-border);
       font-size: .74rem;
       box-shadow: 0 10px 26px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .11);
@@ -2948,9 +3092,10 @@
       display: inline-flex;
       align-items: center;
       gap: .55rem;
-      flex: 0 0 auto;
+      flex: 1 1 100%;
       flex-wrap: wrap;
       justify-content: center;
+      max-width: 100%;
     }
 
     .site-suggestions {
@@ -3077,7 +3222,7 @@
       font-size: .75rem;
       font-weight: 800;
       margin-top: 0;
-      box-shadow: 0 0 0 3px rgba(8, 10, 18, .5);
+      box-shadow: none;
     }
 
     .opp-card-body {
@@ -3117,7 +3262,9 @@
       gap: .55rem;
       border: 1px solid rgba(124, 111, 205, .45);
       color: #fff;
-      background: linear-gradient(135deg, var(--purple) 0%, #6a5fbd 100%);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--purple) 88%, transparent) 0%, color-mix(in srgb, #6a5fbd 88%, transparent) 100%);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
       box-shadow: 0 2px 12px rgba(124, 111, 205, .28);
     }
 
@@ -4355,6 +4502,29 @@
       min-width: 0;
     }
 
+    .header-jingle-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .18rem;
+      min-width: 0;
+    }
+
+    .header-jingle-stack[hidden] {
+      display: none !important;
+    }
+
+    .jingle-credit {
+      margin: 0;
+      color: var(--muted);
+      font-size: .56rem;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: .01em;
+      text-align: center;
+      white-space: nowrap;
+    }
+
     .jingle-offer-play {
       border: 1px solid rgba(155, 143, 224, .42);
       border-radius: 999px;
@@ -4447,6 +4617,10 @@
       border-color: rgba(155, 143, 224, .35);
     }
 
+    [data-color-scheme="mario"] .jingle-credit {
+      color: rgba(255, 255, 255, .72);
+    }
+
     [data-color-scheme="mario"] .jingle-offer-play {
       border: 1.5px solid rgba(91, 170, 255, .72);
       background: linear-gradient(180deg, #dff0ff 0%, #b8dcff 100%);
@@ -4488,6 +4662,10 @@
     }
 
     @media (max-width: 760px) {
+      .app-header-nav-wrap {
+        padding: .55rem 1rem .45rem;
+      }
+
       .header-jingle {
         position: static;
         left: auto;
@@ -4498,8 +4676,11 @@
         min-width: 0;
       }
 
-      .jingle-offer-note,
       .jingle-offer-actions {
+        display: none !important;
+      }
+
+      .jingle-offer-note {
         display: none !important;
       }
 
@@ -4508,6 +4689,17 @@
         flex-wrap: nowrap;
         justify-content: flex-end;
         gap: 0;
+      }
+
+      .header-jingle-stack {
+        align-items: flex-end;
+      }
+
+      .jingle-credit {
+        font-size: .5rem;
+        max-width: min(42vw, 9.5rem);
+        white-space: normal;
+        text-align: right;
       }
 
       .jingle-btn-text--desktop {
@@ -5410,12 +5602,12 @@
       }
 
       .map-visual {
-        min-height: 220px;
+        min-height: 280px;
       }
 
       #opportunity-svg {
-        min-height: 220px;
-        max-height: 300px;
+        min-height: 280px;
+        max-height: 380px;
       }
 
       .map-node-glow {
@@ -5440,6 +5632,8 @@
       .map-plans-toolbar {
         margin: 1.25rem 0 1rem;
         gap: .55rem;
+        flex-direction: column;
+        align-items: stretch;
       }
 
       .map-plans-toolbar-line {
@@ -5452,8 +5646,15 @@
         text-align: center;
       }
 
+      .map-plans-actions {
+        justify-content: center;
+        gap: .5rem;
+      }
+
       .map-toolbar-btn {
-        flex: 1 1 calc(50% - .35rem);
+        flex: 0 1 auto;
+        width: auto;
+        max-width: 100%;
         justify-content: center;
         white-space: normal;
         text-align: center;
@@ -5711,15 +5912,20 @@
               <div class="header-jingle" id="header-jingle" hidden>
                 <div class="jingle-offer" id="jingle-offer" hidden>
                   <div class="header-jingle-main">
-                    <button type="button" class="jingle-offer-play" id="jingle-offer-play"><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
-                    <p class="jingle-offer-note">Sung by Ivy · tap once to play</p>
+                    <div class="header-jingle-stack">
+                      <button type="button" class="jingle-offer-play" id="jingle-offer-play"><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
+                      <p class="jingle-credit">Sung by Ivy, age 8 · tap once to play</p>
+                    </div>
                   </div>
                   <div class="jingle-offer-actions">
                     <button type="button" class="jingle-offer-skip" id="jingle-offer-skip">Skip</button>
                     <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
                   </div>
                 </div>
-                <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
+                <div class="header-jingle-stack" id="jingle-replay-stack" hidden>
+                  <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
+                  <p class="jingle-credit">Sung by Ivy, age 8</p>
+                </div>
               </div>
               <button class="nav-hamburger" id="nav-hamburger-btn" type="button" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
                 <span class="nav-hamburger-line" aria-hidden="true"></span>
@@ -5788,6 +5994,32 @@
               </div>
             </div>
     </nav>
+        </div>
+      </div>
+    </div>
+    <div class="site-update-banner" role="region" aria-label="Recent site updates from community suggestions">
+      <div class="site-update-banner-viewport">
+        <div class="site-update-banner-track">
+          <div class="site-update-banner-group">
+            <span class="site-update-banner-item">We've implemented several changes based on your suggestions — thank you!</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+            <span class="site-update-banner-item">Don't see a change you suggested? Please let us know.</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+            <span class="site-update-banner-item">We'll do our best to accommodate all reasonable adjustments.</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+            <span class="site-update-banner-item">Thank you for your contributions!</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+          </div>
+          <div class="site-update-banner-group" aria-hidden="true">
+            <span class="site-update-banner-item">We've implemented several changes based on your suggestions — thank you!</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+            <span class="site-update-banner-item">Don't see a change you suggested? Please let us know.</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+            <span class="site-update-banner-item">We'll do our best to accommodate all reasonable adjustments.</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+            <span class="site-update-banner-item">Thank you for your contributions!</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+          </div>
         </div>
       </div>
     </div>
@@ -8721,8 +8953,8 @@
     function getNodePosition(index, count, center) {
       const angleDeg = (index / count) * 360 - 90;
       const angle = angleDeg * Math.PI / 180;
-      const orbitX = Math.min(200, 125 + count * 11);
-      const orbitY = Math.min(150, 88 + count * 9);
+      const orbitX = Math.min(228, 148 + count * 12);
+      const orbitY = Math.min(168, 104 + count * 10);
       return {
         x: center.x + Math.cos(angle) * orbitX,
         y: center.y + Math.sin(angle) * orbitY
@@ -8791,14 +9023,21 @@
       grid.innerHTML = "";
 
       const count = ideas.length;
-      const center = { x: 280, y: 210, r: 40 };
-      const svgHeight = Math.min(520, 360 + Math.max(0, count - 3) * 28);
+      const centerRadius = 52;
+      const pathRadius = 40;
+      const center = { x: 280, y: 210, r: centerRadius };
+      const centerLineOffset = centerRadius + 12;
+      const pathLineOffset = pathRadius + 10;
+      const svgHeight = Math.min(560, 390 + Math.max(0, count - 3) * 28);
       if (svg) svg.setAttribute("viewBox", `0 0 560 ${svgHeight}`);
+
+      const centerFill = isMarioMap ? marioMapRoyalStrong : "url(#user-gradient)";
+      const centerFilterAttr = isMarioMap ? "" : ' filter="url(#svg-glow)"';
 
       nodes.insertAdjacentHTML("beforeend", `
         <g class="map-center-node">
-          <circle class="map-center-circle" cx="${center.x}" cy="${center.y}" r="${center.r}" fill="url(#user-gradient)" filter="url(#svg-glow)"></circle>
-          <text class="map-center-label" x="${center.x}" y="${center.y}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="12" font-weight="800">You</text>
+          <circle class="map-center-circle" cx="${center.x}" cy="${center.y}" r="${center.r}" fill="${centerFill}"${centerFilterAttr}></circle>
+          <text class="map-center-label" x="${center.x}" y="${center.y}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="14" font-weight="800">You</text>
         </g>`);
 
       ideas.forEach((idea, index) => {
@@ -8814,7 +9053,7 @@
         const uy = dy / length;
 
         connections.insertAdjacentHTML("beforeend", `
-          <line class="map-connection-line" x1="${center.x + ux * 48}" y1="${center.y + uy * 48}" x2="${x - ux * 40}" y2="${y - uy * 40}" stroke="${accentColor}" stroke-width="1.5" stroke-opacity=".62"></line>`);
+          <line class="map-connection-line" x1="${center.x + ux * centerLineOffset}" y1="${center.y + uy * centerLineOffset}" x2="${x - ux * pathLineOffset}" y2="${y - uy * pathLineOffset}" stroke="${accentColor}" stroke-width="1.5" stroke-opacity=".62"></line>`);
 
         const node = document.createElementNS("http://www.w3.org/2000/svg", "g");
         node.classList.add("map-node");
@@ -8825,8 +9064,8 @@
         node.style.color = strokeColor;
         node.innerHTML = `
           <g class="map-node-body">
-            <circle class="map-node-circle" cx="${x}" cy="${y}" r="32" fill="${accentColor}" fill-opacity=".18" stroke="${strokeColor}" stroke-width="1.5"></circle>
-            <text class="map-node-text" x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" fill="${strokeColor}" font-size="14" font-weight="800">${number}</text>
+            <circle class="map-node-circle" cx="${x}" cy="${y}" r="${pathRadius}" fill="${accentColor}" fill-opacity=".18" stroke="${strokeColor}" stroke-width="1.75"></circle>
+            <text class="map-node-text" x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" fill="${strokeColor}" font-size="16" font-weight="800">${number}</text>
           </g>`;
         node.addEventListener("click", () => scrollToPathDetail(index));
         node.addEventListener("keydown", (event) => {
@@ -9923,12 +10162,12 @@
     }
 
     const MARIO_CLOUD_VARIANTS = [
-      { id: "cloud-1", viewBox: "15 55 380 115", baseWidth: 220 },
-      { id: "cloud-2", viewBox: "55 200 345 105", baseWidth: 260 },
-      { id: "cloud-3", viewBox: "510 225 180 80", baseWidth: 160 },
-      { id: "cloud-4", viewBox: "505 20 185 145", baseWidth: 180 },
-      { id: "cloud-5", viewBox: "55 340 365 135", baseWidth: 280 },
-      { id: "cloud-6", viewBox: "450 355 245 120", baseWidth: 200 }
+      { id: "cloud-1", viewBox: "0 35 410 150", baseWidth: 220 },
+      { id: "cloud-2", viewBox: "25 170 400 155", baseWidth: 260 },
+      { id: "cloud-3", viewBox: "485 195 230 130", baseWidth: 160 },
+      { id: "cloud-4", viewBox: "480 0 230 185", baseWidth: 180 },
+      { id: "cloud-5", viewBox: "25 315 420 175", baseWidth: 280 },
+      { id: "cloud-6", viewBox: "420 325 300 165", baseWidth: 200 }
     ];
 
     let marioCloudsResizeTimer = null;
@@ -9940,7 +10179,7 @@
       const duration = 38 + Math.random() * 72;
       const delay = -(Math.random() * duration);
       const size = 0.52 + Math.random() * 0.95;
-      const top = 3 + (index * 11 + Math.random() * 9) % 78;
+      const top = 10 + (index * 11 + Math.random() * 9) % 72;
       const opacity = 0.68 + Math.random() * 0.28;
       const driftY = `${(Math.random() - 0.5) * 36}px`;
 
@@ -10284,9 +10523,11 @@
       const wrap = $("#header-jingle");
       const offer = $("#jingle-offer");
       const replay = $("#jingle-replay-btn");
+      const replayStack = $("#jingle-replay-stack");
       if (!wrap) return;
       const offerVisible = Boolean(offer && !offer.hidden);
       const replayVisible = Boolean(replay && !replay.hidden);
+      if (replayStack) replayStack.hidden = !replayVisible;
       wrap.hidden = !offerVisible && !replayVisible;
       syncHeaderHeight();
     }
@@ -10433,6 +10674,7 @@
 
     function updateJingleReplayVisibility() {
       const replay = $("#jingle-replay-btn");
+      const replayStack = $("#jingle-replay-stack");
       const offer = $("#jingle-offer");
       if (!replay) return;
       let played = false;
@@ -10442,7 +10684,9 @@
         /* ignore */
       }
       const offerVisible = Boolean(offer && !offer.hidden);
-      replay.hidden = !shouldShowJinglePlay() || offerVisible;
+      const showReplay = shouldShowJinglePlay() && !offerVisible;
+      replay.hidden = !showReplay;
+      if (replayStack) replayStack.hidden = !showReplay;
       setJingleReplayDesktopLabel(played);
       updateHeaderJingleVisibility();
     }
