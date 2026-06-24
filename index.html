@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-sync-fix -->
+<!-- whatimado build: 2026-06-24-sync-restore -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-sync-fix">
+  <meta name="whatimado-build" content="2026-06-24-sync-restore">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7842,10 +7842,14 @@
       const savedMaps = [...mapById.values()].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
       const localTime = localPayload.savedAt ?? 0;
       const cloudTime = cloudPayload.savedAt ?? 0;
-      const primary = cloudTime >= localTime ? cloudPayload : localPayload;
+      const localHasProgress = payloadHasProgress(localPayload);
+      const cloudHasProgress = payloadHasProgress(cloudPayload);
+      let primary = cloudTime >= localTime ? cloudPayload : localPayload;
+      if (cloudHasProgress && !localHasProgress) primary = cloudPayload;
+      else if (localHasProgress && !cloudHasProgress) primary = localPayload;
 
       let activeMapId = primary.activeMapId;
-      if (localPayload && cloudPayload) {
+      if (cloudHasProgress && savedMaps.length) {
         activeMapId = savedMaps[0]?.id ?? activeMapId;
       } else if (!activeMapId || !mapById.has(activeMapId)) {
         activeMapId = savedMaps[0]?.id ?? null;
@@ -7991,6 +7995,16 @@
       }];
     }
 
+    function restoreActiveSavedMapSnapshot() {
+      if (state.ideas.length || state.history.length) return false;
+      if (!state.savedMaps.length) return false;
+      const entry = state.savedMaps.find((map) => map.id === state.activeMapId) || state.savedMaps[0];
+      if (!entry || (!entry.ideas?.length && !entry.history?.length)) return false;
+      state.activeMapId = entry.id;
+      applyMapSnapshot(entry);
+      return true;
+    }
+
     function applySession(data) {
       if (!data) return;
       applyMapSnapshot(data);
@@ -8000,6 +8014,7 @@
       } else {
         migrateLegacySessionPayload(data);
       }
+      restoreActiveSavedMapSnapshot();
     }
 
     function beginNewIntake() {
@@ -8153,7 +8168,41 @@
     }
 
     function hasSavableProgress() {
-      return state.history.length > 0 || state.ideas.length > 0;
+      return state.history.length > 0 || state.ideas.length > 0 || state.savedMaps.length > 0;
+    }
+
+    async function fetchCloudSessionPayload() {
+      if (!state.currentUser || !supabaseClient) {
+        return { payload: null, journeyId: null, error: null };
+      }
+      try {
+        const { data, error } = await supabaseClient
+          .from("user_journeys")
+          .select("id, payload, updated_at")
+          .eq("user_id", state.currentUser.id)
+          .maybeSingle();
+        if (error) {
+          console.error("Cloud load failed:", error);
+          return { payload: null, journeyId: null, error };
+        }
+        if (!data?.payload || !payloadHasProgress(data.payload)) {
+          return { payload: null, journeyId: data?.id ?? null, error: null };
+        }
+        return {
+          payload: {
+            ...data.payload,
+            savedAt: Math.max(
+              data.payload.savedAt ?? 0,
+              new Date(data.updated_at).getTime()
+            )
+          },
+          journeyId: data.id,
+          error: null
+        };
+      } catch (err) {
+        console.error("Cloud load failed:", err);
+        return { payload: null, journeyId: null, error: err };
+      }
     }
 
     function updateSaveButtonVisibility() {
@@ -8303,27 +8352,14 @@
       }
 
       let cloudPayload = null;
-      if (state.currentUser && supabaseClient) {
-        try {
-          const { data } = await supabaseClient
-            .from("user_journeys")
-            .select("id, payload, updated_at")
-            .eq("user_id", state.currentUser.id)
-            .maybeSingle();
-          if (data?.payload && payloadHasProgress(data.payload)) {
-            cloudPayload = {
-              ...data.payload,
-              savedAt: Math.max(
-                data.payload.savedAt ?? 0,
-                new Date(data.updated_at).getTime()
-              )
-            };
-            state.journeyId = data.id;
-          }
-        } catch (err) {
-          console.error("Cloud load failed:", err);
-        }
+      let cloudLoadError = null;
+      if (state.currentUser) {
+        const cloudResult = await fetchCloudSessionPayload();
+        cloudPayload = cloudResult.payload;
+        cloudLoadError = cloudResult.error;
+        if (cloudResult.journeyId) state.journeyId = cloudResult.journeyId;
       }
+      state.cloudSyncAvailable = !cloudLoadError;
 
       let payload = localPayload;
       let mergedFromBothSources = false;
@@ -8331,7 +8367,7 @@
       if (state.currentUser && (localPayload || cloudPayload)) {
         payload = mergeSessionPayloads(localPayload, cloudPayload);
         mergedFromBothSources = Boolean(localPayload && cloudPayload);
-        loadedFromCloudOnly = Boolean(cloudPayload && !localPayload);
+        loadedFromCloudOnly = Boolean(cloudPayload && !payloadHasProgress(localPayload));
       } else if (cloudPayload) {
         payload = cloudPayload;
         loadedFromCloudOnly = true;
@@ -8350,8 +8386,13 @@
         if (state.currentUser && hasSavableProgress() && (mergedFromBothSources || loadedFromCloudOnly)) {
           schedulePersist();
         }
+      } else if (state.currentUser && cloudLoadError) {
+        flashSaveToast("Could not load your saved maps — check Supabase setup.");
       }
+
       updateSaveButtonVisibility();
+      updateMapsNav();
+      renderSavedMapsHome();
     }
 
     async function syncSessionFromCloud() {
@@ -10329,6 +10370,17 @@
       }
     }
 
+    function showScreenAfterSignIn() {
+      restoreActiveSavedMapSnapshot();
+      if (state.ideas.length) {
+        showScreen("map", { skipPersist: true });
+      } else if (state.savedMaps.length) {
+        showScreen("maps", { skipPersist: true });
+      } else if (state.history.length) {
+        showScreen("convo", { skipPersist: true });
+      }
+    }
+
     async function setUser(user, options = {}) {
       const previousId = state.currentUser?.id ?? null;
       const nextId = user?.id ?? null;
@@ -10354,8 +10406,14 @@
           restored_progress: hasSavableProgress()
         });
       }
-      if (freshSignIn && isFounderUser(user)) {
-        showScreen("stats", { skipPersist: true });
+      if (freshSignIn) {
+        if (hasSavableProgress()) {
+          showScreenAfterSignIn();
+        } else if (isFounderUser(user)) {
+          showScreen("stats", { skipPersist: true });
+        } else {
+          flashSaveToast("No saved maps found in your account yet.");
+        }
       }
       updateMapAuxiliaryPanels();
       prefillSuggestionName();
