@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-23-og-image-v1 -->
+<!-- whatimado build: 2026-06-24-mario-theme-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-23-og-image-v1">
+  <meta name="whatimado-build" content="2026-06-24-mario-theme-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -27,7 +27,7 @@
   <script>
     (() => {
       const key = "whatimado_color_scheme";
-      const schemes = ["midnight", "ocean", "sunset"];
+      const schemes = ["midnight", "ocean", "sunset", "mario"];
       try {
         const saved = localStorage.getItem(key);
         document.documentElement.dataset.colorScheme = schemes.includes(saved) ? saved : "midnight";
@@ -152,6 +152,126 @@
       --browser-theme-color: #1b0f20;
       --theme-active-bg: rgba(207, 111, 189, .24);
       --theme-active-border: rgba(255, 157, 200, .38);
+    }
+
+    [data-color-scheme="mario"] {
+      color-scheme: light;
+      --bg: #e8f4ff;
+      --bg-soft: #f4f9ff;
+      --surface: #ffffff;
+      --surface-2: #fff8e7;
+      --surface-3: #ffe9a8;
+      --ink: #1b1b2f;
+      --ink-muted: #2d3748;
+      --muted: #5a6478;
+      --line: rgba(27, 27, 47, .12);
+      --purple: #e8231a;
+      --purple-2: #ff5c54;
+      --teal: #00a800;
+      --gold: #ffc926;
+      --green: #43b047;
+      --rose: #ff4757;
+      --html-bg: #5baaff;
+      --bg-gradient: linear-gradient(180deg, #9fd4ff 0%, #5baaff 52%, #4a96e8 100%);
+      --header-bg: linear-gradient(180deg, rgba(255, 255, 255, .95) 0%, rgba(240, 248, 255, .92) 100%);
+      --header-border: rgba(232, 35, 26, .16);
+      --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .88), 0 8px 28px rgba(27, 27, 47, .12);
+      --logo-gradient: linear-gradient(135deg, #ffc926 0%, #e8231a 46%, #00a800 100%);
+      --network-line-rgb: 255, 201, 38;
+      --browser-theme-color: #5baaff;
+      --theme-active-bg: rgba(232, 35, 26, .14);
+      --theme-active-border: rgba(232, 35, 26, .34);
+      --brand-purple-dark: #e8231a;
+      --pastel-yellow-bg: linear-gradient(180deg, #ffe566 0%, #ffc926 100%);
+      --pastel-yellow-bg-hover: linear-gradient(180deg, #ffed80 0%, #ffd54f 100%);
+      --pastel-yellow-border: rgba(180, 120, 0, .32);
+      --light-blue-bg: linear-gradient(180deg, #ffffff 0%, #e8f4ff 100%);
+      --light-blue-bg-hover: linear-gradient(180deg, #ffffff 0%, #dff0ff 100%);
+      --light-blue-border: rgba(91, 170, 255, .5);
+      --plan-card-bg: var(--pastel-yellow-bg);
+      --plan-card-bg-hover: var(--pastel-yellow-bg-hover);
+      --plan-card-border: var(--pastel-yellow-border);
+      --plan-card-shadow: 0 14px 36px rgba(27, 27, 47, .14), inset 0 2px 0 rgba(255, 255, 255, .75);
+      --plan-card-ink: #1b1b2f;
+      --plan-card-muted: rgba(27, 27, 47, .72);
+      --plan-card-soft: rgba(27, 27, 47, .58);
+      --plan-card-chip-bg: rgba(27, 27, 47, .07);
+      --plan-card-note-bg: rgba(27, 27, 47, .06);
+      --map-control-bg: var(--light-blue-bg);
+      --map-control-border: var(--light-blue-border);
+      --shadow: 0 16px 48px rgba(27, 27, 47, .16);
+    }
+
+    [data-color-scheme="mario"] .surface-card,
+    [data-color-scheme="mario"] .stage-card,
+    [data-color-scheme="mario"] .momentum-card,
+    [data-color-scheme="mario"] .progress-map {
+      background: rgba(255, 255, 255, .94);
+      border-color: rgba(27, 27, 47, .1);
+      box-shadow: 0 10px 28px rgba(27, 27, 47, .1);
+    }
+
+    [data-color-scheme="mario"] #network-canvas {
+      opacity: .14;
+    }
+
+    [data-color-scheme="mario"] .hero h1 {
+      color: #fff;
+      text-shadow: 2px 2px 0 #e8231a, 3px 3px 0 rgba(27, 27, 47, .22);
+    }
+
+    [data-color-scheme="mario"] .hero h1 span {
+      color: #fff8e7;
+    }
+
+    [data-color-scheme="mario"] .hero h1 em {
+      color: #ffc926;
+      text-shadow: 2px 2px 0 #c97800;
+    }
+
+    [data-color-scheme="mario"] .hero-sub {
+      color: #1b1b2f;
+      font-weight: 600;
+    }
+
+    [data-color-scheme="mario"] .map-heading-kicker {
+      color: #e8231a;
+    }
+
+    [data-color-scheme="mario"] .bubble.ai {
+      background: rgba(255, 255, 255, .96);
+      color: var(--ink);
+      border-color: rgba(27, 27, 47, .1);
+    }
+
+    [data-color-scheme="mario"] .bubble.user {
+      background: linear-gradient(135deg, #e8231a 0%, #ff5c54 100%);
+      color: #fff;
+    }
+
+    [data-color-scheme="mario"] .loader {
+      background: var(--bg-gradient);
+    }
+
+    [data-color-scheme="mario"] .nav-btn {
+      color: rgba(27, 27, 47, .78);
+    }
+
+    [data-color-scheme="mario"] .nav-btn.active {
+      color: #fff;
+      background: #e8231a;
+    }
+
+    [data-color-scheme="mario"] .nav-theme-btn {
+      color: rgba(27, 27, 47, .72);
+    }
+
+    @media (max-width: 760px) {
+      [data-color-scheme="mario"] .nav-drawer {
+        background: linear-gradient(180deg, #ffffff 0%, #e8f4ff 100%);
+        border-bottom-color: rgba(232, 35, 26, .15);
+        box-shadow: 0 18px 48px rgba(27, 27, 47, .18);
+      }
     }
 
     html {
@@ -419,6 +539,11 @@
     .nav-theme-btn[data-theme-option="sunset"] {
       --swatch-a: #cf6fbd;
       --swatch-b: #ffd166;
+    }
+
+    .nav-theme-btn[data-theme-option="mario"] {
+      --swatch-a: #e8231a;
+      --swatch-b: #ffc926;
     }
 
     .nav-theme-btn:hover {
@@ -4536,6 +4661,7 @@
                   <button class="nav-theme-btn" type="button" data-theme-option="midnight" aria-pressed="true">Dark</button>
                   <button class="nav-theme-btn" type="button" data-theme-option="ocean" aria-pressed="false">Ocean</button>
                   <button class="nav-theme-btn" type="button" data-theme-option="sunset" aria-pressed="false">Sunset</button>
+                  <button class="nav-theme-btn" type="button" data-theme-option="mario" aria-pressed="false">Mario</button>
                 </div>
               </div>
 
@@ -5010,7 +5136,7 @@
     const DONATION_CART_KEY = "whatimado_donation_cart";
 
     const COLOR_SCHEME_KEY = "whatimado_color_scheme";
-    const COLOR_SCHEMES = ["midnight", "ocean", "sunset"];
+    const COLOR_SCHEMES = ["midnight", "ocean", "sunset", "mario"];
     const OPPORTUNITY_COLOR_VARS = ["--rose", "--teal", "--gold", "--green", "--purple-2"];
     const FALLBACK_OPPORTUNITY_COLORS = ["#e06c75", "#4ecdc4", "#f7c948", "#52c47a", "#9b8fe0"];
     const fallbackIdeas = [
