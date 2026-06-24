@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-jingle-credit-line -->
+<!-- whatimado build: 2026-06-24-roadmap-loader -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-jingle-credit-line">
+  <meta name="whatimado-build" content="2026-06-24-roadmap-loader">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -370,12 +370,14 @@
       color: #fff;
     }
 
-    [data-color-scheme="mario"] .loader {
+    [data-color-scheme="mario"] .loader,
+    [data-color-scheme="mario"] .roadmap-loading {
       background: var(--bg-gradient);
     }
 
     [data-color-scheme="mario"] .loader-quote,
-    [data-color-scheme="mario"] .loader-tagline {
+    [data-color-scheme="mario"] .loader-tagline,
+    [data-color-scheme="mario"] .roadmap-loading .loader-tagline {
       color: #fff;
       text-shadow:
         0 1px 0 rgba(42, 80, 136, .55),
@@ -383,11 +385,13 @@
         0 4px 18px rgba(42, 80, 136, .28);
     }
 
-    [data-color-scheme="mario"] .loader-tagline {
+    [data-color-scheme="mario"] .loader-tagline,
+    [data-color-scheme="mario"] .roadmap-loading .loader-tagline {
       font-weight: 800;
     }
 
-    [data-color-scheme="mario"] .loader-logo {
+    [data-color-scheme="mario"] .loader-logo,
+    [data-color-scheme="mario"] .roadmap-loading .loader-logo {
       mix-blend-mode: normal;
       filter:
         brightness(0) invert(1)
@@ -1037,7 +1041,7 @@
     }
 
     .app-header-nav-wrap {
-      padding: .5rem 1.25rem .4rem;
+      padding: .72rem 1.25rem .62rem;
     }
 
     .app-header-stack {
@@ -1382,6 +1386,7 @@
       align-items: center;
       gap: .45rem;
       flex-shrink: 0;
+      padding-block: .08rem;
     }
 
     .site-update-banner {
@@ -3752,37 +3757,22 @@
       z-index: 20;
       display: grid;
       place-items: center;
-      align-content: center;
-      gap: 1.1rem;
       min-height: calc(100dvh - var(--header-h));
       padding: 1.5rem;
       text-align: center;
-      background: rgba(7, 11, 20, .94);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: var(--bg-gradient);
     }
 
     #screen-roadmap.is-loading .roadmap-loading {
       display: grid !important;
     }
 
-    .roadmap-loading .loader-dot {
-      width: 46px;
-      height: 46px;
-      box-shadow: 0 0 32px rgba(124, 111, 205, .35);
-    }
-
     .roadmap-loading[hidden] {
       display: none !important;
     }
 
-    .roadmap-loading-text {
-      margin: 0;
-      max-width: 16rem;
-      color: #c8deff;
-      font-size: .92rem;
-      font-weight: 600;
-      line-height: 1.45;
+    .roadmap-loading .loader-inner {
+      gap: 1.15rem;
     }
 
     body.roadmap-loading-active {
@@ -4609,16 +4599,19 @@
     }
 
     @media (max-width: 600px) {
-      .loader {
+      .loader,
+      .roadmap-loading {
         padding: 1.25rem;
       }
 
-      .loader-inner {
+      .loader-inner,
+      .roadmap-loading .loader-inner {
         width: min(calc(100% - 1rem), 19rem);
         gap: 1rem;
       }
 
-      .loader-logo {
+      .loader-logo,
+      .roadmap-loading .loader-logo {
         height: 68px;
       }
 
@@ -4627,7 +4620,8 @@
         line-height: 1.6;
       }
 
-      .loader-tagline {
+      .loader-tagline,
+      .roadmap-loading .loader-tagline {
         font-size: .82rem;
       }
     }
@@ -4788,7 +4782,12 @@
 
     @media (max-width: 760px) {
       .app-header-nav-wrap {
-        padding: .55rem 1rem .45rem;
+        padding: .72rem .85rem .68rem;
+      }
+
+      .nav-header-actions {
+        align-items: flex-start;
+        padding-block: .12rem;
       }
 
       .header-jingle {
@@ -4815,6 +4814,8 @@
       .header-jingle-stack {
         flex-direction: column;
         align-items: flex-end;
+        gap: .38rem;
+        padding-block: .06rem;
       }
 
       .jingle-credit {
@@ -5651,10 +5652,6 @@
     }
 
     @media (max-width: 760px) {
-      .app-header-nav-wrap {
-        padding: 0 .65rem;
-      }
-
       .logo-icon {
         width: 30px;
         height: 30px;
@@ -6371,8 +6368,10 @@
 
     <section class="screen" id="screen-roadmap">
       <div class="roadmap-loading" id="roadmap-loading" hidden>
-        <div class="loader-dot" aria-hidden="true"></div>
-        <p class="roadmap-loading-text">Building your personalised roadmap...</p>
+        <div class="loader-inner">
+          <img class="loader-logo" src="/logo.png" alt="" width="251" height="150">
+          <p class="loader-tagline">Building your personalised roadmap...</p>
+        </div>
       </div>
 
       <div class="page roadmap-layout roadmap-page" id="roadmap-page">
@@ -7776,6 +7775,84 @@
       return state.currentUser?.id ? `whatimado_journey_${state.currentUser.id}` : STORAGE_GUEST;
     }
 
+    function normalizeSessionPayload(data) {
+      if (!data) return null;
+      const normalized = { ...data };
+      if (!Array.isArray(normalized.savedMaps)) {
+        if (normalized.history?.length || normalized.ideas?.length) {
+          const id = normalized.activeMapId || createMapId();
+          normalized.savedMaps = [{
+            id,
+            title: deriveMapTitle(normalized.history),
+            updatedAt: normalized.savedAt || Date.now(),
+            ...buildMapSnapshot(normalized)
+          }];
+          normalized.activeMapId = id;
+        } else {
+          normalized.savedMaps = [];
+          normalized.activeMapId = normalized.activeMapId ?? null;
+        }
+      }
+      return normalized;
+    }
+
+    function applyActiveMapToSessionPayload(payload, activeEntry) {
+      if (!payload || !activeEntry) return payload;
+      payload.activeMapId = activeEntry.id;
+      payload.step = activeEntry.step;
+      payload.history = Array.isArray(activeEntry.history) ? activeEntry.history : [];
+      payload.ideas = Array.isArray(activeEntry.ideas) ? activeEntry.ideas : [];
+      payload.roadmapStages = Array.isArray(activeEntry.roadmapStages) ? activeEntry.roadmapStages : [];
+      payload.currentIdea = activeEntry.currentIdea ?? null;
+      payload.roadmapKey = activeEntry.roadmapKey ?? null;
+      payload.allTaskChats = activeEntry.allTaskChats && typeof activeEntry.allTaskChats === "object" ? activeEntry.allTaskChats : {};
+      payload.allRoadmaps = activeEntry.allRoadmaps && typeof activeEntry.allRoadmaps === "object" ? activeEntry.allRoadmaps : {};
+      payload.expandedThreadId = activeEntry.expandedThreadId ?? null;
+      payload.activeTaskId = activeEntry.activeTaskId ?? null;
+      payload.lastScreen = activeEntry.lastScreen ?? payload.lastScreen ?? "main";
+      payload.mapFeedbackGiven = Boolean(activeEntry.mapFeedbackGiven);
+      payload.mapFeedbackSentiment = activeEntry.mapFeedbackSentiment ?? null;
+      payload.intakeMode = activeEntry.intakeMode || payload.intakeMode || "standard";
+      return payload;
+    }
+
+    function mergeSessionPayloads(local, cloud) {
+      const localPayload = normalizeSessionPayload(local);
+      const cloudPayload = normalizeSessionPayload(cloud);
+      if (!localPayload && !cloudPayload) return null;
+      if (!localPayload) return cloudPayload;
+      if (!cloudPayload) return localPayload;
+
+      const mapById = new Map();
+      for (const payload of [localPayload, cloudPayload]) {
+        for (const map of payload.savedMaps || []) {
+          const previous = mapById.get(map.id);
+          if (!previous || (map.updatedAt ?? 0) > (previous.updatedAt ?? 0)) {
+            mapById.set(map.id, { ...map });
+          }
+        }
+      }
+
+      const savedMaps = [...mapById.values()].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+      const localTime = localPayload.savedAt ?? 0;
+      const cloudTime = cloudPayload.savedAt ?? 0;
+      const primary = cloudTime >= localTime ? cloudPayload : localPayload;
+
+      let activeMapId = primary.activeMapId;
+      if (!activeMapId || !mapById.has(activeMapId)) {
+        activeMapId = savedMaps[0]?.id ?? null;
+      }
+
+      const merged = {
+        ...primary,
+        savedMaps,
+        activeMapId,
+        savedAt: Math.max(localTime, cloudTime)
+      };
+
+      return applyActiveMapToSessionPayload(merged, activeMapId ? mapById.get(activeMapId) : null);
+    }
+
     function serializeSession() {
       syncActiveMapIntoLibrary();
       return {
@@ -8194,14 +8271,15 @@
     }
 
     async function loadSession() {
-      let payload = null;
+      let localPayload = null;
       try {
         const raw = localStorage.getItem(getStorageKey());
-        if (raw) payload = JSON.parse(raw);
+        if (raw) localPayload = JSON.parse(raw);
       } catch {
-        payload = null;
+        localPayload = null;
       }
 
+      let cloudPayload = null;
       if (state.currentUser && supabaseClient) {
         try {
           const { data } = await supabaseClient
@@ -8210,23 +8288,48 @@
             .eq("user_id", state.currentUser.id)
             .maybeSingle();
           if (data?.payload) {
-            const cloudTime = new Date(data.updated_at).getTime();
-            const localTime = payload?.savedAt ?? 0;
-            if (cloudTime >= localTime) {
-              payload = data.payload;
-              state.journeyId = data.id;
-            }
+            cloudPayload = {
+              ...data.payload,
+              savedAt: Math.max(
+                data.payload.savedAt ?? 0,
+                new Date(data.updated_at).getTime()
+              )
+            };
+            state.journeyId = data.id;
           }
         } catch {
           /* fall back to localStorage */
         }
       }
 
+      let payload = localPayload;
+      let mergedFromBothSources = false;
+      if (state.currentUser && (localPayload || cloudPayload)) {
+        payload = mergeSessionPayloads(localPayload, cloudPayload);
+        mergedFromBothSources = Boolean(localPayload && cloudPayload);
+      } else if (cloudPayload) {
+        payload = cloudPayload;
+      }
+
       if (payload) {
         applySession(payload);
         restoreSessionUI();
+        try {
+          localStorage.setItem(getStorageKey(), JSON.stringify(serializeSession()));
+        } catch {
+          /* ignore local write failure */
+        }
+        if (mergedFromBothSources && hasSavableProgress()) {
+          schedulePersist();
+        }
       }
       updateSaveButtonVisibility();
+    }
+
+    async function syncSessionFromCloud() {
+      if (!state.currentUser || !supabaseClient) return;
+      await loadSession();
+      syncHeaderHeight();
     }
 
     function restoreConversationBubbles() {
@@ -10190,9 +10293,8 @@
         const userKey = `whatimado_journey_${state.currentUser.id}`;
         const userRaw = localStorage.getItem(userKey);
         const userData = userRaw ? JSON.parse(userRaw) : null;
-        if (!userData || (guestData.savedAt ?? 0) > (userData.savedAt ?? 0)) {
-          localStorage.setItem(userKey, guestRaw);
-        }
+        const merged = mergeSessionPayloads(userData, guestData) || guestData;
+        localStorage.setItem(userKey, JSON.stringify(merged));
         localStorage.removeItem(STORAGE_GUEST);
       } catch {
         /* ignore merge errors */
@@ -10216,8 +10318,8 @@
         await loadSession();
       }
 
-      if (nextId && !previousId && hasSavableProgress()) {
-        await persistSession({ manual: true });
+      if (nextId !== previousId && hasSavableProgress()) {
+        await persistSession({ silent: true });
       }
       if (nextId !== previousId) {
         trackEvent(nextId ? "auth_signed_in" : "auth_signed_out", {
@@ -11027,7 +11129,11 @@
         ]);
         window.addEventListener("pagehide", trackIntakeAbandonment);
         document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "hidden") trackIntakeAbandonment();
+          if (document.visibilityState === "hidden") {
+            trackIntakeAbandonment();
+            return;
+          }
+          if (state.currentUser) syncSessionFromCloud();
         });
         trackEvent("app_loaded", {
           has_progress: hasSavableProgress(),
@@ -11040,6 +11146,7 @@
       } finally {
         clearTimeout(loaderFallbackTimer);
         initSiteJingle();
+        syncHeaderHeight();
         scheduleLoaderDismiss(650);
       }
     });
