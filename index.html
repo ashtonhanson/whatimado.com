@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-mario-white-cards-v1 -->
+<!-- whatimado build: 2026-06-24-mario-royal-text-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-mario-white-cards-v1">
+  <meta name="whatimado-build" content="2026-06-24-mario-royal-text-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -161,10 +161,10 @@
       --surface: #ffffff;
       --surface-2: #f4f9ff;
       --surface-3: #eef6ff;
-      --ink: #1b1b2f;
-      --ink-muted: #2d3748;
-      --muted: #5a6478;
-      --line: rgba(27, 27, 47, .12);
+      --ink: #2a5088;
+      --ink-muted: #4a6594;
+      --muted: #627fa3;
+      --line: rgba(42, 80, 136, .14);
       --purple: #e8231a;
       --purple-2: #ff5c54;
       --teal: #00a800;
@@ -175,7 +175,7 @@
       --bg-gradient: linear-gradient(180deg, #9fd4ff 0%, #5baaff 52%, #4a96e8 100%);
       --header-bg: linear-gradient(180deg, rgba(255, 255, 255, .95) 0%, rgba(240, 248, 255, .92) 100%);
       --header-border: rgba(232, 35, 26, .16);
-      --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .88), 0 8px 28px rgba(27, 27, 47, .12);
+      --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .88), 0 8px 28px rgba(42, 80, 136, .12);
       --logo-gradient: linear-gradient(135deg, #ffc926 0%, #e8231a 46%, #00a800 100%);
       --network-line-rgb: 255, 201, 38;
       --browser-theme-color: #5baaff;
@@ -184,22 +184,22 @@
       --brand-purple-dark: #e8231a;
       --pastel-yellow-bg: rgba(255, 255, 255, .94);
       --pastel-yellow-bg-hover: #ffffff;
-      --pastel-yellow-border: rgba(27, 27, 47, .12);
+      --pastel-yellow-border: rgba(42, 80, 136, .12);
       --light-blue-bg: rgba(255, 255, 255, .86);
       --light-blue-bg-hover: #ffffff;
-      --light-blue-border: rgba(27, 27, 47, .14);
+      --light-blue-border: rgba(42, 80, 136, .16);
       --plan-card-bg: rgba(255, 255, 255, .94);
       --plan-card-bg-hover: #ffffff;
-      --plan-card-border: rgba(27, 27, 47, .12);
-      --plan-card-shadow: 0 8px 24px rgba(27, 27, 47, .08);
-      --plan-card-ink: #1b1b2f;
-      --plan-card-muted: rgba(27, 27, 47, .72);
-      --plan-card-soft: rgba(27, 27, 47, .58);
+      --plan-card-border: rgba(42, 80, 136, .12);
+      --plan-card-shadow: 0 8px 24px rgba(42, 80, 136, .08);
+      --plan-card-ink: #2a5088;
+      --plan-card-muted: rgba(42, 80, 136, .76);
+      --plan-card-soft: rgba(42, 80, 136, .58);
       --plan-card-chip-bg: rgba(232, 244, 255, .75);
       --plan-card-note-bg: rgba(232, 244, 255, .55);
       --map-control-bg: rgba(255, 255, 255, .94);
-      --map-control-border: rgba(27, 27, 47, .12);
-      --shadow: 0 16px 48px rgba(27, 27, 47, .16);
+      --map-control-border: rgba(42, 80, 136, .12);
+      --shadow: 0 16px 48px rgba(42, 80, 136, .14);
     }
 
     [data-color-scheme="mario"] .surface-card,
@@ -215,17 +215,105 @@
     [data-color-scheme="mario"] .site-suggestions,
     [data-color-scheme="mario"] .roadmap-complete-card {
       background: rgba(255, 255, 255, .94);
-      border-color: rgba(27, 27, 47, .1);
-      box-shadow: 0 10px 28px rgba(27, 27, 47, .1);
+      border-color: rgba(42, 80, 136, .1);
+      box-shadow: 0 10px 28px rgba(42, 80, 136, .1);
     }
 
     [data-color-scheme="mario"] #network-canvas {
-      opacity: .14;
+      opacity: .08;
+    }
+
+    #mario-clouds {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .7s ease, visibility .7s ease;
+    }
+
+    #mario-clouds.is-active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #mario-clouds[hidden] {
+      display: none !important;
+    }
+
+    .mario-cloud {
+      position: absolute;
+      top: var(--cloud-top, 20%);
+      left: 0;
+      width: calc(var(--cloud-base-width, 180px) * var(--cloud-size, 1));
+      opacity: 0;
+      will-change: transform, opacity;
+      animation-duration: var(--cloud-duration, 60s);
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      animation-delay: var(--cloud-delay, 0s);
+    }
+
+    .mario-cloud[data-direction="ltr"] {
+      animation-name: mario-cloud-drift-ltr;
+    }
+
+    .mario-cloud[data-direction="rtl"] {
+      animation-name: mario-cloud-drift-rtl;
+    }
+
+    .mario-cloud svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0 8px 18px rgba(42, 80, 136, .1));
+    }
+
+    @keyframes mario-cloud-drift-ltr {
+      0% {
+        transform: translate3d(-20vw, 0, 0);
+        opacity: 0;
+      }
+
+      7%,
+      93% {
+        opacity: var(--cloud-opacity, .82);
+      }
+
+      100% {
+        transform: translate3d(calc(100vw + 20vw), var(--cloud-drift-y, 0), 0);
+        opacity: 0;
+      }
+    }
+
+    @keyframes mario-cloud-drift-rtl {
+      0% {
+        transform: translate3d(calc(100vw + 20vw), 0, 0);
+        opacity: 0;
+      }
+
+      7%,
+      93% {
+        opacity: var(--cloud-opacity, .82);
+      }
+
+      100% {
+        transform: translate3d(-20vw, var(--cloud-drift-y, 0), 0);
+        opacity: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #mario-clouds {
+        display: none !important;
+      }
     }
 
     [data-color-scheme="mario"] .hero h1 {
       color: #fff;
-      text-shadow: 2px 2px 0 #e8231a, 3px 3px 0 rgba(27, 27, 47, .22);
+      text-shadow: 2px 2px 0 #e8231a, 3px 3px 0 rgba(42, 80, 136, .22);
     }
 
     [data-color-scheme="mario"] .hero h1 span {
@@ -249,7 +337,7 @@
     [data-color-scheme="mario"] .bubble.ai {
       background: rgba(255, 255, 255, .96);
       color: var(--ink);
-      border-color: rgba(27, 27, 47, .1);
+      border-color: rgba(42, 80, 136, .1);
     }
 
     [data-color-scheme="mario"] .bubble.user {
@@ -262,7 +350,7 @@
     }
 
     [data-color-scheme="mario"] .nav-btn {
-      color: rgba(27, 27, 47, .78);
+      color: var(--ink-muted);
     }
 
     [data-color-scheme="mario"] .nav-btn.active {
@@ -271,7 +359,7 @@
     }
 
     [data-color-scheme="mario"] .nav-theme-btn {
-      color: rgba(27, 27, 47, .72);
+      color: var(--muted);
     }
 
     [data-color-scheme="mario"] .logo-icon img {
@@ -281,7 +369,7 @@
     [data-color-scheme="mario"] .nav-hamburger {
       border: 1.5px solid rgba(91, 170, 255, .72);
       background: linear-gradient(180deg, #dff0ff 0%, #b8dcff 100%);
-      box-shadow: 0 2px 10px rgba(27, 27, 47, .14), inset 0 1px 0 rgba(255, 255, 255, .92);
+      box-shadow: 0 2px 10px rgba(42, 80, 136, .14), inset 0 1px 0 rgba(255, 255, 255, .92);
     }
 
     [data-color-scheme="mario"] .nav-hamburger:hover {
@@ -290,19 +378,19 @@
     }
 
     [data-color-scheme="mario"] .nav-hamburger-line {
-      background: #1b1b2f;
+      background: var(--ink);
     }
 
     [data-color-scheme="mario"] .logo-text span {
-      color: rgba(27, 27, 47, .62);
-      -webkit-text-fill-color: rgba(27, 27, 47, .62);
+      color: var(--muted);
+      -webkit-text-fill-color: var(--muted);
     }
 
     [data-color-scheme="mario"] .nav-drawer {
       background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
       border-color: rgba(232, 35, 26, .18);
       border-top: 3px solid #e8231a;
-      box-shadow: 0 20px 52px rgba(27, 27, 47, .2);
+      box-shadow: 0 20px 52px rgba(42, 80, 136, .2);
     }
 
     [data-color-scheme="mario"] .nav-drawer-head {
@@ -312,20 +400,20 @@
     [data-color-scheme="mario"] .nav-drawer-head-logo {
       background: #fff;
       border-color: rgba(232, 35, 26, .22);
-      box-shadow: 0 4px 14px rgba(27, 27, 47, .08);
+      box-shadow: 0 4px 14px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .nav-drawer-head-title {
-      color: #1b1b2f;
+      color: var(--ink);
     }
 
     [data-color-scheme="mario"] .nav-drawer-head-sub {
-      color: rgba(27, 27, 47, .58);
+      color: var(--muted);
     }
 
     [data-color-scheme="mario"] .nav-drawer-section {
       background: rgba(255, 255, 255, .78);
-      border-color: rgba(27, 27, 47, .08);
+      border-color: rgba(42, 80, 136, .08);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, .92);
     }
 
@@ -335,8 +423,8 @@
 
     [data-color-scheme="mario"] .nav-drawer .nav-btn {
       background: #fff;
-      color: #1b1b2f;
-      border-color: rgba(27, 27, 47, .14);
+      color: var(--ink);
+      border-color: rgba(42, 80, 136, .14);
     }
 
     [data-color-scheme="mario"] .nav-drawer .nav-btn.active {
@@ -348,17 +436,17 @@
 
     [data-color-scheme="mario"] .nav-drawer .nav-theme-btn {
       background: #fff;
-      color: #1b1b2f;
-      border-color: rgba(27, 27, 47, .14);
+      color: var(--ink);
+      border-color: rgba(42, 80, 136, .14);
     }
 
     [data-color-scheme="mario"] .nav-drawer .nav-user #nav-username {
-      color: rgba(27, 27, 47, .72);
+      color: var(--ink-muted);
     }
 
     [data-color-scheme="mario"] .nav-drawer .nav-btn.donate-btn {
       background: rgba(255, 255, 255, .94);
-      color: #1b1b2f;
+      color: var(--ink);
       border-color: rgba(232, 35, 26, .28);
     }
 
@@ -388,7 +476,7 @@
 
     [data-color-scheme="mario"] .stats-title-light {
       color: #fff;
-      text-shadow: 1px 2px 0 rgba(27, 27, 47, .2);
+      text-shadow: 1px 2px 0 rgba(42, 80, 136, .2);
     }
 
     [data-color-scheme="mario"] .stats-title-accent {
@@ -403,12 +491,12 @@
     [data-color-scheme="mario"] #screen-stats .stats-card,
     [data-color-scheme="mario"] #screen-stats .stats-panel {
       background: rgba(255, 255, 255, .94);
-      border-color: rgba(27, 27, 47, .12);
-      box-shadow: 0 8px 24px rgba(27, 27, 47, .08);
+      border-color: rgba(42, 80, 136, .12);
+      box-shadow: 0 8px 24px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .stats-card-value--visits {
-      color: #1a5fbf;
+      color: #2a5088;
     }
 
     [data-color-scheme="mario"] .stats-card-value--started {
@@ -421,8 +509,8 @@
 
     [data-color-scheme="mario"] .stats-period-btn {
       background: rgba(255, 255, 255, .82);
-      border-color: rgba(27, 27, 47, .14);
-      color: rgba(27, 27, 47, .72);
+      border-color: rgba(42, 80, 136, .14);
+      color: var(--ink-muted);
     }
 
     [data-color-scheme="mario"] .stats-period-btn.active {
@@ -447,7 +535,7 @@
     }
 
     [data-color-scheme="mario"] .stats-funnel-step--visits .stats-funnel-step-num {
-      color: #1a5fbf;
+      color: #2a5088;
     }
 
     [data-color-scheme="mario"] .stats-funnel-step--started .stats-funnel-step-num {
@@ -460,28 +548,28 @@
 
     [data-color-scheme="mario"] .stats-funnel-connector,
     [data-color-scheme="mario"] .stats-funnel-connector-arrow {
-      color: rgba(27, 27, 47, .58);
+      color: var(--muted);
     }
 
     [data-color-scheme="mario"] .stats-day-card {
       background: rgba(255, 255, 255, .94);
-      border-color: rgba(27, 27, 47, .12);
+      border-color: rgba(42, 80, 136, .12);
     }
 
     [data-color-scheme="mario"] .stats-day-head {
-      color: #1b1b2f;
+      color: var(--ink);
     }
 
     [data-color-scheme="mario"] .stats-metric-label {
-      color: rgba(27, 27, 47, .72);
+      color: var(--ink-muted);
     }
 
     [data-color-scheme="mario"] .stats-metric-num {
-      color: #1b1b2f;
+      color: var(--ink);
     }
 
     [data-color-scheme="mario"] .stats-metric-bar-track {
-      background: rgba(27, 27, 47, .08);
+      background: rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .app-header {
@@ -498,29 +586,29 @@
 
     [data-color-scheme="mario"] .prompt-box {
       background: rgba(255, 255, 255, .94);
-      border-color: rgba(27, 27, 47, .12);
-      box-shadow: 0 8px 24px rgba(27, 27, 47, .08);
+      border-color: rgba(42, 80, 136, .12);
+      box-shadow: 0 8px 24px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .prompt-box:focus-within {
       border-color: rgba(232, 35, 26, .35);
-      box-shadow: 0 0 0 3px rgba(232, 35, 26, .1), 0 8px 24px rgba(27, 27, 47, .08);
+      box-shadow: 0 0 0 3px rgba(232, 35, 26, .1), 0 8px 24px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .prompt-textarea {
-      color: #1b1b2f;
+      color: var(--ink);
     }
 
     [data-color-scheme="mario"] .prompt-textarea::placeholder {
-      color: rgba(27, 27, 47, .42);
+      color: var(--plan-card-soft);
     }
 
     [data-color-scheme="mario"] .prompt-footer {
-      border-top-color: rgba(27, 27, 47, .08);
+      border-top-color: rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .hint {
-      color: rgba(27, 27, 47, .62);
+      color: var(--muted);
     }
 
     [data-color-scheme="mario"] .hero-example-btn {
@@ -542,7 +630,7 @@
 
     [data-color-scheme="mario"] .pill {
       background: rgba(255, 255, 255, .86);
-      border-color: rgba(27, 27, 47, .14);
+      border-color: rgba(42, 80, 136, .14);
       color: #e8231a;
     }
 
@@ -554,12 +642,12 @@
 
     [data-color-scheme="mario"] .saved-maps-home {
       background: rgba(255, 255, 255, .94);
-      border-color: rgba(27, 27, 47, .12);
-      box-shadow: 0 8px 24px rgba(27, 27, 47, .08);
+      border-color: rgba(42, 80, 136, .12);
+      box-shadow: 0 8px 24px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .saved-maps-home-title {
-      color: #1b1b2f;
+      color: var(--ink);
     }
 
     [data-color-scheme="mario"] .saved-map-chip {
@@ -574,13 +662,13 @@
     }
 
     [data-color-scheme="mario"] .saved-map-chip-meta {
-      color: rgba(27, 27, 47, .58);
+      color: var(--muted);
     }
 
     [data-color-scheme="mario"] #screen-main .back-btn {
       background: rgba(255, 255, 255, .86);
-      border-color: rgba(27, 27, 47, .14);
-      color: rgba(27, 27, 47, .72);
+      border-color: rgba(42, 80, 136, .14);
+      color: var(--ink-muted);
     }
 
     [data-color-scheme="mario"] #screen-main .back-btn:hover {
@@ -591,12 +679,12 @@
 
     [data-color-scheme="mario"] .ai-difference {
       background: rgba(255, 255, 255, .94);
-      border-color: rgba(27, 27, 47, .12);
-      box-shadow: 0 8px 24px rgba(27, 27, 47, .08);
+      border-color: rgba(42, 80, 136, .12);
+      box-shadow: 0 8px 24px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .ai-difference-copy {
-      color: rgba(27, 27, 47, .72);
+      color: var(--ink-muted);
     }
 
     [data-color-scheme="mario"] .ai-difference-item {
@@ -611,7 +699,7 @@
 
     [data-color-scheme="mario"] #screen-map .page-title {
       color: #fff;
-      text-shadow: 1px 2px 0 rgba(27, 27, 47, .2);
+      text-shadow: 1px 2px 0 rgba(42, 80, 136, .2);
     }
 
     [data-color-scheme="mario"] #screen-map .page-title em {
@@ -625,7 +713,7 @@
 
     [data-color-scheme="mario"] .map-plans-divider-label {
       color: #fff;
-      text-shadow: 1px 2px 0 rgba(27, 27, 47, .18);
+      text-shadow: 1px 2px 0 rgba(42, 80, 136, .18);
     }
 
     [data-color-scheme="mario"] .map-plans-toolbar-line {
@@ -636,14 +724,62 @@
       background: radial-gradient(circle, rgba(255, 255, 255, .34) 0%, rgba(91, 170, 255, .16) 42%, rgba(7, 17, 31, 0) 72%);
     }
 
+    [data-color-scheme="mario"] .map-connection-line {
+      stroke: #fff !important;
+      stroke-opacity: .58 !important;
+    }
+
+    [data-color-scheme="mario"] .map-node-circle {
+      fill: #fff !important;
+      fill-opacity: .14 !important;
+      stroke: #fff !important;
+    }
+
+    [data-color-scheme="mario"] .map-node-text {
+      fill: #fff !important;
+    }
+
+    [data-color-scheme="mario"] .map-node:hover .map-node-circle,
+    [data-color-scheme="mario"] .map-node:focus-visible .map-node-circle,
+    [data-color-scheme="mario"] .map-node.is-highlighted .map-node-circle {
+      fill: #fff !important;
+      fill-opacity: .28 !important;
+      stroke: #fff !important;
+      stroke-width: 2.5;
+      transform: scale(1.16);
+      filter: drop-shadow(0 0 14px rgba(255, 255, 255, .92)) drop-shadow(0 0 28px rgba(255, 255, 255, .42));
+    }
+
+    [data-color-scheme="mario"] .map-node.is-selected .map-node-circle {
+      fill: #fff !important;
+      fill-opacity: .34 !important;
+      stroke: #fff !important;
+      stroke-width: 3;
+      transform: scale(1.24);
+      filter: drop-shadow(0 0 18px rgba(255, 255, 255, .98)) drop-shadow(0 0 36px rgba(255, 255, 255, .55));
+    }
+
+    [data-color-scheme="mario"] .map-node:hover .map-node-text,
+    [data-color-scheme="mario"] .map-node:focus-visible .map-node-text,
+    [data-color-scheme="mario"] .map-node.is-highlighted .map-node-text,
+    [data-color-scheme="mario"] .map-node.is-selected .map-node-text {
+      fill: #fff !important;
+      transform: scale(1.12);
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, .75));
+    }
+
+    [data-color-scheme="mario"] .map-node.is-selected .map-node-text {
+      transform: scale(1.16);
+    }
+
     [data-color-scheme="mario"] #screen-map .page-header .map-header-nav .back-btn,
     [data-color-scheme="mario"] #reset-btn,
     [data-color-scheme="mario"] .map-toolbar-btn,
     [data-color-scheme="mario"] #screen-map .back-btn {
       background: rgba(255, 255, 255, .86);
-      border-color: rgba(27, 27, 47, .14);
-      color: rgba(27, 27, 47, .78);
-      box-shadow: 0 4px 14px rgba(27, 27, 47, .08);
+      border-color: rgba(42, 80, 136, .14);
+      color: var(--ink-muted);
+      box-shadow: 0 4px 14px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] #screen-map .page-header .map-header-nav .back-btn:hover,
@@ -657,13 +793,13 @@
     [data-color-scheme="mario"] .opp-card:hover,
     [data-color-scheme="mario"] .opp-card.is-highlighted {
       border-color: rgba(232, 35, 26, .35);
-      box-shadow: 0 10px 28px rgba(27, 27, 47, .12), inset 3px 0 0 #e8231a;
+      box-shadow: 0 10px 28px rgba(42, 80, 136, .12), inset 3px 0 0 #e8231a;
     }
 
     [data-color-scheme="mario"] .opp-label.surface-card:hover,
     [data-color-scheme="mario"] .opp-label.surface-card.is-highlighted {
       border-color: rgba(232, 35, 26, .35);
-      box-shadow: 0 8px 24px rgba(27, 27, 47, .1), inset 3px 0 0 #e8231a;
+      box-shadow: 0 8px 24px rgba(42, 80, 136, .1), inset 3px 0 0 #e8231a;
     }
 
     [data-color-scheme="mario"] .opp-type {
@@ -687,9 +823,9 @@
     [data-color-scheme="mario"] #screen-roadmap .roadmap-back-btn,
     [data-color-scheme="mario"] #screen-roadmap .complete-action-btn {
       background: rgba(255, 255, 255, .86);
-      border-color: rgba(27, 27, 47, .14);
-      color: rgba(27, 27, 47, .78);
-      box-shadow: 0 4px 14px rgba(27, 27, 47, .08);
+      border-color: rgba(42, 80, 136, .14);
+      color: var(--ink-muted);
+      box-shadow: 0 4px 14px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] #screen-roadmap .roadmap-back-btn:hover,
@@ -701,7 +837,7 @@
 
     [data-color-scheme="mario"] #screen-roadmap .stage-card.open {
       border-color: rgba(232, 35, 26, .28);
-      box-shadow: 0 10px 28px rgba(27, 27, 47, .1), inset 3px 0 0 #e8231a;
+      box-shadow: 0 10px 28px rgba(42, 80, 136, .1), inset 3px 0 0 #e8231a;
     }
 
     [data-color-scheme="mario"] #screen-roadmap .task-item {
@@ -715,7 +851,7 @@
 
     [data-color-scheme="mario"] #screen-maps .maps-page-title {
       color: #fff;
-      text-shadow: 1px 2px 0 rgba(27, 27, 47, .2);
+      text-shadow: 1px 2px 0 rgba(42, 80, 136, .2);
     }
 
     [data-color-scheme="mario"] #screen-maps .maps-page-sub {
@@ -2207,33 +2343,47 @@
     .map-node,
     .map-node-circle,
     .map-node-text {
-      transition: transform .18s ease, filter .18s ease, fill-opacity .18s ease, stroke-width .18s ease;
+      transition: transform .22s ease, filter .22s ease, fill-opacity .22s ease, stroke-width .22s ease, fill .22s ease, stroke .22s ease;
       transform-box: fill-box;
       transform-origin: center;
     }
 
+    .map-connection-line {
+      transition: stroke-opacity .22s ease, stroke-width .22s ease;
+    }
+
     .map-node:hover,
     .map-node:focus-visible,
-    .map-node.is-highlighted {
+    .map-node.is-highlighted,
+    .map-node.is-selected {
       outline: none;
-      filter: drop-shadow(0 0 14px currentColor);
     }
 
     .map-node:hover .map-node-circle,
     .map-node:focus-visible .map-node-circle,
     .map-node.is-highlighted .map-node-circle {
-      fill: #c7edff;
       fill-opacity: .36;
-      stroke: #c7edff;
-      stroke-width: 3;
+      stroke-width: 2.5;
       transform: scale(1.14);
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, .55));
+    }
+
+    .map-node.is-selected .map-node-circle {
+      fill-opacity: .42;
+      stroke-width: 3;
+      transform: scale(1.2);
+      filter: drop-shadow(0 0 16px rgba(255, 255, 255, .72)) drop-shadow(0 0 28px rgba(255, 255, 255, .35));
     }
 
     .map-node:hover .map-node-text,
     .map-node:focus-visible .map-node-text,
-    .map-node.is-highlighted .map-node-text {
-      fill: var(--brand-purple-dark);
-      transform: scale(1.12);
+    .map-node.is-highlighted .map-node-text,
+    .map-node.is-selected .map-node-text {
+      transform: scale(1.1);
+    }
+
+    .map-node.is-selected .map-node-text {
+      transform: scale(1.14);
     }
 
     .opp-labels {
@@ -4151,23 +4301,23 @@
     [data-color-scheme="mario"] .jingle-offer-play {
       border: 1.5px solid rgba(91, 170, 255, .72);
       background: linear-gradient(180deg, #dff0ff 0%, #b8dcff 100%);
-      color: rgba(27, 27, 47, .58);
-      box-shadow: 0 2px 8px rgba(27, 27, 47, .1), inset 0 1px 0 rgba(255, 255, 255, .9);
+      color: var(--muted);
+      box-shadow: 0 2px 8px rgba(42, 80, 136, .1), inset 0 1px 0 rgba(255, 255, 255, .9);
     }
 
     [data-color-scheme="mario"] .jingle-offer-play:hover:not(:disabled) {
       border-color: rgba(232, 35, 26, .4);
       background: linear-gradient(180deg, #eef7ff 0%, #c8e4ff 100%);
-      color: rgba(27, 27, 47, .72);
+      color: var(--ink-muted);
     }
 
     [data-color-scheme="mario"] .jingle-offer-note {
-      color: rgba(27, 27, 47, .58);
+      color: var(--muted);
     }
 
     [data-color-scheme="mario"] .jingle-offer-skip,
     [data-color-scheme="mario"] .jingle-offer-mute {
-      color: rgba(27, 27, 47, .52);
+      color: var(--plan-card-soft);
     }
 
     [data-color-scheme="mario"] .jingle-offer-skip:hover,
@@ -4176,15 +4326,15 @@
     }
 
     [data-color-scheme="mario"] .jingle-replay-btn {
-      border: 1px solid rgba(27, 27, 47, .14);
+      border: 1px solid rgba(42, 80, 136, .14);
       background: rgba(255, 255, 255, .86);
-      color: rgba(27, 27, 47, .58);
-      box-shadow: 0 2px 8px rgba(27, 27, 47, .08);
+      color: var(--muted);
+      box-shadow: 0 2px 8px rgba(42, 80, 136, .08);
     }
 
     [data-color-scheme="mario"] .jingle-replay-btn:hover {
       background: #fff;
-      color: rgba(27, 27, 47, .72);
+      color: var(--ink-muted);
       border-color: rgba(232, 35, 26, .34);
     }
 
@@ -5213,6 +5363,7 @@
   <audio id="site-jingle" preload="none" src="/Jingle.mp3"></audio>
 
   <div id="bg-gradient" aria-hidden="true"></div>
+  <div id="mario-clouds" aria-hidden="true" hidden></div>
   <canvas id="network-canvas" aria-hidden="true"></canvas>
 
   <header class="app-header">
@@ -6610,6 +6761,8 @@
       if (!options.skipAnalytics) {
         trackEvent("color_scheme_changed", { scheme: nextScheme });
       }
+
+      syncMarioClouds();
     }
 
     function initColorScheme() {
@@ -8230,18 +8383,28 @@
       };
     }
 
+    let pathDetailScrollTimer = null;
+    let selectedMapPathIndex = null;
+
+    function syncMapPathSelection() {
+      $$("[data-path-index]").forEach((element) => {
+        const index = Number(element.dataset.pathIndex);
+        element.classList.toggle("is-selected", selectedMapPathIndex === index);
+      });
+    }
+
     function setMapPathHighlight(index, active) {
       $$(`[data-path-index="${index}"]`).forEach((element) => {
         element.classList.toggle("is-highlighted", active);
       });
     }
 
-    let pathDetailScrollTimer = null;
-
     function scrollToPathDetail(index) {
       const card = document.getElementById(`opp-detail-${index}`);
       if (!card || !$("#screen-map")?.classList.contains("active")) return;
 
+      selectedMapPathIndex = index;
+      syncMapPathSelection();
       trackEvent("path_detail_scrolled", { path_index: index });
       setMapPathHighlight(index, true);
       card.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -8272,6 +8435,8 @@
       const grid = $("#opp-grid");
       const svg = $("#opportunity-svg");
       const opportunityColors = getOpportunityColors();
+      const isMarioMap = document.documentElement.dataset.colorScheme === "mario";
+      selectedMapPathIndex = null;
       nodes.innerHTML = "";
       connections.innerHTML = "";
       labels.innerHTML = "";
@@ -8292,6 +8457,7 @@
         const number = index + 1;
         const { x, y } = getNodePosition(index, count, center);
         const color = opportunityColors[index % opportunityColors.length];
+        const accentColor = isMarioMap ? "#ffffff" : color;
         const dx = x - center.x;
         const dy = y - center.y;
         const length = Math.hypot(dx, dy);
@@ -8299,7 +8465,7 @@
         const uy = dy / length;
 
         connections.insertAdjacentHTML("beforeend", `
-          <line x1="${center.x + ux * 48}" y1="${center.y + uy * 48}" x2="${x - ux * 40}" y2="${y - uy * 40}" stroke="${color}" stroke-width="1.5" stroke-opacity=".55"></line>`);
+          <line class="map-connection-line" x1="${center.x + ux * 48}" y1="${center.y + uy * 48}" x2="${x - ux * 40}" y2="${y - uy * 40}" stroke="${accentColor}" stroke-width="1.5" stroke-opacity=".55"></line>`);
 
         const node = document.createElementNS("http://www.w3.org/2000/svg", "g");
         node.classList.add("map-node");
@@ -8307,10 +8473,10 @@
         node.setAttribute("tabindex", "0");
         node.setAttribute("aria-label", `Read details for path ${number}: ${idea.title || "Opportunity"}`);
         node.style.cursor = "pointer";
-        node.style.color = color;
+        node.style.color = accentColor;
         node.innerHTML = `
-          <circle class="map-node-circle" cx="${x}" cy="${y}" r="32" fill="${color}" fill-opacity=".18" stroke="${color}" stroke-width="1.5"></circle>
-          <text class="map-node-text" x="${x}" y="${y + 5}" text-anchor="middle" fill="${color}" font-size="14" font-weight="800">${number}</text>`;
+          <circle class="map-node-circle" cx="${x}" cy="${y}" r="32" fill="${accentColor}" fill-opacity=".18" stroke="${accentColor}" stroke-width="1.5"></circle>
+          <text class="map-node-text" x="${x}" y="${y + 5}" text-anchor="middle" fill="${accentColor}" font-size="14" font-weight="800">${number}</text>`;
         node.addEventListener("click", () => scrollToPathDetail(index));
         node.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -9405,6 +9571,71 @@
       setUser(null);
     }
 
+    const MARIO_CLOUD_VARIANTS = [
+      { id: "cloud-1", viewBox: "15 55 380 115", baseWidth: 220 },
+      { id: "cloud-2", viewBox: "55 200 345 105", baseWidth: 260 },
+      { id: "cloud-3", viewBox: "510 225 180 80", baseWidth: 160 },
+      { id: "cloud-4", viewBox: "505 20 185 145", baseWidth: 180 },
+      { id: "cloud-5", viewBox: "55 340 365 135", baseWidth: 280 },
+      { id: "cloud-6", viewBox: "450 355 245 120", baseWidth: 200 }
+    ];
+
+    let marioCloudsResizeTimer = null;
+
+    function buildMarioCloudElement(variant, index) {
+      const cloud = document.createElement("div");
+      cloud.className = "mario-cloud";
+      const direction = Math.random() > 0.48 ? "ltr" : "rtl";
+      const duration = 38 + Math.random() * 72;
+      const delay = -(Math.random() * duration);
+      const size = 0.52 + Math.random() * 0.95;
+      const top = 3 + (index * 11 + Math.random() * 9) % 78;
+      const opacity = 0.5 + Math.random() * 0.38;
+      const driftY = `${(Math.random() - 0.5) * 36}px`;
+
+      cloud.dataset.direction = direction;
+      cloud.style.setProperty("--cloud-top", `${top}%`);
+      cloud.style.setProperty("--cloud-base-width", `${variant.baseWidth}px`);
+      cloud.style.setProperty("--cloud-size", size.toFixed(2));
+      cloud.style.setProperty("--cloud-duration", `${duration.toFixed(1)}s`);
+      cloud.style.setProperty("--cloud-delay", `${delay.toFixed(1)}s`);
+      cloud.style.setProperty("--cloud-opacity", opacity.toFixed(2));
+      cloud.style.setProperty("--cloud-drift-y", driftY);
+      cloud.innerHTML = `<svg viewBox="${variant.viewBox}" aria-hidden="true"><use href="/clouds.svg#${variant.id}"></use></svg>`;
+      return cloud;
+    }
+
+    function syncMarioClouds() {
+      const container = $("#mario-clouds");
+      if (!container) return;
+
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMario = document.documentElement.dataset.colorScheme === "mario";
+      const shouldShow = isMario && !reducedMotion;
+
+      container.hidden = !shouldShow;
+      container.classList.toggle("is-active", shouldShow);
+      container.replaceChildren();
+
+      if (!shouldShow) return;
+
+      const count = window.innerWidth < 760 ? 7 : 11;
+      const shuffled = [...MARIO_CLOUD_VARIANTS].sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < count; i += 1) {
+        const variant = shuffled[i % shuffled.length];
+        container.appendChild(buildMarioCloudElement(variant, i));
+      }
+    }
+
+    function initMarioClouds() {
+      window.addEventListener("resize", () => {
+        if (document.documentElement.dataset.colorScheme !== "mario") return;
+        clearTimeout(marioCloudsResizeTimer);
+        marioCloudsResizeTimer = setTimeout(syncMarioClouds, 250);
+      });
+    }
+
     function initNetworkCanvas() {
       const canvas = $("#network-canvas");
       const context = canvas.getContext("2d");
@@ -9958,6 +10189,7 @@
         initColorScheme();
         bindEvents();
         syncHeaderHeight();
+        initMarioClouds();
         initNetworkCanvas();
         initDonation();
         await initAuth();
