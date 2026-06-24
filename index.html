@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-sync-verify -->
+<!-- whatimado build: 2026-06-24-sync-error-detail -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-sync-verify">
+  <meta name="whatimado-build" content="2026-06-24-sync-error-detail">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7407,7 +7407,8 @@
       activeMapId: null,
       savedMaps: [],
       saveStatus: "idle",
-      lastSyncStatus: "idle"
+      lastSyncStatus: "idle",
+      lastCloudSyncError: ""
     };
 
     const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
@@ -7590,6 +7591,21 @@
       updateNavSyncStatus();
     }
 
+    function formatCloudSyncError(error) {
+      if (!error) return "";
+      const message = String(error.message || error.details || error).trim();
+      if (/user_journeys|schema cache|does not exist|42P01/i.test(message)) {
+        return "Supabase table missing — run supabase/migrations/001_user_journeys.sql in the SQL Editor.";
+      }
+      if (/row-level security|RLS|42501/i.test(message)) {
+        return "Database permissions blocked sync — re-run 001_user_journeys.sql in Supabase.";
+      }
+      if (/Not authenticated/i.test(message)) {
+        return "Sign in again, then tap Save.";
+      }
+      return message.length > 120 ? `${message.slice(0, 117)}…` : message;
+    }
+
     function updateNavSyncStatus() {
       const note = $("#nav-sync-note");
       if (!note) return;
@@ -7609,15 +7625,17 @@
           : "Account synced.";
         note.className = "nav-sync-note is-ok";
       } else if (state.lastSyncStatus === "cloud-failed") {
-        note.textContent = "Cloud sync failed. Tap Save, then sign out again.";
+        note.textContent = state.lastCloudSyncError
+          || "Cloud sync failed. Tap Save after fixing Supabase setup.";
         note.className = "nav-sync-note is-error";
       } else if (state.lastSyncStatus === "local-only") {
-        note.textContent = "Saved on this device only — not on other devices yet.";
+        note.textContent = state.lastCloudSyncError
+          || "Saved on this device only — not on other devices yet.";
         note.className = "nav-sync-note is-error";
       } else if (mapCount || hasSavableProgress()) {
         note.textContent = mapCount
-          ? `${mapCount} map${mapCount === 1 ? "" : "s"} on this device.`
-          : "Progress on this device.";
+          ? `${mapCount} map${mapCount === 1 ? "" : "s"} on this device. Tap Save to sync.`
+          : "Progress on this device. Tap Save to sync.";
         note.className = "nav-sync-note";
       } else {
         note.textContent = "No saved maps in your account yet.";
@@ -8399,14 +8417,16 @@
 
       let cloudOk = false;
       let cloudError = false;
+      let cloudResult = null;
       if (state.currentUser && supabaseClient) {
-        const cloudResult = await writeCloudSession(payload);
+        cloudResult = await writeCloudSession(payload);
         cloudOk = cloudResult.ok;
         cloudError = !cloudResult.ok;
         if (cloudResult.error) console.error("Cloud sync failed:", cloudResult.error);
       }
 
       state.lastSyncStatus = cloudOk ? "cloud-ok" : (state.currentUser ? (cloudError ? "cloud-failed" : "local-only") : "idle");
+      state.lastCloudSyncError = cloudOk ? "" : formatCloudSyncError(cloudResult?.error);
       updateNavSyncStatus();
 
       updateSaveButtonVisibility();
@@ -8416,7 +8436,7 @@
         if (manual) flashSaveToast("Saved to your account");
       } else if (localOk) {
         const hint = state.currentUser
-          ? "Saved on this device only. Cloud sync failed — run supabase/migrations/001_user_journeys.sql in Supabase, then tap Save."
+          ? (state.lastCloudSyncError || "Saved on this device only. Run 001_user_journeys.sql in Supabase, then tap Save.")
           : "Saved on this device. Sign in to sync across devices.";
         setSaveStatus("saved-local", manual ? hint : (state.currentUser ? "Saved on this device only." : "Saved on this device."));
         if (manual) flashSaveToast(state.currentUser ? "Saved on this device only" : "Saved on this device");
