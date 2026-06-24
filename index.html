@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-23-jingle-v3 -->
+<!-- whatimado build: 2026-06-23-jingle-v5 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-23-jingle-v3">
+  <meta name="whatimado-build" content="2026-06-23-jingle-v5">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4477,7 +4477,7 @@
     </div>
   </div>
 
-  <audio id="site-jingle" preload="none" src="/jingle.mp3"></audio>
+  <audio id="site-jingle" preload="none" src="/Jingle.mp3"></audio>
 
   <div id="bg-gradient" aria-hidden="true"></div>
   <canvas id="network-canvas" aria-hidden="true"></canvas>
@@ -4573,7 +4573,7 @@
             <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
           </div>
         </div>
-        <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden>Replay jingle ♪</button>
+        <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden>Hear the jingle ♪</button>
 
         <div class="prompt-box">
           <textarea class="prompt-textarea" id="main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
@@ -5774,7 +5774,7 @@
     const JINGLE_MUTE_KEY = "whatimado_jingle_muted";
     const JINGLE_HANDLED_KEY = "whatimado_jingle_handled";
     const JINGLE_PLAYED_KEY = "whatimado_jingle_played";
-    const JINGLE_SRC = "/jingle.mp3";
+    const JINGLE_SRC = "/Jingle.mp3";
     const ANALYTICS_SESSION_KEY = "whatimado_analytics_session_id";
     const PATH_BUILDING_MSG = "Building your custom path to success…";
     let persistTimer = null;
@@ -8934,6 +8934,11 @@
       return Boolean($("#site-jingle"));
     }
 
+    function shouldShowJinglePlay() {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+      return !isJingleMuted() && Boolean($("#site-jingle"));
+    }
+
     function hideJingleOffer() {
       const panel = $("#jingle-offer");
       if (panel) panel.hidden = true;
@@ -8951,10 +8956,7 @@
     function ensureJingleAudio() {
       const audio = $("#site-jingle");
       if (!audio) return null;
-      const src = audio.dataset.src || audio.getAttribute("src") || JINGLE_SRC;
-      if (!audio.src || audio.src.endsWith("/index.html") || !audio.src.includes(".mp3")) {
-        audio.src = src;
-      }
+      audio.src = JINGLE_SRC;
       return audio;
     }
 
@@ -8964,36 +8966,34 @@
       if (!audio) return Promise.resolve(false);
 
       audio.currentTime = 0;
-      const attemptPlay = () => audio.play()
-        .then(() => {
-          markJinglePlayed();
-          hideJingleOffer();
-          trackEvent("jingle_played", { source });
-          return true;
-        })
-        .catch(() => false);
-
-      if (audio.readyState >= 2) {
-        return attemptPlay();
-      }
 
       return new Promise((resolve) => {
         let settled = false;
-        const finish = (result) => {
+        const done = (ok) => {
           if (settled) return;
           settled = true;
           audio.removeEventListener("canplay", onReady);
           audio.removeEventListener("error", onError);
-          resolve(result);
+          clearTimeout(timer);
+          resolve(ok);
         };
         const onReady = () => {
-          attemptPlay().then(finish);
+          audio.play()
+            .then(() => {
+              markJinglePlayed();
+              hideJingleOffer();
+              updateJingleReplayVisibility();
+              trackEvent("jingle_played", { source });
+              done(true);
+            })
+            .catch(() => done(false));
         };
-        const onError = () => finish(false);
+        const onError = () => done(false);
+        const timer = setTimeout(() => done(false), 15000);
+
         audio.addEventListener("canplay", onReady, { once: true });
         audio.addEventListener("error", onError, { once: true });
         audio.load();
-        setTimeout(() => finish(false), 12000);
       });
     }
 
@@ -9015,7 +9015,7 @@
         const played = await playSiteJingle("offer");
         if (!played && playBtn) {
           playBtn.disabled = false;
-          playBtn.textContent = "Tap again to play ♪";
+          playBtn.textContent = "Couldn't load — tap to retry ♪";
         }
       });
 
@@ -9070,7 +9070,8 @@
       } catch {
         /* ignore */
       }
-      replay.hidden = isJingleMuted() || !played;
+      replay.hidden = !shouldShowJinglePlay();
+      replay.textContent = played ? "Replay jingle ♪" : "Hear the jingle ♪";
     }
 
     function bindEvents() {
@@ -9175,8 +9176,19 @@
       });
       $("#maps-library-list")?.addEventListener("click", handleSavedMapAction);
       $("#saved-maps-home-list")?.addEventListener("click", handleSavedMapAction);
-      $("#jingle-replay-btn")?.addEventListener("click", () => {
-        playSiteJingle("replay");
+      $("#jingle-replay-btn")?.addEventListener("click", async () => {
+        const replay = $("#jingle-replay-btn");
+        if (replay?.disabled) return;
+        if (replay) {
+          replay.disabled = true;
+          replay.textContent = "Loading…";
+        }
+        const played = await playSiteJingle("replay");
+        if (replay) {
+          replay.disabled = false;
+          if (!played) replay.textContent = "Couldn't load — tap to retry ♪";
+          else updateJingleReplayVisibility();
+        }
       });
     }
 
