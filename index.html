@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-sync-restore -->
+<!-- whatimado build: 2026-06-24-sync-verify -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-sync-restore">
+  <meta name="whatimado-build" content="2026-06-24-sync-verify">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1379,6 +1379,34 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       color: rgba(200, 204, 238, .85);
+    }
+
+    .nav-sync-note {
+      margin: 0;
+      width: 100%;
+      color: var(--muted);
+      font-size: .68rem;
+      font-weight: 600;
+      line-height: 1.35;
+      text-wrap: pretty;
+    }
+
+    .nav-sync-note.is-ok {
+      color: var(--teal);
+    }
+
+    .nav-sync-note.is-error {
+      color: var(--rose);
+    }
+
+    .nav-drawer .nav-user {
+      flex-direction: column;
+      align-items: stretch;
+      gap: .45rem;
+    }
+
+    .nav-drawer .nav-user #nav-username {
+      max-width: none;
     }
 
     .nav-header-actions {
@@ -6114,6 +6142,7 @@
       <button class="nav-btn primary" id="nav-signup-btn" data-auth-open="signup">Sign up</button>
       <span class="nav-user" id="nav-user">
         <span id="nav-username"></span>
+        <p class="nav-sync-note" id="nav-sync-note" hidden></p>
         <button class="nav-btn" id="signout-btn">Sign out</button>
       </span>
                 </div>
@@ -7377,7 +7406,8 @@
       intakeMode: "standard",
       activeMapId: null,
       savedMaps: [],
-      saveStatus: "idle"
+      saveStatus: "idle",
+      lastSyncStatus: "idle"
     };
 
     const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
@@ -7556,6 +7586,42 @@
       }
       if (signedIn) {
         $("#nav-username").textContent = user.email.split("@")[0];
+      }
+      updateNavSyncStatus();
+    }
+
+    function updateNavSyncStatus() {
+      const note = $("#nav-sync-note");
+      if (!note) return;
+      if (!state.currentUser) {
+        note.hidden = true;
+        note.textContent = "";
+        note.className = "nav-sync-note";
+        return;
+      }
+
+      note.hidden = false;
+      const mapCount = state.savedMaps.length;
+
+      if (state.lastSyncStatus === "cloud-ok") {
+        note.textContent = mapCount
+          ? `${mapCount} map${mapCount === 1 ? "" : "s"} synced to your account.`
+          : "Account synced.";
+        note.className = "nav-sync-note is-ok";
+      } else if (state.lastSyncStatus === "cloud-failed") {
+        note.textContent = "Cloud sync failed. Tap Save, then sign out again.";
+        note.className = "nav-sync-note is-error";
+      } else if (state.lastSyncStatus === "local-only") {
+        note.textContent = "Saved on this device only — not on other devices yet.";
+        note.className = "nav-sync-note is-error";
+      } else if (mapCount || hasSavableProgress()) {
+        note.textContent = mapCount
+          ? `${mapCount} map${mapCount === 1 ? "" : "s"} on this device.`
+          : "Progress on this device.";
+        note.className = "nav-sync-note";
+      } else {
+        note.textContent = "No saved maps in your account yet.";
+        note.className = "nav-sync-note";
       }
     }
 
@@ -8266,6 +8332,56 @@
       saveToastTimer = setTimeout(() => toast.classList.remove("visible"), 2400);
     }
 
+    async function getCloudAuthUser() {
+      if (!supabaseClient) return null;
+      const { data: { user }, error } = await supabaseClient.auth.getUser();
+      if (error || !user) {
+        if (error) console.error("Auth check failed:", error);
+        return null;
+      }
+      return user;
+    }
+
+    async function writeCloudSession(payload) {
+      const user = await getCloudAuthUser();
+      if (!user) {
+        return { ok: false, error: new Error("Not authenticated for cloud sync.") };
+      }
+
+      const { error: upsertError } = await supabaseClient.from("user_journeys").upsert(
+        {
+          user_id: user.id,
+          payload,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: "user_id" }
+      );
+
+      if (upsertError) {
+        return { ok: false, error: upsertError };
+      }
+
+      const { data: verify, error: verifyError } = await supabaseClient
+        .from("user_journeys")
+        .select("id, payload, updated_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (verifyError) {
+        return { ok: false, error: verifyError };
+      }
+
+      if (!verify?.payload || !payloadHasProgress(verify.payload)) {
+        return {
+          ok: false,
+          error: new Error("Cloud save could not be verified. Check that user_journeys exists in Supabase.")
+        };
+      }
+
+      state.journeyId = verify.id;
+      return { ok: true, error: null };
+    }
+
     async function persistSession(options = {}) {
       const { manual = false, silent = false } = options;
       if (!hasSavableProgress()) return { ok: false };
@@ -8284,24 +8400,14 @@
       let cloudOk = false;
       let cloudError = false;
       if (state.currentUser && supabaseClient) {
-        try {
-          const { data, error } = await supabaseClient.from("user_journeys").upsert(
-            {
-              user_id: state.currentUser.id,
-              payload,
-              updated_at: new Date().toISOString()
-            },
-            { onConflict: "user_id" }
-          ).select("id").maybeSingle();
-          cloudOk = !error;
-          cloudError = Boolean(error);
-          if (error) console.error("Cloud sync failed:", error);
-          if (!error && data?.id) state.journeyId = data.id;
-        } catch (err) {
-          cloudError = true;
-          console.error("Cloud sync failed:", err);
-        }
+        const cloudResult = await writeCloudSession(payload);
+        cloudOk = cloudResult.ok;
+        cloudError = !cloudResult.ok;
+        if (cloudResult.error) console.error("Cloud sync failed:", cloudResult.error);
       }
+
+      state.lastSyncStatus = cloudOk ? "cloud-ok" : (state.currentUser ? (cloudError ? "cloud-failed" : "local-only") : "idle");
+      updateNavSyncStatus();
 
       updateSaveButtonVisibility();
 
@@ -8310,10 +8416,10 @@
         if (manual) flashSaveToast("Saved to your account");
       } else if (localOk) {
         const hint = state.currentUser
-          ? "Saved on this device. Cloud sync unavailable — run the Supabase migration or try again."
+          ? "Saved on this device only. Cloud sync failed — run supabase/migrations/001_user_journeys.sql in Supabase, then tap Save."
           : "Saved on this device. Sign in to sync across devices.";
-        setSaveStatus("saved-local", manual ? hint : (state.currentUser ? "Saved locally." : "Saved on this device."));
-        if (manual) flashSaveToast(state.currentUser ? "Saved locally" : "Saved on this device");
+        setSaveStatus("saved-local", manual ? hint : (state.currentUser ? "Saved on this device only." : "Saved on this device."));
+        if (manual) flashSaveToast(state.currentUser ? "Saved on this device only" : "Saved on this device");
       } else {
         setSaveStatus("error", "Could not save. Check browser storage settings.");
         if (manual) flashSaveToast("Save failed — try again");
@@ -8383,16 +8489,23 @@
         } catch {
           /* ignore local write failure */
         }
+        if (cloudPayload) {
+          state.lastSyncStatus = "cloud-ok";
+        }
         if (state.currentUser && hasSavableProgress() && (mergedFromBothSources || loadedFromCloudOnly)) {
           schedulePersist();
         }
       } else if (state.currentUser && cloudLoadError) {
-        flashSaveToast("Could not load your saved maps — check Supabase setup.");
+        state.lastSyncStatus = "cloud-failed";
+        flashSaveToast("Could not load your saved maps — run 001_user_journeys.sql in Supabase.");
+      } else if (state.currentUser) {
+        state.lastSyncStatus = "idle";
       }
 
       updateSaveButtonVisibility();
       updateMapsNav();
       renderSavedMapsHome();
+      updateNavSyncStatus();
     }
 
     async function syncSessionFromCloud() {
@@ -10424,9 +10537,15 @@
         await loadSession();
         return;
       }
-      const { data } = await supabaseClient.auth.getSession();
-      await setUser(data.session?.user || null, { reload: true });
-      supabaseClient.auth.onAuthStateChange((_, session) => setUser(session?.user || null));
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      await setUser(session?.user ?? null, { reload: true });
+      supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (event === "INITIAL_SESSION") return;
+        const nextId = session?.user?.id ?? null;
+        const currentId = state.currentUser?.id ?? null;
+        if (event === "SIGNED_IN" && nextId === currentId) return;
+        await setUser(session?.user ?? null, { reload: true });
+      });
     }
 
     function getAuthRedirectUrl() {
@@ -10503,7 +10622,16 @@
     }
 
     async function signOut() {
-      await flushPersist({ manual: true });
+      if (state.currentUser && hasSavableProgress()) {
+        const result = await flushPersist({ manual: true });
+        if (!result?.cloudOk) {
+          updateNavSyncStatus();
+          flashSaveToast("Cloud sync did not complete.");
+          if (!confirm("Your maps may not appear on other devices. Sign out anyway?")) {
+            return;
+          }
+        }
+      }
       await supabaseClient?.auth.signOut();
     }
 
