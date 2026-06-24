@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-map-panels-v1 -->
+<!-- whatimado build: 2026-06-24-testimonials-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-map-panels-v1">
+  <meta name="whatimado-build" content="2026-06-24-testimonials-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -732,6 +732,32 @@
     [data-color-scheme="mario"] .ai-difference-item--map {
       border-color: rgba(232, 35, 26, .24);
       box-shadow: inset 3px 0 0 rgba(232, 35, 26, .75);
+    }
+
+    [data-color-scheme="mario"] .home-testimonials {
+      background: rgba(255, 255, 255, .84);
+      border-color: rgba(42, 80, 136, .12);
+    }
+
+    [data-color-scheme="mario"] .home-testimonials-kicker {
+      color: #e8231a;
+    }
+
+    [data-color-scheme="mario"] .home-testimonials-title {
+      color: var(--ink);
+    }
+
+    [data-color-scheme="mario"] .home-testimonial {
+      background: rgba(232, 244, 255, .55);
+      border-color: rgba(91, 170, 255, .22);
+    }
+
+    [data-color-scheme="mario"] .home-testimonial p {
+      color: var(--ink-muted);
+    }
+
+    [data-color-scheme="mario"] .home-testimonial footer {
+      color: var(--muted);
     }
 
     [data-color-scheme="mario"] #screen-map .page-title {
@@ -1988,6 +2014,63 @@
       text-transform: lowercase;
     }
 
+    .home-testimonials {
+      margin-top: .25rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--light-blue-border);
+      border-radius: var(--radius-md);
+      background: var(--light-blue-bg);
+      box-shadow: var(--plan-card-shadow);
+    }
+
+    .home-testimonials-kicker {
+      margin: 0 0 .35rem;
+      color: var(--brand-purple-dark);
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .home-testimonials-title {
+      margin: 0 0 .85rem;
+      color: var(--brand-purple-dark);
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.3;
+      text-wrap: pretty;
+    }
+
+    .home-testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .65rem;
+    }
+
+    .home-testimonial {
+      margin: 0;
+      padding: .85rem .9rem;
+      border: 1px solid var(--pastel-yellow-border);
+      border-radius: var(--radius-sm);
+      background: var(--pastel-yellow-bg);
+    }
+
+    .home-testimonial p {
+      margin: 0;
+      color: rgba(36, 18, 53, .82);
+      font-size: .8rem;
+      line-height: 1.55;
+      font-style: italic;
+    }
+
+    .home-testimonial footer {
+      margin: .55rem 0 0;
+      color: rgba(36, 18, 53, .58);
+      font-size: .68rem;
+      font-weight: 700;
+      font-style: normal;
+    }
+
     #screen-convo.active {
       display: block;
     }
@@ -2940,6 +3023,16 @@
 
     .site-suggestions-msg.error {
       color: var(--rose);
+    }
+
+    .site-suggestions-msg.success {
+      color: var(--green);
+    }
+
+    .site-suggestions-input:disabled,
+    .site-suggestions .back-btn:disabled {
+      opacity: .72;
+      cursor: not-allowed;
     }
 
     .opp-plans-section {
@@ -5260,6 +5353,10 @@
         grid-template-columns: 1fr;
       }
 
+      .home-testimonials-grid {
+        grid-template-columns: 1fr;
+      }
+
       .map-panel,
       .roadmap-layout {
         grid-template-columns: 1fr;
@@ -5737,7 +5834,7 @@
           <section class="ai-difference" aria-label="How whatimado is different from general AI chatbots">
             <p class="ai-difference-kicker">Not just another chatbot</p>
             <h3 class="ai-difference-title">ChatGPT gives text. Whatimado builds an interactive map.</h3>
-            <p class="ai-difference-copy">General AI tools leave you scrolling through paragraphs in a chat box. Whatimado turns your situation into paths you can see, click, and follow — a visual possibility map and step-by-step roadmaps that ChatGPT does not create.</p>
+            <p class="ai-difference-copy">General AI tools leave you scrolling through paragraphs in a chat box — and what you discussed is hard to find later. Whatimado turns your situation into paths you can see, click, and follow, with roadmaps that keep your chat thread saved so you can revisit where you started and how your thinking evolved.</p>
             <div class="ai-difference-grid">
               <div class="ai-difference-item">
                 <strong>Guided intake</strong>
@@ -5748,9 +5845,24 @@
                 <span>Your options appear as a visual, clickable map — not a wall of text. Explore paths, compare them, and open the one that fits.</span>
               </div>
               <div class="ai-difference-item">
-                <strong>Roadmap workspace</strong>
-                <span>Pick a path, track tasks, save notes, and keep asking for help as you go — all in one place.</span>
+                <strong>Saved roadmap chat</strong>
+                <span>Pick a path and keep chatting as you go. Your discussion thread stays on that roadmap — a gap most tools still miss.</span>
               </div>
+            </div>
+          </section>
+
+          <section class="home-testimonials" aria-label="What people say about whatimado">
+            <p class="home-testimonials-kicker">What people notice</p>
+            <h3 class="home-testimonials-title">Your roadmap remembers the conversation — not just the steps.</h3>
+            <div class="home-testimonials-grid">
+              <blockquote class="home-testimonial">
+                <p>“I really appreciate that the discussion thread in the Roadmap is saved. That's a true gap for lots of tools — what you've chatted through isn't easily accessible elsewhere.”</p>
+                <footer>— whatimado user</footer>
+              </blockquote>
+              <blockquote class="home-testimonial">
+                <p>“I like how easy it is to go back and see where I started and how my thinking may have evolved.”</p>
+                <footer>— whatimado user</footer>
+              </blockquote>
             </div>
           </section>
 
@@ -5762,7 +5874,7 @@
               <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
               <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
             </div>
-            <p class="site-suggestions-msg" id="site-suggestion-msg" hidden></p>
+            <p class="site-suggestions-msg" id="site-suggestion-msg" hidden aria-live="polite"></p>
           </section>
         </div>
       </div>
@@ -6902,6 +7014,8 @@
 
     const STORAGE_GUEST = "whatimado_journey_guest";
     const SUGGESTIONS_KEY = "whatimado_site_suggestions";
+    const SUGGESTION_SUBMIT_COOLDOWN_MS = 3200;
+    let suggestionSubmitCooldownTimer = null;
     const JINGLE_MUTE_KEY = "whatimado_jingle_muted";
     const JINGLE_HANDLED_KEY = "whatimado_jingle_handled";
     const JINGLE_PLAYED_KEY = "whatimado_jingle_played";
@@ -10040,19 +10154,24 @@
       if (!text) {
         if (msg) {
           msg.hidden = false;
+          msg.classList.remove("success");
           msg.classList.add("error");
           msg.textContent = "Type a suggestion first.";
         }
         return;
       }
-      if (button?.disabled) return;
+      if (button?.disabled || input?.disabled) return;
 
       const originalLabel = button?.textContent || "Send suggestion";
       if (button) {
         button.disabled = true;
-        button.textContent = "Sending...";
+        button.textContent = "Sending…";
       }
-      if (msg) msg.hidden = true;
+      if (input) input.disabled = true;
+      if (msg) {
+        msg.hidden = true;
+        msg.classList.remove("success", "error");
+      }
 
       const payload = {
         suggestion: text,
@@ -10075,6 +10194,7 @@
         } catch {
           if (msg) {
             msg.hidden = false;
+            msg.classList.remove("success");
             msg.classList.add("error");
             msg.textContent = "Could not send your suggestion. Try again in a moment.";
           }
@@ -10082,6 +10202,7 @@
             button.disabled = false;
             button.textContent = originalLabel;
           }
+          if (input) input.disabled = false;
           return;
         }
       }
@@ -10094,14 +10215,20 @@
       if (msg) {
         msg.hidden = false;
         msg.classList.remove("error");
+        msg.classList.add("success");
         msg.textContent = savedRemotely
-          ? "Thanks — we got your suggestion."
-          : "Thanks — saved locally. We will sync when connection is back.";
+          ? "Thanks — we got your suggestion. You only need to send it once."
+          : "Thanks — saved locally. We'll sync when your connection is back.";
       }
-      if (button) {
-        button.disabled = false;
-        button.textContent = originalLabel;
-      }
+      if (button) button.textContent = "Sent ✓";
+      clearTimeout(suggestionSubmitCooldownTimer);
+      suggestionSubmitCooldownTimer = setTimeout(() => {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalLabel;
+        }
+        if (input) input.disabled = false;
+      }, SUGGESTION_SUBMIT_COOLDOWN_MS);
     }
 
     let loaderDismissTimer = null;
