@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-header-jingle-v1 -->
+<!-- whatimado build: 2026-06-24-mario-white-cards-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-header-jingle-v1">
+  <meta name="whatimado-build" content="2026-06-24-mario-white-cards-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -159,8 +159,8 @@
       --bg: #e8f4ff;
       --bg-soft: #f4f9ff;
       --surface: #ffffff;
-      --surface-2: #fff8e7;
-      --surface-3: #ffe9a8;
+      --surface-2: #f4f9ff;
+      --surface-3: #eef6ff;
       --ink: #1b1b2f;
       --ink-muted: #2d3748;
       --muted: #5a6478;
@@ -182,30 +182,38 @@
       --theme-active-bg: rgba(232, 35, 26, .14);
       --theme-active-border: rgba(232, 35, 26, .34);
       --brand-purple-dark: #e8231a;
-      --pastel-yellow-bg: linear-gradient(180deg, #ffe566 0%, #ffc926 100%);
-      --pastel-yellow-bg-hover: linear-gradient(180deg, #ffed80 0%, #ffd54f 100%);
-      --pastel-yellow-border: rgba(180, 120, 0, .32);
-      --light-blue-bg: linear-gradient(180deg, #ffffff 0%, #e8f4ff 100%);
-      --light-blue-bg-hover: linear-gradient(180deg, #ffffff 0%, #dff0ff 100%);
-      --light-blue-border: rgba(91, 170, 255, .5);
-      --plan-card-bg: var(--pastel-yellow-bg);
-      --plan-card-bg-hover: var(--pastel-yellow-bg-hover);
-      --plan-card-border: var(--pastel-yellow-border);
-      --plan-card-shadow: 0 14px 36px rgba(27, 27, 47, .14), inset 0 2px 0 rgba(255, 255, 255, .75);
+      --pastel-yellow-bg: rgba(255, 255, 255, .94);
+      --pastel-yellow-bg-hover: #ffffff;
+      --pastel-yellow-border: rgba(27, 27, 47, .12);
+      --light-blue-bg: rgba(255, 255, 255, .86);
+      --light-blue-bg-hover: #ffffff;
+      --light-blue-border: rgba(27, 27, 47, .14);
+      --plan-card-bg: rgba(255, 255, 255, .94);
+      --plan-card-bg-hover: #ffffff;
+      --plan-card-border: rgba(27, 27, 47, .12);
+      --plan-card-shadow: 0 8px 24px rgba(27, 27, 47, .08);
       --plan-card-ink: #1b1b2f;
       --plan-card-muted: rgba(27, 27, 47, .72);
       --plan-card-soft: rgba(27, 27, 47, .58);
-      --plan-card-chip-bg: rgba(27, 27, 47, .07);
-      --plan-card-note-bg: rgba(27, 27, 47, .06);
-      --map-control-bg: var(--light-blue-bg);
-      --map-control-border: var(--light-blue-border);
+      --plan-card-chip-bg: rgba(232, 244, 255, .75);
+      --plan-card-note-bg: rgba(232, 244, 255, .55);
+      --map-control-bg: rgba(255, 255, 255, .94);
+      --map-control-border: rgba(27, 27, 47, .12);
       --shadow: 0 16px 48px rgba(27, 27, 47, .16);
     }
 
     [data-color-scheme="mario"] .surface-card,
     [data-color-scheme="mario"] .stage-card,
     [data-color-scheme="mario"] .momentum-card,
-    [data-color-scheme="mario"] .progress-map {
+    [data-color-scheme="mario"] .progress-map,
+    [data-color-scheme="mario"] .opp-card,
+    [data-color-scheme="mario"] .opp-label.surface-card,
+    [data-color-scheme="mario"] .map-how-it-works,
+    [data-color-scheme="mario"] .map-feedback-card,
+    [data-color-scheme="mario"] .map-sync-nudge,
+    [data-color-scheme="mario"] .map-library-card,
+    [data-color-scheme="mario"] .site-suggestions,
+    [data-color-scheme="mario"] .roadmap-complete-card {
       background: rgba(255, 255, 255, .94);
       border-color: rgba(27, 27, 47, .1);
       box-shadow: 0 10px 28px rgba(27, 27, 47, .1);
@@ -349,9 +357,9 @@
     }
 
     [data-color-scheme="mario"] .nav-drawer .nav-btn.donate-btn {
-      background: var(--pastel-yellow-bg);
+      background: rgba(255, 255, 255, .94);
       color: #1b1b2f;
-      border-color: var(--pastel-yellow-border);
+      border-color: rgba(232, 35, 26, .28);
     }
 
     [data-color-scheme="mario"] .nav-drawer .nav-btn:hover:not(.active):not(.donate-btn):not(.primary) {
@@ -601,6 +609,136 @@
       box-shadow: inset 3px 0 0 rgba(232, 35, 26, .75);
     }
 
+    [data-color-scheme="mario"] #screen-map .page-title {
+      color: #fff;
+      text-shadow: 1px 2px 0 rgba(27, 27, 47, .2);
+    }
+
+    [data-color-scheme="mario"] #screen-map .page-title em {
+      color: #e8231a;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, .55);
+    }
+
+    [data-color-scheme="mario"] #screen-map .page-subtitle {
+      color: rgba(255, 255, 255, .94);
+    }
+
+    [data-color-scheme="mario"] .map-plans-divider-label {
+      color: #fff;
+      text-shadow: 1px 2px 0 rgba(27, 27, 47, .18);
+    }
+
+    [data-color-scheme="mario"] .map-plans-toolbar-line {
+      background: rgba(255, 255, 255, .35);
+    }
+
+    [data-color-scheme="mario"] .map-node-glow {
+      background: radial-gradient(circle, rgba(255, 255, 255, .34) 0%, rgba(91, 170, 255, .16) 42%, rgba(7, 17, 31, 0) 72%);
+    }
+
+    [data-color-scheme="mario"] #screen-map .page-header .map-header-nav .back-btn,
+    [data-color-scheme="mario"] #reset-btn,
+    [data-color-scheme="mario"] .map-toolbar-btn,
+    [data-color-scheme="mario"] #screen-map .back-btn {
+      background: rgba(255, 255, 255, .86);
+      border-color: rgba(27, 27, 47, .14);
+      color: rgba(27, 27, 47, .78);
+      box-shadow: 0 4px 14px rgba(27, 27, 47, .08);
+    }
+
+    [data-color-scheme="mario"] #screen-map .page-header .map-header-nav .back-btn:hover,
+    [data-color-scheme="mario"] #reset-btn:hover,
+    [data-color-scheme="mario"] .map-toolbar-btn:hover:not(:disabled):not(.is-loading) {
+      background: #fff;
+      border-color: rgba(232, 35, 26, .34);
+      color: #e8231a;
+    }
+
+    [data-color-scheme="mario"] .opp-card:hover,
+    [data-color-scheme="mario"] .opp-card.is-highlighted {
+      border-color: rgba(232, 35, 26, .35);
+      box-shadow: 0 10px 28px rgba(27, 27, 47, .12), inset 3px 0 0 #e8231a;
+    }
+
+    [data-color-scheme="mario"] .opp-label.surface-card:hover,
+    [data-color-scheme="mario"] .opp-label.surface-card.is-highlighted {
+      border-color: rgba(232, 35, 26, .35);
+      box-shadow: 0 8px 24px rgba(27, 27, 47, .1), inset 3px 0 0 #e8231a;
+    }
+
+    [data-color-scheme="mario"] .opp-type {
+      color: #e8231a;
+    }
+
+    [data-color-scheme="mario"] .opp-why {
+      border-left-color: #e8231a;
+    }
+
+    [data-color-scheme="mario"] .map-how-title {
+      color: #e8231a;
+    }
+
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-type,
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-title,
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-sub {
+      color: rgba(255, 255, 255, .94);
+    }
+
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-back-btn,
+    [data-color-scheme="mario"] #screen-roadmap .complete-action-btn {
+      background: rgba(255, 255, 255, .86);
+      border-color: rgba(27, 27, 47, .14);
+      color: rgba(27, 27, 47, .78);
+      box-shadow: 0 4px 14px rgba(27, 27, 47, .08);
+    }
+
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-back-btn:hover,
+    [data-color-scheme="mario"] #screen-roadmap .complete-action-btn:hover {
+      background: #fff;
+      border-color: rgba(232, 35, 26, .34);
+      color: #e8231a;
+    }
+
+    [data-color-scheme="mario"] #screen-roadmap .stage-card.open {
+      border-color: rgba(232, 35, 26, .28);
+      box-shadow: 0 10px 28px rgba(27, 27, 47, .1), inset 3px 0 0 #e8231a;
+    }
+
+    [data-color-scheme="mario"] #screen-roadmap .task-item {
+      background: rgba(232, 244, 255, .55);
+      border-color: rgba(91, 170, 255, .22);
+    }
+
+    [data-color-scheme="mario"] #screen-maps .maps-page-kicker {
+      color: rgba(255, 255, 255, .94);
+    }
+
+    [data-color-scheme="mario"] #screen-maps .maps-page-title {
+      color: #fff;
+      text-shadow: 1px 2px 0 rgba(27, 27, 47, .2);
+    }
+
+    [data-color-scheme="mario"] #screen-maps .maps-page-sub {
+      color: rgba(255, 255, 255, .9);
+    }
+
+    [data-color-scheme="mario"] #screen-maps .back-btn,
+    [data-color-scheme="mario"] #screen-maps .action-btn {
+      box-shadow: 0 8px 22px rgba(232, 35, 26, .22), inset 0 1px 0 rgba(255, 255, 255, .45);
+    }
+
+    [data-color-scheme="mario"] .reply-box.surface-card {
+      background: rgba(255, 255, 255, .94);
+    }
+
+    [data-color-scheme="mario"] .send-btn {
+      background: #e8231a;
+    }
+
+    [data-color-scheme="mario"] .send-btn:hover {
+      background: #c41e16;
+    }
+
     @media (max-width: 760px) {
       [data-color-scheme="mario"] .nav-drawer {
         border-bottom-color: rgba(232, 35, 26, .15);
@@ -705,6 +843,7 @@
     }
 
     .app-header-inner {
+      position: relative;
       width: 100%;
       height: 100%;
       display: flex;
@@ -1033,19 +1172,26 @@
       display: flex;
       align-items: center;
       gap: .45rem;
-      flex: 1 1 auto;
-      justify-content: flex-end;
-      min-width: 0;
-      margin-left: auto;
+      flex-shrink: 0;
     }
 
     .header-jingle {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 1;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      gap: .45rem;
+      justify-content: center;
+      gap: .55rem;
       min-width: 0;
-      max-width: min(100%, 420px);
+      max-width: min(calc(100% - 10.5rem), 560px);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .header-jingle > * {
+      pointer-events: auto;
     }
 
     .header-jingle[hidden] {
@@ -3896,8 +4042,8 @@
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: .35rem .55rem;
+      justify-content: center;
+      gap: .45rem .65rem;
       min-width: 0;
       margin: 0;
     }
@@ -3908,9 +4054,9 @@
 
     .header-jingle-main {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: .1rem;
+      flex-direction: row;
+      align-items: center;
+      gap: .55rem;
       min-width: 0;
     }
 
@@ -3918,7 +4064,7 @@
       border: 1px solid rgba(155, 143, 224, .42);
       border-radius: 999px;
       padding: .38rem .78rem;
-      color: #dfe4ff;
+      color: var(--muted);
       background: rgba(124, 111, 205, .18);
       font-size: .74rem;
       font-weight: 700;
@@ -3940,18 +4086,17 @@
     .jingle-offer-note {
       margin: 0;
       color: var(--muted);
-      font-size: .6rem;
+      font-size: .62rem;
       font-weight: 600;
-      line-height: 1.2;
+      line-height: 1.25;
       white-space: nowrap;
-      opacity: .88;
     }
 
     .jingle-offer-actions {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: center;
       gap: .45rem .65rem;
     }
 
@@ -4006,18 +4151,18 @@
     [data-color-scheme="mario"] .jingle-offer-play {
       border: 1.5px solid rgba(91, 170, 255, .72);
       background: linear-gradient(180deg, #dff0ff 0%, #b8dcff 100%);
-      color: #1b1b2f;
+      color: rgba(27, 27, 47, .58);
       box-shadow: 0 2px 8px rgba(27, 27, 47, .1), inset 0 1px 0 rgba(255, 255, 255, .9);
     }
 
     [data-color-scheme="mario"] .jingle-offer-play:hover:not(:disabled) {
       border-color: rgba(232, 35, 26, .4);
       background: linear-gradient(180deg, #eef7ff 0%, #c8e4ff 100%);
+      color: rgba(27, 27, 47, .72);
     }
 
     [data-color-scheme="mario"] .jingle-offer-note {
       color: rgba(27, 27, 47, .58);
-      opacity: 1;
     }
 
     [data-color-scheme="mario"] .jingle-offer-skip,
@@ -4033,23 +4178,23 @@
     [data-color-scheme="mario"] .jingle-replay-btn {
       border: 1px solid rgba(27, 27, 47, .14);
       background: rgba(255, 255, 255, .86);
-      color: #e8231a;
+      color: rgba(27, 27, 47, .58);
       box-shadow: 0 2px 8px rgba(27, 27, 47, .08);
     }
 
     [data-color-scheme="mario"] .jingle-replay-btn:hover {
       background: #fff;
-      color: #c41e16;
+      color: rgba(27, 27, 47, .72);
       border-color: rgba(232, 35, 26, .34);
     }
 
     @media (max-width: 760px) {
       .header-jingle {
-        max-width: calc(100vw - 11.5rem);
+        max-width: min(calc(100% - 8.5rem), 420px);
       }
 
       .jingle-offer-note {
-        display: none;
+        font-size: .58rem;
       }
 
       .jingle-offer-actions {
@@ -4068,14 +4213,16 @@
       }
     }
 
-    @media (max-width: 420px) {
-      .jingle-offer {
-        flex-direction: column;
-        align-items: flex-end;
+    @media (max-width: 520px) {
+      .header-jingle-main {
+        flex-wrap: wrap;
+        justify-content: center;
       }
 
-      .header-jingle-main {
-        align-items: flex-end;
+      .jingle-offer-note {
+        white-space: normal;
+        text-align: left;
+        max-width: 9.5rem;
       }
     }
 
@@ -5079,21 +5226,22 @@
       <span class="logo-text">whatimado<span>.com</span></span>
     </a>
 
+    <div class="header-jingle" id="header-jingle" hidden>
+      <div class="jingle-offer" id="jingle-offer" hidden>
+        <div class="header-jingle-main">
+          <button type="button" class="jingle-offer-play" id="jingle-offer-play">Hear the jingle ♪</button>
+          <p class="jingle-offer-note">Sung by Ivy · tap once to play</p>
+        </div>
+        <div class="jingle-offer-actions">
+          <button type="button" class="jingle-offer-skip" id="jingle-offer-skip">Skip</button>
+          <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
+        </div>
+      </div>
+      <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden>Hear the jingle ♪</button>
+    </div>
+
     <nav class="nav" aria-label="Main navigation">
             <div class="nav-header-actions">
-              <div class="header-jingle" id="header-jingle" hidden>
-                <div class="jingle-offer" id="jingle-offer" hidden>
-                  <div class="header-jingle-main">
-                    <button type="button" class="jingle-offer-play" id="jingle-offer-play">Hear the jingle ♪</button>
-                    <p class="jingle-offer-note">Sung by Ivy · tap once to play</p>
-                  </div>
-                  <div class="jingle-offer-actions">
-                    <button type="button" class="jingle-offer-skip" id="jingle-offer-skip">Skip</button>
-                    <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
-                  </div>
-                </div>
-                <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden>Hear the jingle ♪</button>
-              </div>
               <button class="nav-hamburger" id="nav-hamburger-btn" type="button" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
                 <span class="nav-hamburger-line" aria-hidden="true"></span>
                 <span class="nav-hamburger-line" aria-hidden="true"></span>
