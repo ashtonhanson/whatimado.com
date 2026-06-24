@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-sync-menu-ui -->
+<!-- whatimado build: 2026-06-24-save-map-count -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-sync-menu-ui">
+  <meta name="whatimado-build" content="2026-06-24-save-map-count">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6136,7 +6136,7 @@
                 <div class="nav-group nav-group--actions">
                   <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
                   <button class="nav-btn" type="button" id="nav-suggest-btn">Suggest an improvement</button>
-                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Sync progress to your account">Sync now</button>
+                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress to your account">Save</button>
                   <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
                     Cart
                     <span class="nav-cart-badge" id="nav-cart-badge">1</span>
@@ -7429,7 +7429,8 @@
       savedMaps: [],
       saveStatus: "idle",
       lastSyncStatus: "idle",
-      lastCloudSyncError: ""
+      lastCloudSyncError: "",
+      syncedLibraryStats: null
     };
 
     const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
@@ -7639,25 +7640,23 @@
 
       note.hidden = false;
       note.removeAttribute("hidden");
-      const mapCount = state.savedMaps.length;
+      const stats = state.lastSyncStatus === "cloud-ok" && state.syncedLibraryStats
+        ? state.syncedLibraryStats
+        : getLibraryStats();
 
       if (state.lastSyncStatus === "cloud-ok") {
-        note.textContent = mapCount
-          ? `✓ ${mapCount} map${mapCount === 1 ? "" : "s"} synced to your account`
-          : "✓ Synced to your account";
+        note.textContent = formatSyncSuccessMessage(stats);
         note.className = "nav-sync-note is-ok";
       } else if (state.lastSyncStatus === "cloud-failed") {
         note.textContent = state.lastCloudSyncError
-          || "Cloud sync failed. Tap Sync now after fixing Supabase setup.";
+          || "Cloud sync failed. Tap Save after fixing Supabase setup.";
         note.className = "nav-sync-note is-error";
       } else if (state.lastSyncStatus === "local-only") {
         note.textContent = state.lastCloudSyncError
-          || "Saved on this device only — tap Sync now to upload.";
+          || "Saved on this device only — tap Save to upload.";
         note.className = "nav-sync-note is-error";
-      } else if (mapCount || hasSavableProgress()) {
-        note.textContent = mapCount
-          ? `${mapCount} map${mapCount === 1 ? "" : "s"} on this device — tap Sync now.`
-          : "Progress on this device — tap Sync now.";
+      } else if (stats.mapCount || hasSavableProgress()) {
+        note.textContent = formatSyncPendingMessage(stats);
         note.className = "nav-sync-note";
       } else {
         note.textContent = "No saved maps in your account yet.";
@@ -7669,13 +7668,10 @@
     function updateSaveButtonLabel() {
       const saveBtn = $("#nav-save-btn");
       if (!saveBtn || state.saveStatus === "saving") return;
-      if (state.currentUser) {
-        saveBtn.textContent = "Sync now";
-        saveBtn.title = "Upload your maps to your account";
-      } else {
-        saveBtn.textContent = "Save";
-        saveBtn.title = "Save progress on this device";
-      }
+      saveBtn.textContent = "Save";
+      saveBtn.title = state.currentUser
+        ? "Save progress to your account"
+        : "Save progress on this device";
     }
 
     function isFounderUser(user = state.currentUser) {
@@ -7968,9 +7964,7 @@
       else if (localHasProgress && !cloudHasProgress) primary = localPayload;
 
       let activeMapId = primary.activeMapId;
-      if (cloudHasProgress && savedMaps.length) {
-        activeMapId = savedMaps[0]?.id ?? activeMapId;
-      } else if (!activeMapId || !mapById.has(activeMapId)) {
+      if (!activeMapId || !mapById.has(activeMapId)) {
         activeMapId = savedMaps[0]?.id ?? null;
       }
 
@@ -7984,8 +7978,52 @@
       return applyActiveMapToSessionPayload(merged, activeMapId ? mapById.get(activeMapId) : null);
     }
 
-    function serializeSession() {
+    function prepareLibraryForPersist() {
       syncActiveMapIntoLibrary();
+      const seen = new Set();
+      state.savedMaps = state.savedMaps.filter((map) => {
+        if (!map?.id || seen.has(map.id)) return false;
+        seen.add(map.id);
+        return Boolean(map.history?.length || map.ideas?.length);
+      });
+    }
+
+    function getLibraryStats() {
+      prepareLibraryForPersist();
+      const mapCount = state.savedMaps.length;
+      const pathCount = state.savedMaps.reduce(
+        (total, map) => total + (Array.isArray(map.ideas) ? map.ideas.length : 0),
+        0
+      );
+      return { mapCount, pathCount };
+    }
+
+    function formatSyncSuccessMessage(stats = getLibraryStats()) {
+      const { mapCount, pathCount } = stats;
+      if (!mapCount) return "✓ Saved to your account";
+      if (mapCount === 1 && pathCount > 1) {
+        return `✓ 1 map · ${pathCount} paths saved to your account`;
+      }
+      if (pathCount > mapCount) {
+        return `✓ ${mapCount} map${mapCount === 1 ? "" : "s"} · ${pathCount} paths saved to your account`;
+      }
+      return `✓ ${mapCount} map${mapCount === 1 ? "" : "s"} saved to your account`;
+    }
+
+    function formatSyncPendingMessage(stats = getLibraryStats()) {
+      const { mapCount, pathCount } = stats;
+      if (!mapCount) return "Progress on this device — tap Save.";
+      if (mapCount === 1 && pathCount > 1) {
+        return `1 map · ${pathCount} paths on this device — tap Save.`;
+      }
+      if (pathCount > mapCount) {
+        return `${mapCount} maps · ${pathCount} paths on this device — tap Save.`;
+      }
+      return `${mapCount} map${mapCount === 1 ? "" : "s"} on this device — tap Save.`;
+    }
+
+    function serializeSession() {
+      prepareLibraryForPersist();
       return {
         activeMapId: state.activeMapId,
         savedMaps: state.savedMaps,
@@ -8339,7 +8377,7 @@
       saveBtn?.classList.remove("is-saving", "is-saved", "is-error");
       if (status === "saving") {
         saveBtn?.classList.add("is-saving");
-        if (saveBtn) saveBtn.textContent = state.currentUser ? "Syncing…" : "Saving…";
+        if (saveBtn) saveBtn.textContent = "Saving…";
       } else if (status === "saved-cloud") {
         saveBtn?.classList.add("is-saved");
       } else if (status === "saved-local") {
@@ -8426,6 +8464,15 @@
           error: new Error("Cloud save could not be verified. Check that user_journeys exists in Supabase.")
         };
       }
+
+      const verifiedMaps = Array.isArray(verify.payload.savedMaps) ? verify.payload.savedMaps.length : 0;
+      const verifiedPaths = Array.isArray(verify.payload.savedMaps)
+        ? verify.payload.savedMaps.reduce((total, map) => total + (Array.isArray(map.ideas) ? map.ideas.length : 0), 0)
+        : (verify.payload.ideas?.length || 0);
+      state.syncedLibraryStats = {
+        mapCount: verifiedMaps || (verifiedPaths ? 1 : 0),
+        pathCount: verifiedPaths
+      };
 
       state.journeyId = verify.id;
       return { ok: true, error: null };
