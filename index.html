@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-roadmap-loader -->
+<!-- whatimado build: 2026-06-24-sync-fix -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-roadmap-loader">
+  <meta name="whatimado-build" content="2026-06-24-sync-fix">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7796,6 +7796,12 @@
       return normalized;
     }
 
+    function payloadHasProgress(data) {
+      if (!data || typeof data !== "object") return false;
+      if (Array.isArray(data.savedMaps) && data.savedMaps.length > 0) return true;
+      return Boolean(data.history?.length || data.ideas?.length);
+    }
+
     function applyActiveMapToSessionPayload(payload, activeEntry) {
       if (!payload || !activeEntry) return payload;
       payload.activeMapId = activeEntry.id;
@@ -7839,7 +7845,9 @@
       const primary = cloudTime >= localTime ? cloudPayload : localPayload;
 
       let activeMapId = primary.activeMapId;
-      if (!activeMapId || !mapById.has(activeMapId)) {
+      if (localPayload && cloudPayload) {
+        activeMapId = savedMaps[0]?.id ?? activeMapId;
+      } else if (!activeMapId || !mapById.has(activeMapId)) {
         activeMapId = savedMaps[0]?.id ?? null;
       }
 
@@ -8193,6 +8201,13 @@
       persistTimer = setTimeout(() => persistSession({ silent: true }), 450);
     }
 
+    async function flushPersist(options = {}) {
+      clearTimeout(persistTimer);
+      persistTimer = null;
+      if (!hasSavableProgress()) return { ok: false };
+      return persistSession({ silent: !options.manual, manual: Boolean(options.manual) });
+    }
+
     function flashSaveToast(message) {
       const toast = $("#save-toast");
       if (!toast) return;
@@ -8228,12 +8243,14 @@
               updated_at: new Date().toISOString()
             },
             { onConflict: "user_id" }
-          ).select("id").single();
+          ).select("id").maybeSingle();
           cloudOk = !error;
           cloudError = Boolean(error);
+          if (error) console.error("Cloud sync failed:", error);
           if (!error && data?.id) state.journeyId = data.id;
-        } catch {
+        } catch (err) {
           cloudError = true;
+          console.error("Cloud sync failed:", err);
         }
       }
 
@@ -8255,10 +8272,16 @@
 
       if (silent && !manual) {
         const bar = $("#save-status-bar");
-        if (bar && !state.currentUser && localOk) {
-          bar.classList.add("visible");
-          $("#save-status-text").textContent = "Saved on this device.";
-          $("#save-signin-link").hidden = false;
+        if (bar && localOk) {
+          if (!state.currentUser) {
+            bar.classList.add("visible");
+            $("#save-status-text").textContent = "Saved on this device.";
+            $("#save-signin-link").hidden = false;
+          } else if (cloudError) {
+            bar.classList.add("visible");
+            $("#save-status-text").textContent = "Saved on this device only — cloud sync failed.";
+            $("#save-signin-link").hidden = true;
+          }
         }
       }
 
@@ -8287,7 +8310,7 @@
             .select("id, payload, updated_at")
             .eq("user_id", state.currentUser.id)
             .maybeSingle();
-          if (data?.payload) {
+          if (data?.payload && payloadHasProgress(data.payload)) {
             cloudPayload = {
               ...data.payload,
               savedAt: Math.max(
@@ -8297,29 +8320,34 @@
             };
             state.journeyId = data.id;
           }
-        } catch {
-          /* fall back to localStorage */
+        } catch (err) {
+          console.error("Cloud load failed:", err);
         }
       }
 
       let payload = localPayload;
       let mergedFromBothSources = false;
+      let loadedFromCloudOnly = false;
       if (state.currentUser && (localPayload || cloudPayload)) {
         payload = mergeSessionPayloads(localPayload, cloudPayload);
         mergedFromBothSources = Boolean(localPayload && cloudPayload);
+        loadedFromCloudOnly = Boolean(cloudPayload && !localPayload);
       } else if (cloudPayload) {
         payload = cloudPayload;
+        loadedFromCloudOnly = true;
       }
 
       if (payload) {
         applySession(payload);
         restoreSessionUI();
         try {
-          localStorage.setItem(getStorageKey(), JSON.stringify(serializeSession()));
+          const stored = serializeSession();
+          stored.savedAt = payload.savedAt ?? stored.savedAt;
+          localStorage.setItem(getStorageKey(), JSON.stringify(stored));
         } catch {
           /* ignore local write failure */
         }
-        if (mergedFromBothSources && hasSavableProgress()) {
+        if (state.currentUser && hasSavableProgress() && (mergedFromBothSources || loadedFromCloudOnly)) {
           schedulePersist();
         }
       }
@@ -10318,7 +10346,7 @@
         await loadSession();
       }
 
-      if (nextId !== previousId && hasSavableProgress()) {
+      if (freshSignIn && hasSavableProgress()) {
         await persistSession({ silent: true });
       }
       if (nextId !== previousId) {
@@ -10404,18 +10432,21 @@
       const email = $("#si-email").value.trim();
       const password = $("#si-pass").value;
       if (!email || !password) return showAuthMessage("Please fill in all fields.", true);
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) {
         trackEvent("auth_signin_failed");
         return showAuthMessage(error.message, true);
+      }
+      if (data.session?.user) {
+        await setUser(data.session.user, { reload: true });
       }
       trackEvent("auth_signin_completed");
       closeAuth();
     }
 
     async function signOut() {
+      await flushPersist({ manual: true });
       await supabaseClient?.auth.signOut();
-      setUser(null);
     }
 
     const MARIO_CLOUD_VARIANTS = [
@@ -11127,10 +11158,14 @@
           initAuth(),
           new Promise((resolve) => setTimeout(resolve, 8000))
         ]);
-        window.addEventListener("pagehide", trackIntakeAbandonment);
+        window.addEventListener("pagehide", () => {
+          trackIntakeAbandonment();
+          if (state.currentUser && hasSavableProgress()) flushPersist();
+        });
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "hidden") {
             trackIntakeAbandonment();
+            if (state.currentUser && hasSavableProgress()) flushPersist();
             return;
           }
           if (state.currentUser) syncSessionFromCloud();
