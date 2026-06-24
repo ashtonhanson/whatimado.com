@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-mario-home-polish-v1 -->
+<!-- whatimado build: 2026-06-24-header-jingle-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-mario-home-polish-v1">
+  <meta name="whatimado-build" content="2026-06-24-header-jingle-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -601,14 +601,6 @@
       box-shadow: inset 3px 0 0 rgba(232, 35, 26, .75);
     }
 
-    [data-color-scheme="mario"] .jingle-replay-btn {
-      color: rgba(255, 255, 255, .9);
-    }
-
-    [data-color-scheme="mario"] .jingle-replay-btn:hover {
-      color: #fff;
-    }
-
     @media (max-width: 760px) {
       [data-color-scheme="mario"] .nav-drawer {
         border-bottom-color: rgba(232, 35, 26, .15);
@@ -1041,8 +1033,23 @@
       display: flex;
       align-items: center;
       gap: .45rem;
-      flex-shrink: 0;
+      flex: 1 1 auto;
+      justify-content: flex-end;
+      min-width: 0;
       margin-left: auto;
+    }
+
+    .header-jingle {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: .45rem;
+      min-width: 0;
+      max-width: min(100%, 420px);
+    }
+
+    .header-jingle[hidden] {
+      display: none !important;
     }
 
     .nav-hamburger {
@@ -3887,23 +3894,37 @@
 
     .jingle-offer {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: .55rem;
-      width: 100%;
-      margin: -.15rem 0 .1rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: .35rem .55rem;
+      min-width: 0;
+      margin: 0;
+    }
+
+    .jingle-offer[hidden] {
+      display: none !important;
+    }
+
+    .header-jingle-main {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: .1rem;
+      min-width: 0;
     }
 
     .jingle-offer-play {
       border: 1px solid rgba(155, 143, 224, .42);
       border-radius: 999px;
-      padding: .5rem 1rem;
+      padding: .38rem .78rem;
       color: #dfe4ff;
       background: rgba(124, 111, 205, .18);
-      font-size: .82rem;
+      font-size: .74rem;
       font-weight: 700;
       letter-spacing: -.01em;
-      transition: background .16s ease, transform .16s ease;
+      white-space: nowrap;
+      transition: background .16s ease, transform .16s ease, border-color .16s ease;
     }
 
     .jingle-offer-play:hover:not(:disabled) {
@@ -3919,16 +3940,19 @@
     .jingle-offer-note {
       margin: 0;
       color: var(--muted);
-      font-size: .68rem;
-      opacity: .82;
+      font-size: .6rem;
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+      opacity: .88;
     }
 
     .jingle-offer-actions {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: center;
-      gap: .65rem 1rem;
+      justify-content: flex-end;
+      gap: .45rem .65rem;
     }
 
     .jingle-offer-skip,
@@ -3937,11 +3961,12 @@
       padding: 0;
       color: var(--muted);
       background: transparent;
-      font-size: .72rem;
+      font-size: .66rem;
       font-weight: 600;
       text-decoration: underline;
       text-underline-offset: 2px;
       opacity: .82;
+      white-space: nowrap;
     }
 
     .jingle-offer-skip:hover,
@@ -3951,22 +3976,107 @@
     }
 
     .jingle-replay-btn {
-      display: block;
-      margin: -.35rem auto 0;
-      border: 0;
-      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      border: 1px solid rgba(120, 130, 200, .22);
+      border-radius: 999px;
+      padding: .38rem .78rem;
       color: var(--muted);
-      background: transparent;
-      font-size: .78rem;
-      font-weight: 600;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      opacity: .85;
+      background: rgba(255, 255, 255, .06);
+      font-size: .74rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      white-space: nowrap;
+      opacity: 1;
+      transition: background .16s ease, border-color .16s ease, color .16s ease;
+    }
+
+    .jingle-replay-btn[hidden] {
+      display: none !important;
     }
 
     .jingle-replay-btn:hover {
       color: var(--ink-muted);
+      background: rgba(255, 255, 255, .1);
+      border-color: rgba(155, 143, 224, .35);
+    }
+
+    [data-color-scheme="mario"] .jingle-offer-play {
+      border: 1.5px solid rgba(91, 170, 255, .72);
+      background: linear-gradient(180deg, #dff0ff 0%, #b8dcff 100%);
+      color: #1b1b2f;
+      box-shadow: 0 2px 8px rgba(27, 27, 47, .1), inset 0 1px 0 rgba(255, 255, 255, .9);
+    }
+
+    [data-color-scheme="mario"] .jingle-offer-play:hover:not(:disabled) {
+      border-color: rgba(232, 35, 26, .4);
+      background: linear-gradient(180deg, #eef7ff 0%, #c8e4ff 100%);
+    }
+
+    [data-color-scheme="mario"] .jingle-offer-note {
+      color: rgba(27, 27, 47, .58);
       opacity: 1;
+    }
+
+    [data-color-scheme="mario"] .jingle-offer-skip,
+    [data-color-scheme="mario"] .jingle-offer-mute {
+      color: rgba(27, 27, 47, .52);
+    }
+
+    [data-color-scheme="mario"] .jingle-offer-skip:hover,
+    [data-color-scheme="mario"] .jingle-offer-mute:hover {
+      color: #e8231a;
+    }
+
+    [data-color-scheme="mario"] .jingle-replay-btn {
+      border: 1px solid rgba(27, 27, 47, .14);
+      background: rgba(255, 255, 255, .86);
+      color: #e8231a;
+      box-shadow: 0 2px 8px rgba(27, 27, 47, .08);
+    }
+
+    [data-color-scheme="mario"] .jingle-replay-btn:hover {
+      background: #fff;
+      color: #c41e16;
+      border-color: rgba(232, 35, 26, .34);
+    }
+
+    @media (max-width: 760px) {
+      .header-jingle {
+        max-width: calc(100vw - 11.5rem);
+      }
+
+      .jingle-offer-note {
+        display: none;
+      }
+
+      .jingle-offer-actions {
+        gap: .35rem .5rem;
+      }
+
+      .jingle-offer-skip,
+      .jingle-offer-mute {
+        font-size: .62rem;
+      }
+
+      .jingle-offer-play,
+      .jingle-replay-btn {
+        padding: .34rem .62rem;
+        font-size: .7rem;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .jingle-offer {
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
+      .header-jingle-main {
+        align-items: flex-end;
+      }
     }
 
     .auth-overlay {
@@ -4971,6 +5081,19 @@
 
     <nav class="nav" aria-label="Main navigation">
             <div class="nav-header-actions">
+              <div class="header-jingle" id="header-jingle" hidden>
+                <div class="jingle-offer" id="jingle-offer" hidden>
+                  <div class="header-jingle-main">
+                    <button type="button" class="jingle-offer-play" id="jingle-offer-play">Hear the jingle ♪</button>
+                    <p class="jingle-offer-note">Sung by Ivy · tap once to play</p>
+                  </div>
+                  <div class="jingle-offer-actions">
+                    <button type="button" class="jingle-offer-skip" id="jingle-offer-skip">Skip</button>
+                    <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
+                  </div>
+                </div>
+                <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden>Hear the jingle ♪</button>
+              </div>
               <button class="nav-hamburger" id="nav-hamburger-btn" type="button" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
                 <span class="nav-hamburger-line" aria-hidden="true"></span>
                 <span class="nav-hamburger-line" aria-hidden="true"></span>
@@ -5052,15 +5175,6 @@
       <div class="hero">
         <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
         <p class="hero-sub">Share your situation below — skills, constraints, and what you want next. The more honest detail you give, the better your paths. Free for everyone.</p>
-        <div class="jingle-offer" id="jingle-offer" hidden>
-          <button type="button" class="jingle-offer-play" id="jingle-offer-play">Hear the jingle ♪</button>
-          <p class="jingle-offer-note">Sung by Ivy — tap once to play</p>
-          <div class="jingle-offer-actions">
-            <button type="button" class="jingle-offer-skip" id="jingle-offer-skip">Skip</button>
-            <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
-          </div>
-        </div>
-        <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden>Hear the jingle ♪</button>
 
         <div class="prompt-box">
           <textarea class="prompt-textarea" id="main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
@@ -9422,9 +9536,21 @@
       return !isJingleMuted() && Boolean($("#site-jingle"));
     }
 
+    function updateHeaderJingleVisibility() {
+      const wrap = $("#header-jingle");
+      const offer = $("#jingle-offer");
+      const replay = $("#jingle-replay-btn");
+      if (!wrap) return;
+      const offerVisible = Boolean(offer && !offer.hidden);
+      const replayVisible = Boolean(replay && !replay.hidden);
+      wrap.hidden = !offerVisible && !replayVisible;
+      syncHeaderHeight();
+    }
+
     function hideJingleOffer() {
       const panel = $("#jingle-offer");
       if (panel) panel.hidden = true;
+      updateJingleReplayVisibility();
     }
 
     function showJingleOfferIfNeeded() {
@@ -9434,6 +9560,7 @@
         return;
       }
       panel.hidden = false;
+      updateJingleReplayVisibility();
     }
 
     function ensureJingleAudio() {
@@ -9546,6 +9673,7 @@
 
     function updateJingleReplayVisibility() {
       const replay = $("#jingle-replay-btn");
+      const offer = $("#jingle-offer");
       if (!replay) return;
       let played = false;
       try {
@@ -9553,8 +9681,10 @@
       } catch {
         /* ignore */
       }
-      replay.hidden = !shouldShowJinglePlay();
+      const offerVisible = Boolean(offer && !offer.hidden);
+      replay.hidden = !shouldShowJinglePlay() || offerVisible;
       replay.textContent = played ? "Replay jingle ♪" : "Hear the jingle ♪";
+      updateHeaderJingleVisibility();
     }
 
     function bindEvents() {
