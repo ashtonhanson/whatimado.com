@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-loader-clean -->
+<!-- whatimado build: 2026-06-24-suggestion-name -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-loader-clean">
+  <meta name="whatimado-build" content="2026-06-24-suggestion-name">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -251,7 +251,7 @@
       left: 0;
       width: calc(var(--cloud-base-width, 180px) * var(--cloud-size, 1));
       opacity: 0;
-      will-change: transform, opacity;
+      will-change: transform;
       animation-duration: var(--cloud-duration, 60s);
       animation-timing-function: linear;
       animation-iteration-count: infinite;
@@ -271,7 +271,8 @@
       width: 100%;
       height: auto;
       overflow: visible;
-      filter: drop-shadow(0 10px 22px rgba(255, 255, 255, .55)) drop-shadow(0 4px 14px rgba(42, 80, 136, .18));
+      opacity: .72;
+      filter: drop-shadow(0 6px 14px rgba(255, 255, 255, .18)) drop-shadow(0 2px 8px rgba(42, 80, 136, .08));
     }
 
     .mario-cloud svg .st0 {
@@ -281,7 +282,7 @@
     .mario-cloud svg .st1,
     .mario-cloud svg .st3 {
       fill: #e8f4ff;
-      opacity: .72;
+      opacity: .38;
     }
 
     @keyframes mario-cloud-drift-ltr {
@@ -290,9 +291,9 @@
         opacity: 0;
       }
 
-      7%,
-      93% {
-        opacity: var(--cloud-opacity, .82);
+      12%,
+      88% {
+        opacity: var(--cloud-opacity, .28);
       }
 
       100% {
@@ -307,9 +308,9 @@
         opacity: 0;
       }
 
-      7%,
-      93% {
-        opacity: var(--cloud-opacity, .82);
+      12%,
+      88% {
+        opacity: var(--cloud-opacity, .28);
       }
 
       100% {
@@ -373,20 +374,26 @@
       background: var(--bg-gradient);
     }
 
-    [data-color-scheme="mario"] .loader-quote {
-      color: var(--ink-muted);
-      text-shadow: 0 1px 0 rgba(255, 255, 255, .65);
+    [data-color-scheme="mario"] .loader-quote,
+    [data-color-scheme="mario"] .loader-tagline {
+      color: #fff;
+      text-shadow:
+        0 1px 0 rgba(42, 80, 136, .55),
+        0 2px 10px rgba(42, 80, 136, .42),
+        0 4px 18px rgba(42, 80, 136, .28);
     }
 
     [data-color-scheme="mario"] .loader-tagline {
-      color: var(--ink);
       font-weight: 800;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, .55);
     }
 
     [data-color-scheme="mario"] .loader-logo {
       mix-blend-mode: normal;
-      filter: drop-shadow(0 4px 14px rgba(42, 80, 136, .16));
+      filter:
+        brightness(0) invert(1)
+        drop-shadow(0 1px 0 rgba(42, 80, 136, .55))
+        drop-shadow(0 3px 12px rgba(42, 80, 136, .38))
+        drop-shadow(0 6px 20px rgba(42, 80, 136, .24));
     }
 
     [data-color-scheme="mario"] .nav-btn {
@@ -3224,6 +3231,24 @@
       line-height: 1.45;
     }
 
+    .site-suggestions-field {
+      display: block;
+      margin-bottom: .65rem;
+    }
+
+    .site-suggestions-field-label {
+      display: block;
+      margin-bottom: .35rem;
+      color: var(--brand-purple-dark);
+      font-size: .72rem;
+      font-weight: 700;
+    }
+
+    .site-suggestions-name {
+      min-height: 0;
+      resize: none;
+    }
+
     .site-suggestions-input {
       width: 100%;
       min-height: 72px;
@@ -3278,6 +3303,7 @@
     }
 
     .site-suggestions-input:disabled,
+    .site-suggestions-name:disabled,
     .site-suggestions .back-btn:disabled {
       opacity: .72;
       cursor: not-allowed;
@@ -6227,8 +6253,15 @@
 
           <section class="site-suggestions" id="site-suggestions" aria-label="Suggest a site improvement">
             <h3 class="site-suggestions-title">Suggest an improvement</h3>
-            <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion. Signed-in users may get to vote on which ideas ship first.</p>
-            <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
+            <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion. Add your name below so we can credit you if we ship your idea.</p>
+            <label class="site-suggestions-field" for="site-suggestion-name">
+              <span class="site-suggestions-field-label">Your name (for credit)</span>
+              <input class="site-suggestions-input site-suggestions-name" id="site-suggestion-name" type="text" maxlength="80" autocomplete="name" placeholder="How you'd like to be credited">
+            </label>
+            <label class="site-suggestions-field" for="site-suggestion-input">
+              <span class="site-suggestions-field-label">Your suggestion</span>
+              <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
+            </label>
             <div class="site-suggestions-footer">
               <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
               <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
@@ -7467,7 +7500,7 @@
         trackEvent("color_scheme_changed", { scheme: nextScheme });
       }
 
-      syncMarioClouds();
+      syncMarioClouds({ force: true });
     }
 
     function initColorScheme() {
@@ -8539,8 +8572,9 @@
         const target = $("#site-suggestions");
         if (!target) return;
         target.scrollIntoView({ behavior: "smooth", block: "start" });
+        prefillSuggestionName();
         window.setTimeout(() => {
-          $("#site-suggestion-input")?.focus({ preventScroll: true });
+          $("#site-suggestion-name")?.focus({ preventScroll: true });
         }, 450);
       });
       trackEvent("suggest_nav_click", { source });
@@ -10214,9 +10248,8 @@
         showScreen("stats", { skipPersist: true });
       }
       updateMapAuxiliaryPanels();
+      prefillSuggestionName();
     }
-
-    async function initAuth() {
       if (!supabaseClient) {
         await loadSession();
         return;
@@ -10311,17 +10344,19 @@
     ];
 
     let marioCloudsResizeTimer = null;
+    let marioCloudsLayout = null;
+    let marioCloudsInitWidth = 0;
 
     function buildMarioCloudElement(variant, index) {
       const cloud = document.createElement("div");
       cloud.className = "mario-cloud";
       const direction = Math.random() > 0.48 ? "ltr" : "rtl";
-      const duration = 38 + Math.random() * 72;
+      const duration = 52 + Math.random() * 78;
       const delay = -(Math.random() * duration);
       const size = 0.52 + Math.random() * 0.95;
       const top = 10 + (index * 11 + Math.random() * 9) % 72;
-      const opacity = 0.68 + Math.random() * 0.28;
-      const driftY = `${(Math.random() - 0.5) * 36}px`;
+      const opacity = 0.18 + Math.random() * 0.14;
+      const driftY = `${(Math.random() - 0.5) * 28}px`;
 
       cloud.dataset.direction = direction;
       cloud.style.setProperty("--cloud-top", `${top}%`);
@@ -10335,21 +10370,40 @@
       return cloud;
     }
 
-    function syncMarioClouds() {
+    function syncMarioClouds(options = {}) {
       const container = $("#mario-clouds");
       if (!container) return;
 
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const isMario = document.documentElement.dataset.colorScheme === "mario";
       const shouldShow = isMario && !reducedMotion;
+      const layout = window.innerWidth < 760 ? "mobile" : "desktop";
+      const width = window.innerWidth;
+      const canReuse = !options.force
+        && shouldShow
+        && layout === marioCloudsLayout
+        && container.childElementCount > 0
+        && Math.abs(width - marioCloudsInitWidth) < 48;
 
-      container.hidden = !shouldShow;
-      container.classList.toggle("is-active", shouldShow);
+      if (!shouldShow) {
+        marioCloudsLayout = null;
+        marioCloudsInitWidth = 0;
+        container.hidden = true;
+        container.classList.remove("is-active");
+        container.replaceChildren();
+        return;
+      }
+
+      container.hidden = false;
+      container.classList.toggle("is-active", true);
+
+      if (canReuse) return;
+
+      marioCloudsLayout = layout;
+      marioCloudsInitWidth = width;
       container.replaceChildren();
 
-      if (!shouldShow) return;
-
-      const count = window.innerWidth < 760 ? 7 : 11;
+      const count = layout === "mobile" ? 6 : 9;
       const shuffled = [...MARIO_CLOUD_VARIANTS].sort(() => Math.random() - 0.5);
 
       for (let i = 0; i < count; i += 1) {
@@ -10359,11 +10413,11 @@
     }
 
     function initMarioClouds() {
-      syncMarioClouds();
+      syncMarioClouds({ force: true });
       window.addEventListener("resize", () => {
         if (document.documentElement.dataset.colorScheme !== "mario") return;
         clearTimeout(marioCloudsResizeTimer);
-        marioCloudsResizeTimer = setTimeout(syncMarioClouds, 250);
+        marioCloudsResizeTimer = setTimeout(() => syncMarioClouds(), 400);
       });
     }
 
@@ -10520,17 +10574,42 @@
       });
     }
 
-    function saveSuggestionLocally(text) {
+    function saveSuggestionLocally(text, submitterName = "") {
       const existing = JSON.parse(localStorage.getItem(SUGGESTIONS_KEY) || "[]");
-      existing.push({ text, at: Date.now(), synced: false });
+      existing.push({ text, submitter_name: submitterName, at: Date.now(), synced: false });
       localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(existing));
+    }
+
+    function prefillSuggestionName() {
+      const nameInput = $("#site-suggestion-name");
+      if (!nameInput || nameInput.value.trim()) return;
+      const fullName = state.currentUser?.user_metadata?.full_name;
+      if (fullName && String(fullName).trim()) {
+        nameInput.value = String(fullName).trim();
+        return;
+      }
+      if (state.currentUser?.email) {
+        nameInput.value = state.currentUser.email.split("@")[0];
+      }
     }
 
     async function submitSiteSuggestion() {
       const input = $("#site-suggestion-input");
+      const nameInput = $("#site-suggestion-name");
       const msg = $("#site-suggestion-msg");
       const button = $("#site-suggestion-submit");
       const text = input?.value.trim();
+      const submitterName = nameInput?.value.trim() || "";
+      if (!submitterName) {
+        if (msg) {
+          msg.hidden = false;
+          msg.classList.remove("success");
+          msg.classList.add("error");
+          msg.textContent = "Add your name so we can credit you if we implement your idea.";
+        }
+        nameInput?.focus();
+        return;
+      }
       if (!text) {
         if (msg) {
           msg.hidden = false;
@@ -10538,9 +10617,10 @@
           msg.classList.add("error");
           msg.textContent = "Type a suggestion first.";
         }
+        input?.focus();
         return;
       }
-      if (button?.disabled || input?.disabled) return;
+      if (button?.disabled || input?.disabled || nameInput?.disabled) return;
 
       const originalLabel = button?.textContent || "Send suggestion";
       if (button) {
@@ -10548,6 +10628,7 @@
         button.textContent = "Sending…";
       }
       if (input) input.disabled = true;
+      if (nameInput) nameInput.disabled = true;
       if (msg) {
         msg.hidden = true;
         msg.classList.remove("success", "error");
@@ -10555,6 +10636,7 @@
 
       const payload = {
         suggestion: text,
+        submitter_name: submitterName,
         session_id: getAnalyticsSessionId(),
         user_id: state.currentUser?.id ?? null,
         page_path: `${window.location.pathname}${window.location.hash || ""}`,
@@ -10570,7 +10652,7 @@
 
       if (!savedRemotely) {
         try {
-          saveSuggestionLocally(text);
+          saveSuggestionLocally(text, submitterName);
         } catch {
           if (msg) {
             msg.hidden = false;
@@ -10583,6 +10665,7 @@
             button.textContent = originalLabel;
           }
           if (input) input.disabled = false;
+          if (nameInput) nameInput.disabled = false;
           return;
         }
       }
@@ -10590,6 +10673,7 @@
       if (input) input.value = "";
       trackEvent("suggestion_submitted", {
         suggestion_length: text.length,
+        has_submitter_name: Boolean(submitterName),
         synced: savedRemotely
       });
       if (msg) {
@@ -10608,6 +10692,7 @@
           button.textContent = originalLabel;
         }
         if (input) input.disabled = false;
+        if (nameInput) nameInput.disabled = false;
       }, SUGGESTION_SUBMIT_COOLDOWN_MS);
     }
 
