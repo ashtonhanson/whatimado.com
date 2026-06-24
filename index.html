@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-clouds-loader-v1 -->
+<!-- whatimado build: 2026-06-24-map-panels-v1 -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-clouds-loader-v1">
+  <meta name="whatimado-build" content="2026-06-24-map-panels-v1">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -75,12 +75,12 @@
       --theme-active-bg: rgba(124, 111, 205, .26);
       --theme-active-border: rgba(155, 143, 224, .36);
       --brand-purple-dark: #241235;
-      --pastel-yellow-bg: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
-      --pastel-yellow-bg-hover: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
-      --pastel-yellow-border: rgba(255, 255, 255, .95);
-      --light-blue-bg: linear-gradient(180deg, #c7edff 0%, #93cfee 100%);
-      --light-blue-bg-hover: linear-gradient(180deg, #ddf5ff 0%, #adddf5 100%);
-      --light-blue-border: rgba(216, 245, 255, .9);
+      --pastel-yellow-bg: linear-gradient(180deg, rgba(255, 255, 255, .88) 0%, rgba(255, 255, 255, .78) 100%);
+      --pastel-yellow-bg-hover: linear-gradient(180deg, rgba(255, 255, 255, .92) 0%, rgba(255, 255, 255, .82) 100%);
+      --pastel-yellow-border: rgba(255, 255, 255, .72);
+      --light-blue-bg: linear-gradient(180deg, rgba(199, 237, 255, .82) 0%, rgba(147, 207, 238, .72) 100%);
+      --light-blue-bg-hover: linear-gradient(180deg, rgba(221, 245, 255, .88) 0%, rgba(173, 221, 245, .78) 100%);
+      --light-blue-border: rgba(216, 245, 255, .72);
       --plan-card-bg: var(--pastel-yellow-bg);
       --plan-card-bg-hover: var(--pastel-yellow-bg-hover);
       --plan-card-border: var(--pastel-yellow-border);
@@ -182,23 +182,25 @@
       --theme-active-bg: rgba(232, 35, 26, .14);
       --theme-active-border: rgba(232, 35, 26, .34);
       --brand-purple-dark: #e8231a;
-      --pastel-yellow-bg: rgba(255, 255, 255, .94);
-      --pastel-yellow-bg-hover: #ffffff;
+      --pastel-yellow-bg: rgba(255, 255, 255, .84);
+      --pastel-yellow-bg-hover: rgba(255, 255, 255, .92);
       --pastel-yellow-border: rgba(42, 80, 136, .12);
-      --light-blue-bg: rgba(255, 255, 255, .86);
-      --light-blue-bg-hover: #ffffff;
+      --light-blue-bg: rgba(255, 255, 255, .78);
+      --light-blue-bg-hover: rgba(255, 255, 255, .9);
       --light-blue-border: rgba(42, 80, 136, .16);
-      --plan-card-bg: rgba(255, 255, 255, .94);
-      --plan-card-bg-hover: #ffffff;
+      --plan-card-bg: rgba(255, 255, 255, .84);
+      --plan-card-bg-hover: rgba(255, 255, 255, .92);
       --plan-card-border: rgba(42, 80, 136, .12);
       --plan-card-shadow: 0 8px 24px rgba(42, 80, 136, .08);
       --plan-card-ink: #2a5088;
       --plan-card-muted: rgba(42, 80, 136, .76);
       --plan-card-soft: rgba(42, 80, 136, .58);
-      --plan-card-chip-bg: rgba(232, 244, 255, .75);
-      --plan-card-note-bg: rgba(232, 244, 255, .55);
-      --map-control-bg: rgba(255, 255, 255, .94);
+      --plan-card-chip-bg: rgba(232, 244, 255, .68);
+      --plan-card-note-bg: rgba(232, 244, 255, .48);
+      --map-control-bg: rgba(255, 255, 255, .84);
       --map-control-border: rgba(42, 80, 136, .12);
+      --map-node-royal: #4a6594;
+      --map-node-royal-strong: #2a5088;
       --shadow: 0 16px 48px rgba(42, 80, 136, .14);
     }
 
@@ -214,7 +216,7 @@
     [data-color-scheme="mario"] .map-library-card,
     [data-color-scheme="mario"] .site-suggestions,
     [data-color-scheme="mario"] .roadmap-complete-card {
-      background: rgba(255, 255, 255, .94);
+      background: rgba(255, 255, 255, .84);
       border-color: rgba(42, 80, 136, .1);
       box-shadow: 0 10px 28px rgba(42, 80, 136, .1);
     }
@@ -335,8 +337,19 @@
       text-shadow: 1px 1px 0 rgba(255, 255, 255, .55);
     }
 
+    [data-color-scheme="mario"] .hero-sub,
+    [data-color-scheme="mario"] .stats-sub,
+    [data-color-scheme="mario"] .stats-kicker-light,
+    [data-color-scheme="mario"] #screen-map .page-subtitle,
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-type,
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-sub,
+    [data-color-scheme="mario"] #screen-maps .maps-page-kicker,
+    [data-color-scheme="mario"] #screen-maps .maps-page-sub {
+      color: var(--ink-muted);
+      text-shadow: none;
+    }
+
     [data-color-scheme="mario"] .hero-sub {
-      color: rgba(255, 255, 255, .94);
       font-weight: 500;
     }
 
@@ -345,7 +358,7 @@
     }
 
     [data-color-scheme="mario"] .bubble.ai {
-      background: rgba(255, 255, 255, .96);
+      background: rgba(255, 255, 255, .84);
       color: var(--ink);
       border-color: rgba(42, 80, 136, .1);
     }
@@ -477,7 +490,7 @@
     }
 
     [data-color-scheme="mario"] .nav-drawer .nav-btn.donate-btn {
-      background: rgba(255, 255, 255, .94);
+      background: rgba(255, 255, 255, .84);
       color: var(--ink);
       border-color: rgba(232, 35, 26, .28);
     }
@@ -497,10 +510,6 @@
       border-color: rgba(232, 35, 26, .34);
     }
 
-    [data-color-scheme="mario"] .stats-kicker-light {
-      color: rgba(255, 255, 255, .94);
-    }
-
     [data-color-scheme="mario"] .stats-kicker-accent {
       color: #e8231a;
       text-shadow: 1px 1px 0 rgba(255, 255, 255, .45);
@@ -516,13 +525,9 @@
       text-shadow: 1px 1px 0 rgba(255, 255, 255, .55);
     }
 
-    [data-color-scheme="mario"] .stats-sub {
-      color: rgba(255, 255, 255, .94);
-    }
-
     [data-color-scheme="mario"] #screen-stats .stats-card,
     [data-color-scheme="mario"] #screen-stats .stats-panel {
-      background: rgba(255, 255, 255, .94);
+      background: rgba(255, 255, 255, .84);
       border-color: rgba(42, 80, 136, .12);
       box-shadow: 0 8px 24px rgba(42, 80, 136, .08);
     }
@@ -584,7 +589,7 @@
     }
 
     [data-color-scheme="mario"] .stats-day-card {
-      background: rgba(255, 255, 255, .94);
+      background: rgba(255, 255, 255, .84);
       border-color: rgba(42, 80, 136, .12);
     }
 
@@ -617,7 +622,7 @@
     }
 
     [data-color-scheme="mario"] .prompt-box {
-      background: rgba(255, 255, 255, .94);
+      background: rgba(255, 255, 255, .84);
       border-color: rgba(42, 80, 136, .12);
       box-shadow: 0 8px 24px rgba(42, 80, 136, .08);
     }
@@ -661,7 +666,7 @@
     }
 
     [data-color-scheme="mario"] .pill {
-      background: rgba(255, 255, 255, .86);
+      background: rgba(255, 255, 255, .78);
       border-color: rgba(42, 80, 136, .14);
       color: #e8231a;
     }
@@ -673,7 +678,7 @@
     }
 
     [data-color-scheme="mario"] .saved-maps-home {
-      background: rgba(255, 255, 255, .94);
+      background: rgba(255, 255, 255, .84);
       border-color: rgba(42, 80, 136, .12);
       box-shadow: 0 8px 24px rgba(42, 80, 136, .08);
     }
@@ -698,7 +703,7 @@
     }
 
     [data-color-scheme="mario"] #screen-main .back-btn {
-      background: rgba(255, 255, 255, .86);
+      background: rgba(255, 255, 255, .78);
       border-color: rgba(42, 80, 136, .14);
       color: var(--ink-muted);
     }
@@ -710,7 +715,7 @@
     }
 
     [data-color-scheme="mario"] .ai-difference {
-      background: rgba(255, 255, 255, .94);
+      background: rgba(255, 255, 255, .84);
       border-color: rgba(42, 80, 136, .12);
       box-shadow: 0 8px 24px rgba(42, 80, 136, .08);
     }
@@ -739,10 +744,6 @@
       text-shadow: 1px 1px 0 rgba(255, 255, 255, .55);
     }
 
-    [data-color-scheme="mario"] #screen-map .page-subtitle {
-      color: rgba(255, 255, 255, .94);
-    }
-
     [data-color-scheme="mario"] .map-plans-divider-label {
       color: #fff;
       text-shadow: 1px 2px 0 rgba(42, 80, 136, .18);
@@ -753,62 +754,73 @@
     }
 
     [data-color-scheme="mario"] .map-node-glow {
-      background: radial-gradient(circle, rgba(255, 255, 255, .34) 0%, rgba(91, 170, 255, .16) 42%, rgba(7, 17, 31, 0) 72%);
+      background: radial-gradient(circle, rgba(74, 101, 148, .28) 0%, rgba(42, 80, 136, .14) 42%, rgba(7, 17, 31, 0) 72%);
     }
 
     [data-color-scheme="mario"] .map-connection-line {
-      stroke: #fff !important;
-      stroke-opacity: .58 !important;
+      stroke: var(--map-node-royal) !important;
+      stroke-opacity: .62 !important;
+    }
+
+    [data-color-scheme="mario"] .map-center-circle {
+      fill: url(#user-gradient) !important;
+    }
+
+    [data-color-scheme="mario"] .map-center-label {
+      fill: #fff !important;
     }
 
     [data-color-scheme="mario"] .map-node-circle {
-      fill: #fff !important;
-      fill-opacity: .14 !important;
-      stroke: #fff !important;
+      fill: var(--map-node-royal) !important;
+      fill-opacity: .16 !important;
+      stroke: var(--map-node-royal-strong) !important;
     }
 
     [data-color-scheme="mario"] .map-node-text {
-      fill: #fff !important;
+      fill: var(--map-node-royal-strong) !important;
     }
 
     [data-color-scheme="mario"] .map-node:hover .map-node-circle,
     [data-color-scheme="mario"] .map-node:focus-visible .map-node-circle,
     [data-color-scheme="mario"] .map-node.is-highlighted .map-node-circle {
-      fill: #fff !important;
+      fill: var(--map-node-royal) !important;
       fill-opacity: .28 !important;
-      stroke: #fff !important;
+      stroke: var(--map-node-royal-strong) !important;
       stroke-width: 2.5;
-      transform: scale(1.16);
-      filter: drop-shadow(0 0 14px rgba(255, 255, 255, .92)) drop-shadow(0 0 28px rgba(255, 255, 255, .42));
+      filter: drop-shadow(0 0 12px rgba(74, 101, 148, .45)) drop-shadow(0 0 22px rgba(42, 80, 136, .22));
     }
 
     [data-color-scheme="mario"] .map-node.is-selected .map-node-circle {
-      fill: #fff !important;
+      fill: var(--map-node-royal) !important;
       fill-opacity: .34 !important;
-      stroke: #fff !important;
+      stroke: var(--map-node-royal-strong) !important;
       stroke-width: 3;
-      transform: scale(1.24);
-      filter: drop-shadow(0 0 18px rgba(255, 255, 255, .98)) drop-shadow(0 0 36px rgba(255, 255, 255, .55));
+      filter: drop-shadow(0 0 16px rgba(74, 101, 148, .55)) drop-shadow(0 0 28px rgba(42, 80, 136, .28));
     }
 
     [data-color-scheme="mario"] .map-node:hover .map-node-text,
     [data-color-scheme="mario"] .map-node:focus-visible .map-node-text,
     [data-color-scheme="mario"] .map-node.is-highlighted .map-node-text,
     [data-color-scheme="mario"] .map-node.is-selected .map-node-text {
-      fill: #fff !important;
-      transform: scale(1.12);
-      filter: drop-shadow(0 0 8px rgba(255, 255, 255, .75));
+      fill: var(--map-node-royal-strong) !important;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, .45));
     }
 
-    [data-color-scheme="mario"] .map-node.is-selected .map-node-text {
-      transform: scale(1.16);
+    [data-color-scheme="mario"] .map-node:hover .map-node-body,
+    [data-color-scheme="mario"] .map-node:focus-visible .map-node-body,
+    [data-color-scheme="mario"] .map-node.is-highlighted .map-node-body {
+      transform: scale(1.14);
+    }
+
+    [data-color-scheme="mario"] .map-node.is-selected .map-node-body {
+      transform: scale(1.2);
     }
 
     [data-color-scheme="mario"] #screen-map .page-header .map-header-nav .back-btn,
     [data-color-scheme="mario"] #reset-btn,
     [data-color-scheme="mario"] .map-toolbar-btn,
     [data-color-scheme="mario"] #screen-map .back-btn {
-      background: rgba(255, 255, 255, .86);
+      background: rgba(255, 255, 255, .78);
       border-color: rgba(42, 80, 136, .14);
       color: var(--ink-muted);
       box-shadow: 0 4px 14px rgba(42, 80, 136, .08);
@@ -846,15 +858,13 @@
       color: #e8231a;
     }
 
-    [data-color-scheme="mario"] #screen-roadmap .roadmap-type,
-    [data-color-scheme="mario"] #screen-roadmap .roadmap-title,
-    [data-color-scheme="mario"] #screen-roadmap .roadmap-sub {
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-title {
       color: rgba(255, 255, 255, .94);
     }
 
     [data-color-scheme="mario"] #screen-roadmap .roadmap-back-btn,
     [data-color-scheme="mario"] #screen-roadmap .complete-action-btn {
-      background: rgba(255, 255, 255, .86);
+      background: rgba(255, 255, 255, .78);
       border-color: rgba(42, 80, 136, .14);
       color: var(--ink-muted);
       box-shadow: 0 4px 14px rgba(42, 80, 136, .08);
@@ -877,17 +887,9 @@
       border-color: rgba(91, 170, 255, .22);
     }
 
-    [data-color-scheme="mario"] #screen-maps .maps-page-kicker {
-      color: rgba(255, 255, 255, .94);
-    }
-
     [data-color-scheme="mario"] #screen-maps .maps-page-title {
       color: #fff;
       text-shadow: 1px 2px 0 rgba(42, 80, 136, .2);
-    }
-
-    [data-color-scheme="mario"] #screen-maps .maps-page-sub {
-      color: rgba(255, 255, 255, .9);
     }
 
     [data-color-scheme="mario"] #screen-maps .back-btn,
@@ -896,7 +898,7 @@
     }
 
     [data-color-scheme="mario"] .reply-box.surface-card {
-      background: rgba(255, 255, 255, .94);
+      background: rgba(255, 255, 255, .84);
     }
 
     [data-color-scheme="mario"] .send-btn {
@@ -1723,7 +1725,7 @@
     .surface-card {
       border: 1px solid rgba(120, 130, 200, .2);
       border-radius: var(--radius-md);
-      background: rgba(18, 21, 42, .92);
+      background: rgba(18, 21, 42, .82);
       box-shadow: 0 10px 34px rgba(0, 0, 0, .25);
     }
 
@@ -2373,11 +2375,18 @@
     }
 
     .map-node,
-    .map-node-circle,
-    .map-node-text {
+    .map-node-body,
+    .map-node-circle {
       transition: transform .22s ease, filter .22s ease, fill-opacity .22s ease, stroke-width .22s ease, fill .22s ease, stroke .22s ease;
+    }
+
+    .map-node-body {
       transform-box: fill-box;
       transform-origin: center;
+    }
+
+    .map-node-text {
+      transition: filter .22s ease, fill .22s ease;
     }
 
     .map-connection-line {
@@ -2391,19 +2400,27 @@
       outline: none;
     }
 
+    .map-node:hover .map-node-body,
+    .map-node:focus-visible .map-node-body,
+    .map-node.is-highlighted .map-node-body {
+      transform: scale(1.14);
+    }
+
+    .map-node.is-selected .map-node-body {
+      transform: scale(1.2);
+    }
+
     .map-node:hover .map-node-circle,
     .map-node:focus-visible .map-node-circle,
     .map-node.is-highlighted .map-node-circle {
       fill-opacity: .36;
       stroke-width: 2.5;
-      transform: scale(1.14);
       filter: drop-shadow(0 0 12px rgba(255, 255, 255, .55));
     }
 
     .map-node.is-selected .map-node-circle {
       fill-opacity: .42;
       stroke-width: 3;
-      transform: scale(1.2);
       filter: drop-shadow(0 0 16px rgba(255, 255, 255, .72)) drop-shadow(0 0 28px rgba(255, 255, 255, .35));
     }
 
@@ -2411,11 +2428,7 @@
     .map-node:focus-visible .map-node-text,
     .map-node.is-highlighted .map-node-text,
     .map-node.is-selected .map-node-text {
-      transform: scale(1.1);
-    }
-
-    .map-node.is-selected .map-node-text {
-      transform: scale(1.14);
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, .35));
     }
 
     .opp-labels {
@@ -3179,7 +3192,7 @@
     .progress-map {
       border: 1px solid rgba(120, 130, 200, .2);
       border-radius: var(--radius-md);
-      background: rgba(18, 21, 42, .92);
+      background: rgba(18, 21, 42, .82);
       box-shadow: 0 10px 34px rgba(0, 0, 0, .25);
     }
 
@@ -4272,6 +4285,10 @@
       cursor: wait;
     }
 
+    .jingle-btn-text--mobile {
+      display: none;
+    }
+
     .jingle-offer-note {
       margin: 0;
       color: var(--muted);
@@ -4366,7 +4383,7 @@
 
     [data-color-scheme="mario"] .jingle-replay-btn {
       border: 1px solid rgba(42, 80, 136, .14);
-      background: rgba(255, 255, 255, .86);
+      background: rgba(255, 255, 255, .78);
       color: var(--muted);
       box-shadow: 0 2px 8px rgba(42, 80, 136, .08);
     }
@@ -4379,39 +4396,51 @@
 
     @media (max-width: 760px) {
       .header-jingle {
-        max-width: min(calc(100% - 8.5rem), 420px);
+        position: static;
+        left: auto;
+        top: auto;
+        transform: none;
+        max-width: none;
+        flex: 0 1 auto;
+        min-width: 0;
       }
 
-      .jingle-offer-note {
-        font-size: .58rem;
-      }
-
+      .jingle-offer-note,
       .jingle-offer-actions {
-        gap: .35rem .5rem;
+        display: none !important;
       }
 
-      .jingle-offer-skip,
-      .jingle-offer-mute {
-        font-size: .62rem;
+      .jingle-offer,
+      .header-jingle-main {
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+        gap: 0;
+      }
+
+      .jingle-btn-text--desktop {
+        display: none;
+      }
+
+      .jingle-btn-text--mobile {
+        display: inline;
       }
 
       .jingle-offer-play,
       .jingle-replay-btn {
         padding: .34rem .62rem;
-        font-size: .7rem;
+        font-size: .68rem;
+        max-width: min(42vw, 9.5rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
 
     @media (max-width: 520px) {
-      .header-jingle-main {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      .jingle-offer-note {
-        white-space: normal;
-        text-align: left;
-        max-width: 9.5rem;
+      .jingle-offer-play,
+      .jingle-replay-btn {
+        max-width: min(38vw, 8.75rem);
+        padding: .32rem .55rem;
+        font-size: .64rem;
       }
     }
 
@@ -5580,22 +5609,21 @@
       <span class="logo-text">whatimado<span>.com</span></span>
     </a>
 
-    <div class="header-jingle" id="header-jingle" hidden>
-      <div class="jingle-offer" id="jingle-offer" hidden>
-        <div class="header-jingle-main">
-          <button type="button" class="jingle-offer-play" id="jingle-offer-play">Hear the jingle ♪</button>
-          <p class="jingle-offer-note">Sung by Ivy · tap once to play</p>
-        </div>
-        <div class="jingle-offer-actions">
-          <button type="button" class="jingle-offer-skip" id="jingle-offer-skip">Skip</button>
-          <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
-        </div>
-      </div>
-      <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden>Hear the jingle ♪</button>
-    </div>
-
     <nav class="nav" aria-label="Main navigation">
             <div class="nav-header-actions">
+              <div class="header-jingle" id="header-jingle" hidden>
+                <div class="jingle-offer" id="jingle-offer" hidden>
+                  <div class="header-jingle-main">
+                    <button type="button" class="jingle-offer-play" id="jingle-offer-play"><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
+                    <p class="jingle-offer-note">Sung by Ivy · tap once to play</p>
+                  </div>
+                  <div class="jingle-offer-actions">
+                    <button type="button" class="jingle-offer-skip" id="jingle-offer-skip">Skip</button>
+                    <button type="button" class="jingle-offer-mute" id="jingle-offer-mute">Don't play again</button>
+                  </div>
+                </div>
+                <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
+              </div>
               <button class="nav-hamburger" id="nav-hamburger-btn" type="button" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
                 <span class="nav-hamburger-line" aria-hidden="true"></span>
                 <span class="nav-hamburger-line" aria-hidden="true"></span>
@@ -6935,8 +6963,9 @@
 
     function syncSvgThemeColors() {
       const userStops = $$("#user-gradient stop");
-      if (userStops[0]) userStops[0].setAttribute("stop-color", getCssVar("--purple-2") || "#9b8fe0");
-      if (userStops[1]) userStops[1].setAttribute("stop-color", getCssVar("--purple") || "#7c6fcd");
+      const isMario = document.documentElement.dataset.colorScheme === "mario";
+      if (userStops[0]) userStops[0].setAttribute("stop-color", isMario ? "#627fa3" : (getCssVar("--purple-2") || "#9b8fe0"));
+      if (userStops[1]) userStops[1].setAttribute("stop-color", isMario ? "#2a5088" : (getCssVar("--purple") || "#7c6fcd"));
 
       const ringStops = $$("#ring-gradient stop");
       if (ringStops[0]) ringStops[0].setAttribute("stop-color", getCssVar("--purple") || "#7c6fcd");
@@ -8639,6 +8668,8 @@
       const svg = $("#opportunity-svg");
       const opportunityColors = getOpportunityColors();
       const isMarioMap = document.documentElement.dataset.colorScheme === "mario";
+      const marioMapRoyal = getCssVar("--map-node-royal") || "#4a6594";
+      const marioMapRoyalStrong = getCssVar("--map-node-royal-strong") || "#2a5088";
       selectedMapPathIndex = null;
       nodes.innerHTML = "";
       connections.innerHTML = "";
@@ -8651,16 +8682,17 @@
       if (svg) svg.setAttribute("viewBox", `0 0 560 ${svgHeight}`);
 
       nodes.insertAdjacentHTML("beforeend", `
-        <g>
-          <circle cx="${center.x}" cy="${center.y}" r="${center.r}" fill="url(#user-gradient)" filter="url(#svg-glow)"></circle>
-          <text x="${center.x}" y="${center.y + 5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="800">You</text>
+        <g class="map-center-node">
+          <circle class="map-center-circle" cx="${center.x}" cy="${center.y}" r="${center.r}" fill="url(#user-gradient)" filter="url(#svg-glow)"></circle>
+          <text class="map-center-label" x="${center.x}" y="${center.y}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="12" font-weight="800">You</text>
         </g>`);
 
       ideas.forEach((idea, index) => {
         const number = index + 1;
         const { x, y } = getNodePosition(index, count, center);
         const color = opportunityColors[index % opportunityColors.length];
-        const accentColor = isMarioMap ? "#ffffff" : color;
+        const accentColor = isMarioMap ? marioMapRoyal : color;
+        const strokeColor = isMarioMap ? marioMapRoyalStrong : color;
         const dx = x - center.x;
         const dy = y - center.y;
         const length = Math.hypot(dx, dy);
@@ -8668,7 +8700,7 @@
         const uy = dy / length;
 
         connections.insertAdjacentHTML("beforeend", `
-          <line class="map-connection-line" x1="${center.x + ux * 48}" y1="${center.y + uy * 48}" x2="${x - ux * 40}" y2="${y - uy * 40}" stroke="${accentColor}" stroke-width="1.5" stroke-opacity=".55"></line>`);
+          <line class="map-connection-line" x1="${center.x + ux * 48}" y1="${center.y + uy * 48}" x2="${x - ux * 40}" y2="${y - uy * 40}" stroke="${accentColor}" stroke-width="1.5" stroke-opacity=".62"></line>`);
 
         const node = document.createElementNS("http://www.w3.org/2000/svg", "g");
         node.classList.add("map-node");
@@ -8676,10 +8708,12 @@
         node.setAttribute("tabindex", "0");
         node.setAttribute("aria-label", `Read details for path ${number}: ${idea.title || "Opportunity"}`);
         node.style.cursor = "pointer";
-        node.style.color = accentColor;
+        node.style.color = strokeColor;
         node.innerHTML = `
-          <circle class="map-node-circle" cx="${x}" cy="${y}" r="32" fill="${accentColor}" fill-opacity=".18" stroke="${accentColor}" stroke-width="1.5"></circle>
-          <text class="map-node-text" x="${x}" y="${y + 5}" text-anchor="middle" fill="${accentColor}" font-size="14" font-weight="800">${number}</text>`;
+          <g class="map-node-body">
+            <circle class="map-node-circle" cx="${x}" cy="${y}" r="32" fill="${accentColor}" fill-opacity=".18" stroke="${strokeColor}" stroke-width="1.5"></circle>
+            <text class="map-node-text" x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" fill="${strokeColor}" font-size="14" font-weight="800">${number}</text>
+          </g>`;
         node.addEventListener("click", () => scrollToPathDetail(index));
         node.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -10205,10 +10239,11 @@
         const playBtn = $("#jingle-offer-play");
         if (playBtn?.disabled) return;
         playBtn.disabled = true;
+        setJingleButtonMessage(playBtn, "Loading…");
         const played = await playSiteJingle("offer");
         if (!played && playBtn) {
           playBtn.disabled = false;
-          playBtn.textContent = "Couldn't load — tap to retry ♪";
+          setJingleButtonMessage(playBtn, "Couldn't load — tap to retry ♪");
         }
       });
 
@@ -10254,6 +10289,21 @@
       trackEvent("jingle_muted");
     }
 
+    function setJingleButtonMessage(button, message) {
+      if (!button) return;
+      button.querySelectorAll(".jingle-btn-text").forEach((label) => {
+        label.textContent = message;
+      });
+    }
+
+    function setJingleReplayDesktopLabel(played) {
+      const replay = $("#jingle-replay-btn");
+      const desktop = replay?.querySelector(".jingle-btn-text--desktop");
+      const mobile = replay?.querySelector(".jingle-btn-text--mobile");
+      if (desktop) desktop.textContent = played ? "Replay jingle ♪" : "Hear the jingle ♪";
+      if (mobile) mobile.textContent = "Hear the Jingle";
+    }
+
     function updateJingleReplayVisibility() {
       const replay = $("#jingle-replay-btn");
       const offer = $("#jingle-offer");
@@ -10266,7 +10316,7 @@
       }
       const offerVisible = Boolean(offer && !offer.hidden);
       replay.hidden = !shouldShowJinglePlay() || offerVisible;
-      replay.textContent = played ? "Replay jingle ♪" : "Hear the jingle ♪";
+      setJingleReplayDesktopLabel(played);
       updateHeaderJingleVisibility();
     }
 
@@ -10377,12 +10427,12 @@
         if (replay?.disabled) return;
         if (replay) {
           replay.disabled = true;
-          replay.textContent = "Loading…";
+          setJingleButtonMessage(replay, "Loading…");
         }
         const played = await playSiteJingle("replay");
         if (replay) {
           replay.disabled = false;
-          if (!played) replay.textContent = "Couldn't load — tap to retry ♪";
+          if (!played) setJingleButtonMessage(replay, "Couldn't load — tap to retry ♪");
           else updateJingleReplayVisibility();
         }
       });
