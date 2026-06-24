@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-suggestion-name -->
+<!-- whatimado build: 2026-06-24-loader-pulse -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-suggestion-name">
+  <meta name="whatimado-build" content="2026-06-24-loader-pulse">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1130,6 +1130,8 @@
       height: 78px;
       width: auto;
       mix-blend-mode: normal;
+      transform-origin: center center;
+      animation: loader-logo-pulse 1.65s ease-in-out infinite;
     }
 
     .nav {
@@ -4553,6 +4555,16 @@
       pointer-events: none;
     }
 
+    .loader.hidden .loader-logo {
+      animation: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .loader-logo {
+        animation: none;
+      }
+    }
+
     .loader-inner {
       display: grid;
       gap: 1.15rem;
@@ -5296,6 +5308,16 @@
       50% {
         transform: scale(.82);
         opacity: .65;
+      }
+    }
+
+    @keyframes loader-logo-pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
       }
     }
 
@@ -10250,6 +10272,8 @@
       updateMapAuxiliaryPanels();
       prefillSuggestionName();
     }
+
+    async function initAuth() {
       if (!supabaseClient) {
         await loadSession();
         return;
@@ -11036,6 +11060,13 @@
     }
 
     window.addEventListener("load", async () => {
+      const loaderFallbackTimer = setTimeout(() => {
+        if (!$("#loader")?.classList.contains("hidden")) {
+          console.warn("Loader fallback: init took longer than expected.");
+          dismissLoader();
+        }
+      }, 12000);
+
       try {
         initColorScheme();
         bindEvents();
@@ -11043,7 +11074,10 @@
         initMarioClouds();
         initNetworkCanvas();
         initDonation();
-        await initAuth();
+        await Promise.race([
+          initAuth(),
+          new Promise((resolve) => setTimeout(resolve, 8000))
+        ]);
         window.addEventListener("pagehide", trackIntakeAbandonment);
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "hidden") trackIntakeAbandonment();
@@ -11057,6 +11091,7 @@
       } catch (error) {
         console.error("App init failed:", error);
       } finally {
+        clearTimeout(loaderFallbackTimer);
         initSiteJingle();
         scheduleLoaderDismiss(650);
       }
