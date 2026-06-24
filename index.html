@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-update-banner-jingle -->
+<!-- whatimado build: 2026-06-24-suggest-nav -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-update-banner-jingle">
+  <meta name="whatimado-build" content="2026-06-24-suggest-nav">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -173,9 +173,9 @@
       --rose: #ff4757;
       --html-bg: #5baaff;
       --bg-gradient: linear-gradient(180deg, #9fd4ff 0%, #5baaff 52%, #4a96e8 100%);
-      --header-bg: #2a5088;
-      --header-border: rgba(255, 255, 255, .14);
-      --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 8px 28px rgba(18, 40, 72, .28);
+      --header-bg: linear-gradient(180deg, rgba(255, 255, 255, .95) 0%, rgba(240, 248, 255, .92) 100%);
+      --header-border: rgba(232, 35, 26, .16);
+      --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .88), 0 8px 28px rgba(42, 80, 136, .12);
       --logo-gradient: linear-gradient(135deg, #ffc926 0%, #e8231a 46%, #00a800 100%);
       --network-line-rgb: 255, 201, 38;
       --browser-theme-color: #5baaff;
@@ -428,8 +428,8 @@
     }
 
     [data-color-scheme="mario"] .logo-text span {
-      color: rgba(255, 255, 255, .72);
-      -webkit-text-fill-color: rgba(255, 255, 255, .72);
+      color: var(--muted);
+      -webkit-text-fill-color: var(--muted);
     }
 
     [data-color-scheme="mario"] .nav-drawer {
@@ -507,8 +507,13 @@
     }
 
     [data-color-scheme="mario"] .nav-hamburger[aria-expanded="true"] {
-      background: rgba(232, 35, 26, .1);
-      border-color: rgba(232, 35, 26, .34);
+      background: linear-gradient(180deg, #fff 0%, #dff0ff 100%);
+      border-color: #e8231a;
+      box-shadow: 0 2px 12px rgba(232, 35, 26, .22), inset 0 1px 0 rgba(255, 255, 255, .95);
+    }
+
+    [data-color-scheme="mario"] .nav-hamburger[aria-expanded="true"] .nav-hamburger-line {
+      background: #e8231a;
     }
 
     [data-color-scheme="mario"] .stats-kicker-accent {
@@ -611,33 +616,7 @@
     }
 
     [data-color-scheme="mario"] .app-header {
-      background: var(--map-node-royal-strong);
-      border-bottom: 2px solid rgba(232, 35, 26, .28);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
-    [data-color-scheme="mario"] .app-header .nav-group {
-      background: rgba(255, 255, 255, .08);
-      border-color: rgba(255, 255, 255, .12);
-    }
-
-    [data-color-scheme="mario"] .app-header .nav-btn {
-      color: rgba(255, 255, 255, .84);
-    }
-
-    [data-color-scheme="mario"] .app-header .nav-btn:hover:not(.active):not(.donate-btn):not(.nav-cart):not(.primary) {
-      color: #fff;
-      background: rgba(255, 255, 255, .12);
-    }
-
-    [data-color-scheme="mario"] .app-header .nav-theme-btn {
-      color: rgba(255, 255, 255, .72);
-    }
-
-    [data-color-scheme="mario"] .app-header .nav-user,
-    [data-color-scheme="mario"] .app-header .nav-user #nav-username {
-      color: rgba(255, 255, 255, .78);
+      border-bottom: 2px solid rgba(232, 35, 26, .22);
     }
 
     [data-color-scheme="mario"] .scroll-progress {
@@ -687,7 +666,6 @@
       background: color-mix(in srgb, #e8231a 88%, transparent);
       backdrop-filter: blur(10px) saturate(140%);
       -webkit-backdrop-filter: blur(10px) saturate(140%);
-    }
       box-shadow: 0 8px 22px rgba(232, 35, 26, .28), inset 0 1px 0 rgba(255, 255, 255, .45);
     }
 
@@ -1406,8 +1384,8 @@
     .site-update-banner {
       position: relative;
       overflow: hidden;
-      border-top: 1px solid rgba(120, 130, 200, .14);
-      background: rgba(255, 255, 255, .04);
+      border-top: 1px solid rgba(42, 80, 136, .1);
+      background: transparent;
     }
 
     .site-update-banner-viewport {
@@ -1433,14 +1411,14 @@
     }
 
     .site-update-banner-item {
-      color: rgba(210, 232, 255, .88);
+      color: #2a5088;
       font-size: .68rem;
       font-weight: 600;
       letter-spacing: .01em;
     }
 
     .site-update-banner-dot {
-      color: rgba(124, 111, 205, .72);
+      color: #4a6594;
       font-size: .52rem;
       line-height: 1;
     }
@@ -1456,16 +1434,16 @@
     }
 
     [data-color-scheme="mario"] .site-update-banner {
-      border-top-color: rgba(255, 255, 255, .12);
-      background: rgba(18, 40, 72, .34);
+      border-top-color: rgba(42, 80, 136, .1);
+      background: transparent;
     }
 
     [data-color-scheme="mario"] .site-update-banner-item {
-      color: rgba(255, 255, 255, .9);
+      color: var(--ink);
     }
 
     [data-color-scheme="mario"] .site-update-banner-dot {
-      color: #ffc926;
+      color: var(--ink-muted);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1875,6 +1853,122 @@
       color: rgba(200, 204, 238, .82);
       font-size: .78rem;
       font-weight: 700;
+    }
+
+    [data-color-scheme="mario"] .nav-overlay.is-visible {
+      background: rgba(91, 170, 255, .32);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .84) 0%, rgba(224, 240, 255, .78) 100%);
+      backdrop-filter: blur(14px) saturate(145%);
+      -webkit-backdrop-filter: blur(14px) saturate(145%);
+      border-color: rgba(42, 80, 136, .16);
+      border-top: 3px solid #e8231a;
+      box-shadow: 0 20px 52px rgba(42, 80, 136, .16);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-head {
+      border-bottom-color: rgba(42, 80, 136, .12);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-head-title {
+      color: var(--ink);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-head-sub {
+      color: var(--ink-muted);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-section {
+      background: rgba(255, 255, 255, .58);
+      border-color: rgba(42, 80, 136, .12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer-label {
+      color: #c41e16;
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn,
+    [data-color-scheme="mario"] .nav-drawer .nav-theme-btn {
+      color: var(--ink);
+      background: rgba(255, 255, 255, .88);
+      border-color: rgba(42, 80, 136, .18);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn[data-screen-link]::after {
+      border-color: var(--ink-muted);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn:hover:not(.active):not(.donate-btn):not(.primary),
+    [data-color-scheme="mario"] .nav-drawer .nav-theme-btn:hover {
+      color: var(--ink);
+      background: rgba(232, 244, 255, .95);
+      border-color: rgba(91, 170, 255, .45);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.active {
+      color: #fff;
+      background: #e8231a;
+      border-color: #c41e16;
+      box-shadow: inset 3px 0 0 #ffc926;
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.active[data-screen-link]::after {
+      border-color: rgba(255, 255, 255, .82);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-theme-btn[aria-pressed="true"] {
+      color: #fff;
+      background: #e8231a;
+      border-color: #c41e16;
+      box-shadow: inset 3px 0 0 #ffc926;
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.primary {
+      color: #fff;
+      background: #e8231a;
+      border-color: #c41e16;
+      box-shadow: 0 4px 16px rgba(232, 35, 26, .24);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.donate-btn {
+      color: var(--ink);
+      background: rgba(255, 255, 255, .88);
+      border-color: rgba(232, 35, 26, .28);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.save-btn {
+      color: var(--ink);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.save-btn.is-saved {
+      color: #2d7a35;
+      background: rgba(232, 244, 255, .92);
+      border-color: rgba(67, 176, 71, .45);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.save-btn.is-error {
+      color: #c41e16;
+      background: rgba(255, 240, 240, .92);
+      border-color: rgba(232, 35, 26, .34);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.nav-cart {
+      color: var(--ink);
+      background: rgba(232, 244, 255, .92);
+      border-color: rgba(42, 80, 136, .2);
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-btn.nav-cart.has-items {
+      color: #fff;
+      background: #2a5088;
+      border-color: #1e3d66;
+    }
+
+    [data-color-scheme="mario"] .nav-drawer .nav-user #nav-username {
+      color: var(--ink-muted);
     }
 
     body.nav-menu-open {
@@ -3101,6 +3195,7 @@
     .site-suggestions {
       margin-top: .25rem;
       padding: 1rem 1.1rem;
+      scroll-margin-top: calc(var(--header-h) + 14px);
       border: 1px solid var(--light-blue-border);
       border-radius: var(--radius-md);
       background: var(--light-blue-bg);
@@ -4504,9 +4599,9 @@
 
     .header-jingle-stack {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      gap: .18rem;
+      gap: .5rem;
       min-width: 0;
     }
 
@@ -4519,10 +4614,17 @@
       color: var(--muted);
       font-size: .56rem;
       font-weight: 600;
-      line-height: 1.2;
+      line-height: 1.25;
       letter-spacing: .01em;
-      text-align: center;
-      white-space: nowrap;
+      text-align: left;
+      max-width: 10.5rem;
+      white-space: normal;
+    }
+
+    .jingle-credit-heart {
+      color: #fff;
+      -webkit-text-stroke: .35px rgba(42, 80, 136, .42);
+      filter: drop-shadow(0 0 1px rgba(232, 35, 26, .28));
     }
 
     .jingle-offer-play {
@@ -4618,7 +4720,7 @@
     }
 
     [data-color-scheme="mario"] .jingle-credit {
-      color: rgba(255, 255, 255, .72);
+      color: var(--muted);
     }
 
     [data-color-scheme="mario"] .jingle-offer-play {
@@ -4692,6 +4794,7 @@
       }
 
       .header-jingle-stack {
+        flex-direction: column;
         align-items: flex-end;
       }
 
@@ -5914,7 +6017,7 @@
                   <div class="header-jingle-main">
                     <div class="header-jingle-stack">
                       <button type="button" class="jingle-offer-play" id="jingle-offer-play"><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
-                      <p class="jingle-credit">Sung by Ivy, age 8 · tap once to play</p>
+                      <p class="jingle-credit">Sung by my daughter Ivy, age 8 <span class="jingle-credit-heart" aria-hidden="true">♥</span> · tap once to play</p>
                     </div>
                   </div>
                   <div class="jingle-offer-actions">
@@ -5924,7 +6027,7 @@
                 </div>
                 <div class="header-jingle-stack" id="jingle-replay-stack" hidden>
                   <button type="button" class="jingle-replay-btn" id="jingle-replay-btn" hidden><span class="jingle-btn-text jingle-btn-text--desktop">Hear the jingle ♪</span><span class="jingle-btn-text jingle-btn-text--mobile">Hear the Jingle</span></button>
-                  <p class="jingle-credit">Sung by Ivy, age 8</p>
+                  <p class="jingle-credit">Sung by my daughter Ivy, age 8 <span class="jingle-credit-heart" aria-hidden="true">♥</span></p>
                 </div>
               </div>
               <button class="nav-hamburger" id="nav-hamburger-btn" type="button" aria-expanded="false" aria-controls="nav-drawer" aria-label="Open menu">
@@ -5961,6 +6064,7 @@
                 <p class="nav-drawer-label">Support</p>
                 <div class="nav-group nav-group--actions">
                   <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
+                  <button class="nav-btn" type="button" id="nav-suggest-btn">Suggest an improvement</button>
                   <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress">Save</button>
                   <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
                     Cart
@@ -6005,6 +6109,8 @@
             <span class="site-update-banner-dot" aria-hidden="true">✦</span>
             <span class="site-update-banner-item">Don't see a change you suggested? Please let us know.</span>
             <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+            <span class="site-update-banner-item">The Suggest an improvement box is at the bottom of the home page.</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
             <span class="site-update-banner-item">We'll do our best to accommodate all reasonable adjustments.</span>
             <span class="site-update-banner-dot" aria-hidden="true">✦</span>
             <span class="site-update-banner-item">Thank you for your contributions!</span>
@@ -6014,6 +6120,8 @@
             <span class="site-update-banner-item">We've implemented several changes based on your suggestions — thank you!</span>
             <span class="site-update-banner-dot" aria-hidden="true">✦</span>
             <span class="site-update-banner-item">Don't see a change you suggested? Please let us know.</span>
+            <span class="site-update-banner-dot" aria-hidden="true">✦</span>
+            <span class="site-update-banner-item">The Suggest an improvement box is at the bottom of the home page.</span>
             <span class="site-update-banner-dot" aria-hidden="true">✦</span>
             <span class="site-update-banner-item">We'll do our best to accommodate all reasonable adjustments.</span>
             <span class="site-update-banner-dot" aria-hidden="true">✦</span>
@@ -6098,7 +6206,7 @@
             </div>
           </section>
 
-          <section class="site-suggestions" aria-label="Suggest a site improvement">
+          <section class="site-suggestions" id="site-suggestions" aria-label="Suggest a site improvement">
             <h3 class="site-suggestions-title">Suggest an improvement</h3>
             <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion. Signed-in users may get to vote on which ideas ship first.</p>
             <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
@@ -8389,7 +8497,7 @@
       $("#nav-maps-btn")?.classList.toggle("active", name === "map" || name === "maps");
       if (name === "convo") {
         scrollConversation();
-      } else {
+      } else if (!options.skipScrollTop) {
         window.scrollTo({ top: 0, behavior: options.skipPersist ? "auto" : "smooth" });
       }
       if (!options.skipPersist) schedulePersist();
@@ -8404,6 +8512,19 @@
         refreshLaunchStats();
       }
       requestAnimationFrame(updateScrollProgress);
+    }
+
+    function scrollToSiteSuggestions(source = "nav_drawer") {
+      showScreen("main", { skipScrollTop: true });
+      requestAnimationFrame(() => {
+        const target = $("#site-suggestions");
+        if (!target) return;
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        window.setTimeout(() => {
+          $("#site-suggestion-input")?.focus({ preventScroll: true });
+        }, 450);
+      });
+      trackEvent("suggest_nav_click", { source });
     }
 
     function addUserBubble(text) {
@@ -10348,6 +10469,7 @@
       hamburger.addEventListener("click", toggleMenu);
       overlay.addEventListener("click", closeMenu);
       $("#nav-donate-btn")?.addEventListener("click", closeMenu);
+      $("#nav-suggest-btn")?.addEventListener("click", () => scrollToSiteSuggestions("nav_drawer"));
 
       drawer.querySelectorAll("button, a[data-screen-link]").forEach((element) => {
         if (element.matches("[data-theme-option]")) return;
