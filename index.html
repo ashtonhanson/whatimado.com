@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-adventure-theme -->
+<!-- whatimado build: 2026-06-24-adventure-horizon-titles -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-adventure-theme">
+  <meta name="whatimado-build" content="2026-06-24-adventure-horizon-titles">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -28,12 +28,56 @@
     (() => {
       const key = "whatimado_color_scheme";
       const schemes = ["midnight", "ocean", "sunset", "mario"];
+      const shells = {
+        midnight: {
+          html: "#07111f",
+          loader: "linear-gradient(180deg, #1a3a5c 0%, #07111f 100%)",
+          theme: "#07080f"
+        },
+        ocean: {
+          html: "#041d26",
+          loader: "linear-gradient(180deg, #0c4d5b 0%, #041d26 100%)",
+          theme: "#041d26"
+        },
+        sunset: {
+          html: "#1b0f20",
+          loader: "linear-gradient(180deg, #583045 0%, #1b0f20 100%)",
+          theme: "#1b0f20"
+        },
+        mario: {
+          html: "#4a9fe8",
+          loader: "linear-gradient(180deg, #a8dcff 0%, #96d4ff 20%, #7ec8ff 38%, #4a9fe8 74%, #3d8fd9 100%)",
+          theme: "#4a9fe8"
+        }
+      };
+      let scheme = "midnight";
       try {
         const saved = localStorage.getItem(key);
-        document.documentElement.dataset.colorScheme = schemes.includes(saved) ? saved : "midnight";
+        if (schemes.includes(saved)) scheme = saved;
       } catch {
-        document.documentElement.dataset.colorScheme = "midnight";
+        /* ignore storage errors */
       }
+      document.documentElement.dataset.colorScheme = scheme;
+      const shell = shells[scheme] || shells.midnight;
+      document.documentElement.style.background = shell.html;
+      document.documentElement.style.colorScheme = scheme === "mario" ? "light" : "dark";
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", shell.theme);
+      const critical = document.createElement("style");
+      critical.id = "critical-shell";
+      critical.textContent = `
+        html, body { min-height: 100%; margin: 0; }
+        body { background: transparent; }
+        #loader {
+          position: fixed;
+          inset: 0;
+          z-index: 2147483647;
+          display: grid;
+          place-items: center;
+          background: ${shell.loader};
+        }
+      `;
+      document.head.appendChild(critical);
     })();
   </script>
   <link rel="icon" href="/favicon.png" type="image/png">
@@ -41,7 +85,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -184,7 +228,18 @@
       --green: var(--adv-grass);
       --rose: #ff4757;
       --html-bg: var(--adv-sky-deep);
-      --bg-gradient: linear-gradient(180deg, #a8dcff 0%, #7ec8ff 34%, #4a9fe8 72%, #3d8fd9 100%);
+      --bg-gradient: linear-gradient(180deg, #a8dcff 0%, #96d4ff 20%, #7ec8ff 38%, #66b8f2 56%, #4a9fe8 74%, #4296e4 88%, #3d8fd9 100%);
+      --adv-title-shadow:
+        0 1px 0 rgba(35, 62, 108, .92),
+        0 2px 0 rgba(35, 62, 108, .68),
+        0 3px 0 rgba(35, 62, 108, .42),
+        0 5px 14px rgba(35, 62, 108, .38),
+        0 0 24px rgba(255, 255, 255, .16);
+      --adv-title-accent-shadow:
+        0 1px 0 rgba(107, 69, 40, .82),
+        0 2px 0 rgba(107, 69, 40, .54),
+        0 4px 12px rgba(107, 69, 40, .34),
+        0 0 22px rgba(244, 185, 66, .28);
       --header-bg: linear-gradient(180deg, rgba(255, 248, 235, .96) 0%, rgba(255, 255, 255, .93) 100%);
       --header-border: rgba(107, 69, 40, .16);
       --header-shadow: inset 0 1px 0 rgba(255, 255, 255, .92), 0 6px 24px rgba(42, 80, 136, .1);
@@ -367,18 +422,39 @@
         radial-gradient(ellipse 60% 40% at 82% 18%, rgba(255, 248, 235, .22) 0%, transparent 50%);
     }
 
+    .adv-horizon-mist {
+      position: absolute;
+      left: -12%;
+      right: -12%;
+      top: 34%;
+      height: min(34vh, 280px);
+      background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(168, 220, 255, .16) 24%,
+        rgba(126, 200, 255, .28) 48%,
+        rgba(92, 184, 92, .1) 72%,
+        transparent 100%
+      );
+      filter: blur(1.5px);
+      pointer-events: none;
+      z-index: 1;
+    }
+
     .adv-mountains {
       position: absolute;
-      left: -5%;
-      right: -5%;
-      bottom: 16%;
-      height: min(32vh, 260px);
-      opacity: .72;
+      left: -8%;
+      right: -8%;
+      bottom: 6%;
+      height: min(36vh, 290px);
+      opacity: .56;
       background:
         radial-gradient(ellipse 38% 100% at 12% 100%, rgba(107, 69, 40, .42) 0%, transparent 68%),
         radial-gradient(ellipse 34% 88% at 38% 100%, rgba(139, 94, 60, .34) 0%, transparent 66%),
         radial-gradient(ellipse 40% 95% at 68% 100%, rgba(107, 69, 40, .38) 0%, transparent 68%),
         radial-gradient(ellipse 32% 82% at 90% 100%, rgba(139, 94, 60, .3) 0%, transparent 64%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 38%, rgba(0, 0, 0, 0) 96%);
+      mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 38%, rgba(0, 0, 0, 0) 96%);
       animation: adv-mountain-drift 48s ease-in-out infinite alternate;
     }
 
@@ -390,16 +466,20 @@
     }
 
     .adv-hills--back {
-      height: min(24vh, 190px);
-      background: linear-gradient(180deg, rgba(92, 184, 92, .18) 0%, rgba(61, 139, 74, .62) 58%, rgba(47, 120, 62, .82) 100%);
-      clip-path: polygon(0 100%, 0 52%, 7% 44%, 14% 56%, 22% 38%, 31% 50%, 40% 34%, 50% 48%, 60% 32%, 70% 46%, 80% 36%, 90% 50%, 100% 40%, 100% 100%);
+      height: min(28vh, 220px);
+      background: linear-gradient(180deg, transparent 0%, rgba(92, 184, 92, .1) 30%, rgba(61, 139, 74, .52) 72%, rgba(47, 120, 62, .78) 100%);
+      clip-path: polygon(0 100%, 0 58%, 7% 48%, 14% 58%, 22% 42%, 31% 54%, 40% 38%, 50% 52%, 60% 36%, 70% 50%, 80% 40%, 90% 54%, 100% 44%, 100% 100%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 52%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 52%, rgba(0, 0, 0, 0) 100%);
       animation: adv-hill-drift 36s ease-in-out infinite alternate;
     }
 
     .adv-hills--front {
-      height: min(15vh, 120px);
-      background: linear-gradient(180deg, rgba(122, 201, 122, .72) 0%, rgba(61, 139, 74, .92) 100%);
-      clip-path: polygon(0 100%, 0 58%, 10% 48%, 20% 62%, 30% 46%, 42% 60%, 54% 42%, 66% 58%, 78% 44%, 90% 56%, 100% 46%, 100% 100%);
+      height: min(18vh, 140px);
+      background: linear-gradient(180deg, transparent 0%, rgba(122, 201, 122, .42) 42%, rgba(61, 139, 74, .88) 100%);
+      clip-path: polygon(0 100%, 0 62%, 10% 52%, 20% 64%, 30% 50%, 42% 62%, 54% 46%, 66% 60%, 78% 48%, 90% 58%, 100% 50%, 100% 100%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 58%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 58%, rgba(0, 0, 0, 0) 100%);
       box-shadow: inset 0 8px 24px rgba(255, 255, 255, .12);
       animation: adv-hill-drift 28s ease-in-out infinite alternate-reverse;
     }
@@ -429,27 +509,57 @@
       50% { box-shadow: 0 0 0 6px rgba(244, 185, 66, .12); }
     }
 
-    [data-color-scheme="mario"] .hero h1 {
+    [data-color-scheme="mario"] .hero h1,
+    [data-color-scheme="mario"] .hero h1 span,
+    [data-color-scheme="mario"] #screen-map .page-title,
+    [data-color-scheme="mario"] #screen-maps .maps-page-title,
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-title,
+    [data-color-scheme="mario"] .stats-title-light {
       color: #fff;
-      text-shadow: 0 2px 0 rgba(42, 80, 136, .22), 0 6px 22px rgba(42, 80, 136, .18);
+      font-weight: 800;
+      text-shadow: var(--adv-title-shadow);
     }
 
-    [data-color-scheme="mario"] .hero h1 span {
-      color: #fff;
-    }
-
-    [data-color-scheme="mario"] .hero h1 em {
+    [data-color-scheme="mario"] .hero h1 em,
+    [data-color-scheme="mario"] #screen-map .page-title em,
+    [data-color-scheme="mario"] .stats-title-accent {
       color: var(--adv-gold);
-      text-shadow: 0 1px 0 rgba(107, 69, 40, .25);
+      text-shadow: var(--adv-title-accent-shadow);
+    }
+
+    [data-color-scheme="mario"] .map-heading-kicker,
+    [data-color-scheme="mario"] #screen-roadmap .roadmap-type,
+    [data-color-scheme="mario"] #screen-maps .maps-page-kicker {
+      color: #fff;
+      text-shadow:
+        0 1px 0 rgba(35, 62, 108, .78),
+        0 2px 8px rgba(35, 62, 108, .42);
+    }
+
+    [data-color-scheme="mario"] .map-heading-kicker::before {
+      background: var(--adv-coral);
+      box-shadow: 0 0 10px rgba(224, 90, 79, .55);
+    }
+
+    [data-color-scheme="mario"] .map-center-label {
+      fill: #fff !important;
+      stroke: rgba(35, 62, 108, .72);
+      stroke-width: 2.75px;
+      paint-order: stroke fill;
+      filter: drop-shadow(0 2px 6px rgba(35, 62, 108, .35));
+    }
+
+    [data-color-scheme="mario"] .map-node-text {
+      fill: var(--map-node-royal-strong) !important;
+      font-weight: 800;
+      filter: drop-shadow(0 1px 2px rgba(255, 255, 255, .45));
     }
 
     [data-color-scheme="mario"] .hero-sub,
     [data-color-scheme="mario"] .stats-sub,
     [data-color-scheme="mario"] .stats-kicker-light,
     [data-color-scheme="mario"] #screen-map .page-subtitle,
-    [data-color-scheme="mario"] #screen-roadmap .roadmap-type,
     [data-color-scheme="mario"] #screen-roadmap .roadmap-sub,
-    [data-color-scheme="mario"] #screen-maps .maps-page-kicker,
     [data-color-scheme="mario"] #screen-maps .maps-page-sub {
       color: var(--ink-muted);
       text-shadow: none;
@@ -457,10 +567,6 @@
 
     [data-color-scheme="mario"] .hero-sub {
       font-weight: 500;
-    }
-
-    [data-color-scheme="mario"] .map-heading-kicker {
-      color: var(--adv-coral);
     }
 
     [data-color-scheme="mario"] .bubble.ai {
@@ -654,12 +760,10 @@
 
     [data-color-scheme="mario"] .stats-title-light {
       color: #fff;
-      text-shadow: 1px 2px 0 rgba(42, 80, 136, .2);
     }
 
     [data-color-scheme="mario"] .stats-title-accent {
-      color: var(--adv-coral);
-      text-shadow: 1px 1px 0 rgba(255, 255, 255, .55);
+      color: var(--adv-gold);
     }
 
     [data-color-scheme="mario"] #screen-stats .stats-card,
@@ -804,18 +908,6 @@
       background: var(--adv-coral-dark);
     }
 
-    [data-color-scheme="mario"] .pill {
-      background: rgba(255, 255, 255, .78);
-      border-color: rgba(42, 80, 136, .14);
-      color: var(--adv-coral);
-    }
-
-    [data-color-scheme="mario"] .pill:hover {
-      background: #fff;
-      border-color: rgba(232, 35, 26, .34);
-      color: var(--adv-brown-dark);
-    }
-
     [data-color-scheme="mario"] .saved-maps-home {
       background: rgba(255, 255, 255, .84);
       border-color: rgba(42, 80, 136, .12);
@@ -899,19 +991,15 @@
       color: var(--muted);
     }
 
-    [data-color-scheme="mario"] #screen-map .page-title {
-      color: #fff;
-      text-shadow: 1px 2px 0 rgba(42, 80, 136, .2);
-    }
-
     [data-color-scheme="mario"] #screen-map .page-title em {
-      color: var(--adv-coral);
-      text-shadow: 1px 1px 0 rgba(255, 255, 255, .55);
+      color: var(--adv-gold);
     }
 
     [data-color-scheme="mario"] .map-plans-divider-label {
       color: #fff;
-      text-shadow: 1px 2px 0 rgba(42, 80, 136, .18);
+      text-shadow:
+        0 1px 0 rgba(35, 62, 108, .72),
+        0 2px 8px rgba(35, 62, 108, .35);
     }
 
     [data-color-scheme="mario"] .map-plans-toolbar-line {
@@ -932,18 +1020,10 @@
       filter: none !important;
     }
 
-    [data-color-scheme="mario"] .map-center-label {
-      fill: var(--map-node-royal-strong) !important;
-    }
-
     [data-color-scheme="mario"] .map-node-circle {
       fill: #fff !important;
       fill-opacity: .22 !important;
       stroke: #fff !important;
-    }
-
-    [data-color-scheme="mario"] .map-node-text {
-      fill: var(--map-node-royal-strong) !important;
     }
 
     [data-color-scheme="mario"] .map-node:hover .map-node-circle,
@@ -1038,7 +1118,7 @@
     }
 
     [data-color-scheme="mario"] #screen-roadmap .roadmap-title {
-      color: rgba(255, 255, 255, .94);
+      color: #fff;
     }
 
     [data-color-scheme="mario"] #screen-roadmap .roadmap-back-btn,
@@ -1068,7 +1148,6 @@
 
     [data-color-scheme="mario"] #screen-maps .maps-page-title {
       color: #fff;
-      text-shadow: 1px 2px 0 rgba(42, 80, 136, .2);
     }
 
     [data-color-scheme="mario"] #screen-maps .back-btn,
@@ -1144,7 +1223,7 @@
       font-weight: 800;
       letter-spacing: .08em;
       text-transform: uppercase;
-      text-shadow: 0 1px 0 rgba(107, 69, 40, .18);
+      text-shadow: var(--adv-title-accent-shadow);
     }
 
     [data-color-scheme="mario"] .prompt-box {
@@ -1331,7 +1410,6 @@
 
     [data-color-scheme="mario"] .opp-type,
     [data-color-scheme="mario"] .map-how-title,
-    [data-color-scheme="mario"] .map-heading-kicker,
     [data-color-scheme="mario"] .home-testimonials-kicker,
     [data-color-scheme="mario"] .stats-kicker-accent {
       color: var(--adv-coral);
@@ -1339,10 +1417,6 @@
 
     [data-color-scheme="mario"] .opp-why {
       border-left-color: var(--adv-gold);
-    }
-
-    [data-color-scheme="mario"] #screen-map .page-title em {
-      color: var(--adv-gold);
     }
 
     [data-color-scheme="mario"] .stage-card {
@@ -2713,11 +2787,11 @@
     }
 
     .pill {
-      border: 1px solid rgba(144, 212, 255, .35);
+      border: 1px solid rgba(160, 170, 220, .42);
       border-radius: 999px;
       padding: .4rem .9rem;
-      color: var(--brand-purple-dark);
-      background: color-mix(in srgb, var(--light-blue-bg) 84%, transparent);
+      color: var(--ink-muted);
+      background: rgba(255, 255, 255, .08);
       backdrop-filter: blur(10px) saturate(140%);
       -webkit-backdrop-filter: blur(10px) saturate(140%);
       font-size: .72rem;
@@ -2725,8 +2799,9 @@
     }
 
     .pill:hover {
-      color: var(--brand-purple-dark);
-      background: var(--light-blue-bg-hover);
+      color: var(--ink);
+      background: rgba(255, 255, 255, .14);
+      border-color: rgba(155, 143, 224, .52);
     }
 
     .ai-difference {
@@ -6674,6 +6749,7 @@
   <div id="mario-clouds" aria-hidden="true" hidden></div>
   <div id="adventure-scenery" aria-hidden="true" hidden>
     <div class="adv-sky-glow"></div>
+    <div class="adv-horizon-mist"></div>
     <div class="adv-mountains"></div>
     <div class="adv-hills adv-hills--back"></div>
     <div class="adv-hills adv-hills--front"></div>
@@ -6845,7 +6921,6 @@
           <button class="pill" data-prompt="I am creative and artistic">creative</button>
           <button class="pill" data-prompt="I have no money but I have time and hustle">starting from zero</button>
           <button class="pill" data-prompt="I feel stuck and don't know my next step in life">feeling stuck</button>
-          <button class="pill" data-prompt="I'm rebuilding after a hard time and need a realistic path forward">rebuilding</button>
           </div>
 
           <section class="ai-difference" aria-label="How whatimado is different from general AI chatbots">
@@ -10343,7 +10418,7 @@
       const centerFilterAttr = isMarioMap ? "" : ' filter="url(#svg-glow)"';
       const centerLabelFill = isMarioMap ? marioMapRoyalStrong : "#fff";
       const centerLabelText = isMarioMap ? "Base Camp" : "You";
-      const centerLabelSize = isMarioMap ? "11" : "14";
+      const centerLabelSize = isMarioMap ? "12" : "14";
       const marioLineColor = "#ffffff";
       const marioNodeFill = "#ffffff";
       const marioNodeText = marioMapRoyalStrong;
