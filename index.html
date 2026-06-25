@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-17-map-chat-polish -->
+<!-- whatimado build: 2026-06-24-ui-contrast -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-17-map-chat-polish">
+  <meta name="whatimado-build" content="2026-06-24-ui-contrast">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -211,7 +211,6 @@
     [data-color-scheme="mario"] .opp-card,
     [data-color-scheme="mario"] .opp-label.surface-card,
     [data-color-scheme="mario"] .map-how-it-works,
-    [data-color-scheme="mario"] .map-feedback-card,
     [data-color-scheme="mario"] .map-sync-nudge,
     [data-color-scheme="mario"] .map-library-card,
     [data-color-scheme="mario"] .site-suggestions,
@@ -410,7 +409,22 @@
     }
 
     [data-color-scheme="mario"] .nav-theme-btn {
+      color: var(--ink);
+    }
+
+    [data-color-scheme="mario"] .nav-theme-btn[aria-pressed="true"] {
+      color: #fff;
+      background: #e8231a;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24), inset 3px 0 0 #ffc926;
+    }
+
+    [data-color-scheme="mario"] .logo-text,
+    [data-color-scheme="mario"] .logo-text span {
+      background: none;
+      -webkit-background-clip: unset;
+      background-clip: unset;
       color: var(--muted);
+      -webkit-text-fill-color: var(--muted);
     }
 
     [data-color-scheme="mario"] .logo-icon img {
@@ -430,11 +444,6 @@
 
     [data-color-scheme="mario"] .nav-hamburger-line {
       background: var(--ink);
-    }
-
-    [data-color-scheme="mario"] .logo-text span {
-      color: var(--muted);
-      -webkit-text-fill-color: var(--muted);
     }
 
     [data-color-scheme="mario"] .nav-drawer {
@@ -621,7 +630,7 @@
     }
 
     [data-color-scheme="mario"] .app-header-nav-wrap {
-      border-bottom: 2px solid rgba(232, 35, 26, .22);
+      border-bottom: 0;
     }
 
     [data-color-scheme="mario"] .scroll-progress {
@@ -950,18 +959,49 @@
     }
 
     [data-color-scheme="mario"] .reply-map-btn {
-      border-color: rgba(42, 80, 136, .28);
-      background: rgba(255, 255, 255, .72);
-      color: var(--ink);
+      border-color: rgba(91, 170, 255, .72);
+      background: linear-gradient(180deg, #dff0ff 0%, #b8dcff 100%);
+      color: #2a5088;
     }
 
     [data-color-scheme="mario"] .reply-map-btn:hover {
-      background: rgba(255, 255, 255, .9);
+      background: linear-gradient(180deg, #eef7ff 0%, #c8e4ff 100%);
+      border-color: rgba(232, 35, 26, .35);
+    }
+
+    [data-color-scheme="mario"] .reply-map-btn--ghost {
+      background: rgba(255, 255, 255, .72);
+      color: #4a6594;
     }
 
     [data-color-scheme="mario"] .opp-card-discuss-btn {
-      border-color: rgba(42, 80, 136, .22);
-      background: rgba(255, 255, 255, .72);
+      border: 1.5px solid rgba(91, 170, 255, .72);
+      background: linear-gradient(180deg, #dff0ff 0%, #b8dcff 100%);
+      color: #2a5088;
+    }
+
+    [data-color-scheme="mario"] .opp-card-discuss-btn:hover {
+      border-color: rgba(232, 35, 26, .35);
+      background: linear-gradient(180deg, #eef7ff 0%, #c8e4ff 100%);
+    }
+
+    [data-color-scheme="mario"] .map-feedback-title {
+      color: var(--ink);
+    }
+
+    [data-color-scheme="mario"] .map-feedback-btn {
+      border: 1.5px solid rgba(91, 170, 255, .72);
+      background: linear-gradient(180deg, #dff0ff 0%, #b8dcff 100%);
+      color: #2a5088;
+    }
+
+    [data-color-scheme="mario"] .map-feedback-btn:hover {
+      border-color: rgba(232, 35, 26, .35);
+      background: linear-gradient(180deg, #eef7ff 0%, #c8e4ff 100%);
+    }
+
+    [data-color-scheme="mario"] .map-feedback-thanks {
+      color: var(--ink-muted);
     }
 
     @media (max-width: 760px) {
@@ -1058,7 +1098,7 @@
     .app-header-nav-wrap {
       padding: .72rem 1.25rem .62rem;
       background: var(--header-bg);
-      border-bottom: 1px solid var(--header-border);
+      border-bottom: 0;
       backdrop-filter: blur(22px) saturate(150%);
       -webkit-backdrop-filter: blur(22px) saturate(150%);
       box-shadow: var(--header-shadow);
@@ -1488,14 +1528,14 @@
     }
 
     .site-update-banner-item {
-      color: #2a5088;
+      color: var(--ink-muted);
       font-size: .68rem;
       font-weight: 600;
       letter-spacing: .01em;
     }
 
     .site-update-banner-dot {
-      color: #4a6594;
+      color: var(--muted);
       font-size: .52rem;
       line-height: 1;
     }
@@ -1511,16 +1551,16 @@
     }
 
     [data-color-scheme="mario"] .site-update-banner {
-      border-top-color: rgba(42, 80, 136, .1);
-      background: transparent;
+      border-top: 0;
+      background: linear-gradient(180deg, rgba(223, 240, 255, .94) 0%, rgba(184, 220, 255, .9) 100%);
     }
 
     [data-color-scheme="mario"] .site-update-banner-item {
-      color: var(--ink);
+      color: #2a5088;
     }
 
     [data-color-scheme="mario"] .site-update-banner-dot {
-      color: var(--ink-muted);
+      color: #4a6594;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1783,17 +1823,20 @@
     .nav-drawer .nav-theme-btn {
       justify-content: center;
       min-height: 42px;
-      border: 1px solid rgba(120, 130, 200, .28);
+      border: 1px solid rgba(155, 143, 224, .42);
       border-radius: 12px;
       padding: .72rem .45rem;
-      background: rgba(24, 28, 46, .96);
-      color: rgba(240, 242, 255, .96);
+      background: rgba(30, 34, 53, .98);
+      color: #f0f2ff;
       font-size: .78rem;
+      font-weight: 700;
     }
 
     .nav-drawer .nav-theme-btn[aria-pressed="true"] {
-      border-color: var(--theme-active-border);
-      background: var(--theme-active-bg);
+      border-color: color-mix(in srgb, var(--purple) 70%, #ffffff);
+      background: color-mix(in srgb, var(--purple) 88%, transparent);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
     }
 
     .nav-drawer .nav-btn {
@@ -3139,7 +3182,16 @@
       margin-top: .25rem;
     }
 
-    .map-feedback-card,
+    .map-feedback-card {
+      margin-top: 1rem;
+      padding: .85rem 0 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      text-align: center;
+    }
+
     .map-sync-nudge {
       margin-top: 1rem;
       padding: 1rem 1.05rem;
@@ -3150,7 +3202,14 @@
       text-align: center;
     }
 
-    .map-feedback-title,
+    .map-feedback-title {
+      margin: 0 0 .7rem;
+      color: var(--ink);
+      font-size: .84rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
     .map-sync-nudge p {
       margin: 0 0 .7rem;
       color: var(--plan-card-ink);
@@ -3168,18 +3227,20 @@
 
     .map-feedback-btn {
       min-height: 38px;
-      border: 1px solid var(--map-control-border);
+      border: 1px solid color-mix(in srgb, var(--purple) 72%, #ffffff);
       border-radius: 999px;
       padding: .45rem .95rem;
-      background: var(--map-control-bg);
-      color: var(--plan-card-ink);
+      background: color-mix(in srgb, var(--purple) 92%, transparent);
+      color: #fff;
       font-size: .76rem;
       font-weight: 700;
+      transition: background .16s ease, border-color .16s ease, transform .16s ease;
     }
 
     .map-feedback-btn:hover {
-      background: var(--light-blue-bg-hover);
-      border-color: var(--light-blue-border);
+      background: var(--purple-2);
+      border-color: color-mix(in srgb, var(--purple-2) 72%, #ffffff);
+      transform: translateY(-1px);
     }
 
     .map-feedback-followup {
@@ -3216,7 +3277,7 @@
 
     .map-feedback-thanks {
       margin: .35rem 0 0;
-      color: var(--plan-card-muted);
+      color: var(--ink-muted);
       font-size: .76rem;
       font-weight: 600;
     }
@@ -3839,19 +3900,19 @@
       min-height: 38px;
       width: 100%;
       margin-bottom: .55rem;
-      border: 1px solid rgba(124, 111, 205, .35);
+      border: 1px solid color-mix(in srgb, var(--plan-card-ink) 28%, transparent);
       border-radius: 10px;
       padding: .55rem 1rem;
-      background: rgba(124, 111, 205, .1);
-      color: var(--ink);
+      background: rgba(255, 255, 255, .38);
+      color: var(--plan-card-ink);
       font-size: .8rem;
       font-weight: 700;
-      transition: background .16s ease, border-color .16s ease;
+      transition: background .16s ease, border-color .16s ease, color .16s ease;
     }
 
     .opp-card-discuss-btn:hover {
-      background: rgba(124, 111, 205, .18);
-      border-color: rgba(124, 111, 205, .5);
+      background: rgba(255, 255, 255, .58);
+      border-color: color-mix(in srgb, var(--plan-card-ink) 42%, transparent);
     }
 
     .roadmap-layout {
