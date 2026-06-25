@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-adventure-horizon-titles -->
+<!-- whatimado build: 2026-06-24-supabase-defer-fix -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-adventure-horizon-titles">
+  <meta name="whatimado-build" content="2026-06-24-supabase-defer-fix">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7293,7 +7293,13 @@
   <script>
     const SUPABASE_URL = "https://acgjcnhcjgtpoztntcyb.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjZ2pjbmhjamd0cG96dG50Y3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDU1MTgsImV4cCI6MjA5Njg4MTUxOH0.gEJfMFWjmsLTw2aKbjQhYDlPl_zvpjfxP8QskAN6ghQ";
-    const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let supabaseClient = null;
+    function ensureSupabaseClient() {
+      if (!supabaseClient && window.supabase) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      return supabaseClient;
+    }
     const FOUNDER_USER_ID = "3a861ded-c448-4662-9e27-9f4fc90966cf";
     const FOUNDER_EMAILS = new Set([
       "ashtonsemailis@gmail.com",
@@ -11490,6 +11496,7 @@
     }
 
     async function initAuth() {
+      ensureSupabaseClient();
       if (!supabaseClient) {
         await loadSession();
         return;
@@ -11511,7 +11518,7 @@
 
     async function signUp(event) {
       event.preventDefault();
-      if (!supabaseClient) return showAuthMessage("Supabase is not available.", true);
+      if (!ensureSupabaseClient()) return showAuthMessage("Supabase is not available.", true);
       const name = $("#su-name").value.trim();
       const email = $("#su-email").value.trim();
       const password = $("#su-pass").value;
@@ -11547,7 +11554,7 @@
     }
 
     async function resendConfirmation() {
-      if (!supabaseClient) return showAuthMessage("Supabase is not available.", true);
+      if (!ensureSupabaseClient()) return showAuthMessage("Supabase is not available.", true);
       const email = $("#su-email").value.trim();
       if (!email) return showAuthMessage("Enter your email above first.", true);
 
@@ -11562,7 +11569,7 @@
 
     async function signIn(event) {
       event.preventDefault();
-      if (!supabaseClient) return showAuthMessage("Supabase is not available.", true);
+      if (!ensureSupabaseClient()) return showAuthMessage("Supabase is not available.", true);
       const email = $("#si-email").value.trim();
       const password = $("#si-pass").value;
       if (!email || !password) return showAuthMessage("Please fill in all fields.", true);
@@ -12306,6 +12313,7 @@
       }, 12000);
 
       try {
+        ensureSupabaseClient();
         initColorScheme();
         bindEvents();
         syncHeaderHeight();
