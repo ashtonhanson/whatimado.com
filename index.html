@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-save-map-count -->
+<!-- whatimado build: 2026-06-17-map-chat-polish -->
 <html lang="en" data-color-scheme="midnight">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-save-map-count">
+  <meta name="whatimado-build" content="2026-06-17-map-chat-polish">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -271,8 +271,8 @@
       width: 100%;
       height: auto;
       overflow: visible;
-      opacity: .72;
-      filter: drop-shadow(0 6px 14px rgba(255, 255, 255, .18)) drop-shadow(0 2px 8px rgba(42, 80, 136, .08));
+      opacity: .84;
+      filter: drop-shadow(0 6px 14px rgba(255, 255, 255, .24)) drop-shadow(0 2px 8px rgba(42, 80, 136, .1));
     }
 
     .mario-cloud svg .st0 {
@@ -282,7 +282,7 @@
     .mario-cloud svg .st1,
     .mario-cloud svg .st3 {
       fill: #e8f4ff;
-      opacity: .38;
+      opacity: .5;
     }
 
     @keyframes mario-cloud-drift-ltr {
@@ -293,7 +293,7 @@
 
       12%,
       88% {
-        opacity: var(--cloud-opacity, .28);
+        opacity: var(--cloud-opacity, .38);
       }
 
       100% {
@@ -310,7 +310,7 @@
 
       12%,
       88% {
-        opacity: var(--cloud-opacity, .28);
+        opacity: var(--cloud-opacity, .38);
       }
 
       100% {
@@ -620,7 +620,7 @@
       background: rgba(42, 80, 136, .08);
     }
 
-    [data-color-scheme="mario"] .app-header {
+    [data-color-scheme="mario"] .app-header-nav-wrap {
       border-bottom: 2px solid rgba(232, 35, 26, .22);
     }
 
@@ -949,6 +949,21 @@
       background: #c41e16;
     }
 
+    [data-color-scheme="mario"] .reply-map-btn {
+      border-color: rgba(42, 80, 136, .28);
+      background: rgba(255, 255, 255, .72);
+      color: var(--ink);
+    }
+
+    [data-color-scheme="mario"] .reply-map-btn:hover {
+      background: rgba(255, 255, 255, .9);
+    }
+
+    [data-color-scheme="mario"] .opp-card-discuss-btn {
+      border-color: rgba(42, 80, 136, .22);
+      background: rgba(255, 255, 255, .72);
+    }
+
     @media (max-width: 760px) {
       [data-color-scheme="mario"] .nav-drawer {
         border-bottom-color: rgba(232, 35, 26, .15);
@@ -1000,11 +1015,11 @@
       height: auto;
       min-height: var(--header-h);
       padding: 0;
-      background: var(--header-bg);
-      border-bottom: 1px solid var(--header-border);
-      backdrop-filter: blur(22px) saturate(150%);
-      -webkit-backdrop-filter: blur(22px) saturate(150%);
-      box-shadow: var(--header-shadow);
+      background: transparent;
+      border-bottom: 0;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: none;
     }
 
     .scroll-progress {
@@ -1042,6 +1057,11 @@
 
     .app-header-nav-wrap {
       padding: .72rem 1.25rem .62rem;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--header-border);
+      backdrop-filter: blur(22px) saturate(150%);
+      -webkit-backdrop-filter: blur(22px) saturate(150%);
+      box-shadow: var(--header-shadow);
     }
 
     .app-header-stack {
@@ -1441,7 +1461,7 @@
     .site-update-banner {
       position: relative;
       overflow: hidden;
-      border-top: 1px solid rgba(42, 80, 136, .1);
+      border-top: 0;
       background: transparent;
     }
 
@@ -2492,12 +2512,12 @@
     }
 
     .reply-textarea {
-      min-height: 42px;
-      max-height: 120px;
+      min-height: 88px;
+      max-height: 220px;
       flex: 1;
-      resize: none;
-      padding: .7rem .9rem;
-      line-height: 1.45;
+      resize: vertical;
+      padding: .85rem .95rem;
+      line-height: 1.5;
     }
 
     .send-btn,
@@ -2524,8 +2544,51 @@
 
     .reply-actions {
       display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .55rem;
       justify-content: flex-start;
       margin-top: .6rem;
+    }
+
+    .reply-map-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      width: 100%;
+    }
+
+    .reply-map-actions[hidden] {
+      display: none !important;
+    }
+
+    .reply-map-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      border-radius: 999px;
+      padding: .45rem .95rem;
+      font-size: .78rem;
+      font-weight: 700;
+      border: 1px solid rgba(124, 111, 205, .45);
+      background: rgba(124, 111, 205, .18);
+      color: var(--ink);
+      transition: .16s ease;
+    }
+
+    .reply-map-btn:hover {
+      background: rgba(124, 111, 205, .28);
+    }
+
+    .reply-map-btn--ghost {
+      border-color: rgba(160, 170, 220, .35);
+      background: transparent;
+      color: var(--ink-muted);
+    }
+
+    .reply-map-btn--ghost:hover {
+      background: rgba(160, 170, 220, .12);
     }
 
     .reset-pill {
@@ -3767,6 +3830,28 @@
     .opp-card-open-btn:hover {
       background: color-mix(in srgb, var(--brand-purple-dark) 88%, #ffffff);
       transform: translateY(-1px);
+    }
+
+    .opp-card-discuss-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      width: 100%;
+      margin-bottom: .55rem;
+      border: 1px solid rgba(124, 111, 205, .35);
+      border-radius: 10px;
+      padding: .55rem 1rem;
+      background: rgba(124, 111, 205, .1);
+      color: var(--ink);
+      font-size: .8rem;
+      font-weight: 700;
+      transition: background .16s ease, border-color .16s ease;
+    }
+
+    .opp-card-discuss-btn:hover {
+      background: rgba(124, 111, 205, .18);
+      border-color: rgba(124, 111, 205, .5);
     }
 
     .roadmap-layout {
@@ -6320,10 +6405,14 @@
       <div class="conversation" id="bubble-chain"></div>
         <div class="reply-box surface-card" id="reply-box">
         <div class="reply-inner">
-          <textarea class="reply-textarea" id="reply-textarea" rows="1" placeholder="Type your response..."></textarea>
+          <textarea class="reply-textarea" id="reply-textarea" rows="4" placeholder="Type your response..."></textarea>
           <button class="send-btn" id="reply-send-btn">Send</button>
           </div>
           <div class="reply-actions">
+            <div class="reply-map-actions" id="reply-map-actions" hidden>
+              <button type="button" class="reply-map-btn" id="reply-apply-map-btn">Update my paths</button>
+              <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-map-btn">Back to map</button>
+            </div>
             <button class="reset-pill" id="reply-reset-btn" type="button">Reset current plans</button>
           </div>
         </div>
@@ -7422,6 +7511,7 @@
       lastScreen: "main",
       journeyId: null,
       alterPathMode: false,
+      mapChat: null,
       mapFeedbackGiven: false,
       mapFeedbackSentiment: null,
       intakeMode: "standard",
@@ -8659,20 +8749,96 @@
 
     function startAlterPathChat() {
       if (!state.ideas.length) return;
-      state.alterPathMode = true;
+      state.mapChat = { type: "alter" };
+      state.alterPathMode = false;
       trackEvent("alter_path_started", { ideas_count: state.ideas.length });
       showScreen("convo");
-      const prompt = "What would you like to change about these paths? Tell me what's not fitting — or what direction you'd rather explore.";
+      const prompt = "What would you like to change about these paths? Tell me what's not fitting — or what direction you'd rather explore. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back anytime.";
       addTypingBubble();
       resolveTyping(prompt);
       state.history.push({ role: "assistant", content: prompt });
       const reply = $("#reply-textarea");
       if (reply) reply.placeholder = "e.g. These feel too online — I want something local and hands-on...";
       showReplyBox(true);
+      updateReplyMapActions();
       schedulePersist();
     }
 
-    async function submitAlterPathReply() {
+    function startIdeaDiscussChat(index) {
+      const idea = state.ideas[index];
+      if (!idea) return;
+      state.mapChat = { type: "idea", index };
+      state.alterPathMode = false;
+      trackEvent("idea_discuss_started", {
+        idea_index: index,
+        idea_title: idea.title || "Opportunity"
+      });
+      showScreen("convo");
+      const prompt = `Let's talk about "${idea.title}". What questions do you have — fit, timing, money, or how you'd actually start? Chat as long as you like; tap "Update this path" when you're ready for a revised version, or go back to your map anytime.`;
+      addTypingBubble();
+      resolveTyping(prompt);
+      state.history.push({ role: "assistant", content: prompt });
+      const reply = $("#reply-textarea");
+      if (reply) reply.placeholder = "e.g. Is this realistic if I only have weekends? Could it work part-time?";
+      showReplyBox(true);
+      updateReplyMapActions();
+      schedulePersist();
+    }
+
+    function updateReplyMapActions() {
+      const actions = $("#reply-map-actions");
+      const applyBtn = $("#reply-apply-map-btn");
+      if (!actions) return;
+      const active = Boolean(state.mapChat);
+      actions.hidden = !active;
+      if (applyBtn) {
+        applyBtn.textContent = state.mapChat?.type === "idea" ? "Update this path" : "Update my paths";
+      }
+    }
+
+    function exitMapChat() {
+      state.mapChat = null;
+      state.alterPathMode = false;
+      const reply = $("#reply-textarea");
+      if (reply) reply.placeholder = "Type your response...";
+      updateReplyMapActions();
+      showScreen("map");
+      schedulePersist();
+    }
+
+    function buildMapChatPrompt(summary) {
+      const pathList = state.ideas.map((idea, index) => `${index + 1}. ${idea.title}`).join("\n");
+      let focusBlock = `The user is reviewing their possibility map and wants to discuss their paths.\nCurrent paths:\n${pathList}\n\nHelp them explore what's not fitting and what they'd rather do. Answer questions, compare options, and suggest practical next steps. Do NOT output JSON or regenerate paths — just have a helpful conversation.`;
+
+      if (state.mapChat?.type === "idea") {
+        const idea = state.ideas[state.mapChat.index];
+        focusBlock = `The user is discussing this specific path on their map:\nTitle: ${idea.title}\nType: ${idea.type || "Opportunity"}\nTagline: ${idea.tagline || ""}\nWhy: ${idea.why || ""}\nCost: ${idea.cost || ""}\nTimeline: ${idea.timeline || ""}\nIncome: ${idea.income || ""}\n\nAll paths on their map:\n${pathList}\n\nHelp them think through this path — fit, tradeoffs, first steps, and alternatives. Do NOT output JSON or regenerate paths — just have a helpful conversation.`;
+      }
+
+      return (
+        "You are whatimado, a practical possibility advisor.\n\nConversation:\n" +
+        summary +
+        "\n\n" +
+        focusBlock +
+        "\n\nRespond in plain text. Keep it concise (2-4 short paragraphs max) and reference what they actually said."
+      );
+    }
+
+    async function submitMapChatReply() {
+      const summary = getConversationSummary();
+      trackEvent("map_chat_reply", {
+        chat_type: state.mapChat?.type || "unknown",
+        history_count: state.history.length
+      });
+      const response = await callAdvisor(buildMapChatPrompt(summary), 550);
+      const answer = response || "I'm having trouble connecting right now — try again in a moment.";
+      resolveTyping(answer);
+      state.history.push({ role: "assistant", content: answer });
+      showReplyBox(true);
+      schedulePersist();
+    }
+
+    async function applyAlterPathChanges() {
       const summary = getConversationSummary();
       trackEvent("alter_path_submitted", {
         history_count: state.history.length,
@@ -8688,10 +8854,12 @@
       state.currentIdea = null;
       state.roadmapKey = null;
       state.roadmapStages = [];
+      state.mapChat = null;
       state.alterPathMode = false;
       $("#nav-roadmap-btn").hidden = true;
       const reply = $("#reply-textarea");
       if (reply) reply.placeholder = "Type your response...";
+      updateReplyMapActions();
 
       const closing = "Got it — I've updated your paths based on that. Take a look at your revised map.";
       resolveTyping(closing);
@@ -8705,6 +8873,79 @@
         updateMapAuxiliaryPanels();
         showScreen("map");
       }, 550);
+    }
+
+    async function applyIdeaDiscussChanges() {
+      const index = state.mapChat?.index;
+      const idea = Number.isInteger(index) ? state.ideas[index] : null;
+      if (!idea) return;
+
+      const summary = getConversationSummary();
+      const existingTitles = state.ideas.map((entry) => entry.title);
+      trackEvent("idea_discuss_applied", {
+        idea_index: index,
+        previous_title: idea.title || "Opportunity"
+      });
+
+      const response = await callAdvisor(
+        `${buildIdeasPrompt(summary, 1, existingTitles.filter((_, i) => i !== index))}\n\nReplace path "${idea.title}" with ONE new idea that reflects the user's latest feedback from this discussion. Keep the rest of the map unchanged.`,
+        700
+      );
+      const newIdeas = extractJsonArray(response, []).filter((entry) => entry.title);
+      if (!newIdeas.length) {
+        resolveTyping("I couldn't revise that path just now — your map is unchanged. Try again or keep chatting.");
+        state.history.push({ role: "assistant", content: "I couldn't revise that path just now — your map is unchanged. Try again or keep chatting." });
+        showReplyBox(true);
+        schedulePersist();
+        return;
+      }
+
+      const oldKey = slugify(idea.title);
+      state.ideas[index] = newIdeas[0];
+      delete state.allRoadmaps[oldKey];
+      if (state.allTaskChats[oldKey]) delete state.allTaskChats[oldKey];
+      if (state.roadmapKey === oldKey) {
+        state.currentIdea = null;
+        state.roadmapKey = null;
+        state.roadmapStages = [];
+        $("#nav-roadmap-btn").hidden = true;
+      }
+
+      state.mapChat = null;
+      state.alterPathMode = false;
+      const reply = $("#reply-textarea");
+      if (reply) reply.placeholder = "Type your response...";
+      updateReplyMapActions();
+
+      const closing = `Updated path ${index + 1} based on our chat. Take a look at the revised version on your map.`;
+      resolveTyping(closing);
+      state.history.push({ role: "assistant", content: closing });
+      schedulePersist();
+
+      setTimeout(() => {
+        buildOpportunityMap(state.ideas);
+        updateMapAuxiliaryPanels();
+        showScreen("map");
+        scrollToPathDetail(index);
+      }, 550);
+    }
+
+    async function applyMapChatChanges() {
+      if (!state.mapChat) return;
+      if (state.mapChat.type === "idea" && !state.ideas[state.mapChat.index]) {
+        addTypingBubble();
+        resolveTyping("That path isn't available anymore — head back to your map.");
+        state.history.push({ role: "assistant", content: "That path isn't available anymore — head back to your map." });
+        showReplyBox(true);
+        return;
+      }
+      showReplyBox(false);
+      addTypingBubble(PATH_BUILDING_MSG);
+      if (state.mapChat.type === "idea") {
+        await applyIdeaDiscussChanges();
+        return;
+      }
+      await applyAlterPathChanges();
     }
 
     function getRoadmapTaskData(taskId) {
@@ -8983,6 +9224,7 @@
       if (!reply) return;
       reply.style.display = show ? "block" : "none";
       if (show) {
+        updateReplyMapActions();
         $("#reply-textarea")?.focus();
       }
       scrollConversation();
@@ -9343,7 +9585,8 @@
       labelEl.textContent = label;
       button.disabled = false;
       button.classList.remove("is-loading");
-      setTimeout(() => $("#opp-grid")?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 120);
+      const firstNewIndex = state.ideas.length - newIdeas.length;
+      setTimeout(() => scrollToPathDetail(firstNewIndex), 120);
     }
 
     async function startFlow() {
@@ -9436,10 +9679,16 @@
       addUserBubble(text);
       state.history.push({ role: "user", content: text });
 
+      if (state.mapChat) {
+        addTypingBubble();
+        await submitMapChatReply();
+        return;
+      }
+
       if (state.alterPathMode) {
         showReplyBox(false);
         addTypingBubble(PATH_BUILDING_MSG);
-        await submitAlterPathReply();
+        await applyAlterPathChanges();
         return;
       }
 
@@ -9644,11 +9893,16 @@
           </div>
               ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
               <div class="opp-card-actions">
+                <button type="button" class="opp-card-discuss-btn">Discuss this path</button>
                 <button type="button" class="opp-card-open-btn">Open step-by-step roadmap</button>
               </div>
             </div>
           </div>`;
         card.querySelector(".opp-card-number").style.background = color;
+        card.querySelector(".opp-card-discuss-btn").addEventListener("click", (event) => {
+          event.stopPropagation();
+          startIdeaDiscussChat(index);
+        });
         card.querySelector(".opp-card-open-btn").addEventListener("click", (event) => {
           event.stopPropagation();
           viewRoadmap(idea, index);
@@ -10149,6 +10403,7 @@
       state.activeTaskId = null;
       state.expandedThreadId = null;
       state.alterPathMode = false;
+      state.mapChat = null;
       state.mapFeedbackGiven = false;
       state.mapFeedbackSentiment = null;
       state.intakeMode = "standard";
@@ -10754,7 +11009,7 @@
       const delay = -(Math.random() * duration);
       const size = 0.52 + Math.random() * 0.95;
       const top = 10 + (index * 11 + Math.random() * 9) % 72;
-      const opacity = 0.18 + Math.random() * 0.14;
+      const opacity = 0.28 + Math.random() * 0.16;
       const driftY = `${(Math.random() - 0.5) * 28}px`;
 
       cloud.dataset.direction = direction;
@@ -11354,6 +11609,8 @@
           resetAll();
         }
       });
+      $("#reply-apply-map-btn")?.addEventListener("click", applyMapChatChanges);
+      $("#reply-back-map-btn")?.addEventListener("click", exitMapChat);
 
       $("#reset-btn").addEventListener("click", resetAll);
       $("#map-toolbar-reset-btn")?.addEventListener("click", resetAll);
