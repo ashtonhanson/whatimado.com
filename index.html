@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-27-adult-contrast -->
+<!-- whatimado build: 2026-06-27-path-dedup -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-27-adult-contrast">
+  <meta name="whatimado-build" content="2026-06-27-path-dedup">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -8412,11 +8412,90 @@
     const GENERIC_FALLBACK_SIGNATURE = "Write the simplest version of your offer";
 
     function getFounderPathTemplate(idea) {
-      const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""}`.toLowerCase();
-      if (/donat|revenue|sustain|stripe|supporter|pay-what/.test(blob)) return "donation";
-      if (/partner|nonprofit|grant|library|shelter|workforce|pilot|community org/.test(blob)) return "partnership";
-      if (/launch|valid|community|social|user|reddit|facebook/.test(blob)) return "launch";
+      const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      if (/partner|nonprofit|grant|library|shelter|workforce|pilot|sponsor|outreach email|partnership pipeline/.test(blob)) {
+        return "partnership";
+      }
+      if (/launch|valid|reddit|facebook|quiet launch|first users|feedback-first|community sprint|social proof|5 communit/.test(blob)) {
+        return "launch";
+      }
+      if (/donat|pay-what|supporter tier|stripe checkout|tip jar|donation-first|keep it free.*\$/.test(blob)) {
+        return "donation";
+      }
+      if (/revenue|sustain|moneti/.test(blob) && !/grant|partner|nonprofit|launch|valid|reddit|facebook/.test(blob)) {
+        return "donation";
+      }
       return "general";
+    }
+
+    function normalizeRoadmapText(text) {
+      return String(text || "").toLowerCase().replace(/\s+/g, " ").trim();
+    }
+
+    function getSiblingRoadmapContext(idea) {
+      const others = state.ideas.filter((item) => item.title !== idea.title);
+      if (!others.length) return "";
+
+      const lines = others.map((item) => {
+        const key = slugify(item.title);
+        const cached = state.allRoadmaps[key];
+        if (!cached?.stages?.length) {
+          return `- "${item.title}" (${item.type || "path"}): ${item.tagline || "roadmap not opened yet"}`;
+        }
+
+        const stageSummary = cached.stages.map((stage, index) => `${index + 1}. ${stage.label}`).join("; ");
+        const sampleTasks = cached.stages
+          .flatMap((stage) => stage.tasks || [])
+          .slice(0, 2)
+          .map((task) => `"${task.slice(0, 96)}${task.length > 96 ? "…" : ""}"`)
+          .join(", ");
+        return `- "${item.title}" (${item.type || "path"}) — stages: ${stageSummary}. Sample tasks: ${sampleTasks}`;
+      });
+
+      return (
+        `\nOther paths already on this map (do NOT repeat their stages, tactics, or task wording):\n` +
+        lines.join("\n") +
+        `\n`
+      );
+    }
+
+    function roadmapOverlapsSibling(stages, idea) {
+      if (!Array.isArray(stages) || !idea?.title) return false;
+
+      const stageLabels = stages.map((stage) => normalizeRoadmapText(stage.label)).filter(Boolean);
+      const tasks = stages.flatMap((stage) => (stage.tasks || []).map((task) => normalizeRoadmapText(task))).filter(Boolean);
+      const siblings = state.ideas.filter((item) => item.title !== idea.title);
+
+      for (const sibling of siblings) {
+        const cached = state.allRoadmaps[slugify(sibling.title)];
+        const siblingStages = cached?.stages;
+        if (!siblingStages?.length) continue;
+
+        const siblingLabels = siblingStages.map((stage) => normalizeRoadmapText(stage.label)).filter(Boolean);
+        const siblingTasks = siblingStages
+          .flatMap((stage) => (stage.tasks || []).map((task) => normalizeRoadmapText(task)))
+          .filter(Boolean);
+
+        const duplicateLabels = stageLabels.filter((label) => siblingLabels.includes(label));
+        const duplicateTasks = tasks.filter((task) => siblingTasks.includes(task));
+        const nearDuplicateTasks = tasks.filter((task) =>
+          siblingTasks.some((other) => task.length > 40 && other.length > 40 && (task.includes(other.slice(0, 48)) || other.includes(task.slice(0, 48))))
+        );
+
+        if (duplicateLabels.length >= 2 || duplicateTasks.length >= 2 || nearDuplicateTasks.length >= 2) {
+          return true;
+        }
+
+        if (stageLabels[0] && siblingLabels[0] && stageLabels[0] === siblingLabels[0]) {
+          return true;
+        }
+
+        if (duplicateLabels.length >= 1 && (duplicateTasks.length >= 1 || nearDuplicateTasks.length >= 1)) {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     function getFounderFallbackStages(idea) {
@@ -8643,7 +8722,7 @@
       );
     }
 
-    function buildFounderRoadmapPrompt(idea, context, { phase = "initial" } = {}) {
+    function buildFounderRoadmapPrompt(idea, context, { phase = "initial", dedupe = false } = {}) {
       const ideaBlock = [
         `Title: ${idea.title}`,
         idea.type ? `Type: ${idea.type}` : "",
@@ -8665,6 +8744,11 @@
         general: "low-cost 30-90 day founder milestones mixing validation, feedback, donations, and partnerships"
       }[getFounderPathTemplate(idea)];
 
+      const siblingBlock = getSiblingRoadmapContext(idea);
+      const dedupeNote = dedupe
+        ? "\nYour last draft repeated stages or tasks from another path on this map. Rewrite with completely different stage names and tasks.\n"
+        : "";
+
       return (
         `You are whatimado, a practical advisor to the FOUNDER of whatimado.com — a free AI possibility map for people landing on their own what Ima do.\n\n` +
         `${phaseNote}\n\n` +
@@ -8675,8 +8759,12 @@
         `- Suggestions box writes to Supabase site_suggestions; analytics in site_events (prompt_submitted, map_generated, roadmap_opened, donation clicks, etc.)\n` +
         `- Mission: free for under-resourced, stuck, low-income, homeless, or rebuilding users — never suggest premium SaaS tiers for individuals\n\n` +
         `Chosen founder path:\n${ideaBlock}\n\n` +
-        `Founder conversation:\n${context}\n\n` +
-        `Focus this roadmap on: ${pathFocus}.\n\n` +
+        `Founder conversation:\n${context}\n` +
+        siblingBlock +
+        dedupeNote +
+        `\nFocus this roadmap ONLY on: ${pathFocus}.\n` +
+        `This path must feel different from the other paths on the map — use stage labels and tasks that match "${idea.title}" specifically.\n` +
+        `Do NOT reuse stage names or tasks from other paths (for example, do not copy donation-setup tasks into a launch or partnership path).\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
         `- Every task is for the FOUNDER building whatimado.com — NOT for a random user finding a job.\n` +
         `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real deliverables, time boxes, email subject lines, and copy snippets.\n` +
@@ -8697,10 +8785,10 @@
       );
     }
 
-    function buildRoadmapPrompt(idea, context, { phase = "initial", founderMode = false } = {}) {
+    function buildRoadmapPrompt(idea, context, { phase = "initial", founderMode = false, dedupe = false } = {}) {
       const founder = founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
       if (founder) {
-        return buildFounderRoadmapPrompt(idea, context, { phase });
+        return buildFounderRoadmapPrompt(idea, context, { phase, dedupe });
       }
 
       const ideaBlock = [
@@ -8717,10 +8805,18 @@
         ? "Generate the NEXT 4 stages after their completed roadmap. Do not repeat completed tasks."
         : "Generate the FIRST 4 stages to get this path off the ground.";
 
+      const siblingBlock = getSiblingRoadmapContext(idea);
+      const dedupeNote = dedupe
+        ? "\nYour last draft repeated stages or tasks from another path on this map. Rewrite with completely different stage names and tasks.\n"
+        : "";
+
       return (
         `You are whatimado, a practical roadmap coach. ${phaseNote}\n\n` +
         `Chosen path:\n${ideaBlock}\n\n` +
-        `Full conversation:\n${context}\n\n` +
+        `Full conversation:\n${context}\n` +
+        siblingBlock +
+        dedupeNote +
+        `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
         `- Every task must be 1–2 sentences and SPECIFIC to this person and this exact path.\n` +
         `- Name real platforms, tools, audiences, numbers, time boxes, and deliverables.\n` +
@@ -11013,10 +11109,11 @@
         "Conversation:\n" +
         summary +
         "\n\nGenerate exactly 3 realistic path options for whatimado.com over the next 30-90 days and beyond.\n" +
+        "Each path must use a DIFFERENT primary strategy — for example: (1) community launch/validation, (2) donation or pay-what-you-can sustainability, (3) nonprofit/grant/partnership pipeline. Do not give three variations of the same tactic.\n" +
         "Focus on low-cost validation, social launch, donations (Stripe is already set up), sponsors/grants, nonprofit/community partnerships, feedback loops, and analytics.\n" +
         "Personal user pricing must stay free, donation-based, pay-what-you-can, or very low — never premium SaaS tiers for individuals.\n" +
         "Each idea must be specific to whatimado.com and reference details from what they said.\n\n" +
-        "BAD: \"Start a business\" or \"Build an audience\"\n" +
+        "BAD: \"Start a business\" or \"Build an audience\" or three paths that all focus on Reddit posts\n" +
         "GOOD: \"30-day Reddit + Facebook validation sprint — post in 5 career-change communities, collect 100 email signups, ask for $1-3 donations via existing Stripe checkout\"\n\n" +
         "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. donations / grants / sponsorship\"}]"
       );
@@ -11609,7 +11706,8 @@
       const cached = !options.force ? state.allRoadmaps[state.roadmapKey] : null;
       const cachedIsUsable = cached?.stages?.length
         && !isGenericFallbackRoadmap(cached.stages)
-        && (!founderMode || isFounderRoadmap(cached.stages));
+        && (!founderMode || isFounderRoadmap(cached.stages))
+        && !roadmapOverlapsSibling(cached.stages, idea);
       if (cachedIsUsable) {
         setRoadmapLoading(false);
         showScreen("roadmap");
@@ -11643,11 +11741,24 @@
 
       try {
       const context = getConversationSummary();
-      const response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode }), founderMode ? 2200 : 1800);
-      const stages = parseRoadmapResponse(response, idea);
+      let response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode }), founderMode ? 2200 : 1800);
+      let stages = parseRoadmapResponse(response, idea);
 
-      if (!stages) {
-        throw new Error("Roadmap response was empty or too generic");
+      if (stages && roadmapOverlapsSibling(stages, idea)) {
+        response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode, dedupe: true }), founderMode ? 2200 : 1800);
+        stages = parseRoadmapResponse(response, idea);
+      }
+
+      if (!stages || roadmapOverlapsSibling(stages, idea)) {
+        stages = getFallbackStages(idea);
+        if (roadmapOverlapsSibling(stages, idea)) {
+          throw new Error("Fallback roadmap still overlapped sibling paths");
+        }
+        trackEvent("roadmap_used_fallback", {
+          idea_index: ideaIndex,
+          founder_mode: founderMode,
+          reason: stages ? "deduped" : "empty_or_generic"
+        });
       }
 
       state.roadmapStages = stages;
