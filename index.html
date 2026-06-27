@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-24-map-center-you -->
-<html lang="en" data-color-scheme="midnight">
+<!-- whatimado build: 2026-06-26-adult-dashboard -->
+<html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-24-map-center-you">
+  <meta name="whatimado-build" content="2026-06-26-adult-dashboard">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -27,8 +27,13 @@
   <script>
     (() => {
       const key = "whatimado_color_scheme";
-      const schemes = ["midnight", "ocean", "sunset", "mario"];
+      const schemes = ["adult", "midnight", "ocean", "sunset", "mario"];
       const shells = {
+        adult: {
+          html: "#ffffff",
+          loader: "linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%)",
+          theme: "#ffffff"
+        },
         midnight: {
           html: "#07111f",
           loader: "linear-gradient(180deg, #1a3a5c 0%, #07111f 100%)",
@@ -50,17 +55,17 @@
           theme: "#4a9fe8"
         }
       };
-      let scheme = "midnight";
+      let scheme = "adult";
       try {
         const saved = localStorage.getItem(key);
-        if (schemes.includes(saved)) scheme = saved;
+        if (saved !== "adult") localStorage.setItem(key, "adult");
       } catch {
         /* ignore storage errors */
       }
       document.documentElement.dataset.colorScheme = scheme;
-      const shell = shells[scheme] || shells.midnight;
+      const shell = shells[scheme] || shells.adult;
       document.documentElement.style.background = shell.html;
-      document.documentElement.style.colorScheme = scheme === "mario" ? "light" : "dark";
+      document.documentElement.style.colorScheme = (scheme === "mario" || scheme === "adult") ? "light" : "dark";
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", shell.theme);
       const critical = document.createElement("style");
@@ -142,6 +147,636 @@
       --radius-lg: 20px;
       --header-nav-h: 56px;
       --header-h: 56px;
+    }
+
+    [data-color-scheme="adult"] {
+      color-scheme: light;
+      --sidebar-w: 248px;
+      --topbar-h: 64px;
+      --bg: #ffffff;
+      --bg-soft: #f9fafb;
+      --surface: #ffffff;
+      --surface-2: #f3f4f6;
+      --surface-3: #e5e7eb;
+      --ink: #111827;
+      --ink-muted: #6b7280;
+      --muted: #9ca3af;
+      --line: #e5e7eb;
+      --purple: #2563eb;
+      --purple-2: #3b82f6;
+      --teal: #2563eb;
+      --gold: #f59e0b;
+      --green: #10b981;
+      --rose: #ef4444;
+      --html-bg: #ffffff;
+      --bg-gradient: #ffffff;
+      --header-bg: #ffffff;
+      --header-border: #e5e7eb;
+      --header-shadow: none;
+      --logo-gradient: none;
+      --network-line-rgb: 209, 213, 219;
+      --browser-theme-color: #ffffff;
+      --theme-active-bg: rgba(37, 99, 235, .1);
+      --theme-active-border: rgba(37, 99, 235, .22);
+      --brand-purple-dark: #111827;
+      --pastel-yellow-bg: #ffffff;
+      --pastel-yellow-bg-hover: #f9fafb;
+      --pastel-yellow-border: #e5e7eb;
+      --light-blue-bg: #ffffff;
+      --light-blue-bg-hover: #f9fafb;
+      --light-blue-border: #e5e7eb;
+      --plan-card-bg: #ffffff;
+      --plan-card-bg-hover: #f9fafb;
+      --plan-card-border: #e5e7eb;
+      --plan-card-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+      --plan-card-ink: #111827;
+      --plan-card-muted: #6b7280;
+      --plan-card-soft: #9ca3af;
+      --plan-card-chip-bg: #f3f4f6;
+      --plan-card-note-bg: #f9fafb;
+      --map-control-bg: #ffffff;
+      --map-control-border: #e5e7eb;
+      --map-node-royal: #2563eb;
+      --map-node-royal-strong: #1d4ed8;
+      --shadow: 0 1px 3px rgba(0, 0, 0, .06);
+      --header-h: var(--topbar-h);
+    }
+
+    html[data-color-scheme="adult"] #bg-gradient,
+    html[data-color-scheme="adult"] #network-canvas,
+    html[data-color-scheme="adult"] #mario-clouds,
+    html[data-color-scheme="adult"] #adventure-scenery,
+    html[data-color-scheme="adult"] .site-update-banner,
+    html[data-color-scheme="adult"] .app-header-nav-wrap,
+    html[data-color-scheme="adult"] .scroll-progress {
+      display: none !important;
+    }
+
+    html[data-color-scheme="adult"] .app-header {
+      background: transparent;
+      pointer-events: none;
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .nav-drawer,
+    html[data-color-scheme="adult"] .nav-overlay,
+    html[data-color-scheme="adult"] .nav-hamburger {
+      pointer-events: auto;
+    }
+
+    html[data-color-scheme="adult"] body {
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-shell {
+      display: flex;
+      min-height: 100vh;
+      background: var(--bg);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 30;
+      width: var(--sidebar-w);
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem 1rem 1rem;
+      background: var(--bg-soft);
+      border-right: 1px solid var(--line);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-brand {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      margin-bottom: 1.5rem;
+      padding: 0 .35rem;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, .22);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-brand-mark svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav {
+      display: flex;
+      flex-direction: column;
+      gap: .2rem;
+      flex: 1;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-btn {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      width: 100%;
+      padding: .72rem .85rem;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--ink-muted);
+      font: inherit;
+      font-size: .92rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-btn:hover {
+      background: rgba(255, 255, 255, .72);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-btn.active {
+      background: rgba(37, 99, 235, .1);
+      color: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-sidebar-foot {
+      margin-top: auto;
+      display: grid;
+      gap: .75rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-theme-note {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      padding: .55rem .75rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .72);
+      color: var(--ink-muted);
+      font-size: .82rem;
+      font-weight: 600;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-profile {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .75rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-profile-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-profile-copy strong {
+      display: block;
+      font-size: .88rem;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-profile-copy span {
+      font-size: .76rem;
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-main {
+      flex: 1;
+      margin-left: var(--sidebar-w);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: var(--topbar-h);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: .65rem;
+      padding: 0 1.5rem;
+      background: rgba(255, 255, 255, .92);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-topbar-btn {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--ink-muted);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-topbar-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-topbar-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 0;
+      padding: 0;
+      overflow: hidden;
+      cursor: pointer;
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-topbar-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-mobile-menu {
+      display: none;
+      margin-right: auto;
+    }
+
+    html[data-color-scheme="adult"] main {
+      flex: 1;
+    }
+
+    html[data-color-scheme="adult"] .screen {
+      padding-top: 0;
+      min-height: auto;
+    }
+
+    html[data-color-scheme="adult"] .main-workspace {
+      width: min(100%, 980px);
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    html[data-color-scheme="adult"] .home-legacy-extra {
+      display: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-home {
+      display: grid;
+      gap: 2rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-hero {
+      text-align: center;
+      padding-top: 1rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      margin: 0 0 1rem;
+      padding: .38rem .8rem;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .08);
+      color: #2563eb;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      line-height: 1.08;
+      letter-spacing: -.03em;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-lead {
+      max-width: 38rem;
+      margin: .85rem auto 1.5rem;
+      color: var(--ink-muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search {
+      position: relative;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
+      min-height: 58px;
+      max-height: 160px;
+      padding: 1rem 4.5rem 1rem 1.15rem;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, .06);
+      resize: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-textarea:focus {
+      outline: none;
+      border-color: rgba(37, 99, 235, .35);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, .08), 0 8px 30px rgba(15, 23, 42, .06);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-go {
+      position: absolute;
+      right: .55rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, .28);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-go svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-footer,
+    html[data-color-scheme="adult"] .dashboard-search .prompt-box {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-footer {
+      justify-content: center;
+      border-top: 0;
+      padding: .65rem 0 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: .55rem;
+      margin-top: 1rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-quick-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .55rem .85rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-quick-btn:hover {
+      background: var(--bg-soft);
+      border-color: #d1d5db;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-section-head h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-link-btn {
+      border: 0;
+      background: transparent;
+      color: #2563eb;
+      font: inherit;
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .saved-maps-home {
+      margin-top: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+
+    html[data-color-scheme="adult"] .saved-maps-home-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    html[data-color-scheme="adult"] .saved-map-chip {
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    html[data-color-scheme="adult"] .saved-map-chip-title {
+      display: block;
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: .35rem;
+    }
+
+    html[data-color-scheme="adult"] .saved-map-chip-meta {
+      display: block;
+      font-size: .78rem;
+      color: var(--ink-muted);
+      margin-bottom: .85rem;
+    }
+
+    html[data-color-scheme="adult"] .saved-map-chip-progress {
+      display: block;
+      height: 6px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+
+    html[data-color-scheme="adult"] .saved-map-chip-progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-explore-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-explore-card {
+      padding: 1.1rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-explore-card:hover {
+      background: var(--bg-soft);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-explore-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      margin-bottom: .85rem;
+      font-size: 1.1rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-explore-card strong {
+      display: block;
+      margin-bottom: .35rem;
+      font-size: .95rem;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-explore-card span {
+      display: block;
+      font-size: .78rem;
+      line-height: 1.45;
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .logo-text,
+    html[data-color-scheme="adult"] .logo-text span {
+      background: none;
+      -webkit-text-fill-color: var(--ink);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .action-btn,
+    html[data-color-scheme="adult"] .auth-submit,
+    html[data-color-scheme="adult"] .send-btn {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .surface-card,
+    html[data-color-scheme="adult"] .opp-card,
+    html[data-color-scheme="adult"] .stage-card,
+    html[data-color-scheme="adult"] .map-library-card {
+      background: #fff;
+      border-color: var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-footer {
+      display: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-settings-panel {
+      margin-top: .5rem;
+      padding: 1.25rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    html[data-color-scheme="adult"] .nav-drawer-section:has(.nav-group--theme) {
+      display: none;
+    }
+
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] .dashboard-sidebar {
+        display: none;
+      }
+
+      html[data-color-scheme="adult"] .dashboard-main {
+        margin-left: 0;
+      }
+
+      html[data-color-scheme="adult"] .dashboard-mobile-menu {
+        display: grid;
+      }
+
+      html[data-color-scheme="adult"] .saved-maps-home-list,
+      html[data-color-scheme="adult"] .dashboard-explore-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    html[data-color-scheme="adult"] .loader-quote,
+    html[data-color-scheme="adult"] .loader-tagline {
+      color: var(--ink);
+      text-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .loader-logo {
+      filter: none;
+    }
+
+    html:not([data-color-scheme="adult"]) .dashboard-shell {
+      display: contents;
+    }
+
+    html:not([data-color-scheme="adult"]) .dashboard-topbar {
+      display: none;
     }
 
     [data-color-scheme="ocean"] {
@@ -1249,17 +1884,40 @@
       border: 1.5px solid rgba(107, 69, 40, .22);
       color: var(--adv-brown-dark);
       box-shadow: 0 3px 0 rgba(107, 69, 40, .12), inset 0 1px 0 rgba(255, 255, 255, .85);
-      padding-left: 1.65rem;
+      padding: .3rem .5rem .3rem 1.35rem;
+      font-size: .64rem;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     [data-color-scheme="mario"] .pill::before {
       content: "◆";
       position: absolute;
-      left: .55rem;
+      left: .45rem;
       top: 50%;
       transform: translateY(-50%);
       color: var(--adv-gold);
-      font-size: .52rem;
+      font-size: .48rem;
+    }
+
+    [data-color-scheme="mario"] .pills {
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: .32rem;
+      width: min(720px, calc(100vw - 2rem));
+      max-width: none;
+      margin-inline: auto;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    [data-color-scheme="mario"] .pills::-webkit-scrollbar {
+      display: none;
+    }
+
+    [data-color-scheme="mario"] .hero {
+      width: min(100%, 720px);
     }
 
     [data-color-scheme="mario"] .pill:hover {
@@ -2736,9 +3394,17 @@
 
     .pills {
       display: flex;
-      flex-wrap: wrap;
-      gap: .45rem;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: .4rem;
       margin: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .pills::-webkit-scrollbar {
+      display: none;
     }
 
     .pill {
@@ -2751,6 +3417,8 @@
       -webkit-backdrop-filter: blur(10px) saturate(140%);
       font-size: .72rem;
       font-weight: 800;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .pill:hover {
@@ -6844,29 +7512,176 @@
     </div>
   </header>
 
+  <div class="dashboard-shell">
+    <aside class="dashboard-sidebar" id="dashboard-sidebar" aria-label="Sidebar">
+      <a class="dashboard-brand" href="#main" data-screen-link="main">
+        <span class="dashboard-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path></svg>
+        </span>
+        WhatImADo
+      </a>
+      <nav class="dashboard-nav" aria-label="Primary">
+        <button type="button" class="dashboard-nav-btn active" data-screen-link="main">
+          <svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
+          Home
+        </button>
+        <button type="button" class="dashboard-nav-btn" data-screen-link="map" id="sidebar-map-btn" hidden>
+          <svg viewBox="0 0 24 24"><path d="M3 6.5 9 4.5l6 2 6-2v13l-6 2-6-2-6 2V6.5z"></path><path d="M9 4.5v13M15 6.5v13"></path></svg>
+          Map
+        </button>
+        <button type="button" class="dashboard-nav-btn" id="sidebar-roadmaps-btn">
+          <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+          Roadmaps
+        </button>
+        <button type="button" class="dashboard-nav-btn" id="sidebar-discover-btn">
+          <svg viewBox="0 0 24 24"><path d="M12 3l2.4 7.4H22l-6 4.6 2.3 7L12 17.8 5.7 22l2.3-7-6-4.6h7.6L12 3z"></path></svg>
+          Discoveries
+        </button>
+        <button type="button" class="dashboard-nav-btn" data-screen-link="roadmap" id="sidebar-progress-btn" hidden>
+          <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 17V9M12 17V7M16 17v-5"></path></svg>
+          Progress
+        </button>
+        <button type="button" class="dashboard-nav-btn" id="sidebar-saved-btn">
+          <svg viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5z"></path></svg>
+          Saved
+        </button>
+        <button type="button" class="dashboard-nav-btn" id="sidebar-settings-btn">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
+          Settings
+        </button>
+      </nav>
+      <div class="dashboard-sidebar-foot">
+        <div class="dashboard-theme-note" aria-hidden="true">☀ Clean theme</div>
+        <button type="button" class="dashboard-profile" id="dashboard-profile-btn">
+          <img class="dashboard-profile-avatar" id="dashboard-profile-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect fill='%23dbeafe' width='80' height='80'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%2393c5fd'/%3E%3Cpath d='M16 68c4-14 16-22 24-22s20 8 24 22' fill='%2393c5fd'/%3E%3C/svg%3E" alt="">
+          <span class="dashboard-profile-copy">
+            <strong id="dashboard-profile-name">Guest</strong>
+            <span>View profile</span>
+          </span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="dashboard-main">
+      <header class="dashboard-topbar">
+        <button type="button" class="dashboard-topbar-btn dashboard-mobile-menu" id="dashboard-mobile-menu" aria-label="Open menu">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+        </button>
+        <button type="button" class="dashboard-topbar-btn" id="dashboard-notify-btn" aria-label="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg>
+        </button>
+        <button type="button" class="dashboard-topbar-avatar" id="dashboard-top-avatar" aria-label="Account">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect fill='%23dbeafe' width='80' height='80'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%2393c5fd'/%3E%3Cpath d='M16 68c4-14 16-22 24-22s20 8 24 22' fill='%2393c5fd'/%3E%3C/svg%3E" alt="">
+        </button>
+      </header>
+
   <main>
     <section class="screen active" id="screen-main">
       <div class="main-workspace">
+      <div class="dashboard-home">
+        <div class="dashboard-hero">
+          <p class="dashboard-badge">✦ AI-Powered Guidance</p>
+          <h1>Let's figure out what you're gonna do.</h1>
+          <p class="dashboard-lead">Answer a few questions about your interests and goals, and I'll help you discover the best paths forward.</p>
+
+          <div class="prompt-box dashboard-search">
+            <textarea class="prompt-textarea" id="main-input" rows="2" placeholder="What are you curious about?"></textarea>
+            <button type="button" class="dashboard-search-go" id="dashboard-search-go" aria-label="Continue">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </button>
+            <div class="prompt-footer">
+              <span class="hint">More detail helps · <button type="button" class="hero-example-btn" id="hero-example-btn">Test Demo Prompt to See Process</button></span>
+              <div class="prompt-actions">
+                <button class="action-btn" id="start-btn">Continue</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-quick-actions" aria-label="Quick starters">
+            <button type="button" class="dashboard-quick-btn" data-prompt="I want to find a career I'll genuinely love based on my strengths and interests">⭐ Find a career I'll love</button>
+            <button type="button" class="dashboard-quick-btn" data-prompt="I need to make more money soon and want realistic paths I can start now">💰 Make more money</button>
+            <button type="button" class="dashboard-quick-btn" data-prompt="I want to work for myself and build something independent">💼 Work for myself</button>
+            <button type="button" class="dashboard-quick-btn" data-prompt="I want a path where I can help others and make a meaningful difference">❤️ Help others</button>
+          </div>
+        </div>
+
+        <section class="saved-maps-home dashboard-section" id="saved-maps-home" hidden aria-label="Continue where you left off">
+          <div class="saved-maps-home-head dashboard-section-head">
+            <h2 class="saved-maps-home-title">Continue where you left off</h2>
+            <button type="button" class="dashboard-link-btn" data-screen-link="maps" id="saved-maps-view-all">View all</button>
+          </div>
+          <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
+        </section>
+
+        <section class="dashboard-section dashboard-explore" aria-label="Explore popular paths">
+          <div class="dashboard-section-head">
+            <h2>Explore popular paths</h2>
+            <button type="button" class="dashboard-link-btn" id="dashboard-explore-all">View all</button>
+          </div>
+          <div class="dashboard-explore-grid">
+            <button type="button" class="dashboard-explore-card" data-prompt="I'm creative and want paths in design, content, art, or building something expressive">
+              <span class="dashboard-explore-icon" style="background:#fff7ed;color:#ea580c">✏️</span>
+              <strong>Creative</strong>
+              <span>Design, content, art, and other expressive paths.</span>
+            </button>
+            <button type="button" class="dashboard-explore-card" data-prompt="I want business, sales, or entrepreneurship paths where I can build income and independence">
+              <span class="dashboard-explore-icon" style="background:#eff6ff;color:#2563eb">💼</span>
+              <strong>Business</strong>
+              <span>Entrepreneurship, sales, and income-building routes.</span>
+            </button>
+            <button type="button" class="dashboard-explore-card" data-prompt="I'm good with technology and want paths in tech, automation, or digital skills">
+              <span class="dashboard-explore-icon" style="background:#f5f3ff;color:#7c3aed">💻</span>
+              <strong>Technology</strong>
+              <span>Tech skills, automation, and digital careers.</span>
+            </button>
+            <button type="button" class="dashboard-explore-card" data-prompt="I want to help people through coaching, care, teaching, or community work">
+              <span class="dashboard-explore-icon" style="background:#fef2f2;color:#dc2626">❤️</span>
+              <strong>Helping</strong>
+              <span>Teaching, care, coaching, and community impact.</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="site-suggestions dashboard-settings-panel" id="site-suggestions" aria-label="Suggest a site improvement">
+          <h3 class="site-suggestions-title">Suggest an improvement</h3>
+          <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion. Add your name below so we can credit you if we ship your idea.</p>
+          <label class="site-suggestions-field" for="site-suggestion-name">
+            <span class="site-suggestions-field-label">Your name (for credit)</span>
+            <input class="site-suggestions-input site-suggestions-name" id="site-suggestion-name" type="text" maxlength="80" autocomplete="name" placeholder="How you'd like to be credited">
+          </label>
+          <label class="site-suggestions-field" for="site-suggestion-input">
+            <span class="site-suggestions-field-label">Your suggestion</span>
+            <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
+          </label>
+          <div class="site-suggestions-footer">
+            <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
+            <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
+          </div>
+          <p class="site-suggestions-msg" id="site-suggestion-msg" hidden aria-live="polite"></p>
+        </section>
+      </div>
+
+      <div class="home-legacy-extra">
       <div class="hero">
         <h1><span>Let us help figure out,</span><em>what ya gonna do...</em></h1>
         <p class="hero-sub">Share your situation below — skills, constraints, and what you want next. The more honest detail you give, the better your paths. Free for everyone.</p>
 
-        <div class="prompt-box">
-          <textarea class="prompt-textarea" id="main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
+        <div class="prompt-box legacy-prompt-box">
+          <textarea class="prompt-textarea legacy-main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
           <div class="prompt-footer">
-            <span class="hint">More detail helps · <button type="button" class="hero-example-btn" id="hero-example-btn">Test Demo Prompt to See Process</button></span>
+            <span class="hint">More detail helps · <button type="button" class="hero-example-btn legacy-hero-example-btn">Test Demo Prompt to See Process</button></span>
             <div class="prompt-actions">
-              <button class="action-btn" id="start-btn">Continue</button>
+              <button class="action-btn legacy-start-btn">Continue</button>
             </div>
           </div>
         </div>
 
-        <section class="saved-maps-home" id="saved-maps-home" hidden aria-label="Your saved maps">
+        <section class="saved-maps-home legacy-saved-maps-home" hidden aria-label="Your saved maps">
           <div class="saved-maps-home-head">
             <h2 class="saved-maps-home-title">Your saved maps</h2>
-            <button type="button" class="back-btn" data-screen-link="maps" id="saved-maps-view-all">View all</button>
+            <button type="button" class="back-btn" data-screen-link="maps">View all</button>
           </div>
-          <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
+          <div class="saved-maps-home-list legacy-saved-maps-home-list"></div>
         </section>
 
         <div class="pills" aria-label="Prompt starters">
@@ -6912,25 +7727,8 @@
               </blockquote>
             </div>
           </section>
-
-          <section class="site-suggestions" id="site-suggestions" aria-label="Suggest a site improvement">
-            <h3 class="site-suggestions-title">Suggest an improvement</h3>
-            <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion. Add your name below so we can credit you if we ship your idea.</p>
-            <label class="site-suggestions-field" for="site-suggestion-name">
-              <span class="site-suggestions-field-label">Your name (for credit)</span>
-              <input class="site-suggestions-input site-suggestions-name" id="site-suggestion-name" type="text" maxlength="80" autocomplete="name" placeholder="How you'd like to be credited">
-            </label>
-            <label class="site-suggestions-field" for="site-suggestion-input">
-              <span class="site-suggestions-field-label">Your suggestion</span>
-              <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
-            </label>
-            <div class="site-suggestions-footer">
-              <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
-              <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
-            </div>
-            <p class="site-suggestions-msg" id="site-suggestion-msg" hidden aria-live="polite"></p>
-          </section>
         </div>
+      </div>
       </div>
     </section>
 
@@ -7178,6 +7976,8 @@
       </div>
     </section>
   </main>
+    </div>
+  </div>
 
   <div class="auth-overlay" id="auth-overlay">
     <div class="auth-modal" role="dialog" aria-modal="true" aria-label="Authentication">
@@ -7318,7 +8118,7 @@
     const DONATION_CART_KEY = "whatimado_donation_cart";
 
     const COLOR_SCHEME_KEY = "whatimado_color_scheme";
-    const COLOR_SCHEMES = ["midnight", "ocean", "sunset", "mario"];
+    const COLOR_SCHEMES = ["adult", "midnight", "ocean", "sunset", "mario"];
     const OPPORTUNITY_COLOR_VARS = ["--rose", "--teal", "--gold", "--green", "--purple-2"];
     const FALLBACK_OPPORTUNITY_COLORS = ["#e06c75", "#4ecdc4", "#f7c948", "#52c47a", "#9b8fe0"];
     const fallbackIdeas = [
@@ -8130,10 +8930,9 @@
     function getSavedColorScheme() {
       try {
         const saved = localStorage.getItem(COLOR_SCHEME_KEY);
-        return COLOR_SCHEMES.includes(saved) ? saved : "midnight";
-      } catch {
-        return "midnight";
-      }
+        if (saved === "adult") return "adult";
+      } catch {}
+      return "adult";
     }
 
     function updateColorSchemeControls(activeScheme) {
@@ -8159,7 +8958,7 @@
     }
 
     function applyColorScheme(scheme, options = {}) {
-      const nextScheme = COLOR_SCHEMES.includes(scheme) ? scheme : "midnight";
+      const nextScheme = scheme === "adult" ? "adult" : "adult";
       document.documentElement.dataset.colorScheme = nextScheme;
       refreshThemeRenderColors();
       updateThemeMetaColor();
@@ -8256,7 +9055,13 @@
         navUser.classList.toggle("is-visible", signedIn);
       }
       if (signedIn) {
-        $("#nav-username").textContent = user.email.split("@")[0];
+        const displayName = user.user_metadata?.full_name || user.email.split("@")[0];
+        $("#nav-username").textContent = displayName;
+        const profileName = $("#dashboard-profile-name");
+        if (profileName) profileName.textContent = displayName;
+      } else {
+        const profileName = $("#dashboard-profile-name");
+        if (profileName) profileName.textContent = "Guest";
       }
       updateNavSyncStatus();
     }
@@ -8870,12 +9675,19 @@
       schedulePersist();
     }
 
+    function setRoadmapNavVisible(visible) {
+      if ($("#nav-roadmap-btn")) $("#nav-roadmap-btn").hidden = !visible;
+      if ($("#sidebar-progress-btn")) $("#sidebar-progress-btn").hidden = !visible;
+    }
+
     function updateMapsNav() {
       const mapsBtn = $("#nav-maps-btn");
       const allMapsBtn = $("#map-all-maps-btn");
+      const sidebarMapBtn = $("#sidebar-map-btn");
       syncActiveMapIntoLibrary();
       const visible = state.savedMaps.length > 0 || state.ideas.length > 0;
       if (mapsBtn) mapsBtn.hidden = !visible;
+      if (sidebarMapBtn) sidebarMapBtn.hidden = !state.ideas.length;
       if (allMapsBtn) allMapsBtn.hidden = state.savedMaps.length <= 1;
     }
 
@@ -8914,14 +9726,18 @@
         return;
       }
 
-      list.innerHTML = preview.map((map) => `
+      list.innerHTML = preview.map((map) => {
+        const pathCount = map.ideas?.length || 0;
+        const progress = Math.min(100, Math.max(12, pathCount * 22));
+        return `
         <button type="button" class="saved-map-chip ${map.id === state.activeMapId ? "is-active" : ""}" data-open-map="${escapeHtml(map.id)}">
           <span>
             <span class="saved-map-chip-title">${escapeHtml(map.title)}</span>
-            <span class="saved-map-chip-meta">${escapeHtml(formatMapDate(map.updatedAt))} · ${map.ideas?.length || 0} paths</span>
+            <span class="saved-map-chip-meta">${escapeHtml(formatMapDate(map.updatedAt))} · ${pathCount} paths</span>
+            <span class="saved-map-chip-progress" aria-hidden="true"><span style="width:${progress}%"></span></span>
           </span>
-        </button>
-      `).join("");
+        </button>`;
+      }).join("");
     }
 
     function renderMapsLibrary() {
@@ -9286,7 +10102,7 @@
           state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
         }
         const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
-        $("#nav-roadmap-btn").hidden = false;
+        setRoadmapNavVisible(true);
         $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
         $("#roadmap-title").textContent = state.currentIdea.title || "";
         $("#roadmap-sub").textContent = founderMode
@@ -9414,7 +10230,7 @@
       state.roadmapStages = [];
       state.mapChat = null;
       state.alterPathMode = false;
-      $("#nav-roadmap-btn").hidden = true;
+      setRoadmapNavVisible(false);
       const reply = $("#reply-textarea");
       if (reply) reply.placeholder = "Type your response...";
       updateReplyMapActions();
@@ -9466,7 +10282,7 @@
         state.currentIdea = null;
         state.roadmapKey = null;
         state.roadmapStages = [];
-        $("#nav-roadmap-btn").hidden = true;
+        setRoadmapNavVisible(false);
       }
 
       state.mapChat = null;
@@ -9706,8 +10522,18 @@
       const previousScreen = state.lastScreen;
       state.lastScreen = name;
       $$(".screen").forEach((screen) => screen.classList.toggle("active", screen.id === `screen-${name}`));
-      $$(".nav-btn[data-screen-link]").forEach((button) => button.classList.remove("active"));
+      $$(".nav-btn[data-screen-link], .dashboard-nav-btn[data-screen-link]").forEach((button) => button.classList.remove("active"));
       $(`[data-screen-link="${name}"]`)?.classList.add("active");
+      $$(".dashboard-nav-btn").forEach((button) => button.classList.remove("active"));
+      if (name === "main") {
+        $("#dashboard-sidebar")?.querySelector('[data-screen-link="main"]')?.classList.add("active");
+      } else if (name === "map") {
+        $("#sidebar-map-btn")?.classList.add("active");
+      } else if (name === "maps") {
+        $("#sidebar-saved-btn")?.classList.add("active");
+      } else if (name === "roadmap") {
+        $("#sidebar-progress-btn")?.classList.add("active");
+      }
       $("#nav-maps-btn")?.classList.toggle("active", name === "map" || name === "maps");
       if (name === "convo") {
         scrollConversation();
@@ -10509,7 +11335,7 @@
         forced: Boolean(options.force),
         founder_mode: founderMode
       });
-      $("#nav-roadmap-btn").hidden = false;
+      setRoadmapNavVisible(true);
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = idea.title;
 
@@ -10974,7 +11800,7 @@
       state.intakeMode = "standard";
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
-      $("#nav-roadmap-btn").hidden = true;
+      setRoadmapNavVisible(false);
       updateMapsNav();
       showReplyBox(false);
       if (options.clearMainInput) {
@@ -11708,6 +12534,10 @@
     }
 
     function syncHeaderHeight() {
+      if (document.documentElement.dataset.colorScheme === "adult") {
+        document.documentElement.style.setProperty("--header-h", "0px");
+        return;
+      }
       const header = document.querySelector(".app-header");
       if (!header) return;
       document.documentElement.style.setProperty("--header-h", `${header.offsetHeight}px`);
@@ -12139,11 +12969,56 @@
       updateHeaderJingleVisibility();
     }
 
+    function applyDashboardPrompt(prompt) {
+      const input = $("#main-input");
+      if (!input || !prompt) return;
+      input.value = prompt;
+      input.focus();
+    }
+
+    function bindDashboardUi() {
+      $("#dashboard-search-go")?.addEventListener("click", startFlow);
+      $("#dashboard-mobile-menu")?.addEventListener("click", () => {
+        $("#nav-hamburger-btn")?.click();
+      });
+      $("#dashboard-profile-btn")?.addEventListener("click", () => {
+        if (state.currentUser) return;
+        showAuth("signin");
+      });
+      $("#dashboard-top-avatar")?.addEventListener("click", () => {
+        if (state.currentUser) return;
+        showAuth("signin");
+      });
+      $("#sidebar-roadmaps-btn")?.addEventListener("click", openMapsFromNav);
+      $("#sidebar-saved-btn")?.addEventListener("click", () => showScreen("maps"));
+      $("#sidebar-discover-btn")?.addEventListener("click", () => {
+        showScreen("main", { skipScrollTop: true });
+        requestAnimationFrame(() => {
+          document.querySelector(".dashboard-explore")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+      $("#sidebar-settings-btn")?.addEventListener("click", () => {
+        showScreen("main", { skipScrollTop: true });
+        requestAnimationFrame(() => {
+          $("#site-suggestions")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+      $("#dashboard-explore-all")?.addEventListener("click", () => {
+        document.querySelector(".dashboard-explore")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      $$(".dashboard-quick-btn, .dashboard-explore-card").forEach((button) => {
+        button.addEventListener("click", () => {
+          applyDashboardPrompt(button.dataset.prompt);
+        });
+      });
+    }
+
     function bindEvents() {
       syncHeaderHeight();
       initScrollProgress();
       initMobileNav();
       bindColorSchemeControls();
+      bindDashboardUi();
       initMobileKeyboardAssist();
       window.addEventListener("resize", syncHeaderHeight);
       $$("[data-screen-link]").forEach((element) => {
