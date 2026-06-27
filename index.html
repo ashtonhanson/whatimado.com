@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-27-mobile-nav-fix -->
+<!-- whatimado build: 2026-06-27-maps-clarity -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-27-mobile-nav-fix">
+  <meta name="whatimado-build" content="2026-06-27-maps-clarity">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -477,6 +477,56 @@
       height: 15px;
       accent-color: #2563eb;
       cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-sync-btn {
+      width: 100%;
+      padding: .65rem .85rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-sync-btn:hover:not(:disabled) {
+      border-color: #2563eb;
+      color: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-sync-btn.is-saving {
+      opacity: .7;
+      cursor: wait;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-sync-note {
+      margin: 0;
+      padding: 0 .15rem;
+      color: var(--ink-muted);
+      font-size: .74rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .map-workflow-note {
+      margin: 0 0 1.25rem;
+      padding: .85rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .82);
+      color: var(--ink-muted);
+      font-size: .84rem;
+      line-height: 1.55;
+    }
+
+    html[data-color-scheme="adult"] .map-workflow-note strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-danger-btn {
+      color: #b91c1c;
     }
 
     html[data-color-scheme="adult"] .dashboard-sidebar-foot {
@@ -7926,7 +7976,7 @@
                 <div class="nav-group nav-group--actions">
                   <button class="nav-btn donate-btn" id="nav-donate-btn" type="button">Donate</button>
                   <button class="nav-btn" type="button" id="nav-suggest-btn">Suggest an improvement</button>
-                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Save progress to your account">Save</button>
+                  <button class="nav-btn save-btn" id="nav-save-btn" type="button" hidden title="Sync progress to your account">Sync</button>
                   <button class="nav-btn nav-cart" id="nav-cart-btn" type="button" aria-label="Donation cart">
                     Cart
                     <span class="nav-cart-badge" id="nav-cart-badge">1</span>
@@ -8038,7 +8088,7 @@
         </button>
         <button type="button" class="dashboard-nav-btn" id="sidebar-saved-btn">
           <svg viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5z"></path></svg>
-          Saved
+          My maps
         </button>
         <button type="button" class="dashboard-nav-btn" id="sidebar-settings-btn">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
@@ -8046,6 +8096,8 @@
         </button>
       </nav>
       <div class="dashboard-sidebar-foot">
+        <p class="dashboard-sync-note" id="dashboard-sync-note">Maps auto-save on this device. Sync to back up to your account.</p>
+        <button type="button" class="dashboard-sync-btn" id="dashboard-sync-btn" hidden>Sync progress</button>
         <div class="dashboard-theme-note" aria-hidden="true">☀ Clean theme</div>
         <button type="button" class="dashboard-profile" id="dashboard-profile-btn">
           <img class="dashboard-profile-avatar" id="dashboard-profile-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect fill='%23dbeafe' width='80' height='80'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%2393c5fd'/%3E%3Cpath d='M16 68c4-14 16-22 24-22s20 8 24 22' fill='%2393c5fd'/%3E%3C/svg%3E" alt="">
@@ -8077,7 +8129,6 @@
       <div class="main-workspace">
       <div class="dashboard-home">
         <div class="dashboard-hero">
-          <p class="dashboard-badge">✦ AI-Powered Guidance</p>
           <h1>Let's figure out what you're gonna do.</h1>
           <p class="dashboard-lead">Answer a few questions about your interests and goals, and I'll help you discover the best paths forward.</p>
 
@@ -8155,6 +8206,9 @@
             <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
           </div>
           <p class="site-suggestions-msg" id="site-suggestion-msg" hidden aria-live="polite"></p>
+          <div class="site-suggestions-footer" style="margin-top:1rem">
+            <button type="button" class="dashboard-link-btn dashboard-danger-btn" id="delete-all-maps-btn">Delete all maps and data</button>
+          </div>
         </section>
       </div>
 
@@ -8235,8 +8289,8 @@
           <button type="button" class="back-btn" data-screen-link="main">Back to home</button>
           <div>
             <p class="maps-page-kicker">Your library</p>
-            <h2 class="maps-page-title">My Maps</h2>
-            <p class="maps-page-sub">Each map keeps its paths, roadmaps, and task notes. Start a new one anytime without losing the others.</p>
+            <h2 class="maps-page-title">My maps</h2>
+            <p class="maps-page-sub">Each map is one exploration — your conversation, generated paths, and roadmap progress. Maps auto-save here as you work. Sync progress in the sidebar to back them up to your account.</p>
           </div>
           <button type="button" class="action-btn" id="maps-new-btn">Start new map</button>
         </div>
@@ -8258,7 +8312,7 @@
               <button type="button" class="reply-map-btn" id="reply-apply-map-btn">Update my paths</button>
               <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-map-btn">Back to map</button>
             </div>
-            <button class="reset-pill" id="reply-reset-btn" type="button">Reset current plans</button>
+            <button class="reset-pill" id="reply-reset-btn" type="button">Start new map</button>
           </div>
         </div>
       </div>
@@ -8276,7 +8330,7 @@
             <h2 class="page-title">Your <em>Possibility Map</em></h2>
             <p class="page-subtitle">Review each path below, then open a step-by-step roadmap for the one that fits you best.</p>
           </div>
-          <button class="back-btn" id="reset-btn">Start over</button>
+          <button class="back-btn" id="reset-btn">New map</button>
         </div>
 
         <div class="map-how-it-works" aria-label="What happens next">
@@ -8287,6 +8341,8 @@
             <li>Check off tasks, add notes, and Ask if you get stuck</li>
           </ol>
         </div>
+
+        <p class="map-workflow-note"><strong>My maps</strong> stores this whole exploration. <strong>Roadmaps</strong> in the sidebar lists step-by-step plans you've opened. Use <strong>Sync progress</strong> at the bottom of the menu to back up to your account.</p>
 
         <div class="map-overview">
         <div class="map-panel">
@@ -8318,7 +8374,7 @@
               <button class="back-btn map-toolbar-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
               <button class="back-btn map-toolbar-btn" id="add-selected-roadmaps-btn" type="button" disabled>Add selected to Roadmaps</button>
               <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Refine or add paths</button>
-              <button class="back-btn map-toolbar-btn" id="map-toolbar-reset-btn" type="button">Start over</button>
+              <button class="back-btn map-toolbar-btn" id="map-toolbar-reset-btn" type="button">New map</button>
             </div>
             <span class="map-plans-divider-label">Full path details</span>
           </div>
@@ -9829,11 +9885,11 @@
         note.className = "nav-sync-note is-ok";
       } else if (state.lastSyncStatus === "cloud-failed") {
         note.textContent = state.lastCloudSyncError
-          || "Cloud sync failed. Tap Save after fixing Supabase setup.";
+          || "Cloud sync failed. Tap Sync after fixing Supabase setup.";
         note.className = "nav-sync-note is-error";
       } else if (state.lastSyncStatus === "local-only") {
         note.textContent = state.lastCloudSyncError
-          || "Saved on this device only — tap Save to upload.";
+          || "Saved on this device only — tap Sync to upload.";
         note.className = "nav-sync-note is-error";
       } else if (stats.mapCount || hasSavableProgress()) {
         note.textContent = formatSyncPendingMessage(stats);
@@ -9843,15 +9899,16 @@
         note.className = "nav-sync-note";
       }
       updateSaveButtonLabel();
+      updateDashboardSyncNote();
     }
 
     function updateSaveButtonLabel() {
       const saveBtn = $("#nav-save-btn");
       if (!saveBtn || state.saveStatus === "saving") return;
-      saveBtn.textContent = "Save";
+      saveBtn.textContent = "Sync";
       saveBtn.title = state.currentUser
-        ? "Save progress to your account"
-        : "Save progress on this device";
+        ? "Sync progress to your account"
+        : "Sync progress on this device";
     }
 
     function isFounderUser(user = state.currentUser) {
@@ -10196,14 +10253,14 @@
 
     function formatSyncPendingMessage(stats = getLibraryStats()) {
       const { mapCount, pathCount } = stats;
-      if (!mapCount) return "Progress on this device — tap Save.";
+      if (!mapCount) return "Progress on this device — tap Sync.";
       if (mapCount === 1 && pathCount > 1) {
-        return `1 map · ${pathCount} paths on this device — tap Save.`;
+        return `1 map · ${pathCount} paths on this device — tap Sync.`;
       }
       if (pathCount > mapCount) {
-        return `${mapCount} maps · ${pathCount} paths on this device — tap Save.`;
+        return `${mapCount} maps · ${pathCount} paths on this device — tap Sync.`;
       }
-      return `${mapCount} map${mapCount === 1 ? "" : "s"} on this device — tap Save.`;
+      return `${mapCount} map${mapCount === 1 ? "" : "s"} on this device — tap Sync.`;
     }
 
     function serializeSession() {
@@ -10478,7 +10535,7 @@
       if (toggle) toggle.setAttribute("aria-expanded", state.sidebarRoadmapsExpanded ? "true" : "false");
 
       if (!hasCategories) {
-        container.innerHTML = '<p class="dashboard-roadmaps-empty">Select paths on your map or open a roadmap to collect them here.</p>';
+        container.innerHTML = '<p class="dashboard-roadmaps-empty">Open a path\'s roadmap from your map and it appears here for quick access. The full exploration stays in <strong>My maps</strong>.</p>';
         return;
       }
 
@@ -10836,8 +10893,34 @@
     }
 
     function updateSaveButtonVisibility() {
+      const visible = hasSavableProgress();
       const saveBtn = $("#nav-save-btn");
-      if (saveBtn) saveBtn.hidden = !hasSavableProgress();
+      if (saveBtn) saveBtn.hidden = !visible;
+      const dashboardSync = $("#dashboard-sync-btn");
+      if (dashboardSync) dashboardSync.hidden = !visible;
+      updateDashboardSyncNote();
+    }
+
+    function updateDashboardSyncNote() {
+      const note = $("#dashboard-sync-note");
+      if (!note) return;
+      if (!hasSavableProgress()) {
+        note.textContent = "Maps auto-save on this device. Sync to back up to your account.";
+        return;
+      }
+      const stats = state.lastSyncStatus === "cloud-ok" && state.syncedLibraryStats
+        ? state.syncedLibraryStats
+        : getLibraryStats();
+      if (state.lastSyncStatus === "cloud-ok") {
+        note.textContent = formatSyncSuccessMessage(stats);
+      } else if (state.lastSyncStatus === "cloud-failed") {
+        note.textContent = state.lastCloudSyncError
+          || "Saved on this device only — cloud sync failed. Tap Sync progress to retry.";
+      } else if (state.currentUser) {
+        note.textContent = formatSyncPendingMessage(stats);
+      } else {
+        note.textContent = `${formatSyncPendingMessage(stats)} Sign in to sync across devices.`;
+      }
     }
 
     function setSaveStatus(status, message = "") {
@@ -11016,7 +11099,15 @@
 
     async function manualSave() {
       trackEvent("manual_save_clicked", { has_user: Boolean(state.currentUser) });
-      await persistSession({ manual: true });
+      const dashSync = $("#dashboard-sync-btn");
+      dashSync?.classList.add("is-saving");
+      if (dashSync) dashSync.textContent = "Syncing…";
+      try {
+        await persistSession({ manual: true });
+      } finally {
+        dashSync?.classList.remove("is-saving");
+        if (dashSync) dashSync.textContent = "Sync progress";
+      }
     }
 
     async function loadSession() {
@@ -12930,6 +13021,46 @@
       updateSaveButtonVisibility();
     }
 
+    function getRoadmapSidebarCount() {
+      return (state.roadmapCategories || []).reduce(
+        (total, category) => total + (category.items || []).length,
+        0
+      );
+    }
+
+    function confirmStartNewMap() {
+      syncActiveMapIntoLibrary();
+      const mapCount = state.savedMaps.length;
+      const roadmapCount = getRoadmapSidebarCount();
+      let detail = "";
+      if (mapCount > 0 || roadmapCount > 0) {
+        const parts = [];
+        if (mapCount > 0) parts.push(`${mapCount} map${mapCount === 1 ? "" : "s"} in My maps`);
+        if (roadmapCount > 0) parts.push(`${roadmapCount} roadmap shortcut${roadmapCount === 1 ? "" : "s"}`);
+        detail = `\n\n${parts.join(" and ")} stay saved.`;
+      }
+      if (!confirm(`Start a new map? You'll answer fresh questions on Home.${detail}`)) return;
+      beginNewIntake();
+      state.lastScreen = "main";
+      setSaveStatus("idle");
+      updateMapsNav();
+      renderSavedMapsHome();
+      renderSidebarRoadmaps();
+      renderMapsLibrary();
+      showScreen("main");
+      schedulePersist();
+    }
+
+    function confirmResetEverything() {
+      syncActiveMapIntoLibrary();
+      const mapCount = state.savedMaps.length;
+      const roadmapCount = getRoadmapSidebarCount();
+      if (!confirm(
+        `Delete ALL maps, roadmaps, and conversation history on this device${state.currentUser ? " and in your account" : ""}?\n\nThis cannot be undone.${mapCount ? `\n\nIncludes ${mapCount} map${mapCount === 1 ? "" : "s"}` : ""}${roadmapCount ? ` and ${roadmapCount} roadmap shortcut${roadmapCount === 1 ? "" : "s"}` : ""}.`
+      )) return;
+      resetAll();
+    }
+
     function resetAll() {
       trackEvent("journey_reset", {
         history_count: state.history.length,
@@ -12964,6 +13095,7 @@
       }
       updateMapsNav();
       renderSavedMapsHome();
+      renderSidebarRoadmaps();
       showScreen("main");
     }
 
@@ -14178,6 +14310,7 @@
       $("#dashboard-search-go")?.addEventListener("click", startFlow);
       $("#dashboard-mobile-menu")?.addEventListener("click", toggleDashboardMobileNav);
       $("#dashboard-mobile-overlay")?.addEventListener("click", closeDashboardMobileNav);
+      $("#dashboard-sync-btn")?.addEventListener("click", manualSave);
       $("#dashboard-profile-btn")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-top-avatar")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-notify-btn")?.addEventListener("click", handleDashboardNotifyClick);
@@ -14273,16 +14406,12 @@
           submitReply();
         }
       });
-      $("#reply-reset-btn")?.addEventListener("click", () => {
-        if (confirm("Reset your current plans and start over? This clears the conversation and paths.")) {
-          resetAll();
-        }
-      });
+      $("#reply-reset-btn")?.addEventListener("click", confirmStartNewMap);
       $("#reply-apply-map-btn")?.addEventListener("click", applyMapChatChanges);
       $("#reply-back-map-btn")?.addEventListener("click", exitMapChat);
 
-      $("#reset-btn").addEventListener("click", resetAll);
-      $("#map-toolbar-reset-btn")?.addEventListener("click", resetAll);
+      $("#reset-btn").addEventListener("click", confirmStartNewMap);
+      $("#map-toolbar-reset-btn")?.addEventListener("click", confirmStartNewMap);
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
       $("#add-selected-roadmaps-btn")?.addEventListener("click", addSelectedPathsToRoadmaps);
       $("#map-back-btn")?.addEventListener("click", backFromMap);
@@ -14290,11 +14419,8 @@
       $("#roadmap-change-path-btn")?.addEventListener("click", regenerateCurrentRoadmap);
       $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
-      $("#complete-reset-btn")?.addEventListener("click", () => {
-        if (confirm("Start fresh? This clears the current conversation, map, and roadmap.")) {
-          resetAll();
-        }
-      });
+      $("#complete-reset-btn")?.addEventListener("click", confirmStartNewMap);
+      $("#delete-all-maps-btn")?.addEventListener("click", confirmResetEverything);
       $("#site-suggestion-submit")?.addEventListener("click", submitSiteSuggestion);
       $("#map-feedback-yes")?.addEventListener("click", () => handleMapFeedbackChoice("yes"));
       $("#map-feedback-no")?.addEventListener("click", () => handleMapFeedbackChoice("no"));
@@ -14332,8 +14458,7 @@
         showScreen(screen);
       });
       $("#maps-new-btn")?.addEventListener("click", () => {
-        beginNewIntake();
-        showScreen("main");
+        confirmStartNewMap();
         $("#main-input")?.focus();
       });
       $("#maps-library-list")?.addEventListener("click", handleSavedMapAction);
