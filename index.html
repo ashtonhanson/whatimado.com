@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-27-maps-clarity -->
+<!-- whatimado build: 2026-06-27-analytics-nav -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-27-maps-clarity">
+  <meta name="whatimado-build" content="2026-06-27-analytics-nav">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -8090,6 +8090,10 @@
           <svg viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5z"></path></svg>
           My maps
         </button>
+        <button type="button" class="dashboard-nav-btn" data-screen-link="stats" id="sidebar-stats-btn" hidden>
+          <svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-6"></path></svg>
+          Analytics
+        </button>
         <button type="button" class="dashboard-nav-btn" id="sidebar-settings-btn">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
           Settings
@@ -9921,7 +9925,9 @@
     function updateFounderNav() {
       const founder = isFounderUser();
       const statsBtn = $("#nav-stats-btn");
+      const sidebarStatsBtn = $("#sidebar-stats-btn");
       if (statsBtn) statsBtn.hidden = !founder;
+      if (sidebarStatsBtn) sidebarStatsBtn.hidden = !founder;
       if (!founder && state.lastScreen === "stats") {
         showScreen("main", { skipPersist: true, skipTrack: true });
       }
@@ -11677,6 +11683,8 @@
         $("#sidebar-saved-btn")?.classList.add("active");
       } else if (name === "roadmap") {
         $("#sidebar-progress-btn")?.classList.add("active");
+      } else if (name === "stats") {
+        $("#sidebar-stats-btn")?.classList.add("active");
       }
       $("#nav-maps-btn")?.classList.toggle("active", name === "map" || name === "maps");
       if (name === "convo") {
