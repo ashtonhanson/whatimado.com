@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-27-analytics-nav -->
+<!-- whatimado build: 2026-06-27-mobile-path-ux -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-27-analytics-nav">
+  <meta name="whatimado-build" content="2026-06-27-mobile-path-ux">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -240,14 +240,18 @@
       inset: 0 auto 0 0;
       z-index: 30;
       width: var(--sidebar-w);
+      height: 100dvh;
+      max-height: 100dvh;
       display: flex;
       flex-direction: column;
       padding: 1.25rem 1rem 1rem;
       background: var(--bg-soft);
       border-right: 1px solid var(--line);
+      overflow: hidden;
     }
 
     html[data-color-scheme="adult"] .dashboard-brand {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       gap: .65rem;
@@ -281,7 +285,12 @@
       display: flex;
       flex-direction: column;
       gap: .2rem;
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-right: .15rem;
     }
 
     html[data-color-scheme="adult"] .dashboard-nav-btn {
@@ -378,6 +387,10 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .35rem;
       width: 100%;
       padding: .35rem .45rem;
       border: 0;
@@ -394,6 +407,20 @@
       cursor: pointer;
     }
 
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-chevron {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      flex-shrink: 0;
+      transition: transform .18s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-expanded .dashboard-roadmap-category-chevron {
+      transform: rotate(90deg);
+    }
+
     html[data-color-scheme="adult"] .dashboard-roadmap-category.is-active .dashboard-roadmap-category-title,
     html[data-color-scheme="adult"] .dashboard-roadmap-category-title:hover {
       background: rgba(255, 255, 255, .72);
@@ -404,8 +431,12 @@
       list-style: none;
       margin: 0;
       padding: 0;
-      display: grid;
+      display: none;
       gap: .12rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-expanded .dashboard-roadmap-items {
+      display: grid;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item {
@@ -530,6 +561,7 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-sidebar-foot {
+      flex-shrink: 0;
       margin-top: auto;
       display: grid;
       gap: .75rem;
@@ -1033,6 +1065,7 @@
     }
 
     html[data-color-scheme="adult"] .opp-card-discuss-btn {
+      margin-bottom: 0;
       background: var(--bg-soft);
     }
 
@@ -1042,13 +1075,62 @@
       color: var(--ink);
     }
 
-    html[data-color-scheme="adult"] .opp-card-open-btn {
-      background: #111827;
-      border-color: #111827;
+    html[data-color-scheme="adult"] .opp-card-open-zone {
+      cursor: pointer;
+      border-radius: 12px;
+      transition: background .15s ease, box-shadow .15s ease;
     }
 
-    html[data-color-scheme="adult"] .opp-card-open-btn:hover {
-      background: #1f2937;
+    html[data-color-scheme="adult"] .opp-card-open-zone:hover,
+    html[data-color-scheme="adult"] .opp-card-open-zone:focus-visible {
+      background: rgba(37, 99, 235, .05);
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .18);
+    }
+
+    html[data-color-scheme="adult"] .opp-card-open-hint {
+      margin: .85rem 0 0;
+      padding-top: .75rem;
+      border-top: 1px dashed var(--line);
+      color: #2563eb;
+      font-size: .78rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-save-bar {
+      display: grid;
+      gap: .45rem;
+      margin-bottom: 1rem;
+      padding: .85rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .82);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-save-note {
+      margin: 0;
+      color: var(--ink-muted);
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] #roadmap-save-path-btn {
+      width: fit-content;
+    }
+
+    html[data-color-scheme="adult"] .map-plans-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .55rem;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    html[data-color-scheme="adult"] .map-plans-actions .map-toolbar-btn {
+      width: 100%;
+      justify-content: center;
+      text-align: center;
     }
 
     html[data-color-scheme="adult"] .bubble.ai {
@@ -1184,6 +1266,10 @@
 
       html[data-color-scheme="adult"] .saved-maps-home-list,
       html[data-color-scheme="adult"] .dashboard-explore-grid {
+        grid-template-columns: 1fr;
+      }
+
+      html[data-color-scheme="adult"] .map-plans-actions {
         grid-template-columns: 1fr;
       }
     }
@@ -5481,6 +5567,32 @@
       border-top: 1px solid rgba(20, 30, 60, .1);
     }
 
+    .opp-card-open-zone {
+      cursor: pointer;
+    }
+
+    .opp-card-open-hint {
+      margin: .85rem 0 0;
+      padding-top: .75rem;
+      border-top: 1px dashed rgba(20, 30, 60, .14);
+      font-size: .78rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .roadmap-save-bar {
+      display: grid;
+      gap: .45rem;
+      margin-bottom: 1rem;
+    }
+
+    .roadmap-save-note {
+      margin: 0;
+      font-size: .76rem;
+      line-height: 1.45;
+      opacity: .82;
+    }
+
     .opp-card-open-btn {
       display: inline-flex;
       align-items: center;
@@ -8376,7 +8488,6 @@
           <div class="map-plans-toolbar-inner">
             <div class="map-plans-actions">
               <button class="back-btn map-toolbar-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
-              <button class="back-btn map-toolbar-btn" id="add-selected-roadmaps-btn" type="button" disabled>Add selected to Roadmaps</button>
               <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Refine or add paths</button>
               <button class="back-btn map-toolbar-btn" id="map-toolbar-reset-btn" type="button">New map</button>
             </div>
@@ -8432,6 +8543,10 @@
           </div>
 
           <div class="roadmap-content" id="roadmap-content">
+          <div class="roadmap-save-bar">
+            <button type="button" class="back-btn" id="roadmap-save-path-btn">Save this path</button>
+            <p class="roadmap-save-note">This path auto-saves to My maps and Roadmaps as you check off tasks, add notes, or ask for help.</p>
+          </div>
           <div class="roadmap-type" id="roadmap-type"></div>
           <h2 class="roadmap-title" id="roadmap-title"></h2>
           <p class="roadmap-sub" id="roadmap-sub">Building your personalised roadmap...</p>
@@ -10454,7 +10569,12 @@
       const exists = category.items.some(
         (item) => item.mapId === state.activeMapId && item.ideaTitle === idea.title
       );
-      if (exists) return;
+      if (exists) {
+        state.activeRoadmapCategoryId = category.id;
+        state.sidebarRoadmapsExpanded = true;
+        renderSidebarRoadmaps();
+        return;
+      }
 
       category.items.push({
         id: createRoadmapItemId(),
@@ -10463,6 +10583,7 @@
         ideaIndex,
         addedAt: Date.now()
       });
+      state.activeRoadmapCategoryId = category.id;
       state.sidebarRoadmapsExpanded = true;
       renderSidebarRoadmaps();
     }
@@ -10484,18 +10605,20 @@
         const index = Number(input.dataset.pathSelect);
         input.checked = state.selectedPathIndexes.includes(index);
       });
-      const addBtn = $("#add-selected-roadmaps-btn");
-      if (addBtn) addBtn.disabled = state.selectedPathIndexes.length === 0;
     }
 
-    function addSelectedPathsToRoadmaps() {
-      const indexes = getSelectedPathIndexes();
-      if (!indexes.length) return;
-      indexes.forEach((index) => {
-        const idea = state.ideas[index];
-        if (idea) registerRoadmapInSidebar(idea, index);
-      });
-      trackEvent("roadmaps_added_to_sidebar", { count: indexes.length });
+    async function saveCurrentPath(options = {}) {
+      if (!state.currentIdea) return;
+      syncActiveMapIntoLibrary();
+      const ideaIndex = state.ideas.findIndex((entry) => slugify(entry.title) === state.roadmapKey);
+      registerRoadmapInSidebar(state.currentIdea, ideaIndex >= 0 ? ideaIndex : 0);
+      renderSidebarRoadmaps();
+      if (options.manual) {
+        await persistSession({ manual: true });
+        flashSaveToast("Path saved to My maps and Roadmaps");
+      } else {
+        schedulePersist();
+      }
     }
 
     function createManualRoadmapCategory() {
@@ -10545,10 +10668,13 @@
         return;
       }
 
-      container.innerHTML = state.roadmapCategories.map((category) => `
-        <div class="dashboard-roadmap-category ${category.id === state.activeRoadmapCategoryId ? "is-active" : ""}">
-          <button type="button" class="dashboard-roadmap-category-title" data-roadmap-category="${escapeHtml(category.id)}">
-            ${escapeHtml(category.title)}
+      container.innerHTML = state.roadmapCategories.map((category) => {
+        const isExpanded = category.id === state.activeRoadmapCategoryId;
+        return `
+        <div class="dashboard-roadmap-category ${isExpanded ? "is-expanded is-active" : ""}">
+          <button type="button" class="dashboard-roadmap-category-title" data-roadmap-category="${escapeHtml(category.id)}" aria-expanded="${isExpanded ? "true" : "false"}">
+            <span>${escapeHtml(category.title)}</span>
+            <svg class="dashboard-roadmap-category-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
           </button>
           <ul class="dashboard-roadmap-items">
             ${(category.items || []).map((item) => `
@@ -10560,7 +10686,8 @@
             `).join("")}
           </ul>
         </div>
-      `).join("");
+      `;
+      }).join("");
     }
 
     async function openRoadmapFromSidebar(categoryId, itemId) {
@@ -12438,24 +12565,22 @@
           <div class="opp-card-inner">
             <span class="opp-card-number">${number}</span>
             <div class="opp-card-body">
-              <div class="opp-card-head">
+              <div class="opp-card-open-zone" role="button" tabindex="0" aria-label="Open step-by-step roadmap for ${escapeHtml(idea.title)}">
+                <div class="opp-card-head">
           <div class="opp-type">${escapeHtml(idea.type || "Opportunity")}</div>
           <div class="opp-name">${escapeHtml(idea.title)}</div>
-              </div>
+                </div>
           <div class="opp-tagline">${escapeHtml(idea.tagline || "")}</div>
           <div class="opp-meta">
             ${idea.cost ? `<span>${escapeHtml(idea.cost)}</span>` : ""}
             ${idea.timeline ? `<span>${escapeHtml(idea.timeline)}</span>` : ""}
             ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
           </div>
-              ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
-              <label class="opp-card-select">
-                <input type="checkbox" class="opp-card-select-input" data-path-select="${index}">
-                <span>Track in Roadmaps</span>
-              </label>
+                ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
+                <p class="opp-card-open-hint">Click path to open step-by-step roadmap</p>
+              </div>
               <div class="opp-card-actions">
-                <button type="button" class="opp-card-discuss-btn">Discuss this path</button>
-                <button type="button" class="opp-card-open-btn">Open step-by-step roadmap</button>
+                <button type="button" class="opp-card-discuss-btn">Alter this path</button>
               </div>
             </div>
           </div>`;
@@ -12464,13 +12589,14 @@
           event.stopPropagation();
           startIdeaDiscussChat(index);
         });
-        card.querySelector(".opp-card-open-btn").addEventListener("click", (event) => {
-          event.stopPropagation();
-          viewRoadmap(idea, index);
-        });
-        const selectInput = card.querySelector(".opp-card-select-input");
-        selectInput?.addEventListener("change", (event) => {
-          setPathSelected(index, event.target.checked);
+        const openZone = card.querySelector(".opp-card-open-zone");
+        const openRoadmap = () => viewRoadmap(idea, index);
+        openZone?.addEventListener("click", openRoadmap);
+        openZone?.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openRoadmap();
+          }
         });
         bindMapPathHover(card, index);
         if (grid) grid.append(card);
@@ -14327,12 +14453,15 @@
       $("#dashboard-roadmap-categories")?.addEventListener("click", (event) => {
         const itemBtn = event.target.closest("[data-open-roadmap-item]");
         if (itemBtn) {
+          closeDashboardMobileNav();
           openRoadmapFromSidebar(itemBtn.dataset.roadmapCategory, itemBtn.dataset.openRoadmapItem);
           return;
         }
         const categoryBtn = event.target.closest("[data-roadmap-category]");
         if (categoryBtn && !event.target.closest("[data-open-roadmap-item]")) {
-          state.activeRoadmapCategoryId = categoryBtn.dataset.roadmapCategory;
+          const categoryId = categoryBtn.dataset.roadmapCategory;
+          state.activeRoadmapCategoryId = state.activeRoadmapCategoryId === categoryId ? null : categoryId;
+          state.sidebarRoadmapsExpanded = true;
           renderSidebarRoadmaps();
           schedulePersist();
         }
@@ -14421,9 +14550,9 @@
       $("#reset-btn").addEventListener("click", confirmStartNewMap);
       $("#map-toolbar-reset-btn")?.addEventListener("click", confirmStartNewMap);
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
-      $("#add-selected-roadmaps-btn")?.addEventListener("click", addSelectedPathsToRoadmaps);
       $("#map-back-btn")?.addEventListener("click", backFromMap);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
+      $("#roadmap-save-path-btn")?.addEventListener("click", () => saveCurrentPath({ manual: true }));
       $("#roadmap-change-path-btn")?.addEventListener("click", regenerateCurrentRoadmap);
       $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
