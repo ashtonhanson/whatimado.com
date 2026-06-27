@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-27-path-sticky -->
+<!-- whatimado build: 2026-06-27-mobile-nav-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-27-path-sticky">
+  <meta name="whatimado-build" content="2026-06-27-mobile-nav-fix">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -318,6 +318,165 @@
     html[data-color-scheme="adult"] .dashboard-nav-btn.active {
       background: rgba(37, 99, 235, .1);
       color: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: .15rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-btn--expand {
+      justify-content: space-between;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-btn-main {
+      display: inline-flex;
+      align-items: center;
+      gap: .7rem;
+      min-width: 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-chevron {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      transition: transform .16s ease;
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-group.is-open .dashboard-nav-chevron {
+      transform: rotate(90deg);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmaps-sub {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      margin: .1rem 0 .35rem .35rem;
+      padding-left: .65rem;
+      border-left: 1px solid var(--line);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmaps-empty {
+      margin: .15rem 0 .35rem;
+      padding: 0 .2rem;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category {
+      display: grid;
+      gap: .2rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category + .dashboard-roadmap-category {
+      margin-top: .35rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-title {
+      width: 100%;
+      padding: .35rem .45rem;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-muted);
+      font: inherit;
+      font-size: .66rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      text-align: left;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-active .dashboard-roadmap-category-title,
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-title:hover {
+      background: rgba(255, 255, 255, .72);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: .12rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item {
+      width: 100%;
+      padding: .48rem .55rem;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink-muted);
+      font: inherit;
+      font-size: .78rem;
+      font-weight: 600;
+      text-align: left;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item:hover {
+      background: rgba(255, 255, 255, .72);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active {
+      background: rgba(37, 99, 235, .1);
+      color: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-add-btn {
+      margin-top: .25rem;
+      padding: .45rem .55rem;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink-muted);
+      font: inherit;
+      font-size: .74rem;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-add-btn:hover {
+      background: rgba(255, 255, 255, .72);
+      color: var(--ink);
+      border-color: #d1d5db;
+    }
+
+    html[data-color-scheme="adult"] #saved-maps-home {
+      display: none !important;
+    }
+
+    html[data-color-scheme="adult"] .opp-card-select {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .75rem;
+      padding: .45rem .55rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--bg-soft);
+      color: var(--ink);
+      font-size: .76rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .opp-card-select input {
+      width: 15px;
+      height: 15px;
+      accent-color: #2563eb;
+      cursor: pointer;
     }
 
     html[data-color-scheme="adult"] .dashboard-sidebar-foot {
@@ -931,7 +1090,38 @@
 
     @media (max-width: 960px) {
       html[data-color-scheme="adult"] .dashboard-sidebar {
-        display: none;
+        display: flex;
+        z-index: 41;
+        transform: translateX(calc(-100% - 12px));
+        transition: transform .22s ease;
+        box-shadow: none;
+      }
+
+      html[data-color-scheme="adult"] .dashboard-sidebar.is-mobile-open {
+        transform: translateX(0);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, .12);
+      }
+
+      html[data-color-scheme="adult"] .dashboard-mobile-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        border: 0;
+        padding: 0;
+        background: rgba(17, 24, 39, .36);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .22s ease;
+        cursor: pointer;
+      }
+
+      html[data-color-scheme="adult"] .dashboard-mobile-overlay.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      html[data-color-scheme="adult"] body.dashboard-mobile-nav-open {
+        overflow: hidden;
       }
 
       html[data-color-scheme="adult"] .dashboard-main {
@@ -946,6 +1136,31 @@
       html[data-color-scheme="adult"] .dashboard-explore-grid {
         grid-template-columns: 1fr;
       }
+    }
+
+    html[data-color-scheme="adult"] .dashboard-toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+      z-index: 60;
+      max-width: min(92vw, 360px);
+      padding: .75rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font-size: .82rem;
+      line-height: 1.45;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, .12);
+      transform: translate(-50%, 12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
     }
 
     html[data-color-scheme="adult"] .loader-quote,
@@ -7800,10 +8015,19 @@
           <svg viewBox="0 0 24 24"><path d="M3 6.5 9 4.5l6 2 6-2v13l-6 2-6-2-6 2V6.5z"></path><path d="M9 4.5v13M15 6.5v13"></path></svg>
           Map
         </button>
-        <button type="button" class="dashboard-nav-btn" id="sidebar-roadmaps-btn">
-          <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
-          Roadmaps
-        </button>
+        <div class="dashboard-nav-group" id="dashboard-roadmaps-group">
+          <button type="button" class="dashboard-nav-btn dashboard-nav-btn--expand" id="sidebar-roadmaps-btn" aria-expanded="false" aria-controls="dashboard-roadmaps-sub">
+            <span class="dashboard-nav-btn-main">
+              <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+              Roadmaps
+            </span>
+            <svg class="dashboard-nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+          </button>
+          <div class="dashboard-roadmaps-sub" id="dashboard-roadmaps-sub" hidden>
+            <div id="dashboard-roadmap-categories"></div>
+            <button type="button" class="dashboard-roadmap-add-btn" id="dashboard-add-category-btn">+ New category</button>
+          </div>
+        </div>
         <button type="button" class="dashboard-nav-btn" id="sidebar-discover-btn">
           <svg viewBox="0 0 24 24"><path d="M12 3l2.4 7.4H22l-6 4.6 2.3 7L12 17.8 5.7 22l2.3-7-6-4.6h7.6L12 3z"></path></svg>
           Discoveries
@@ -7832,6 +8056,8 @@
         </button>
       </div>
     </aside>
+
+    <button type="button" class="dashboard-mobile-overlay" id="dashboard-mobile-overlay" hidden aria-label="Close menu"></button>
 
     <div class="dashboard-main">
       <header class="dashboard-topbar">
@@ -8042,7 +8268,7 @@
       <div class="page">
         <div class="page-header">
           <div class="map-header-nav">
-            <button class="back-btn" data-screen-link="convo">Back</button>
+            <button class="back-btn" id="map-back-btn" type="button">Back</button>
             <button class="back-btn" id="map-all-maps-btn" type="button" hidden>All maps</button>
           </div>
           <div class="map-heading">
@@ -8090,7 +8316,8 @@
           <div class="map-plans-toolbar-inner">
             <div class="map-plans-actions">
               <button class="back-btn map-toolbar-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
-              <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Chat to alter path</button>
+              <button class="back-btn map-toolbar-btn" id="add-selected-roadmaps-btn" type="button" disabled>Add selected to Roadmaps</button>
+              <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Refine or add paths</button>
               <button class="back-btn map-toolbar-btn" id="map-toolbar-reset-btn" type="button">Start over</button>
             </div>
             <span class="map-plans-divider-label">Full path details</span>
@@ -9332,6 +9559,10 @@
       intakeMode: "standard",
       activeMapId: null,
       savedMaps: [],
+      roadmapCategories: [],
+      activeRoadmapCategoryId: null,
+      selectedPathIndexes: [],
+      sidebarRoadmapsExpanded: false,
       saveStatus: "idle",
       lastSyncStatus: "idle",
       lastCloudSyncError: "",
@@ -9921,6 +10152,10 @@
         ...primary,
         savedMaps,
         activeMapId,
+        roadmapCategories: mergeRoadmapCategories(localPayload?.roadmapCategories, cloudPayload?.roadmapCategories),
+        activeRoadmapCategoryId: cloudTime >= localTime
+          ? (cloudPayload?.activeRoadmapCategoryId ?? localPayload?.activeRoadmapCategoryId ?? null)
+          : (localPayload?.activeRoadmapCategoryId ?? cloudPayload?.activeRoadmapCategoryId ?? null),
         savedAt: Math.max(localTime, cloudTime)
       };
 
@@ -9990,6 +10225,9 @@
         mapFeedbackGiven: state.mapFeedbackGiven,
         mapFeedbackSentiment: state.mapFeedbackSentiment,
         intakeMode: state.intakeMode || "standard",
+        roadmapCategories: state.roadmapCategories,
+        activeRoadmapCategoryId: state.activeRoadmapCategoryId,
+        selectedPathIndexes: state.selectedPathIndexes,
         savedAt: Date.now()
       };
     }
@@ -10040,6 +10278,268 @@
     function deriveMapTitle(history = state.history) {
       const first = history.find((entry) => entry.role === "user")?.content?.trim() || "Untitled map";
       return first.length > 72 ? `${first.slice(0, 71)}…` : first;
+    }
+
+    function deriveCategoryTitle(history = state.history) {
+      const mapTitle = deriveMapTitle(history);
+      const firstUser = history.find((entry) => entry.role === "user")?.content?.trim() || "";
+      if (isFounderOrProjectPrompt(firstUser || mapTitle)) {
+        return "whatimado.com growth paths";
+      }
+      return mapTitle.length > 56 ? `${mapTitle.slice(0, 55)}…` : mapTitle;
+    }
+
+    function createRoadmapCategoryId() {
+      return window.crypto?.randomUUID?.()
+        ? window.crypto.randomUUID()
+        : `rcat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function createRoadmapItemId() {
+      return window.crypto?.randomUUID?.()
+        ? window.crypto.randomUUID()
+        : `rli-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function mergeRoadmapCategories(local = [], cloud = []) {
+      const byId = new Map();
+      [...(local || []), ...(cloud || [])].forEach((category) => {
+        if (!category?.id) return;
+        const previous = byId.get(category.id);
+        if (!previous) {
+          byId.set(category.id, {
+            ...category,
+            items: Array.isArray(category.items) ? [...category.items] : []
+          });
+          return;
+        }
+        const seenItems = new Set(previous.items.map((item) => item.id));
+        (category.items || []).forEach((item) => {
+          if (!item?.id || seenItems.has(item.id)) return;
+          previous.items.push(item);
+          seenItems.add(item.id);
+        });
+        if ((category.createdAt || 0) > (previous.createdAt || 0)) {
+          previous.title = category.title;
+          previous.mapId = category.mapId ?? previous.mapId;
+        }
+      });
+      return [...byId.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    }
+
+    function migrateRoadmapCategoriesFromLibrary() {
+      if (state.roadmapCategories.length) return;
+      state.savedMaps.forEach((map) => {
+        const roadmaps = map.allRoadmaps && typeof map.allRoadmaps === "object" ? map.allRoadmaps : {};
+        const items = Object.entries(roadmaps)
+          .filter(([, entry]) => entry?.stages?.length)
+          .map(([key, entry]) => {
+            const ideaIndex = Array.isArray(map.ideas)
+              ? map.ideas.findIndex((idea) => slugify(idea.title) === key)
+              : -1;
+            return {
+              id: createRoadmapItemId(),
+              mapId: map.id,
+              ideaTitle: entry.idea?.title || map.ideas?.[ideaIndex]?.title || key,
+              ideaIndex: ideaIndex >= 0 ? ideaIndex : 0,
+              addedAt: map.updatedAt || Date.now()
+            };
+          });
+        if (!items.length) return;
+        state.roadmapCategories.push({
+          id: createRoadmapCategoryId(),
+          title: map.title || deriveCategoryTitle(map.history),
+          mapId: map.id,
+          createdAt: map.updatedAt || Date.now(),
+          items
+        });
+      });
+    }
+
+    function ensureCategoryForCurrentMap() {
+      syncActiveMapIntoLibrary();
+      if (!state.activeMapId) return null;
+      let category = state.roadmapCategories.find((entry) => entry.mapId === state.activeMapId);
+      if (category) return category;
+      category = {
+        id: createRoadmapCategoryId(),
+        title: deriveCategoryTitle(),
+        mapId: state.activeMapId,
+        createdAt: Date.now(),
+        items: []
+      };
+      state.roadmapCategories.unshift(category);
+      return category;
+    }
+
+    function getTargetCategoryForNewRoadmap() {
+      syncActiveMapIntoLibrary();
+      if (state.activeRoadmapCategoryId) {
+        const selected = state.roadmapCategories.find((entry) => entry.id === state.activeRoadmapCategoryId);
+        if (selected) return selected;
+      }
+      const byMap = state.roadmapCategories.find((entry) => entry.mapId === state.activeMapId);
+      if (byMap) return byMap;
+      return ensureCategoryForCurrentMap();
+    }
+
+    function registerRoadmapInSidebar(idea, ideaIndex) {
+      if (!idea?.title) return;
+      const category = getTargetCategoryForNewRoadmap();
+      if (!category) return;
+
+      const exists = category.items.some(
+        (item) => item.mapId === state.activeMapId && item.ideaTitle === idea.title
+      );
+      if (exists) return;
+
+      category.items.push({
+        id: createRoadmapItemId(),
+        mapId: state.activeMapId,
+        ideaTitle: idea.title,
+        ideaIndex,
+        addedAt: Date.now()
+      });
+      state.sidebarRoadmapsExpanded = true;
+      renderSidebarRoadmaps();
+    }
+
+    function getSelectedPathIndexes() {
+      return Array.isArray(state.selectedPathIndexes) ? [...state.selectedPathIndexes] : [];
+    }
+
+    function setPathSelected(index, selected) {
+      const next = new Set(getSelectedPathIndexes());
+      if (selected) next.add(index);
+      else next.delete(index);
+      state.selectedPathIndexes = [...next].sort((a, b) => a - b);
+      syncPathSelectionUi();
+    }
+
+    function syncPathSelectionUi() {
+      $$(".opp-card-select-input").forEach((input) => {
+        const index = Number(input.dataset.pathSelect);
+        input.checked = state.selectedPathIndexes.includes(index);
+      });
+      const addBtn = $("#add-selected-roadmaps-btn");
+      if (addBtn) addBtn.disabled = state.selectedPathIndexes.length === 0;
+    }
+
+    function addSelectedPathsToRoadmaps() {
+      const indexes = getSelectedPathIndexes();
+      if (!indexes.length) return;
+      indexes.forEach((index) => {
+        const idea = state.ideas[index];
+        if (idea) registerRoadmapInSidebar(idea, index);
+      });
+      trackEvent("roadmaps_added_to_sidebar", { count: indexes.length });
+    }
+
+    function createManualRoadmapCategory() {
+      const title = prompt("Name this roadmap group (e.g. Side projects, Career change):");
+      if (!title?.trim()) return;
+      const category = {
+        id: createRoadmapCategoryId(),
+        title: title.trim(),
+        mapId: null,
+        createdAt: Date.now(),
+        items: []
+      };
+      state.roadmapCategories.unshift(category);
+      state.activeRoadmapCategoryId = category.id;
+      state.sidebarRoadmapsExpanded = true;
+      renderSidebarRoadmaps();
+      schedulePersist();
+    }
+
+    function isActiveRoadmapSidebarItem(item) {
+      return Boolean(
+        item
+        && state.currentIdea?.title === item.ideaTitle
+        && state.roadmapKey === slugify(item.ideaTitle)
+        && $("#screen-roadmap")?.classList.contains("active")
+      );
+    }
+
+    function renderSidebarRoadmaps() {
+      const group = $("#dashboard-roadmaps-group");
+      const sub = $("#dashboard-roadmaps-sub");
+      const container = $("#dashboard-roadmap-categories");
+      const toggle = $("#sidebar-roadmaps-btn");
+      if (!sub || !container) return;
+
+      migrateRoadmapCategoriesFromLibrary();
+
+      const hasCategories = state.roadmapCategories.length > 0;
+      if (hasCategories) state.sidebarRoadmapsExpanded = true;
+
+      if (group) group.classList.toggle("is-open", state.sidebarRoadmapsExpanded);
+      sub.hidden = !state.sidebarRoadmapsExpanded;
+      if (toggle) toggle.setAttribute("aria-expanded", state.sidebarRoadmapsExpanded ? "true" : "false");
+
+      if (!hasCategories) {
+        container.innerHTML = '<p class="dashboard-roadmaps-empty">Select paths on your map or open a roadmap to collect them here.</p>';
+        return;
+      }
+
+      container.innerHTML = state.roadmapCategories.map((category) => `
+        <div class="dashboard-roadmap-category ${category.id === state.activeRoadmapCategoryId ? "is-active" : ""}">
+          <button type="button" class="dashboard-roadmap-category-title" data-roadmap-category="${escapeHtml(category.id)}">
+            ${escapeHtml(category.title)}
+          </button>
+          <ul class="dashboard-roadmap-items">
+            ${(category.items || []).map((item) => `
+              <li>
+                <button type="button" class="dashboard-roadmap-item ${isActiveRoadmapSidebarItem(item) ? "is-active" : ""}" data-open-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}">
+                  ${escapeHtml(item.ideaTitle)}
+                </button>
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+      `).join("");
+    }
+
+    async function openRoadmapFromSidebar(categoryId, itemId) {
+      const category = state.roadmapCategories.find((entry) => entry.id === categoryId);
+      const item = category?.items.find((entry) => entry.id === itemId);
+      if (!item) return;
+
+      state.activeRoadmapCategoryId = categoryId;
+
+      if (item.mapId && item.mapId !== state.activeMapId) {
+        loadSavedMap(item.mapId, { skipScreen: true });
+      }
+
+      let ideaIndex = item.ideaIndex;
+      let idea = state.ideas?.[ideaIndex];
+      if (!idea || idea.title !== item.ideaTitle) {
+        ideaIndex = state.ideas.findIndex((entry) => entry.title === item.ideaTitle);
+        idea = state.ideas[ideaIndex];
+      }
+      if (!idea) return;
+
+      await viewRoadmap(idea, ideaIndex);
+      renderSidebarRoadmaps();
+    }
+
+    function toggleSidebarRoadmapsPanel() {
+      state.sidebarRoadmapsExpanded = !state.sidebarRoadmapsExpanded;
+      renderSidebarRoadmaps();
+    }
+
+    function cleanupRoadmapCategoriesForMap(mapId) {
+      state.roadmapCategories = state.roadmapCategories
+        .map((category) => ({
+          ...category,
+          mapId: category.mapId === mapId ? null : category.mapId,
+          items: (category.items || []).filter((item) => item.mapId !== mapId)
+        }))
+        .filter((category) => category.items.length > 0 || category.mapId === null);
+      if (state.activeRoadmapCategoryId && !state.roadmapCategories.some((c) => c.id === state.activeRoadmapCategoryId)) {
+        state.activeRoadmapCategoryId = null;
+      }
+      renderSidebarRoadmaps();
     }
 
     function formatMapDate(timestamp) {
@@ -10120,6 +10620,10 @@
       } else {
         migrateLegacySessionPayload(data);
       }
+      state.roadmapCategories = Array.isArray(data.roadmapCategories) ? data.roadmapCategories : [];
+      state.activeRoadmapCategoryId = data.activeRoadmapCategoryId ?? null;
+      state.selectedPathIndexes = Array.isArray(data.selectedPathIndexes) ? data.selectedPathIndexes : [];
+      migrateRoadmapCategoriesFromLibrary();
       restoreActiveSavedMapSnapshot();
     }
 
@@ -10129,26 +10633,34 @@
       clearIntakeSession({ preserveLibrary: true });
     }
 
-    function loadSavedMap(mapId) {
+    function loadSavedMap(mapId, options = {}) {
       syncActiveMapIntoLibrary();
       const entry = state.savedMaps.find((map) => map.id === mapId);
       if (!entry) return;
 
       state.activeMapId = mapId;
       applyMapSnapshot(entry);
-      restoreSessionUI();
+      if (!options.skipScreen) restoreSessionUI();
+      else {
+        if (state.history.length) restoreConversationBubbles();
+        if (state.ideas.length) buildOpportunityMap(state.ideas);
+        updateMapsNav();
+      }
       trackEvent("saved_map_opened", {
         saved_maps_count: state.savedMaps.length,
         ideas_count: state.ideas.length
       });
 
-      if (state.ideas.length) {
-        showScreen("map");
-      } else if (state.history.length) {
-        showScreen("convo");
-      } else {
-        showScreen("main");
+      if (!options.skipScreen) {
+        if (state.ideas.length) {
+          showScreen("map");
+        } else if (state.history.length) {
+          showScreen("convo");
+        } else {
+          showScreen("main");
+        }
       }
+      renderSidebarRoadmaps();
       schedulePersist();
     }
 
@@ -10158,6 +10670,7 @@
       if (!confirm(`Delete this map?\n\n"${entry.title}"`)) return;
 
       state.savedMaps = state.savedMaps.filter((map) => map.id !== mapId);
+      cleanupRoadmapCategoriesForMap(mapId);
       if (state.activeMapId === mapId) {
         state.activeMapId = null;
         clearIntakeSession({ preserveLibrary: true });
@@ -10615,15 +11128,59 @@
       updateSaveButtonVisibility();
       updateMapsNav();
       renderSavedMapsHome();
+      renderSidebarRoadmaps();
+    }
+
+    function isMapChatIntroMessage(content) {
+      if (!content || typeof content !== "string") return false;
+      return content.startsWith("What would you like to change about these paths")
+        || content.startsWith("Want to tweak these paths or add new ones")
+        || /^Let's talk about "/.test(content);
+    }
+
+    function trimDanglingMapChatIntro() {
+      let trimmed = false;
+      while (state.history.length) {
+        const last = state.history[state.history.length - 1];
+        if (last.role === "user" || !isMapChatIntroMessage(last.content)) break;
+        state.history.pop();
+        trimmed = true;
+      }
+      return trimmed;
+    }
+
+    function hasAnyGeneratedRoadmaps() {
+      const cached = Object.values(state.allRoadmaps || {}).some((entry) => Array.isArray(entry?.stages) && entry.stages.length > 0);
+      const sidebar = (state.roadmapCategories || []).some((category) => (category.items || []).length > 0);
+      return cached || sidebar;
+    }
+
+    function backFromMap() {
+      const trimmedIntro = trimDanglingMapChatIntro();
+      state.mapChat = null;
+      state.alterPathMode = false;
+      updateReplyMapActions();
+      const reply = $("#reply-textarea");
+      if (reply) reply.placeholder = "Type your response...";
+      showReplyBox(false);
+      if (trimmedIntro) restoreConversationBubbles();
+      showScreen("convo");
+      schedulePersist();
     }
 
     function startAlterPathChat() {
       if (!state.ideas.length) return;
+      if (hasAnyGeneratedRoadmaps()) {
+        const ok = confirm(
+          "You've already opened step-by-step roadmaps for some paths. Refining your map may change those roadmaps and reset progress that isn't saved to your account.\n\nContinue refining or adding paths?"
+        );
+        if (!ok) return;
+      }
       state.mapChat = { type: "alter" };
       state.alterPathMode = false;
       trackEvent("alter_path_started", { ideas_count: state.ideas.length });
       showScreen("convo");
-      const prompt = "What would you like to change about these paths? Tell me what's not fitting — or what direction you'd rather explore. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back anytime.";
+      const prompt = "Want to tweak these paths or add new ones? Tell me what's not fitting, what direction you'd rather explore, or what to add. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back to your map anytime.";
       addTypingBubble();
       resolveTyping(prompt);
       state.history.push({ role: "assistant", content: prompt });
@@ -11311,10 +11868,13 @@
       updateSaveButtonVisibility();
       schedulePersist();
       setTimeout(() => {
+        state.selectedPathIndexes = [];
         buildOpportunityMap(state.ideas);
         updateMapsNav();
         syncActiveMapIntoLibrary();
+        ensureCategoryForCurrentMap();
         renderSavedMapsHome();
+        renderSidebarRoadmaps();
         trackEvent("map_generated", {
           ideas_count: state.ideas.length,
           founder_mode: founderMode,
@@ -11389,6 +11949,7 @@
       });
 
       updateMapAuxiliaryPanels();
+      renderSidebarRoadmaps();
       schedulePersist();
     }
 
@@ -11789,6 +12350,10 @@
             ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
           </div>
               ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
+              <label class="opp-card-select">
+                <input type="checkbox" class="opp-card-select-input" data-path-select="${index}">
+                <span>Track in Roadmaps</span>
+              </label>
               <div class="opp-card-actions">
                 <button type="button" class="opp-card-discuss-btn">Discuss this path</button>
                 <button type="button" class="opp-card-open-btn">Open step-by-step roadmap</button>
@@ -11804,9 +12369,14 @@
           event.stopPropagation();
           viewRoadmap(idea, index);
         });
+        const selectInput = card.querySelector(".opp-card-select-input");
+        selectInput?.addEventListener("change", (event) => {
+          setPathSelected(index, event.target.checked);
+        });
         bindMapPathHover(card, index);
         if (grid) grid.append(card);
       });
+      syncPathSelectionUi();
       if (!options.skipPersist) schedulePersist();
     }
 
@@ -11863,6 +12433,8 @@
           idea_index: ideaIndex,
           stages_count: state.roadmapStages.length
         });
+        registerRoadmapInSidebar(idea, ideaIndex);
+        renderSidebarRoadmaps();
         schedulePersist();
         return;
       }
@@ -11914,6 +12486,8 @@
           founder_mode: founderMode,
           source: roadmapSource
         });
+        registerRoadmapInSidebar(idea, ideaIndex);
+        renderSidebarRoadmaps();
         schedulePersist();
       } catch (error) {
         console.error(error);
@@ -11923,6 +12497,8 @@
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, "fallback");
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
+        registerRoadmapInSidebar(idea, ideaIndex);
+        renderSidebarRoadmaps();
         schedulePersist();
       } finally {
         setRoadmapLoading(false);
@@ -12341,6 +12917,7 @@
       state.mapFeedbackGiven = false;
       state.mapFeedbackSentiment = null;
       state.intakeMode = "standard";
+      state.selectedPathIndexes = [];
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
       setRoadmapNavVisible(false);
@@ -12363,6 +12940,9 @@
       intakeInProgress = false;
       state.savedMaps = [];
       state.activeMapId = null;
+      state.roadmapCategories = [];
+      state.activeRoadmapCategoryId = null;
+      state.selectedPathIndexes = [];
       clearIntakeSession({ clearMainInput: true });
       state.lastScreen = "main";
       setSaveStatus("idle");
@@ -13520,28 +14100,115 @@
       input.focus();
     }
 
+    let dashboardMobileNavOpen = false;
+
+    function showDashboardToast(message) {
+      let toast = $("#dashboard-toast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "dashboard-toast";
+        toast.className = "dashboard-toast";
+        toast.setAttribute("role", "status");
+        toast.setAttribute("aria-live", "polite");
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.add("is-visible");
+      clearTimeout(showDashboardToast.timer);
+      showDashboardToast.timer = window.setTimeout(() => toast.classList.remove("is-visible"), 3200);
+    }
+
+    function closeDashboardMobileNav() {
+      dashboardMobileNavOpen = false;
+      document.body.classList.remove("dashboard-mobile-nav-open");
+      $("#dashboard-sidebar")?.classList.remove("is-mobile-open");
+      const overlay = $("#dashboard-mobile-overlay");
+      if (overlay) {
+        overlay.classList.remove("is-visible");
+        overlay.hidden = true;
+      }
+    }
+
+    function openDashboardMobileNav() {
+      if (window.innerWidth > 960) return;
+      dashboardMobileNavOpen = true;
+      document.body.classList.add("dashboard-mobile-nav-open");
+      $("#dashboard-sidebar")?.classList.add("is-mobile-open");
+      const overlay = $("#dashboard-mobile-overlay");
+      if (overlay) {
+        overlay.hidden = false;
+        requestAnimationFrame(() => overlay.classList.add("is-visible"));
+      }
+    }
+
+    function toggleDashboardMobileNav() {
+      if (dashboardMobileNavOpen) closeDashboardMobileNav();
+      else openDashboardMobileNav();
+    }
+
+    function handleDashboardProfileClick() {
+      if (state.currentUser) {
+        if (confirm(`Signed in as ${state.currentUser.email}. Sign out?`)) {
+          closeDashboardMobileNav();
+          signOut();
+        }
+        return;
+      }
+      closeDashboardMobileNav();
+      showAuth("signin");
+    }
+
+    function handleDashboardNotifyClick() {
+      const roadmapCount = Object.values(state.allRoadmaps || {}).filter((entry) => Array.isArray(entry?.stages) && entry.stages.length > 0).length;
+      const sidebarCount = (state.roadmapCategories || []).reduce((total, category) => total + (category.items || []).length, 0);
+      if (roadmapCount > 0 || sidebarCount > 0) {
+        const count = Math.max(roadmapCount, sidebarCount);
+        showDashboardToast(`You have ${count} roadmap${count === 1 ? "" : "s"} in progress. Open Roadmaps in the menu.`);
+        return;
+      }
+      if (state.savedMaps?.length) {
+        const savedCount = state.savedMaps.length;
+        showDashboardToast(`You have ${savedCount} saved map${savedCount === 1 ? "" : "s"}.`);
+        return;
+      }
+      showDashboardToast("You're all caught up — no new notifications.");
+    }
+
     function bindDashboardUi() {
       $("#dashboard-search-go")?.addEventListener("click", startFlow);
-      $("#dashboard-mobile-menu")?.addEventListener("click", () => {
-        $("#nav-hamburger-btn")?.click();
+      $("#dashboard-mobile-menu")?.addEventListener("click", toggleDashboardMobileNav);
+      $("#dashboard-mobile-overlay")?.addEventListener("click", closeDashboardMobileNav);
+      $("#dashboard-profile-btn")?.addEventListener("click", handleDashboardProfileClick);
+      $("#dashboard-top-avatar")?.addEventListener("click", handleDashboardProfileClick);
+      $("#dashboard-notify-btn")?.addEventListener("click", handleDashboardNotifyClick);
+      $("#sidebar-roadmaps-btn")?.addEventListener("click", toggleSidebarRoadmapsPanel);
+      $("#dashboard-add-category-btn")?.addEventListener("click", createManualRoadmapCategory);
+      $("#dashboard-roadmap-categories")?.addEventListener("click", (event) => {
+        const itemBtn = event.target.closest("[data-open-roadmap-item]");
+        if (itemBtn) {
+          openRoadmapFromSidebar(itemBtn.dataset.roadmapCategory, itemBtn.dataset.openRoadmapItem);
+          return;
+        }
+        const categoryBtn = event.target.closest("[data-roadmap-category]");
+        if (categoryBtn && !event.target.closest("[data-open-roadmap-item]")) {
+          state.activeRoadmapCategoryId = categoryBtn.dataset.roadmapCategory;
+          renderSidebarRoadmaps();
+          schedulePersist();
+        }
       });
-      $("#dashboard-profile-btn")?.addEventListener("click", () => {
-        if (state.currentUser) return;
-        showAuth("signin");
+      $("#sidebar-saved-btn")?.addEventListener("click", () => {
+        closeDashboardMobileNav();
+        showScreen("maps");
       });
-      $("#dashboard-top-avatar")?.addEventListener("click", () => {
-        if (state.currentUser) return;
-        showAuth("signin");
-      });
-      $("#sidebar-roadmaps-btn")?.addEventListener("click", openMapsFromNav);
-      $("#sidebar-saved-btn")?.addEventListener("click", () => showScreen("maps"));
       $("#sidebar-discover-btn")?.addEventListener("click", () => {
+        closeDashboardMobileNav();
         showScreen("main", { skipScrollTop: true });
         requestAnimationFrame(() => {
           document.querySelector(".dashboard-explore")?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
       $("#sidebar-settings-btn")?.addEventListener("click", () => {
+        closeDashboardMobileNav();
         showScreen("main", { skipScrollTop: true });
         requestAnimationFrame(() => {
           $("#site-suggestions")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -13554,6 +14221,12 @@
         button.addEventListener("click", () => {
           applyDashboardPrompt(button.dataset.prompt);
         });
+      });
+      $$(".dashboard-nav-btn[data-screen-link]").forEach((button) => {
+        button.addEventListener("click", closeDashboardMobileNav);
+      });
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 960) closeDashboardMobileNav();
       });
     }
 
@@ -13611,6 +14284,8 @@
       $("#reset-btn").addEventListener("click", resetAll);
       $("#map-toolbar-reset-btn")?.addEventListener("click", resetAll);
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
+      $("#add-selected-roadmaps-btn")?.addEventListener("click", addSelectedPathsToRoadmaps);
+      $("#map-back-btn")?.addEventListener("click", backFromMap);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
       $("#roadmap-change-path-btn")?.addEventListener("click", regenerateCurrentRoadmap);
       $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
