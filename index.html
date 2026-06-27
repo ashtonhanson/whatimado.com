@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-27-mobile-path-ux -->
+<!-- whatimado build: 2026-06-27-home-hero -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-27-mobile-path-ux">
+  <meta name="whatimado-build" content="2026-06-27-home-hero">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -8245,11 +8245,11 @@
       <div class="main-workspace">
       <div class="dashboard-home">
         <div class="dashboard-hero">
-          <h1>Let's figure out what you're gonna do.</h1>
-          <p class="dashboard-lead">Answer a few questions about your interests and goals, and I'll help you discover the best paths forward.</p>
+          <h1>Let us help you figure out what you're gonna do.</h1>
+          <p class="dashboard-lead">Tell me about yourself—your skills, interests, experience, challenges, and what you want next. The more you share, the better your Possibility Map will be.</p>
 
           <div class="prompt-box dashboard-search">
-            <textarea class="prompt-textarea" id="main-input" rows="2" placeholder="What are you curious about?"></textarea>
+            <textarea class="prompt-textarea" id="main-input" rows="2" placeholder=""></textarea>
             <button type="button" class="dashboard-search-go" id="dashboard-search-go" aria-label="Continue">
               <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
             </button>
@@ -11824,7 +11824,10 @@
         trackEvent("screen_view", { screen: name, from: previousScreen });
       }
       if (name === "map") updateMapAuxiliaryPanels();
-      if (name === "main") renderSavedMapsHome();
+      if (name === "main") {
+        renderSavedMapsHome();
+        startRotatingPromptPlaceholder();
+      }
       if (name === "maps") renderMapsLibrary();
       if (name === "stats") {
         updateStatsContinueButton();
@@ -12260,6 +12263,7 @@
     async function startFlow() {
       const text = $("#main-input").value.trim();
       if (!text || intakeInProgress) return;
+      stopRotatingPromptPlaceholder();
       intakeInProgress = true;
       beginNewIntake();
       intakeAbandonTracked = false;
@@ -14363,7 +14367,50 @@
       const input = $("#main-input");
       if (!input || !prompt) return;
       input.value = prompt;
+      stopRotatingPromptPlaceholder();
       input.focus();
+    }
+
+    const PROMPT_PLACEHOLDER_EXAMPLES = [
+      "I'm a stay-at-home parent who's ready to get back to work. What careers should I explore?",
+      "I love cars and fixing things. Could I turn that into a business?",
+      "I'm 17 and trying to figure out what I should do after high school.",
+      "I'm burned out in my current job and want a career that's more creative.",
+      "I need to make extra income in the next few months. What realistic options do I have?",
+      "People always tell me I'm good with people, but I don't know what jobs or businesses fit that."
+    ];
+    let promptPlaceholderTimer = null;
+    let promptPlaceholderIndex = 0;
+
+    function stopRotatingPromptPlaceholder() {
+      clearInterval(promptPlaceholderTimer);
+      promptPlaceholderTimer = null;
+    }
+
+    function startRotatingPromptPlaceholder() {
+      const input = $("#main-input");
+      if (!input || input.value.trim() || document.activeElement === input) return;
+      stopRotatingPromptPlaceholder();
+      const advance = () => {
+        if (!input || input.value.trim() || document.activeElement === input) return;
+        input.placeholder = PROMPT_PLACEHOLDER_EXAMPLES[promptPlaceholderIndex];
+        promptPlaceholderIndex = (promptPlaceholderIndex + 1) % PROMPT_PLACEHOLDER_EXAMPLES.length;
+      };
+      advance();
+      promptPlaceholderTimer = setInterval(advance, 4500);
+    }
+
+    function initRotatingPromptPlaceholder() {
+      const input = $("#main-input");
+      if (!input || input.dataset.placeholderRotateBound) return;
+      input.dataset.placeholderRotateBound = "1";
+      input.addEventListener("focus", stopRotatingPromptPlaceholder);
+      input.addEventListener("blur", startRotatingPromptPlaceholder);
+      input.addEventListener("input", () => {
+        if (input.value.trim()) stopRotatingPromptPlaceholder();
+        else startRotatingPromptPlaceholder();
+      });
+      startRotatingPromptPlaceholder();
     }
 
     let dashboardMobileNavOpen = false;
@@ -14506,6 +14553,7 @@
       initMobileNav();
       bindColorSchemeControls();
       bindDashboardUi();
+      initRotatingPromptPlaceholder();
       initMobileKeyboardAssist();
       window.addEventListener("resize", syncHeaderHeight);
       $$("[data-screen-link]").forEach((element) => {
@@ -14518,6 +14566,7 @@
       $$("[data-prompt]").forEach((button) => {
         button.addEventListener("click", () => {
           $("#main-input").value = button.dataset.prompt;
+          stopRotatingPromptPlaceholder();
           $("#main-input").focus();
         });
       });
