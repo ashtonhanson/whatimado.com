@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-27-path-dedup -->
+<!-- whatimado build: 2026-06-27-path-sticky -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-27-path-dedup">
+  <meta name="whatimado-build" content="2026-06-27-path-sticky">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4060,6 +4060,18 @@
       margin-bottom: 1.35rem;
     }
 
+    .roadmap-header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      align-items: center;
+      margin-bottom: 1.35rem;
+    }
+
+    .roadmap-header-actions .roadmap-back-btn {
+      margin-bottom: 0;
+    }
+
     .back-btn:hover {
       color: var(--ink);
       border-color: rgba(124, 111, 205, .4);
@@ -7403,6 +7415,7 @@
     html[data-color-scheme="adult"] #screen-map #map-toolbar-reset-btn,
     html[data-color-scheme="adult"] #screen-map .map-toolbar-btn,
     html[data-color-scheme="adult"] #screen-roadmap .roadmap-back-btn,
+    html[data-color-scheme="adult"] #screen-roadmap #roadmap-change-path-btn,
     html[data-color-scheme="adult"] #screen-roadmap .complete-action-btn,
     html[data-color-scheme="adult"] #screen-maps .back-btn {
       color: var(--ink);
@@ -8123,10 +8136,13 @@
 
       <div class="page roadmap-layout roadmap-page" id="roadmap-page">
         <div>
-          <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
-            Back to map
-          </button>
+          <div class="roadmap-header-actions">
+            <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+              Back to map
+            </button>
+            <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
+          </div>
 
           <div class="roadmap-content" id="roadmap-content">
           <div class="roadmap-type" id="roadmap-type"></div>
@@ -8412,20 +8428,49 @@
     const GENERIC_FALLBACK_SIGNATURE = "Write the simplest version of your offer";
 
     function getFounderPathTemplate(idea) {
-      const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
-      if (/partner|nonprofit|grant|library|shelter|workforce|pilot|sponsor|outreach email|partnership pipeline/.test(blob)) {
-        return "partnership";
-      }
-      if (/launch|valid|reddit|facebook|quiet launch|first users|feedback-first|community sprint|social proof|5 communit/.test(blob)) {
-        return "launch";
-      }
-      if (/donat|pay-what|supporter tier|stripe checkout|tip jar|donation-first|keep it free.*\$/.test(blob)) {
-        return "donation";
-      }
-      if (/revenue|sustain|moneti/.test(blob) && !/grant|partner|nonprofit|launch|valid|reddit|facebook/.test(blob)) {
-        return "donation";
-      }
+      const title = String(idea?.title || "").toLowerCase();
+      const meta = `${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      const blob = `${title} ${meta}`;
+
+      if (/social proof|sponsorship deck|sponsor deck|sponsor-ready|sponsor read/.test(title)) return "sponsorship";
+      if (/quiet launch|community launch|validation sprint|5 communit|feedback-first|reddit launch|facebook launch/.test(title)) return "launch";
+      if (/donation-first|pay-what|supporter loop|sustainability loop/.test(title)) return "donation";
+      if (/grant|nonprofit partnership|partnership pipeline|workforce program|library pilot/.test(title)) return "partnership";
+
+      if (/social proof|sponsorship deck|sponsor deck/.test(blob)) return "sponsorship";
+      if (/quiet launch|validation sprint|feedback-first|5 communit|community sprint|first users/.test(blob)) return "launch";
+      if (/launch|valid/.test(blob) && !/partnership pipeline|nonprofit partner|grant pipeline/.test(title)) return "launch";
+      if (/donat|pay-what|supporter tier|stripe checkout|tip jar/.test(blob)) return "donation";
+      if (/partner|nonprofit|grant|library|shelter|workforce|pilot org|partnership/.test(blob)) return "partnership";
       return "general";
+    }
+
+    function cloneRoadmapStages(stages) {
+      return (stages || []).map((stage) => ({
+        label: String(stage.label || ""),
+        desc: String(stage.desc || ""),
+        tasks: Array.isArray(stage.tasks) ? stage.tasks.map(String) : []
+      }));
+    }
+
+    function pickUniqueFounderFallbackStages(idea, templates, preferred) {
+      const tryOrder = [...new Set([preferred, "launch", "sponsorship", "donation", "partnership", "general"])];
+      for (const key of tryOrder) {
+        const stages = cloneRoadmapStages(templates[key] || templates.general);
+        if (!roadmapOverlapsSibling(stages, idea)) return stages;
+      }
+      return cloneRoadmapStages(templates.general);
+    }
+
+    function getRoadmapSubtitle(founderMode, source = "ai") {
+      if (source === "fallback") {
+        return founderMode
+          ? "Using a detailed backup roadmap for whatimado.com — tasks include Reddit posts, donation copy, and outreach templates."
+          : "Using a backup roadmap — tasks are tailored to your path, but run through the flow again for a fully custom plan.";
+      }
+      return founderMode
+        ? "Mission-driven steps for whatimado.com — each task includes concrete copy, channels, or templates."
+        : "Follow these stages to get this off the ground.";
     }
 
     function normalizeRoadmapText(text) {
@@ -8496,6 +8541,25 @@
       }
 
       return false;
+    }
+
+    function purgeOverlappingRoadmapCaches() {
+      if (state.ideas.length < 2) return;
+      let changed = false;
+
+      state.ideas.forEach((idea) => {
+        const key = slugify(idea.title);
+        const entry = state.allRoadmaps[key];
+        if (!entry?.stages?.length) return;
+        if (!roadmapOverlapsSibling(entry.stages, idea)) return;
+
+        delete state.allRoadmaps[key];
+        if (state.allTaskChats[key]) delete state.allTaskChats[key];
+        if (state.roadmapKey === key) state.roadmapStages = [];
+        changed = true;
+      });
+
+      if (changed) schedulePersist();
     }
 
     function getFounderFallbackStages(idea) {
@@ -8579,6 +8643,44 @@
             ]
           }
         ],
+        sponsorship: [
+          {
+            label: "Build your sponsorship deck",
+            desc: `Turn "${title}" into a 1-page sponsor story for whatimado.com.`,
+            tasks: [
+              "Create a 1-page PDF or Google Slides deck with 4 sections: mission (who whatimado.com helps), traction (maps generated, testimonials, screenshots), sponsor benefits (logo, shoutout, optional co-branded workshop), and ask ($250–500 local sponsor tier)",
+              "Collect 3 proof points: one user quote (with permission), one screenshot of the map/roadmap flow, and one sentence on why the tool stays free for end users",
+              "Write a 60-second verbal pitch: problem → whatimado.com → what sponsor money covers → why it matters locally"
+            ]
+          },
+          {
+            label: "Gather social proof",
+            desc: "Sponsors fund impact — collect evidence this tool actually helps.",
+            tasks: [
+              "Ask 5 people who completed a roadmap for a one-sentence testimonial you can paste into the deck — note whether you have permission to use their first name",
+              "Screenshot 2 success moments on the site (map generated, roadmap with checked tasks) and add short captions explaining what happened",
+              "Draft a 100-word impact blurb: who uses whatimado.com, what problem it solves, and what stays free forever"
+            ]
+          },
+          {
+            label: "Pitch 5 local sponsors",
+            desc: "Start with businesses that already care about workforce, education, or community impact.",
+            tasks: [
+              "List 10 local candidates: workforce boards, credit unions, staffing agencies, community foundations, or small businesses that hire locally — pick 5 to contact first",
+              "Send this email to 5 contacts: \"Hi [Name] — I built whatimado.com, a free AI possibility map for people stuck on what's next. I'm looking for a local sponsor ($250–500) to keep it free for users who can't pay. Deck attached — open to a 15-minute call?\"",
+              "Follow up once after 5 business days with the deck link and one new testimonial or usage stat"
+            ]
+          },
+          {
+            label: "Close and deliver",
+            desc: "One sponsor plus visible gratitude beats ten maybes.",
+            tasks: [
+              "If someone says yes: send a simple sponsor agreement (logo on site, optional thank-you post, no paywall for users) and confirm payment method",
+              "Add a thank-you line on the site or donate modal for sponsors who keep personal access free — redeploy index.html after copy is final",
+              "Document what you promised the sponsor and set a 60-day check-in to share usage stats or a short impact update"
+            ]
+          }
+        ],
         partnership: [
           {
             label: "Pick one pilot partner type",
@@ -8657,7 +8759,7 @@
         ]
       };
 
-      return templates[template] || templates.general;
+      return pickUniqueFounderFallbackStages(idea, templates, template);
     }
 
     function getFallbackStages(idea) {
@@ -8740,7 +8842,8 @@
       const pathFocus = {
         launch: "community validation, Reddit/Facebook launch posts, first real users, analytics from Supabase site_events, suggestions box feedback",
         donation: "Stripe donation copy, pay-what-you-can framing, soft asks without paywalls, supporter loop, cost-per-session math",
-        partnership: "nonprofit/library/workforce/shelter pilot outreach, email templates, demo script, grant/sponsor paths that keep end users free",
+        sponsorship: "testimonials, 1-page sponsor deck, local business outreach, social proof quotes, ethical sponsor tiers that keep end users free",
+        partnership: "nonprofit/library/workforce/shelter pilot outreach, email templates, demo script, grant paths that keep end users free",
         general: "low-cost 30-90 day founder milestones mixing validation, feedback, donations, and partnerships"
       }[getFounderPathTemplate(idea)];
 
@@ -9248,6 +9351,22 @@
     const JINGLE_SRC = "/Jingle.mp3";
     const ANALYTICS_SESSION_KEY = "whatimado_analytics_session_id";
     const PATH_BUILDING_MSG = "Building your custom path to success…";
+    const LOADING_QUIPS = [
+      "Consulting the career oracle (it's winging it too)…",
+      "Mapping paths that aren't just 'learn to code'…",
+      "Asking the algorithm what you're gonna do…",
+      "Skimming the self-help aisle at lightspeed…",
+      "Bribing the roadmap elves with coffee…",
+      "Checking that this isn't another pyramid scheme…",
+      "Turning confusion into checkboxes…",
+      "Running a background check on your potential…",
+      "Fact-checking that side hustle you saw on TikTok…",
+      "Negotiating with your future self…",
+      "Herding possibilities into neat little rows…",
+      "Politely arguing with the productivity gods…"
+    ];
+    let loadingQuipTimer = null;
+    let loadingQuipIndex = 0;
     let persistTimer = null;
     let saveToastTimer = null;
     let lastAdvisorError = "";
@@ -9258,6 +9377,29 @@
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+    function pickLoadingQuip() {
+      const quip = LOADING_QUIPS[loadingQuipIndex % LOADING_QUIPS.length];
+      loadingQuipIndex += 1;
+      return quip;
+    }
+
+    function startLoadingQuips(target) {
+      stopLoadingQuips();
+      const el = typeof target === "string" ? $(target) : target;
+      if (!el) return;
+      el.textContent = pickLoadingQuip();
+      loadingQuipTimer = setInterval(() => {
+        el.textContent = pickLoadingQuip();
+      }, 2800);
+    }
+
+    function stopLoadingQuips() {
+      if (loadingQuipTimer) {
+        clearInterval(loadingQuipTimer);
+        loadingQuipTimer = null;
+      }
+    }
 
     function getCssVar(name) {
       return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -10446,6 +10588,7 @@
     }
 
     function restoreSessionUI() {
+      purgeOverlappingRoadmapCaches();
       if (state.history.length) restoreConversationBubbles();
       if (state.ideas.length) {
         buildOpportunityMap(state.ideas);
@@ -10453,15 +10596,14 @@
       updateMapsNav();
       if (state.currentIdea && state.roadmapStages.length) {
         if (state.roadmapKey && !state.allRoadmaps[state.roadmapKey]) {
-          state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
+          state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages, source: "ai" };
         }
         const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
+        const cachedEntry = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
         setRoadmapNavVisible(true);
         $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
         $("#roadmap-title").textContent = state.currentIdea.title || "";
-        $("#roadmap-sub").textContent = founderMode
-          ? "Mission-driven steps for whatimado.com — each task includes concrete copy, channels, or templates."
-          : "Follow these stages to get this off the ground.";
+        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedEntry?.source || "ai");
         $("#momentum-card").style.display = "flex";
         setRoadmapLoading(false);
         renderStages(state.roadmapStages);
@@ -11109,7 +11251,7 @@
         "Conversation:\n" +
         summary +
         "\n\nGenerate exactly 3 realistic path options for whatimado.com over the next 30-90 days and beyond.\n" +
-        "Each path must use a DIFFERENT primary strategy — for example: (1) community launch/validation, (2) donation or pay-what-you-can sustainability, (3) nonprofit/grant/partnership pipeline. Do not give three variations of the same tactic.\n" +
+        "Each path must use a DIFFERENT primary strategy — for example: (1) community launch/validation, (2) donation or pay-what-you-can sustainability, (3) sponsorship deck OR nonprofit/grant partnership pipeline. Do not give three variations of the same tactic.\n" +
         "Focus on low-cost validation, social launch, donations (Stripe is already set up), sponsors/grants, nonprofit/community partnerships, feedback loops, and analytics.\n" +
         "Personal user pricing must stay free, donation-based, pay-what-you-can, or very low — never premium SaaS tiers for individuals.\n" +
         "Each idea must be specific to whatimado.com and reference details from what they said.\n\n" +
@@ -11679,6 +11821,11 @@
         page.setAttribute("aria-hidden", loading ? "true" : "false");
       }
       document.body.classList.toggle("roadmap-loading-active", loading);
+      if (loading) {
+        startLoadingQuips("#roadmap-loading .loader-tagline");
+      } else {
+        stopLoadingQuips();
+      }
     }
 
     function clearProgressMap() {
@@ -11704,17 +11851,12 @@
       $("#roadmap-title").textContent = idea.title;
 
       const cached = !options.force ? state.allRoadmaps[state.roadmapKey] : null;
-      const cachedIsUsable = cached?.stages?.length
-        && !isGenericFallbackRoadmap(cached.stages)
-        && (!founderMode || isFounderRoadmap(cached.stages))
-        && !roadmapOverlapsSibling(cached.stages, idea);
+      const cachedIsUsable = Boolean(cached?.stages?.length) && !isGenericFallbackRoadmap(cached.stages);
       if (cachedIsUsable) {
         setRoadmapLoading(false);
         showScreen("roadmap");
         state.roadmapStages = cached.stages;
-        $("#roadmap-sub").textContent = founderMode
-          ? "Mission-driven steps for whatimado.com — each task includes concrete copy, channels, or templates."
-          : "Follow these stages to get this off the ground.";
+        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cached.source || "ai");
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
         trackEvent("roadmap_loaded_cached", {
@@ -11739,6 +11881,7 @@
       setRoadmapLoading(true);
       showScreen("roadmap");
 
+      let roadmapSource = "ai";
       try {
       const context = getConversationSummary();
       let response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode }), founderMode ? 2200 : 1800);
@@ -11751,9 +11894,7 @@
 
       if (!stages || roadmapOverlapsSibling(stages, idea)) {
         stages = getFallbackStages(idea);
-        if (roadmapOverlapsSibling(stages, idea)) {
-          throw new Error("Fallback roadmap still overlapped sibling paths");
-        }
+        roadmapSource = "fallback";
         trackEvent("roadmap_used_fallback", {
           idea_index: ideaIndex,
           founder_mode: founderMode,
@@ -11762,33 +11903,49 @@
       }
 
       state.roadmapStages = stages;
-        state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages };
-      $("#roadmap-sub").textContent = founderMode
-        ? "Mission-driven steps for whatimado.com — each task includes concrete copy, channels, or templates."
-        : "Follow these stages to get this off the ground.";
+        state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
+      $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
       $("#momentum-card").style.display = "flex";
       renderStages(state.roadmapStages);
         trackEvent("roadmap_generated", {
           idea_index: ideaIndex,
           stages_count: state.roadmapStages.length,
           task_count: state.roadmapStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0),
-          founder_mode: founderMode
+          founder_mode: founderMode,
+          source: roadmapSource
         });
         schedulePersist();
       } catch (error) {
         console.error(error);
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
         state.roadmapStages = getFallbackStages(idea);
-        state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages };
-        $("#roadmap-sub").textContent = founderMode
-          ? "Using a detailed backup roadmap for whatimado.com — tasks include Reddit posts, donation copy, and outreach templates."
-          : "Using a backup roadmap — tasks are tailored to your path, but run through the flow again for a fully custom plan.";
+        state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: "fallback" };
+        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, "fallback");
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
         schedulePersist();
       } finally {
         setRoadmapLoading(false);
       }
+    }
+
+    function getCurrentIdeaIndex() {
+      if (!state.currentIdea?.title) return -1;
+      return state.ideas.findIndex((idea) => idea.title === state.currentIdea.title);
+    }
+
+    async function regenerateCurrentRoadmap() {
+      const index = getCurrentIdeaIndex();
+      if (index < 0 || !state.currentIdea) return;
+      if (!confirm("Replace this path with fresh steps? Notes and checkboxes for this path will reset.")) return;
+
+      const key = state.roadmapKey;
+      if (key) {
+        delete state.allRoadmaps[key];
+        delete state.allTaskChats[key];
+      }
+      state.roadmapStages = [];
+      await viewRoadmap(state.currentIdea, index, { force: true });
     }
 
     function bindTaskPersistence() {
@@ -11928,7 +12085,11 @@
       });
 
       if (state.roadmapKey) {
-        state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
+        state.allRoadmaps[state.roadmapKey] = {
+          ...state.allRoadmaps[state.roadmapKey],
+          idea: state.currentIdea,
+          stages: state.roadmapStages
+        };
       }
 
       const firstTarget = targets[0];
@@ -12001,7 +12162,11 @@
 
         state.roadmapStages = [...state.roadmapStages, ...nextStages];
         if (state.roadmapKey) {
-          state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages };
+          state.allRoadmaps[state.roadmapKey] = {
+            ...state.allRoadmaps[state.roadmapKey],
+            idea: state.currentIdea,
+            stages: state.roadmapStages
+          };
         }
         renderStages(state.roadmapStages);
         schedulePersist();
@@ -13144,6 +13309,7 @@
         clearTimeout(loaderDismissTimer);
         loaderDismissTimer = null;
       }
+      stopLoadingQuips();
       const loader = $("#loader");
       if (!loader || loader.classList.contains("hidden")) return;
       loader.classList.add("hidden");
@@ -13446,6 +13612,7 @@
       $("#map-toolbar-reset-btn")?.addEventListener("click", resetAll);
       $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
+      $("#roadmap-change-path-btn")?.addEventListener("click", regenerateCurrentRoadmap);
       $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
       $("#complete-reset-btn")?.addEventListener("click", () => {
@@ -13513,6 +13680,7 @@
     }
 
     window.addEventListener("load", async () => {
+      startLoadingQuips("#loader .loader-tagline");
       const loaderFallbackTimer = setTimeout(() => {
         if (!$("#loader")?.classList.contains("hidden")) {
           console.warn("Loader fallback: init took longer than expected.");
