@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-sidebar-maps -->
+<!-- whatimado build: 2026-06-28-roadmap-complete-footer -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-sidebar-maps">
+  <meta name="whatimado-build" content="2026-06-28-roadmap-complete-footer">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -5800,6 +5800,19 @@
       background: linear-gradient(180deg, rgba(78, 205, 196, .1) 0%, rgba(124, 111, 205, .08) 100%);
     }
 
+    .roadmap-complete-card--footer {
+      margin-top: 1.25rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-complete-card--footer {
+      margin-top: 1.5rem;
+      padding: 1.15rem 1.2rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(37, 99, 235, .06) 0%, rgba(255, 255, 255, .92) 100%);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
     .roadmap-complete-card.visible {
       display: block;
     }
@@ -8642,6 +8655,18 @@
           </div>
 
           <div class="stage-list" id="stage-list"></div>
+
+          <div class="roadmap-complete-card roadmap-complete-card--footer" id="roadmap-complete-card" hidden>
+            <p class="roadmap-complete-kicker">Path complete</p>
+            <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
+            <p class="roadmap-complete-copy" id="roadmap-complete-copy">Nice work — this phase is complete. The next phase will load automatically when you're ready.</p>
+            <p class="roadmap-continuing-note" id="roadmap-continuing-note" hidden>Building your next phase…</p>
+            <div class="roadmap-complete-actions">
+              <button class="back-btn complete-action-btn primary" id="continue-plan-btn" type="button">Continue this plan</button>
+              <button class="back-btn complete-action-btn" id="complete-map-btn" type="button">Explore another path</button>
+              <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -8649,17 +8674,6 @@
           <div class="progress-map">
             <div class="progress-title">Progress Map <span id="progress-pct">0%</span></div>
             <div class="pm-chain" id="progress-chain"></div>
-          </div>
-          <div class="roadmap-complete-card" id="roadmap-complete-card" hidden>
-            <p class="roadmap-complete-kicker">Path complete</p>
-            <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
-            <p class="roadmap-complete-copy" id="roadmap-complete-copy">Nice work — this phase is complete. The next phase will load automatically when you're ready.</p>
-            <p class="roadmap-continuing-note" id="roadmap-continuing-note" hidden>Building your next phase…</p>
-            <div class="roadmap-complete-actions">
-              <button class="back-btn complete-action-btn primary" id="continue-plan-btn" type="button" hidden>Continue this plan</button>
-              <button class="back-btn complete-action-btn" id="complete-map-btn" type="button">Explore another path</button>
-              <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
-            </div>
           </div>
         </aside>
       </div>
@@ -13559,9 +13573,9 @@
       const complete = total > 0 && percent === 100;
       const continueBtn = $("#continue-plan-btn");
       const completeCopy = $("#roadmap-complete-copy");
+      const showComplete = complete && !state.roadmapAutoContinuePending;
 
       if (completeCard) {
-        const showComplete = complete && !state.roadmapAutoContinuePending;
         completeCard.hidden = !showComplete;
         completeCard.classList.toggle("visible", showComplete);
       }
@@ -13572,12 +13586,18 @@
 
       if (completeCopy && complete && !state.roadmapAutoContinuePending) {
         completeCopy.textContent = state.roadmapExhausted
-          ? "You've finished every meaningful phase on this path. Explore another path or rebuild remaining steps if something changed."
-          : "Nice work — this phase is complete. The next phase will load automatically, or tap Continue below.";
+          ? "You've finished every meaningful phase on this path. Pick another path on your map, or start fresh with a new exploration."
+          : "Nice work — this phase is complete. The next phase will load automatically in a moment, or tap Continue below.";
       }
 
       updateRebuildRemainingButton();
       updateProgressMap();
+
+      if (showComplete && completeCard) {
+        requestAnimationFrame(() => {
+          completeCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+      }
 
       if (complete && !state.roadmapExhausted && !state.roadmapAutoContinuePending && !roadmapAutoContinueTimer) {
         roadmapAutoContinueTimer = setTimeout(() => {
