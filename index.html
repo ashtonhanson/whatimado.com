@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-local-enrich-fallback -->
+<!-- whatimado build: 2026-06-28-roadmap-layout-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-local-enrich-fallback">
+  <meta name="whatimado-build" content="2026-06-28-roadmap-layout-fix">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -5888,7 +5888,7 @@
 
     html[data-color-scheme="adult"] .roadmap-phase-body {
       display: none;
-      padding: 0 1rem 1rem;
+      padding: .5rem 1rem 1.1rem;
       border-top: 1px solid var(--line);
     }
 
@@ -5897,10 +5897,14 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-phase-desc {
-      margin: .85rem 0 1rem;
+      margin: .65rem 0 .85rem;
       color: var(--ink-muted);
       font-size: .8rem;
       line-height: 1.5;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-body .tasks {
+      padding-top: .15rem;
     }
 
     html[data-color-scheme="adult"] .overview-task {
@@ -5910,7 +5914,7 @@
 
     html[data-color-scheme="adult"] .overview-task:first-child {
       border-top: 0;
-      padding-top: .25rem;
+      padding-top: .75rem;
     }
 
     html[data-color-scheme="adult"] .overview-task-main {
@@ -6156,6 +6160,20 @@
       padding: 0;
       display: grid;
       gap: .45rem;
+      max-height: min(18rem, 42vh);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: .2rem;
+      scrollbar-gutter: stable;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-list::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .18);
     }
 
     html[data-color-scheme="adult"] .roadmap-local-item {
@@ -6310,6 +6328,20 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      max-height: calc(100dvh - 96px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: .2rem;
+      scrollbar-gutter: stable;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side::-webkit-scrollbar {
+      width: 7px;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .16);
     }
 
     .roadmap-type {
@@ -8427,6 +8459,14 @@
 
       .roadmap-side {
         position: static;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-local-list {
+        max-height: none;
+        overflow: visible;
       }
 
       .bubble {
@@ -14748,8 +14788,11 @@
         return;
       }
 
-      list.innerHTML = resources.slice(0, 6).map((item) => renderLocalResourceItem(item)).join("");
-      if (moreBtn) moreBtn.hidden = resources.length <= 6;
+      list.innerHTML = resources.map((item) => renderLocalResourceItem(item)).join("");
+      if (moreBtn) {
+        moreBtn.hidden = resources.length <= 4;
+        moreBtn.textContent = "Jump to tasks with these contacts";
+      }
       if (card) card.hidden = false;
     }
 
