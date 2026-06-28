@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-mobile-roadmap-layout -->
+<!-- whatimado build: 2026-06-28-sidebar-nav-resources -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-mobile-roadmap-layout">
+  <meta name="whatimado-build" content="2026-06-28-sidebar-nav-resources">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -367,6 +367,12 @@
       margin: .1rem 0 .35rem .35rem;
       padding-left: .65rem;
       border-left: 1px solid var(--line);
+      min-width: 0;
+      overflow-x: hidden;
+    }
+
+    html[data-color-scheme="adult"] #dashboard-roadmap-categories {
+      min-width: 0;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmaps-empty {
@@ -379,37 +385,41 @@
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-head {
       display: flex;
-      align-items: stretch;
+      align-items: flex-start;
       gap: .1rem;
+      min-width: 0;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-title {
       flex: 1;
       min-width: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: .35rem;
+      display: block;
       width: auto;
-      padding: .35rem .45rem;
+      padding: .55rem .6rem;
       border: 0;
-      border-radius: 8px;
-      background: transparent;
-      color: var(--ink-muted);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, .05);
+      color: var(--ink);
       font: inherit;
-      font-size: .66rem;
+      font-size: .82rem;
       font-weight: 800;
-      letter-spacing: .04em;
+      letter-spacing: .05em;
       text-transform: uppercase;
       text-align: left;
       line-height: 1.35;
       cursor: pointer;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-title span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      display: block;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle,
@@ -461,10 +471,26 @@
       transform: rotate(90deg);
     }
 
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section {
+      padding-left: .35rem;
+      border-left: 3px solid #2563eb;
+      margin-left: -.1rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section .dashboard-roadmap-category-title {
+      background: rgba(37, 99, 235, .12);
+      color: #1d4ed8;
+    }
+
     html[data-color-scheme="adult"] .dashboard-roadmap-category.is-active .dashboard-roadmap-category-title,
     html[data-color-scheme="adult"] .dashboard-roadmap-category-title:hover {
-      background: rgba(255, 255, 255, .72);
+      background: rgba(255, 255, 255, .85);
       color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section.is-active .dashboard-roadmap-category-title {
+      background: rgba(37, 99, 235, .12);
+      color: #1d4ed8;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-items {
@@ -481,17 +507,20 @@
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item {
       width: 100%;
-      padding: .48rem .55rem;
+      padding: .52rem .55rem .52rem .85rem;
       border: 0;
       border-radius: 10px;
       background: transparent;
       color: var(--ink-muted);
       font: inherit;
-      font-size: .78rem;
-      font-weight: 600;
+      font-size: .7rem;
+      font-weight: 500;
       text-align: left;
-      line-height: 1.35;
+      line-height: 1.4;
       cursor: pointer;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item:hover {
@@ -500,8 +529,10 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active {
-      background: rgba(37, 99, 235, .1);
-      color: #2563eb;
+      background: rgba(37, 99, 235, .12);
+      color: #1d4ed8;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .18);
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-add-btn {
@@ -5624,6 +5655,45 @@
       line-height: 1.45;
     }
 
+    html[data-color-scheme="adult"] .opp-local-hint {
+      margin-top: .75rem;
+      padding: .75rem .85rem;
+      border-radius: 12px;
+      border: 1px solid rgba(37, 99, 235, .16);
+      background: rgba(37, 99, 235, .05);
+    }
+
+    html[data-color-scheme="adult"] .opp-local-hint-title {
+      margin: 0 0 .4rem;
+      color: var(--ink);
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+
+    html[data-color-scheme="adult"] .opp-local-hint-list {
+      display: grid;
+      gap: .3rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    html[data-color-scheme="adult"] .opp-local-hint-list li {
+      color: var(--ink);
+      font-size: .72rem;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    html[data-color-scheme="adult"] .opp-local-hint-list a {
+      color: #2563eb;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
     .opp-card {
       scroll-margin-top: calc(var(--header-h) + 14px);
     }
@@ -5773,6 +5843,41 @@
       flex-wrap: wrap;
       align-items: center;
       gap: .55rem .85rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-header-local-hint {
+      margin: 0 0 1rem;
+      padding: .85rem 1rem;
+      border: 1px solid rgba(37, 99, 235, .18);
+      border-radius: 14px;
+      background: rgba(37, 99, 235, .05);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-header-local-hint-title {
+      margin: 0 0 .45rem;
+      color: var(--ink);
+      font-size: .74rem;
+      font-weight: 800;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-header-local-hint-list {
+      display: grid;
+      gap: .35rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-header-local-hint-list li {
+      color: var(--ink);
+      font-size: .72rem;
+      line-height: 1.4;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-header-local-hint-list a {
+      color: #2563eb;
+      font-weight: 700;
+      text-decoration: none;
     }
 
     html[data-color-scheme="adult"] .roadmap-meta-chip {
@@ -6398,6 +6503,16 @@
 
       html[data-color-scheme="adult"] .roadmap-phase-head {
         padding: 1.1rem 1.15rem;
+      }
+
+      html[data-color-scheme="adult"] .task-action-pack {
+        padding: .95rem 1rem;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      html[data-color-scheme="adult"] .task-script-block {
+        font-size: .7rem;
       }
     }
 
@@ -9353,6 +9468,7 @@
               <span class="roadmap-meta-chip" id="roadmap-meta-timeline" hidden></span>
               <button type="button" class="roadmap-edit-link" id="roadmap-edit-details-btn">Edit details</button>
             </div>
+            <div class="roadmap-header-local-hint" id="roadmap-header-local-hint" hidden></div>
           </header>
 
           <div class="roadmap-content" id="roadmap-content">
@@ -9847,6 +9963,19 @@
       if (confirmed) state.locationConfirmed = true;
       updateRoadmapOverviewHeader();
       updateRoadmapLocalResourcesList();
+      if (state.ideas?.length && $("#screen-map")?.classList.contains("active")) {
+        buildOpportunityMap(state.ideas, { skipPersist: true });
+      }
+      if (state.roadmapStages?.length && $("#screen-roadmap")?.classList.contains("active")) {
+        state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages);
+        if (state.roadmapKey && state.allRoadmaps[state.roadmapKey]) {
+          state.allRoadmaps[state.roadmapKey] = {
+            ...state.allRoadmaps[state.roadmapKey],
+            stages: state.roadmapStages
+          };
+        }
+        renderStages(state.roadmapStages);
+      }
       schedulePersist();
     }
 
@@ -10053,7 +10182,33 @@
       );
     }
 
-    function injectLocalContactsIntoRoadmap(stages, resources, loc = getUserLocation()) {
+    function shouldInjectLocalContacts(task, stage, stageIndex, idea = state.currentIdea) {
+      const normalized = normalizeRoadmapTask(task);
+      const taskText = normalized.text;
+      const stageBlob = `${stage.label || ""} ${stage.desc || ""}`.toLowerCase();
+      const ideaBlob = `${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+
+      if (/\b(email|call|outreach|visit|director|shelter|recovery|workforce|pilot|demo|partner|nonprofit|library|organizations?|list 10|name 5|spreadsheet|community|3-5|programs?|centers?|contact|reach|demos?|flier|flyer)\b/i.test(taskText)) {
+        return true;
+      }
+      if (/\b(shelter|recovery|workforce|partner|outreach|nonprofit|library|pilot|demo|community|local|visit|email|org|contact|programs?)\b/.test(stageBlob)) {
+        return true;
+      }
+      if (pathNeedsLocalResources(idea) && stageIndex >= 1) return true;
+      if (pathNeedsLocalResources(idea) && stageIndex === 0 && /\b(shelter|recovery|partner|workforce|3-5|programs?|centers?|austin|validation|feedback|demo|pilot)\b/.test(ideaBlob)) {
+        return true;
+      }
+      if (/\b(shelter|recovery|partner|workforce|nonprofit|pilot|3-5|programs?)\b/.test(ideaBlob) && stageIndex >= 1) {
+        return true;
+      }
+      if (/\b(shelter|recovery|partner|workforce|nonprofit|pilot|3-5|programs?|austin)\b/.test(ideaBlob) &&
+          /\b(list|find|identify|name|research|contact|reach|partner|visit|email|call|org|program|center|shelter)\b/i.test(taskText)) {
+        return true;
+      }
+      return false;
+    }
+
+    function injectLocalContactsIntoRoadmap(stages, resources, loc = getUserLocation(), idea = state.currentIdea) {
       if (!Array.isArray(stages) || !resources.length) return stages;
       let resourceIndex = 0;
       const cloned = normalizeRoadmapStages(stages);
@@ -10070,11 +10225,7 @@
             return normalized;
           }
 
-          const shouldInject =
-            stageIndex >= 1 ||
-            /\b(email|call|outreach|visit|director|shelter|recovery|workforce|pilot|demo|partner|nonprofit|library|organizations?|list 10|name 5|spreadsheet|community)\b/i.test(normalized.text);
-
-          if (!shouldInject) return normalized;
+          if (!shouldInjectLocalContacts(normalized, stage, stageIndex, idea)) return normalized;
 
           const primary = resources[resourceIndex % resources.length];
           const secondary = resources[(resourceIndex + 1) % resources.length];
@@ -10097,6 +10248,72 @@
       return cloned;
     }
 
+    function ensureRoadmapLocalContacts(stages, idea = state.currentIdea) {
+      if (!getUserLocation() || !pathNeedsLocalResources(idea)) return stages;
+      return injectLocalContactsIntoRoadmap(stages, getKnownLocalResources(), getUserLocation(), idea);
+    }
+
+    function getLocalHintResources(idea = state.currentIdea, limit = 5) {
+      const loc = getUserLocation();
+      if (!loc) return [];
+      const resources = getKnownLocalResources(loc);
+      const ideaBlob = `${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      const preferShelter = /\b(shelter|recovery|re-?entry|homeless|housing)\b/.test(ideaBlob);
+      const score = (entry) => {
+        const blob = `${entry.org || ""} ${entry.name || ""}`.toLowerCase();
+        if (preferShelter && /\b(shelter|re-?entry|housing|caritas|front steps|lifeworks|foundation communities)\b/.test(blob)) return 2;
+        if (/\b(workforce|library|job)\b/.test(blob)) return 1;
+        return 0;
+      };
+      return [...resources].sort((a, b) => score(b) - score(a)).slice(0, limit);
+    }
+
+    function renderLocalHintListHtml(resources, listClass = "roadmap-header-local-hint-list") {
+      if (!resources.length) return "";
+      return `
+        <ul class="${listClass}">
+          ${resources.map((entry) => {
+            const href = entry.url ? formatExternalUrl(entry.url) : "";
+            const org = escapeHtml(entry.org || entry.name || "Local program");
+            const meta = [entry.phone, entry.email].filter(Boolean).map((value) => escapeHtml(value)).join(" · ");
+            return `<li>${href ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${org}</a>` : org}${meta ? ` · ${meta}` : ""}</li>`;
+          }).join("")}
+        </ul>`;
+    }
+
+    function renderMapPathLocalHintHtml(idea) {
+      if (!getUserLocation() || !pathNeedsLocalResources(idea)) return "";
+      const resources = getLocalHintResources(idea, 5);
+      if (!resources.length) return "";
+      const cityLabel = getUserLocation().split(",")[0]?.trim() || "your area";
+      return `
+        <div class="opp-local-hint">
+          <p class="opp-local-hint-title">Start with these ${escapeHtml(cityLabel)} orgs</p>
+          ${renderLocalHintListHtml(resources, "opp-local-hint-list")}
+        </div>`;
+    }
+
+    function updateRoadmapHeaderLocalHint(idea = state.currentIdea) {
+      const el = $("#roadmap-header-local-hint");
+      if (!el) return;
+      if (!getUserLocation() || !pathNeedsLocalResources(idea)) {
+        el.hidden = true;
+        el.innerHTML = "";
+        return;
+      }
+      const resources = getLocalHintResources(idea, 5);
+      if (!resources.length) {
+        el.hidden = true;
+        el.innerHTML = "";
+        return;
+      }
+      const cityLabel = getUserLocation().split(",")[0]?.trim() || "your area";
+      el.innerHTML = `
+        <p class="roadmap-header-local-hint-title">Local orgs to start with in ${escapeHtml(cityLabel)}</p>
+        ${renderLocalHintListHtml(resources)}`;
+      el.hidden = false;
+    }
+
     function buildCompactLocalEnrichPrompt(idea, loc, founderMode) {
       const focus = founderMode
         ? "whatimado.com founder partnership with shelters, recovery centers, and workforce programs"
@@ -10116,7 +10333,7 @@
 
     function applyLocalResourceFallback(stages, loc) {
       const resources = getKnownLocalResources(loc);
-      return injectLocalContactsIntoRoadmap(stages, resources, loc);
+      return injectLocalContactsIntoRoadmap(stages, resources, loc, state.currentIdea);
     }
 
     function renderTaskMetaHtml(task) {
@@ -12181,6 +12398,13 @@
       );
     }
 
+    function isCurrentRoadmapCategory(category) {
+      if (!category) return false;
+      if (category.id === state.activeRoadmapCategoryId) return true;
+      if (!category.mapId || category.mapId !== state.activeMapId) return false;
+      return $("#screen-map")?.classList.contains("active") || $("#screen-roadmap")?.classList.contains("active");
+    }
+
     function syncRoadmapCategoriesWithLibrary() {
       const savedIds = new Set(state.savedMaps.map((map) => map.id));
       state.roadmapCategories = state.roadmapCategories
@@ -12219,9 +12443,16 @@
 
       container.innerHTML = state.roadmapCategories.map((category) => {
         const isExpanded = category.id === state.activeRoadmapCategoryId;
+        const isCurrentSection = isCurrentRoadmapCategory(category);
         const deleteLabel = category.mapId ? "Delete map" : "Remove group";
+        const categoryClasses = [
+          "dashboard-roadmap-category",
+          isExpanded ? "is-expanded" : "",
+          isExpanded || isCurrentSection ? "is-active" : "",
+          isCurrentSection ? "is-current-section" : ""
+        ].filter(Boolean).join(" ");
         return `
-        <div class="dashboard-roadmap-category ${isExpanded ? "is-expanded is-active" : ""}">
+        <div class="${categoryClasses}">
           <div class="dashboard-roadmap-category-head">
             <button type="button" class="dashboard-roadmap-category-title" data-open-map-category="${escapeHtml(category.id)}" title="${category.mapId ? "Open possibility map" : "Expand roadmaps"}">
               <span>${escapeHtml(category.title)}</span>
@@ -13427,6 +13658,7 @@
         updateStatsContinueButton();
         refreshLaunchStats();
       }
+      renderSidebarRoadmaps();
       requestAnimationFrame(updateScrollProgress);
     }
 
@@ -14421,6 +14653,7 @@
             ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
           </div>
                 ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
+                ${renderMapPathLocalHintHtml(idea)}
                 <p class="opp-card-open-hint">Click path to open step-by-step roadmap</p>
               </div>
               <div class="opp-card-actions">
@@ -14502,7 +14735,15 @@
       if (cachedIsUsable) {
         setRoadmapLoading(false);
         showScreen("roadmap");
-        state.roadmapStages = normalizeRoadmapStages(cached.stages);
+        const normalizedStages = normalizeRoadmapStages(cached.stages);
+        const enrichedStages = ensureRoadmapLocalContacts(normalizedStages, idea);
+        state.roadmapStages = enrichedStages;
+        if (JSON.stringify(enrichedStages) !== JSON.stringify(normalizedStages)) {
+          state.allRoadmaps[state.roadmapKey] = {
+            ...cached,
+            stages: enrichedStages
+          };
+        }
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cached.source || "ai");
         renderStages(state.roadmapStages);
         trackEvent("roadmap_loaded_cached", {
@@ -14579,6 +14820,7 @@
       }
 
       state.roadmapStages = normalizeRoadmapStages(stages);
+      state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, idea);
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
       renderStages(state.roadmapStages);
@@ -14758,9 +15000,9 @@
 
     function getSidebarLocalResources() {
       const fromTasks = collectLocalResourcesFromRoadmap();
-      if (fromTasks.length || !getUserLocation()) return fromTasks;
+      if (!getUserLocation()) return fromTasks;
 
-      return getKnownLocalResources().map((entry) => ({
+      const known = getKnownLocalResources().map((entry) => ({
         type: "contact",
         key: entry.org,
         name: entry.name,
@@ -14769,6 +15011,19 @@
         email: entry.email,
         url: entry.url
       }));
+
+      if (!pathNeedsLocalResources()) return fromTasks;
+      if (!fromTasks.length) return known;
+
+      const merged = [...fromTasks];
+      const seen = new Set(fromTasks.map((entry) => entry.key || entry.org || entry.url));
+      known.forEach((entry) => {
+        const key = entry.key || entry.org || entry.url;
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        merged.push(entry);
+      });
+      return merged.slice(0, 10);
     }
 
     function renderLocalResourceItem(resource) {
@@ -14834,6 +15089,8 @@
       if (why && idea.why) {
         why.textContent = `${idea.why} Each task shows why it matters, time, cost, and local help when relevant.`;
       }
+
+      updateRoadmapHeaderLocalHint(idea);
     }
 
     function updateRoadmapLocalResourcesList() {
@@ -15228,6 +15485,8 @@
       bindTaskPersistence();
       updateRoadmapOverviewHeader();
       updateRoadmapOverviewChrome();
+      updateRoadmapHeaderLocalHint();
+      updateRoadmapLocalResourcesList();
       updateMomentum();
     }
 
