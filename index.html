@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-sidebar-compact -->
+<!-- whatimado build: 2026-06-28-task-local-match -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-sidebar-compact">
+  <meta name="whatimado-build" content="2026-06-28-task-local-match">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10080,8 +10080,10 @@
       return Math.min(4096, Math.max(700, requested || 700));
     }
 
-    function renderTaskActionPackHtml(task) {
+    function renderTaskActionPackHtml(task, options = {}) {
       const normalized = normalizeRoadmapTask(task);
+      const { stage, stageIndex, idea = state.currentIdea } = options;
+      if (stage && !taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return "";
       const blocks = [];
 
       if (normalized.contacts.length) {
@@ -10125,18 +10127,18 @@
       }));
     }
 
-    function roadmapHasRichLocalData(stages = state.roadmapStages) {
-      return (stages || []).some((stage) =>
-        (stage.tasks || []).some((task) => {
+    function roadmapHasRichLocalData(stages = state.roadmapStages, idea = state.currentIdea) {
+      let needsAny = false;
+      let hasAny = false;
+      (stages || []).forEach((stage, stageIndex) => {
+        (stage.tasks || []).forEach((task) => {
           const normalized = normalizeRoadmapTask(task);
-          return (
-            normalized.contacts.length > 0 ||
-            normalized.links.length > 0 ||
-            Boolean(normalized.script) ||
-            (normalized.local.length > 12 && !/^workforce \/ american job center near/i.test(normalized.local))
-          );
-        })
-      );
+          if (!taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return;
+          needsAny = true;
+          if (normalized.contacts.length > 0 || normalized.links.length > 0) hasAny = true;
+        });
+      });
+      return !needsAny || hasAny;
     }
 
     function pathNeedsLocalResources(idea = state.currentIdea) {
@@ -10185,65 +10187,132 @@
       );
     }
 
-    function shouldInjectLocalContacts(task, stage, stageIndex, idea = state.currentIdea) {
+    function taskExplicitlyExcludesLocalContacts(taskText) {
+      const text = String(taskText || "").toLowerCase();
+      return /\b(stripe|checkout|donate button|donation modal|hosting|api cost|domain cost|monthly cost|write copy|draft \d|mission-first ask|visible line|social post|notes doc|founder story|120-word|screenshot|reddit|facebook post|subreddit|upgrade|guilt|test \$?\d|one-time tier|end-to-end on mobile|sharpen one line|estimate monthly|divide by expected|after map generated|keep it free for others|no 'upgrade'|donate modal|modal, and in|costs \(hosting|weekly sessions|\$5 helps cover)\b/.test(text);
+    }
+
+    function taskNeedsLocalContacts(task, stage, stageIndex, idea = state.currentIdea) {
       const normalized = normalizeRoadmapTask(task);
       const taskText = normalized.text;
-      const stageBlob = `${stage.label || ""} ${stage.desc || ""}`.toLowerCase();
-      const ideaBlob = `${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
 
-      if (/\b(email|call|outreach|visit|director|shelter|recovery|workforce|pilot|demo|partner|nonprofit|library|organizations?|list 10|name 5|spreadsheet|community|3-5|programs?|centers?|contact|reach|demos?|flier|flyer)\b/i.test(taskText)) {
-        return true;
-      }
-      if (/\b(shelter|recovery|workforce|partner|outreach|nonprofit|library|pilot|demo|community|local|visit|email|org|contact|programs?)\b/.test(stageBlob)) {
-        return true;
-      }
-      if (pathNeedsLocalResources(idea) && stageIndex >= 1) return true;
-      if (pathNeedsLocalResources(idea) && stageIndex === 0 && /\b(shelter|recovery|partner|workforce|3-5|programs?|centers?|austin|validation|feedback|demo|pilot)\b/.test(ideaBlob)) {
-        return true;
-      }
-      if (/\b(shelter|recovery|partner|workforce|nonprofit|pilot|3-5|programs?)\b/.test(ideaBlob) && stageIndex >= 1) {
-        return true;
-      }
-      if (/\b(shelter|recovery|partner|workforce|nonprofit|pilot|3-5|programs?|austin)\b/.test(ideaBlob) &&
-          /\b(list|find|identify|name|research|contact|reach|partner|visit|email|call|org|program|center|shelter)\b/i.test(taskText)) {
-        return true;
-      }
+      const outreachAction = /\b(email|e-mail|call|phone|visit|meet with|reach out|contact|outreach|pitch to|schedule a (?:call|meeting|demo)|set up a (?:call|meeting|demo)|send (?:an )?email|introduce yourself|ask (?:the|a) director|partner with|pilot with|demo (?:at|for|to)|organizational accounts|offer free (?:organizational )?accounts|live demos?|structured feedback)\b/i.test(taskText);
+      const orgTarget = /\b(shelters?|recovery centers?|workforce programs?|libraries?|nonprofits?|non-profits?|community foundations?|homeless|re-?entry|partner orgs?|local orgs?|programs? to (?:offer|reach|contact)|organizations? to (?:offer|reach|contact)|name \d|list \d|identify \d|find \d|research \d|3-5|5-10|\d+ homeless|\d+ (?:shelters?|libraries?|programs?|centers?|organizations?))\b/i.test(taskText);
+
+      if (outreachAction && orgTarget) return true;
+      if (/\b(reach out to \d|contact \d|email \d|visit \d|partner with \d+)\b/i.test(taskText)) return true;
+      if (/\b(homeless shelters?|workforce programs?|libraries?)\b/i.test(taskText) && /\b(reach out|offer free|organizational accounts|testimonials|referrals)\b/i.test(taskText)) return true;
+      if (/\b(shelters?, recovery centers?, and workforce|austin shelters?)\b/i.test(taskText)) return true;
+      if (/\b(get \d+ real users|live demos|structured feedback)\b/i.test(taskText) && /\b(shelter|recovery|workforce|programs?|centers?)\b/i.test(taskText)) return true;
+      if (/\b(list|find|identify|name|research)\b/i.test(taskText) && /\b(\d+\s*(?:local )?(?:shelters?|orgs?|programs?|centers?|libraries?|nonprofits?)|local organizations?)\b/i.test(taskText)) return true;
+
       return false;
+    }
+
+    function isKnownPackOrg(orgName) {
+      const org = String(orgName || "").trim().toLowerCase();
+      if (!org) return false;
+      return getKnownLocalResources().some((entry) => String(entry.org || "").trim().toLowerCase() === org);
+    }
+
+    function stripMisplacedLocalContacts(stages, idea = state.currentIdea) {
+      const knownUrls = new Set(
+        getKnownLocalResources()
+          .map((entry) => String(entry.url || "").replace(/\/$/, "").toLowerCase())
+          .filter(Boolean)
+      );
+
+      return normalizeRoadmapStages(stages).map((stage, stageIndex) => ({
+        ...stage,
+        tasks: stage.tasks.map((task) => {
+          const normalized = normalizeRoadmapTask(task);
+          if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return normalized;
+
+          const hasPackContacts = normalized.contacts.some((contact) => isKnownPackOrg(contact.org));
+          const hasGenericScript = normalized.script && /whatimado\.com, a free ai possibility map/i.test(normalized.script);
+          const hasPackLinks = normalized.links.some((url) =>
+            knownUrls.has(String(url).replace(/^https?:\/\//i, "").replace(/\/$/, "").toLowerCase())
+          );
+          const hasPackLocal = normalized.local && getKnownLocalResources().some((entry) => normalized.local.includes(entry.org));
+
+          if (hasPackContacts || hasGenericScript || hasPackLinks || hasPackLocal) {
+            return {
+              ...normalized,
+              contacts: [],
+              links: [],
+              script: "",
+              local: ""
+            };
+          }
+          return normalized;
+        })
+      }));
+    }
+
+    function scoreResourceForTask(entry, taskText) {
+      const text = String(taskText || "").toLowerCase();
+      const orgBlob = `${entry.org || ""} ${entry.name || ""}`.toLowerCase();
+      let score = 0;
+      if (/\b(shelter|homeless|housing)\b/.test(text) && /\b(shelter|front steps|caritas|housing|lifeworks|foundation communities)\b/.test(orgBlob)) score += 12;
+      if (/\b(workforce|job|employment|career)\b/.test(text) && /\b(workforce|wfscapital|job)\b/.test(orgBlob)) score += 12;
+      if (/\b(library|libraries)\b/.test(text) && /\b(library)\b/.test(orgBlob)) score += 12;
+      if (/\b(recovery|re-?entry)\b/.test(text) && /\b(recovery|re-?entry|caritas)\b/.test(orgBlob)) score += 12;
+      if (/\b(youth|family)\b/.test(text) && /\b(lifeworks|youth|family)\b/.test(orgBlob)) score += 10;
+      if (/\b(nonprofit|partner|pilot|community)\b/.test(text) && !/\b(shelter|library|workforce)\b/.test(text)) score += 1;
+      return score;
+    }
+
+    function pickResourcesForTask(taskText, resources, usedOrgKeys = new Set()) {
+      const ranked = [...resources]
+        .map((entry, index) => ({ entry, score: scoreResourceForTask(entry, taskText), index }))
+        .sort((a, b) => b.score - a.score || a.index - b.index);
+
+      const available = ranked.filter(({ entry }) => !usedOrgKeys.has(entry.org));
+      const pool = available.length ? available : ranked;
+      const primary = pool.find(({ score }) => score > 0) || pool[0];
+      if (!primary) return [];
+
+      const picks = [primary.entry];
+      const wantsMultiple = /\b(\d+[-–]\d+|\d+)\s*(?:shelters?|programs?|orgs?|libraries?|centers?)|name \d|list \d|contact \d|reach out to \d|partner with \d|3-5|5-10|10 (?:homeless|local|workforce|shelter|library)\b/i.test(taskText);
+      if (wantsMultiple) {
+        const secondary = pool.find(({ entry }) => entry.org !== primary.entry.org && scoreResourceForTask(entry, taskText) > 0)
+          || pool.find(({ entry }) => entry.org !== primary.entry.org);
+        if (secondary) picks.push(secondary.entry);
+      }
+      return picks;
     }
 
     function injectLocalContactsIntoRoadmap(stages, resources, loc = getUserLocation(), idea = state.currentIdea) {
       if (!Array.isArray(stages) || !resources.length) return stages;
-      let resourceIndex = 0;
+      const usedOrgKeys = new Set();
       const cloned = normalizeRoadmapStages(stages);
 
       cloned.forEach((stage, stageIndex) => {
         stage.tasks = stage.tasks.map((task) => {
           const normalized = normalizeRoadmapTask(task);
-          if (
-            normalized.contacts.length ||
-            normalized.links.length ||
-            normalized.script ||
-            (normalized.local.length > 12 && !/^workforce \/ american job center near/i.test(normalized.local))
-          ) {
+          if (!taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return normalized;
+          if (normalized.contacts.length) {
+            normalized.contacts.forEach((contact) => {
+              if (contact.org) usedOrgKeys.add(contact.org);
+            });
             return normalized;
           }
 
-          if (!shouldInjectLocalContacts(normalized, stage, stageIndex, idea)) return normalized;
+          const picks = pickResourcesForTask(normalized.text, resources, usedOrgKeys);
+          if (!picks.length) return normalized;
 
-          const primary = resources[resourceIndex % resources.length];
-          const secondary = resources[(resourceIndex + 1) % resources.length];
-          resourceIndex += 1;
-
-          normalized.contacts = [primary, secondary].map((entry) => ({
+          picks.forEach((entry) => usedOrgKeys.add(entry.org));
+          normalized.contacts = picks.map((entry) => ({
             name: entry.name || "Program director",
             org: entry.org,
             phone: entry.phone || "",
             email: entry.email || "",
             url: entry.url || ""
           }));
-          normalized.links = [primary.url, secondary.url].filter(Boolean);
-          normalized.local = `${primary.org} · ${secondary.org}`;
-          normalized.script = buildOutreachScript(primary.org, loc);
+          normalized.links = picks.map((entry) => entry.url).filter(Boolean);
+          normalized.local = picks.length > 1 ? `${picks[0].org} · ${picks[1].org}` : picks[0].org;
+          normalized.script = buildOutreachScript(picks[0].org, loc);
           return normalized;
         });
       });
@@ -10252,51 +10321,10 @@
     }
 
     function ensureRoadmapLocalContacts(stages, idea = state.currentIdea) {
-      if (!getUserLocation() || !pathNeedsLocalResources(idea)) return stages;
-      return injectLocalContactsIntoRoadmap(stages, getKnownLocalResources(), getUserLocation(), idea);
-    }
-
-    function getLocalHintResources(idea = state.currentIdea, limit = 5) {
-      const loc = getUserLocation();
-      if (!loc) return [];
-      const resources = getKnownLocalResources(loc);
-      const ideaBlob = `${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
-      const preferShelter = /\b(shelter|recovery|re-?entry|homeless|housing)\b/.test(ideaBlob);
-      const score = (entry) => {
-        const blob = `${entry.org || ""} ${entry.name || ""}`.toLowerCase();
-        if (preferShelter && /\b(shelter|re-?entry|housing|caritas|front steps|lifeworks|foundation communities)\b/.test(blob)) return 2;
-        if (/\b(workforce|library|job)\b/.test(blob)) return 1;
-        return 0;
-      };
-      return [...resources].sort((a, b) => score(b) - score(a)).slice(0, limit);
-    }
-
-    function renderLocalHintListHtml(resources, listClass = "task-mobile-local-list") {
-      if (!resources.length) return "";
-      return `
-        <ul class="${listClass}">
-          ${resources.map((entry) => {
-            const href = entry.url ? formatExternalUrl(entry.url) : "";
-            const org = escapeHtml(entry.org || entry.name || "Local program");
-            const meta = [entry.phone, entry.email].filter(Boolean).map((value) => escapeHtml(value)).join(" · ");
-            return `<li>${href ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${org}</a>` : org}${meta ? ` · ${meta}` : ""}</li>`;
-          }).join("")}
-        </ul>`;
-    }
-
-    function renderMobileTaskLocalResourcesHtml(task, stage, stageIndex, idea = state.currentIdea) {
-      if (!getUserLocation() || !pathNeedsLocalResources(idea)) return "";
-      const normalized = normalizeRoadmapTask(task);
-      if (normalized.contacts.length || normalized.links.length || normalized.script) return "";
-      if (!shouldInjectLocalContacts(normalized, stage, stageIndex, idea)) return "";
-      const resources = getLocalHintResources(idea, 5);
-      if (!resources.length) return "";
-      const cityLabel = getUserLocation().split(",")[0]?.trim() || "your area";
-      return `
-        <div class="task-mobile-local-resources">
-          <p class="task-mobile-local-label">Local orgs in ${escapeHtml(cityLabel)}</p>
-          ${renderLocalHintListHtml(resources)}
-        </div>`;
+      if (!getUserLocation()) return stages;
+      const cleaned = stripMisplacedLocalContacts(stages, idea);
+      if (!pathNeedsLocalResources(idea)) return cleaned;
+      return injectLocalContactsIntoRoadmap(cleaned, getKnownLocalResources(), getUserLocation(), idea);
     }
 
     function buildCompactLocalEnrichPrompt(idea, loc, founderMode) {
@@ -10318,7 +10346,8 @@
 
     function applyLocalResourceFallback(stages, loc) {
       const resources = getKnownLocalResources(loc);
-      return injectLocalContactsIntoRoadmap(stages, resources, loc, state.currentIdea);
+      const cleaned = stripMisplacedLocalContacts(stages, state.currentIdea);
+      return injectLocalContactsIntoRoadmap(cleaned, resources, loc, state.currentIdea);
     }
 
     function renderTaskMetaHtml(task) {
@@ -14999,9 +15028,10 @@
         resources.push(resource);
       };
 
-      state.roadmapStages.forEach((stage) => {
+      state.roadmapStages.forEach((stage, stageIndex) => {
         (stage.tasks || []).forEach((task) => {
           const normalized = normalizeRoadmapTask(task);
+          if (!taskNeedsLocalContacts(normalized, stage, stageIndex)) return;
           normalized.contacts.forEach((contact) => {
             addResource({
               type: "contact",
@@ -15038,31 +15068,7 @@
     }
 
     function getSidebarLocalResources() {
-      const fromTasks = collectLocalResourcesFromRoadmap();
-      if (!getUserLocation()) return fromTasks;
-
-      const known = getKnownLocalResources().map((entry) => ({
-        type: "contact",
-        key: entry.org,
-        name: entry.name,
-        org: entry.org,
-        phone: entry.phone,
-        email: entry.email,
-        url: entry.url
-      }));
-
-      if (!pathNeedsLocalResources()) return fromTasks;
-      if (!fromTasks.length) return known;
-
-      const merged = [...fromTasks];
-      const seen = new Set(fromTasks.map((entry) => entry.key || entry.org || entry.url));
-      known.forEach((entry) => {
-        const key = entry.key || entry.org || entry.url;
-        if (!key || seen.has(key)) return;
-        seen.add(key);
-        merged.push(entry);
-      });
-      return merged.slice(0, 10);
+      return collectLocalResourcesFromRoadmap();
     }
 
     function renderLocalResourceItem(resource) {
@@ -15238,7 +15244,7 @@
         );
         let stages = parseRoadmapResponse(response, idea);
 
-        if (!stages || !roadmapHasRichLocalData(stages)) {
+        if (!stages || !roadmapHasRichLocalData(stages, idea)) {
           setLocalEnrichProgress(3, 82);
           response = await callAdvisor(
             `${buildCompactLocalEnrichPrompt(idea, loc, founderMode)}\n` +
@@ -15249,18 +15255,18 @@
           stages = parseRoadmapResponse(response, idea);
         }
 
-        if (!stages || !roadmapHasRichLocalData(stages)) {
+        if (!stages || !roadmapHasRichLocalData(stages, idea)) {
           setLocalEnrichProgress(3, 90, "Using verified local org list");
           stages = applyLocalResourceFallback(state.roadmapStages, loc);
           enrichSource = "fallback";
         }
 
-        if (!stages || !roadmapHasRichLocalData(stages)) {
+        if (!stages || !roadmapHasRichLocalData(stages, idea)) {
           throw new Error(lastAdvisorError || "Could not add local contacts");
         }
 
         setLocalEnrichProgress(4, 98);
-        state.roadmapStages = normalizeRoadmapStages(stages);
+        state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea);
         state.allRoadmaps[key] = {
           ...(state.allRoadmaps[key] || {}),
           idea,
@@ -15284,8 +15290,8 @@
         finishLocalEnrichProgress(false);
 
         const fallbackStages = applyLocalResourceFallback(state.roadmapStages, loc);
-        if (roadmapHasRichLocalData(fallbackStages)) {
-          state.roadmapStages = normalizeRoadmapStages(fallbackStages);
+        if (roadmapHasRichLocalData(fallbackStages, idea)) {
+          state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(fallbackStages), idea);
           state.allRoadmaps[key] = {
             ...(state.allRoadmaps[key] || {}),
             idea,
@@ -15407,19 +15413,19 @@
     function renderOverviewTaskHtml(task, stageIndex, taskIndex) {
       const id = `task-${stageIndex}-${taskIndex}`;
       const normalized = normalizeRoadmapTask(task);
+      const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "" };
+      const showLocal = taskNeedsLocalContacts(normalized, stage, stageIndex);
       const text = normalized.text;
       const chips = [];
       if (normalized.duration) chips.push(`<span class="task-chip">${escapeHtml(normalized.duration)}</span>`);
       if (normalized.cost) chips.push(`<span class="task-chip">${escapeHtml(normalized.cost)}</span>`);
-      if (normalized.local) {
+      if (showLocal && normalized.local) {
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
       const whyBlock = normalized.why
         ? `<p class="overview-task-why"><strong>Why:</strong> ${escapeHtml(normalized.why)}${normalized.outcome ? ` <strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}` : ""}</p>`
         : "";
-      const actionPack = renderTaskActionPackHtml(normalized);
-      const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "" };
-      const mobileLocal = renderMobileTaskLocalResourcesHtml(normalized, stage, stageIndex);
+      const actionPack = showLocal ? renderTaskActionPackHtml(normalized, { stage, stageIndex }) : "";
 
       return `
         <div class="task-item overview-task" data-task-id="${id}">
@@ -15430,7 +15436,6 @@
               ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
               ${whyBlock}
               ${actionPack}
-              ${mobileLocal}
             </div>
           </div>
           <div class="overview-task-tools">
