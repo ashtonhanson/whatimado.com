@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-27-home-hero -->
+<!-- whatimado build: 2026-06-27-roadmap-intelligence -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-27-home-hero">
+  <meta name="whatimado-build" content="2026-06-27-roadmap-intelligence">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1115,8 +1115,33 @@
       line-height: 1.45;
     }
 
-    html[data-color-scheme="adult"] #roadmap-save-path-btn {
+    html[data-color-scheme="adult"] #roadmap-save-path-btn,
+    html[data-color-scheme="adult"] #roadmap-rebuild-remaining-btn {
       width: fit-content;
+    }
+
+    html[data-color-scheme="adult"] .task-meta {
+      display: grid;
+      gap: .28rem;
+      margin: .45rem 0 0 2rem;
+      padding: .55rem .65rem;
+      border-radius: 10px;
+      background: rgba(37, 99, 235, .05);
+      color: var(--ink-muted);
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .task-meta strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-continuing-note {
+      margin: .35rem 0 0;
+      color: var(--ink-muted);
+      font-size: .76rem;
+      font-style: italic;
     }
 
     html[data-color-scheme="adult"] .map-plans-actions {
@@ -8540,6 +8565,7 @@
               Back to map
             </button>
             <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
+            <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Rebuild remaining steps</button>
           </div>
 
           <div class="roadmap-content" id="roadmap-content">
@@ -8587,9 +8613,10 @@
           <div class="roadmap-complete-card" id="roadmap-complete-card" hidden>
             <p class="roadmap-complete-kicker">Path complete</p>
             <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
-            <p class="roadmap-complete-copy">If this plan still has room to grow, continue into the next phase. Or jump back to your map and explore another option.</p>
+            <p class="roadmap-complete-copy" id="roadmap-complete-copy">Nice work — this phase is complete. The next phase will load automatically when you're ready.</p>
+            <p class="roadmap-continuing-note" id="roadmap-continuing-note" hidden>Building your next phase…</p>
             <div class="roadmap-complete-actions">
-              <button class="back-btn complete-action-btn primary" id="continue-plan-btn" type="button">Continue this plan</button>
+              <button class="back-btn complete-action-btn primary" id="continue-plan-btn" type="button" hidden>Continue this plan</button>
               <button class="back-btn complete-action-btn" id="complete-map-btn" type="button">Explore another path</button>
               <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
             </div>
@@ -8828,6 +8855,18 @@
     ];
 
     const GENERIC_FALLBACK_SIGNATURE = "Write the simplest version of your offer";
+    const BANNED_GENERIC_STAGE_LABELS = new Set([
+      "launch the first test",
+      "turn feedback into proof",
+      "build a repeatable rhythm",
+      "decide the next 30 days"
+    ]);
+    const INTAKE_STEP_MAP = 5;
+    const ROADMAP_JSON_INSTRUCTION =
+      'Return exactly 4 stages with 3 tasks each.\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"one sentence tied to this path","tasks":[{"text":"specific action","why":"why this step matters","outcome":"what you will have done","duration":"~30-45 min","cost":"Free or estimated cost","local":"local program or search term near them"}]}]\n' +
+      "Every task MUST include all six fields: text, why, outcome, duration, cost, local. Do not reuse stage titles across different paths on the same map.";
+    let roadmapAutoContinueTimer = null;
 
     function getFounderPathTemplate(idea) {
       const title = String(idea?.title || "").toLowerCase();
@@ -8879,6 +8918,174 @@
       return String(text || "").toLowerCase().replace(/\s+/g, " ").trim();
     }
 
+    function emptyUserLocation() {
+      return { city: "", region: "", country: "", raw: "" };
+    }
+
+    function normalizeUserLocation(value) {
+      if (!value) return emptyUserLocation();
+      if (typeof value === "string") {
+        const raw = value.trim();
+        return raw ? parseLocationAnswer(raw) : emptyUserLocation();
+      }
+      return {
+        city: String(value.city || "").trim(),
+        region: String(value.region || "").trim(),
+        country: String(value.country || "").trim(),
+        raw: String(value.raw || "").trim()
+      };
+    }
+
+    function parseLocationAnswer(text) {
+      const trimmed = String(text || "").trim();
+      if (!trimmed) return emptyUserLocation();
+      const parts = trimmed.split(/[,|\n]/).map((part) => part.trim()).filter(Boolean);
+      if (parts.length >= 3) {
+        return { city: parts[0], region: parts[1], country: parts.slice(2).join(", "), raw: trimmed };
+      }
+      if (parts.length === 2) {
+        return { city: parts[0], region: parts[1], country: "", raw: trimmed };
+      }
+      return { city: trimmed, region: "", country: "", raw: trimmed };
+    }
+
+    function formatUserLocation(loc = state.userLocation) {
+      const normalized = normalizeUserLocation(loc);
+      if (normalized.city || normalized.region || normalized.country) {
+        return [normalized.city, normalized.region, normalized.country].filter(Boolean).join(", ");
+      }
+      return normalized.raw;
+    }
+
+    function getTaskText(task) {
+      if (typeof task === "string") return task.trim();
+      if (task && typeof task === "object") {
+        return String(task.text || task.task || task.description || "").trim();
+      }
+      return String(task ?? "").trim();
+    }
+
+    function normalizeRoadmapTask(task, fallback = {}) {
+      if (typeof task === "string") {
+        return {
+          text: task.trim(),
+          why: fallback.why || "",
+          outcome: fallback.outcome || "",
+          duration: fallback.duration || "",
+          cost: fallback.cost || "",
+          local: fallback.local || ""
+        };
+      }
+      if (task && typeof task === "object") {
+        return {
+          text: getTaskText(task),
+          why: String(task.why || fallback.why || "").trim(),
+          outcome: String(task.outcome || fallback.outcome || "").trim(),
+          duration: String(task.duration || fallback.duration || "").trim(),
+          cost: String(task.cost || fallback.cost || "").trim(),
+          local: String(task.local || task.localTip || fallback.local || "").trim()
+        };
+      }
+      return { text: String(task ?? "").trim(), why: "", outcome: "", duration: "", cost: "", local: "" };
+    }
+
+    function normalizeRoadmapStages(stages) {
+      return (stages || []).map((stage) => ({
+        ...stage,
+        tasks: (stage.tasks || []).map((task) => normalizeRoadmapTask(task))
+      }));
+    }
+
+    function renderTaskMetaHtml(task) {
+      const normalized = normalizeRoadmapTask(task);
+      const rows = [];
+      if (normalized.why) rows.push(`<div><strong>Why:</strong> ${escapeHtml(normalized.why)}</div>`);
+      if (normalized.outcome) rows.push(`<div><strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}</div>`);
+      if (normalized.duration) rows.push(`<div><strong>Time:</strong> ${escapeHtml(normalized.duration)}</div>`);
+      if (normalized.cost) rows.push(`<div><strong>Cost:</strong> ${escapeHtml(normalized.cost)}</div>`);
+      if (normalized.local) rows.push(`<div><strong>Local help:</strong> ${escapeHtml(normalized.local)}</div>`);
+      return rows.length ? `<div class="task-meta">${rows.join("")}</div>` : "";
+    }
+
+    function getRoadmapArchetypeGuidance(idea) {
+      const archetype = getPathArchetype(idea);
+      const guides = {
+        employment: "Employment path — certifications, tailored resume, networking, interviews, workforce boards, apprenticeships. Do NOT use generic startup validation language.",
+        business: "Local service or small business path — licensing, pricing, first customers, local marketing, SBDC/SCORE mentors. Do NOT use job-search tasks.",
+        learning: "Training or credential path — program enrollment, financial aid, portfolio proof, practicum hours, trade school applications.",
+        creative: "Creative income path — samples, platforms, audience building, first paid gig, local arts markets."
+      };
+      return guides[archetype] || guides.employment;
+    }
+
+    function getTaskTextById(taskId) {
+      const parsed = parseTaskId(taskId);
+      if (!parsed) return "";
+      return getTaskText(state.roadmapStages[parsed.stageIndex]?.tasks?.[parsed.taskIndex]);
+    }
+
+    function getFirstIncompleteTaskPosition() {
+      for (let stageIndex = 0; stageIndex < state.roadmapStages.length; stageIndex += 1) {
+        const stage = state.roadmapStages[stageIndex];
+        for (let taskIndex = 0; taskIndex < (stage.tasks || []).length; taskIndex += 1) {
+          const taskId = `task-${stageIndex}-${taskIndex}`;
+          const data = getRoadmapTaskData(taskId);
+          if (!data.checked) return { stageIndex, taskIndex };
+        }
+      }
+      return null;
+    }
+
+    function sliceRoadmapBeforeFirstIncomplete() {
+      const pos = getFirstIncompleteTaskPosition();
+      if (!pos) return { kept: [...state.roadmapStages], pos: null };
+
+      const kept = [];
+      for (let stageIndex = 0; stageIndex < state.roadmapStages.length; stageIndex += 1) {
+        const stage = state.roadmapStages[stageIndex];
+        if (stageIndex < pos.stageIndex) {
+          kept.push(stage);
+          continue;
+        }
+        if (stageIndex === pos.stageIndex) {
+          const beforeTasks = (stage.tasks || []).slice(0, pos.taskIndex);
+          if (beforeTasks.length) kept.push({ ...stage, tasks: beforeTasks });
+          break;
+        }
+      }
+      return { kept, pos };
+    }
+
+    function updateRebuildRemainingButton() {
+      const button = $("#roadmap-rebuild-remaining-btn");
+      if (!button) return;
+      const pos = getFirstIncompleteTaskPosition();
+      const hasRemaining = Boolean(
+        pos && (
+          pos.taskIndex < (state.roadmapStages[pos.stageIndex]?.tasks?.length || 0) ||
+          pos.stageIndex < state.roadmapStages.length - 1
+        )
+      );
+      button.hidden = !hasRemaining || !state.roadmapStages.length;
+    }
+
+    function buildCompletedRoadmapSummary(stages = state.roadmapStages) {
+      return stages.map((stage, index) => {
+        const tasks = (stage.tasks || []).map((task) => `- ${getTaskText(task)}`).join("\n");
+        return `Stage ${index + 1}: ${stage.label}\n${stage.desc || ""}\n${tasks}`;
+      }).join("\n\n");
+    }
+
+    function stagesAreMeaningful(stages) {
+      if (!Array.isArray(stages) || !stages.length) return false;
+      const taskCount = stages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0);
+      return taskCount >= 3;
+    }
+
+    function isStuckOrBlockedRequest(question) {
+      return /\b(stuck|impossible|can't do|cannot do|blocked|dead end|won't work|doesn't work|not possible|this isn't working|can't finish|cannot finish)\b/i.test(question);
+    }
+
     function getSiblingRoadmapContext(idea) {
       const others = state.ideas.filter((item) => item.title !== idea.title);
       if (!others.length) return "";
@@ -8894,7 +9101,7 @@
         const sampleTasks = cached.stages
           .flatMap((stage) => stage.tasks || [])
           .slice(0, 2)
-          .map((task) => `"${task.slice(0, 96)}${task.length > 96 ? "…" : ""}"`)
+          .map((task) => `"${getTaskText(task).slice(0, 96)}${getTaskText(task).length > 96 ? "…" : ""}"`)
           .join(", ");
         return `- "${item.title}" (${item.type || "path"}) — stages: ${stageSummary}. Sample tasks: ${sampleTasks}`;
       });
@@ -8910,7 +9117,7 @@
       if (!Array.isArray(stages) || !idea?.title) return false;
 
       const stageLabels = stages.map((stage) => normalizeRoadmapText(stage.label)).filter(Boolean);
-      const tasks = stages.flatMap((stage) => (stage.tasks || []).map((task) => normalizeRoadmapText(task))).filter(Boolean);
+      const tasks = stages.flatMap((stage) => (stage.tasks || []).map((task) => normalizeRoadmapText(getTaskText(task)))).filter(Boolean);
       const siblings = state.ideas.filter((item) => item.title !== idea.title);
 
       for (const sibling of siblings) {
@@ -8920,7 +9127,7 @@
 
         const siblingLabels = siblingStages.map((stage) => normalizeRoadmapText(stage.label)).filter(Boolean);
         const siblingTasks = siblingStages
-          .flatMap((stage) => (stage.tasks || []).map((task) => normalizeRoadmapText(task)))
+          .flatMap((stage) => (stage.tasks || []).map((task) => normalizeRoadmapText(getTaskText(task))))
           .filter(Boolean);
 
         const duplicateLabels = stageLabels.filter((label) => siblingLabels.includes(label));
@@ -8929,15 +9136,7 @@
           siblingTasks.some((other) => task.length > 40 && other.length > 40 && (task.includes(other.slice(0, 48)) || other.includes(task.slice(0, 48))))
         );
 
-        if (duplicateLabels.length >= 2 || duplicateTasks.length >= 2 || nearDuplicateTasks.length >= 2) {
-          return true;
-        }
-
-        if (stageLabels[0] && siblingLabels[0] && stageLabels[0] === siblingLabels[0]) {
-          return true;
-        }
-
-        if (duplicateLabels.length >= 1 && (duplicateTasks.length >= 1 || nearDuplicateTasks.length >= 1)) {
+        if (duplicateLabels.length >= 1 || duplicateTasks.length >= 1 || nearDuplicateTasks.length >= 1) {
           return true;
         }
       }
@@ -9164,55 +9363,210 @@
       return pickUniqueFounderFallbackStages(idea, templates, template);
     }
 
+    function getPathArchetype(idea) {
+      const blob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      if (/learn|skill|training|certif|portfolio|course|degree|apprent/.test(blob)) return "learning";
+      if (/job|employ|hire|career|income|work for|staff|shift|union/.test(blob)) return "employment";
+      if (/business|freelance|client|startup|sell|shop|service|gig|contractor/.test(blob)) return "business";
+      if (/creative|design|art|content|music|write|maker/.test(blob)) return "creative";
+      const idx = Math.max(0, state.ideas.findIndex((entry) => entry.title === idea?.title));
+      return ["employment", "business", "learning", "creative"][idx % 4];
+    }
+
+    function buildStandardFallbackTemplates() {
+      return {
+        employment: [
+          {
+            label: "Scan {locRaw} hiring lanes",
+            desc: "Find realistic employers and public workforce help for \"{title}\" near you.",
+            tasks: [
+              "Search Indeed + Google Jobs for 10 roles that match \"{title}\" within 25 miles of {locRaw}; save links in a spreadsheet with pay range and requirements",
+              "Call or visit your local American Job Center / workforce board in {locRaw} and ask what training, placement, or stipend programs fit \"{title}\"",
+              "List 3 staffing agencies, temp firms, or union halls in {locRaw} that place people into work like \"{title}\" and note how to apply"
+            ]
+          },
+          {
+            label: "Package your proof",
+            desc: "Make hiring managers understand you for \"{title}\" in one glance.",
+            tasks: [
+              "Rewrite your resume headline and summary for \"{title}\" using words from 5 job posts you saved — keep it to one page",
+              "Draft a 3-sentence outreach message explaining why \"{title}\" fits you; send it to 2 people who hire in that space",
+              "Prepare 3 short stories (60 seconds each) about times you showed skills relevant to \"{title}\" — practice out loud once"
+            ]
+          },
+          {
+            label: "Run a two-week sprint",
+            desc: "Turn applications and conversations into momentum for \"{title}\".",
+            tasks: [
+              "Apply to 5 targeted roles or programs for \"{title}\" this week and log date, contact, and follow-up date",
+              "Attend one local job fair, hiring event, or workforce workshop in {locRaw} related to \"{title}\"",
+              "Follow up on every application from the past 7 days with a short, specific note referencing \"{title}\""
+            ]
+          },
+          {
+            label: "Choose your next move",
+            desc: "Decide whether \"{title}\" stays your lead option or needs a tweak.",
+            tasks: [
+              "Compare responses from employers vs. training programs — note which channel produced real conversations",
+              "Set one 30-day measurable target for \"{title}\" (interviews, callbacks, enrolled program, or hours worked)",
+              "Write a keep / pivot / pause decision for \"{title}\" and the one action that makes it obvious next week"
+            ]
+          }
+        ],
+        business: [
+          {
+            label: "Validate demand locally",
+            desc: "Test whether anyone near {locRaw} will pay for \"{title}\" before you invest more.",
+            tasks: [
+              "Interview 3 people in {locRaw} who would buy or refer \"{title}\" — ask what they already pay for and what's missing",
+              "Post one plain-language offer for \"{title}\" in a local Facebook group or Nextdoor thread in {locRaw} and note every question you get",
+              "Check {locRaw} licensing, permit, or home-business rules that apply to \"{title}\" and write down any fees or deadlines"
+            ]
+          },
+          {
+            label: "Shape a tiny offer",
+            desc: "Define the smallest paid version of \"{title}\" you can deliver this month.",
+            tasks: [
+              "Write a one-paragraph offer for \"{title}\" with price, who it's for, and what they get in 7 days or less",
+              "Create a simple payment or booking path (Cash App, Stripe link, calendar, or paper invoice) and test it with one friendly buyer",
+              "List every cost to deliver \"{title}\" once — keep the first version under $100 out of pocket if possible"
+            ]
+          },
+          {
+            label: "Deliver three paid reps",
+            desc: "Prove \"{title}\" works by doing it for real customers.",
+            tasks: [
+              "Book or sell 3 paid (or barter) deliveries of \"{title}\" this week — prioritize people you can reach in {locRaw}",
+              "After each job, ask what almost stopped them from buying and what would make them refer you",
+              "Adjust your offer wording or price once based on those three conversations"
+            ]
+          },
+          {
+            label: "Pick a growth lane",
+            desc: "Decide how \"{title}\" earns next month.",
+            tasks: [
+              "Identify the channel that brought the best customers (referrals, social, local ads, partnerships) and double down for 14 days",
+              "Search {locRaw} for SBDC, SCORE, or small-business grant office hours and book one session about \"{title}\"",
+              "Set a 30-day revenue or booking target for \"{title}\" and the single habit that protects your time"
+            ]
+          }
+        ],
+        learning: [
+          {
+            label: "Pick the credential",
+            desc: "Choose the fastest credible skill path for \"{title}\" in {locRaw}.",
+            tasks: [
+              "Compare 3 training routes for \"{title}\" — community college, nonprofit program, online cert, or apprenticeship in {locRaw} — note cost, length, and job placement help",
+              "Ask your local workforce board or 211 in {locRaw} whether any tuition, childcare, or transport assistance exists for that training",
+              "Pick one program or self-study plan for \"{title}\" and put the enrollment deadline on your calendar"
+            ]
+          },
+          {
+            label: "Build visible proof",
+            desc: "Show future employers or clients you can do \"{title}\", not just study it.",
+            tasks: [
+              "Complete one small project for \"{title}\" this week and document before/after with photos or a short write-up",
+              "Publish that project on LinkedIn, a portfolio site, or a local community board in {locRaw}",
+              "Ask one practitioner in \"{title}\" for 10 minutes of feedback on your project — send a specific question, not a generic review"
+            ]
+          },
+          {
+            label: "Stack two more wins",
+            desc: "Turn practice into a believable track record for \"{title}\".",
+            tasks: [
+              "Finish a second project that uses a different skill within \"{title}\" than your first project",
+              "Volunteer or freelance one tiny \"{title}\" task for a neighbor, nonprofit, or local business in {locRaw}",
+              "Update your resume or profile with quantified outcomes from all three pieces of proof"
+            ]
+          },
+          {
+            label: "Convert skills to opportunity",
+            desc: "Move from learning \"{title}\" to paid or hired work.",
+            tasks: [
+              "Apply to 5 roles, gigs, or program placements that explicitly mention the skills you just demonstrated",
+              "Attend one meetup, class demo day, or hiring event in {locRaw} tied to \"{title}\"",
+              "Decide whether to keep studying, start earning, or blend both — write the next 30-day milestone"
+            ]
+          }
+        ],
+        creative: [
+          {
+            label: "Define your niche",
+            desc: "Clarify what makes \"{title}\" yours in {locRaw}.",
+            tasks: [
+              "Write a one-sentence niche statement for \"{title}\" — who you serve, what you make, and why you're different",
+              "Collect 10 examples of people succeeding at similar creative work and note which platforms they use",
+              "Choose one platform or venue in {locRaw} where your audience already gathers for this kind of work"
+            ]
+          },
+          {
+            label: "Ship three samples",
+            desc: "Publish real work samples for \"{title}\" this week.",
+            tasks: [
+              "Create and post 3 pieces of work for \"{title}\" — keep each one finishable in one sitting",
+              "Ask 5 people for one sentence of feedback on whichever sample felt weakest",
+              "Revise the weakest sample once based on that feedback and republish it"
+            ]
+          },
+          {
+            label: "Find first buyers or gigs",
+            desc: "Turn attention into paid creative work for \"{title}\".",
+            tasks: [
+              "Pitch \"{title}\" to 5 realistic buyers — local businesses, creators, markets, or online clients in {locRaw}",
+              "Apply to one call for artists, vendors, freelancers, or creators in {locRaw} that fits \"{title}\"",
+              "Track every outreach in a simple sheet: date, contact, response, next step"
+            ]
+          },
+          {
+            label: "Set a sustainable rhythm",
+            desc: "Keep \"{title}\" moving without burning out.",
+            tasks: [
+              "Block two recurring creative sessions on your calendar for \"{title}\" and protect them for 2 weeks",
+              "Calculate the minimum monthly income \"{title}\" needs to cover and what price or volume gets you there",
+              "Decide keep / pivot / pause for \"{title}\" based on paid interest vs. effort — write the next milestone"
+            ]
+          }
+        ]
+      };
+    }
+
+    function personalizeFallbackStages(stages, idea) {
+      const locRaw = getUserLocation() || "your area";
+      const title = idea?.title || "this path";
+      const replaceTokens = (text) =>
+        String(text || "")
+          .replaceAll("{title}", title)
+          .replaceAll("{locRaw}", locRaw)
+          .replaceAll("{type}", idea?.type || "path");
+
+      return stages.map((stage) => ({
+        label: replaceTokens(stage.label),
+        desc: replaceTokens(stage.desc),
+        tasks: (stage.tasks || []).map((task) => replaceTokens(task))
+      }));
+    }
+
+    function pickUniqueStandardFallbackStages(idea) {
+      const templates = buildStandardFallbackTemplates();
+      const order = ["employment", "business", "learning", "creative"];
+      const preferred = getPathArchetype(idea);
+      const tryOrder = [preferred, ...order.filter((entry) => entry !== preferred)];
+
+      for (const key of tryOrder) {
+        const stages = personalizeFallbackStages(templates[key] || templates.employment, idea);
+        const usesBannedLabels = stages.some((stage) => BANNED_GENERIC_STAGE_LABELS.has(normalizeRoadmapText(stage.label)));
+        if (usesBannedLabels) continue;
+        if (!roadmapOverlapsSibling(stages, idea)) return stages;
+      }
+
+      return personalizeFallbackStages(templates[preferred] || templates.employment, idea);
+    }
+
     function getFallbackStages(idea) {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) {
         return getFounderFallbackStages(idea);
       }
-
-      const title = idea?.title || "this path";
-      const tagline = idea?.tagline || "";
-      const why = idea?.why || "";
-      const type = idea?.type || "path";
-      const anchor = tagline || why || title;
-
-      return [
-        {
-          label: "Launch the first test",
-          desc: `Run one small, real-world test for "${title}" before over-planning.`,
-          tasks: [
-            `Open a notes doc titled "${title}" and write the exact problem you solve for one specific person — use details from: ${anchor}`,
-            `Name 5 real people, groups, or communities who would care about "${title}" and write one sentence on why each fits`,
-            `Complete one 30–45 minute action for "${title}" today (post, message, prototype, or outreach) and capture 3 reactions or questions people had`
-          ]
-        },
-        {
-          label: "Turn feedback into proof",
-          desc: `Use what you learned in week one to sharpen "${title}".`,
-          tasks: [
-            `Review your notes from the first test and rewrite your pitch for "${title}" in under 120 words — fix the part that confused people`,
-            `Ask 2 people from your list for 10 minutes of feedback on whether "${title}" solves a real need — send the exact message you will use`,
-            `Change one concrete thing about "${title}" (wording, audience, channel, or offer) based on what they said and retry once`
-          ]
-        },
-        {
-          label: "Build a repeatable rhythm",
-          desc: `Make "${title}" easier to repeat every week without burning out.`,
-          tasks: [
-            `Pick one channel that worked best for "${title}" (Facebook group, email, in-person, etc.) and schedule 2 repeating time blocks this week`,
-            `Create a simple tracker with 4 columns: date, action taken, response, next tweak — log every step for "${title}"`,
-            `Repeat your best-performing outreach or test 3 times this week for "${title}" and note which version got the strongest response`
-          ]
-        },
-        {
-          label: "Decide the next 30 days",
-          desc: `Choose whether "${title}" deserves more time, a pivot, or a pause.`,
-          tasks: [
-            `Compare effort vs. results for "${title}" — list what cost time, what created signal, and what felt pointless`,
-            `Set one measurable 30-day goal for "${type}" tied to "${title}" (signups, conversations, revenue, or completed pilots)`,
-            `Decide keep / pivot / pause for "${title}" and write the single next milestone that makes that decision obvious`
-          ]
-        }
-      ];
+      return pickUniqueStandardFallbackStages(idea);
     }
 
     function isFounderRoadmap(stages) {
@@ -9222,7 +9576,7 @@
 
     function isGenericFallbackRoadmap(stages) {
       return Boolean(
-        stages?.[0]?.tasks?.some((task) => task.includes(GENERIC_FALLBACK_SIGNATURE))
+        stages?.[0]?.tasks?.some((task) => getTaskText(task).includes(GENERIC_FALLBACK_SIGNATURE))
       );
     }
 
@@ -9285,8 +9639,7 @@
         `- "Post in r/Findapath with title 'I built a free possibility map for people stuck on what's next' — follow sub rules; put whatimado.com in comment if links banned in body"\n` +
         `- "Email workforce director at [local org]: 'Hi [Name], I built whatimado.com — free AI roadmaps for clients rebuilding careers. 4-week pilot, zero cost. 15-min call?'"\n` +
         `- "Add donate line after map: 'Free forever — $3 optional tip covers ~6 sessions for someone else' and track stripe_checkout_redirected in Supabase for 7 days"\n\n` +
-        `Return exactly 4 stages with 3 tasks each.\n` +
-        `Respond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence for this founder path","tasks":["specific task 1","specific task 2","specific task 3"]}]`
+        ROADMAP_JSON_INSTRUCTION
       );
     }
 
@@ -9307,7 +9660,7 @@
       ].filter(Boolean).join("\n");
 
       const phaseNote = phase === "continue"
-        ? "Generate the NEXT 4 stages after their completed roadmap. Do not repeat completed tasks."
+        ? "Generate the NEXT 4 stages after their completed roadmap. Do not repeat completed tasks. Logical progression: validation → first revenue → optimization → scaling → next expansion. Only stop when there is no meaningful next phase."
         : "Generate the FIRST 4 stages to get this path off the ground.";
 
       const siblingBlock = getSiblingRoadmapContext(idea);
@@ -9321,9 +9674,13 @@
         `Full conversation:\n${context}\n` +
         siblingBlock +
         dedupeNote +
-        `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n\n` +
+        getLocationContextBlock() +
+        `\nPath type guidance: ${getRoadmapArchetypeGuidance(idea)}\n` +
+        `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
+        `NEVER use generic stage titles like "Launch the first test", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path.\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
         `- Every task must be 1–2 sentences and SPECIFIC to this person and this exact path.\n` +
+        `- Each task object must answer: why am I doing this, what outcome to expect, how long (~time), free or paid cost, and a local resource search phrase when relevant.\n` +
         `- Name real platforms, tools, audiences, numbers, time boxes, and deliverables.\n` +
         `- Reference details they actually said (skills, location, constraints, goals, industry, budget).\n` +
         `- Each task should be doable in a day or a week — not a vague category.\n` +
@@ -9337,8 +9694,7 @@
         `- "Draft a 150-word Facebook post explaining why you built whatimado.com for people stuck on career direction — include one screenshot of the map screen and publish to your profile"\n` +
         `- "Email 3 recovery-center program directors you can name locally, attach a 1-page pilot outline for a free whatimado workshop, and ask for a 15-minute call"\n` +
         `- "Spend 45 minutes in r/Findapath or a local career-change Facebook group, reply helpfully to 5 posts, and note which questions match your tool"\n\n` +
-        `Return exactly 4 stages with 3 tasks each.\n` +
-        `Respond only with a raw JSON array: [{"label":"Stage Name","desc":"one sentence tied to their situation","tasks":["specific task 1","specific task 2","specific task 3"]}]`
+        ROADMAP_JSON_INSTRUCTION
       );
     }
 
@@ -9348,8 +9704,9 @@
       if (!Array.isArray(parsed) || parsed.length < 1) return null;
       const stages = parsed.filter((stage) => stage?.label && Array.isArray(stage.tasks) && stage.tasks.length > 0);
       if (!stages.length) return null;
+      if (stages.some((stage) => BANNED_GENERIC_STAGE_LABELS.has(normalizeRoadmapText(stage.label)))) return null;
       if (isGenericFallbackRoadmap(stages)) return null;
-      return stages;
+      return normalizeRoadmapStages(stages);
     }
 
     function parseTaskId(taskId) {
@@ -9364,7 +9721,7 @@
         if (stageIdx < stageIndex) return;
         (stage.tasks || []).forEach((text, taskIdx) => {
           if (stageIdx === stageIndex && taskIdx < taskIndex) return;
-          items.push({ stageIndex: stageIdx, taskIndex: taskIdx, text });
+          items.push({ stageIndex: stageIdx, taskIndex: taskIdx, text: getTaskText(text) });
         });
       });
       return items;
@@ -9373,11 +9730,12 @@
     function getTasksInStage(stageIndex) {
       const stage = state.roadmapStages[stageIndex];
       if (!stage) return [];
-      return (stage.tasks || []).map((text, taskIndex) => ({ stageIndex, taskIndex, text }));
+      return (stage.tasks || []).map((text, taskIndex) => ({ stageIndex, taskIndex, text: getTaskText(text) }));
     }
 
     function isTaskChangeRequest(question) {
       const q = question.toLowerCase().trim();
+      if (isStuckOrBlockedRequest(question)) return true;
       const looksLikeQuestion = /^(how|what|why|when|where|who|which|should i|is there|are there|can you explain|could you explain|help me understand|any tips|any advice)\b/.test(q);
 
       const strongChangeSignal =
@@ -9398,6 +9756,7 @@
       if (!parsed) return "current";
 
       const q = question.toLowerCase();
+      if (isStuckOrBlockedRequest(question)) return "remaining";
       if (/\b(all tasks|following tasks|rest of the tasks|other tasks|every task|remaining tasks|subsequent tasks)\b/.test(q)) {
         return "following";
       }
@@ -9732,6 +10091,9 @@
       mapFeedbackGiven: false,
       mapFeedbackSentiment: null,
       intakeMode: "standard",
+      userLocation: { city: "", region: "", country: "", raw: "" },
+      roadmapExhausted: false,
+      roadmapAutoContinuePending: false,
       activeMapId: null,
       savedMaps: [],
       roadmapCategories: [],
@@ -10292,6 +10654,7 @@
       payload.mapFeedbackGiven = Boolean(activeEntry.mapFeedbackGiven);
       payload.mapFeedbackSentiment = activeEntry.mapFeedbackSentiment ?? null;
       payload.intakeMode = activeEntry.intakeMode || payload.intakeMode || "standard";
+      payload.userLocation = normalizeUserLocation(activeEntry.userLocation || payload.userLocation);
       return payload;
     }
 
@@ -10403,6 +10766,7 @@
         mapFeedbackGiven: state.mapFeedbackGiven,
         mapFeedbackSentiment: state.mapFeedbackSentiment,
         intakeMode: state.intakeMode || "standard",
+        userLocation: normalizeUserLocation(state.userLocation),
         roadmapCategories: state.roadmapCategories,
         activeRoadmapCategoryId: state.activeRoadmapCategoryId,
         selectedPathIndexes: state.selectedPathIndexes,
@@ -10425,7 +10789,8 @@
         lastScreen: source.lastScreen,
         mapFeedbackGiven: source.mapFeedbackGiven,
         mapFeedbackSentiment: source.mapFeedbackSentiment,
-        intakeMode: source.intakeMode || "standard"
+        intakeMode: source.intakeMode || "standard",
+        userLocation: normalizeUserLocation(source.userLocation)
       };
     }
 
@@ -10434,7 +10799,7 @@
       state.step = data.step ?? 1;
       state.history = Array.isArray(data.history) ? data.history : [];
       state.ideas = Array.isArray(data.ideas) ? data.ideas : [];
-      state.roadmapStages = Array.isArray(data.roadmapStages) ? data.roadmapStages : [];
+      state.roadmapStages = Array.isArray(data.roadmapStages) ? normalizeRoadmapStages(data.roadmapStages) : [];
       state.currentIdea = data.currentIdea ?? null;
       state.roadmapKey = data.roadmapKey ?? null;
       state.allTaskChats = data.allTaskChats && typeof data.allTaskChats === "object" ? data.allTaskChats : {};
@@ -10445,6 +10810,25 @@
       state.mapFeedbackGiven = Boolean(data.mapFeedbackGiven);
       state.mapFeedbackSentiment = data.mapFeedbackSentiment ?? null;
       state.intakeMode = data.intakeMode || "standard";
+      state.userLocation = normalizeUserLocation(data.userLocation);
+      if (!formatUserLocation(state.userLocation)) {
+        const inferred = inferLocationFromConversation();
+        if (formatUserLocation(inferred)) state.userLocation = inferred;
+      }
+      state.roadmapExhausted = false;
+      state.roadmapAutoContinuePending = false;
+      migrateIntakeStep();
+    }
+
+    function migrateIntakeStep() {
+      if (state.ideas.length) {
+        state.step = INTAKE_STEP_MAP;
+        return;
+      }
+      const lastAssistant = [...state.history].reverse().find((entry) => entry.role === "assistant")?.content || "";
+      if (state.step === 3 && /what your name/i.test(lastAssistant)) {
+        state.step = 4;
+      }
     }
 
     function createMapId() {
@@ -10978,7 +11362,7 @@
     }
 
     function trackIntakeAbandonment() {
-      if (intakeAbandonTracked || state.step < 2 || state.step >= 4 || state.ideas.length > 0) return;
+      if (intakeAbandonTracked || state.step < 2 || state.step >= INTAKE_STEP_MAP || state.ideas.length > 0) return;
       intakeAbandonTracked = true;
       trackEvent("intake_abandoned", {
         step: state.step,
@@ -11321,7 +11705,7 @@
           resolveTyping(entry.content);
         }
       });
-      if (state.step >= 2 && state.step < 4) showReplyBox(true);
+      if (state.step >= 2 && state.step < INTAKE_STEP_MAP) showReplyBox(true);
     }
 
     function restoreSessionUI() {
@@ -11972,6 +12356,114 @@
       return state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
     }
 
+    function inferLocationFromConversation() {
+      for (const entry of state.history) {
+        if (entry.role !== "user") continue;
+        const content = entry.content;
+        const patterns = [
+          /\b(?:i live in|i'm in|im in|based in|located in|from)\s+([^.\n?]{3,90})/i,
+          /\b(?:city|town|area|region):\s*([^.\n]+)/i
+        ];
+        for (const pattern of patterns) {
+          const match = content.match(pattern);
+          if (match?.[1]) {
+            const raw = match[1].trim().replace(/\s+(and|but|who|with|because)\b.*/i, "").trim();
+            if (raw) return parseLocationAnswer(raw);
+          }
+        }
+      }
+      return emptyUserLocation();
+    }
+
+    function getUserLocation() {
+      const formatted = formatUserLocation(state.userLocation);
+      if (formatted) return formatted;
+      return formatUserLocation(inferLocationFromConversation());
+    }
+
+    function locationMentionedInConversation() {
+      return Boolean(getUserLocation());
+    }
+
+    function getLocationContextBlock() {
+      const loc = getUserLocation();
+      if (!loc) return "";
+      return (
+        `\nUser location: ${loc}\n` +
+        `Whenever a task fits, weave in credible LOCAL resources near them — search terms and program types, not fake names:\n` +
+        `- Workforce boards / American Job Centers / CareerOneStop partner sites\n` +
+        `- Community colleges, trade schools, and adult education\n` +
+        `- Registered apprenticeships and union training halls\n` +
+        `- Small Business Development Centers (SBDC) and SCORE mentors\n` +
+        `- Business incubators, accelerators, and coworking with founder programs\n` +
+        `- Local government reentry/workforce grants and training vouchers\n` +
+        `- United Way / 211 for childcare, housing, transportation assistance\n` +
+        `- Veteran Readiness & Employment (VR&E) and VSO chapters when applicable\n` +
+        `- Goodwill, YMCA/YWCA career centers, public libraries, nonprofit workforce partners\n` +
+        `Put the best-fit local resource in each task's "local" field as an actionable search phrase.\n`
+      );
+    }
+
+    function shouldAskLocation() {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      return !locationMentionedInConversation();
+    }
+
+    function normalizeIdeaText(text) {
+      return String(text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function ideasOverlap(a, b) {
+      if (!a?.title || !b?.title) return false;
+      const aTitle = normalizeIdeaText(a.title);
+      const bTitle = normalizeIdeaText(b.title);
+      if (aTitle === bTitle) return true;
+
+      const aWords = new Set(aTitle.split(" ").filter((word) => word.length > 3));
+      const shared = bTitle.split(" ").filter((word) => word.length > 3 && aWords.has(word));
+      if (shared.length >= 3) return true;
+
+      const aTag = normalizeIdeaText(a.tagline);
+      const bTag = normalizeIdeaText(b.tagline);
+      if (aTag && bTag && (aTag === bTag || aTag.includes(bTag) || bTag.includes(aTag))) return true;
+
+      return false;
+    }
+
+    function ideasAreTooSimilar(ideas) {
+      for (let i = 0; i < ideas.length; i += 1) {
+        for (let j = i + 1; j < ideas.length; j += 1) {
+          if (ideasOverlap(ideas[i], ideas[j])) return true;
+        }
+      }
+      return false;
+    }
+
+    function askNameStep() {
+      const reply = "May I ask what your name is?";
+      resolveTyping(reply);
+      state.history.push({ role: "assistant", content: reply });
+      state.step = 4;
+      trackEvent("name_prompt_shown", {
+        intake_mode: state.intakeMode || "standard",
+        has_location: Boolean(getUserLocation())
+      });
+      showReplyBox(true);
+      schedulePersist();
+    }
+
+    function askLocationStep() {
+      const reply = "Where are you based? City, state or province, and country — comma-separated is fine. I'll look for local programs, training funds, and resources that could help.";
+      resolveTyping(reply);
+      state.history.push({ role: "assistant", content: reply });
+      state.step = 3;
+      trackEvent("location_prompt_shown", {
+        intake_mode: state.intakeMode || "standard"
+      });
+      showReplyBox(true);
+      schedulePersist();
+    }
+
     function getFirstUserMessage() {
       return state.history.find((entry) => entry.role === "user")?.content?.trim() || "";
     }
@@ -12020,13 +12512,13 @@
 
       if (isDetailedPrompt(userText)) {
         return (
-          "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Even though they gave a lot of detail, ask ONE short clarifying question that references something specific they mentioned and helps you prioritize the best paths for them. Plain text only.\n\nUser: " +
+          "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Even though they gave a lot of detail, ask ONE short clarifying question that references something specific they mentioned and helps you prioritize the best paths for them. Do not ask where they live — the app asks that separately next. Plain text only.\n\nUser: " +
           userText
         );
       }
 
       return (
-        "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Ask ONE short clarifying question that references something specific they mentioned — their situation, skills, constraints, or goals. Do not ask generic questions like 'what are you good at?' unless they gave you almost nothing to work with. Your question should uncover whether they want to get hired, learn something new, or build their own thing, and what resources (time, money, skills) they actually have. Plain text only.\n\nUser: " +
+        "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Ask ONE short clarifying question that references something specific they mentioned — their situation, skills, constraints, or goals. Do not ask where they live — the app asks that separately next. Do not ask generic questions like 'what are you good at?' unless they gave you almost nothing to work with. Your question should uncover whether they want to get hired, learn something new, or build their own thing, and what resources (time, money, skills) they actually have. Plain text only.\n\nUser: " +
         userText
       );
     }
@@ -12082,18 +12574,26 @@
     async function generateAndShowMap(options = {}) {
       const founderMode = options.founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
       const summary = getConversationSummary();
-      const response = await callAdvisor(
+      let response = await callAdvisor(
         founderMode ? buildFounderIdeasPrompt(summary) : buildIdeasPrompt(summary, 3),
         1200
       );
 
-      state.ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : fallbackIdeas);
+      let ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : fallbackIdeas);
+      if (!founderMode && ideasAreTooSimilar(ideas)) {
+        response = await callAdvisor(
+          `${buildIdeasPrompt(summary, 3)}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps.`,
+          1200
+        );
+        ideas = extractJsonArray(response, ideas);
+      }
+      state.ideas = ideas;
       const closing = founderMode
         ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
         : "Here are your paths. Tap any opportunity to see your full roadmap.";
       resolveTyping(closing);
       state.history.push({ role: "assistant", content: closing });
-      state.step = 4;
+      state.step = INTAKE_STEP_MAP;
       updateSaveButtonVisibility();
       schedulePersist();
       setTimeout(() => {
@@ -12205,8 +12705,15 @@
       return (
         "You are whatimado, a practical possibility advisor. Read this entire conversation carefully.\n\nConversation:\n" +
         summary +
+        getLocationContextBlock() +
         excludeBlock +
-        " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\nEach idea should be something they could realistically start given their stated resources. Include a mix when appropriate: zero-cost options, skill-building paths, gig/local work, or unconventional paths — but only if they fit THIS person.\n\nPricing realism: When suggesting monetization, use bootstrapped, believable 2026 consumer pricing. ALWAYS lead with free / pay-what-you-can / donations. For any paid INDIVIDUAL or personal tier, keep it very low — $0 to $5/mo, or a one-time tip of a few dollars; never suggest $9+/mo for an unproven individual product. Do NOT invent multi-tier SaaS pricing ladders. Avoid inflated B2B SaaS pricing ($99+/mo, $300–500/mo white-label) entirely unless the user EXPLICITLY says they target enterprise buyers. Every set of ideas must include at least one fully $0 path. Keep income projections modest and realistic.\n\nBAD: \"Freelance web developer\" (too generic)\nGOOD: \"Weekend furniture refinishing side gig — you mentioned loving hands-on work and having a garage; start by fixing one thrift-store piece and listing it on Facebook Marketplace\"\n\nRespond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. $500-1500/mo\"}]"
+        " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\n" +
+        "Each idea must use a DIFFERENT primary strategy (for example: direct employment, self-employment, short training/certification, gig work, creative portfolio, or community-based route). Do NOT copy-paste structure between ideas — titles, taglines, first steps, and income models should feel distinct.\n" +
+        "When location is known, at least one idea should name a local resource type they could search in their area (workforce board, community college program, apprenticeship, nonprofit career center, etc.).\n\n" +
+        "Each idea should be something they could realistically start given their stated resources. Include a mix when appropriate: zero-cost options, skill-building paths, gig/local work, or unconventional paths — but only if they fit THIS person.\n\n" +
+        "Pricing realism: When suggesting monetization, use bootstrapped, believable 2026 consumer pricing. ALWAYS lead with free / pay-what-you-can / donations. For any paid INDIVIDUAL or personal tier, keep it very low — $0 to $5/mo, or a one-time tip of a few dollars; never suggest $9+/mo for an unproven individual product. Do NOT invent multi-tier SaaS pricing ladders. Avoid inflated B2B SaaS pricing ($99+/mo, $300–500/mo white-label) entirely unless the user EXPLICITLY says they target enterprise buyers. Every set of ideas must include at least one fully $0 path. Keep income projections modest and realistic.\n\n" +
+        "BAD: \"Freelance web developer\" (too generic)\nGOOD: \"Weekend furniture refinishing side gig — you mentioned loving hands-on work and having a garage; start by fixing one thrift-store piece and listing it on Facebook Marketplace\"\n\n" +
+        "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. $500-1500/mo\"}]"
       );
     }
 
@@ -12324,6 +12831,7 @@
       showScreen("convo");
       addUserBubble(text);
       state.history.push({ role: "user", content: text });
+      state.userLocation = inferLocationFromConversation();
       state.step = 3;
       showReplyBox(false);
       addTypingBubble(PATH_BUILDING_MSG);
@@ -12370,30 +12878,43 @@
           intake_mode: state.intakeMode || "standard"
         });
         addTypingBubble();
-        const reply = "May I ask what your name is?";
-        resolveTyping(reply);
-        state.history.push({ role: "assistant", content: reply });
-        state.step = 3;
-        trackEvent("name_prompt_shown", {
-          reply_length: text.length,
-          intake_mode: state.intakeMode || "standard"
-        });
-        showReplyBox(true);
-        schedulePersist();
+        if (shouldAskLocation()) {
+          askLocationStep();
+        } else {
+          const inferred = inferLocationFromConversation();
+          if (formatUserLocation(inferred)) state.userLocation = inferred;
+          askNameStep();
+        }
         return;
       }
 
       if (state.step === 3) {
+        state.userLocation = parseLocationAnswer(text);
+        trackEvent("location_answer_submitted", {
+          reply_length: text.length,
+          intake_mode: state.intakeMode || "standard",
+          has_city: Boolean(state.userLocation.city),
+          has_region: Boolean(state.userLocation.region),
+          has_country: Boolean(state.userLocation.country)
+        });
+        addTypingBubble();
+        askNameStep();
+        return;
+      }
+
+      if (state.step === 4) {
         trackEvent("name_answer_submitted", {
           reply_length: text.length,
-          intake_mode: state.intakeMode || "standard"
+          intake_mode: state.intakeMode || "standard",
+          has_location: Boolean(getUserLocation())
         });
         showReplyBox(false);
         addTypingBubble(PATH_BUILDING_MSG);
         trackEvent("path_generation_started", {
           reply_length: text.length,
           history_count: state.history.length,
-          intake_mode: state.intakeMode || "standard"
+          intake_mode: state.intakeMode || "standard",
+          has_location: Boolean(getUserLocation())
         });
         await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(getFirstUserMessage()) });
         return;
@@ -12637,6 +13158,12 @@
     async function viewRoadmap(idea, ideaIndex, options = {}) {
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
+      state.roadmapExhausted = false;
+      state.roadmapAutoContinuePending = false;
+      if (roadmapAutoContinueTimer) {
+        clearTimeout(roadmapAutoContinueTimer);
+        roadmapAutoContinueTimer = null;
+      }
       const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
       trackEvent("roadmap_opened", {
         idea_index: ideaIndex,
@@ -12654,7 +13181,7 @@
       if (cachedIsUsable) {
         setRoadmapLoading(false);
         showScreen("roadmap");
-        state.roadmapStages = cached.stages;
+        state.roadmapStages = normalizeRoadmapStages(cached.stages);
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cached.source || "ai");
         $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
@@ -12703,7 +13230,7 @@
         });
       }
 
-      state.roadmapStages = stages;
+      state.roadmapStages = normalizeRoadmapStages(stages);
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
       $("#momentum-card").style.display = "flex";
@@ -12721,7 +13248,7 @@
       } catch (error) {
         console.error(error);
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
-        state.roadmapStages = getFallbackStages(idea);
+        state.roadmapStages = normalizeRoadmapStages(getFallbackStages(idea));
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: "fallback" };
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, "fallback");
         $("#momentum-card").style.display = "flex";
@@ -12824,18 +13351,20 @@
         card.className = `stage-card ${stageIndex === 0 ? "open" : ""}`;
         const taskMarkup = (stage.tasks || []).map((task, taskIndex) => {
           const id = `task-${stageIndex}-${taskIndex}`;
+          const text = getTaskText(task);
           return `
             <div class="task-item" data-task-id="${id}">
               <div class="task-top">
                 <input class="task-check" type="checkbox" id="${id}">
-                <label class="task-text" for="${id}">${escapeHtml(task)}</label>
+                <label class="task-text" for="${id}">${escapeHtml(text)}</label>
               </div>
+              ${renderTaskMetaHtml(task)}
               <div class="task-label">My Notes</div>
               <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
               <div class="task-threads" id="threads-${id}"></div>
               <div class="task-ask-row">
-                <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(task))}"></textarea>
-                <button class="task-ask-btn" type="button" data-task-id="${id}" data-task="${escapeHtml(task)}">Ask</button>
+                <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
+                <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
               </div>
             </div>`;
         }).join("");
@@ -12855,7 +13384,7 @@
       });
 
       $$(".task-ask-btn").forEach((button) => {
-        button.addEventListener("click", () => askTask(button.dataset.taskId, button.dataset.task));
+        button.addEventListener("click", () => askTask(button.dataset.taskId, getTaskTextById(button.dataset.taskId)));
       });
       bindTaskPersistence();
       initProgressMap(stages);
@@ -12881,12 +13410,13 @@
     function applyTaskTextUpdates(targets, newTexts) {
       targets.forEach((target, index) => {
         const text = newTexts[index];
-        state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = text;
+        const current = state.roadmapStages[target.stageIndex].tasks[target.taskIndex];
+        const normalized = normalizeRoadmapTask(current);
+        normalized.text = text;
+        state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = normalized;
         const id = `task-${target.stageIndex}-${target.taskIndex}`;
         const label = document.querySelector(`label.task-text[for="${id}"]`);
-        const askBtn = document.querySelector(`.task-ask-btn[data-task-id="${id}"]`);
         if (label) label.textContent = text;
-        if (askBtn) askBtn.dataset.task = text;
       });
 
       if (state.roadmapKey) {
@@ -12922,39 +13452,149 @@
       if (percent === 0) status.textContent = "Check off tasks to build momentum";
       else if (percent < 50) status.textContent = "Good start. Keep the rhythm going.";
       else if (percent < 100) status.textContent = "You're building real momentum now.";
+      else if (state.roadmapAutoContinuePending) status.textContent = "Phase complete — loading next steps…";
       else status.textContent = "Path complete!";
 
       const completeCard = $("#roadmap-complete-card");
+      const complete = total > 0 && percent === 100;
+      const continueBtn = $("#continue-plan-btn");
+      const completeCopy = $("#roadmap-complete-copy");
+
       if (completeCard) {
-        const complete = total > 0 && percent === 100;
-        completeCard.hidden = !complete;
-        completeCard.classList.toggle("visible", complete);
+        const showComplete = complete && !state.roadmapAutoContinuePending;
+        completeCard.hidden = !showComplete;
+        completeCard.classList.toggle("visible", showComplete);
       }
 
+      if (continueBtn) {
+        continueBtn.hidden = !complete || state.roadmapExhausted || state.roadmapAutoContinuePending;
+      }
+
+      if (completeCopy && complete && !state.roadmapAutoContinuePending) {
+        completeCopy.textContent = state.roadmapExhausted
+          ? "You've finished every meaningful phase on this path. Explore another path or rebuild remaining steps if something changed."
+          : "Nice work — this phase is complete. The next phase will load automatically, or tap Continue below.";
+      }
+
+      updateRebuildRemainingButton();
       updateProgressMap();
+
+      if (complete && !state.roadmapExhausted && !state.roadmapAutoContinuePending && !roadmapAutoContinueTimer) {
+        roadmapAutoContinueTimer = setTimeout(() => {
+          roadmapAutoContinueTimer = null;
+          const allDone = $$(".task-check").length > 0 && $$(".task-check").every((check) => check.checked);
+          if (allDone) continueCompletedPlan({ auto: true });
+        }, 1400);
+      }
     }
 
-    async function continueCompletedPlan() {
-      if (!state.currentIdea || !state.roadmapStages.length) return;
-      const button = $("#continue-plan-btn");
-      if (button?.disabled) return;
-
-      const originalText = button?.textContent || "Continue this plan";
-      if (button) {
-        button.disabled = true;
-        button.textContent = "Building next phase…";
+    async function regenerateRemainingRoadmap(options = {}) {
+      const { kept, pos } = sliceRoadmapBeforeFirstIncomplete();
+      if (!pos || !state.currentIdea) return false;
+      if (!options.skipConfirm && !confirm("Rebuild the remaining steps from where you are now? Completed tasks stay checked.")) {
+        return false;
       }
-      trackEvent("continue_plan_requested", {
+
+      const rebuildBtn = $("#roadmap-rebuild-remaining-btn");
+      const originalLabel = rebuildBtn?.textContent || "Rebuild remaining steps";
+      if (rebuildBtn) {
+        rebuildBtn.disabled = true;
+        rebuildBtn.textContent = "Rebuilding…";
+      }
+
+      trackEvent("roadmap_rebuild_remaining_requested", {
         roadmap_key: state.roadmapKey,
-        existing_stages_count: state.roadmapStages.length
+        kept_stages_count: kept.length,
+        reason_length: options.reason?.length || 0
       });
 
       const context = getConversationSummary();
       const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
-      const completedStages = state.roadmapStages.map((stage, index) => {
-        const tasks = (stage.tasks || []).map((task) => `- ${task}`).join("\n");
-        return `Stage ${index + 1}: ${stage.label}\n${stage.desc || ""}\n${tasks}`;
-      }).join("\n\n");
+      const stuckNote = options.reason
+        ? `\nUser is stuck or blocked: "${options.reason}"\nReplace unreachable steps with practical alternatives — do not repeat the same impossible step.\n`
+        : "";
+      const completedSummary = buildCompletedRoadmapSummary(kept);
+
+      try {
+        const response = await callAdvisor(
+          `${buildRoadmapPrompt(state.currentIdea, context, { phase: "continue", founderMode })}\n\n${stuckNote}Completed work (build the next steps from here — do not repeat these):\n${completedSummary}`,
+          founderMode ? 2200 : 1800
+        );
+        const nextStages = parseRoadmapResponse(response, state.currentIdea);
+        if (!nextStages || !stagesAreMeaningful(nextStages)) throw new Error("Rebuild response was empty or too generic");
+
+        state.roadmapStages = [...kept, ...nextStages];
+        state.roadmapExhausted = false;
+        if (state.roadmapKey) {
+          state.allRoadmaps[state.roadmapKey] = {
+            ...state.allRoadmaps[state.roadmapKey],
+            idea: state.currentIdea,
+            stages: state.roadmapStages
+          };
+        }
+
+        const completeCard = $("#roadmap-complete-card");
+        if (completeCard) {
+          completeCard.hidden = true;
+          completeCard.classList.remove("visible");
+        }
+
+        renderStages(state.roadmapStages);
+        schedulePersist();
+        trackEvent("roadmap_rebuild_remaining_added", {
+          added_stages_count: nextStages.length,
+          total_stages_count: state.roadmapStages.length
+        });
+        setTimeout(() => {
+          const posAfter = getFirstIncompleteTaskPosition();
+          if (posAfter) {
+            document.querySelector(`.task-item[data-task-id="task-${posAfter.stageIndex}-${posAfter.taskIndex}"]`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 120);
+        return true;
+      } catch {
+        trackEvent("roadmap_rebuild_remaining_failed", { roadmap_key: state.roadmapKey });
+        return false;
+      } finally {
+        if (rebuildBtn) {
+          rebuildBtn.disabled = false;
+          rebuildBtn.textContent = originalLabel;
+        }
+      }
+    }
+
+    async function continueCompletedPlan(options = {}) {
+      const auto = Boolean(options.auto);
+      if (!state.currentIdea || !state.roadmapStages.length) return;
+      if (state.roadmapExhausted) return;
+      if (state.roadmapAutoContinuePending && !auto) return;
+
+      const button = $("#continue-plan-btn");
+      const continuingNote = $("#roadmap-continuing-note");
+      const completeCopy = $("#roadmap-complete-copy");
+      if (button?.disabled && !auto) return;
+
+      const originalText = button?.textContent || "Continue this plan";
+      if (auto) {
+        state.roadmapAutoContinuePending = true;
+        if (continuingNote) continuingNote.hidden = false;
+        if (completeCopy) completeCopy.textContent = "Phase complete — loading your next phase…";
+        updateMomentum();
+      } else if (button) {
+        button.disabled = true;
+        button.textContent = "Building next phase…";
+      }
+
+      trackEvent("continue_plan_requested", {
+        roadmap_key: state.roadmapKey,
+        existing_stages_count: state.roadmapStages.length,
+        auto
+      });
+
+      const context = getConversationSummary();
+      const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
+      const completedStages = buildCompletedRoadmapSummary();
 
       try {
         const response = await callAdvisor(
@@ -12963,8 +13603,17 @@
         );
 
         const nextStages = parseRoadmapResponse(response, state.currentIdea);
-        if (!nextStages) throw new Error("Continue roadmap response was empty or too generic");
+        if (!nextStages || !stagesAreMeaningful(nextStages)) {
+          state.roadmapExhausted = true;
+          if (completeCopy) {
+            completeCopy.textContent = "You've finished every meaningful phase on this path. Explore another path or rebuild remaining steps if something changed.";
+          }
+          if (button) button.hidden = true;
+          trackEvent("continue_plan_exhausted", { roadmap_key: state.roadmapKey, auto });
+          return;
+        }
 
+        state.roadmapExhausted = false;
         state.roadmapStages = [...state.roadmapStages, ...nextStages];
         if (state.roadmapKey) {
           state.allRoadmaps[state.roadmapKey] = {
@@ -12973,20 +13622,35 @@
             stages: state.roadmapStages
           };
         }
+
+        const completeCard = $("#roadmap-complete-card");
+        if (completeCard) {
+          completeCard.hidden = true;
+          completeCard.classList.remove("visible");
+        }
+
         renderStages(state.roadmapStages);
         schedulePersist();
         trackEvent("continue_plan_added", {
           added_stages_count: nextStages.length,
-          total_stages_count: state.roadmapStages.length
+          total_stages_count: state.roadmapStages.length,
+          auto
         });
         setTimeout(() => $("#stage-list")?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
       } catch {
-        trackEvent("continue_plan_failed", { roadmap_key: state.roadmapKey });
+        trackEvent("continue_plan_failed", { roadmap_key: state.roadmapKey, auto });
+        if (auto && completeCopy) {
+          completeCopy.textContent = "Couldn't load the next phase automatically — tap Continue to try again.";
+        }
       } finally {
-        if (button) {
+        state.roadmapAutoContinuePending = false;
+        if (continuingNote) continuingNote.hidden = true;
+        if (button && !state.roadmapExhausted) {
           button.disabled = false;
           button.textContent = originalText;
+          button.hidden = false;
         }
+        updateMomentum();
       }
     }
 
@@ -13054,6 +13718,7 @@
     }
 
     async function askTask(taskId, taskText) {
+      const resolvedTaskText = taskText || getTaskTextById(taskId);
       const questionEl = $(`#question-${taskId}`);
       const askBtn = document.querySelector(`.task-ask-btn[data-task-id="${taskId}"]`);
       const question = questionEl?.value.trim();
@@ -13099,21 +13764,35 @@
 
       if (wantsChange) {
         const scope = inferAdjustScope(taskId, question);
-        const result = await applyTaskAdjustments(taskId, thread.id, scope);
-        thread.messages = thread.messages.filter((message) => message.content !== pendingMessage);
-        thread.messages.push({
-          role: "assistant",
-          content: result.ok
-            ? getAdjustSuccessMessage(scope, result.targets)
-            : "I understood what you want changed, but couldn't rewrite the task right now. Try asking again in a moment."
-        });
-        trackEvent("task_ai_change_applied", {
-          task_id: taskId,
-          scope,
-          ok: result.ok
-        });
+        if (scope === "remaining" && isStuckOrBlockedRequest(question)) {
+          thread.messages = thread.messages.filter((message) => message.content !== pendingMessage);
+          thread.messages.push({ role: "assistant", content: "Got it — rebuilding your remaining steps around this blocker..." });
+          renderTaskThreads(taskId);
+          const rebuilt = await regenerateRemainingRoadmap({ skipConfirm: true, reason: question });
+          thread.messages.push({
+            role: "assistant",
+            content: rebuilt
+              ? "Done — your remaining steps are updated. Start with the next unchecked task."
+              : "I couldn't rebuild the remaining steps right now. Try Rebuild remaining steps, or ask again in a moment."
+          });
+          trackEvent("task_ai_rebuild_remaining", { task_id: taskId, ok: rebuilt });
+        } else {
+          const result = await applyTaskAdjustments(taskId, thread.id, scope === "remaining" ? "following" : scope);
+          thread.messages = thread.messages.filter((message) => message.content !== pendingMessage);
+          thread.messages.push({
+            role: "assistant",
+            content: result.ok
+              ? getAdjustSuccessMessage(scope === "remaining" ? "following" : scope, result.targets)
+              : "I understood what you want changed, but couldn't rewrite the task right now. Try asking again in a moment."
+          });
+          trackEvent("task_ai_change_applied", {
+            task_id: taskId,
+            scope,
+            ok: result.ok
+          });
+        }
       } else {
-        const answer = await answerTaskQuestion(taskId, taskText, thread, question);
+        const answer = await answerTaskQuestion(taskId, resolvedTaskText, thread, question);
         thread.messages = thread.messages.filter((message) => message.content !== "Thinking...");
         thread.messages.push({
           role: "assistant",
@@ -13146,6 +13825,13 @@
       state.mapFeedbackGiven = false;
       state.mapFeedbackSentiment = null;
       state.intakeMode = "standard";
+      state.userLocation = emptyUserLocation();
+      state.roadmapExhausted = false;
+      state.roadmapAutoContinuePending = false;
+      if (roadmapAutoContinueTimer) {
+        clearTimeout(roadmapAutoContinueTimer);
+        roadmapAutoContinueTimer = null;
+      }
       state.selectedPathIndexes = [];
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
@@ -14603,7 +15289,8 @@
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
       $("#roadmap-save-path-btn")?.addEventListener("click", () => saveCurrentPath({ manual: true }));
       $("#roadmap-change-path-btn")?.addEventListener("click", regenerateCurrentRoadmap);
-      $("#continue-plan-btn")?.addEventListener("click", continueCompletedPlan);
+      $("#roadmap-rebuild-remaining-btn")?.addEventListener("click", () => regenerateRemainingRoadmap());
+      $("#continue-plan-btn")?.addEventListener("click", () => continueCompletedPlan());
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
       $("#complete-reset-btn")?.addEventListener("click", confirmStartNewMap);
       $("#delete-all-maps-btn")?.addEventListener("click", confirmResetEverything);
