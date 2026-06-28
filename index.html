@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-actionable-tasks -->
+<!-- whatimado build: 2026-06-28-local-sidebar-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-actionable-tasks">
+  <meta name="whatimado-build" content="2026-06-28-local-sidebar-fix">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6174,6 +6174,20 @@
       flex-shrink: 0;
     }
 
+    html[data-color-scheme="adult"] .roadmap-local-item--action {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item--action .roadmap-side-copy {
+      margin: 0 0 .45rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item--action .roadmap-side-link {
+      align-self: flex-start;
+      padding: 0;
+    }
+
     html[data-color-scheme="adult"] .roadmap-ask-assistant-btn {
       display: inline-flex;
       align-items: center;
@@ -9780,6 +9794,25 @@
         ...stage,
         tasks: (stage.tasks || []).map((task) => normalizeRoadmapTask(task))
       }));
+    }
+
+    function roadmapHasRichLocalData(stages = state.roadmapStages) {
+      return (stages || []).some((stage) =>
+        (stage.tasks || []).some((task) => {
+          const normalized = normalizeRoadmapTask(task);
+          return (
+            normalized.contacts.length > 0 ||
+            normalized.links.length > 0 ||
+            Boolean(normalized.script) ||
+            (normalized.local.length > 12 && !/^workforce \/ american job center near/i.test(normalized.local))
+          );
+        })
+      );
+    }
+
+    function pathNeedsLocalResources(idea = state.currentIdea) {
+      const blob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      return /\b(local|shelter|recovery|workforce|partner|outreach|nonprofit|library|re-?entry|community|employ|job|train|license|sbdc|score|pilot|visit|demo)\b/.test(blob);
     }
 
     function renderTaskMetaHtml(task) {
@@ -14111,6 +14144,28 @@
         stages = parseRoadmapResponse(response, idea);
       }
 
+      if (
+        stages &&
+        hasSavedUserLocation() &&
+        pathNeedsLocalResources(idea) &&
+        !roadmapHasRichLocalData(stages)
+      ) {
+        response = await callAdvisor(
+          `${buildRoadmapPrompt(idea, context, { founderMode, dedupe: true })}\n\n` +
+          `PREVIOUS ROADMAP WAS TOO GENERIC FOR ${getUserLocation()}.\n` +
+          `${ACTIONABLE_TASK_RULES}\n` +
+          "Regenerate all 4 stages. Every task MUST include contacts[], links[], and script with real named organizations, official URLs, and copy-paste outreach for this location.\n",
+          getRoadmapAdvisorTokenLimit(founderMode)
+        );
+        const enriched = parseRoadmapResponse(response, idea);
+        if (enriched) stages = enriched;
+      }
+
+      if (stages && roadmapOverlapsSibling(stages, idea)) {
+        response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode, dedupe: true }), getRoadmapAdvisorTokenLimit(founderMode));
+        stages = parseRoadmapResponse(response, idea);
+      }
+
       if (!stages || roadmapOverlapsSibling(stages, idea)) {
         stages = getFallbackStages(idea);
         roadmapSource = "fallback";
@@ -14274,6 +14329,15 @@
               local: normalized.local
             });
           });
+          normalized.links.forEach((url, index) => {
+            if (!url) return;
+            addResource({
+              type: "link",
+              key: url,
+              text: normalized.local || url.replace(/^https?:\/\//i, "").split("/")[0] || "Resource link",
+              url
+            });
+          });
           if (normalized.local && !/^workforce \/ american job center near/i.test(normalized.local)) {
             addResource({
               type: "local",
@@ -14374,7 +14438,23 @@
       }
 
       if (!resources.length) {
-        list.innerHTML = "<li class=\"roadmap-local-item\">Regenerate this roadmap after saving your location — new tasks will include named local contacts, links, and scripts.</li>";
+        const loc = getUserLocation();
+        const missingRichData = !roadmapHasRichLocalData();
+        if (missingRichData && pathNeedsLocalResources()) {
+          list.innerHTML =
+            `<li class="roadmap-local-item roadmap-local-item--action">` +
+            `<p class="roadmap-side-copy">Your location (<strong>${escapeHtml(loc)}</strong>) is saved. This roadmap was built without named local contacts yet.</p>` +
+            `<button type="button" class="roadmap-side-link" id="roadmap-refresh-local-btn">Refresh tasks with local contacts</button>` +
+            `</li>`;
+        } else if (missingRichData) {
+          list.innerHTML =
+            `<li class="roadmap-local-item roadmap-local-item--action">` +
+            `<p class="roadmap-side-copy">Your location (<strong>${escapeHtml(loc)}</strong>) is saved. Use <strong>Rebuild remaining steps</strong> or <strong>Change this path</strong> to add named contacts, links, and scripts to tasks.</p>` +
+            `</li>`;
+        } else {
+          list.innerHTML =
+            `<li class="roadmap-local-item">Your location is saved. Local orgs will appear here as you reach outreach and community tasks in this plan.</li>`;
+        }
         if (card) card.hidden = false;
         if (moreBtn) moreBtn.hidden = true;
         return;
@@ -14395,6 +14475,40 @@
       saveUserLocation(text, { confirmed: true });
       if (input) input.value = text;
       trackEvent("roadmap_location_saved", { source: "sidebar" });
+    }
+
+    async function refreshRoadmapLocalContacts() {
+      if (!state.currentIdea || !getUserLocation()) return;
+      const button = $("#roadmap-refresh-local-btn");
+      const originalLabel = button?.textContent || "Refresh tasks with local contacts";
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Refreshing…";
+      }
+
+      trackEvent("roadmap_refresh_local_requested", {
+        roadmap_key: state.roadmapKey,
+        location: getUserLocation()
+      });
+
+      const loc = getUserLocation();
+      const reason =
+        `Replace remaining tasks with low-effort steps for ${loc}. ` +
+        "Every relevant task must include real local organization names in contacts[], official links[], and copy-paste script text.";
+
+      try {
+        const rebuilt = await regenerateRemainingRoadmap({ skipConfirm: true, reason });
+        if (!rebuilt) {
+          if (confirm("Quick refresh didn't work. Replace this entire path with a fresh roadmap that includes local contacts, links, and scripts? Notes and checkboxes will reset.")) {
+            await regenerateCurrentRoadmap();
+          }
+        }
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalLabel;
+        }
+      }
     }
 
     function updateRoadmapOverviewChrome() {
@@ -16497,6 +16611,12 @@
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
       $("#roadmap-save-path-btn")?.addEventListener("click", () => saveCurrentPath({ manual: true }));
       $("#roadmap-location-save")?.addEventListener("click", saveLocationFromRoadmapSidebar);
+      $("#roadmap-local-list")?.addEventListener("click", (event) => {
+        if (event.target.closest("#roadmap-refresh-local-btn")) {
+          event.preventDefault();
+          refreshRoadmapLocalContacts();
+        }
+      });
       $("#roadmap-location-input")?.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
           event.preventDefault();
