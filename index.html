@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-roadmap-complete-footer -->
+<!-- whatimado build: 2026-06-28-roadmap-overview -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-roadmap-complete-footer">
+  <meta name="whatimado-build" content="2026-06-28-roadmap-overview">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -5703,9 +5703,443 @@
 
     .roadmap-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 280px;
-      gap: 1.5rem;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 1.75rem;
       align-items: start;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-main {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-overview-header {
+      padding: .25rem 0 .5rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-overview-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .65rem .85rem;
+      margin-bottom: .55rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: .22rem .55rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, .12);
+      color: #15803d;
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-status-badge.is-complete {
+      background: rgba(37, 99, 235, .1);
+      color: #1d4ed8;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-overview-desc {
+      margin: 0 0 .85rem;
+      color: var(--ink-muted);
+      font-size: .92rem;
+      line-height: 1.55;
+      max-width: 46rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-overview-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .55rem .85rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      color: var(--ink-muted);
+      font-size: .76rem;
+      font-weight: 600;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-meta-chip::before {
+      opacity: .75;
+    }
+
+    html[data-color-scheme="adult"] #roadmap-meta-location::before { content: "📍"; }
+    html[data-color-scheme="adult"] #roadmap-meta-type::before { content: "💼"; }
+    html[data-color-scheme="adult"] #roadmap-meta-timeline::before { content: "⏱"; }
+
+    html[data-color-scheme="adult"] .roadmap-edit-link,
+    html[data-color-scheme="adult"] .roadmap-side-link,
+    html[data-color-scheme="adult"] .roadmap-footer-regen {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: #2563eb;
+      font: inherit;
+      font-size: .76rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-edit-link {
+      margin-left: auto;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phases {
+      display: grid;
+      gap: .85rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .88);
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase.is-in-progress {
+      border-color: rgba(37, 99, 235, .35);
+      box-shadow: 0 10px 28px rgba(37, 99, 235, .08);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase.is-complete {
+      opacity: .92;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-head {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      width: 100%;
+      padding: .85rem 1rem;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-num {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      border: 2px solid var(--line);
+      color: var(--ink-muted);
+      font-size: .82rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase.is-complete .roadmap-phase-num {
+      border-color: #22c55e;
+      background: #22c55e;
+      color: #fff;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase.is-in-progress .roadmap-phase-num {
+      border-color: #2563eb;
+      background: #2563eb;
+      color: #fff;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-info {
+      flex: 1;
+      min-width: 0;
+      display: grid;
+      gap: .12rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-label {
+      color: var(--ink);
+      font-size: .92rem;
+      font-weight: 800;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-count {
+      color: var(--ink-muted);
+      font-size: .74rem;
+      font-weight: 600;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-chevron {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      color: var(--ink-muted);
+      transition: transform .18s ease;
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase.is-open .roadmap-phase-chevron {
+      transform: rotate(90deg);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-body {
+      display: none;
+      padding: 0 1rem 1rem;
+      border-top: 1px solid var(--line);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase.is-open .roadmap-phase-body {
+      display: block;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-desc {
+      margin: .85rem 0 1rem;
+      color: var(--ink-muted);
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+
+    html[data-color-scheme="adult"] .overview-task {
+      padding: .85rem 0;
+      border-top: 1px solid rgba(15, 23, 42, .06);
+    }
+
+    html[data-color-scheme="adult"] .overview-task:first-child {
+      border-top: 0;
+      padding-top: .25rem;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-main {
+      display: flex;
+      gap: .65rem;
+      align-items: flex-start;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    html[data-color-scheme="adult"] .overview-task .task-text {
+      display: block;
+      color: var(--ink);
+      font-size: .84rem;
+      font-weight: 600;
+      line-height: 1.45;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .overview-task.is-done .task-text {
+      color: var(--ink-muted);
+      text-decoration: line-through;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+      margin-top: .45rem;
+    }
+
+    html[data-color-scheme="adult"] .task-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: .18rem .5rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .05);
+      color: var(--ink-muted);
+      font-size: .66rem;
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .task-chip--local {
+      background: rgba(37, 99, 235, .1);
+      color: #1d4ed8;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-why {
+      margin: .55rem 0 0;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-tools {
+      margin: .65rem 0 0 1.65rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-load-phases-btn {
+      width: 100%;
+      margin-top: .5rem;
+      padding: .85rem 1rem;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .72);
+      color: var(--ink);
+      font: inherit;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-load-phases-btn:hover {
+      border-color: rgba(37, 99, 235, .35);
+      background: rgba(37, 99, 235, .04);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-overview-footer {
+      margin-top: .5rem;
+      padding: 1.1rem 1.15rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .82);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-footer-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-footer-label {
+      margin: 0 0 .35rem;
+      color: var(--ink);
+      font-size: .72rem;
+      font-weight: 800;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-footer-text,
+    html[data-color-scheme="adult"] .roadmap-footer-updated {
+      margin: 0;
+      color: var(--ink-muted);
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-card {
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .92);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-card + .roadmap-side-card {
+      margin-top: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+      margin-bottom: .55rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-card-title {
+      margin: 0 0 .45rem;
+      color: var(--ink);
+      font-size: .82rem;
+      font-weight: 800;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-card-head .roadmap-side-card-title {
+      margin: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-progress-pct {
+      color: #2563eb;
+      font-size: .95rem;
+      font-weight: 800;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-bar {
+      height: .45rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .08);
+      overflow: hidden;
+      margin-bottom: .45rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-bar-fill {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb, #22c55e);
+      transition: width .25s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-summary {
+      margin: 0 0 .55rem;
+      color: var(--ink-muted);
+      font-size: .74rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-copy {
+      margin: 0 0 .55rem;
+      color: var(--ink-muted);
+      font-size: .74rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-list {
+      list-style: none;
+      margin: 0 0 .55rem;
+      padding: 0;
+      display: grid;
+      gap: .45rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .45rem;
+      color: var(--ink);
+      font-size: .74rem;
+      line-height: 1.4;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item::before {
+      content: "↗";
+      color: #2563eb;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-ask-assistant-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .45rem;
+      width: 100%;
+      padding: .65rem .85rem;
+      border: 0;
+      border-radius: 12px;
+      background: #2563eb;
+      color: #fff;
+      font: inherit;
+      font-size: .78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-ask-assistant-btn:hover {
+      background: #1d4ed8;
+    }
+
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] .roadmap-footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-edit-link {
+        margin-left: 0;
+      }
     }
 
     .roadmap-side {
@@ -8611,7 +9045,7 @@
       </div>
 
       <div class="page roadmap-layout roadmap-page" id="roadmap-page">
-        <div>
+        <div class="roadmap-main">
           <div class="roadmap-header-actions">
             <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
@@ -8621,60 +9055,109 @@
             <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Rebuild remaining steps</button>
           </div>
 
-          <div class="roadmap-content" id="roadmap-content">
-          <div class="roadmap-save-bar">
-            <button type="button" class="back-btn" id="roadmap-save-path-btn">Save this path</button>
-            <p class="roadmap-save-note">This path auto-saves to My maps and Roadmaps as you check off tasks, add notes, or ask for help.</p>
-          </div>
-          <div class="roadmap-type" id="roadmap-type"></div>
-          <h2 class="roadmap-title" id="roadmap-title"></h2>
-          <p class="roadmap-sub" id="roadmap-sub">Building your personalised roadmap...</p>
+          <header class="roadmap-overview-header" id="roadmap-overview-header">
+            <div class="roadmap-overview-title-row">
+              <span class="roadmap-status-badge" id="roadmap-status-badge">Active roadmap</span>
+              <h2 class="roadmap-title" id="roadmap-title"></h2>
+            </div>
+            <p class="roadmap-overview-desc" id="roadmap-overview-desc"></p>
+            <div class="roadmap-overview-meta" id="roadmap-overview-meta">
+              <span class="roadmap-meta-chip" id="roadmap-meta-location" hidden></span>
+              <span class="roadmap-meta-chip" id="roadmap-meta-type" hidden></span>
+              <span class="roadmap-meta-chip" id="roadmap-meta-timeline" hidden></span>
+              <button type="button" class="roadmap-edit-link" id="roadmap-edit-details-btn">Edit details</button>
+            </div>
+          </header>
 
-          <div class="momentum-card" id="momentum-card">
-            <div class="momentum-ring-wrap">
+          <div class="roadmap-content" id="roadmap-content">
+            <p class="roadmap-sub" id="roadmap-sub" hidden>Building your personalised roadmap...</p>
+            <span id="roadmap-type" hidden></span>
+
+            <div class="momentum-card" id="momentum-card" hidden aria-hidden="true">
+              <div class="momentum-pct" id="momentum-pct">0%</div>
               <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
-                <defs>
-                  <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#7c6fcd"></stop>
-                    <stop offset="100%" stop-color="#4ecdc4"></stop>
-                  </linearGradient>
-                </defs>
-                <circle class="ring-bg" cx="32" cy="32" r="26"></circle>
                 <circle class="ring-fill" id="momentum-ring" cx="32" cy="32" r="26" stroke-dasharray="163" stroke-dashoffset="163"></circle>
               </svg>
-              <div class="momentum-pct" id="momentum-pct">0%</div>
+              <span id="stat-done">0</span>
+              <span id="stat-total">0</span>
+              <span id="momentum-status"></span>
             </div>
-            <div>
-              <div class="momentum-label">Momentum</div>
-              <div class="momentum-status" id="momentum-status">Check off tasks to build momentum</div>
-              <div class="momentum-stats">
-                <span><strong id="stat-done">0</strong> done</span>
-                <span><strong id="stat-total">0</strong> total</span>
+
+            <div class="roadmap-phases" id="stage-list"></div>
+
+            <button type="button" class="roadmap-load-phases-btn" id="roadmap-load-phases-btn" hidden>Load next phases</button>
+
+            <div class="roadmap-complete-card roadmap-complete-card--footer" id="roadmap-complete-card" hidden>
+              <p class="roadmap-complete-kicker">Path complete</p>
+              <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
+              <p class="roadmap-complete-copy" id="roadmap-complete-copy">Nice work — this phase is complete. The next phase will load automatically when you're ready.</p>
+              <p class="roadmap-continuing-note" id="roadmap-continuing-note" hidden>Building your next phase…</p>
+              <div class="roadmap-complete-actions">
+                <button class="back-btn complete-action-btn primary" id="continue-plan-btn" type="button">Continue this plan</button>
+                <button class="back-btn complete-action-btn" id="complete-map-btn" type="button">Explore another path</button>
+                <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
               </div>
             </div>
           </div>
 
-          <div class="stage-list" id="stage-list"></div>
-
-          <div class="roadmap-complete-card roadmap-complete-card--footer" id="roadmap-complete-card" hidden>
-            <p class="roadmap-complete-kicker">Path complete</p>
-            <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
-            <p class="roadmap-complete-copy" id="roadmap-complete-copy">Nice work — this phase is complete. The next phase will load automatically when you're ready.</p>
-            <p class="roadmap-continuing-note" id="roadmap-continuing-note" hidden>Building your next phase…</p>
-            <div class="roadmap-complete-actions">
-              <button class="back-btn complete-action-btn primary" id="continue-plan-btn" type="button">Continue this plan</button>
-              <button class="back-btn complete-action-btn" id="complete-map-btn" type="button">Explore another path</button>
-              <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
+          <footer class="roadmap-overview-footer">
+            <div class="roadmap-footer-grid">
+              <div class="roadmap-footer-block">
+                <h4 class="roadmap-footer-label">Your goal</h4>
+                <p class="roadmap-footer-text" id="roadmap-footer-goal">—</p>
+              </div>
+              <div class="roadmap-footer-block">
+                <h4 class="roadmap-footer-label">Your details</h4>
+                <p class="roadmap-footer-text" id="roadmap-footer-details">—</p>
+              </div>
+              <div class="roadmap-footer-block roadmap-footer-actions">
+                <p class="roadmap-footer-updated" id="roadmap-footer-updated">Last updated —</p>
+                <button type="button" class="roadmap-footer-regen" id="roadmap-footer-regen-btn">Regenerate roadmap</button>
+              </div>
             </div>
-          </div>
-          </div>
+          </footer>
         </div>
 
-        <aside class="roadmap-side">
-          <div class="progress-map">
-            <div class="progress-title">Progress Map <span id="progress-pct">0%</span></div>
-            <div class="pm-chain" id="progress-chain"></div>
+        <aside class="roadmap-side" id="roadmap-side">
+          <div class="roadmap-side-card">
+            <div class="roadmap-side-card-head">
+              <h3 class="roadmap-side-card-title">Overall progress</h3>
+              <span class="roadmap-side-progress-pct" id="roadmap-progress-pct">0%</span>
+            </div>
+            <div class="roadmap-progress-bar" aria-hidden="true">
+              <span class="roadmap-progress-bar-fill" id="roadmap-progress-bar-fill"></span>
+            </div>
+            <p class="roadmap-progress-summary" id="roadmap-progress-summary">0 of 0 tasks completed</p>
+            <button type="button" class="roadmap-side-link" id="roadmap-view-progress-btn">View progress</button>
           </div>
+
+          <div class="roadmap-side-card">
+            <h3 class="roadmap-side-card-title">About this roadmap</h3>
+            <p class="roadmap-side-copy" id="roadmap-side-about">This plan is built from your skills, goals, and situation — with local resources when we know where you are.</p>
+            <button type="button" class="roadmap-side-link" id="roadmap-how-works-btn">How this works</button>
+          </div>
+
+          <div class="roadmap-side-card" id="roadmap-side-local-card">
+            <h3 class="roadmap-side-card-title">Local resources for you</h3>
+            <ul class="roadmap-local-list" id="roadmap-local-list"></ul>
+            <button type="button" class="roadmap-side-link" id="roadmap-more-resources-btn" hidden>View more resources</button>
+          </div>
+
+          <div class="roadmap-side-card">
+            <h3 class="roadmap-side-card-title">Why these tasks?</h3>
+            <p class="roadmap-side-copy" id="roadmap-side-why">Each step includes why it matters, what you'll have when it's done, time, cost, and local help when relevant.</p>
+          </div>
+
+          <div class="roadmap-side-card roadmap-side-help">
+            <h3 class="roadmap-side-card-title">Need help or want to pivot?</h3>
+            <p class="roadmap-side-copy">Stuck on a step? Ask below any task, or jump to your next open step.</p>
+            <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-ask-assistant-btn">
+              <span aria-hidden="true">💬</span> Ask AI assistant
+            </button>
+          </div>
+
+          <span id="progress-pct" hidden>0%</span>
+          <div id="progress-chain" hidden></div>
         </aside>
       </div>
     </section>
@@ -10148,6 +10631,7 @@
       userLocation: { city: "", region: "", country: "", raw: "" },
       roadmapExhausted: false,
       roadmapAutoContinuePending: false,
+      expandedRoadmapPhases: null,
       activeMapId: null,
       savedMaps: [],
       roadmapCategories: [],
@@ -13274,6 +13758,7 @@
       state.roadmapKey = slugify(idea.title);
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
+      state.expandedRoadmapPhases = null;
       if (roadmapAutoContinueTimer) {
         clearTimeout(roadmapAutoContinueTimer);
         roadmapAutoContinueTimer = null;
@@ -13287,6 +13772,7 @@
         founder_mode: founderMode
       });
       setRoadmapNavVisible(true);
+      updateRoadmapOverviewHeader(idea);
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = idea.title;
 
@@ -13297,7 +13783,6 @@
         showScreen("roadmap");
         state.roadmapStages = normalizeRoadmapStages(cached.stages);
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cached.source || "ai");
-        $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
         trackEvent("roadmap_loaded_cached", {
           idea_index: ideaIndex,
@@ -13314,7 +13799,6 @@
         ? "Building your whatimado.com launch roadmap..."
         : "Building your personalised roadmap...";
       $("#stage-list").innerHTML = "";
-      $("#momentum-card").style.display = "none";
       const completeCard = $("#roadmap-complete-card");
       if (completeCard) {
         completeCard.hidden = true;
@@ -13347,7 +13831,6 @@
       state.roadmapStages = normalizeRoadmapStages(stages);
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
-      $("#momentum-card").style.display = "flex";
       renderStages(state.roadmapStages);
         trackEvent("roadmap_generated", {
           idea_index: ideaIndex,
@@ -13365,7 +13848,6 @@
         state.roadmapStages = normalizeRoadmapStages(getFallbackStages(idea));
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: "fallback" };
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, "fallback");
-        $("#momentum-card").style.display = "flex";
         renderStages(state.roadmapStages);
         registerRoadmapInSidebar(idea, ideaIndex);
         renderSidebarRoadmaps();
@@ -13401,9 +13883,11 @@
         const check = item.querySelector(".task-check");
         const notes = item.querySelector(".task-textarea");
         if (check) check.checked = Boolean(data.checked);
+        item.classList.toggle("is-done", Boolean(check?.checked));
         if (notes) notes.value = data.notes || "";
         check?.addEventListener("change", () => {
           data.checked = check.checked;
+          item.classList.toggle("is-done", check.checked);
           trackEvent("task_check_toggled", {
             task_id: taskId,
             checked: check.checked
@@ -13420,6 +13904,250 @@
         });
         renderTaskThreads(taskId);
       });
+    }
+
+    function getStageProgressFromIndices(stageIndex) {
+      const stage = state.roadmapStages[stageIndex];
+      const total = (stage?.tasks || []).length;
+      let done = 0;
+      for (let taskIndex = 0; taskIndex < total; taskIndex += 1) {
+        if (getRoadmapTaskData(`task-${stageIndex}-${taskIndex}`).checked) done += 1;
+      }
+      return { done, total };
+    }
+
+    function getActivePhaseIndex() {
+      for (let i = 0; i < state.roadmapStages.length; i += 1) {
+        const { done, total } = getStageProgressFromIndices(i);
+        if (total > 0 && done < total) return i;
+      }
+      return state.roadmapStages.length > 0 ? state.roadmapStages.length - 1 : 0;
+    }
+
+    function getPhaseStatusClass(stageIndex) {
+      const { done, total } = getStageProgressFromIndices(stageIndex);
+      if (total > 0 && done === total) return "is-complete";
+      const firstOpen = state.roadmapStages.findIndex((_, index) => {
+        const progress = getStageProgressFromIndices(index);
+        return progress.total > 0 && progress.done < progress.total;
+      });
+      if (firstOpen === -1) return "is-complete";
+      if (stageIndex === firstOpen) return "is-in-progress";
+      if (stageIndex < firstOpen) {
+        return done === total ? "is-complete" : "is-in-progress";
+      }
+      return "is-upcoming";
+    }
+
+    function resetRoadmapExpandedPhases() {
+      const active = getActivePhaseIndex();
+      state.expandedRoadmapPhases = new Set([active]);
+    }
+
+    function isPhaseExpanded(stageIndex) {
+      if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+      return state.expandedRoadmapPhases.has(stageIndex);
+    }
+
+    function togglePhaseExpanded(stageIndex) {
+      if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+      if (state.expandedRoadmapPhases.has(stageIndex)) state.expandedRoadmapPhases.delete(stageIndex);
+      else state.expandedRoadmapPhases.add(stageIndex);
+    }
+
+    function collectLocalResourcesFromRoadmap() {
+      const resources = [];
+      const seen = new Set();
+      state.roadmapStages.forEach((stage) => {
+        (stage.tasks || []).forEach((task) => {
+          const local = normalizeRoadmapTask(task).local;
+          if (!local || seen.has(local)) return;
+          seen.add(local);
+          resources.push(local);
+        });
+      });
+      const loc = getUserLocation();
+      if (loc) {
+        [`Workforce / American Job Center near ${loc}`, `SBDC or SCORE mentor in ${loc}`, `Community college programs in ${loc}`].forEach((item) => {
+          if (!seen.has(item)) {
+            seen.add(item);
+            resources.push(item);
+          }
+        });
+      }
+      return resources.slice(0, 8);
+    }
+
+    function updateRoadmapOverviewHeader(idea = state.currentIdea) {
+      if (!idea) return;
+
+      const desc = $("#roadmap-overview-desc");
+      if (desc) desc.textContent = idea.tagline || idea.why || "";
+
+      const setMeta = (el, value) => {
+        if (!el) return;
+        if (value) {
+          el.textContent = value;
+          el.hidden = false;
+        } else {
+          el.hidden = true;
+        }
+      };
+
+      setMeta($("#roadmap-meta-location"), getUserLocation());
+      setMeta($("#roadmap-meta-type"), idea.type || "");
+      setMeta($("#roadmap-meta-timeline"), idea.timeline || idea.income || "");
+
+      const firstUser = getFirstUserMessage();
+      const goal = idea.why || (firstUser.length > 120 ? `${firstUser.slice(0, 117)}…` : firstUser) || "—";
+      const details = [getUserLocation(), idea.type, idea.timeline || idea.income].filter(Boolean).join(" · ");
+
+      const goalEl = $("#roadmap-footer-goal");
+      const detailsEl = $("#roadmap-footer-details");
+      const updatedEl = $("#roadmap-footer-updated");
+      if (goalEl) goalEl.textContent = goal;
+      if (detailsEl) detailsEl.textContent = details || "—";
+      if (updatedEl) updatedEl.textContent = `Last updated ${formatMapDate(Date.now())}`;
+
+      const about = $("#roadmap-side-about");
+      if (about) {
+        about.textContent = idea.tagline
+          ? `${idea.tagline} Tasks are ordered so each phase builds on the last.`
+          : "This plan is built from your skills, goals, and situation — with local resources when we know where you are.";
+      }
+
+      const why = $("#roadmap-side-why");
+      if (why && idea.why) {
+        why.textContent = `${idea.why} Each task shows why it matters, time, cost, and local help when relevant.`;
+      }
+    }
+
+    function updateRoadmapLocalResourcesList() {
+      const list = $("#roadmap-local-list");
+      const card = $("#roadmap-side-local-card");
+      const moreBtn = $("#roadmap-more-resources-btn");
+      if (!list) return;
+
+      const resources = collectLocalResourcesFromRoadmap();
+      if (!resources.length) {
+        list.innerHTML = "<li class=\"roadmap-local-item\">Add your city during intake to see local workforce, SBDC, and training resources here.</li>";
+        if (card) card.hidden = false;
+        if (moreBtn) moreBtn.hidden = true;
+        return;
+      }
+
+      list.innerHTML = resources.slice(0, 5).map((item) => `<li class="roadmap-local-item">${escapeHtml(item)}</li>`).join("");
+      if (moreBtn) moreBtn.hidden = resources.length <= 5;
+      if (card) card.hidden = false;
+    }
+
+    function updateRoadmapOverviewChrome() {
+      const checks = $$(".task-check");
+      const done = checks.filter((check) => check.checked).length;
+      const total = checks.length;
+      const percent = total ? Math.round(done / total * 100) : 0;
+
+      const pctEl = $("#roadmap-progress-pct");
+      const fillEl = $("#roadmap-progress-bar-fill");
+      const summaryEl = $("#roadmap-progress-summary");
+      if (pctEl) pctEl.textContent = `${percent}%`;
+      if (fillEl) fillEl.style.width = `${percent}%`;
+      if (summaryEl) summaryEl.textContent = `${done} of ${total} tasks completed`;
+
+      const badge = $("#roadmap-status-badge");
+      if (badge) {
+        if (percent === 100 && !state.roadmapAutoContinuePending) {
+          badge.textContent = state.roadmapExhausted ? "Roadmap complete" : "Phase complete";
+          badge.classList.add("is-complete");
+        } else {
+          badge.textContent = "Active roadmap";
+          badge.classList.remove("is-complete");
+        }
+      }
+
+      state.roadmapStages.forEach((stage, stageIndex) => {
+        const progress = getStageProgressFromIndices(stageIndex);
+        const phase = document.querySelector(`.roadmap-phase[data-phase-index="${stageIndex}"]`);
+        if (!phase) return;
+        phase.classList.remove("is-complete", "is-in-progress", "is-upcoming");
+        phase.classList.add(getPhaseStatusClass(stageIndex));
+        const countEl = phase.querySelector(".roadmap-phase-count");
+        if (countEl) countEl.textContent = `${progress.done} / ${progress.total} tasks`;
+      });
+
+      $$(".overview-task").forEach((item) => {
+        const check = item.querySelector(".task-check");
+        item.classList.toggle("is-done", Boolean(check?.checked));
+      });
+
+      updateRoadmapLocalResourcesList();
+    }
+
+    function focusFirstOpenTaskAsk() {
+      const pos = getFirstIncompleteTaskPosition();
+      if (!pos) {
+        $("#roadmap-complete-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        return;
+      }
+
+      if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+      state.expandedRoadmapPhases.add(pos.stageIndex);
+      const phase = document.querySelector(`.roadmap-phase[data-phase-index="${pos.stageIndex}"]`);
+      phase?.classList.add("is-open", "open");
+
+      const taskId = `task-${pos.stageIndex}-${pos.taskIndex}`;
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const question = item?.querySelector(".task-question");
+      item?.scrollIntoView({ behavior: "smooth", block: "center" });
+      question?.focus();
+    }
+
+    function scrollToActivePhase() {
+      const active = getActivePhaseIndex();
+      const phase = document.querySelector(`.roadmap-phase[data-phase-index="${active}"]`);
+      if (!phase) return;
+      if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+      if (!isPhaseExpanded(active)) {
+        state.expandedRoadmapPhases.add(active);
+        phase.classList.add("is-open", "open");
+      }
+      phase.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderOverviewTaskHtml(task, stageIndex, taskIndex) {
+      const id = `task-${stageIndex}-${taskIndex}`;
+      const normalized = normalizeRoadmapTask(task);
+      const text = normalized.text;
+      const chips = [];
+      if (normalized.duration) chips.push(`<span class="task-chip">${escapeHtml(normalized.duration)}</span>`);
+      if (normalized.cost) chips.push(`<span class="task-chip">${escapeHtml(normalized.cost)}</span>`);
+      if (normalized.local) {
+        chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">Local resource</span>`);
+      }
+      const whyBlock = normalized.why
+        ? `<p class="overview-task-why"><strong>Why:</strong> ${escapeHtml(normalized.why)}${normalized.outcome ? ` <strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}` : ""}</p>`
+        : "";
+
+      return `
+        <div class="task-item overview-task" data-task-id="${id}">
+          <div class="overview-task-main">
+            <input class="task-check" type="checkbox" id="${id}">
+            <div class="overview-task-content">
+              <label class="task-text" for="${id}">${escapeHtml(text)}</label>
+              ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
+              ${whyBlock}
+            </div>
+          </div>
+          <div class="overview-task-tools">
+            <div class="task-label">My Notes</div>
+            <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
+            <div class="task-threads" id="threads-${id}"></div>
+            <div class="task-ask-row">
+              <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
+              <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
+            </div>
+          </div>
+        </div>`;
     }
 
     function getTaskAskPlaceholder(taskText) {
@@ -13458,42 +14186,41 @@
 
     function renderStages(stages) {
       const list = $("#stage-list");
+      if (!list) return;
       list.innerHTML = "";
 
-      stages.forEach((stage, stageIndex) => {
-        const card = document.createElement("article");
-        card.className = `stage-card ${stageIndex === 0 ? "open" : ""}`;
-        const taskMarkup = (stage.tasks || []).map((task, taskIndex) => {
-          const id = `task-${stageIndex}-${taskIndex}`;
-          const text = getTaskText(task);
-          return `
-            <div class="task-item" data-task-id="${id}">
-              <div class="task-top">
-                <input class="task-check" type="checkbox" id="${id}">
-                <label class="task-text" for="${id}">${escapeHtml(text)}</label>
-              </div>
-              ${renderTaskMetaHtml(task)}
-              <div class="task-label">My Notes</div>
-              <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
-              <div class="task-threads" id="threads-${id}"></div>
-              <div class="task-ask-row">
-                <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
-                <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
-              </div>
-            </div>`;
-        }).join("");
+      if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
 
+      stages.forEach((stage, stageIndex) => {
+        const progress = getStageProgressFromIndices(stageIndex);
+        const statusClass = getPhaseStatusClass(stageIndex);
+        const isOpen = isPhaseExpanded(stageIndex);
+        const taskMarkup = (stage.tasks || []).map((task, taskIndex) => renderOverviewTaskHtml(task, stageIndex, taskIndex)).join("");
+
+        const card = document.createElement("article");
+        card.className = `roadmap-phase stage-card ${statusClass}${isOpen ? " is-open open" : ""}`;
+        card.dataset.phaseIndex = String(stageIndex);
         card.innerHTML = `
-          <button class="stage-head" type="button">
-            <span class="stage-num">${stageIndex + 1}</span>
-            <span class="stage-label">${escapeHtml(stage.label)}</span>
-            <span aria-hidden="true">&gt;</span>
+          <button type="button" class="roadmap-phase-head stage-head">
+            <span class="roadmap-phase-num stage-num">${stageIndex + 1}</span>
+            <span class="roadmap-phase-info">
+              <span class="roadmap-phase-label stage-label">${escapeHtml(stage.label)}</span>
+              <span class="roadmap-phase-count">${progress.done} / ${progress.total} tasks</span>
+            </span>
+            <svg class="roadmap-phase-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
           </button>
-          <div class="stage-body">
-            <p class="stage-desc">${escapeHtml(stage.desc)}</p>
+          <div class="roadmap-phase-body stage-body">
+            <p class="roadmap-phase-desc stage-desc">${escapeHtml(stage.desc || "")}</p>
             <div class="tasks">${taskMarkup}</div>
           </div>`;
-        card.querySelector(".stage-head").addEventListener("click", () => card.classList.toggle("open"));
+
+        card.querySelector(".roadmap-phase-head")?.addEventListener("click", (event) => {
+          if (event.target.closest(".task-item")) return;
+          togglePhaseExpanded(stageIndex);
+          card.classList.toggle("is-open");
+          card.classList.toggle("open");
+        });
+
         list.append(card);
       });
 
@@ -13501,7 +14228,8 @@
         button.addEventListener("click", () => askTask(button.dataset.taskId, getTaskTextById(button.dataset.taskId)));
       });
       bindTaskPersistence();
-      initProgressMap(stages);
+      updateRoadmapOverviewHeader();
+      updateRoadmapOverviewChrome();
       updateMomentum();
     }
 
@@ -13543,7 +14271,8 @@
 
       const firstTarget = targets[0];
       if (firstTarget) {
-        $("#stage-list")?.children[firstTarget.stageIndex]?.classList.add("open");
+        const phaseEl = $("#stage-list")?.children[firstTarget.stageIndex];
+        phaseEl?.classList.add("open", "is-open");
       }
 
       highlightUpdatedTasks(targets.map((target) => `task-${target.stageIndex}-${target.taskIndex}`));
@@ -13591,7 +14320,13 @@
       }
 
       updateRebuildRemainingButton();
+      updateRoadmapOverviewChrome();
       updateProgressMap();
+
+      const loadPhasesBtn = $("#roadmap-load-phases-btn");
+      if (loadPhasesBtn) {
+        loadPhasesBtn.hidden = !complete || state.roadmapExhausted || state.roadmapAutoContinuePending;
+      }
 
       if (showComplete && completeCard) {
         requestAnimationFrame(() => {
@@ -13775,30 +14510,11 @@
     }
 
     function initProgressMap(stages) {
-      const chain = $("#progress-chain");
-      chain.innerHTML = stages.map((stage, index) => `
-        <div class="pm-stage">
-          <span class="pm-node" id="pm-node-${index}">${index + 1}</span>
-          <div>
-            <div class="pm-name">${escapeHtml(stage.label)}</div>
-            <div class="pm-tasks" id="pm-tasks-${index}">0 / ${(stage.tasks || []).length} tasks</div>
-          </div>
-        </div>`).join("");
+      updateRoadmapOverviewChrome();
     }
 
     function updateProgressMap() {
-      let offset = 0;
-      state.roadmapStages.forEach((stage, index) => {
-        const count = (stage.tasks || []).length;
-        const checks = $$(".task-check").slice(offset, offset + count);
-        const done = checks.filter((check) => check.checked).length;
-        offset += count;
-        const node = $(`#pm-node-${index}`);
-        node?.classList.toggle("active", done > 0 && done < count);
-        node?.classList.toggle("done", count > 0 && done === count);
-        const tasks = $(`#pm-tasks-${index}`);
-        if (tasks) tasks.textContent = `${done} / ${count} tasks`;
-      });
+      updateRoadmapOverviewChrome();
     }
 
     async function applyTaskAdjustments(taskId, threadId, scope) {
@@ -15421,6 +16137,15 @@
       $("#map-back-btn")?.addEventListener("click", backFromMap);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
       $("#roadmap-save-path-btn")?.addEventListener("click", () => saveCurrentPath({ manual: true }));
+      $("#roadmap-footer-regen-btn")?.addEventListener("click", regenerateCurrentRoadmap);
+      $("#roadmap-edit-details-btn")?.addEventListener("click", () => showScreen("map"));
+      $("#roadmap-view-progress-btn")?.addEventListener("click", scrollToActivePhase);
+      $("#roadmap-ask-assistant-btn")?.addEventListener("click", focusFirstOpenTaskAsk);
+      $("#roadmap-load-phases-btn")?.addEventListener("click", () => continueCompletedPlan());
+      $("#roadmap-how-works-btn")?.addEventListener("click", () => {
+        $("#roadmap-side-about")?.closest(".roadmap-side-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+      $("#roadmap-more-resources-btn")?.addEventListener("click", scrollToActivePhase);
       $("#roadmap-change-path-btn")?.addEventListener("click", regenerateCurrentRoadmap);
       $("#roadmap-rebuild-remaining-btn")?.addEventListener("click", () => regenerateRemainingRoadmap());
       $("#continue-plan-btn")?.addEventListener("click", () => continueCompletedPlan());
