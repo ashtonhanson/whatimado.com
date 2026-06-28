@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-sidebar-nav-resources -->
+<!-- whatimado build: 2026-06-28-sidebar-compact -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-sidebar-nav-resources">
+  <meta name="whatimado-build" content="2026-06-28-sidebar-compact">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -395,16 +395,16 @@
       min-width: 0;
       display: block;
       width: auto;
-      padding: .55rem .6rem;
+      padding: .45rem .5rem;
       border: 0;
-      border-radius: 10px;
-      background: rgba(15, 23, 42, .05);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, .04);
       color: var(--ink);
       font: inherit;
-      font-size: .82rem;
-      font-weight: 800;
-      letter-spacing: .05em;
-      text-transform: uppercase;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      text-transform: none;
       text-align: left;
       line-height: 1.35;
       cursor: pointer;
@@ -5845,41 +5845,6 @@
       gap: .55rem .85rem;
     }
 
-    html[data-color-scheme="adult"] .roadmap-header-local-hint {
-      margin: 0 0 1rem;
-      padding: .85rem 1rem;
-      border: 1px solid rgba(37, 99, 235, .18);
-      border-radius: 14px;
-      background: rgba(37, 99, 235, .05);
-    }
-
-    html[data-color-scheme="adult"] .roadmap-header-local-hint-title {
-      margin: 0 0 .45rem;
-      color: var(--ink);
-      font-size: .74rem;
-      font-weight: 800;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-header-local-hint-list {
-      display: grid;
-      gap: .35rem;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-header-local-hint-list li {
-      color: var(--ink);
-      font-size: .72rem;
-      line-height: 1.4;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-header-local-hint-list a {
-      color: #2563eb;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
     html[data-color-scheme="adult"] .roadmap-meta-chip {
       display: inline-flex;
       align-items: center;
@@ -6114,6 +6079,10 @@
       border-radius: 12px;
       background: rgba(37, 99, 235, .05);
       border: 1px solid rgba(37, 99, 235, .12);
+    }
+
+    html[data-color-scheme="adult"] .task-mobile-local-resources {
+      display: none;
     }
 
     html[data-color-scheme="adult"] .task-action-label {
@@ -6470,17 +6439,52 @@
         display: contents;
       }
 
-      html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
-      html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
       html[data-color-scheme="adult"] #roadmap-side-local-card {
-        order: 30;
-        border-color: rgba(37, 99, 235, .28);
-        box-shadow: 0 8px 24px rgba(37, 99, 235, .08);
+        display: none !important;
       }
 
-      html[data-color-scheme="adult"] #roadmap-side-local-card .roadmap-side-card-title::before {
-        content: "📍 ";
+      html[data-color-scheme="adult"] .task-mobile-local-resources {
+        display: block;
+        margin-top: .75rem;
+        padding: .85rem .9rem;
+        border-radius: 12px;
+        border: 1px solid rgba(37, 99, 235, .14);
+        background: rgba(37, 99, 235, .05);
       }
+
+      html[data-color-scheme="adult"] .task-mobile-local-label {
+        margin: 0 0 .4rem;
+        color: var(--ink);
+        font-size: .66rem;
+        font-weight: 800;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+      }
+
+      html[data-color-scheme="adult"] .task-mobile-local-list {
+        display: grid;
+        gap: .3rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      html[data-color-scheme="adult"] .task-mobile-local-list li {
+        color: var(--ink);
+        font-size: .72rem;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      html[data-color-scheme="adult"] .task-mobile-local-list a {
+        color: #2563eb;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
+      html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
       html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:first-child { order: 40; }
       html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:nth-child(2) { order: 50; }
       html[data-color-scheme="adult"] .roadmap-content { order: 60; }
@@ -9468,7 +9472,6 @@
               <span class="roadmap-meta-chip" id="roadmap-meta-timeline" hidden></span>
               <button type="button" class="roadmap-edit-link" id="roadmap-edit-details-btn">Edit details</button>
             </div>
-            <div class="roadmap-header-local-hint" id="roadmap-header-local-hint" hidden></div>
           </header>
 
           <div class="roadmap-content" id="roadmap-content">
@@ -10268,7 +10271,7 @@
       return [...resources].sort((a, b) => score(b) - score(a)).slice(0, limit);
     }
 
-    function renderLocalHintListHtml(resources, listClass = "roadmap-header-local-hint-list") {
+    function renderLocalHintListHtml(resources, listClass = "task-mobile-local-list") {
       if (!resources.length) return "";
       return `
         <ul class="${listClass}">
@@ -10281,37 +10284,19 @@
         </ul>`;
     }
 
-    function renderMapPathLocalHintHtml(idea) {
+    function renderMobileTaskLocalResourcesHtml(task, stage, stageIndex, idea = state.currentIdea) {
       if (!getUserLocation() || !pathNeedsLocalResources(idea)) return "";
+      const normalized = normalizeRoadmapTask(task);
+      if (normalized.contacts.length || normalized.links.length || normalized.script) return "";
+      if (!shouldInjectLocalContacts(normalized, stage, stageIndex, idea)) return "";
       const resources = getLocalHintResources(idea, 5);
       if (!resources.length) return "";
       const cityLabel = getUserLocation().split(",")[0]?.trim() || "your area";
       return `
-        <div class="opp-local-hint">
-          <p class="opp-local-hint-title">Start with these ${escapeHtml(cityLabel)} orgs</p>
-          ${renderLocalHintListHtml(resources, "opp-local-hint-list")}
+        <div class="task-mobile-local-resources">
+          <p class="task-mobile-local-label">Local orgs in ${escapeHtml(cityLabel)}</p>
+          ${renderLocalHintListHtml(resources)}
         </div>`;
-    }
-
-    function updateRoadmapHeaderLocalHint(idea = state.currentIdea) {
-      const el = $("#roadmap-header-local-hint");
-      if (!el) return;
-      if (!getUserLocation() || !pathNeedsLocalResources(idea)) {
-        el.hidden = true;
-        el.innerHTML = "";
-        return;
-      }
-      const resources = getLocalHintResources(idea, 5);
-      if (!resources.length) {
-        el.hidden = true;
-        el.innerHTML = "";
-        return;
-      }
-      const cityLabel = getUserLocation().split(",")[0]?.trim() || "your area";
-      el.innerHTML = `
-        <p class="roadmap-header-local-hint-title">Local orgs to start with in ${escapeHtml(cityLabel)}</p>
-        ${renderLocalHintListHtml(resources)}`;
-      el.hidden = false;
     }
 
     function buildCompactLocalEnrichPrompt(idea, loc, founderMode) {
@@ -12209,6 +12194,60 @@
       return first.length > 72 ? `${first.slice(0, 71)}…` : first;
     }
 
+    function toSidebarTitleCase(text) {
+      return String(text || "")
+        .split(/\s+/)
+        .map((word) => {
+          if (!word) return "";
+          if (/^whatimado\.?com$/i.test(word)) return "Whatimado";
+          if (word.length <= 3 && !/[a-z]/.test(word)) return word.toUpperCase();
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join(" ");
+    }
+
+    function abbreviateSidebarCategoryTitle(title) {
+      let text = String(title || "").trim();
+      if (!text) return "My map";
+
+      const lower = text.toLowerCase().replace(/\s+/g, " ");
+
+      if (/whatimado/.test(lower) && /growth|path|launch/.test(lower)) {
+        return "Whatimado growth";
+      }
+      if (/whatimado/.test(lower) && /build|building|possibility map|free ai/.test(lower)) {
+        return "Building whatimado";
+      }
+      if (/make.*money|money.*fast|lot of money|as fast as possible/.test(lower)) {
+        return "Make money fast";
+      }
+      if (/career change|new career|get hired|find a job/.test(lower)) {
+        return "Career change";
+      }
+      if (/side hustle|freelance|gig work/.test(lower)) {
+        return "Side income";
+      }
+
+      text = text
+        .replace(/^i['’]m\s+/i, "")
+        .replace(/^i need to\s+/i, "")
+        .replace(/^help me\s+/i, "")
+        .replace(/^my\s+/i, "")
+        .replace(/\bwhatimado\.com\b/gi, "whatimado")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const clause = text.split(/[,;—–-](?!\d)/)[0]?.trim() || text;
+      const words = clause.split(/\s+/).filter(Boolean);
+      const stop = new Set(["a", "an", "the", "and", "or", "to", "for", "of", "in", "on", "at", "with", "that", "this", "is", "are", "as", "be", "by", "from", "it", "my", "me", "i", "we", "you", "your"]);
+      const keywords = words.filter((word) => !stop.has(word.toLowerCase())).slice(0, 4);
+      text = keywords.length >= 2 ? keywords.join(" ") : words.slice(0, 5).join(" ");
+
+      text = toSidebarTitleCase(text);
+      if (text.length > 30) text = `${text.slice(0, 27).trim()}…`;
+      return text;
+    }
+
     function deriveCategoryTitle(history = state.history) {
       const mapTitle = deriveMapTitle(history);
       const firstUser = history.find((entry) => entry.role === "user")?.content?.trim() || "";
@@ -12445,6 +12484,7 @@
         const isExpanded = category.id === state.activeRoadmapCategoryId;
         const isCurrentSection = isCurrentRoadmapCategory(category);
         const deleteLabel = category.mapId ? "Delete map" : "Remove group";
+        const shortTitle = abbreviateSidebarCategoryTitle(category.title);
         const categoryClasses = [
           "dashboard-roadmap-category",
           isExpanded ? "is-expanded" : "",
@@ -12454,8 +12494,8 @@
         return `
         <div class="${categoryClasses}">
           <div class="dashboard-roadmap-category-head">
-            <button type="button" class="dashboard-roadmap-category-title" data-open-map-category="${escapeHtml(category.id)}" title="${category.mapId ? "Open possibility map" : "Expand roadmaps"}">
-              <span>${escapeHtml(category.title)}</span>
+            <button type="button" class="dashboard-roadmap-category-title" data-open-map-category="${escapeHtml(category.id)}" title="${escapeHtml(category.title)}" aria-label="${escapeHtml(category.title)}">
+              <span>${escapeHtml(shortTitle)}</span>
             </button>
             <button type="button" class="dashboard-roadmap-category-toggle" data-roadmap-category="${escapeHtml(category.id)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="Show roadmaps for this map" title="Show roadmaps">
               <svg class="dashboard-roadmap-category-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
@@ -14653,7 +14693,6 @@
             ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
           </div>
                 ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
-                ${renderMapPathLocalHintHtml(idea)}
                 <p class="opp-card-open-hint">Click path to open step-by-step roadmap</p>
               </div>
               <div class="opp-card-actions">
@@ -15089,8 +15128,6 @@
       if (why && idea.why) {
         why.textContent = `${idea.why} Each task shows why it matters, time, cost, and local help when relevant.`;
       }
-
-      updateRoadmapHeaderLocalHint(idea);
     }
 
     function updateRoadmapLocalResourcesList() {
@@ -15381,6 +15418,8 @@
         ? `<p class="overview-task-why"><strong>Why:</strong> ${escapeHtml(normalized.why)}${normalized.outcome ? ` <strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}` : ""}</p>`
         : "";
       const actionPack = renderTaskActionPackHtml(normalized);
+      const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "" };
+      const mobileLocal = renderMobileTaskLocalResourcesHtml(normalized, stage, stageIndex);
 
       return `
         <div class="task-item overview-task" data-task-id="${id}">
@@ -15391,6 +15430,7 @@
               ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
               ${whyBlock}
               ${actionPack}
+              ${mobileLocal}
             </div>
           </div>
           <div class="overview-task-tools">
@@ -15485,7 +15525,6 @@
       bindTaskPersistence();
       updateRoadmapOverviewHeader();
       updateRoadmapOverviewChrome();
-      updateRoadmapHeaderLocalHint();
       updateRoadmapLocalResourcesList();
       updateMomentum();
     }
