@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-local-sidebar-fix -->
+<!-- whatimado build: 2026-06-28-auto-local-enrich -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-local-sidebar-fix">
+  <meta name="whatimado-build" content="2026-06-28-auto-local-enrich">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -9525,8 +9525,10 @@
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each.\n' +
       'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"one sentence tied to this path","tasks":[{"text":"specific action — name the org/step, not generic homework","why":"why this step matters","outcome":"what you will have done","duration":"~30-45 min","cost":"Free or estimated cost","local":"Specific real org/program name in their city (not a category label)","links":["https://official-site.example"],"contacts":[{"name":"Contact name or title","org":"Organization full name","phone":"published main line or empty string","email":"published program email or empty string","url":"https://official-contact-page"}],"script":"Ready to copy: email subject + 3-4 sentence body OR phone opener"}]}]\n' +
-      'Every task MUST include all nine fields: text, why, outcome, duration, cost, local, links (array), contacts (array), script (string). Use [] or "" when not applicable.\n' +
+      'Every task object MUST include all nine fields. Use empty contacts[] and script "" for internal prep/writing tasks. Outreach, visits, demos, and local-program tasks MUST include real contacts[], links[], and script with copy-paste text.\n' +
       'Do not reuse stage titles across different paths on the same map.';
+
+    let roadmapLocalEnrichInFlight = false;
 
     const ACTIONABLE_TASK_RULES =
       'LOW-EFFORT / DO-THIS-FOR-THEM RULES:\n' +
@@ -9747,8 +9749,8 @@
 
     function getRoadmapAdvisorTokenLimit(founderMode) {
       const hasLocation = Boolean(getUserLocation());
-      if (founderMode) return hasLocation ? 3200 : 2600;
-      return hasLocation ? 2800 : 2000;
+      if (founderMode) return hasLocation ? 4800 : 3000;
+      return hasLocation ? 4200 : 2400;
     }
 
     function renderTaskActionPackHtml(task) {
@@ -9812,7 +9814,13 @@
 
     function pathNeedsLocalResources(idea = state.currentIdea) {
       const blob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
-      return /\b(local|shelter|recovery|workforce|partner|outreach|nonprofit|library|re-?entry|community|employ|job|train|license|sbdc|score|pilot|visit|demo)\b/.test(blob);
+      return /\b(local|shelter|recovery|workforce|partner|outreach|nonprofit|library|re-?entry|community|employ|job|train|license|sbdc|score|pilot|visit|demo|feedback sprint|validation)\b/.test(blob);
+    }
+
+    function roadmapNeedsLocalEnrichment(stages = state.roadmapStages, idea = state.currentIdea) {
+      if (!getUserLocation()) return false;
+      if (!pathNeedsLocalResources(idea)) return false;
+      return !roadmapHasRichLocalData(stages);
     }
 
     function renderTaskMetaHtml(task) {
@@ -14114,9 +14122,16 @@
           idea_index: ideaIndex,
           stages_count: state.roadmapStages.length
         });
+        if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea) && state.allRoadmaps[state.roadmapKey]?.localEnrichFailed) {
+          state.allRoadmaps[state.roadmapKey] = {
+            ...state.allRoadmaps[state.roadmapKey],
+            localEnrichFailed: false
+          };
+        }
         registerRoadmapInSidebar(idea, ideaIndex);
         renderSidebarRoadmaps();
         schedulePersist();
+        void maybeEnrichRoadmapLocalContacts();
         return;
       }
 
@@ -14190,6 +14205,7 @@
         registerRoadmapInSidebar(idea, ideaIndex);
         renderSidebarRoadmaps();
         schedulePersist();
+        void maybeEnrichRoadmapLocalContacts();
       } catch (error) {
         console.error(error);
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
@@ -14200,6 +14216,7 @@
         registerRoadmapInSidebar(idea, ideaIndex);
         renderSidebarRoadmaps();
         schedulePersist();
+        void maybeEnrichRoadmapLocalContacts();
       } finally {
         setRoadmapLoading(false);
       }
@@ -14439,18 +14456,23 @@
 
       if (!resources.length) {
         const loc = getUserLocation();
-        const missingRichData = !roadmapHasRichLocalData();
-        if (missingRichData && pathNeedsLocalResources()) {
+        const cached = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
+        const waitingForEnrich =
+          roadmapLocalEnrichInFlight ||
+          (roadmapNeedsLocalEnrichment() && !cached?.localEnrichFailed);
+
+        if (waitingForEnrich) {
+          list.innerHTML =
+            `<li class="roadmap-local-item">Adding local contacts, links, and scripts for ${escapeHtml(loc)}…</li>`;
+        } else if (cached?.localEnrichFailed) {
           list.innerHTML =
             `<li class="roadmap-local-item roadmap-local-item--action">` +
-            `<p class="roadmap-side-copy">Your location (<strong>${escapeHtml(loc)}</strong>) is saved. This roadmap was built without named local contacts yet.</p>` +
-            `<button type="button" class="roadmap-side-link" id="roadmap-refresh-local-btn">Refresh tasks with local contacts</button>` +
+            `<p class="roadmap-side-copy">Couldn't load local contacts automatically. Try again or use <strong>Change this path</strong> for a fresh roadmap.</p>` +
+            `<button type="button" class="roadmap-side-link" id="roadmap-refresh-local-btn">Try again</button>` +
             `</li>`;
-        } else if (missingRichData) {
+        } else if (!roadmapHasRichLocalData()) {
           list.innerHTML =
-            `<li class="roadmap-local-item roadmap-local-item--action">` +
-            `<p class="roadmap-side-copy">Your location (<strong>${escapeHtml(loc)}</strong>) is saved. Use <strong>Rebuild remaining steps</strong> or <strong>Change this path</strong> to add named contacts, links, and scripts to tasks.</p>` +
-            `</li>`;
+            `<li class="roadmap-local-item">Your location is saved. Local orgs will appear here as you reach outreach and community tasks in this plan.</li>`;
         } else {
           list.innerHTML =
             `<li class="roadmap-local-item">Your location is saved. Local orgs will appear here as you reach outreach and community tasks in this plan.</li>`;
@@ -14477,38 +14499,95 @@
       trackEvent("roadmap_location_saved", { source: "sidebar" });
     }
 
-    async function refreshRoadmapLocalContacts() {
-      if (!state.currentIdea || !getUserLocation()) return;
-      const button = $("#roadmap-refresh-local-btn");
-      const originalLabel = button?.textContent || "Refresh tasks with local contacts";
-      if (button) {
-        button.disabled = true;
-        button.textContent = "Refreshing…";
-      }
+    async function maybeEnrichRoadmapLocalContacts(options = {}) {
+      const { force = false } = options;
+      const key = state.roadmapKey;
+      const idea = state.currentIdea;
+      if (!key || !idea || !getUserLocation()) return false;
+      if (!roadmapNeedsLocalEnrichment()) return false;
+      if (roadmapLocalEnrichInFlight) return false;
 
-      trackEvent("roadmap_refresh_local_requested", {
-        roadmap_key: state.roadmapKey,
+      const cached = state.allRoadmaps[key];
+      if (cached?.localEnrichFailed && !force) return false;
+
+      roadmapLocalEnrichInFlight = true;
+      updateRoadmapLocalResourcesList();
+
+      trackEvent("roadmap_local_enrich_started", {
+        roadmap_key: key,
+        forced: force,
         location: getUserLocation()
       });
 
-      const loc = getUserLocation();
-      const reason =
-        `Replace remaining tasks with low-effort steps for ${loc}. ` +
-        "Every relevant task must include real local organization names in contacts[], official links[], and copy-paste script text.";
-
       try {
-        const rebuilt = await regenerateRemainingRoadmap({ skipConfirm: true, reason });
-        if (!rebuilt) {
-          if (confirm("Quick refresh didn't work. Replace this entire path with a fresh roadmap that includes local contacts, links, and scripts? Notes and checkboxes will reset.")) {
-            await regenerateCurrentRoadmap();
-          }
+        const context = getConversationSummary();
+        const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
+        const loc = getUserLocation();
+        const enrichNote =
+          `\nREWRITE ALL 4 STAGES for ${loc}.\n` +
+          `Keep the goal of "${idea.title}" but replace generic homework with named local orgs, official links, and copy-paste scripts.\n` +
+          `${ACTIONABLE_TASK_RULES}\n` +
+          `At least 4 tasks across the roadmap must include real contacts[] entries for ${loc} organizations.\n`;
+
+        let response = await callAdvisor(
+          `${buildRoadmapPrompt(idea, context, { founderMode, dedupe: true })}${enrichNote}`,
+          getRoadmapAdvisorTokenLimit(founderMode)
+        );
+        let stages = parseRoadmapResponse(response, idea);
+
+        if (!stages || !roadmapHasRichLocalData(stages)) {
+          response = await callAdvisor(
+            `${buildRoadmapPrompt(idea, context, { founderMode, dedupe: true })}${enrichNote}\n` +
+            "CRITICAL: Previous attempt lacked contacts[] and links[]. Return ONLY valid JSON. Include contacts on outreach, demo, and visit tasks.\n",
+            getRoadmapAdvisorTokenLimit(founderMode) + 800
+          );
+          stages = parseRoadmapResponse(response, idea);
         }
+
+        if (!stages || !stagesAreMeaningful(stages)) {
+          throw new Error("Local enrich response was empty or too generic");
+        }
+
+        state.roadmapStages = normalizeRoadmapStages(stages);
+        state.allRoadmaps[key] = {
+          ...(state.allRoadmaps[key] || {}),
+          idea,
+          stages: state.roadmapStages,
+          source: "ai",
+          localEnriched: true,
+          localEnrichFailed: false
+        };
+        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, "ai");
+        renderStages(state.roadmapStages);
+        schedulePersist();
+        trackEvent("roadmap_local_enrich_succeeded", { roadmap_key: key });
+        return true;
+      } catch (error) {
+        console.error(error);
+        if (state.allRoadmaps[key]) {
+          state.allRoadmaps[key] = {
+            ...state.allRoadmaps[key],
+            localEnrichFailed: true
+          };
+        }
+        trackEvent("roadmap_local_enrich_failed", { roadmap_key: key });
+        return false;
       } finally {
-        if (button) {
-          button.disabled = false;
-          button.textContent = originalLabel;
-        }
+        roadmapLocalEnrichInFlight = false;
+        updateRoadmapLocalResourcesList();
       }
+    }
+
+    async function refreshRoadmapLocalContacts() {
+      if (!state.currentIdea || !getUserLocation()) return;
+      const key = state.roadmapKey;
+      if (key && state.allRoadmaps[key]) {
+        state.allRoadmaps[key] = {
+          ...state.allRoadmaps[key],
+          localEnrichFailed: false
+        };
+      }
+      await maybeEnrichRoadmapLocalContacts({ force: true });
     }
 
     function updateRoadmapOverviewChrome() {
