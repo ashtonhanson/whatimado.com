@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-auto-local-enrich -->
+<!-- whatimado build: 2026-06-28-local-enrich-fallback -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-auto-local-enrich">
+  <meta name="whatimado-build" content="2026-06-28-local-enrich-fallback">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6188,6 +6188,51 @@
       padding: 0;
     }
 
+    html[data-color-scheme="adult"] .roadmap-local-item--loading {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item--loading::before {
+      content: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-enrich {
+      width: 100%;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-enrich-step {
+      margin: 0 0 .35rem;
+      color: var(--ink);
+      font-size: .74rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-enrich-bar {
+      height: .45rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, .08);
+      overflow: hidden;
+      margin-bottom: .35rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-enrich-bar-fill {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb, #22c55e);
+      transition: width .35s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-enrich-note {
+      margin: 0;
+      color: var(--ink-muted);
+      font-size: .68rem;
+      line-height: 1.4;
+    }
+
     html[data-color-scheme="adult"] .roadmap-ask-assistant-btn {
       display: inline-flex;
       align-items: center;
@@ -9529,6 +9574,28 @@
       'Do not reuse stage titles across different paths on the same map.';
 
     let roadmapLocalEnrichInFlight = false;
+    let roadmapLocalEnrichProgress = null;
+    let roadmapLocalEnrichProgressTimer = null;
+    let lastLocalEnrichError = "";
+
+    const LOCAL_ENRICH_STEPS = [
+      { label: "Reading your path and location", cap: 14 },
+      { label: "Finding organizations in your area", cap: 52 },
+      { label: "Adding contacts, links, and scripts", cap: 78 },
+      { label: "Double-checking outreach details", cap: 90 },
+      { label: "Updating your tasks", cap: 98 }
+    ];
+
+    const KNOWN_LOCAL_RESOURCE_PACKS = {
+      austin: [
+        { name: "Workforce programs", org: "Workforce Solutions Capital Area", url: "https://www.wfscapitalarea.com/", phone: "512-530-1050", email: "" },
+        { name: "Re-entry & housing", org: "Caritas of Austin", url: "https://www.caritasofaustin.org/", phone: "512-479-4610", email: "info@caritasofaustin.org" },
+        { name: "Job search help", org: "Austin Public Library Job Search Help", url: "https://library.austintexas.gov/job-search-help", phone: "512-974-7400", email: "" },
+        { name: "Shelter services", org: "Front Steps", url: "https://frontsteps.org/", phone: "512-305-4100", email: "" },
+        { name: "Youth & family services", org: "LifeWorks Austin", url: "https://www.lifeworksaustin.org/", phone: "512-735-2400", email: "" },
+        { name: "Affordable housing & support", org: "Foundation Communities", url: "https://foundcom.org/", phone: "512-447-2026", email: "" }
+      ]
+    };
 
     const ACTIONABLE_TASK_RULES =
       'LOW-EFFORT / DO-THIS-FOR-THEM RULES:\n' +
@@ -9749,8 +9816,12 @@
 
     function getRoadmapAdvisorTokenLimit(founderMode) {
       const hasLocation = Boolean(getUserLocation());
-      if (founderMode) return hasLocation ? 4800 : 3000;
-      return hasLocation ? 4200 : 2400;
+      if (founderMode) return hasLocation ? 4096 : 2800;
+      return hasLocation ? 3600 : 2200;
+    }
+
+    function capAdvisorTokens(requested) {
+      return Math.min(4096, Math.max(700, requested || 700));
     }
 
     function renderTaskActionPackHtml(task) {
@@ -9821,6 +9892,107 @@
       if (!getUserLocation()) return false;
       if (!pathNeedsLocalResources(idea)) return false;
       return !roadmapHasRichLocalData(stages);
+    }
+
+    function getKnownLocalResources(loc = getUserLocation()) {
+      const parsed = parseLocationAnswer(loc);
+      const cityKey = String(parsed.city || loc.split(",")[0] || "").trim().toLowerCase();
+      if (KNOWN_LOCAL_RESOURCE_PACKS[cityKey]?.length) {
+        return KNOWN_LOCAL_RESOURCE_PACKS[cityKey].map((entry) => ({ ...entry }));
+      }
+      const cityLabel = parsed.city || loc.split(",")[0]?.trim() || loc;
+      return [
+        {
+          name: "Workforce help",
+          org: `American Job Center — ${cityLabel} area`,
+          url: "https://www.careeronestop.org/LocalHelp/AmericanJobCenters/find-american-job-centers.aspx",
+          phone: "877-872-5627",
+          email: ""
+        },
+        {
+          name: "Community resources",
+          org: "United Way 211",
+          url: "https://www.211.org/",
+          phone: "211",
+          email: ""
+        }
+      ];
+    }
+
+    function buildOutreachScript(orgName, loc) {
+      return (
+        `Subject: Free career roadmap pilot for your clients\n\n` +
+        `Hi — I built whatimado.com, a free AI possibility map for people who are stuck on what's next. ` +
+        `I'd love a 4-week pilot with ${orgName} in ${loc}: your clients use it at no cost, and I collect feedback to improve it. ` +
+        `Could we schedule a 15-minute call this week?\n\n` +
+        `[Your name]`
+      );
+    }
+
+    function injectLocalContactsIntoRoadmap(stages, resources, loc = getUserLocation()) {
+      if (!Array.isArray(stages) || !resources.length) return stages;
+      let resourceIndex = 0;
+      const cloned = normalizeRoadmapStages(stages);
+
+      cloned.forEach((stage, stageIndex) => {
+        stage.tasks = stage.tasks.map((task) => {
+          const normalized = normalizeRoadmapTask(task);
+          if (
+            normalized.contacts.length ||
+            normalized.links.length ||
+            normalized.script ||
+            (normalized.local.length > 12 && !/^workforce \/ american job center near/i.test(normalized.local))
+          ) {
+            return normalized;
+          }
+
+          const shouldInject =
+            stageIndex >= 1 ||
+            /\b(email|call|outreach|visit|director|shelter|recovery|workforce|pilot|demo|partner|nonprofit|library|organizations?|list 10|name 5|spreadsheet|community)\b/i.test(normalized.text);
+
+          if (!shouldInject) return normalized;
+
+          const primary = resources[resourceIndex % resources.length];
+          const secondary = resources[(resourceIndex + 1) % resources.length];
+          resourceIndex += 1;
+
+          normalized.contacts = [primary, secondary].map((entry) => ({
+            name: entry.name || "Program director",
+            org: entry.org,
+            phone: entry.phone || "",
+            email: entry.email || "",
+            url: entry.url || ""
+          }));
+          normalized.links = [primary.url, secondary.url].filter(Boolean);
+          normalized.local = `${primary.org} · ${secondary.org}`;
+          normalized.script = buildOutreachScript(primary.org, loc);
+          return normalized;
+        });
+      });
+
+      return cloned;
+    }
+
+    function buildCompactLocalEnrichPrompt(idea, loc, founderMode) {
+      const focus = founderMode
+        ? "whatimado.com founder partnership with shelters, recovery centers, and workforce programs"
+        : `${idea.title} — ${idea.type || "local path"}`;
+      return (
+        `You are whatimado. Return ONLY a raw JSON array — no markdown, no commentary.\n` +
+        `Rewrite 4 stages with 3 tasks each for:\n` +
+        `Path: ${idea.title}\n` +
+        `${idea.tagline ? `Goal: ${idea.tagline}\n` : ""}` +
+        `Location: ${loc}\n` +
+        `Focus: ${focus}\n\n` +
+        `${ACTIONABLE_TASK_RULES}\n` +
+        `At least 5 tasks must include real ${loc} organizations in contacts[] with official urls.\n` +
+        ROADMAP_JSON_INSTRUCTION
+      );
+    }
+
+    function applyLocalResourceFallback(stages, loc) {
+      const resources = getKnownLocalResources(loc);
+      return injectLocalContactsIntoRoadmap(stages, resources, loc);
     }
 
     function renderTaskMetaHtml(task) {
@@ -13204,12 +13376,17 @@
         .trim();
     }
 
-    async function callAdvisor(prompt, maxTokens = 700) {
+    async function callAdvisor(prompt, maxTokens = 700, { timeoutMs = 0 } = {}) {
       lastAdvisorError = "";
+      const controller = timeoutMs > 0 ? new AbortController() : null;
+      const timeoutId = controller
+        ? setTimeout(() => controller.abort(), timeoutMs)
+        : null;
       try {
         const response = await fetch(`${getApiOrigin()}/api/claude`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller?.signal,
           body: JSON.stringify({
             model: "claude-sonnet-4-5",
             max_tokens: maxTokens,
@@ -13236,10 +13413,96 @@
         }
         return text;
       } catch (error) {
-        lastAdvisorError = error.message || "Network error";
+        if (error?.name === "AbortError") {
+          lastAdvisorError = "Request timed out";
+        } else {
+          lastAdvisorError = error.message || "Network error";
+        }
         console.error("Advisor request failed:", error);
         return "";
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
+    }
+
+    function stopLocalEnrichProgressTimer() {
+      if (roadmapLocalEnrichProgressTimer) {
+        clearInterval(roadmapLocalEnrichProgressTimer);
+        roadmapLocalEnrichProgressTimer = null;
+      }
+    }
+
+    function renderLocalEnrichProgressHtml(loc) {
+      const progress = roadmapLocalEnrichProgress;
+      const percent = Math.round(progress?.percent || 4);
+      const step = escapeHtml(progress?.step || LOCAL_ENRICH_STEPS[0].label);
+      const elapsedSec = progress?.startedAt ? Math.round((Date.now() - progress.startedAt) / 1000) : 0;
+      const note = progress?.timedOut
+        ? "This is taking longer than usual. Still working — large roadmaps can take up to 2 minutes."
+        : `Usually 30–90 seconds · ${elapsedSec}s elapsed`;
+
+      return (
+        `<li class="roadmap-local-item roadmap-local-item--loading">` +
+        `<div class="roadmap-local-enrich" role="status" aria-live="polite">` +
+        `<p class="roadmap-local-enrich-step">${step}</p>` +
+        `<div class="roadmap-local-enrich-bar" aria-hidden="true"><span class="roadmap-local-enrich-bar-fill" style="width:${percent}%"></span></div>` +
+        `<p class="roadmap-local-enrich-note">${escapeHtml(note)} for ${escapeHtml(loc)}</p>` +
+        `</div></li>`
+      );
+    }
+
+    function startLocalEnrichProgress(loc) {
+      stopLocalEnrichProgressTimer();
+      roadmapLocalEnrichProgress = {
+        active: true,
+        percent: 4,
+        cap: LOCAL_ENRICH_STEPS[0].cap,
+        step: LOCAL_ENRICH_STEPS[0].label,
+        startedAt: Date.now(),
+        timedOut: false
+      };
+      roadmapLocalEnrichProgressTimer = setInterval(() => {
+        if (!roadmapLocalEnrichProgress?.active) return;
+        const elapsed = Date.now() - roadmapLocalEnrichProgress.startedAt;
+        if (elapsed > 120000) roadmapLocalEnrichProgress.timedOut = true;
+        if (roadmapLocalEnrichProgress.percent < roadmapLocalEnrichProgress.cap) {
+          const pace = elapsed > 45000 ? 0.25 : elapsed > 20000 ? 0.45 : 0.7;
+          roadmapLocalEnrichProgress.percent = Math.min(
+            roadmapLocalEnrichProgress.cap,
+            roadmapLocalEnrichProgress.percent + pace
+          );
+        }
+        updateRoadmapLocalResourcesList();
+      }, 450);
+      updateRoadmapLocalResourcesList();
+    }
+
+    function setLocalEnrichProgress(stepIndex, capPercent, stepLabel) {
+      if (!roadmapLocalEnrichProgress) return;
+      const step = LOCAL_ENRICH_STEPS[stepIndex] || LOCAL_ENRICH_STEPS[LOCAL_ENRICH_STEPS.length - 1];
+      roadmapLocalEnrichProgress.step = stepLabel || step.label;
+      roadmapLocalEnrichProgress.cap = capPercent ?? step.cap;
+      roadmapLocalEnrichProgress.percent = Math.max(
+        roadmapLocalEnrichProgress.percent,
+        Math.min(roadmapLocalEnrichProgress.cap - 6, step.cap - 10)
+      );
+      updateRoadmapLocalResourcesList();
+    }
+
+    function finishLocalEnrichProgress(success) {
+      stopLocalEnrichProgressTimer();
+      if (success && roadmapLocalEnrichProgress) {
+        roadmapLocalEnrichProgress.percent = 100;
+        roadmapLocalEnrichProgress.step = "Local contacts added";
+        roadmapLocalEnrichProgress.cap = 100;
+        updateRoadmapLocalResourcesList();
+        setTimeout(() => {
+          roadmapLocalEnrichProgress = null;
+          updateRoadmapLocalResourcesList();
+        }, 700);
+        return;
+      }
+      roadmapLocalEnrichProgress = null;
     }
 
     function extractJsonArray(text, fallback) {
@@ -14461,13 +14724,16 @@
           roadmapLocalEnrichInFlight ||
           (roadmapNeedsLocalEnrichment() && !cached?.localEnrichFailed);
 
-        if (waitingForEnrich) {
-          list.innerHTML =
-            `<li class="roadmap-local-item">Adding local contacts, links, and scripts for ${escapeHtml(loc)}…</li>`;
+        if (waitingForEnrich || roadmapLocalEnrichProgress?.active) {
+          list.innerHTML = renderLocalEnrichProgressHtml(loc);
         } else if (cached?.localEnrichFailed) {
+          const errorHint = lastLocalEnrichError
+            ? ` (${lastLocalEnrichError})`
+            : "";
           list.innerHTML =
             `<li class="roadmap-local-item roadmap-local-item--action">` +
-            `<p class="roadmap-side-copy">Couldn't load local contacts automatically. Try again or use <strong>Change this path</strong> for a fresh roadmap.</p>` +
+            `<p class="roadmap-side-copy">We added what we could, but full auto-load didn't finish${escapeHtml(errorHint)}. ` +
+            `Click <strong>Try again</strong> or use <strong>Change this path</strong> for a fresh roadmap.</p>` +
             `<button type="button" class="roadmap-side-link" id="roadmap-refresh-local-btn">Try again</button>` +
             `</li>`;
         } else if (!roadmapHasRichLocalData()) {
@@ -14511,66 +14777,107 @@
       if (cached?.localEnrichFailed && !force) return false;
 
       roadmapLocalEnrichInFlight = true;
-      updateRoadmapLocalResourcesList();
+      lastLocalEnrichError = "";
+      const loc = getUserLocation();
+      startLocalEnrichProgress(loc);
 
       trackEvent("roadmap_local_enrich_started", {
         roadmap_key: key,
         forced: force,
-        location: getUserLocation()
+        location: loc
       });
 
-      try {
-        const context = getConversationSummary();
-        const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
-        const loc = getUserLocation();
-        const enrichNote =
-          `\nREWRITE ALL 4 STAGES for ${loc}.\n` +
-          `Keep the goal of "${idea.title}" but replace generic homework with named local orgs, official links, and copy-paste scripts.\n` +
-          `${ACTIONABLE_TASK_RULES}\n` +
-          `At least 4 tasks across the roadmap must include real contacts[] entries for ${loc} organizations.\n`;
+      let enrichSource = "ai";
 
+      try {
+        const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
+        const advisorTimeoutMs = 90000;
+        const tokenLimit = capAdvisorTokens(getRoadmapAdvisorTokenLimit(founderMode));
+
+        setLocalEnrichProgress(0, 14);
+        await new Promise((resolve) => setTimeout(resolve, 80));
+
+        setLocalEnrichProgress(1, 55);
         let response = await callAdvisor(
-          `${buildRoadmapPrompt(idea, context, { founderMode, dedupe: true })}${enrichNote}`,
-          getRoadmapAdvisorTokenLimit(founderMode)
+          buildCompactLocalEnrichPrompt(idea, loc, founderMode),
+          tokenLimit,
+          { timeoutMs: advisorTimeoutMs }
         );
         let stages = parseRoadmapResponse(response, idea);
 
         if (!stages || !roadmapHasRichLocalData(stages)) {
+          setLocalEnrichProgress(3, 82);
           response = await callAdvisor(
-            `${buildRoadmapPrompt(idea, context, { founderMode, dedupe: true })}${enrichNote}\n` +
-            "CRITICAL: Previous attempt lacked contacts[] and links[]. Return ONLY valid JSON. Include contacts on outreach, demo, and visit tasks.\n",
-            getRoadmapAdvisorTokenLimit(founderMode) + 800
+            `${buildCompactLocalEnrichPrompt(idea, loc, founderMode)}\n` +
+            "CRITICAL: Return ONLY valid JSON. Include contacts[] with org, url, phone on outreach tasks.\n",
+            tokenLimit,
+            { timeoutMs: advisorTimeoutMs }
           );
           stages = parseRoadmapResponse(response, idea);
         }
 
-        if (!stages || !stagesAreMeaningful(stages)) {
-          throw new Error("Local enrich response was empty or too generic");
+        if (!stages || !roadmapHasRichLocalData(stages)) {
+          setLocalEnrichProgress(3, 90, "Using verified local org list");
+          stages = applyLocalResourceFallback(state.roadmapStages, loc);
+          enrichSource = "fallback";
         }
 
+        if (!stages || !roadmapHasRichLocalData(stages)) {
+          throw new Error(lastAdvisorError || "Could not add local contacts");
+        }
+
+        setLocalEnrichProgress(4, 98);
         state.roadmapStages = normalizeRoadmapStages(stages);
         state.allRoadmaps[key] = {
           ...(state.allRoadmaps[key] || {}),
           idea,
           stages: state.roadmapStages,
-          source: "ai",
+          source: enrichSource === "fallback" ? "fallback" : "ai",
           localEnriched: true,
           localEnrichFailed: false
         };
-        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, "ai");
+        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, enrichSource === "fallback" ? "fallback" : "ai");
         renderStages(state.roadmapStages);
         schedulePersist();
-        trackEvent("roadmap_local_enrich_succeeded", { roadmap_key: key });
+        finishLocalEnrichProgress(true);
+        trackEvent("roadmap_local_enrich_succeeded", {
+          roadmap_key: key,
+          source: enrichSource
+        });
         return true;
       } catch (error) {
         console.error(error);
+        lastLocalEnrichError = error?.message || lastAdvisorError || "unknown error";
+        finishLocalEnrichProgress(false);
+
+        const fallbackStages = applyLocalResourceFallback(state.roadmapStages, loc);
+        if (roadmapHasRichLocalData(fallbackStages)) {
+          state.roadmapStages = normalizeRoadmapStages(fallbackStages);
+          state.allRoadmaps[key] = {
+            ...(state.allRoadmaps[key] || {}),
+            idea,
+            stages: state.roadmapStages,
+            source: "fallback",
+            localEnriched: true,
+            localEnrichFailed: false
+          };
+          renderStages(state.roadmapStages);
+          schedulePersist();
+          finishLocalEnrichProgress(true);
+          trackEvent("roadmap_local_enrich_succeeded", { roadmap_key: key, source: "fallback_rescue" });
+          return true;
+        }
+
         if (state.allRoadmaps[key]) {
           state.allRoadmaps[key] = {
             ...state.allRoadmaps[key],
             localEnrichFailed: true
           };
         }
-        trackEvent("roadmap_local_enrich_failed", { roadmap_key: key });
+        trackEvent("roadmap_local_enrich_failed", {
+          roadmap_key: key,
+          error: lastLocalEnrichError
+        });
         return false;
       } finally {
         roadmapLocalEnrichInFlight = false;
@@ -14581,6 +14888,7 @@
     async function refreshRoadmapLocalContacts() {
       if (!state.currentIdea || !getUserLocation()) return;
       const key = state.roadmapKey;
+      lastLocalEnrichError = "";
       if (key && state.allRoadmaps[key]) {
         state.allRoadmaps[key] = {
           ...state.allRoadmaps[key],
