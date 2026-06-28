@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-location-intake-fix -->
+<!-- whatimado build: 2026-06-28-actionable-tasks -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-location-intake-fix">
+  <meta name="whatimado-build" content="2026-06-28-actionable-tasks">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -5968,6 +5968,69 @@
       line-height: 1.45;
     }
 
+    html[data-color-scheme="adult"] .task-action-pack {
+      display: grid;
+      gap: .55rem;
+      margin-top: .65rem;
+      padding: .65rem .75rem;
+      border-radius: 12px;
+      background: rgba(37, 99, 235, .05);
+      border: 1px solid rgba(37, 99, 235, .12);
+    }
+
+    html[data-color-scheme="adult"] .task-action-label {
+      color: var(--ink);
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+
+    html[data-color-scheme="adult"] .task-contact-card + .task-contact-card {
+      margin-top: .45rem;
+      padding-top: .45rem;
+      border-top: 1px solid rgba(15, 23, 42, .08);
+    }
+
+    html[data-color-scheme="adult"] .task-contact-title {
+      color: var(--ink);
+      font-size: .76rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    html[data-color-scheme="adult"] .task-contact-meta,
+    html[data-color-scheme="adult"] .task-link-list,
+    html[data-color-scheme="adult"] .roadmap-local-meta {
+      margin-top: .2rem;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .task-contact-meta a,
+    html[data-color-scheme="adult"] .task-link-list a,
+    html[data-color-scheme="adult"] .roadmap-local-meta a {
+      color: #2563eb;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    html[data-color-scheme="adult"] .task-script-block {
+      margin: 0;
+      color: var(--ink);
+      font-size: .72rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item--rich strong {
+      display: block;
+      color: var(--ink);
+      font-size: .76rem;
+      margin-bottom: .15rem;
+    }
+
     html[data-color-scheme="adult"] .overview-task-tools {
       margin: .65rem 0 0 1.65rem;
     }
@@ -9447,8 +9510,19 @@
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each.\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"one sentence tied to this path","tasks":[{"text":"specific action","why":"why this step matters","outcome":"what you will have done","duration":"~30-45 min","cost":"Free or estimated cost","local":"local program or search term near them"}]}]\n' +
-      "Every task MUST include all six fields: text, why, outcome, duration, cost, local. Do not reuse stage titles across different paths on the same map.";
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"one sentence tied to this path","tasks":[{"text":"specific action — name the org/step, not generic homework","why":"why this step matters","outcome":"what you will have done","duration":"~30-45 min","cost":"Free or estimated cost","local":"Specific real org/program name in their city (not a category label)","links":["https://official-site.example"],"contacts":[{"name":"Contact name or title","org":"Organization full name","phone":"published main line or empty string","email":"published program email or empty string","url":"https://official-contact-page"}],"script":"Ready to copy: email subject + 3-4 sentence body OR phone opener"}]}]\n' +
+      'Every task MUST include all nine fields: text, why, outcome, duration, cost, local, links (array), contacts (array), script (string). Use [] or "" when not applicable.\n' +
+      'Do not reuse stage titles across different paths on the same map.';
+
+    const ACTIONABLE_TASK_RULES =
+      'LOW-EFFORT / DO-THIS-FOR-THEM RULES:\n' +
+      '- The user should NOT have to hunt for basics. Give real organization names, official https:// links, published phone numbers, and published emails when you know them for their city.\n' +
+      '- For outreach tasks: include 1-3 specific local orgs in contacts[] with url/phone/email, plus a copy-paste script (subject line + email body or call opener).\n' +
+      '- For licensing/registration tasks: link to the exact state/city agency page and list the fee in cost.\n' +
+      '- BAD: "List 10 local organizations" or "Find workforce resources near you" or "SBDC near Austin".\n' +
+      '- GOOD: contacts for Caritas of Austin Re-Entry, Austin Public Library Job Center, Workforce Solutions Capital Area with URLs + script: "Subject: Free career roadmap pilot for your clients…"\n' +
+      '- Never invent fake grant names or personal @gmail addresses. Use official sites; if unsure of a phone/email, leave it "" and put "Find contact on website" in script with the URL.\n' +
+      '- links[] should be the exact pages they need open to complete the task.\n';
     let roadmapAutoContinueTimer = null;
 
     function getFounderPathTemplate(idea) {
@@ -9585,7 +9659,10 @@
           outcome: fallback.outcome || "",
           duration: fallback.duration || "",
           cost: fallback.cost || "",
-          local: fallback.local || ""
+          local: fallback.local || "",
+          links: normalizeTaskLinks(fallback.links),
+          contacts: normalizeTaskContacts(fallback.contacts),
+          script: fallback.script || ""
         };
       }
       if (task && typeof task === "object") {
@@ -9595,10 +9672,107 @@
           outcome: String(task.outcome || fallback.outcome || "").trim(),
           duration: String(task.duration || fallback.duration || "").trim(),
           cost: String(task.cost || fallback.cost || "").trim(),
-          local: String(task.local || task.localTip || fallback.local || "").trim()
+          local: String(task.local || task.localTip || fallback.local || "").trim(),
+          links: normalizeTaskLinks(task.links ?? task.link ?? task.urls ?? fallback.links),
+          contacts: normalizeTaskContacts(task.contacts ?? task.contact ?? fallback.contacts),
+          script: String(task.script || task.outreach || task.template || fallback.script || "").trim()
         };
       }
-      return { text: String(task ?? "").trim(), why: "", outcome: "", duration: "", cost: "", local: "" };
+      return {
+        text: String(task ?? "").trim(),
+        why: "",
+        outcome: "",
+        duration: "",
+        cost: "",
+        local: "",
+        links: [],
+        contacts: [],
+        script: ""
+      };
+    }
+
+    function normalizeTaskContact(entry) {
+      if (!entry) return null;
+      if (typeof entry === "string") {
+        const trimmed = entry.trim();
+        if (!trimmed) return null;
+        return { name: "", org: trimmed, phone: "", email: "", url: "" };
+      }
+      const contact = {
+        name: String(entry.name || entry.contact || "").trim(),
+        org: String(entry.org || entry.organization || entry.place || "").trim(),
+        phone: String(entry.phone || entry.tel || entry.telephone || "").trim(),
+        email: String(entry.email || "").trim(),
+        url: String(entry.url || entry.link || entry.website || "").trim()
+      };
+      if (!contact.name && !contact.org && !contact.phone && !contact.email && !contact.url) return null;
+      return contact;
+    }
+
+    function normalizeTaskContacts(value) {
+      if (!value) return [];
+      if (Array.isArray(value)) return value.map(normalizeTaskContact).filter(Boolean);
+      const single = normalizeTaskContact(value);
+      return single ? [single] : [];
+    }
+
+    function normalizeTaskLinks(value) {
+      if (!value) return [];
+      const items = Array.isArray(value) ? value : String(value).split(/\s+|,\s*/);
+      return items
+        .map((item) => String(item || "").trim())
+        .filter((item) => item.length > 4 && (/^https?:\/\//i.test(item) || /\.[a-z]{2,}/i.test(item)));
+    }
+
+    function formatExternalUrl(url) {
+      const trimmed = String(url || "").trim();
+      if (!trimmed) return "";
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return `https://${trimmed.replace(/^\/\//, "")}`;
+    }
+
+    function getRoadmapAdvisorTokenLimit(founderMode) {
+      const hasLocation = Boolean(getUserLocation());
+      if (founderMode) return hasLocation ? 3200 : 2600;
+      return hasLocation ? 2800 : 2000;
+    }
+
+    function renderTaskActionPackHtml(task) {
+      const normalized = normalizeRoadmapTask(task);
+      const blocks = [];
+
+      if (normalized.contacts.length) {
+        const cards = normalized.contacts.map((contact) => {
+          const title = [contact.org, contact.name].filter(Boolean).join(" — ") || "Contact";
+          const meta = [];
+          if (contact.url) {
+            meta.push(`<a href="${escapeHtml(formatExternalUrl(contact.url))}" target="_blank" rel="noopener noreferrer">Website</a>`);
+          }
+          if (contact.phone) {
+            meta.push(`<a href="tel:${escapeHtml(contact.phone.replace(/[^\d+]/g, ""))}">${escapeHtml(contact.phone)}</a>`);
+          }
+          if (contact.email) {
+            meta.push(`<a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a>`);
+          }
+          return `<div class="task-contact-card"><div class="task-contact-title">${escapeHtml(title)}</div>${meta.length ? `<div class="task-contact-meta">${meta.join(" · ")}</div>` : ""}</div>`;
+        }).join("");
+        blocks.push(`<div class="task-contacts"><div class="task-action-label">Who to contact</div>${cards}</div>`);
+      }
+
+      if (normalized.links.length) {
+        const links = normalized.links.map((link) => {
+          const href = formatExternalUrl(link);
+          const label = link.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+          return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+        }).join(" · ");
+        blocks.push(`<div class="task-links"><div class="task-action-label">Links</div><div class="task-link-list">${links}</div></div>`);
+      }
+
+      if (normalized.script) {
+        blocks.push(`<div class="task-script"><div class="task-action-label">What to say</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
+      }
+
+      return blocks.length ? `<div class="task-action-pack">${blocks.join("")}</div>` : "";
     }
 
     function normalizeRoadmapStages(stages) {
@@ -9615,7 +9789,8 @@
       if (normalized.outcome) rows.push(`<div><strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}</div>`);
       if (normalized.duration) rows.push(`<div><strong>Time:</strong> ${escapeHtml(normalized.duration)}</div>`);
       if (normalized.cost) rows.push(`<div><strong>Cost:</strong> ${escapeHtml(normalized.cost)}</div>`);
-      if (normalized.local) rows.push(`<div><strong>Local help:</strong> ${escapeHtml(normalized.local)}</div>`);
+      if (normalized.local) rows.push(`<div><strong>Local:</strong> ${escapeHtml(normalized.local)}</div>`);
+      if (normalized.script) rows.push(`<div><strong>Script:</strong> ${escapeHtml(normalized.script.slice(0, 160))}${normalized.script.length > 160 ? "…" : ""}</div>`);
       return rows.length ? `<div class="task-meta">${rows.join("")}</div>` : "";
     }
 
@@ -10233,6 +10408,8 @@
         `Founder conversation:\n${context}\n` +
         siblingBlock +
         dedupeNote +
+        getLocationContextBlock() +
+        `\n${ACTIONABLE_TASK_RULES}\n` +
         `\nFocus this roadmap ONLY on: ${pathFocus}.\n` +
         `This path must feel different from the other paths on the map — use stage labels and tasks that match "${idea.title}" specifically.\n` +
         `Do NOT reuse stage names or tasks from other paths (for example, do not copy donation-setup tasks into a launch or partnership path).\n\n` +
@@ -10288,11 +10465,13 @@
         dedupeNote +
         getLocationContextBlock() +
         `\nPath type guidance: ${getRoadmapArchetypeGuidance(idea)}\n` +
+        `\n${ACTIONABLE_TASK_RULES}\n` +
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
         `NEVER use generic stage titles like "Launch the first test", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path.\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
         `- Every task must be 1–2 sentences and SPECIFIC to this person and this exact path.\n` +
-        `- Each task object must answer: why am I doing this, what outcome to expect, how long (~time), free or paid cost, and a local resource search phrase when relevant.\n` +
+        `- Each task object must answer: why, outcome, time, cost, AND include contacts[], links[], and script when the task involves outreach, applications, licensing, or local programs.\n` +
+        `- Do NOT assign vague homework like "research local orgs" without naming the orgs and giving the outreach script in the same task.\n` +
         `- Name real platforms, tools, audiences, numbers, time boxes, and deliverables.\n` +
         `- Reference details they actually said (skills, location, constraints, goals, industry, budget).\n` +
         `- Each task should be doable in a day or a week — not a vague category.\n` +
@@ -10555,25 +10734,39 @@
       );
     }
 
-    function buildTaskCoachPrompt({ taskText, thread, question, context, stage }) {
+    function buildTaskCoachPrompt({ taskText, thread, question, context, stage, task }) {
       const threadHistory = (thread.messages || [])
         .filter((message) => !["Thinking...", "Got it — updating your task now..."].includes(message.content))
         .map((message) => `${message.role === "user" ? "User" : "Advisor"}: ${message.content}`)
         .join("\n");
       const contextTail = context.length > 1400 ? context.slice(-1400) : context;
+      const normalized = task ? normalizeRoadmapTask(task) : null;
+      const taskDetail = normalized
+        ? [
+            normalized.local ? `Local org: ${normalized.local}` : "",
+            normalized.links.length ? `Links: ${normalized.links.join(", ")}` : "",
+            normalized.contacts.length
+              ? `Contacts: ${normalized.contacts.map((c) => [c.org, c.name, c.phone, c.email, c.url].filter(Boolean).join(" | ")).join("; ")}`
+              : "",
+            normalized.script ? `Script on task: ${normalized.script}` : ""
+          ].filter(Boolean).join("\n")
+        : "";
 
       return (
         `You are whatimado, a practical task coach helping someone execute a roadmap step.\n\n` +
         `Path: ${state.currentIdea?.title || $("#roadmap-title")?.textContent || "their plan"}\n` +
         `${state.currentIdea?.tagline ? `Path summary: ${state.currentIdea.tagline}\n` : ""}` +
+        `${getUserLocation() ? `User location: ${getUserLocation()}\n` : ""}` +
         `${stage?.label ? `Stage: ${stage.label}\n` : ""}` +
         `${stage?.desc ? `Stage goal: ${stage.desc}\n` : ""}` +
-        `Current task: ${taskText}\n\n` +
+        `Current task: ${taskText}\n` +
+        `${taskDetail ? `\nTask resources already provided:\n${taskDetail}\n` : ""}\n` +
         `Latest question: ${question}\n\n` +
         (threadHistory ? `Task chat so far:\n${threadHistory}\n\n` : "") +
         `Broader conversation context:\n${contextTail}\n\n` +
         `Answer helpfully in 2-5 sentences. Be specific to THIS task and THIS question.\n` +
         `When mentioning websites, tools, or platforms, include full https:// URLs.\n` +
+        `Prefer the contacts, links, and script already on the task before sending them to research from scratch.\n` +
         `If they want to change the task wording, tell them to say what to change (for example: "change Reddit to Facebook") and the task will update automatically.\n` +
         `Do NOT reply with vague advice like "try one small step today" unless that is truly the best specific answer.`
       );
@@ -10599,9 +10792,10 @@
     async function answerTaskQuestion(taskId, taskText, thread, question) {
       const parsed = parseTaskId(taskId);
       const stage = parsed ? state.roadmapStages[parsed.stageIndex] : null;
+      const task = parsed ? state.roadmapStages[parsed.stageIndex]?.tasks?.[parsed.taskIndex] : null;
       const context = getConversationSummary();
 
-      const fullPrompt = buildTaskCoachPrompt({ taskText, thread, question, context, stage });
+      const fullPrompt = buildTaskCoachPrompt({ taskText, thread, question, context, stage, task });
       let text = await callAdvisor(fullPrompt, 900);
       if (text) return { text, source: "ai-full" };
 
@@ -13068,20 +13262,21 @@
 
     function getLocationContextBlock() {
       const loc = getUserLocation();
-      if (!loc) return "";
+      if (!loc) {
+        return (
+          `\nUser location: not provided yet.\n` +
+          `If a task would benefit from local programs, still give national official links — but prefer generic .gov workforce URLs over fake local names.\n`
+        );
+      }
       return (
         `\nUser location: ${loc}\n` +
-        `Whenever a task fits, weave in credible LOCAL resources near them — search terms and program types, not fake names:\n` +
-        `- Workforce boards / American Job Centers / CareerOneStop partner sites\n` +
-        `- Community colleges, trade schools, and adult education\n` +
-        `- Registered apprenticeships and union training halls\n` +
-        `- Small Business Development Centers (SBDC) and SCORE mentors\n` +
-        `- Business incubators, accelerators, and coworking with founder programs\n` +
-        `- Local government reentry/workforce grants and training vouchers\n` +
-        `- United Way / 211 for childcare, housing, transportation assistance\n` +
-        `- Veteran Readiness & Employment (VR&E) and VSO chapters when applicable\n` +
-        `- Goodwill, YMCA/YWCA career centers, public libraries, nonprofit workforce partners\n` +
-        `Put the best-fit local resource in each task's "local" field as an actionable search phrase.\n`
+        `CRITICAL: Tasks must be LOW-EFFORT for this exact area. Name real organizations, campuses, workforce boards, libraries, re-entry nonprofits, SBDC/SCORE chapters, or government offices serving ${loc}.\n` +
+        `For each relevant task include in JSON:\n` +
+        `- contacts[] with org name + official url (+ phone/email only if published)\n` +
+        `- links[] with the exact page they need (apply, schedule, directory, licensing portal)\n` +
+        `- script with copy-paste outreach or what to say on a call\n` +
+        `Examples of specificity level (adapt to ${loc}): workforce board by name, main library branch job center, community college continuing ed, United Way 211, local SBDC at a named college.\n` +
+        `Never output generic sidebar phrases like "Workforce near ${loc}" — only named places with URLs.\n`
       );
     }
 
@@ -13908,11 +14103,11 @@
       let roadmapSource = "ai";
       try {
       const context = getConversationSummary();
-      let response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode }), founderMode ? 2200 : 1800);
+      let response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode }), getRoadmapAdvisorTokenLimit(founderMode));
       let stages = parseRoadmapResponse(response, idea);
 
       if (stages && roadmapOverlapsSibling(stages, idea)) {
-        response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode, dedupe: true }), founderMode ? 2200 : 1800);
+        response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode, dedupe: true }), getRoadmapAdvisorTokenLimit(founderMode));
         stages = parseRoadmapResponse(response, idea);
       }
 
@@ -14056,24 +14251,62 @@
     function collectLocalResourcesFromRoadmap() {
       const resources = [];
       const seen = new Set();
+
+      const addResource = (resource) => {
+        const key = resource.key || resource.url || resource.email || resource.org || resource.text;
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        resources.push(resource);
+      };
+
       state.roadmapStages.forEach((stage) => {
         (stage.tasks || []).forEach((task) => {
-          const local = normalizeRoadmapTask(task).local;
-          if (!local || seen.has(local)) return;
-          seen.add(local);
-          resources.push(local);
-        });
-      });
-      const loc = getUserLocation();
-      if (loc) {
-        [`Workforce / American Job Center near ${loc}`, `SBDC or SCORE mentor in ${loc}`, `Community college programs in ${loc}`].forEach((item) => {
-          if (!seen.has(item)) {
-            seen.add(item);
-            resources.push(item);
+          const normalized = normalizeRoadmapTask(task);
+          normalized.contacts.forEach((contact) => {
+            addResource({
+              type: "contact",
+              key: `${contact.org}|${contact.url}|${contact.email}`,
+              name: contact.name,
+              org: contact.org,
+              phone: contact.phone,
+              email: contact.email,
+              url: contact.url,
+              local: normalized.local
+            });
+          });
+          if (normalized.local && !/^workforce \/ american job center near/i.test(normalized.local)) {
+            addResource({
+              type: "local",
+              key: normalized.local,
+              text: normalized.local,
+              url: normalized.links[0] || normalized.contacts[0]?.url || ""
+            });
           }
         });
+      });
+
+      return resources.slice(0, 10);
+    }
+
+    function renderLocalResourceItem(resource) {
+      if (resource.type === "contact" || resource.org || resource.name) {
+        const title = [resource.org, resource.name].filter(Boolean).join(" — ") || resource.text || "Local resource";
+        const meta = [];
+        if (resource.url) {
+          meta.push(`<a href="${escapeHtml(formatExternalUrl(resource.url))}" target="_blank" rel="noopener noreferrer">Website</a>`);
+        }
+        if (resource.phone) {
+          meta.push(`<a href="tel:${escapeHtml(resource.phone.replace(/[^\d+]/g, ""))}">${escapeHtml(resource.phone)}</a>`);
+        }
+        if (resource.email) {
+          meta.push(`<a href="mailto:${escapeHtml(resource.email)}">${escapeHtml(resource.email)}</a>`);
+        }
+        return `<li class="roadmap-local-item roadmap-local-item--rich"><strong>${escapeHtml(title)}</strong>${meta.length ? `<div class="roadmap-local-meta">${meta.join(" · ")}</div>` : ""}</li>`;
       }
-      return resources.slice(0, 8);
+      if (resource.url) {
+        return `<li class="roadmap-local-item roadmap-local-item--rich"><strong>${escapeHtml(resource.text || "Resource")}</strong><div class="roadmap-local-meta"><a href="${escapeHtml(formatExternalUrl(resource.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(resource.url.replace(/^https?:\/\//i, ""))}</a></div></li>`;
+      }
+      return `<li class="roadmap-local-item">${escapeHtml(resource.text || String(resource))}</li>`;
     }
 
     function updateRoadmapOverviewHeader(idea = state.currentIdea) {
@@ -14141,14 +14374,14 @@
       }
 
       if (!resources.length) {
-        list.innerHTML = "<li class=\"roadmap-local-item\">Local programs will appear here as your roadmap includes location-specific tasks.</li>";
+        list.innerHTML = "<li class=\"roadmap-local-item\">Regenerate this roadmap after saving your location — new tasks will include named local contacts, links, and scripts.</li>";
         if (card) card.hidden = false;
         if (moreBtn) moreBtn.hidden = true;
         return;
       }
 
-      list.innerHTML = resources.slice(0, 5).map((item) => `<li class="roadmap-local-item">${escapeHtml(item)}</li>`).join("");
-      if (moreBtn) moreBtn.hidden = resources.length <= 5;
+      list.innerHTML = resources.slice(0, 6).map((item) => renderLocalResourceItem(item)).join("");
+      if (moreBtn) moreBtn.hidden = resources.length <= 6;
       if (card) card.hidden = false;
     }
 
@@ -14245,11 +14478,12 @@
       if (normalized.duration) chips.push(`<span class="task-chip">${escapeHtml(normalized.duration)}</span>`);
       if (normalized.cost) chips.push(`<span class="task-chip">${escapeHtml(normalized.cost)}</span>`);
       if (normalized.local) {
-        chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">Local resource</span>`);
+        chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
       const whyBlock = normalized.why
         ? `<p class="overview-task-why"><strong>Why:</strong> ${escapeHtml(normalized.why)}${normalized.outcome ? ` <strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}` : ""}</p>`
         : "";
+      const actionPack = renderTaskActionPackHtml(normalized);
 
       return `
         <div class="task-item overview-task" data-task-id="${id}">
@@ -14259,6 +14493,7 @@
               <label class="task-text" for="${id}">${escapeHtml(text)}</label>
               ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
               ${whyBlock}
+              ${actionPack}
             </div>
           </div>
           <div class="overview-task-tools">
@@ -14496,7 +14731,7 @@
       try {
         const response = await callAdvisor(
           `${buildRoadmapPrompt(state.currentIdea, context, { phase: "continue", founderMode })}\n\n${stuckNote}Completed work (build the next steps from here — do not repeat these):\n${completedSummary}`,
-          founderMode ? 2200 : 1800
+          getRoadmapAdvisorTokenLimit(founderMode)
         );
         const nextStages = parseRoadmapResponse(response, state.currentIdea);
         if (!nextStages || !stagesAreMeaningful(nextStages)) throw new Error("Rebuild response was empty or too generic");
@@ -14577,7 +14812,7 @@
       try {
         const response = await callAdvisor(
           `${buildRoadmapPrompt(state.currentIdea, context, { phase: "continue", founderMode })}\n\nCompleted roadmap:\n${completedStages}`,
-          founderMode ? 2200 : 1800
+          getRoadmapAdvisorTokenLimit(founderMode)
         );
 
         const nextStages = parseRoadmapResponse(response, state.currentIdea);
