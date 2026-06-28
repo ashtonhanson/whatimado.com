@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-roadmap-layout-fix -->
+<!-- whatimado build: 2026-06-28-mobile-roadmap-layout -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-roadmap-layout-fix">
+  <meta name="whatimado-build" content="2026-06-28-mobile-roadmap-layout">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1115,17 +1115,34 @@
       color: var(--ink);
     }
 
+    html[data-color-scheme="adult"] .opp-card {
+      padding: 1.35rem 1.35rem 1.15rem;
+    }
+
+    html[data-color-scheme="adult"] .opp-card:hover {
+      border-color: rgba(37, 99, 235, .32);
+      background: rgba(37, 99, 235, .03);
+      box-shadow: 0 10px 28px rgba(37, 99, 235, .08);
+    }
+
     html[data-color-scheme="adult"] .opp-card-open-zone {
       cursor: pointer;
-      border-radius: 12px;
-      transition: background .15s ease, box-shadow .15s ease;
+      margin: 0;
+      padding: 0;
+      border-radius: 0;
+      transition: none;
     }
 
     html[data-color-scheme="adult"] .opp-card-open-zone:hover,
     html[data-color-scheme="adult"] .opp-card-open-zone:focus-visible {
-      background: rgba(37, 99, 235, .05);
+      background: transparent;
       outline: none;
-      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .18);
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .opp-card-actions {
+      margin-top: 1rem;
+      padding-top: 1rem;
     }
 
     html[data-color-scheme="adult"] .opp-card-open-hint {
@@ -5820,7 +5837,7 @@
       align-items: center;
       gap: .75rem;
       width: 100%;
-      padding: .85rem 1rem;
+      padding: 1.15rem 1.35rem;
       border: 0;
       background: transparent;
       text-align: left;
@@ -5888,7 +5905,7 @@
 
     html[data-color-scheme="adult"] .roadmap-phase-body {
       display: none;
-      padding: .5rem 1rem 1.1rem;
+      padding: .85rem 1.35rem 1.35rem;
       border-top: 1px solid var(--line);
     }
 
@@ -5908,13 +5925,25 @@
     }
 
     html[data-color-scheme="adult"] .overview-task {
-      padding: .85rem 0;
+      padding: 1.15rem 1.25rem;
       border-top: 1px solid rgba(15, 23, 42, .06);
     }
 
     html[data-color-scheme="adult"] .overview-task:first-child {
       border-top: 0;
-      padding-top: .75rem;
+      padding-top: 1.1rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, .04);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task:focus-within {
+      border-color: rgba(37, 99, 235, .32);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .08);
     }
 
     html[data-color-scheme="adult"] .overview-task-main {
@@ -5974,9 +6003,9 @@
 
     html[data-color-scheme="adult"] .task-action-pack {
       display: grid;
-      gap: .55rem;
-      margin-top: .65rem;
-      padding: .65rem .75rem;
+      gap: .65rem;
+      margin-top: .85rem;
+      padding: .9rem 1rem;
       border-radius: 12px;
       background: rgba(37, 99, 235, .05);
       border: 1px solid rgba(37, 99, 235, .12);
@@ -6036,7 +6065,11 @@
     }
 
     html[data-color-scheme="adult"] .overview-task-tools {
-      margin: .65rem 0 0 1.65rem;
+      margin: .9rem 0 0 1.65rem;
+      padding: .95rem 1rem 1rem;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, .025);
+      border: 1px solid rgba(15, 23, 42, .06);
     }
 
     html[data-color-scheme="adult"] .roadmap-load-phases-btn {
@@ -6088,7 +6121,7 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-side-card {
-      padding: 1rem;
+      padding: 1.15rem 1.25rem;
       border: 1px solid var(--line);
       border-radius: 16px;
       background: rgba(255, 255, 255, .92);
@@ -6319,6 +6352,52 @@
 
       html[data-color-scheme="adult"] .roadmap-edit-link {
         margin-left: 0;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-main,
+      html[data-color-scheme="adult"] .roadmap-side {
+        display: contents;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
+      html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
+      html[data-color-scheme="adult"] #roadmap-side-local-card {
+        order: 30;
+        border-color: rgba(37, 99, 235, .28);
+        box-shadow: 0 8px 24px rgba(37, 99, 235, .08);
+      }
+
+      html[data-color-scheme="adult"] #roadmap-side-local-card .roadmap-side-card-title::before {
+        content: "📍 ";
+      }
+      html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:first-child { order: 40; }
+      html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:nth-child(2) { order: 50; }
+      html[data-color-scheme="adult"] .roadmap-content { order: 60; }
+      html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:nth-child(4) { order: 70; }
+      html[data-color-scheme="adult"] .roadmap-side-help { order: 80; }
+      html[data-color-scheme="adult"] .roadmap-overview-footer { order: 90; }
+
+      html[data-color-scheme="adult"] .overview-task {
+        padding: 1.25rem 1.15rem;
+      }
+
+      html[data-color-scheme="adult"] .overview-task-tools {
+        margin-left: 0;
+        padding: 1rem 1.05rem 1.05rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-phase-body {
+        padding: .85rem 1rem 1.25rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-phase-head {
+        padding: 1.1rem 1.15rem;
       }
     }
 
@@ -8551,6 +8630,11 @@
       background: #fff;
       border-color: var(--line);
       color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .task-textarea,
+    html[data-color-scheme="adult"] .task-question {
+      padding: .75rem .9rem;
     }
   </style>
 </head>
@@ -14672,6 +14756,21 @@
       return resources.slice(0, 10);
     }
 
+    function getSidebarLocalResources() {
+      const fromTasks = collectLocalResourcesFromRoadmap();
+      if (fromTasks.length || !getUserLocation()) return fromTasks;
+
+      return getKnownLocalResources().map((entry) => ({
+        type: "contact",
+        key: entry.org,
+        name: entry.name,
+        org: entry.org,
+        phone: entry.phone,
+        email: entry.email,
+        url: entry.url
+      }));
+    }
+
     function renderLocalResourceItem(resource) {
       if (resource.type === "contact" || resource.org || resource.name) {
         const title = [resource.org, resource.name].filter(Boolean).join(" — ") || resource.text || "Local resource";
@@ -14749,7 +14848,7 @@
       if (locationAdd) locationAdd.hidden = hasLocation;
       if (locationInput && hasLocation) locationInput.value = getUserLocation();
 
-      const resources = collectLocalResourcesFromRoadmap();
+      const resources = getSidebarLocalResources();
       if (!hasLocation) {
         list.innerHTML = "";
         if (card) card.hidden = false;
@@ -14776,9 +14875,6 @@
             `Click <strong>Try again</strong> or use <strong>Change this path</strong> for a fresh roadmap.</p>` +
             `<button type="button" class="roadmap-side-link" id="roadmap-refresh-local-btn">Try again</button>` +
             `</li>`;
-        } else if (!roadmapHasRichLocalData()) {
-          list.innerHTML =
-            `<li class="roadmap-local-item">Your location is saved. Local orgs will appear here as you reach outreach and community tasks in this plan.</li>`;
         } else {
           list.innerHTML =
             `<li class="roadmap-local-item">Your location is saved. Local orgs will appear here as you reach outreach and community tasks in this plan.</li>`;
