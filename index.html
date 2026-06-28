@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-roadmap-overview -->
+<!-- whatimado build: 2026-06-28-location-intake-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-roadmap-overview">
+  <meta name="whatimado-build" content="2026-06-28-location-intake-fix">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6128,7 +6128,47 @@
       cursor: pointer;
     }
 
-    html[data-color-scheme="adult"] .roadmap-ask-assistant-btn:hover {
+    html[data-color-scheme="adult"] .roadmap-location-add {
+      display: grid;
+      gap: .45rem;
+      margin-top: .15rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-location-add[hidden] {
+      display: none !important;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-location-label {
+      color: var(--ink-muted);
+      font-size: .68rem;
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-location-input {
+      width: 100%;
+      padding: .55rem .65rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: .76rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-location-save {
+      width: fit-content;
+      padding: .45rem .75rem;
+      border: 0;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #fff;
+      font: inherit;
+      font-size: .74rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-location-save:hover {
       background: #1d4ed8;
     }
 
@@ -9140,6 +9180,12 @@
           <div class="roadmap-side-card" id="roadmap-side-local-card">
             <h3 class="roadmap-side-card-title">Local resources for you</h3>
             <ul class="roadmap-local-list" id="roadmap-local-list"></ul>
+            <div class="roadmap-location-add" id="roadmap-location-add">
+              <p class="roadmap-side-copy" id="roadmap-location-empty-msg">Add where you're based to unlock local workforce, SBDC, and training resources.</p>
+              <label class="roadmap-location-label" for="roadmap-location-input">City, state, country</label>
+              <input class="roadmap-location-input" id="roadmap-location-input" type="text" placeholder="e.g. Austin, Texas, USA" autocomplete="address-level2">
+              <button type="button" class="roadmap-location-save" id="roadmap-location-save">Save location</button>
+            </div>
             <button type="button" class="roadmap-side-link" id="roadmap-more-resources-btn" hidden>View more resources</button>
           </div>
 
@@ -9492,6 +9538,35 @@
         return [normalized.city, normalized.region, normalized.country].filter(Boolean).join(", ");
       }
       return normalized.raw;
+    }
+
+    function looksLikeRealLocation(text) {
+      const formatted = String(text || "").trim();
+      if (!formatted || formatted.length < 3) return false;
+
+      const lower = formatted.toLowerCase();
+      const falsePositive =
+        /\b(strengths|interests|scratch|nothing|nowhere|here|there|home office|myself|independent|difference|money|career|skills|experience|high school|remote work)\b/.test(lower);
+      if (falsePositive) return false;
+
+      const parsed = parseLocationAnswer(formatted);
+      if (parsed.region || parsed.country) return true;
+      if (formatted.includes(",") && parsed.city.length >= 2) return true;
+      return /\b\d{5}(?:-\d{4})?\b/.test(formatted);
+    }
+
+    function hasSavedUserLocation() {
+      if (state.locationConfirmed && formatUserLocation(state.userLocation)) return true;
+      const formatted = formatUserLocation(state.userLocation);
+      return Boolean(formatted && looksLikeRealLocation(formatted));
+    }
+
+    function saveUserLocation(text, { confirmed = true } = {}) {
+      state.userLocation = parseLocationAnswer(text);
+      if (confirmed) state.locationConfirmed = true;
+      updateRoadmapOverviewHeader();
+      updateRoadmapLocalResourcesList();
+      schedulePersist();
     }
 
     function getTaskText(task) {
@@ -10629,6 +10704,7 @@
       mapFeedbackSentiment: null,
       intakeMode: "standard",
       userLocation: { city: "", region: "", country: "", raw: "" },
+      locationConfirmed: false,
       roadmapExhausted: false,
       roadmapAutoContinuePending: false,
       expandedRoadmapPhases: null,
@@ -11305,6 +11381,7 @@
         mapFeedbackSentiment: state.mapFeedbackSentiment,
         intakeMode: state.intakeMode || "standard",
         userLocation: normalizeUserLocation(state.userLocation),
+        locationConfirmed: Boolean(state.locationConfirmed),
         roadmapCategories: state.roadmapCategories,
         activeRoadmapCategoryId: state.activeRoadmapCategoryId,
         selectedPathIndexes: state.selectedPathIndexes,
@@ -11328,7 +11405,8 @@
         mapFeedbackGiven: source.mapFeedbackGiven,
         mapFeedbackSentiment: source.mapFeedbackSentiment,
         intakeMode: source.intakeMode || "standard",
-        userLocation: normalizeUserLocation(source.userLocation)
+        userLocation: normalizeUserLocation(source.userLocation),
+        locationConfirmed: Boolean(source.locationConfirmed)
       };
     }
 
@@ -11349,9 +11427,12 @@
       state.mapFeedbackSentiment = data.mapFeedbackSentiment ?? null;
       state.intakeMode = data.intakeMode || "standard";
       state.userLocation = normalizeUserLocation(data.userLocation);
-      if (!formatUserLocation(state.userLocation)) {
+      state.locationConfirmed = Boolean(data.locationConfirmed);
+      if (!hasSavedUserLocation()) {
         const inferred = inferLocationFromConversation();
-        if (formatUserLocation(inferred)) state.userLocation = inferred;
+        if (formatUserLocation(inferred) && looksLikeRealLocation(formatUserLocation(inferred))) {
+          state.userLocation = inferred;
+        }
       }
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
@@ -12959,14 +13040,15 @@
         if (entry.role !== "user") continue;
         const content = entry.content;
         const patterns = [
-          /\b(?:i live in|i'm in|im in|based in|located in|from)\s+([^.\n?]{3,90})/i,
+          /\b(?:i live in|i'm living in|im living in|i'm in|im in|based in|located in)\s+([^.\n?]{3,90})/i,
+          /\b(?:i am from|i'm from|im from)\s+([^.\n?]{3,90})/i,
           /\b(?:city|town|area|region):\s*([^.\n]+)/i
         ];
         for (const pattern of patterns) {
           const match = content.match(pattern);
           if (match?.[1]) {
             const raw = match[1].trim().replace(/\s+(and|but|who|with|because)\b.*/i, "").trim();
-            if (raw) return parseLocationAnswer(raw);
+            if (raw && looksLikeRealLocation(raw)) return parseLocationAnswer(raw);
           }
         }
       }
@@ -12975,12 +13057,13 @@
 
     function getUserLocation() {
       const formatted = formatUserLocation(state.userLocation);
-      if (formatted) return formatted;
-      return formatUserLocation(inferLocationFromConversation());
+      if (formatted && (state.locationConfirmed || looksLikeRealLocation(formatted))) return formatted;
+      const inferred = formatUserLocation(inferLocationFromConversation());
+      return inferred && looksLikeRealLocation(inferred) ? inferred : "";
     }
 
     function locationMentionedInConversation() {
-      return Boolean(getUserLocation());
+      return hasSavedUserLocation() || Boolean(getUserLocation());
     }
 
     function getLocationContextBlock() {
@@ -13003,8 +13086,7 @@
     }
 
     function shouldAskLocation() {
-      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
-      return !locationMentionedInConversation();
+      return !hasSavedUserLocation();
     }
 
     function normalizeIdeaText(text) {
@@ -13429,8 +13511,14 @@
       showScreen("convo");
       addUserBubble(text);
       state.history.push({ role: "user", content: text });
-      state.userLocation = inferLocationFromConversation();
-      state.step = 3;
+      if (shouldAskLocation()) {
+        addTypingBubble();
+        askLocationStep();
+        updateSaveButtonVisibility();
+        schedulePersist();
+        intakeInProgress = false;
+        return;
+      }
       showReplyBox(false);
       addTypingBubble(PATH_BUILDING_MSG);
       trackEvent("path_generation_started", {
@@ -13479,15 +13567,13 @@
         if (shouldAskLocation()) {
           askLocationStep();
         } else {
-          const inferred = inferLocationFromConversation();
-          if (formatUserLocation(inferred)) state.userLocation = inferred;
           askNameStep();
         }
         return;
       }
 
       if (state.step === 3) {
-        state.userLocation = parseLocationAnswer(text);
+        saveUserLocation(text, { confirmed: true });
         trackEvent("location_answer_submitted", {
           reply_length: text.length,
           intake_mode: state.intakeMode || "standard",
@@ -13495,6 +13581,18 @@
           has_region: Boolean(state.userLocation.region),
           has_country: Boolean(state.userLocation.country)
         });
+        if (state.intakeMode === "quick") {
+          showReplyBox(false);
+          addTypingBubble(PATH_BUILDING_MSG);
+          trackEvent("path_generation_started", {
+            reply_length: text.length,
+            history_count: state.history.length,
+            intake_mode: "quick",
+            has_location: true
+          });
+          await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
+          return;
+        }
         addTypingBubble();
         askNameStep();
         return;
@@ -14026,11 +14124,24 @@
       const list = $("#roadmap-local-list");
       const card = $("#roadmap-side-local-card");
       const moreBtn = $("#roadmap-more-resources-btn");
+      const locationAdd = $("#roadmap-location-add");
+      const locationInput = $("#roadmap-location-input");
       if (!list) return;
 
+      const hasLocation = Boolean(getUserLocation());
+      if (locationAdd) locationAdd.hidden = hasLocation;
+      if (locationInput && hasLocation) locationInput.value = getUserLocation();
+
       const resources = collectLocalResourcesFromRoadmap();
+      if (!hasLocation) {
+        list.innerHTML = "";
+        if (card) card.hidden = false;
+        if (moreBtn) moreBtn.hidden = true;
+        return;
+      }
+
       if (!resources.length) {
-        list.innerHTML = "<li class=\"roadmap-local-item\">Add your city during intake to see local workforce, SBDC, and training resources here.</li>";
+        list.innerHTML = "<li class=\"roadmap-local-item\">Local programs will appear here as your roadmap includes location-specific tasks.</li>";
         if (card) card.hidden = false;
         if (moreBtn) moreBtn.hidden = true;
         return;
@@ -14039,6 +14150,18 @@
       list.innerHTML = resources.slice(0, 5).map((item) => `<li class="roadmap-local-item">${escapeHtml(item)}</li>`).join("");
       if (moreBtn) moreBtn.hidden = resources.length <= 5;
       if (card) card.hidden = false;
+    }
+
+    function saveLocationFromRoadmapSidebar() {
+      const input = $("#roadmap-location-input");
+      const text = input?.value.trim();
+      if (!text) {
+        input?.focus();
+        return;
+      }
+      saveUserLocation(text, { confirmed: true });
+      if (input) input.value = text;
+      trackEvent("roadmap_location_saved", { source: "sidebar" });
     }
 
     function updateRoadmapOverviewChrome() {
@@ -14662,6 +14785,7 @@
       state.mapFeedbackSentiment = null;
       state.intakeMode = "standard";
       state.userLocation = emptyUserLocation();
+      state.locationConfirmed = false;
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
       if (roadmapAutoContinueTimer) {
@@ -16137,6 +16261,13 @@
       $("#map-back-btn")?.addEventListener("click", backFromMap);
       $("#alter-path-btn").addEventListener("click", startAlterPathChat);
       $("#roadmap-save-path-btn")?.addEventListener("click", () => saveCurrentPath({ manual: true }));
+      $("#roadmap-location-save")?.addEventListener("click", saveLocationFromRoadmapSidebar);
+      $("#roadmap-location-input")?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveLocationFromRoadmapSidebar();
+        }
+      });
       $("#roadmap-footer-regen-btn")?.addEventListener("click", regenerateCurrentRoadmap);
       $("#roadmap-edit-details-btn")?.addEventListener("click", () => showScreen("map"));
       $("#roadmap-view-progress-btn")?.addEventListener("click", scrollToActivePhase);
