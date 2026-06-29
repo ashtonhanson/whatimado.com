@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-change-path-fix -->
+<!-- whatimado build: 2026-06-28-task-detail-clarity -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-change-path-fix">
+  <meta name="whatimado-build" content="2026-06-28-task-detail-clarity">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6071,6 +6071,78 @@
       line-height: 1.45;
     }
 
+    html[data-color-scheme="adult"] .overview-task-details {
+      display: grid;
+      gap: .55rem;
+      margin-top: .65rem;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem .75rem;
+      color: var(--ink-muted);
+      font-size: .7rem;
+      line-height: 1.4;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-meta-item strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-steps {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: var(--ink);
+      font-size: .74rem;
+      line-height: 1.5;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-steps li + li {
+      margin-top: .35rem;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-detail-block {
+      padding: .65rem .75rem;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, .03);
+      border: 1px solid rgba(15, 23, 42, .06);
+    }
+
+    html[data-color-scheme="adult"] .overview-task-detail-label {
+      display: block;
+      margin-bottom: .25rem;
+      color: var(--ink);
+      font-size: .64rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-detail-copy {
+      margin: 0;
+      color: var(--ink-muted);
+      font-size: .74rem;
+      line-height: 1.5;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-inline-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem .55rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-inline-links a {
+      color: #2563eb;
+      font-size: .72rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
     html[data-color-scheme="adult"] .task-action-pack {
       display: grid;
       gap: .65rem;
@@ -9812,8 +9884,9 @@
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each.\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"one sentence tied to this path","tasks":[{"text":"specific action — name the org/step, not generic homework","why":"why this step matters","outcome":"what you will have done","duration":"~30-45 min","cost":"Free or estimated cost","local":"Specific real org/program name in their city (not a category label)","links":["https://official-site.example"],"contacts":[{"name":"Contact name or title","org":"Organization full name","phone":"published main line or empty string","email":"published program email or empty string","url":"https://official-contact-page"}],"script":"Ready to copy: email subject + 3-4 sentence body OR phone opener"}]}]\n' +
-      'Every task object MUST include all nine fields. Use empty contacts[] and script "" for internal prep/writing tasks. Outreach, visits, demos, and local-program tasks MUST include real contacts[], links[], and script with copy-paste text.\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and how it connects to the path","tasks":[{"text":"Clear headline — then 2-3 sentences explaining exactly what to do, where to do it, and what finished looks like","steps":["First concrete micro-step (5-15 min)","Second step with a named tool, page, or person","Final step: what to save, send, or check off"],"why":"1-2 sentences on why THIS step matters now for this person","outcome":"1 sentence on the tangible thing they will have when done (file sent, post live, call booked, number calculated)","duration":"~30-45 min","cost":"Free or estimated cost","local":"Specific real org/program name in their city (not a category label)","links":["https://official-site.example"],"contacts":[{"name":"Contact name or title","org":"Organization full name","phone":"published main line or empty string","email":"published program email or empty string","url":"https://official-contact-page"}],"script":"Ready to copy: email subject + 3-4 sentence body OR phone opener"}]}]\n' +
+      'Every task object MUST include text, steps (2-4 items), why, outcome, duration, and cost. Include local, links[], contacts[], and script only when the task involves outreach, applications, licensing, or local programs — otherwise use empty strings/arrays.\n' +
+      'Write like a patient coach: assume the reader has never done this before. Name the screen, button, doc, or person. No vague homework.\n' +
       'Do not reuse stage titles across different paths on the same map.';
 
     let roadmapLocalEnrichInFlight = false;
@@ -9845,6 +9918,8 @@
       '- The user should NOT have to hunt for basics. Give real organization names, official https:// links, published phone numbers, and published emails when you know them for their city.\n' +
       '- For outreach tasks: include 1-3 specific local orgs in contacts[] with url/phone/email, plus a copy-paste script (subject line + email body or call opener).\n' +
       '- For licensing/registration tasks: link to the exact state/city agency page and list the fee in cost.\n' +
+      '- Every task needs steps[] with 2-4 numbered micro-actions the user can follow in order — not one vague paragraph.\n' +
+      '- why and outcome must each be a full sentence the user can understand without guessing.\n' +
       '- BAD: "List 10 local organizations" or "Find workforce resources near you" or "SBDC near Austin".\n' +
       '- GOOD: contacts for Caritas of Austin Re-Entry, Austin Public Library Job Center, Workforce Solutions Capital Area with URLs + script: "Subject: Free career roadmap pilot for your clients…"\n' +
       '- Never invent fake grant names or personal @gmail addresses. Use official sites; if unsure of a phone/email, leave it "" and put "Find contact on website" in script with the URL.\n' +
@@ -9893,8 +9968,8 @@
           : "Using a backup roadmap — tasks are tailored to your path, but run through the flow again for a fully custom plan.";
       }
       return founderMode
-        ? "Mission-driven steps for whatimado.com — each task includes concrete copy, channels, or templates."
-        : "Follow these stages to get this off the ground.";
+        ? "Mission-driven steps for whatimado.com — each task includes concrete steps, copy, channels, or templates."
+        : "Follow these stages to get this off the ground — each task includes steps, timing, and what done looks like.";
     }
 
     function normalizeRoadmapText(text) {
@@ -9990,10 +10065,67 @@
       return String(task ?? "").trim();
     }
 
+    function normalizeTaskSteps(value) {
+      if (!value) return [];
+      if (Array.isArray(value)) {
+        return value.map((step) => String(step || "").trim()).filter(Boolean).slice(0, 5);
+      }
+      if (typeof value === "string") {
+        return value
+          .split(/\n+|(?:\d+[\).\]])\s+/)
+          .map((step) => step.trim())
+          .filter(Boolean)
+          .slice(0, 5);
+      }
+      return [];
+    }
+
+    function inferTaskStepsFromText(text) {
+      const raw = String(text || "").trim();
+      if (!raw) return [];
+
+      if (/\d+[\).\]]\s/.test(raw)) {
+        const numbered = raw.split(/\d+[\).\]]\s+/).map((part) => part.trim()).filter(Boolean);
+        if (numbered.length >= 2) return numbered.slice(0, 4);
+      }
+
+      const dashParts = raw.split(/\s—\s|\s-\s+/).map((part) => part.trim()).filter(Boolean);
+      if (dashParts.length >= 2) return dashParts.slice(0, 4);
+
+      if (/\band then\b|\bthen\b/i.test(raw)) {
+        const split = raw.split(/\band then\b|\bthen\b/i).map((part) => part.trim()).filter(Boolean);
+        if (split.length >= 2) return split.slice(0, 4);
+      }
+
+      const sentences = raw.split(/(?<=[.!?])\s+/).map((part) => part.trim()).filter((part) => part.length > 18);
+      if (sentences.length >= 2) return sentences.slice(0, 4);
+
+      return [];
+    }
+
+    function getTaskDisplaySteps(normalized) {
+      if (normalized.steps?.length) return normalized.steps;
+      return inferTaskStepsFromText(normalized.text);
+    }
+
+    function enrichTaskClarity(stages) {
+      return normalizeRoadmapStages(stages).map((stage) => ({
+        ...stage,
+        tasks: stage.tasks.map((task) => {
+          const normalized = normalizeRoadmapTask(task);
+          if (!normalized.steps.length) {
+            normalized.steps = inferTaskStepsFromText(normalized.text);
+          }
+          return normalized;
+        })
+      }));
+    }
+
     function normalizeRoadmapTask(task, fallback = {}) {
       if (typeof task === "string") {
         return {
           text: task.trim(),
+          steps: normalizeTaskSteps(fallback.steps),
           why: fallback.why || "",
           outcome: fallback.outcome || "",
           duration: fallback.duration || "",
@@ -10007,6 +10139,7 @@
       if (task && typeof task === "object") {
         return {
           text: getTaskText(task),
+          steps: normalizeTaskSteps(task.steps ?? task.substeps ?? task.checklist ?? fallback.steps),
           why: String(task.why || fallback.why || "").trim(),
           outcome: String(task.outcome || fallback.outcome || "").trim(),
           duration: String(task.duration || fallback.duration || "").trim(),
@@ -10019,6 +10152,7 @@
       }
       return {
         text: String(task ?? "").trim(),
+        steps: [],
         why: "",
         outcome: "",
         duration: "",
@@ -10433,13 +10567,14 @@
       const { force = false } = options;
       let cleaned = stripMisplacedLocalContacts(stages, idea);
       if (force) cleaned = clearTaskResourcesForReinjection(cleaned, idea);
-      return injectLocalContactsIntoRoadmap(
+      const enriched = injectLocalContactsIntoRoadmap(
         cleaned,
         getUserLocation() ? getKnownLocalResources() : [],
         getUserLocation(),
         idea,
         { force }
       );
+      return enrichTaskClarity(enriched);
     }
 
     function refreshRoadmapTaskResources(options = {}) {
@@ -11119,6 +11254,8 @@
         `Do NOT reuse stage names or tasks from other paths (for example, do not copy donation-setup tasks into a launch or partnership path).\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
         `- Every task is for the FOUNDER building whatimado.com — NOT for a random user finding a job.\n` +
+        `- Write 2-4 sentences in text plus steps[] with 2-4 ordered micro-actions (open X, paste Y, send Z).\n` +
+        `- Include why and outcome as full sentences so the founder knows why now and what done looks like.\n` +
         `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real deliverables, time boxes, email subject lines, and copy snippets.\n` +
         `- Include ready-to-use templates where helpful (Reddit post title, outreach email opening, donation ask line, demo script bullet).\n` +
         `- Reference Stripe, Supabase analytics/suggestions, and social launch — not generic "build an audience" advice.\n` +
@@ -11192,8 +11329,8 @@
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
         `NEVER use generic stage titles like "Launch the first test", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path.\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
-        `- Every task must be 1–2 sentences and SPECIFIC to this person and this exact path.\n` +
-        `- Each task object must answer: why, outcome, time, cost, AND include contacts[], links[], and script when the task involves outreach, applications, licensing, or local programs.\n` +
+        `- Every task must be written for a beginner: 2-4 sentences in text plus steps[] with 2-4 ordered micro-actions.\n` +
+        `- Each task object must answer: why, outcome, duration, cost, AND include contacts[], links[], and script when the task involves outreach, applications, licensing, or local programs.\n` +
         `- Do NOT assign vague homework like "research local orgs" without naming the orgs and giving the outreach script in the same task.\n` +
         `- Name real platforms, tools, audiences, numbers, time boxes, and deliverables.\n` +
         `- Reference details they actually said (skills, location, constraints, goals, industry, budget).\n` +
@@ -15637,6 +15774,65 @@
       phase.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
+    function renderTaskInlineLinksHtml(normalized, showResources) {
+      if (showResources || !normalized.links.length) return "";
+      const links = normalized.links.map((link) => {
+        const href = formatExternalUrl(link);
+        const label = link.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+        return `<li><a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a></li>`;
+      }).join("");
+      return `
+        <div class="overview-task-detail-block">
+          <span class="overview-task-detail-label">Helpful links</span>
+          <ul class="overview-task-inline-links">${links}</ul>
+        </div>`;
+    }
+
+    function renderTaskDetailSectionsHtml(normalized, showResources) {
+      const steps = getTaskDisplaySteps(normalized);
+      const parts = [];
+
+      if (normalized.duration || normalized.cost) {
+        parts.push(`
+          <div class="overview-task-meta-row">
+            ${normalized.duration ? `<span class="overview-task-meta-item"><strong>Time:</strong> ${escapeHtml(normalized.duration)}</span>` : ""}
+            ${normalized.cost ? `<span class="overview-task-meta-item"><strong>Cost:</strong> ${escapeHtml(normalized.cost)}</span>` : ""}
+          </div>`);
+      }
+
+      if (steps.length > 1) {
+        parts.push(`
+          <div class="overview-task-detail-block">
+            <span class="overview-task-detail-label">Steps</span>
+            <ol class="overview-task-steps">
+              ${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+            </ol>
+          </div>`);
+      }
+
+      if (normalized.why) {
+        parts.push(`
+          <div class="overview-task-detail-block">
+            <span class="overview-task-detail-label">Why this step</span>
+            <p class="overview-task-detail-copy">${escapeHtml(normalized.why)}</p>
+          </div>`);
+      }
+
+      if (normalized.outcome) {
+        parts.push(`
+          <div class="overview-task-detail-block">
+            <span class="overview-task-detail-label">When you're done</span>
+            <p class="overview-task-detail-copy">${escapeHtml(normalized.outcome)}</p>
+          </div>`);
+      }
+
+      const inlineLinks = renderTaskInlineLinksHtml(normalized, showResources);
+      if (inlineLinks) parts.push(inlineLinks);
+
+      if (!parts.length) return "";
+      return `<div class="overview-task-details">${parts.join("")}</div>`;
+    }
+
     function renderOverviewTaskHtml(task, stageIndex, taskIndex) {
       const id = `task-${stageIndex}-${taskIndex}`;
       const normalized = normalizeRoadmapTask(task);
@@ -15644,14 +15840,10 @@
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
       const text = normalized.text;
       const chips = [];
-      if (normalized.duration) chips.push(`<span class="task-chip">${escapeHtml(normalized.duration)}</span>`);
-      if (normalized.cost) chips.push(`<span class="task-chip">${escapeHtml(normalized.cost)}</span>`);
       if (showResources && normalized.local) {
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
-      const whyBlock = normalized.why
-        ? `<p class="overview-task-why"><strong>Why:</strong> ${escapeHtml(normalized.why)}${normalized.outcome ? ` <strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}` : ""}</p>`
-        : "";
+      const detailBlock = renderTaskDetailSectionsHtml(normalized, showResources);
       const actionPack = showResources ? renderTaskActionPackHtml(normalized, { stage, stageIndex }) : "";
 
       return `
@@ -15661,7 +15853,7 @@
             <div class="overview-task-content">
               <label class="task-text" for="${id}">${escapeHtml(text)}</label>
               ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
-              ${whyBlock}
+              ${detailBlock}
               ${actionPack}
             </div>
           </div>
