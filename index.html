@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-creative-path">
+  <meta name="whatimado-build" content="2026-06-29-resource-dedupe">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -12810,6 +12810,11 @@ What would make this more useful for someone in your situation?`;
       if (pathNeedsLocalResources(idea) && getUserLocation()) {
         return hasAny;
       }
+      if (isOnlineFirstCreativePath(idea)) {
+        return (stages || []).some((stage, stageIndex) =>
+          (stage.tasks || []).some((task) => shouldShowTaskResources(normalizeRoadmapTask(task), stage, stageIndex, idea))
+        );
+      }
       return !needsAny || hasAny;
     }
 
@@ -12995,7 +13000,21 @@ What would make this more useful for someone in your situation?`;
       }
 
       result.links = (result.links || []).filter((link) => !linkDomainAlreadyInTask(result.text, link));
-      return result;
+
+      const layers = result.resourceLayers || {
+        local: result.resourcesLocal || [],
+        national: result.resourcesNational || [],
+        global: result.resourcesGlobal || []
+      };
+      layers.local = filterResourcesNotInTaskText(result.text, layers.local);
+      layers.national = filterResourcesNotInTaskText(result.text, layers.national);
+      layers.global = filterResourcesNotInTaskText(result.text, layers.global);
+
+      if (taskMentionsCreativePlatform(result.text)) {
+        layers.global = pickCreativeResourcesForTask(result.text);
+      }
+
+      return applyResourceLayers(result, layers);
     }
 
     function buildOutreachScript(orgName, loc) {
@@ -13212,24 +13231,24 @@ What would make this more useful for someone in your situation?`;
 
     function enrichCreativeOnlineResources(stages, idea = state.currentIdea) {
       if (!isOnlineFirstCreativePath(idea)) return stages;
-      const globalResources = getCreativeGlobalResources();
       return (stages || []).map((stage) => ({
         ...stage,
         tasks: (stage.tasks || []).map((task) => {
           const normalized = normalizeRoadmapTask(task);
-          const text = normalized.text.toLowerCase();
-          const mentionsOnline = /\b(behance|dribbble|upwork|99design|contra|fiverr|linkedin|portfolio|freelance|platform|pitch|online)\b/.test(text);
-          if (!mentionsOnline) return normalized;
-          if (hasLayeredResources(normalized) && normalized.resourcesGlobal?.length) return normalized;
-          return {
-            ...normalized,
-            resourcesGlobal: globalResources.slice(0, 4),
-            resourceLayers: {
+          if (!taskMentionsCreativePlatform(normalized.text)) return normalized;
+          const picked = pickCreativeResourcesForTask(normalized.text);
+          if (!picked.length) {
+            return applyResourceLayers(normalized, {
               local: normalized.resourcesLocal || [],
               national: normalized.resourcesNational || [],
-              global: globalResources.slice(0, 4)
-            }
-          };
+              global: []
+            });
+          }
+          return applyResourceLayers(normalized, {
+            local: normalized.resourcesLocal || [],
+            national: normalized.resourcesNational || [],
+            global: picked
+          });
         })
       }));
     }
@@ -13719,8 +13738,48 @@ What would make this more useful for someone in your situation?`;
         { name: "Logo projects & contests", org: "99designs", url: "https://99designs.com/", phone: "", email: "" },
         { name: "Freelance marketplace", org: "Upwork", url: "https://www.upwork.com/", phone: "", email: "" },
         { name: "Independent freelance", org: "Contra", url: "https://contra.com/", phone: "", email: "" },
-        { name: "Gig marketplace", org: "Fiverr", url: "https://www.fiverr.com/", phone: "", email: "" }
+        { name: "Gig marketplace", org: "Fiverr", url: "https://www.fiverr.com/", phone: "", email: "" },
+        { name: "Professional network", org: "LinkedIn", url: "https://www.linkedin.com/", phone: "", email: "" }
       ];
+    }
+
+    function taskMentionsCreativePlatform(taskText) {
+      return /\b(behance|dribbble|upwork|99designs?|contra|fiverr|linkedin)\b/i.test(String(taskText || ""));
+    }
+
+    function filterResourcesNotInTaskText(taskText, entries) {
+      return (entries || []).filter((entry) => {
+        const url = entry.url || entry.org || "";
+        return url && !linkDomainAlreadyInTask(taskText, url);
+      });
+    }
+
+    function pickCreativeResourcesForTask(taskText) {
+      const text = String(taskText || "").toLowerCase();
+      const all = getCreativeGlobalResources();
+      const matched = all.filter((entry) => {
+        const blob = `${entry.org} ${entry.url} ${entry.name}`.toLowerCase();
+        return (
+          (/\bbehance\b/.test(text) && /behance/.test(blob)) ||
+          (/\bdribbble\b/.test(text) && /dribbble/.test(blob)) ||
+          (/\b99designs?\b/.test(text) && /99design/.test(blob)) ||
+          (/\bupwork\b/.test(text) && /upwork/.test(blob)) ||
+          (/\bcontra\b/.test(text) && /contra/.test(blob)) ||
+          (/\bfiverr\b/.test(text) && /fiverr/.test(blob)) ||
+          (/\blinkedin\b/.test(text) && /linkedin/.test(blob))
+        );
+      });
+      return filterResourcesNotInTaskText(taskText, matched);
+    }
+
+    function applyResourceLayers(normalized, layers) {
+      return {
+        ...normalized,
+        resourcesLocal: layers.local,
+        resourcesNational: layers.national,
+        resourcesGlobal: layers.global,
+        resourceLayers: layers
+      };
     }
 
     function getPathArchetype(idea) {
@@ -18803,7 +18862,8 @@ What would make this more useful for someone in your situation?`;
         (stage.tasks || []).forEach((task) => {
           const normalized = normalizeRoadmapTask(task);
           if (!shouldShowTaskResources(normalized, stage, stageIndex)) return;
-          normalized.contacts.forEach((contact) => {
+
+          const addContact = (contact) => {
             addResource({
               type: "contact",
               key: `${contact.org}|${contact.url}|${contact.email}`,
@@ -18814,7 +18874,13 @@ What would make this more useful for someone in your situation?`;
               url: contact.url,
               local: normalized.local
             });
-          });
+          };
+
+          normalized.contacts.forEach(addContact);
+          (normalized.resourcesLocal || []).forEach(addContact);
+          (normalized.resourcesNational || []).forEach(addContact);
+          (normalized.resourcesGlobal || []).forEach(addContact);
+
           normalized.links.forEach((url, index) => {
             if (!url) return;
             addResource({
@@ -18841,6 +18907,17 @@ What would make this more useful for someone in your situation?`;
     function getSidebarLocalResources() {
       const fromTasks = collectLocalResourcesFromRoadmap();
       if (fromTasks.length) return fromTasks;
+      if (isOnlineFirstCreativePath(state.currentIdea)) {
+        return getCreativeGlobalResources().map((entry) => ({
+          type: "contact",
+          key: entry.org || entry.url,
+          name: entry.name,
+          org: entry.org,
+          phone: entry.phone || "",
+          email: entry.email || "",
+          url: entry.url
+        }));
+      }
       if (!getUserLocation() || !pathNeedsLocalResources()) return [];
       return getKnownLocalResourcesForPath().map((entry) => ({
         type: "contact",
@@ -18924,14 +19001,20 @@ What would make this more useful for someone in your situation?`;
       const moreBtn = $("#roadmap-more-resources-btn");
       const locationAdd = $("#roadmap-location-add");
       const locationInput = $("#roadmap-location-input");
+      const cardTitle = card?.querySelector(".roadmap-side-card-title");
       if (!list) return;
+
+      const creativeOnline = isOnlineFirstCreativePath(state.currentIdea);
+      if (cardTitle) {
+        cardTitle.textContent = creativeOnline ? "Online resources for you" : "Local resources for you";
+      }
 
       const hasLocation = Boolean(getUserLocation());
       if (locationAdd) locationAdd.hidden = hasLocation;
       if (locationInput && hasLocation) locationInput.value = getUserLocation();
 
       const resources = getSidebarLocalResources();
-      if (!hasLocation) {
+      if (!hasLocation && !creativeOnline) {
         list.innerHTML = "";
         if (card) card.hidden = false;
         if (moreBtn) moreBtn.hidden = true;
@@ -18954,12 +19037,21 @@ What would make this more useful for someone in your situation?`;
           list.innerHTML =
             `<li class="roadmap-local-item roadmap-local-item--action">` +
             `<p class="roadmap-side-copy">We added what we could, but full auto-load didn't finish${escapeHtml(errorHint)}. ` +
-            `Click <strong>Try again</strong> or use <strong>Change this path</strong> for a fresh roadmap.</p>` +
+            `Use <strong>Change this path</strong> for a fresh roadmap, or check the tasks below.</p>` +
             `<button type="button" class="roadmap-side-link" id="roadmap-refresh-local-btn">Try again</button>` +
             `</li>`;
+        } else if (creativeOnline) {
+          list.innerHTML = getCreativeGlobalResources()
+            .map((entry) => renderLocalResourceItem({
+              type: "contact",
+              org: entry.org,
+              name: entry.name,
+              url: entry.url
+            }))
+            .join("");
         } else {
           list.innerHTML =
-            `<li class="roadmap-local-item">We're still matching local programs to your tasks. Try <strong>Try again</strong> below, or open the first task — named orgs and links should appear there too.</li>`;
+            `<li class="roadmap-local-item">Resources appear under each task as you work through them.</li>`;
         }
         if (card) card.hidden = false;
         if (moreBtn) moreBtn.hidden = true;
