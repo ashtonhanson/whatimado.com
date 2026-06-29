@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-explore-grid -->
+<!-- whatimado build: 2026-06-29-roadmap-glance -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-explore-grid">
+  <meta name="whatimado-build" content="2026-06-29-roadmap-glance">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6257,6 +6257,154 @@
       gap: .85rem;
     }
 
+    html[data-color-scheme="adult"] .roadmap-glance {
+      padding: 1.05rem 1.15rem 1.15rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(248, 250, 252, .95) 0%, #fff 100%);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: .35rem .75rem;
+      margin-bottom: .85rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-title {
+      margin: 0;
+      font-size: .92rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-meta {
+      color: var(--ink-muted);
+      font-size: .72rem;
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-lead {
+      margin: 0 0 .75rem;
+      color: var(--ink-muted);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-track {
+      display: flex;
+      gap: .65rem;
+      overflow-x: auto;
+      padding: .15rem .1rem .35rem;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase {
+      flex: 1 0 min(10.5rem, 72vw);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .55rem;
+      min-width: 0;
+      padding: .8rem .85rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      text-align: left;
+      cursor: pointer;
+      scroll-snap-align: start;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase:hover {
+      border-color: rgba(37, 99, 235, .28);
+      box-shadow: 0 8px 20px rgba(37, 99, 235, .08);
+      transform: translateY(-1px);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-in-progress {
+      border-color: rgba(37, 99, 235, .42);
+      box-shadow: 0 8px 22px rgba(37, 99, 235, .1);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-complete {
+      opacity: .88;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-upcoming {
+      opacity: .72;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-node {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .1);
+      color: #1d4ed8;
+      font-size: .72rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-complete .roadmap-glance-node {
+      background: rgba(34, 197, 94, .14);
+      color: #15803d;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-upcoming .roadmap-glance-node {
+      background: rgba(148, 163, 184, .16);
+      color: #64748b;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-label {
+      display: block;
+      color: var(--ink);
+      font-size: .78rem;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-desc {
+      display: block;
+      margin-top: .28rem;
+      color: var(--ink-muted);
+      font-size: .7rem;
+      line-height: 1.4;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-count {
+      display: block;
+      margin-top: .35rem;
+      color: #2563eb;
+      font-size: .66rem;
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-next-btn {
+      margin-top: .85rem;
+      padding: .62rem .9rem;
+      border: 1px solid rgba(37, 99, 235, .22);
+      border-radius: 12px;
+      background: rgba(37, 99, 235, .06);
+      color: #1d4ed8;
+      font: inherit;
+      font-size: .76rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-next-btn:hover {
+      background: rgba(37, 99, 235, .1);
+      border-color: rgba(37, 99, 235, .34);
+    }
+
     html[data-color-scheme="adult"] .roadmap-phase {
       border: 1px solid var(--line);
       border-radius: 16px;
@@ -10330,6 +10478,16 @@
           <div class="roadmap-content" id="roadmap-content">
             <p class="roadmap-sub" id="roadmap-sub" hidden>Building your personalised roadmap...</p>
             <span id="roadmap-type" hidden></span>
+
+            <section class="roadmap-glance" id="roadmap-glance" hidden aria-label="Roadmap at a glance">
+              <div class="roadmap-glance-head">
+                <h3 class="roadmap-glance-title">Your plan at a glance</h3>
+                <span class="roadmap-glance-meta" id="roadmap-glance-meta"></span>
+              </div>
+              <p class="roadmap-glance-lead">The full journey in one view — tap a phase to jump to its tasks. Work one small step at a time below.</p>
+              <div class="roadmap-glance-track" id="roadmap-glance-track"></div>
+              <button type="button" class="roadmap-glance-next-btn" id="roadmap-glance-next-btn">Jump to your next task</button>
+            </section>
 
             <div class="momentum-card" id="momentum-card" hidden aria-hidden="true">
               <div class="momentum-pct" id="momentum-pct">0%</div>
@@ -17068,6 +17226,69 @@ What would make this more useful for someone in your situation?`;
       else state.expandedRoadmapPhases.add(stageIndex);
     }
 
+    function getRoadmapTaskTotals(stages = state.roadmapStages) {
+      const safeStages = Array.isArray(stages) ? stages : [];
+      const phaseCount = safeStages.length;
+      const taskCount = safeStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0);
+      return { phaseCount, taskCount };
+    }
+
+    function jumpToRoadmapPhase(stageIndex) {
+      if (!Number.isInteger(stageIndex) || stageIndex < 0) return;
+      if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+      state.expandedRoadmapPhases.add(stageIndex);
+      const phase = document.querySelector(`.roadmap-phase[data-phase-index="${stageIndex}"]`);
+      if (phase) {
+        phase.classList.add("is-open", "open");
+        phase.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function renderRoadmapGlance(stages = state.roadmapStages) {
+      const section = $("#roadmap-glance");
+      const track = $("#roadmap-glance-track");
+      const meta = $("#roadmap-glance-meta");
+      const nextBtn = $("#roadmap-glance-next-btn");
+      if (!section || !track) return;
+
+      if (!stages?.length) {
+        section.hidden = true;
+        track.innerHTML = "";
+        if (meta) meta.textContent = "";
+        if (nextBtn) nextBtn.hidden = true;
+        return;
+      }
+
+      section.hidden = false;
+      const { phaseCount, taskCount } = getRoadmapTaskTotals(stages);
+      if (meta) {
+        meta.textContent = `${phaseCount} phase${phaseCount === 1 ? "" : "s"} · ${taskCount} task${taskCount === 1 ? "" : "s"}`;
+      }
+
+      track.innerHTML = stages.map((stage, stageIndex) => {
+        const progress = getStageProgressFromIndices(stageIndex);
+        const status = getPhaseStatusClass(stageIndex);
+        const desc = String(stage.desc || "").trim();
+        const descShort = desc.length > 88 ? `${desc.slice(0, 85)}…` : desc;
+        const nodeLabel = progress.total > 0 && progress.done === progress.total ? "✓" : String(stageIndex + 1);
+        return `
+          <button type="button" class="roadmap-glance-phase ${status}" data-glance-phase="${stageIndex}">
+            <span class="roadmap-glance-node" aria-hidden="true">${nodeLabel}</span>
+            <span class="roadmap-glance-copy">
+              <span class="roadmap-glance-label">${escapeHtml(stage.label || `Phase ${stageIndex + 1}`)}</span>
+              ${descShort ? `<span class="roadmap-glance-desc">${escapeHtml(descShort)}</span>` : ""}
+              <span class="roadmap-glance-count">${progress.done}/${progress.total} tasks</span>
+            </span>
+          </button>`;
+      }).join("");
+
+      track.querySelectorAll("[data-glance-phase]").forEach((button) => {
+        button.addEventListener("click", () => jumpToRoadmapPhase(Number(button.dataset.glancePhase)));
+      });
+
+      if (nextBtn) nextBtn.hidden = !getFirstIncompleteTaskPosition();
+    }
+
     function collectLocalResourcesFromRoadmap() {
       const resources = [];
       const seen = new Set();
@@ -17427,6 +17648,7 @@ What would make this more useful for someone in your situation?`;
         item.classList.toggle("is-done", Boolean(check?.checked));
       });
 
+      renderRoadmapGlance();
       updateRoadmapLocalResourcesList();
     }
 
@@ -19731,6 +19953,7 @@ What would make this more useful for someone in your situation?`;
       $("#roadmap-footer-regen-btn")?.addEventListener("click", regenerateCurrentRoadmap);
       $("#roadmap-edit-details-btn")?.addEventListener("click", () => showScreen("map"));
       $("#roadmap-view-progress-btn")?.addEventListener("click", scrollToActivePhase);
+      $("#roadmap-glance-next-btn")?.addEventListener("click", focusFirstOpenTaskAsk);
       $("#roadmap-ask-assistant-btn")?.addEventListener("click", focusFirstOpenTaskAsk);
       $("#roadmap-load-phases-btn")?.addEventListener("click", () => continueCompletedPlan());
       $("#roadmap-how-works-btn")?.addEventListener("click", () => {
