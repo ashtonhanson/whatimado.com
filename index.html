@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-glance-layout -->
+<!-- whatimado build: 2026-06-29-scroll-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-glance-layout">
+  <meta name="whatimado-build" content="2026-06-29-scroll-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6419,6 +6419,11 @@
       background: rgba(255, 255, 255, .88);
       overflow: hidden;
       box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+      scroll-margin-top: calc(var(--topbar-h, 64px) + 12px);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-head {
+      scroll-margin-top: calc(var(--topbar-h, 64px) + 12px);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-in-progress {
@@ -11911,18 +11916,35 @@ What would make this more useful for someone in your situation?`;
           if (shouldShowTaskResources(normalized, stage, stageIndex, idea)) hasAny = true;
         });
       });
+      if (pathNeedsLocalResources(idea) && getUserLocation()) {
+        return hasAny;
+      }
       return !needsAny || hasAny;
     }
 
+    function isReentryPath(idea = state.currentIdea) {
+      const blob = `${getFirstUserMessage()} ${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      return /\b(re-?enter|incarcerat|jail|prison|release|parole|probation|second chance|background check|record expung|just got out|getting out)\b/.test(blob);
+    }
+
+    function getKnownLocalResourcesForPath(idea = state.currentIdea, loc = getUserLocation()) {
+      const all = getKnownLocalResources(loc);
+      if (!isReentryPath(idea)) return all.slice(0, 6);
+      const reentryMatch = /\b(re-?entry|housing|shelter|workforce|library|caritas|front steps|lifeworks|foundation communities|second chance)\b/i;
+      const prioritized = all.filter((entry) => reentryMatch.test(`${entry.name || ""} ${entry.org || ""}`));
+      const rest = all.filter((entry) => !reentryMatch.test(`${entry.name || ""} ${entry.org || ""}`));
+      return [...prioritized, ...rest].slice(0, 6);
+    }
+
     function pathNeedsLocalResources(idea = state.currentIdea) {
-      const blob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
-      return /\b(local|shelter|recovery|workforce|partner|outreach|nonprofit|library|re-?entry|community|employ|job|train|license|sbdc|score|pilot|visit|demo|feedback sprint|validation)\b/.test(blob);
+      const blob = `${getFirstUserMessage()} ${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      return /\b(local|shelter|recovery|workforce|partner|outreach|nonprofit|library|re-?entry|incarcerat|jail|prison|parole|community|employ|job|train|license|sbdc|score|housing|background check|second chance|certif|apprenticeship|college|credential|id card|211)\b/.test(blob);
     }
 
     function roadmapNeedsLocalEnrichment(stages = state.roadmapStages, idea = state.currentIdea) {
       if (!getUserLocation()) return false;
       if (!pathNeedsLocalResources(idea)) return false;
-      return !roadmapHasRichLocalData(stages);
+      return !roadmapHasRichLocalData(stages, idea);
     }
 
     function getKnownLocalResources(loc = getUserLocation()) {
@@ -11960,6 +11982,25 @@ What would make this more useful for someone in your situation?`;
       );
     }
 
+    function buildLocalTaskScript(taskText, orgName, loc) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage()) && /\b(outreach|pitch|pilot|partner|offer free|email \d|reach out)\b/i.test(taskText)) {
+        return buildOutreachScript(orgName, loc);
+      }
+      if (/\b(call|phone|visit|walk in|walk-in)\b/i.test(String(taskText || ""))) {
+        return (
+          `"Hi — I'm in ${loc} and working on my next step. Does ${orgName} have programs for training, jobs, or re-entry support? ` +
+          `What should I do first to get started, and is there anything I should bring?"`
+        );
+      }
+      if (/\b(compare|research|find|enroll|apply|training|certif|college|apprenticeship|credential)\b/i.test(String(taskText || ""))) {
+        return (
+          `At ${orgName}: ask which program fits your timeline and budget, whether they serve people rebuilding after incarceration if that's relevant, ` +
+          `and exactly what documents or steps you need to enroll this week.`
+        );
+      }
+      return `Contact ${orgName} in ${loc} — ask what fits your situation and what the first step is this week.`;
+    }
+
     function taskExplicitlyExcludesLocalContacts(taskText) {
       const text = String(taskText || "").toLowerCase();
       return /\b(stripe|checkout|donate button|donation modal|hosting|api cost|domain cost|monthly cost|write copy|draft \d|mission-first ask|visible line|social post|notes doc|founder story|120-word|screenshot|reddit|facebook post|subreddit|upgrade|guilt|test \$?\d|one-time tier|end-to-end on mobile|sharpen one line|estimate monthly|divide by expected|after map generated|keep it free for others|no 'upgrade'|donate modal|modal, and in|costs \(hosting|weekly sessions|\$5 helps cover)\b/.test(text);
@@ -11978,7 +12019,13 @@ What would make this more useful for someone in your situation?`;
       if (/\b(homeless shelters?|workforce programs?|libraries?)\b/i.test(taskText) && /\b(reach out|offer free|organizational accounts|testimonials|referrals)\b/i.test(taskText)) return true;
       if (/\b(shelters?, recovery centers?, and workforce|austin shelters?)\b/i.test(taskText)) return true;
       if (/\b(get \d+ real users|live demos|structured feedback)\b/i.test(taskText) && /\b(shelter|recovery|workforce|programs?|centers?)\b/i.test(taskText)) return true;
-      if (/\b(list|find|identify|name|research)\b/i.test(taskText) && /\b(\d+\s*(?:local )?(?:shelters?|orgs?|programs?|centers?|libraries?|nonprofits?)|local organizations?)\b/i.test(taskText)) return true;
+      if (/\b(list|find|identify|name|research|compare|visit|call|apply to|enroll in|sign up for)\b/i.test(taskText) && /\b(\d+\s*(?:local )?(?:shelters?|orgs?|programs?|centers?|libraries?|nonprofits?)|local organizations?|training routes?|community college|trade school|apprenticeship|workforce|job center|career center|nonprofit program)\b/i.test(taskText)) return true;
+
+      if (/\b(community college|trade school|apprenticeship|workforce board|american job center|job center|career center|re-?entry|second chance|background check|parole|probation|state id|id card|housing assistance|snap benefits|211|sbdc|score chapter|licensing office|temp agency|staffing agency)\b/i.test(taskText)) return true;
+
+      if (/\b(compare|research|find|visit|call|apply|enroll|register|schedule)\b/i.test(taskText) && /\b(training|certif|program|college|workforce|job|employ|license|nonprofit|apprenticeship|credential)\b/i.test(taskText)) return true;
+
+      if (isReentryPath(idea) && /\b(id|housing|work|job|train|program|employ|income|resume|interview|background|record)\b/i.test(taskText)) return true;
 
       return false;
     }
@@ -12030,7 +12077,9 @@ What would make this more useful for someone in your situation?`;
       if (/\b(shelter|homeless|housing)\b/.test(text) && /\b(shelter|front steps|caritas|housing|lifeworks|foundation communities)\b/.test(orgBlob)) score += 12;
       if (/\b(workforce|job|employment|career)\b/.test(text) && /\b(workforce|wfscapital|job)\b/.test(orgBlob)) score += 12;
       if (/\b(library|libraries)\b/.test(text) && /\b(library)\b/.test(orgBlob)) score += 12;
-      if (/\b(recovery|re-?entry)\b/.test(text) && /\b(recovery|re-?entry|caritas)\b/.test(orgBlob)) score += 12;
+      if (/\b(recovery|re-?entry|incarcerat|release|parole|second chance|background check)\b/.test(text) && /\b(recovery|re-?entry|caritas|front steps|lifeworks)\b/.test(orgBlob)) score += 14;
+      if (/\b(training|certif|college|apprenticeship|credential|program)\b/.test(text) && /\b(workforce|library|lifeworks|community)\b/.test(orgBlob)) score += 12;
+      if (/\b(housing|shelter|rent|homeless)\b/.test(text) && /\b(shelter|housing|caritas|front steps|foundation communities)\b/.test(orgBlob)) score += 13;
       if (/\b(youth|family)\b/.test(text) && /\b(lifeworks|youth|family)\b/.test(orgBlob)) score += 10;
       if (/\b(nonprofit|partner|pilot|community)\b/.test(text) && !/\b(shelter|library|workforce)\b/.test(text)) score += 1;
       return score;
@@ -12083,7 +12132,7 @@ What would make this more useful for someone in your situation?`;
                 }));
                 normalized.links = picks.map((entry) => entry.url).filter(Boolean);
                 normalized.local = picks.length > 1 ? `${picks[0].org} · ${picks[1].org}` : picks[0].org;
-                normalized.script = buildOutreachScript(picks[0].org, loc);
+                normalized.script = buildLocalTaskScript(normalized.text, picks[0].org, loc);
               }
             }
           } else if (taskNeedsTaskToolResources(normalized.text)) {
@@ -12125,7 +12174,7 @@ What would make this more useful for someone in your situation?`;
       if (force) cleaned = clearTaskResourcesForReinjection(cleaned, idea);
       const enriched = injectLocalContactsIntoRoadmap(
         cleaned,
-        getUserLocation() ? getKnownLocalResources() : [],
+        getUserLocation() ? getKnownLocalResourcesForPath(idea) : [],
         getUserLocation(),
         idea,
         { force }
@@ -12156,7 +12205,9 @@ What would make this more useful for someone in your situation?`;
     function buildCompactLocalEnrichPrompt(idea, loc, founderMode) {
       const focus = founderMode
         ? "whatimado.com founder partnership with shelters, recovery centers, and workforce programs"
-        : `${idea.title} — ${idea.type || "local path"}`;
+        : isReentryPath(idea)
+          ? `${idea.title} — reentry, employment, housing, and ID basics`
+          : `${idea.title} — ${idea.type || "local path"}`;
       return (
         `You are whatimado. Return ONLY a raw JSON array — no markdown, no commentary.\n` +
         `Rewrite 4 stages with 3 tasks each for:\n` +
@@ -12171,7 +12222,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     function applyLocalResourceFallback(stages, loc) {
-      const resources = getKnownLocalResources(loc);
+      const resources = getKnownLocalResourcesForPath(state.currentIdea, loc);
       const cleaned = stripMisplacedLocalContacts(stages, state.currentIdea);
       return injectLocalContactsIntoRoadmap(cleaned, resources, loc, state.currentIdea);
     }
@@ -17264,8 +17315,26 @@ What would make this more useful for someone in your situation?`;
       const phase = document.querySelector(`.roadmap-phase[data-phase-index="${stageIndex}"]`);
       if (phase) {
         phase.classList.add("is-open", "open");
-        phase.scrollIntoView({ behavior: "smooth", block: "start" });
+        scrollRoadmapTargetIntoView(phase.querySelector(".roadmap-phase-head") || phase);
       }
+    }
+
+    function scrollRoadmapTargetIntoView(element, options = {}) {
+      if (!element) return;
+      const behavior = options.behavior ?? "smooth";
+      const topbarH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--topbar-h"), 10)
+        || parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10)
+        || 64;
+      const extraOffset = options.extraOffset ?? 12;
+      const offset = topbarH + extraOffset;
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const rect = element.getBoundingClientRect();
+          const top = window.scrollY + rect.top - offset;
+          window.scrollTo({ top: Math.max(0, top), behavior });
+        });
+      });
     }
 
     function renderRoadmapGlance(stages = state.roadmapStages) {
@@ -17364,7 +17433,18 @@ What would make this more useful for someone in your situation?`;
     }
 
     function getSidebarLocalResources() {
-      return collectLocalResourcesFromRoadmap();
+      const fromTasks = collectLocalResourcesFromRoadmap();
+      if (fromTasks.length) return fromTasks;
+      if (!getUserLocation() || !pathNeedsLocalResources()) return [];
+      return getKnownLocalResourcesForPath().map((entry) => ({
+        type: "contact",
+        key: entry.org || entry.url,
+        name: entry.name,
+        org: entry.org,
+        phone: entry.phone,
+        email: entry.email,
+        url: entry.url
+      }));
     }
 
     function renderLocalResourceItem(resource) {
@@ -17473,7 +17553,7 @@ What would make this more useful for someone in your situation?`;
             `</li>`;
         } else {
           list.innerHTML =
-            `<li class="roadmap-local-item">Your location is saved. Local orgs will appear here as you reach outreach and community tasks in this plan.</li>`;
+            `<li class="roadmap-local-item">We're still matching local programs to your tasks. Try <strong>Try again</strong> below, or open the first task — named orgs and links should appear there too.</li>`;
         }
         if (card) card.hidden = false;
         if (moreBtn) moreBtn.hidden = true;
@@ -17691,7 +17771,7 @@ What would make this more useful for someone in your situation?`;
       const taskId = `task-${pos.stageIndex}-${pos.taskIndex}`;
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       const question = item?.querySelector(".task-question");
-      item?.scrollIntoView({ behavior: "smooth", block: "center" });
+      scrollRoadmapTargetIntoView(item || phase, { extraOffset: 16 });
       question?.focus();
     }
 
@@ -17704,7 +17784,7 @@ What would make this more useful for someone in your situation?`;
         state.expandedRoadmapPhases.add(active);
         phase.classList.add("is-open", "open");
       }
-      phase.scrollIntoView({ behavior: "smooth", block: "start" });
+      scrollRoadmapTargetIntoView(phase.querySelector(".roadmap-phase-head") || phase);
     }
 
     function renderTaskInlineLinksHtml(normalized, showResources) {
