@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-task-plain-writing -->
+<!-- whatimado build: 2026-06-28-task-coaching-polish -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-task-plain-writing">
+  <meta name="whatimado-build" content="2026-06-28-task-coaching-polish">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6195,6 +6195,110 @@
       line-height: 1.4;
     }
 
+    html[data-color-scheme="adult"] .overview-task-tools .task-writing-assist {
+      margin-top: 0;
+      margin-bottom: .65rem;
+    }
+
+    html[data-color-scheme="adult"] .task-notes-wordcount {
+      margin: .35rem 0 0;
+      color: var(--ink-muted);
+      font-size: .68rem;
+      line-height: 1.35;
+    }
+
+    html[data-color-scheme="adult"] .task-notes-wordcount.is-in-range {
+      color: #166534;
+      font-weight: 700;
+    }
+
+    html[data-color-scheme="adult"] .task-notes-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .45rem;
+    }
+
+    html[data-color-scheme="adult"] .task-notes-action-btn {
+      padding: .35rem .55rem;
+      border: 1px solid rgba(15, 23, 42, .12);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink-muted);
+      font: inherit;
+      font-size: .66rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .task-outcome-checklist {
+      display: grid;
+      gap: .4rem;
+      margin: .35rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    html[data-color-scheme="adult"] .task-outcome-checklist label {
+      display: flex;
+      align-items: flex-start;
+      gap: .45rem;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .task-outcome-checklist input {
+      margin-top: .15rem;
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .task-plain-explain--compact summary,
+    html[data-color-scheme="adult"] .task-extra-detail summary {
+      cursor: pointer;
+      color: #2563eb;
+      font-size: .72rem;
+      font-weight: 700;
+      list-style: none;
+    }
+
+    html[data-color-scheme="adult"] .task-plain-explain--compact summary::-webkit-details-marker,
+    html[data-color-scheme="adult"] .task-extra-detail summary::-webkit-details-marker {
+      display: none;
+    }
+
+    html[data-color-scheme="adult"] .task-extra-detail {
+      margin-top: .55rem;
+      padding: .65rem .75rem;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, .03);
+      border: 1px solid rgba(15, 23, 42, .06);
+    }
+
+    @media (min-width: 961px) {
+      html[data-color-scheme="adult"] .task-extra-detail summary {
+        display: none;
+      }
+
+      html[data-color-scheme="adult"] .task-extra-detail {
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+
+      html[data-color-scheme="adult"] .task-extra-detail .task-extra-detail-body {
+        display: grid;
+        gap: .55rem;
+      }
+    }
+
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] .task-extra-detail:not([open]) .task-extra-detail-body {
+        display: none;
+      }
+    }
+
     html[data-color-scheme="adult"] .task-action-pack {
       display: grid;
       gap: .65rem;
@@ -10209,8 +10313,73 @@
     }
 
     function getTaskDisplaySteps(normalized) {
-      const steps = normalized.steps?.length ? normalized.steps : inferTaskStepsFromText(normalized.text);
-      return dedupeTaskSteps(normalized.text, steps);
+      const fromTask = normalized.steps?.length ? normalized.steps : inferTaskStepsFromText(normalized.text);
+      let steps = dedupeTaskSteps(normalized.text, fromTask);
+      if (steps.length < 2) {
+        steps = dedupeTaskSteps(normalized.text, getTemplateTaskSteps(normalized));
+      }
+      return steps;
+    }
+
+    function getTemplateTaskSteps(normalized) {
+      const text = normalized.text.toLowerCase();
+
+      if (/\bscreenshot\b/.test(text)) {
+        return [
+          "On your phone, open https://whatimado.com in your browser.",
+          "Take three screenshots: the home screen, your possibility map, and one roadmap with tasks visible.",
+          "In Photos, crop each image square (1:1) so they look good on Reddit and Facebook."
+        ];
+      }
+      if (/\b120-word\b|\bfounder story\b/.test(text)) {
+        return [
+          "Tap Write a draft for me below (or start typing in My Notes).",
+          "Say who whatimado.com is for, why it stays free, and what makes the map different from ChatGPT.",
+          "Edit until it sounds like you and is close to 120 words."
+        ];
+      }
+      if (/\bsave two post drafts\b|\bpost drafts\b/.test(text)) {
+        return [
+          "Use Write a draft for me to get Reddit and Facebook starters in My Notes.",
+          "Edit Draft A for a help-first Reddit intro; edit Draft B for a personal Facebook story.",
+          "Keep both drafts in Notes so you can reuse them across posts."
+        ];
+      }
+      if (/\breddit\b|r\//.test(text) && !/\bfacebook\b/.test(text)) {
+        return [
+          "Read 3–5 recent posts in the forum to match tone.",
+          "Paste your draft from My Notes (or tap Write a draft for me).",
+          "Post with a help-first title; put https://whatimado.com in the body or first comment per forum rules."
+        ];
+      }
+      if (/\bfacebook\b/.test(text)) {
+        return [
+          "Write like you're telling one friend — short paragraphs, your story first.",
+          "Paste or draft your post in My Notes, then copy it to your profile or a group you already use.",
+          "End with a question so people reply instead of scrolling past."
+        ];
+      }
+      if (/\bstripe\b|\bdonat/.test(text)) {
+        return [
+          "Open your Stripe payment link (or set one up if you haven't yet).",
+          "Write one sentence on why tips help keep whatimado.com free for the next person.",
+          "Add that line near your post or profile — after your story, not before it."
+        ];
+      }
+
+      return [];
+    }
+
+    function countWords(text) {
+      return String(text || "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean).length;
+    }
+
+    function isFounderStoryTask(normalized) {
+      const blob = `${normalized.text} ${normalized.outcome}`.toLowerCase();
+      return /\b120-word\b|\bfounder story\b/.test(blob);
     }
 
     function humanizeTaskText(text) {
@@ -10238,16 +10407,35 @@
       copy = copy.replace(/\bsub rules\b/gi, "that forum's posting rules");
       copy = copy.replace(/\bsubreddit\b/gi, "Reddit forum");
       copy = copy.replace(/\bchatgpt\b/gi, "ChatGPT (a general AI chat tool)");
+      copy = copy.replace(/\bstripe\b/gi, "Stripe (a payment page for tips and donations)");
+      copy = copy.replace(/\bquiet launch\b/gi, "quiet launch (sharing softly with a few communities first)");
+      copy = copy.replace(/\bvalidation\b/gi, "validation (learning whether people actually want this)");
+      copy = copy.replace(/\bpwyc\b/gi, "pay-what-you-can");
+      copy = copy.replace(/\bpay-what-you-want\b/gi, "pay-what-you-can tips");
 
       return copy;
     }
 
     function taskNeedsPlainExplain(normalized) {
       const blob = `${normalized.text} ${normalized.why} ${(normalized.steps || []).join(" ")}`.toLowerCase();
-      return /\br\/|reddit|subreddit|sub rules|facebook group|post in r\//.test(blob);
+      return /\br\/|reddit|subreddit|sub rules|facebook group|post in r\/|stripe|quiet launch|validation\b/.test(blob);
     }
 
-    function renderTaskPlainExplainHtml(normalized) {
+    function isFirstSocialExplainTask(stageIndex, taskIndex) {
+      if (!state.roadmapStages?.length) return true;
+      for (let si = 0; si < state.roadmapStages.length; si += 1) {
+        const tasks = state.roadmapStages[si].tasks || [];
+        for (let ti = 0; ti < tasks.length; ti += 1) {
+          const candidate = normalizeRoadmapTask(tasks[ti]);
+          if (taskNeedsPlainExplain(candidate)) {
+            return si === stageIndex && ti === taskIndex;
+          }
+        }
+      }
+      return true;
+    }
+
+    function renderTaskPlainExplainHtml(normalized, stageIndex, taskIndex) {
       if (!taskNeedsPlainExplain(normalized)) return "";
       const text = `${normalized.text} ${normalized.why}`.toLowerCase();
       const lines = [];
@@ -10267,13 +10455,40 @@
           "On Facebook, share on your own profile or in a group you already belong to — write like you're telling one friend, not running an ad."
         );
       }
+      if (/\bstripe\b|\bdonat/.test(text)) {
+        lines.push(
+          "Stripe is a simple payment page where people can leave optional tips. Mention it after your story — keep the focus on helping people first."
+        );
+      }
+      if (/quiet launch|validation/.test(text)) {
+        lines.push(
+          "A quiet launch means sharing with a few communities and listening before trying to reach everyone. Validation means checking whether real people find it useful — not just getting likes."
+        );
+      }
+      if (/\bscreenshot\b/.test(text)) {
+        lines.push(
+          "Square crop means the image is as wide as it is tall (1:1). On iPhone: open the photo → Edit → crop icon → choose square. Android varies, but look for a 1:1 or square option."
+        );
+      }
 
       if (!lines.length) return "";
+
+      const body = `<p class="task-plain-explain-copy">${escapeHtml(lines.join(" "))}</p>`;
+      const isFirst = isFirstSocialExplainTask(stageIndex, taskIndex);
+
+      if (isFirst) {
+        return `
+          <div class="task-plain-explain">
+            <span class="overview-task-detail-label">In plain English</span>
+            ${body}
+          </div>`;
+      }
+
       return `
-        <div class="task-plain-explain">
-          <span class="overview-task-detail-label">In plain English</span>
-          <p class="task-plain-explain-copy">${escapeHtml(lines.join(" "))}</p>
-        </div>`;
+        <details class="task-plain-explain task-plain-explain--compact">
+          <summary>Quick jargon reminder</summary>
+          ${body}
+        </details>`;
     }
 
     function isWritingTask(normalized) {
@@ -10292,13 +10507,13 @@
       if (/\b120-word\b|\bfounder story\b/.test(text)) {
         return `[Edit this draft in My Notes — aim for about 120 words]
 
-I built whatimado.com for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding, under-resourced, or tired of advice that doesn't fit your life.
+I've been building something small called whatimado.com for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding, under-resourced, or tired of advice that doesn't fit your life.
 
-Most tools either dump a chat wall of text or charge you before you've explored anything real. whatimado stays free because paths shouldn't be paywalled.
+A lot of tools either talk at you in a chat window or charge before you've explored anything real. I'm keeping whatimado free because paths shouldn't be paywalled.
 
-The difference: you see a visual possibility map of paths that fit you, then open step-by-step roadmaps with tasks — not just another ChatGPT thread.
+What's different: you see a visual map of paths that might fit you, then open step-by-step roadmaps with tasks — not just another ChatGPT thread.
 
-Try it at ${site} and tell me what would make it more useful for someone in your situation.`;
+If you're curious, try ${site} and tell me what would make it more useful for someone in your situation.`;
       }
 
       if (/\bsave two post drafts\b|\bpost drafts\b/.test(text)) {
@@ -10307,9 +10522,9 @@ Try it at ${site} and tell me what would make it more useful for someone in your
 Title: I built a free tool for people stuck on what's next
 
 Body:
-I've watched a lot of people freeze when they need a direction — not because they're lazy, but because every option feels vague or expensive.
+I've been working on something small for people who freeze when they need a direction — not because they're lazy, but because every option feels vague or expensive.
 
-I made whatimado.com to map real paths visually, then break each path into small tasks you can actually do. It's free.
+whatimado.com maps real paths visually, then breaks each path into small tasks you can actually do. It's free.
 
 If you're exploring what's next, I'd love honest feedback: ${site}
 (If the forum doesn't allow links in posts, I'll put the link in my first comment.)
@@ -10318,7 +10533,7 @@ If you're exploring what's next, I'd love honest feedback: ${site}
 
 [Draft B — Facebook personal post]
 
-I've been working on something for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding or don't have money for another paid course.
+I've been chipping away at something for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding or don't have money for another paid course.
 
 whatimado.com is free. It shows you a map of paths that might fit, then gives you step-by-step tasks for each one — not just another AI chat.
 
@@ -10332,9 +10547,9 @@ What would make this more useful for someone in your situation?`;
 Title: I built a free tool for people stuck on "what's next"
 
 Body:
-I've watched a lot of people freeze when they need a direction — not because they're lazy, but because every option feels vague or expensive.
+I've been working on something small for people who freeze when they need a direction — not because they're lazy, but because every option feels vague or expensive.
 
-I made whatimado.com to map real paths visually, then break each path into small tasks you can actually do. It's free.
+whatimado.com maps real paths visually, then breaks each path into small tasks you can actually do. It's free.
 
 If you're exploring what's next, I'd love honest feedback: ${site}
 (If this forum doesn't allow links in posts, I'll put the link in my first comment.)`;
@@ -10343,7 +10558,7 @@ If you're exploring what's next, I'd love honest feedback: ${site}
       if (/\bfacebook\b/.test(text)) {
         return `[Facebook post draft — edit to sound like you]
 
-I've been working on something for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding or don't have money for another paid course.
+I've been chipping away at something for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding or don't have money for another paid course.
 
 whatimado.com is free. It shows you a map of paths that might fit, then gives you step-by-step tasks for each one — not just another AI chat.
 
@@ -10359,11 +10574,11 @@ What would make this more useful for someone in your situation?`;
       const draft = generateLocalTaskDraft(normalized);
       if (!draft) return "";
 
-      const isFounder = /\b120-word\b|\bfounder story\b/i.test(normalized.text);
+      const isFounder = isFounderStoryTask(normalized);
       const headline = isFounder ? "Want help getting started?" : "Need a starting draft?";
       const copy = isFounder
-        ? "Most people aren't sure how to open a founder story. Paste our sample into My Notes and edit until it sounds like you — or ask below to rewrite it."
-        : "We can drop a ready-to-edit draft into My Notes so you're not staring at a blank box.";
+        ? "Tap below to add a starter founder story to My Notes — edit until it sounds like you. If you already wrote something, we'll add below it instead of replacing."
+        : "We can add a ready-to-edit draft to My Notes so you're not staring at a blank box.";
 
       return `
         <div class="task-writing-assist" data-task-id="${escapeHtml(taskId)}">
@@ -10371,13 +10586,84 @@ What would make this more useful for someone in your situation?`;
           <p class="task-writing-assist-copy">${escapeHtml(copy)}</p>
           <div class="task-writing-assist-actions">
             <button type="button" class="task-writing-assist-btn" data-action="insert-draft" data-task-id="${escapeHtml(taskId)}">Write a draft for me</button>
+            <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="replace-draft" data-task-id="${escapeHtml(taskId)}" hidden>Replace my notes</button>
             <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="view-sample" data-task-id="${escapeHtml(taskId)}">Show sample text</button>
+            <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="rewrite-draft" data-task-id="${escapeHtml(taskId)}">Rewrite in my voice</button>
           </div>
         </div>`;
     }
 
+    function insertDraftIntoNotes(taskId, draft, mode = "append") {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const notes = item?.querySelector(".task-textarea");
+      const data = getRoadmapTaskData(taskId);
+      const box = item?.querySelector(".task-writing-assist");
+      if (!notes || !draft) return false;
+
+      const existing = notes.value.trim();
+      if (mode === "replace" || !existing) {
+        notes.value = draft;
+      } else {
+        notes.value = `${existing}\n\n---\n\n${draft}`;
+      }
+      data.notes = notes.value;
+      schedulePersist();
+      updateTaskNotesWordCount(taskId);
+      updateTaskWritingAssistButtons(taskId);
+
+      let note = box?.querySelector(".task-writing-assist-note");
+      if (!note && box) {
+        note = document.createElement("p");
+        note.className = "task-writing-assist-note";
+        box.appendChild(note);
+      }
+      if (note) {
+        note.textContent = mode === "replace" || !existing
+          ? "Draft added to My Notes — edit until it sounds like you."
+          : "Draft added below your notes — scroll to see it.";
+      }
+      notes.focus();
+      trackEvent("task_draft_inserted", { task_id: taskId, mode: existing && mode !== "replace" ? "append" : "replace" });
+      return true;
+    }
+
+    function updateTaskWritingAssistButtons(taskId) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const notes = item?.querySelector(".task-textarea");
+      const replaceBtn = item?.querySelector('[data-action="replace-draft"]');
+      if (replaceBtn) replaceBtn.hidden = !notes?.value.trim();
+    }
+
+    function updateTaskNotesWordCount(taskId) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const notes = item?.querySelector(".task-textarea");
+      const counter = item?.querySelector(".task-notes-wordcount");
+      if (!counter || !notes) return;
+
+      const words = countWords(notes.value);
+      counter.textContent = `${words} word${words === 1 ? "" : "s"}`;
+      counter.classList.toggle("is-in-range", words >= 100 && words <= 140);
+    }
+
+    function extractPostTitleFromNotes(notesText) {
+      const match = String(notesText || "").match(/^Title:\s*(.+)$/im);
+      return match ? match[1].trim() : "";
+    }
+
+    async function copyTextToClipboard(text) {
+      const value = String(text || "").trim();
+      if (!value) return false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(value);
+          return true;
+        }
+      } catch (_) {}
+      return false;
+    }
+
     function handleTaskAssistClick(event) {
-      const btn = event.target.closest(".task-writing-assist-btn");
+      const btn = event.target.closest(".task-writing-assist-btn, .task-notes-action-btn");
       if (!btn) return;
 
       const taskId = btn.dataset.taskId;
@@ -10391,29 +10677,55 @@ What would make this more useful for someone in your situation?`;
       const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
       const normalized = normalizeRoadmapTask(task);
       const draft = generateLocalTaskDraft(normalized);
-      if (!draft) return;
-
       const box = btn.closest(".task-writing-assist");
+      const notes = item.querySelector(".task-textarea");
 
       if (action === "insert-draft") {
-        const notes = item.querySelector(".task-textarea");
-        const data = getRoadmapTaskData(taskId);
-        if (notes) {
-          notes.value = draft;
-          data.notes = draft;
-          schedulePersist();
-          trackEvent("task_draft_inserted", { task_id: taskId });
-        }
-        let note = box?.querySelector(".task-writing-assist-note");
-        if (!note && box) {
-          note = document.createElement("p");
-          note.className = "task-writing-assist-note";
-          box.appendChild(note);
-        }
-        if (note) note.textContent = "Draft added to My Notes — edit until it sounds like you.";
-        notes?.focus();
+        if (draft) insertDraftIntoNotes(taskId, draft, notes?.value.trim() ? "append" : "replace");
         return;
       }
+
+      if (action === "replace-draft") {
+        if (draft && confirm("Replace everything in My Notes with a fresh draft?")) {
+          insertDraftIntoNotes(taskId, draft, "replace");
+        }
+        return;
+      }
+
+      if (action === "rewrite-draft") {
+        const questionEl = item.querySelector(".task-question");
+        if (questionEl) {
+          questionEl.value = notes?.value.trim()
+            ? "Rewrite the draft in My Notes to sound more like me — warmer, shorter, and less salesy."
+            : "Write a founder story draft for me in a warm, personal voice (~120 words).";
+          questionEl.focus();
+        }
+        return;
+      }
+
+      if (action === "copy-notes") {
+        copyTextToClipboard(notes?.value).then((ok) => {
+          if (ok) btn.textContent = "Copied!";
+          setTimeout(() => {
+            btn.textContent = "Copy all";
+          }, 1400);
+        });
+        return;
+      }
+
+      if (action === "copy-title") {
+        const title = extractPostTitleFromNotes(notes?.value);
+        if (!title) return;
+        copyTextToClipboard(title).then((ok) => {
+          if (ok) btn.textContent = "Copied!";
+          setTimeout(() => {
+            btn.textContent = "Copy title";
+          }, 1400);
+        });
+        return;
+      }
+
+      if (!draft) return;
 
       if (action === "view-sample") {
         let preview = box?.querySelector(".task-writing-sample");
@@ -10444,13 +10756,98 @@ What would make this more useful for someone in your situation?`;
           const normalized = normalizeRoadmapTask(task);
           if (!normalized.steps.length) {
             const inferred = inferTaskStepsFromText(normalized.text);
-            normalized.steps = stepsAreRedundantWithText(normalized.text, inferred) ? [] : inferred;
+            normalized.steps = stepsAreRedundantWithText(normalized.text, inferred)
+              ? dedupeTaskSteps(normalized.text, getTemplateTaskSteps(normalized))
+              : inferred;
           } else {
             normalized.steps = dedupeTaskSteps(normalized.text, normalized.steps);
+            if (!normalized.steps.length) {
+              normalized.steps = dedupeTaskSteps(normalized.text, getTemplateTaskSteps(normalized));
+            }
           }
           return normalized;
         })
       }));
+    }
+
+    function getOutcomeChecklistItems(normalized) {
+      const text = normalized.text.toLowerCase();
+
+      if (/\b120-word\b|\bfounder story\b/.test(text)) {
+        return [
+          "My founder story draft is in My Notes",
+          "It says who it's for, why it's free, and what's different (~120 words)"
+        ];
+      }
+      if (/\bsave two post drafts\b|\bpost drafts\b/.test(text)) {
+        return [
+          "Reddit draft (Draft A) is ready in My Notes",
+          "Facebook draft (Draft B) is ready in My Notes"
+        ];
+      }
+      if (/\bscreenshot\b/.test(text)) {
+        return [
+          "I saved 3 phone screenshots (home, map, roadmap)",
+          "Each image is cropped square for social posts"
+        ];
+      }
+      if (/\breddit\b|r\//.test(text)) {
+        return [
+          "I have a post draft ready in My Notes",
+          "I know which Reddit forum to use and read their rules"
+        ];
+      }
+      if (/\bfacebook\b/.test(text)) {
+        return [
+          "My personal post draft is ready",
+          "It reads like a story to a friend, not an ad"
+        ];
+      }
+      if (normalized.outcome) {
+        const parts = normalized.outcome
+          .split(/[;•]\s*|\.\s+(?=[A-Z])/)
+          .map((part) => part.trim())
+          .filter((part) => part.length > 12);
+        if (parts.length >= 2) return parts.slice(0, 3);
+        return [humanizeTaskText(normalized.outcome)];
+      }
+      return [];
+    }
+
+    function renderTaskOutcomeChecklistHtml(taskId, normalized) {
+      const items = getOutcomeChecklistItems(normalized);
+      if (items.length < 2) return "";
+      const data = getRoadmapTaskData(taskId);
+      if (!Array.isArray(data.outcomeChecks)) data.outcomeChecks = [];
+
+      return `
+        <div class="overview-task-detail-block">
+          <span class="overview-task-detail-label">Check when done</span>
+          <ul class="task-outcome-checklist">
+            ${items.map((item, index) => `
+              <li>
+                <label>
+                  <input type="checkbox" class="task-outcome-check" data-task-id="${escapeHtml(taskId)}" data-check-index="${index}"${data.outcomeChecks[index] ? " checked" : ""}>
+                  <span>${escapeHtml(item)}</span>
+                </label>
+              </li>`).join("")}
+          </ul>
+        </div>`;
+    }
+
+    function renderTaskNotesExtrasHtml(taskId, normalized) {
+      const parts = [];
+      if (isFounderStoryTask(normalized)) {
+        parts.push(`<div class="task-notes-wordcount" data-task-id="${escapeHtml(taskId)}">0 words</div>`);
+      }
+      if (isWritingTask(normalized)) {
+        parts.push(`
+          <div class="task-notes-actions">
+            <button type="button" class="task-notes-action-btn" data-action="copy-notes" data-task-id="${escapeHtml(taskId)}">Copy all</button>
+            <button type="button" class="task-notes-action-btn" data-action="copy-title" data-task-id="${escapeHtml(taskId)}">Copy title</button>
+          </div>`);
+      }
+      return parts.join("");
     }
 
     function normalizeRoadmapTask(task, fallback = {}) {
@@ -14141,10 +14538,13 @@ What would make this more useful for someone in your situation?`;
     }
 
     function getRoadmapTaskData(taskId) {
-      if (!state.roadmapKey) return { notes: "", checked: false, threads: [] };
+      if (!state.roadmapKey) return { notes: "", checked: false, threads: [], outcomeChecks: [] };
       if (!state.allTaskChats[state.roadmapKey]) state.allTaskChats[state.roadmapKey] = {};
       if (!state.allTaskChats[state.roadmapKey][taskId]) {
-        state.allTaskChats[state.roadmapKey][taskId] = { notes: "", checked: false, threads: [] };
+        state.allTaskChats[state.roadmapKey][taskId] = { notes: "", checked: false, threads: [], outcomeChecks: [] };
+      }
+      if (!Array.isArray(state.allTaskChats[state.roadmapKey][taskId].outcomeChecks)) {
+        state.allTaskChats[state.roadmapKey][taskId].outcomeChecks = [];
       }
       return state.allTaskChats[state.roadmapKey][taskId];
     }
@@ -14215,8 +14615,18 @@ What would make this more useful for someone in your situation?`;
     }
 
     function handleTaskThreadClick(event) {
-      if (event.target.closest(".task-writing-assist-btn")) {
+      if (event.target.closest(".task-writing-assist-btn, .task-notes-action-btn")) {
         handleTaskAssistClick(event);
+        return;
+      }
+      const outcomeCheck = event.target.closest(".task-outcome-check");
+      if (outcomeCheck) {
+        const taskId = outcomeCheck.dataset.taskId;
+        const index = Number(outcomeCheck.dataset.checkIndex);
+        const data = getRoadmapTaskData(taskId);
+        if (!Array.isArray(data.outcomeChecks)) data.outcomeChecks = [];
+        data.outcomeChecks[index] = outcomeCheck.checked;
+        schedulePersist();
         return;
       }
       const collapsed = event.target.closest(".task-thread-collapsed");
@@ -15647,6 +16057,11 @@ What would make this more useful for someone in your situation?`;
         if (check) check.checked = Boolean(data.checked);
         item.classList.toggle("is-done", Boolean(check?.checked));
         if (notes) notes.value = data.notes || "";
+        updateTaskWritingAssistButtons(taskId);
+        updateTaskNotesWordCount(taskId);
+        item.querySelectorAll(".task-extra-detail").forEach((detailsEl) => {
+          if (window.matchMedia("(max-width: 960px)").matches) detailsEl.removeAttribute("open");
+        });
         check?.addEventListener("change", () => {
           data.checked = check.checked;
           item.classList.toggle("is-done", check.checked);
@@ -15662,6 +16077,8 @@ What would make this more useful for someone in your situation?`;
             trackEvent("task_notes_started", { task_id: taskId });
           }
           data.notes = notes.value;
+          updateTaskWritingAssistButtons(taskId);
+          updateTaskNotesWordCount(taskId);
           schedulePersist();
         });
         renderTaskThreads(taskId);
@@ -16124,7 +16541,7 @@ What would make this more useful for someone in your situation?`;
         </div>`;
     }
 
-    function renderTaskDetailSectionsHtml(normalized, showResources) {
+    function renderTaskDetailSectionsHtml(normalized, showResources, taskId) {
       const steps = getTaskDisplaySteps(normalized);
       const parts = [];
 
@@ -16146,8 +16563,9 @@ What would make this more useful for someone in your situation?`;
           </div>`);
       }
 
+      const extraParts = [];
       if (normalized.why) {
-        parts.push(`
+        extraParts.push(`
           <div class="overview-task-detail-block">
             <span class="overview-task-detail-label">Why this step</span>
             <p class="overview-task-detail-copy">${escapeHtml(humanizeTaskText(normalized.why))}</p>
@@ -16155,15 +16573,28 @@ What would make this more useful for someone in your situation?`;
       }
 
       if (normalized.outcome) {
-        parts.push(`
+        extraParts.push(`
           <div class="overview-task-detail-block">
             <span class="overview-task-detail-label">When you're done</span>
             <p class="overview-task-detail-copy">${escapeHtml(humanizeTaskText(normalized.outcome))}</p>
           </div>`);
       }
 
+      if (taskId) {
+        const checklist = renderTaskOutcomeChecklistHtml(taskId, normalized);
+        if (checklist) extraParts.push(checklist);
+      }
+
       const inlineLinks = renderTaskInlineLinksHtml(normalized, showResources);
-      if (inlineLinks) parts.push(inlineLinks);
+      if (inlineLinks) extraParts.push(inlineLinks);
+
+      if (extraParts.length) {
+        parts.push(`
+          <details class="task-extra-detail" open>
+            <summary>Why &amp; when done</summary>
+            <div class="task-extra-detail-body">${extraParts.join("")}</div>
+          </details>`);
+      }
 
       if (!parts.length) return "";
       return `<div class="overview-task-details">${parts.join("")}</div>`;
@@ -16179,9 +16610,10 @@ What would make this more useful for someone in your situation?`;
       if (showResources && normalized.local) {
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
-      const plainExplain = renderTaskPlainExplainHtml(normalized);
+      const plainExplain = renderTaskPlainExplainHtml(normalized, stageIndex, taskIndex);
       const writingAssist = renderTaskWritingAssistHtml(id, normalized);
-      const detailBlock = renderTaskDetailSectionsHtml(normalized, showResources);
+      const detailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
+      const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const actionPack = showResources ? renderTaskActionPackHtml(normalized, { stage, stageIndex }) : "";
 
       return `
@@ -16192,14 +16624,15 @@ What would make this more useful for someone in your situation?`;
               <label class="task-text" for="${id}">${escapeHtml(text)}</label>
               ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
               ${plainExplain}
-              ${writingAssist}
               ${detailBlock}
               ${actionPack}
             </div>
           </div>
           <div class="overview-task-tools">
+            ${writingAssist}
             <div class="task-label">My Notes</div>
             <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
+            ${notesExtras}
             <div class="task-threads" id="threads-${id}"></div>
             <div class="task-ask-row">
               <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
