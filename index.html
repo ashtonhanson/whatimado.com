@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-scroll-fix -->
+<!-- whatimado build: 2026-06-29-local-layout -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-scroll-fix">
+  <meta name="whatimado-build" content="2026-06-29-local-layout">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6867,9 +6867,22 @@
       line-height: 1.35;
     }
 
-    html[data-color-scheme="adult"] .task-contact-meta,
-    html[data-color-scheme="adult"] .task-link-list,
     html[data-color-scheme="adult"] .roadmap-local-meta {
+      display: flex;
+      flex-direction: column;
+      gap: .22rem;
+      margin-top: .4rem;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-meta-line {
+      display: block;
+    }
+
+    html[data-color-scheme="adult"] .task-contact-meta,
+    html[data-color-scheme="adult"] .task-link-list {
       margin-top: .2rem;
       color: var(--ink-muted);
       font-size: .72rem;
@@ -7027,7 +7040,7 @@
       margin: 0 0 .55rem;
       padding: 0;
       display: grid;
-      gap: .45rem;
+      gap: .15rem;
       max-height: min(18rem, 42vh);
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -7058,6 +7071,33 @@
       color: #2563eb;
       font-weight: 800;
       flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item--rich {
+      flex-direction: row;
+      align-items: flex-start;
+      padding-bottom: .75rem;
+      margin-bottom: .75rem;
+      border-bottom: 1px solid rgba(15, 23, 42, .08);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item--rich:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-local-item--rich strong {
+      display: block;
+      color: var(--ink);
+      font-size: .74rem;
+      font-weight: 700;
+      line-height: 1.35;
     }
 
     html[data-color-scheme="adult"] .roadmap-local-item--action {
@@ -17450,20 +17490,20 @@ What would make this more useful for someone in your situation?`;
     function renderLocalResourceItem(resource) {
       if (resource.type === "contact" || resource.org || resource.name) {
         const title = [resource.org, resource.name].filter(Boolean).join(" — ") || resource.text || "Local resource";
-        const meta = [];
+        const metaLines = [];
         if (resource.url) {
-          meta.push(`<a href="${escapeHtml(formatExternalUrl(resource.url))}" target="_blank" rel="noopener noreferrer">Website</a>`);
+          metaLines.push(`<span class="roadmap-local-meta-line"><a href="${escapeHtml(formatExternalUrl(resource.url))}" target="_blank" rel="noopener noreferrer">Website</a></span>`);
         }
         if (resource.phone) {
-          meta.push(`<a href="tel:${escapeHtml(resource.phone.replace(/[^\d+]/g, ""))}">${escapeHtml(resource.phone)}</a>`);
+          metaLines.push(`<span class="roadmap-local-meta-line"><a href="tel:${escapeHtml(resource.phone.replace(/[^\d+]/g, ""))}">${escapeHtml(resource.phone)}</a></span>`);
         }
         if (resource.email) {
-          meta.push(`<a href="mailto:${escapeHtml(resource.email)}">${escapeHtml(resource.email)}</a>`);
+          metaLines.push(`<span class="roadmap-local-meta-line"><a href="mailto:${escapeHtml(resource.email)}">${escapeHtml(resource.email)}</a></span>`);
         }
-        return `<li class="roadmap-local-item roadmap-local-item--rich"><strong>${escapeHtml(title)}</strong>${meta.length ? `<div class="roadmap-local-meta">${meta.join(" · ")}</div>` : ""}</li>`;
+        return `<li class="roadmap-local-item roadmap-local-item--rich"><div class="roadmap-local-item-body"><strong>${escapeHtml(title)}</strong>${metaLines.length ? `<div class="roadmap-local-meta">${metaLines.join("")}</div>` : ""}</div></li>`;
       }
       if (resource.url) {
-        return `<li class="roadmap-local-item roadmap-local-item--rich"><strong>${escapeHtml(resource.text || "Resource")}</strong><div class="roadmap-local-meta"><a href="${escapeHtml(formatExternalUrl(resource.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(resource.url.replace(/^https?:\/\//i, ""))}</a></div></li>`;
+        return `<li class="roadmap-local-item roadmap-local-item--rich"><div class="roadmap-local-item-body"><strong>${escapeHtml(resource.text || "Resource")}</strong><div class="roadmap-local-meta"><span class="roadmap-local-meta-line"><a href="${escapeHtml(formatExternalUrl(resource.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(resource.url.replace(/^https?:\/\//i, ""))}</a></span></div></div></li>`;
       }
       return `<li class="roadmap-local-item">${escapeHtml(resource.text || String(resource))}</li>`;
     }
