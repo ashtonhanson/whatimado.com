@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-task-thread-delete -->
+<!-- whatimado build: 2026-06-28-remove-roadmap -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-task-thread-delete">
+  <meta name="whatimado-build" content="2026-06-28-remove-roadmap">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -533,6 +533,61 @@
       color: #1d4ed8;
       font-weight: 700;
       box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .18);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row {
+      display: flex;
+      align-items: stretch;
+      gap: .3rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row .dashboard-roadmap-item {
+      flex: 1;
+      min-width: 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-delete {
+      flex: 0 0 auto;
+      align-self: center;
+      padding: .35rem .45rem;
+      border: 1px solid rgba(15, 23, 42, .12);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink-muted);
+      font: inherit;
+      font-size: .62rem;
+      font-weight: 700;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-delete:hover {
+      color: #b91c1c;
+      border-color: rgba(185, 28, 28, .28);
+      background: rgba(254, 226, 226, .65);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-remove-btn:hover {
+      color: #b91c1c;
+      border-color: rgba(185, 28, 28, .28);
+      background: rgba(254, 226, 226, .45);
+    }
+
+    html[data-color-scheme="adult"] .opp-card-remove-roadmap-btn {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--ink-muted);
+      font: inherit;
+      font-size: .72rem;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: .12em;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .opp-card-remove-roadmap-btn:hover {
+      color: #b91c1c;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-add-btn {
@@ -9737,6 +9792,7 @@
               Back to map
             </button>
             <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
+            <button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button>
             <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Rebuild remaining steps</button>
           </div>
 
@@ -13579,6 +13635,119 @@ What would make this more useful for someone in your situation?`;
       }
     }
 
+    function hasRoadmapProgress(ideaTitle, mapId = state.activeMapId) {
+      const key = slugify(ideaTitle);
+      if (state.allRoadmaps[key]?.stages?.length) return true;
+      if (state.allTaskChats[key] && Object.keys(state.allTaskChats[key]).length) return true;
+      return state.roadmapCategories.some((category) =>
+        (category.items || []).some((item) => {
+          if (item.ideaTitle !== ideaTitle) return false;
+          if (mapId && item.mapId && item.mapId !== mapId) return false;
+          return true;
+        })
+      );
+    }
+
+    function removeRoadmapSidebarItems(ideaTitle, mapId) {
+      state.roadmapCategories.forEach((category) => {
+        category.items = (category.items || []).filter((item) => {
+          if (item.ideaTitle !== ideaTitle) return true;
+          if (mapId && item.mapId && item.mapId !== mapId) return true;
+          return false;
+        });
+      });
+      state.roadmapCategories = state.roadmapCategories.filter(
+        (category) => (category.items || []).length > 0 || category.mapId
+      );
+      if (state.activeRoadmapCategoryId && !state.roadmapCategories.some((c) => c.id === state.activeRoadmapCategoryId)) {
+        state.activeRoadmapCategoryId = null;
+      }
+    }
+
+    function purgeRoadmapFromLibrary(mapId, ideaTitle) {
+      if (!mapId || !ideaTitle) return;
+      const entry = state.savedMaps.find((map) => map.id === mapId);
+      if (!entry) return;
+      const key = slugify(ideaTitle);
+
+      if (entry.allRoadmaps && typeof entry.allRoadmaps === "object") {
+        entry.allRoadmaps = { ...entry.allRoadmaps };
+        delete entry.allRoadmaps[key];
+      }
+      if (entry.allTaskChats && typeof entry.allTaskChats === "object") {
+        entry.allTaskChats = { ...entry.allTaskChats };
+        delete entry.allTaskChats[key];
+      }
+      if (entry.roadmapKey === key) {
+        entry.roadmapKey = null;
+        entry.currentIdea = null;
+        entry.roadmapStages = [];
+      }
+      entry.updatedAt = Date.now();
+    }
+
+    function removeRoadmapForPath(ideaTitle, options = {}) {
+      const { ideaIndex, mapId = state.activeMapId, skipConfirm = false } = options;
+      if (!ideaTitle) return false;
+
+      const key = slugify(ideaTitle);
+      if (!hasRoadmapProgress(ideaTitle, mapId) && !state.allRoadmaps[key] && !state.allTaskChats[key]) {
+        return false;
+      }
+
+      if (!skipConfirm) {
+        const ok = confirm(
+          `Remove the roadmap for "${ideaTitle}"?\n\nThis deletes step-by-step progress, My Notes, and Ask history for this path. The path stays on your map — you can open a fresh roadmap anytime.`
+        );
+        if (!ok) return false;
+      }
+
+      delete state.allRoadmaps[key];
+      delete state.allTaskChats[key];
+      if (mapId) purgeRoadmapFromLibrary(mapId, ideaTitle);
+      removeRoadmapSidebarItems(ideaTitle, mapId);
+
+      let resolvedIndex = Number.isInteger(ideaIndex) ? ideaIndex : state.ideas.findIndex((entry) => entry.title === ideaTitle);
+      if (resolvedIndex >= 0) setPathSelected(resolvedIndex, false);
+
+      const viewingRemoved = state.roadmapKey === key && state.currentIdea?.title === ideaTitle;
+      if (viewingRemoved) {
+        state.currentIdea = null;
+        state.roadmapKey = null;
+        state.roadmapStages = [];
+        state.activeTaskId = null;
+        state.expandedThreadId = null;
+        state.roadmapExhausted = false;
+        state.roadmapAutoContinuePending = false;
+        setRoadmapNavVisible(false);
+        showScreen("map");
+      }
+
+      syncActiveMapIntoLibrary();
+      renderSidebarRoadmaps();
+      updateMapsNav();
+      if (state.ideas.length) buildOpportunityMap(state.ideas, { skipPersist: true });
+      schedulePersist();
+      trackEvent("roadmap_removed", {
+        idea_title: ideaTitle,
+        map_id: mapId || null,
+        was_active: viewingRemoved
+      });
+      return true;
+    }
+
+    function removeRoadmapFromSidebar(categoryId, itemId) {
+      const category = state.roadmapCategories.find((entry) => entry.id === categoryId);
+      const item = category?.items?.find((entry) => entry.id === itemId);
+      if (!item) return;
+      removeRoadmapForPath(item.ideaTitle, { ideaIndex: item.ideaIndex, mapId: item.mapId || category.mapId || state.activeMapId });
+    }
+
+    function removeCurrentRoadmap() {
+      if (!state.currentIdea?.title) return;
+      removeRoadmapForPath(state.currentIdea.title, { ideaIndex: getCurrentIdeaIndex() });
+    }
+
     function renderSidebarRoadmaps() {
       const group = $("#dashboard-roadmaps-group");
       const sub = $("#dashboard-roadmaps-sub");
@@ -13625,10 +13794,11 @@ What would make this more useful for someone in your situation?`;
           </div>
           <ul class="dashboard-roadmap-items">
             ${(category.items || []).map((item) => `
-              <li>
+              <li class="dashboard-roadmap-item-row">
                 <button type="button" class="dashboard-roadmap-item ${isActiveRoadmapSidebarItem(item) ? "is-active" : ""}" data-open-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}">
                   ${escapeHtml(item.ideaTitle)}
                 </button>
+                <button type="button" class="dashboard-roadmap-item-delete" data-delete-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}" aria-label="Remove roadmap for ${escapeHtml(item.ideaTitle)}" title="Remove roadmap">Remove</button>
               </li>
             `).join("")}
           </ul>
@@ -15870,6 +16040,7 @@ What would make this more useful for someone in your situation?`;
               </div>
               <div class="opp-card-actions">
                 <button type="button" class="opp-card-discuss-btn">Alter this path</button>
+                ${hasRoadmapProgress(idea.title) ? `<button type="button" class="opp-card-remove-roadmap-btn" data-remove-roadmap-index="${index}">Remove roadmap</button>` : ""}
               </div>
             </div>
           </div>`;
@@ -15877,6 +16048,10 @@ What would make this more useful for someone in your situation?`;
         card.querySelector(".opp-card-discuss-btn").addEventListener("click", (event) => {
           event.stopPropagation();
           startIdeaDiscussChat(index);
+        });
+        card.querySelector(".opp-card-remove-roadmap-btn")?.addEventListener("click", (event) => {
+          event.stopPropagation();
+          removeRoadmapForPath(idea.title, { ideaIndex: index });
         });
         const openZone = card.querySelector(".opp-card-open-zone");
         const openRoadmap = () => viewRoadmap(idea, index);
@@ -18619,6 +18794,14 @@ What would make this more useful for someone in your situation?`;
       $("#sidebar-roadmaps-btn")?.addEventListener("click", toggleSidebarRoadmapsPanel);
       $("#dashboard-add-category-btn")?.addEventListener("click", createManualRoadmapCategory);
       $("#dashboard-roadmap-categories")?.addEventListener("click", (event) => {
+        const deleteItemBtn = event.target.closest("[data-delete-roadmap-item]");
+        if (deleteItemBtn) {
+          event.preventDefault();
+          event.stopPropagation();
+          closeDashboardMobileNav();
+          removeRoadmapFromSidebar(deleteItemBtn.dataset.roadmapCategory, deleteItemBtn.dataset.deleteRoadmapItem);
+          return;
+        }
         const deleteBtn = event.target.closest("[data-delete-roadmap-category]");
         if (deleteBtn) {
           event.preventDefault();
@@ -18759,6 +18942,7 @@ What would make this more useful for someone in your situation?`;
       });
       $("#roadmap-more-resources-btn")?.addEventListener("click", scrollToActivePhase);
       $("#roadmap-change-path-btn")?.addEventListener("click", changeCurrentPath);
+      $("#roadmap-remove-btn")?.addEventListener("click", removeCurrentRoadmap);
       $("#roadmap-rebuild-remaining-btn")?.addEventListener("click", () => regenerateRemainingRoadmap());
       $("#continue-plan-btn")?.addEventListener("click", () => continueCompletedPlan());
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
