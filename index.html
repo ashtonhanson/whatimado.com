@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-intl-location -->
+<!-- whatimado build: 2026-06-29-location-playbook -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-intl-location">
+  <meta name="whatimado-build" content="2026-06-29-location-playbook">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10622,7 +10622,7 @@
             <h3 class="roadmap-side-card-title">Local resources for you</h3>
             <ul class="roadmap-local-list" id="roadmap-local-list"></ul>
             <div class="roadmap-location-add" id="roadmap-location-add">
-              <p class="roadmap-side-copy" id="roadmap-location-empty-msg">Add where you're based to unlock local workforce, SBDC, and training resources.</p>
+              <p class="roadmap-side-copy" id="roadmap-location-empty-msg">Add where you're based to unlock local employment, training, and support resources for your area.</p>
               <label class="roadmap-location-label" for="roadmap-location-input">City, state, country</label>
               <input class="roadmap-location-input" id="roadmap-location-input" type="text" placeholder="e.g. Austin, Texas, USA" autocomplete="address-level2">
               <button type="button" class="roadmap-location-save" id="roadmap-location-save">Save location</button>
@@ -11213,6 +11213,316 @@
           email: ""
         }
       ];
+    }
+
+    function buildReentryTaskSet(locRaw, parsed, region) {
+      const city = parsed.city || locRaw.split(",")[0]?.trim() || locRaw;
+      const country = parsed.country || locRaw;
+      if (region === "norway") {
+        const kommuneUrl = normalizeCityKey(city) === "tromso" ? "tromso.kommune.no" : `${normalizeCityKey(city) || "kommune"}.kommune.no`;
+        return {
+          housing: `Call NAV at 55 55 33 33 or visit nav.no — ask about housing support, emergency accommodation, and ID help in ${locRaw}. Also check ${city} kommune (${kommuneUrl}) — write down 3 program names and phone numbers`,
+          id: `Visit politiet.no and skatteetaten.no to list documents needed for valid ID in Norway (passport, national ID, D-number, or bank ID) — note cost and the nearest office serving ${locRaw}`,
+          workforce: `Call or visit NAV in ${locRaw} (55 55 33 33 or nav.no) for employment and reintegration help — book the earliest appointment and ask what ID to bring`,
+          tempWork: `Register with 2 bemanningsbyrå in ${locRaw} via nav.no/arbeid or Finn.no — ask which employers hire people with employment gaps`,
+          jobSearch: `Search Finn.no and nav.no/ledige-stillinger for jobs near ${locRaw}; save 5 listings with NOK pay and how to apply`,
+          employerList: `Ask your NAV contact from stage 1 for employers they work with — apply to at least 2 this week`,
+          benefits: `Check nav.no for dagpenger, økonomisk sosialhjelp, and other benefits in ${locRaw} — start an application if eligible`,
+          transport: `Map transport in ${locRaw} (Ruter/bus pass, bike, or carpool) for 2 weeks of interviews and shifts`,
+          compliance: `If you have reporting requirements with NAV or politiet, confirm deadlines and write a weekly schedule: job search, appointments, rest`,
+          training: `Ask NAV whether short training for "{title}" is funded in ${locRaw} — get program name, length, and start date`
+        };
+      }
+      if (region === "uk") {
+        return {
+          housing: `Call Citizens Advice on 0800 144 8848 or visit citizensadvice.org.uk — ask about housing and ID help in ${locRaw}; write down 3 services and phone numbers`,
+          id: `Check gov.uk for ID and benefits eligibility in ${locRaw} — list documents and the nearest Jobcentre Plus or council office`,
+          workforce: `Contact Jobcentre Plus in ${locRaw} via gov.uk/find-a-job for employment support — book an appointment`,
+          tempWork: `Register with 2 recruitment agencies in ${locRaw} for warehouse, hospitality, or general labour`,
+          jobSearch: `Search gov.uk/find-a-job and Indeed for roles near ${locRaw}; save 5 listings with pay and how to apply`,
+          employerList: `Ask your Jobcentre Plus work coach for employers to target — apply to at least 2 this week`,
+          benefits: `Check Universal Credit and housing benefit on gov.uk for ${locRaw}`,
+          transport: `Map transport costs in ${locRaw} for 2 weeks of interviews and shifts`,
+          compliance: `If you have probation or reporting requirements, confirm deadlines and write a weekly schedule`,
+          training: `Ask Jobcentre Plus whether funded training for "{title}" exists in ${locRaw}`
+        };
+      }
+      if (region === "canada") {
+        return {
+          housing: `Call 211 (where available) or visit canada.ca/en/employment-social-development — ask about housing and shelter help in ${locRaw}; write down 3 services`,
+          id: `Check canada.ca and your provincial service centre for ID documents needed in ${parsed.region || country} — note cost and nearest office`,
+          workforce: `Visit a Service Canada Centre or employment service in ${locRaw} — book an appointment for job placement help`,
+          tempWork: `Register with 2 staffing agencies in ${locRaw} via Job Bank Canada (jobbank.gc.ca)`,
+          jobSearch: `Search jobbank.gc.ca and Indeed for roles near ${locRaw}; save 5 listings with pay and how to apply`,
+          employerList: `Ask your Service Canada contact for employers to target — apply to at least 2 this week`,
+          benefits: `Check canada.ca for EI, provincial social assistance, and other benefits in ${parsed.region || country}`,
+          transport: `Map transit costs in ${locRaw} for 2 weeks of interviews and shifts`,
+          compliance: `If you have parole or reporting requirements, confirm deadlines and write a weekly schedule`,
+          training: `Ask Service Canada or provincial employment service about funded training for "{title}" in ${locRaw}`
+        };
+      }
+      if (region === "us") {
+        return {
+          housing: `Call United Way 211 (dial 211) or visit 211.org — ask for reentry housing, ID help, and emergency shelter in ${locRaw}; write down 3 program names and phone numbers`,
+          id: `Visit your county clerk or DMV website for ${locRaw} — list documents for state ID or driver's license (birth certificate, Social Security card, proof of address)`,
+          workforce: `Call or visit your local American Job Center / workforce board in ${locRaw} for reentry employment help — book the earliest appointment`,
+          tempWork: `Register with 2 temp or staffing agencies in ${locRaw} — ask which clients accept recent release backgrounds`,
+          jobSearch: `Search Indeed and Google Jobs for "second chance" or "background friendly" roles within 25 miles of ${locRaw}; save 5 listings`,
+          employerList: `Ask your workforce or reentry contact for employers they place people with — apply to at least 2 this week`,
+          benefits: `Check SNAP and Medicaid eligibility for ${locRaw} on your state benefits portal`,
+          transport: `Map transport (bus pass, rideshare, or bike) for 2 weeks — cost it and identify a backup plan`,
+          compliance: `If on parole or probation, confirm your next reporting date and write a weekly schedule`,
+          training: `Ask your workforce contact whether short training for "{title}" is funded in ${locRaw}`
+        };
+      }
+      return {
+        housing: `Contact official local social services or municipal housing office in ${locRaw}, ${country} — ask about shelter, housing support, and ID help; write down 3 program names and phone numbers`,
+        id: `Check official government ID requirements for ${country} — list documents needed and the nearest office serving ${locRaw}`,
+        workforce: `Contact the government employment service in ${country} for ${locRaw} — book an appointment for job placement and reintegration support`,
+        tempWork: `Register with 2 staffing or recruitment agencies in ${locRaw} that place people into entry-level work`,
+        jobSearch: `Search official job boards for ${country} and local listings near ${locRaw}; save 5 roles with pay and how to apply`,
+        employerList: `Ask your employment contact from stage 1 for employers to target — apply to at least 2 this week`,
+        benefits: `Check official government benefits portals for ${country} — see what you qualify for in ${locRaw}`,
+        transport: `Map how you will get to interviews and shifts in ${locRaw} — cost travel for 2 weeks`,
+        compliance: `If you have any court, probation, or reporting requirements in ${country}, confirm deadlines and write a weekly schedule`,
+        training: `Ask the local employment service whether funded training for "{title}" exists in ${locRaw}`
+      };
+    }
+
+    function getLocationRegion(parsed) {
+      const countryKey = normalizeCountryKey(parsed.country || "");
+      if (countryKey === "norway" || countryKey === "norge") return "norway";
+      if (["united kingdom", "uk", "england", "scotland", "wales", "northern ireland"].includes(countryKey)) return "uk";
+      if (countryKey === "canada") return "canada";
+      if (isUSLocation(parsed)) return "us";
+      return "international";
+    }
+
+    function getLocationPlaybook(parsed, locRaw) {
+      const region = getLocationRegion(parsed);
+      const city = parsed.city || locRaw.split(",")[0]?.trim() || locRaw;
+      const country = parsed.country || locRaw;
+      const reentry = buildReentryTaskSet(locRaw, parsed, region === "international" ? "international" : region);
+
+      if (region === "norway") {
+        return {
+          region,
+          countryLabel: "Norway",
+          jobSearchRoles: `Search Finn.no and nav.no/ledige-stillinger for 10 roles matching "{title}" near ${locRaw}; save links with NOK pay and requirements`,
+          employmentOffice: `Call or visit NAV in ${locRaw} (55 55 33 33 or nav.no) and ask what training, placement, or stipend programs fit "{title}"`,
+          staffingList: `List 3 bemanningsbyrå in ${locRaw} via Finn.no or NAV that place people into work like "{title}" — note how to apply`,
+          jobFair: `Attend one NAV jobbmøte, karrieremesse, or kompetansekartlegging session in ${locRaw} related to "{title}"`,
+          businessLicense: `Check Brønnøysundregistrene and Altinn for registration rules that apply to "{title}" in Norway — note fees (NOK) and deadlines`,
+          businessSupport: `Book free guidance via Innovasjon Norge, local næringsforening, or NAV in ${locRaw} about "{title}"`,
+          localMarketplace: `Post one offer for "{title}" on Finn.no or local Facebook groups in ${city} — note every question you get`,
+          trainingCompare: `Compare 3 routes for "{title}" — folkehøgskole, fagskole, NAV-funded course, or lærling in ${locRaw} — note NOK cost, length, and job placement help`,
+          socialServicesLine: `Ask NAV in ${locRaw} (nav.no or 55 55 33 33) whether funding exists for that training, plus transport or childcare support`,
+          employmentGuide: `Use NAV, Finn.no, and local kommune services — not US workforce boards or 211`,
+          businessGuide: `Use Altinn, Brønnøysundregistrene, Innovasjon Norge — not US SBDC/SCORE`,
+          learningGuide: `Use folkehøgskole, fagskole, NAV-funded courses, or lærling paths in Norway`,
+          reentry
+        };
+      }
+      if (region === "uk") {
+        return {
+          region,
+          countryLabel: "United Kingdom",
+          jobSearchRoles: `Search gov.uk/find-a-job and Indeed for 10 roles matching "{title}" near ${locRaw}; save links with pay and requirements`,
+          employmentOffice: `Contact Jobcentre Plus in ${locRaw} via gov.uk/find-a-job and ask what training or placement programs fit "{title}"`,
+          staffingList: `List 3 recruitment agencies in ${locRaw} that place people into work like "{title}" — note how to apply`,
+          jobFair: `Attend one job fair, careers event, or National Careers Service workshop in ${locRaw} related to "{title}"`,
+          businessLicense: `Check gov.uk for business registration and licensing rules for "{title}" in ${locRaw} — note fees and deadlines`,
+          businessSupport: `Book a session with National Careers Service, local council business support, or a Growth Hub about "{title}"`,
+          localMarketplace: `Post one offer for "{title}" on local Facebook groups, Gumtree, or community boards in ${city}`,
+          trainingCompare: `Compare 3 routes for "{title}" — college, apprenticeship, online cert, or funded course in ${locRaw} — note cost, length, and placement help`,
+          socialServicesLine: `Ask Jobcentre Plus or your local council in ${locRaw} whether funding exists for that training plus transport or childcare`,
+          employmentGuide: `Use Jobcentre Plus, gov.uk/find-a-job, National Careers Service — not US workforce boards`,
+          businessGuide: `Use gov.uk business guidance and local Growth Hubs — not US SBDC/SCORE`,
+          learningGuide: `Use colleges, apprenticeships, and gov.uk skills funding in the UK`,
+          reentry
+        };
+      }
+      if (region === "canada") {
+        return {
+          region,
+          countryLabel: "Canada",
+          jobSearchRoles: `Search jobbank.gc.ca and Indeed for 10 roles matching "{title}" near ${locRaw}; save links with CAD pay and requirements`,
+          employmentOffice: `Visit a Service Canada Centre or provincial employment office in ${locRaw} and ask what programs fit "{title}"`,
+          staffingList: `List 3 staffing agencies in ${locRaw} via Job Bank Canada that place people into work like "{title}"`,
+          jobFair: `Attend one job fair or employment workshop in ${locRaw} related to "{title}"`,
+          businessLicense: `Check canada.ca and provincial business-registration sites for rules applying to "{title}" in ${parsed.region || country}`,
+          businessSupport: `Book a session with a Small Business Centre, BDC, or provincial business advisor about "{title}"`,
+          localMarketplace: `Post one offer for "{title}" on Kijiji, Facebook Marketplace, or local community groups in ${city}`,
+          trainingCompare: `Compare 3 routes for "{title}" — college, apprenticeship, online cert, or provincial program in ${locRaw}`,
+          socialServicesLine: `Ask Service Canada or your provincial employment office in ${locRaw} about training funding and support`,
+          employmentGuide: `Use Job Bank Canada and Service Canada — not US American Job Centers`,
+          businessGuide: `Use BDC, provincial Small Business Centres — not US SBDC/SCORE`,
+          learningGuide: `Use colleges, apprenticeships, and provincial training funds in Canada`,
+          reentry
+        };
+      }
+      if (region === "us") {
+        return {
+          region,
+          countryLabel: "United States",
+          jobSearchRoles: `Search Indeed + Google Jobs for 10 roles matching "{title}" within 25 miles of ${locRaw}; save links with pay and requirements`,
+          employmentOffice: `Call or visit your local American Job Center / workforce board in ${locRaw} and ask what programs fit "{title}"`,
+          staffingList: `List 3 staffing agencies, temp firms, or union halls in ${locRaw} that place people into work like "{title}"`,
+          jobFair: `Attend one local job fair, hiring event, or workforce workshop in ${locRaw} related to "{title}"`,
+          businessLicense: `Check ${locRaw} licensing, permit, or home-business rules for "{title}" — note fees and deadlines`,
+          businessSupport: `Search ${locRaw} for SBDC, SCORE, or small-business grant office hours and book one session about "{title}"`,
+          localMarketplace: `Post one offer for "{title}" in a local Facebook group or Nextdoor thread in ${locRaw}`,
+          trainingCompare: `Compare 3 training routes for "{title}" — community college, nonprofit, online cert, or apprenticeship in ${locRaw}`,
+          socialServicesLine: `Ask your local workforce board or 211 in ${locRaw} whether tuition, childcare, or transport assistance exists for that training`,
+          employmentGuide: `Use American Job Centers, workforce boards, Indeed, local staffing agencies`,
+          businessGuide: `Use SBDC, SCORE, local licensing offices, state business portals`,
+          learningGuide: `Use community colleges, apprenticeships, workforce-funded training`,
+          reentry
+        };
+      }
+      return {
+        region: "international",
+        countryLabel: country,
+        jobSearchRoles: `Search the main job boards and official employment website for ${country} for 10 roles matching "{title}" near ${locRaw}; save pay and requirements`,
+        employmentOffice: `Contact the official government employment service in ${country} for ${locRaw} and ask what training or placement programs fit "{title}"`,
+        staffingList: `List 3 staffing or recruitment agencies in ${locRaw} that place people into work like "{title}" — note how to apply`,
+        jobFair: `Attend one job fair, hiring event, or career workshop in ${locRaw} related to "{title}"`,
+        businessLicense: `Check official government business-registration sites for ${country} for rules applying to "{title}" in ${locRaw}`,
+        businessSupport: `Find a local small-business advice centre or chamber of commerce in ${locRaw} and book one session about "{title}"`,
+        localMarketplace: `Post one offer for "{title}" on local online marketplaces or community groups in ${city}`,
+        trainingCompare: `Compare 3 training routes for "{title}" — public college, nonprofit, online cert, or apprenticeship in ${locRaw}`,
+        socialServicesLine: `Ask the local government employment or social services office in ${locRaw} about training funding and support`,
+        employmentGuide: `Use official ${country} employment services and local job boards — NOT US-specific agencies (211, American Job Center, SNAP)`,
+        businessGuide: `Use official ${country} business-registration and small-business support — NOT US SBDC/SCORE`,
+        learningGuide: `Use local colleges, apprenticeships, and government-funded training in ${country}`,
+        reentry
+      };
+    }
+
+    function getReentryLocalizedTasks(locRaw, parsed = parseLocationAnswer(locRaw)) {
+      return getLocationPlaybook(parsed, locRaw).reentry;
+    }
+
+    function getSocialServicesLine(parsed, locRaw) {
+      return getLocationPlaybook(parsed, locRaw).socialServicesLine;
+    }
+
+    function getLocationCitizenRulesBlock(parsed = parseLocationAnswer(getUserLocation() || ""), locRaw = formatUserLocation(parsed)) {
+      if (!locRaw) return "";
+      const pb = getLocationPlaybook(parsed, locRaw);
+      return (
+        `\nLOCATION-SPECIFIC RULES for ${locRaw} (${pb.countryLabel}):\n` +
+        `- Every task must match what a resident of ${pb.countryLabel} would ACTUALLY do — same ID documents, government agencies, job boards, benefits systems, business registration, and local customs.\n` +
+        `- Employment: ${pb.employmentGuide}.\n` +
+        `- Business/self-employment: ${pb.businessGuide}.\n` +
+        `- Training: ${pb.learningGuide}.\n` +
+        `- NEVER use US-only steps (211.org, United Way 211, SNAP, Medicaid, DMV, Social Security card, American Job Center, SBDC, SCORE, county clerk, "25 miles") unless the user is in the United States.\n` +
+        `- Use local currency, local distance units (km outside the US), and official country websites (.no, .uk, .ca, .gov, etc.).\n` +
+        `- Name real organizations in ${locRaw} with published URLs and phone numbers.\n`
+      );
+    }
+
+    function getActionableTaskRules() {
+      return ACTIONABLE_TASK_RULES;
+    }
+
+    function applyPlaybookTokens(text, idea, parsed, locRaw) {
+      const title = idea?.title || "this path";
+      const pb = getLocationPlaybook(parsed, locRaw);
+      const fill = (value) => String(value || "").replaceAll("{title}", title);
+      return String(text || "")
+        .replaceAll("{title}", title)
+        .replaceAll("{locRaw}", locRaw)
+        .replaceAll("{type}", idea?.type || "path")
+        .replaceAll("{social_services_line}", pb.socialServicesLine)
+        .replaceAll("{emp_job_search}", fill(pb.jobSearchRoles))
+        .replaceAll("{emp_workforce}", fill(pb.employmentOffice))
+        .replaceAll("{emp_staffing}", fill(pb.staffingList))
+        .replaceAll("{emp_job_fair}", fill(pb.jobFair))
+        .replaceAll("{biz_license}", fill(pb.businessLicense))
+        .replaceAll("{biz_support}", fill(pb.businessSupport))
+        .replaceAll("{biz_marketplace}", fill(pb.localMarketplace))
+        .replaceAll("{learn_training_compare}", fill(pb.trainingCompare))
+        .replaceAll("{reentry_housing}", pb.reentry.housing)
+        .replaceAll("{reentry_id}", pb.reentry.id)
+        .replaceAll("{reentry_workforce}", pb.reentry.workforce)
+        .replaceAll("{reentry_temp_work}", pb.reentry.tempWork)
+        .replaceAll("{reentry_job_search}", pb.reentry.jobSearch)
+        .replaceAll("{reentry_employer_list}", pb.reentry.employerList)
+        .replaceAll("{reentry_benefits}", pb.reentry.benefits)
+        .replaceAll("{reentry_transport}", pb.reentry.transport)
+        .replaceAll("{reentry_compliance}", pb.reentry.compliance)
+        .replaceAll("{reentry_training}", fill(pb.reentry.training));
+    }
+
+    function getReentryStabilityGuidance(parsed, loc) {
+      const pb = getLocationPlaybook(parsed, formatUserLocation(parsed));
+      if (pb.region === "us") {
+        return `valid ID/documents (birth certificate, Social Security card, state ID), safe housing or 211/shelter intake, and contacting a local reentry or workforce program by name`;
+      }
+      if (pb.region === "norway") {
+        return `valid ID (passport, bank ID, or D-number), safe housing via NAV or ${parsed.city || "local"} kommune, and contacting NAV for employment/reintegration help by name`;
+      }
+      return `valid ID/documents per ${pb.countryLabel} rules, safe housing via official local social services, and contacting the government employment service by name — NOT US 211 or American Job Center`;
+    }
+
+    function localizeTaskTextForLocation(text, parsed = parseLocationAnswer(getUserLocation() || ""), locRaw = formatUserLocation(parsed)) {
+      if (!text || isUSLocation(parsed)) return String(text || "");
+      const pb = getLocationPlaybook(parsed, locRaw);
+      const title = state.currentIdea?.title || "this path";
+      const fill = (value) => String(value || "").replaceAll("{title}", title);
+      let out = String(text);
+
+      const lineReplacements = [
+        [/Search Indeed \+ Google Jobs for 10 roles[^\n]+/gi, fill(pb.jobSearchRoles)],
+        [/Search Indeed and Google Jobs for[^\n]+/gi, fill(pb.reentry.jobSearch)],
+        [/Call or visit your local American Job Center \/ workforce board[^\n]+/gi, fill(pb.employmentOffice)],
+        [/Visit your county clerk or DMV website[^\n]+/gi, fill(pb.reentry.id)],
+        [/Check SNAP and Medicaid eligibility[^\n]+/gi, fill(pb.reentry.benefits)],
+        [/Call United Way 211 \(dial 211\) or visit 211\.org[^\n]+/gi, pb.reentry.housing],
+        [/Register with 2 temp or staffing agencies[^\n]+/gi, fill(pb.reentry.tempWork)],
+        [/Compare 3 training routes for[^\n]+— note cost, length, and job placement help/gi, fill(pb.trainingCompare)],
+        [/Check \{locRaw\} licensing, permit, or home-business rules[^\n]+/gi, fill(pb.businessLicense)],
+        [/Search \{locRaw\} for SBDC, SCORE[^\n]+/gi, fill(pb.businessSupport)],
+        [/Post one plain-language offer[^\n]+Facebook group or Nextdoor[^\n]+/gi, fill(pb.localMarketplace)],
+        [/Ask your local workforce board or 211 in[^\n]+/gi, pb.socialServicesLine],
+        [/within 25 miles of/gi, "within commuting distance of"],
+        [/within 15 miles of/gi, "within commuting distance of"]
+      ];
+
+      for (const [pattern, replacement] of lineReplacements) {
+        out = out.replace(pattern, replacement);
+      }
+
+      const wordReplacements = [
+        [/\bUnited Way 211\b|\b211\.org\b|\(dial 211\)/gi, pb.region === "norway" ? "NAV (nav.no)" : "local social services"],
+        [/\bAmerican Job Center\b/gi, pb.region === "norway" ? "NAV" : pb.region === "uk" ? "Jobcentre Plus" : pb.region === "canada" ? "Service Canada" : "local employment office"],
+        [/\bSNAP and Medicaid\b/gi, pb.region === "norway" ? "NAV benefits (nav.no)" : "local benefits programs"],
+        [/\bDMV\b/gi, pb.region === "norway" ? "Politiet / Skatteetaten" : "local ID office"],
+        [/\bSocial Security card\b/gi, pb.region === "norway" ? "Norwegian ID or D-number" : "government ID"],
+        [/\bSBDC\b|\bSCORE\b/gi, pb.region === "norway" ? "Innovasjon Norge" : "local business support"],
+        [/\bworkforce board\b/gi, pb.region === "norway" ? "NAV" : "employment service"],
+        [/\bcommunity college\b/gi, pb.region === "norway" ? "folkehøgskole or fagskole" : "local college"]
+      ];
+      for (const [pattern, replacement] of wordReplacements) {
+        out = out.replace(pattern, replacement);
+      }
+      return out;
+    }
+
+    function localizeTaskForUserLocation(task) {
+      if (!task || isUSLocation()) return task;
+      const parsed = parseLocationAnswer(getUserLocation() || "");
+      const locRaw = formatUserLocation(parsed);
+      return {
+        ...task,
+        text: localizeTaskTextForLocation(task.text, parsed, locRaw),
+        steps: (task.steps || []).map((step) => localizeTaskTextForLocation(step, parsed, locRaw)),
+        script: localizeTaskTextForLocation(task.script, parsed, locRaw),
+        local: localizeTaskTextForLocation(task.local, parsed, locRaw),
+        why: localizeTaskTextForLocation(task.why, parsed, locRaw),
+        outcome: localizeTaskTextForLocation(task.outcome, parsed, locRaw)
+      };
     }
 
     function emptyUserLocation() {
@@ -11939,8 +12249,9 @@ What would make this more useful for someone in your situation?`;
     }
 
     function normalizeRoadmapTask(task, fallback = {}) {
+      let normalized;
       if (typeof task === "string") {
-        return {
+        normalized = {
           text: task.trim(),
           steps: normalizeTaskSteps(fallback.steps),
           why: fallback.why || "",
@@ -11952,9 +12263,8 @@ What would make this more useful for someone in your situation?`;
           contacts: normalizeTaskContacts(fallback.contacts),
           script: fallback.script || ""
         };
-      }
-      if (task && typeof task === "object") {
-        return {
+      } else if (task && typeof task === "object") {
+        normalized = {
           text: getTaskText(task),
           steps: normalizeTaskSteps(task.steps ?? task.substeps ?? task.checklist ?? fallback.steps),
           why: String(task.why || fallback.why || "").trim(),
@@ -11966,19 +12276,21 @@ What would make this more useful for someone in your situation?`;
           contacts: normalizeTaskContacts(task.contacts ?? task.contact ?? fallback.contacts),
           script: String(task.script || task.outreach || task.template || fallback.script || "").trim()
         };
+      } else {
+        normalized = {
+          text: String(task ?? "").trim(),
+          steps: [],
+          why: "",
+          outcome: "",
+          duration: "",
+          cost: "",
+          local: "",
+          links: [],
+          contacts: [],
+          script: ""
+        };
       }
-      return {
-        text: String(task ?? "").trim(),
-        steps: [],
-        why: "",
-        outcome: "",
-        duration: "",
-        cost: "",
-        local: "",
-        links: [],
-        contacts: [],
-        script: ""
-      };
+      return localizeTaskForUserLocation(normalized);
     }
 
     function normalizeTaskContact(entry) {
@@ -12194,14 +12506,17 @@ What would make this more useful for someone in your situation?`;
     function getReentryPromptBlock(idea = state.currentIdea) {
       if (!isReentrySituation(idea)) return "";
       const loc = getUserLocation() || "their city";
+      const parsed = parseLocationAnswer(loc);
       const pathTitle = idea?.title || "their chosen path";
+      const stability = getReentryStabilityGuidance(parsed, loc);
       return (
         `\nREENTRY / RECENTLY RELEASED — NON-NEGOTIABLE ROADMAP ORDER:\n` +
         `- This person is rebuilding after incarceration or similar disruption. Do NOT start with training, certifications, portfolios, or "compare 3 programs."\n` +
-        `- Stage 1 MUST be stability in ${loc}: valid ID/documents (birth certificate, Social Security card, state ID), safe housing or 211/shelter intake, and contacting a local reentry or workforce program by name.\n` +
+        `- Stage 1 MUST be stability in ${loc}: ${stability}.\n` +
         `- Stage 2 MUST be fast, background-check-aware income: temp/staffing agencies, day-labor boards, reentry-friendly employers, or workforce placement — not long courses.\n` +
-        `- Stage 3: benefits eligibility (SNAP/Medicaid if applicable), transportation, parole/probation compliance, and weekly routine.\n` +
+        `- Stage 3: benefits eligibility (use country-appropriate programs — NOT US SNAP/Medicaid/211 outside the US), transportation, parole/probation compliance, and weekly routine.\n` +
         `- Stage 4 ONLY: longer steps toward "${pathTitle}" (training, certification, or self-employment) — and only after stages 1–3 are underway.\n` +
+        `- NEVER reference 211.org, United Way 211, American Job Center, DMV, or SNAP unless the user is in the United States.\n` +
         `- Every stage must reference constraints they stated (money, timeline, background checks, housing, parole).\n`
       );
     }
@@ -12219,11 +12534,15 @@ What would make this more useful for someone in your situation?`;
 
     function getReentryRoadmapCorrectionBlock(idea = state.currentIdea) {
       const loc = getUserLocation() || "their city";
+      const parsed = parseLocationAnswer(loc);
       const pathTitle = idea?.title || "their chosen path";
+      const housingLine = isUSLocation(parsed)
+        ? "ID/documents + housing/211 + local reentry workforce intake"
+        : "ID/documents + housing via NAV/kommune or local social services + government employment intake";
       return (
         `\nREENTRY CORRECTION — your last draft started with training, business validation, or long-term skills BEFORE stability basics.\n` +
         `Regenerate all 4 stages for someone recently released. MANDATORY order:\n` +
-        `1) ID/documents + housing/211 + local reentry workforce intake (named orgs in ${loc})\n` +
+        `1) ${housingLine} (named orgs in ${loc}) — do NOT use 211.org outside the United States\n` +
         `2) Fast background-check-aware income (temp/staffing/reentry employers)\n` +
         `3) Benefits, transportation, parole/probation compliance\n` +
         `4) ONLY THEN steps toward "${pathTitle}" — training or business growth\n` +
@@ -12538,7 +12857,7 @@ What would make this more useful for someone in your situation?`;
         `${idea.tagline ? `Goal: ${idea.tagline}\n` : ""}` +
         `Location: ${loc}\n` +
         `Focus: ${focus}\n\n` +
-        `${ACTIONABLE_TASK_RULES}\n` +
+        `${getActionableTaskRules()}\n` +
         `At least 5 tasks must include real ${loc} organizations in contacts[] with official urls.\n` +
         ROADMAP_JSON_INSTRUCTION
       );
@@ -12564,12 +12883,15 @@ What would make this more useful for someone in your situation?`;
 
     function getRoadmapArchetypeGuidance(idea) {
       const archetype = getPathArchetype(idea);
+      const parsed = parseLocationAnswer(getUserLocation() || "");
+      const locRaw = formatUserLocation(parsed);
+      const pb = getLocationPlaybook(parsed, locRaw);
       const guides = {
-        reentry: "Reentry / recently released — Stage 1–3 MUST be stability before career building: ID and documents, housing or 211 intake, reentry workforce program, background-check-friendly temp income, benefits, parole compliance. Stage 4 may connect to the chosen path title. NEVER open with training, certifications, or business validation.",
-        employment: "Employment path — certifications, tailored resume, networking, interviews, workforce boards, apprenticeships. Do NOT use generic startup validation language.",
-        business: "Local service or small business path — licensing, pricing, first customers, local marketing, SBDC/SCORE mentors. Do NOT use job-search tasks.",
-        learning: "Training or credential path — program enrollment, financial aid, portfolio proof, practicum hours, trade school applications.",
-        creative: "Creative income path — samples, platforms, audience building, first paid gig, local arts markets."
+        reentry: `Reentry / recently released in ${pb.countryLabel} — Stage 1–3 MUST be stability before career building: ID and documents per local rules, housing via ${pb.region === "norway" ? "NAV/kommune" : pb.region === "us" ? "211/shelter (US only)" : "official social services"}, ${pb.employmentGuide}, background-check-aware temp income, local benefits, compliance. Stage 4 may connect to the chosen path title. NEVER open with training first.`,
+        employment: `Employment path in ${pb.countryLabel} — ${pb.employmentGuide}. Tailored CV/resume, networking, interviews, local apprenticeships. Do NOT use generic US startup language or wrong-country agencies.`,
+        business: `Local service or small business in ${pb.countryLabel} — ${pb.businessGuide}. Licensing, pricing, first customers, local marketing. Do NOT use US SBDC/SCORE outside the US.`,
+        learning: `Training path in ${pb.countryLabel} — ${pb.learningGuide}. Program enrollment, local funding, portfolio proof. Do NOT assume US community college or 211.`,
+        creative: `Creative income in ${pb.countryLabel} — samples, local platforms, audience building, first paid gig, local arts markets or Finn.no/Gumtree-style channels as appropriate.`
       };
       return guides[archetype] || guides.employment;
     }
@@ -12937,9 +13259,9 @@ What would make this more useful for someone in your situation?`;
             label: "Scan {locRaw} hiring lanes",
             desc: "Find realistic employers and public workforce help for \"{title}\" near you.",
             tasks: [
-              "Search Indeed + Google Jobs for 10 roles that match \"{title}\" within 25 miles of {locRaw}; save links in a spreadsheet with pay range and requirements",
-              "Call or visit your local American Job Center / workforce board in {locRaw} and ask what training, placement, or stipend programs fit \"{title}\"",
-              "List 3 staffing agencies, temp firms, or union halls in {locRaw} that place people into work like \"{title}\" and note how to apply"
+              "{emp_job_search}",
+              "{emp_workforce}",
+              "{emp_staffing}"
             ]
           },
           {
@@ -12956,7 +13278,7 @@ What would make this more useful for someone in your situation?`;
             desc: "Turn applications and conversations into momentum for \"{title}\".",
             tasks: [
               "Apply to 5 targeted roles or programs for \"{title}\" this week and log date, contact, and follow-up date",
-              "Attend one local job fair, hiring event, or workforce workshop in {locRaw} related to \"{title}\"",
+              "{emp_job_fair}",
               "Follow up on every application from the past 7 days with a short, specific note referencing \"{title}\""
             ]
           },
@@ -12976,8 +13298,8 @@ What would make this more useful for someone in your situation?`;
             desc: "Test whether anyone near {locRaw} will pay for \"{title}\" before you invest more.",
             tasks: [
               "Interview 3 people in {locRaw} who would buy or refer \"{title}\" — ask what they already pay for and what's missing",
-              "Post one plain-language offer for \"{title}\" in a local Facebook group or Nextdoor thread in {locRaw} and note every question you get",
-              "Check {locRaw} licensing, permit, or home-business rules that apply to \"{title}\" and write down any fees or deadlines"
+              "{biz_marketplace}",
+              "{biz_license}"
             ]
           },
           {
@@ -13003,7 +13325,7 @@ What would make this more useful for someone in your situation?`;
             desc: "Decide how \"{title}\" earns next month.",
             tasks: [
               "Identify the channel that brought the best customers (referrals, social, local ads, partnerships) and double down for 14 days",
-              "Search {locRaw} for SBDC, SCORE, or small-business grant office hours and book one session about \"{title}\"",
+              "{biz_support}",
               "Set a 30-day revenue or booking target for \"{title}\" and the single habit that protects your time"
             ]
           }
@@ -13013,8 +13335,8 @@ What would make this more useful for someone in your situation?`;
             label: "Pick the credential",
             desc: "Choose the fastest credible skill path for \"{title}\" in {locRaw}.",
             tasks: [
-              "Compare 3 training routes for \"{title}\" — community college, nonprofit program, online cert, or apprenticeship in {locRaw} — note cost, length, and job placement help",
-              "Ask your local workforce board or 211 in {locRaw} whether any tuition, childcare, or transport assistance exists for that training",
+              "{learn_training_compare}",
+              "{social_services_line}",
               "Pick one program or self-study plan for \"{title}\" and put the enrollment deadline on your calendar"
             ]
           },
@@ -13089,34 +13411,34 @@ What would make this more useful for someone in your situation?`;
             label: "Secure ID and shelter basics in {locRaw}",
             desc: "Get documents and a safe place to stay before anything long-term — this unlocks jobs, benefits, and programs.",
             tasks: [
-              "Call United Way 211 (dial 211) or visit 211.org and ask for reentry housing, ID help, and emergency shelter options in {locRaw} — write down 3 program names and phone numbers",
-              "Visit your county clerk or DMV website for {locRaw} and list every document you need for a state ID or driver's license (birth certificate, Social Security card, proof of address) — note cost and where to apply",
-              "Call or walk in to your local American Job Center / workforce board in {locRaw} and say you were recently released and need reentry employment help — book the earliest appointment and ask what ID they require"
+              "{reentry_housing}",
+              "{reentry_id}",
+              "{reentry_workforce}"
             ]
           },
           {
             label: "First paycheck-friendly work",
             desc: "Line up income that fits background checks and your timeline — temp and reentry programs first.",
             tasks: [
-              "Register with 2 temp or staffing agencies in {locRaw} that place warehouse, hospitality, or general labor — ask directly which clients accept recent release backgrounds",
-              "Search Indeed and Google Jobs for \"second chance employer\" or \"background friendly\" roles within 15 miles of {locRaw}; save 5 listings with pay rate and how to apply",
-              "Ask your workforce or reentry contact from stage 1 for a list of employers they place people with — apply to at least 2 this week"
+              "{reentry_temp_work}",
+              "{reentry_job_search}",
+              "{reentry_employer_list}"
             ]
           },
           {
             label: "Stabilize the week",
             desc: "Benefits, transportation, and compliance so work does not fall apart.",
             tasks: [
-              "Check SNAP and Medicaid eligibility for {locRaw} on your state benefits portal — start an application if you qualify and note any documents you still need from stage 1",
-              "Map how you will get to interviews and shifts (bus pass, ride share budget, or bike) — cost it for 2 weeks and identify one backup plan",
-              "If you are on parole or probation, confirm your next reporting date and write a one-page weekly schedule: work search hours, reporting, and one rest block"
+              "{reentry_benefits}",
+              "{reentry_transport}",
+              "{reentry_compliance}"
             ]
           },
           {
             label: "Grow toward {title}",
             desc: "Once basics are moving, take the first step on your longer path — not before.",
             tasks: [
-              "With ID and at least one income lead in progress, ask your workforce contact whether short training for \"{title}\" is funded — get one program name, length, and start date in {locRaw}",
+              "{reentry_training}",
               "Complete one small proof task for \"{title}\" this week (one job application, one paid gig, or one info session) — log what you finished",
               "Review stages 1–3: note what is still missing (housing, ID, income) and set the single next action for Monday"
             ]
@@ -13127,12 +13449,8 @@ What would make this more useful for someone in your situation?`;
 
     function personalizeFallbackStages(stages, idea) {
       const locRaw = getUserLocation() || "your area";
-      const title = idea?.title || "this path";
-      const replaceTokens = (text) =>
-        String(text || "")
-          .replaceAll("{title}", title)
-          .replaceAll("{locRaw}", locRaw)
-          .replaceAll("{type}", idea?.type || "path");
+      const parsed = parseLocationAnswer(locRaw);
+      const replaceTokens = (text) => applyPlaybookTokens(text, idea, parsed, locRaw);
 
       return stages.map((stage) => ({
         label: replaceTokens(stage.label),
@@ -13220,7 +13538,7 @@ What would make this more useful for someone in your situation?`;
         dedupeNote +
         refreshBlock +
         getLocationContextBlock() +
-        `\n${ACTIONABLE_TASK_RULES}\n` +
+        `\n${getActionableTaskRules()}\n` +
         `\nFocus this roadmap ONLY on: ${pathFocus}.\n` +
         `This path must feel different from the other paths on the map — use stage labels and tasks that match "${idea.title}" specifically.\n` +
         `Do NOT reuse stage names or tasks from other paths (for example, do not copy donation-setup tasks into a launch or partnership path).\n\n` +
@@ -13298,7 +13616,7 @@ What would make this more useful for someone in your situation?`;
         getLocationContextBlock() +
         getReentryPromptBlock(idea) +
         `\nPath type guidance: ${getRoadmapArchetypeGuidance(idea)}\n` +
-        `\n${ACTIONABLE_TASK_RULES}\n` +
+        `\n${getActionableTaskRules()}\n` +
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
         `NEVER use generic stage titles like "Launch the first test", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path.\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
@@ -16589,9 +16907,7 @@ What would make this more useful for someone in your situation?`;
       if (!isUSLocation(parsed)) {
         return (
           `\nUser location: ${loc}\n` +
-          `CRITICAL: Tasks must use real organizations in ${parsed.country || loc} — official government employment services, municipal resources, public libraries, vocational colleges, and nonprofits serving ${parsed.city || loc}.\n` +
-          `Use official country websites (.no, .uk, .ca, etc.). Do NOT use US-only resources (211.org, American Job Center, SBDC, SNAP/Medicaid) unless the user is in the United States.\n` +
-          `For Norway: name NAV office, kommune services, folkeuniversitetet, fylkeskommune programs, and UiT or local college career services when relevant.\n` +
+          getLocationCitizenRulesBlock(parsed, loc) +
           `For each relevant task include in JSON:\n` +
           `- contacts[] with org name + official url (+ phone/email only if published)\n` +
           `- links[] with the exact page they need (apply, schedule, directory, licensing portal)\n` +
@@ -17002,6 +17318,16 @@ What would make this more useful for someone in your situation?`;
       if (input) input.focus();
     }
 
+    function getLocationResourceHint() {
+      const parsed = parseLocationAnswer(getUserLocation() || "");
+      const pb = getLocationPlaybook(parsed, formatUserLocation(parsed));
+      if (pb.region === "norway") return "NAV office, folkehøgskole/fagskole, bemanningsbyrå, kommune service, or lærling apprenticeship";
+      if (pb.region === "uk") return "Jobcentre Plus, college, apprenticeship, or local council service";
+      if (pb.region === "canada") return "Service Canada, Job Bank, college, apprenticeship, or provincial employment program";
+      if (pb.region === "us") return "workforce board, community college program, apprenticeship, nonprofit career center";
+      return `official employment service, local college, apprenticeship, or nonprofit in ${pb.countryLabel}`;
+    }
+
     function buildIdeasPrompt(summary, count, excludeTitles = []) {
       const excludeBlock = excludeTitles.length
         ? `\n\nDO NOT repeat or closely resemble these ideas already shown:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n\nGenerate exactly ${count} completely NEW and different ideas that are SPECIFIC to this person`
@@ -17015,7 +17341,7 @@ What would make this more useful for someone in your situation?`;
         excludeBlock +
         " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\n" +
         "Each idea must use a DIFFERENT primary strategy (for example: direct employment, self-employment, short training/certification, gig work, creative portfolio, or community-based route). Do NOT copy-paste structure between ideas — titles, taglines, first steps, and income models should feel distinct.\n" +
-        "When location is known, at least one idea should name a local resource type they could search in their area (workforce board, community college program, apprenticeship, nonprofit career center, etc.).\n\n" +
+        `When location is known, at least one idea should name a local resource type they could use in their area (${getLocationResourceHint()}).\n\n` +
         "Each idea should be something they could realistically start given their stated resources. Include a mix when appropriate: zero-cost options, skill-building paths, gig/local work, or unconventional paths — but only if they fit THIS person.\n\n" +
         "Pricing realism: When suggesting monetization, use bootstrapped, believable 2026 consumer pricing. ALWAYS lead with free / pay-what-you-can / donations. For any paid INDIVIDUAL or personal tier, keep it very low — $0 to $5/mo, or a one-time tip of a few dollars; never suggest $9+/mo for an unproven individual product. Do NOT invent multi-tier SaaS pricing ladders. Avoid inflated B2B SaaS pricing ($99+/mo, $300–500/mo white-label) entirely unless the user EXPLICITLY says they target enterprise buyers. Every set of ideas must include at least one fully $0 path. Keep income projections modest and realistic.\n\n" +
         "BAD: \"Freelance web developer\" (too generic)\nGOOD: \"Weekend furniture refinishing side gig — you mentioned loving hands-on work and having a garage; start by fixing one thrift-store piece and listing it on Facebook Marketplace\"\n\n" +
@@ -17631,7 +17957,7 @@ What would make this more useful for someone in your situation?`;
         response = await callAdvisor(
           `${buildRoadmapPrompt(idea, context, { founderMode, dedupe: true })}\n\n` +
           `PREVIOUS ROADMAP WAS TOO GENERIC FOR ${getUserLocation()}.\n` +
-          `${ACTIONABLE_TASK_RULES}\n` +
+          `${getActionableTaskRules()}\n` +
           "Regenerate all 4 stages. Every task MUST include contacts[], links[], and script with real named organizations, official URLs, and copy-paste outreach for this location.\n",
           getRoadmapAdvisorTokenLimit(founderMode)
         );
@@ -17648,7 +17974,7 @@ What would make this more useful for someone in your situation?`;
         response = await callAdvisor(
           `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n` +
           `${getReentryRoadmapCorrectionBlock(idea)}\n` +
-          `${ACTIONABLE_TASK_RULES}\n`,
+          `${getActionableTaskRules()}\n`,
           getRoadmapAdvisorTokenLimit(founderMode)
         );
         const corrected = parseRoadmapResponse(response, idea);
