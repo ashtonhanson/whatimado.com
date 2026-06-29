@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-task-local-match -->
+<!-- whatimado build: 2026-06-28-change-path-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-task-local-match">
+  <meta name="whatimado-build" content="2026-06-28-change-path-fix">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10077,13 +10077,94 @@
     }
 
     function capAdvisorTokens(requested) {
-      return Math.min(4096, Math.max(700, requested || 700));
+      return Math.min(8192, Math.max(256, requested || 700));
+    }
+
+    function truncateAdvisorPrompt(prompt, maxChars = 14000) {
+      const text = String(prompt || "");
+      if (text.length <= maxChars) return text;
+      return `${text.slice(0, maxChars)}\n\n[Context trimmed to fit.]`;
+    }
+
+    function taskNeedsTaskToolResources(taskText) {
+      const text = String(taskText || "").toLowerCase();
+      if (/\b(stripe|checkout|\$1 test|one-time tier|donation modal|donate button)\b/.test(text)) return true;
+      if (/\b(hosting|api cost|domain cost|monthly cost|estimate monthly|weekly sessions|\$5 helps cover)\b/.test(text)) return true;
+      if (/\b(fast forward|echoing green|tech-for-good grant|community foundation grant)\b/.test(text)) return true;
+      return false;
+    }
+
+    function getTaskToolResources(taskText) {
+      const text = String(taskText || "").toLowerCase();
+      const links = [];
+      const contacts = [];
+      let local = "";
+
+      if (/\b(stripe|checkout|\$1 test|one-time tier)\b/.test(text)) {
+        links.push("https://dashboard.stripe.com/test/payments");
+        local = "Stripe test mode";
+      }
+      if (/\b(hosting|api cost|domain cost|monthly cost|estimate monthly|weekly sessions|\$5 helps cover)\b/.test(text)) {
+        links.push("https://vercel.com/pricing", "https://www.anthropic.com/pricing");
+        local = local ? `${local} · Cost calculators` : "Hosting + AI pricing";
+      }
+      if (/\b(fast forward)\b/.test(text)) {
+        links.push("https://www.fastforward.org/");
+        contacts.push({
+          name: "Applications",
+          org: "Fast Forward",
+          phone: "",
+          email: "",
+          url: "https://www.fastforward.org/"
+        });
+      }
+      if (/\b(echoing green)\b/.test(text)) {
+        links.push("https://echoinggreen.org/");
+        contacts.push({
+          name: "Applications",
+          org: "Echoing Green",
+          phone: "",
+          email: "",
+          url: "https://echoinggreen.org/"
+        });
+      }
+      if (/\b(community foundation)\b/.test(text) && getUserLocation()) {
+        const city = getUserLocation().split(",")[0]?.trim() || "your city";
+        links.push("https://www.cof.org/foundation-locator");
+        local = local ? `${local} · ${city} community foundations` : `${city} community foundations`;
+      }
+
+      return {
+        links: [...new Set(links)],
+        contacts,
+        local,
+        script: ""
+      };
+    }
+
+    function isMisplacedPackResources(task, stage, stageIndex, idea = state.currentIdea) {
+      const normalized = normalizeRoadmapTask(task);
+      if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return false;
+      if (taskNeedsTaskToolResources(normalized.text)) return false;
+      if (normalized.contacts.some((contact) => isKnownPackOrg(contact.org))) return true;
+      if (normalized.script && /whatimado\.com, a free ai possibility map/i.test(normalized.script)) return true;
+      if (normalized.local && getKnownLocalResources().some((entry) => normalized.local.includes(entry.org))) return true;
+      return false;
+    }
+
+    function shouldShowTaskResources(task, stage, stageIndex, idea = state.currentIdea) {
+      const normalized = normalizeRoadmapTask(task);
+      if (!normalized.contacts.length && !normalized.links.length && !normalized.script) return false;
+      if (isMisplacedPackResources(normalized, stage, stageIndex, idea)) return false;
+      if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return true;
+      if (taskNeedsTaskToolResources(normalized.text)) return true;
+      return normalized.contacts.some((contact) => !isKnownPackOrg(contact.org));
     }
 
     function renderTaskActionPackHtml(task, options = {}) {
       const normalized = normalizeRoadmapTask(task);
       const { stage, stageIndex, idea = state.currentIdea } = options;
-      if (stage && !taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return "";
+      if (stage && !shouldShowTaskResources(normalized, stage, stageIndex, idea)) return "";
       const blocks = [];
 
       if (normalized.contacts.length) {
@@ -10133,9 +10214,11 @@
       (stages || []).forEach((stage, stageIndex) => {
         (stage.tasks || []).forEach((task) => {
           const normalized = normalizeRoadmapTask(task);
-          if (!taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return;
+          const needsLocal = taskNeedsLocalContacts(normalized, stage, stageIndex, idea);
+          const needsTools = taskNeedsTaskToolResources(normalized.text);
+          if (!needsLocal && !needsTools) return;
           needsAny = true;
-          if (normalized.contacts.length > 0 || normalized.links.length > 0) hasAny = true;
+          if (shouldShowTaskResources(normalized, stage, stageIndex, idea)) hasAny = true;
         });
       });
       return !needsAny || hasAny;
@@ -10283,36 +10366,49 @@
       return picks;
     }
 
-    function injectLocalContactsIntoRoadmap(stages, resources, loc = getUserLocation(), idea = state.currentIdea) {
-      if (!Array.isArray(stages) || !resources.length) return stages;
+    function injectLocalContactsIntoRoadmap(stages, resources, loc = getUserLocation(), idea = state.currentIdea, { force = false } = {}) {
+      if (!Array.isArray(stages)) return stages;
       const usedOrgKeys = new Set();
       const cloned = normalizeRoadmapStages(stages);
 
       cloned.forEach((stage, stageIndex) => {
         stage.tasks = stage.tasks.map((task) => {
-          const normalized = normalizeRoadmapTask(task);
-          if (!taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return normalized;
-          if (normalized.contacts.length) {
-            normalized.contacts.forEach((contact) => {
-              if (contact.org) usedOrgKeys.add(contact.org);
-            });
-            return normalized;
+          let normalized = normalizeRoadmapTask(task);
+
+          if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea) && loc && resources.length) {
+            if (!force && normalized.contacts.length && shouldShowTaskResources(normalized, stage, stageIndex, idea)) {
+              normalized.contacts.forEach((contact) => {
+                if (contact.org) usedOrgKeys.add(contact.org);
+              });
+            } else {
+              const picks = pickResourcesForTask(normalized.text, resources, usedOrgKeys);
+              if (picks.length) {
+                picks.forEach((entry) => usedOrgKeys.add(entry.org));
+                normalized.contacts = picks.map((entry) => ({
+                  name: entry.name || "Program director",
+                  org: entry.org,
+                  phone: entry.phone || "",
+                  email: entry.email || "",
+                  url: entry.url || ""
+                }));
+                normalized.links = picks.map((entry) => entry.url).filter(Boolean);
+                normalized.local = picks.length > 1 ? `${picks[0].org} · ${picks[1].org}` : picks[0].org;
+                normalized.script = buildOutreachScript(picks[0].org, loc);
+              }
+            }
+          } else if (taskNeedsTaskToolResources(normalized.text)) {
+            if (!force && shouldShowTaskResources(normalized, stage, stageIndex, idea)) {
+              return normalized;
+            }
+            const tools = getTaskToolResources(normalized.text);
+            if (tools.links.length || tools.contacts.length) {
+              normalized.contacts = tools.contacts;
+              normalized.links = tools.links;
+              normalized.local = tools.local;
+              normalized.script = tools.script || "";
+            }
           }
 
-          const picks = pickResourcesForTask(normalized.text, resources, usedOrgKeys);
-          if (!picks.length) return normalized;
-
-          picks.forEach((entry) => usedOrgKeys.add(entry.org));
-          normalized.contacts = picks.map((entry) => ({
-            name: entry.name || "Program director",
-            org: entry.org,
-            phone: entry.phone || "",
-            email: entry.email || "",
-            url: entry.url || ""
-          }));
-          normalized.links = picks.map((entry) => entry.url).filter(Boolean);
-          normalized.local = picks.length > 1 ? `${picks[0].org} · ${picks[1].org}` : picks[0].org;
-          normalized.script = buildOutreachScript(picks[0].org, loc);
           return normalized;
         });
       });
@@ -10320,11 +10416,50 @@
       return cloned;
     }
 
-    function ensureRoadmapLocalContacts(stages, idea = state.currentIdea) {
-      if (!getUserLocation()) return stages;
-      const cleaned = stripMisplacedLocalContacts(stages, idea);
-      if (!pathNeedsLocalResources(idea)) return cleaned;
-      return injectLocalContactsIntoRoadmap(cleaned, getKnownLocalResources(), getUserLocation(), idea);
+    function clearTaskResourcesForReinjection(stages, idea = state.currentIdea) {
+      return normalizeRoadmapStages(stages).map((stage, stageIndex) => ({
+        ...stage,
+        tasks: stage.tasks.map((task) => {
+          const normalized = normalizeRoadmapTask(task);
+          if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea) || taskNeedsTaskToolResources(normalized.text)) {
+            return { ...normalized, contacts: [], links: [], script: "", local: "" };
+          }
+          return normalized;
+        })
+      }));
+    }
+
+    function ensureRoadmapLocalContacts(stages, idea = state.currentIdea, options = {}) {
+      const { force = false } = options;
+      let cleaned = stripMisplacedLocalContacts(stages, idea);
+      if (force) cleaned = clearTaskResourcesForReinjection(cleaned, idea);
+      return injectLocalContactsIntoRoadmap(
+        cleaned,
+        getUserLocation() ? getKnownLocalResources() : [],
+        getUserLocation(),
+        idea,
+        { force }
+      );
+    }
+
+    function refreshRoadmapTaskResources(options = {}) {
+      const { force = true } = options;
+      if (!state.roadmapStages?.length) return false;
+      const before = JSON.stringify(state.roadmapStages);
+      state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, state.currentIdea, { force });
+      if (state.roadmapKey && state.allRoadmaps[state.roadmapKey]) {
+        state.allRoadmaps[state.roadmapKey] = {
+          ...state.allRoadmaps[state.roadmapKey],
+          idea: state.currentIdea,
+          stages: state.roadmapStages
+        };
+      }
+      renderStages(state.roadmapStages);
+      updateRoadmapLocalResourcesList();
+      schedulePersist();
+      return JSON.stringify(state.roadmapStages) !== before || state.roadmapStages.some((stage, stageIndex) =>
+        (stage.tasks || []).some((task) => shouldShowTaskResources(normalizeRoadmapTask(task), stage, stageIndex))
+      );
     }
 
     function buildCompactLocalEnrichPrompt(idea, loc, founderMode) {
@@ -10935,7 +11070,7 @@
       );
     }
 
-    function buildFounderRoadmapPrompt(idea, context, { phase = "initial", dedupe = false } = {}) {
+    function buildFounderRoadmapPrompt(idea, context, { phase = "initial", dedupe = false, refreshBlock = "" } = {}) {
       const ideaBlock = [
         `Title: ${idea.title}`,
         idea.type ? `Type: ${idea.type}` : "",
@@ -10976,6 +11111,7 @@
         `Founder conversation:\n${context}\n` +
         siblingBlock +
         dedupeNote +
+        refreshBlock +
         getLocationContextBlock() +
         `\n${ACTIONABLE_TASK_RULES}\n` +
         `\nFocus this roadmap ONLY on: ${pathFocus}.\n` +
@@ -11000,10 +11136,28 @@
       );
     }
 
-    function buildRoadmapPrompt(idea, context, { phase = "initial", founderMode = false, dedupe = false } = {}) {
+    function buildRoadmapRefreshBlock(stages = []) {
+      if (!Array.isArray(stages) || !stages.length) return "";
+      const summary = stages.slice(0, 4).map((stage, index) => {
+        const taskPreview = (stage.tasks || [])
+          .slice(0, 2)
+          .map((task) => abbreviateQuestion(getTaskText(task), 90))
+          .join(" · ");
+        return `Stage ${index + 1} "${stage.label}": ${taskPreview || "—"}`;
+      }).join("\n");
+
+      return (
+        `\nThe user asked for a fresh roadmap for this SAME path because the previous version felt too similar or not helpful.\n` +
+        `Previous roadmap (do NOT reuse these stage names, task wording, or step order — choose a different strategy while serving the same goal):\n` +
+        `${summary}\n` +
+        `Invent new stage labels and different concrete tasks.\n`
+      );
+    }
+
+    function buildRoadmapPrompt(idea, context, { phase = "initial", founderMode = false, dedupe = false, refreshBlock = "" } = {}) {
       const founder = founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
       if (founder) {
-        return buildFounderRoadmapPrompt(idea, context, { phase, dedupe });
+        return buildFounderRoadmapPrompt(idea, context, { phase, dedupe, refreshBlock });
       }
 
       const ideaBlock = [
@@ -11031,6 +11185,7 @@
         `Full conversation:\n${context}\n` +
         siblingBlock +
         dedupeNote +
+        refreshBlock +
         getLocationContextBlock() +
         `\nPath type guidance: ${getRoadmapArchetypeGuidance(idea)}\n` +
         `\n${ACTIONABLE_TASK_RULES}\n` +
@@ -11090,6 +11245,15 @@
       const stage = state.roadmapStages[stageIndex];
       if (!stage) return [];
       return (stage.tasks || []).map((text, taskIndex) => ({ stageIndex, taskIndex, text: getTaskText(text) }));
+    }
+
+    function isTaskResourceRequest(question) {
+      const q = String(question || "").toLowerCase();
+      return (
+        /\b(regenerat(e|ing)|refresh|reload|rebuild|add|update|fix).*(resources?|recourses?|contacts?|links?|local orgs?)\b/.test(q) ||
+        /\b(resources?|recourses?|contacts?|links?).*(correlat|match|fit|specific|relevant|this task|each task|per task)\b/.test(q) ||
+        /\b(match|correlat|align).*(resources?|recourses?|contacts?).*(task|step)\b/.test(q)
+      );
     }
 
     function isTaskChangeRequest(question) {
@@ -11369,6 +11533,16 @@
 
       text = await callAdvisor(buildCompactTaskCoachPrompt(taskText, question), 700);
       if (text) return { text, source: "ai-compact" };
+
+      if (isTaskResourceRequest(question)) {
+        const refreshed = refreshRoadmapTaskResources({ force: true });
+        if (refreshed) {
+          return {
+            text: "I refreshed the resources on your tasks so each step shows links and contacts matched to what that task asks for.",
+            source: "local-resources"
+          };
+        }
+      }
 
       const local = answerTaskQuestionLocally(question, taskText);
       if (local) return { text: local, source: "local" };
@@ -13309,17 +13483,21 @@
       schedulePersist();
     }
 
-    function startIdeaDiscussChat(index) {
+    function startIdeaDiscussChat(index, options = {}) {
       const idea = state.ideas[index];
       if (!idea) return;
+      const { fromRoadmap = false } = options;
       state.mapChat = { type: "idea", index };
       state.alterPathMode = false;
       trackEvent("idea_discuss_started", {
         idea_index: index,
-        idea_title: idea.title || "Opportunity"
+        idea_title: idea.title || "Opportunity",
+        from_roadmap: fromRoadmap
       });
       showScreen("convo");
-      const prompt = `Let's talk about "${idea.title}". What questions do you have — fit, timing, money, or how you'd actually start? Chat as long as you like; tap "Update this path" when you're ready for a revised version, or go back to your map anytime.`;
+      const prompt = fromRoadmap
+        ? `Let's change "${idea.title}" — the current roadmap isn't the right fit. What's off: too generic, wrong focus, timing, budget, or a direction you'd rather take? Chat as long as you like; tap "Update this path" when you're ready for a revised path on your map (that clears the old roadmap for this path).`
+        : `Let's talk about "${idea.title}". What questions do you have — fit, timing, money, or how you'd actually start? Chat as long as you like; tap "Update this path" when you're ready for a revised version, or go back to your map anytime.`;
       addTypingBubble();
       resolveTyping(prompt);
       state.history.push({ role: "assistant", content: prompt });
@@ -13814,8 +13992,8 @@
           signal: controller?.signal,
           body: JSON.stringify({
             model: "claude-sonnet-4-5",
-            max_tokens: maxTokens,
-            messages: [{ role: "user", content: prompt }]
+            max_tokens: capAdvisorTokens(maxTokens),
+            messages: [{ role: "user", content: truncateAdvisorPrompt(prompt) }]
           })
         });
         let data;
@@ -14847,12 +15025,37 @@
       let roadmapSource = "ai";
       try {
       const context = getConversationSummary();
-      let response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode }), getRoadmapAdvisorTokenLimit(founderMode));
+      const refreshBlock = options.previousStages?.length
+        ? buildRoadmapRefreshBlock(options.previousStages)
+        : "";
+      const promptOptions = {
+        founderMode,
+        dedupe: Boolean(options.force || refreshBlock),
+        refreshBlock
+      };
+      let response = await callAdvisor(
+        buildRoadmapPrompt(idea, context, promptOptions),
+        getRoadmapAdvisorTokenLimit(founderMode)
+      );
       let stages = parseRoadmapResponse(response, idea);
 
       if (stages && roadmapOverlapsSibling(stages, idea)) {
-        response = await callAdvisor(buildRoadmapPrompt(idea, context, { founderMode, dedupe: true }), getRoadmapAdvisorTokenLimit(founderMode));
+        response = await callAdvisor(buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true }), getRoadmapAdvisorTokenLimit(founderMode));
         stages = parseRoadmapResponse(response, idea);
+      }
+
+      if (
+        stages &&
+        refreshBlock &&
+        roadmapStagesMatchPrevious(stages, options.previousStages)
+      ) {
+        response = await callAdvisor(
+          `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n\n` +
+          `Your rewrite still mirrors the previous roadmap too closely. Use different stage names, a different first move, and different task wording.\n`,
+          getRoadmapAdvisorTokenLimit(founderMode)
+        );
+        const refreshed = parseRoadmapResponse(response, idea);
+        if (refreshed) stages = refreshed;
       }
 
       if (
@@ -14924,18 +15127,42 @@
       return state.ideas.findIndex((idea) => idea.title === state.currentIdea.title);
     }
 
+    function roadmapStagesMatchPrevious(nextStages, previousStages) {
+      if (!Array.isArray(nextStages) || !Array.isArray(previousStages) || !previousStages.length) return false;
+      const nextLabels = nextStages.map((stage) => normalizeRoadmapText(stage.label)).join("|");
+      const prevLabels = previousStages.map((stage) => normalizeRoadmapText(stage.label)).join("|");
+      if (nextLabels === prevLabels) return true;
+      const nextTasks = nextStages.flatMap((stage) => (stage.tasks || []).map((task) => normalizeRoadmapText(getTaskText(task))));
+      const prevTasks = previousStages.flatMap((stage) => (stage.tasks || []).map((task) => normalizeRoadmapText(getTaskText(task))));
+      const overlap = nextTasks.filter((task) => prevTasks.includes(task)).length;
+      return overlap >= Math.min(6, Math.max(3, Math.floor(prevTasks.length * 0.55)));
+    }
+
+    function changeCurrentPath() {
+      const index = getCurrentIdeaIndex();
+      if (index < 0 || !state.currentIdea) {
+        showScreen("map");
+        return;
+      }
+      trackEvent("roadmap_change_path_clicked", { idea_index: index });
+      startIdeaDiscussChat(index, { fromRoadmap: true });
+    }
+
     async function regenerateCurrentRoadmap() {
       const index = getCurrentIdeaIndex();
       if (index < 0 || !state.currentIdea) return;
-      if (!confirm("Replace this path with fresh steps? Notes and checkboxes for this path will reset.")) return;
+      if (!confirm("Generate a new version of this roadmap with different steps? Notes and checkboxes for this path will reset.")) return;
 
       const key = state.roadmapKey;
+      const previousStages = key && state.allRoadmaps[key]?.stages?.length
+        ? normalizeRoadmapStages(state.allRoadmaps[key].stages)
+        : normalizeRoadmapStages(state.roadmapStages);
       if (key) {
         delete state.allRoadmaps[key];
         delete state.allTaskChats[key];
       }
       state.roadmapStages = [];
-      await viewRoadmap(state.currentIdea, index, { force: true });
+      await viewRoadmap(state.currentIdea, index, { force: true, previousStages });
     }
 
     function bindTaskPersistence() {
@@ -15031,7 +15258,7 @@
       state.roadmapStages.forEach((stage, stageIndex) => {
         (stage.tasks || []).forEach((task) => {
           const normalized = normalizeRoadmapTask(task);
-          if (!taskNeedsLocalContacts(normalized, stage, stageIndex)) return;
+          if (!shouldShowTaskResources(normalized, stage, stageIndex)) return;
           normalized.contacts.forEach((contact) => {
             addResource({
               type: "contact",
@@ -15414,18 +15641,18 @@
       const id = `task-${stageIndex}-${taskIndex}`;
       const normalized = normalizeRoadmapTask(task);
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "" };
-      const showLocal = taskNeedsLocalContacts(normalized, stage, stageIndex);
+      const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
       const text = normalized.text;
       const chips = [];
       if (normalized.duration) chips.push(`<span class="task-chip">${escapeHtml(normalized.duration)}</span>`);
       if (normalized.cost) chips.push(`<span class="task-chip">${escapeHtml(normalized.cost)}</span>`);
-      if (showLocal && normalized.local) {
+      if (showResources && normalized.local) {
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
       const whyBlock = normalized.why
         ? `<p class="overview-task-why"><strong>Why:</strong> ${escapeHtml(normalized.why)}${normalized.outcome ? ` <strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}` : ""}</p>`
         : "";
-      const actionPack = showLocal ? renderTaskActionPackHtml(normalized, { stage, stageIndex }) : "";
+      const actionPack = showResources ? renderTaskActionPackHtml(normalized, { stage, stageIndex }) : "";
 
       return `
         <div class="task-item overview-task" data-task-id="${id}">
@@ -15577,6 +15804,9 @@
       }
 
       highlightUpdatedTasks(targets.map((target) => `task-${target.stageIndex}-${target.taskIndex}`));
+      state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, state.currentIdea);
+      renderStages(state.roadmapStages);
+      updateRoadmapLocalResourcesList();
     }
 
     function updateMomentum() {
@@ -15680,6 +15910,7 @@
         if (!nextStages || !stagesAreMeaningful(nextStages)) throw new Error("Rebuild response was empty or too generic");
 
         state.roadmapStages = [...kept, ...nextStages];
+        state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, state.currentIdea, { force: true });
         state.roadmapExhausted = false;
         if (state.roadmapKey) {
           state.allRoadmaps[state.roadmapKey] = {
@@ -15893,6 +16124,24 @@
       if (askBtn) askBtn.disabled = true;
       renderTaskThreads(taskId);
       schedulePersist();
+
+      if (isTaskResourceRequest(question)) {
+        thread.messages.push({ role: "assistant", content: "Matching resources to each task now..." });
+        renderTaskThreads(taskId);
+        const refreshed = refreshRoadmapTaskResources({ force: true });
+        thread.messages = thread.messages.filter((message) => message.content !== "Matching resources to each task now...");
+        thread.messages.push({
+          role: "assistant",
+          content: refreshed
+            ? "Done — each task now shows resources matched to what that step actually asks you to do. Outreach tasks get local org contacts; Stripe, grant, and cost tasks get the relevant links."
+            : "I couldn't refresh resources just now. Make sure your location is saved if this path needs local orgs, then try again."
+        });
+        trackEvent("task_resources_refreshed", { task_id: taskId, ok: refreshed });
+        if (askBtn) askBtn.disabled = false;
+        renderTaskThreads(taskId);
+        schedulePersist();
+        return;
+      }
 
       const wantsChange = isTaskChangeRequest(question);
       const pendingMessage = wantsChange ? "Got it — updating your task now..." : "Thinking...";
@@ -17461,7 +17710,7 @@
         $("#roadmap-side-about")?.closest(".roadmap-side-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       });
       $("#roadmap-more-resources-btn")?.addEventListener("click", scrollToActivePhase);
-      $("#roadmap-change-path-btn")?.addEventListener("click", regenerateCurrentRoadmap);
+      $("#roadmap-change-path-btn")?.addEventListener("click", changeCurrentPath);
       $("#roadmap-rebuild-remaining-btn")?.addEventListener("click", () => regenerateRemainingRoadmap());
       $("#continue-plan-btn")?.addEventListener("click", () => continueCompletedPlan());
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
