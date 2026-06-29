@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-task-coaching-polish -->
+<!-- whatimado build: 2026-06-28-task-thread-delete -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-task-coaching-polish">
+  <meta name="whatimado-build" content="2026-06-28-task-thread-delete">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7292,11 +7292,18 @@
       margin-top: .55rem;
     }
 
+    .task-thread-row {
+      display: flex;
+      align-items: stretch;
+      gap: .35rem;
+    }
+
     .task-thread-collapsed {
       display: flex;
       align-items: center;
       gap: .5rem;
-      width: 100%;
+      flex: 1;
+      min-width: 0;
       border: 1px solid rgba(78, 205, 196, .22);
       border-radius: var(--radius-sm);
       padding: .5rem .65rem;
@@ -7307,6 +7314,39 @@
       line-height: 1.35;
       text-align: left;
       transition: .14s ease;
+    }
+
+    .task-thread-collapsed-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task-thread-delete {
+      flex: 0 0 auto;
+      border: 1px solid rgba(120, 130, 200, .22);
+      border-radius: var(--radius-sm);
+      padding: .45rem .55rem;
+      color: var(--muted);
+      background: rgba(120, 130, 200, .1);
+      font: inherit;
+      font-size: .66rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .task-thread-delete:hover {
+      color: #fecaca;
+      border-color: rgba(248, 113, 113, .45);
+      background: rgba(248, 113, 113, .12);
+    }
+
+    .task-thread-head-actions {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      flex-shrink: 0;
     }
 
     .task-thread-collapsed:hover {
@@ -7541,6 +7581,18 @@
     #screen-roadmap .task-thread-collapse {
       color: var(--brand-purple-dark);
       background: rgba(36, 18, 53, .08);
+    }
+
+    #screen-roadmap .task-thread-delete {
+      color: var(--brand-purple-dark);
+      border-color: rgba(36, 18, 53, .16);
+      background: rgba(36, 18, 53, .06);
+    }
+
+    #screen-roadmap .task-thread-delete:hover {
+      color: #b91c1c;
+      border-color: rgba(185, 28, 28, .28);
+      background: rgba(254, 226, 226, .65);
     }
 
     #screen-roadmap .task-thread-actions {
@@ -14568,6 +14620,24 @@ What would make this more useful for someone in your situation?`;
       });
     }
 
+    function deleteTaskThread(taskId, threadId) {
+      const taskData = getRoadmapTaskData(taskId);
+      const threads = taskData.threads || [];
+      const index = threads.findIndex((item) => item.id === threadId);
+      if (index < 0) return false;
+
+      threads.splice(index, 1);
+      taskData.threads = threads;
+
+      if (state.expandedThreadId === threadId) state.expandedThreadId = null;
+      if (!threads.some((thread) => thread.expanded)) state.expandedThreadId = null;
+
+      renderTaskThreads(taskId);
+      schedulePersist();
+      trackEvent("task_thread_deleted", { task_id: taskId, thread_id: threadId });
+      return true;
+    }
+
     function renderTaskThreads(taskId) {
       const container = $(`#threads-${taskId}`);
       if (!container) return;
@@ -14583,10 +14653,13 @@ What would make this more useful for someone in your situation?`;
         const isExpanded = thread.expanded || thread.id === state.expandedThreadId;
         if (!isExpanded) {
           return `
-            <button type="button" class="task-thread-collapsed" data-task-id="${taskId}" data-thread-id="${thread.id}">
-              <span class="task-thread-dot" aria-hidden="true"></span>
-              ${escapeHtml(thread.title)}
-            </button>`;
+            <div class="task-thread-row" data-thread-id="${escapeHtml(thread.id)}">
+              <button type="button" class="task-thread-collapsed" data-task-id="${escapeHtml(taskId)}" data-thread-id="${escapeHtml(thread.id)}">
+                <span class="task-thread-dot" aria-hidden="true"></span>
+                <span class="task-thread-collapsed-title">${escapeHtml(thread.title)}</span>
+              </button>
+              <button type="button" class="task-thread-delete" data-task-id="${escapeHtml(taskId)}" data-thread-id="${escapeHtml(thread.id)}" aria-label="Remove this question">Remove</button>
+            </div>`;
         }
 
         const messages = (thread.messages || []).map((message) => `
@@ -14594,10 +14667,13 @@ What would make this more useful for someone in your situation?`;
         `).join("");
 
         return `
-          <div class="task-thread-expanded" data-thread-id="${thread.id}">
+          <div class="task-thread-expanded" data-thread-id="${escapeHtml(thread.id)}">
             <div class="task-thread-head">
               <div class="task-thread-title">${escapeHtml(thread.title)}</div>
-              <button type="button" class="task-thread-collapse" data-task-id="${taskId}" data-thread-id="${thread.id}" aria-label="Collapse chat">−</button>
+              <div class="task-thread-head-actions">
+                <button type="button" class="task-thread-delete" data-task-id="${escapeHtml(taskId)}" data-thread-id="${escapeHtml(thread.id)}" aria-label="Remove this question">Remove</button>
+                <button type="button" class="task-thread-collapse" data-task-id="${escapeHtml(taskId)}" data-thread-id="${escapeHtml(thread.id)}" aria-label="Collapse chat">−</button>
+              </div>
             </div>
             <div class="task-thread-msgs rich-text">${messages}</div>
           </div>`;
@@ -14627,6 +14703,13 @@ What would make this more useful for someone in your situation?`;
         if (!Array.isArray(data.outcomeChecks)) data.outcomeChecks = [];
         data.outcomeChecks[index] = outcomeCheck.checked;
         schedulePersist();
+        return;
+      }
+      const deleteBtn = event.target.closest(".task-thread-delete");
+      if (deleteBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        deleteTaskThread(deleteBtn.dataset.taskId, deleteBtn.dataset.threadId);
         return;
       }
       const collapsed = event.target.closest(".task-thread-collapsed");
