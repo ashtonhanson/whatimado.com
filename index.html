@@ -9998,9 +9998,9 @@
           <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
         </section>
 
-        <section class="dashboard-section dashboard-explore" aria-label="Explore popular paths">
+        <section class="dashboard-section dashboard-explore" aria-label="Explore roadmaps towards popular career paths">
           <div class="dashboard-section-head">
-            <h2>Explore popular paths</h2>
+            <h2>Explore roadmaps towards these popular career paths</h2>
             <button type="button" class="dashboard-link-btn" id="dashboard-explore-all">View all</button>
           </div>
           <div class="dashboard-explore-grid">
@@ -15894,6 +15894,95 @@ What would make this more useful for someone in your situation?`;
       return false;
     }
 
+    function extractIdeasFromAdvisorResponse(response) {
+      if (!response?.trim()) return [];
+      let parsed = extractJsonArray(response, null);
+      if (!Array.isArray(parsed)) {
+        const fenced = response.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        if (fenced) parsed = extractJsonArray(fenced[1], null);
+      }
+      return Array.isArray(parsed) ? parsed : [];
+    }
+
+    function filterNewIdeas(candidates, existingIdeas) {
+      return (candidates || []).filter(
+        (idea) => idea?.title?.trim() && !existingIdeas.some((existing) => ideasOverlap(existing, idea))
+      );
+    }
+
+    function getMoreIdeasButtonLabel(button) {
+      const labelEl = button.querySelector(".btn-label") || button;
+      if (!button.dataset.defaultLabel) {
+        button.dataset.defaultLabel = (labelEl.textContent || "Show me more paths").trim();
+      }
+      return button.dataset.defaultLabel;
+    }
+
+    function resetMoreIdeasButton(button, labelEl, label) {
+      labelEl.textContent = label;
+      button.disabled = false;
+      button.classList.remove("is-loading");
+    }
+
+    function getFounderExtraIdeas() {
+      return [
+        {
+          title: "Library & Workforce Pilot Outreach",
+          type: "Partnerships",
+          tagline: "Email 10 libraries or workforce boards with a one-page pilot offer and 15-minute demo.",
+          why: "Mission-aligned orgs can send real users without ads — and later unlock grant or sponsor conversations.",
+          cost: "$0",
+          timeline: "4-6 weeks",
+          income: "Grants / sponsorship"
+        },
+        {
+          title: "Organic Discovery Sprint (SEO + Short Posts)",
+          type: "Growth",
+          tagline: "Publish 8 helpful pages or posts answering 'stuck on what's next' — link back to the free tool.",
+          why: "People searching for career clarity may find whatimado without paid ads if content matches how they talk about being stuck.",
+          cost: "$0",
+          timeline: "30-45 days",
+          income: "Donations + signups"
+        },
+        {
+          title: "Founder Feedback Circle (5 Sessions)",
+          type: "Validation",
+          tagline: "Run five 20-minute user interviews with strangers who feel stuck — watch them use the map live.",
+          why: "Direct observation beats guessing which parts of the flow confuse people before you scale outreach.",
+          cost: "$0",
+          timeline: "2-3 weeks",
+          income: "Product insight"
+        },
+        {
+          title: "Local Micro-Grant Application Pack",
+          type: "Funding",
+          tagline: "Apply to 3 small tech-for-good or workforce innovation grants with a one-page impact story.",
+          why: "Even modest grants can cover hosting and AI costs while keeping the product free for individuals.",
+          cost: "$0-100",
+          timeline: "60-90 days",
+          income: "$2k-25k grants"
+        },
+        {
+          title: "Monthly Supporter Email Loop",
+          type: "Revenue",
+          tagline: "Ask map completers for optional $3/mo or one-time tips — share one honest progress email per month.",
+          why: "Stripe is already set up; a small supporter list tests sustainability without paywalling personal use.",
+          cost: "$0",
+          timeline: "3-5 weeks",
+          income: "$50-500/mo early"
+        },
+        {
+          title: "Re-entry & Nonprofit Referral Chain",
+          type: "Partnerships",
+          tagline: "Partner with one re-entry program, shelter career coach, or 211 navigator as a free referral path.",
+          why: "The people who need structured roadmaps most often hear about tools through trusted local helpers.",
+          cost: "$0",
+          timeline: "6-8 weeks",
+          income: "Impact + donations"
+        }
+      ];
+    }
+
     function askNameStep() {
       const reply = "May I ask what your name is?";
       resolveTyping(reply);
@@ -16178,33 +16267,37 @@ What would make this more useful for someone in your situation?`;
       trackEvent("more_paths_requested", { existing_ideas_count: state.ideas.length });
 
       const labelEl = button.querySelector(".btn-label") || button;
-      const label = labelEl.textContent;
+      const label = getMoreIdeasButtonLabel(button);
       button.disabled = true;
       button.classList.add("is-loading");
       labelEl.textContent = "Finding more paths...";
 
       const summary = getConversationSummary();
-      const existingTitles = state.ideas.map((idea) => idea.title);
+      const existingIdeas = state.ideas.slice();
+      const existingTitles = existingIdeas.map((idea) => idea.title);
       const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
-      const response = await callAdvisor(
-        founderMode
-          ? `${buildFounderIdeasPrompt(summary)}\n\nGenerate 3 NEW path options different from these existing titles: ${existingTitles.join(", ")}`
-          : buildIdeasPrompt(summary, 3, existingTitles),
-        900
-      );
-      const seen = new Set(existingTitles.map((title) => title.toLowerCase()));
-      const newIdeas = extractJsonArray(response, []).filter(
-        (idea) => idea.title && !seen.has(idea.title.toLowerCase())
-      );
+      const basePrompt = founderMode
+        ? `${buildFounderIdeasPrompt(summary)}\n\nGenerate 3 NEW path options different from these existing titles: ${existingTitles.join(", ")}`
+        : buildIdeasPrompt(summary, 3, existingTitles);
+
+      let response = await callAdvisor(basePrompt, 1200);
+      let newIdeas = filterNewIdeas(extractIdeasFromAdvisorResponse(response), existingIdeas);
+
+      if (!newIdeas.length) {
+        const retryPrompt =
+          `${basePrompt}\n\nReturn ONLY a raw JSON array of exactly 3 objects. No markdown, no commentary. Each title must be clearly different from: ${existingTitles.join("; ")}.`;
+        response = await callAdvisor(retryPrompt, 1200);
+        newIdeas = filterNewIdeas(extractIdeasFromAdvisorResponse(response), existingIdeas);
+      }
+
+      if (!newIdeas.length && founderMode) {
+        newIdeas = filterNewIdeas(getFounderExtraIdeas(), existingIdeas).slice(0, 3);
+      }
 
       if (!newIdeas.length) {
         trackEvent("more_paths_failed", { existing_ideas_count: state.ideas.length });
         labelEl.textContent = "Couldn't find new paths — try again";
-        setTimeout(() => {
-          labelEl.textContent = label;
-          button.disabled = false;
-          button.classList.remove("is-loading");
-        }, 2200);
+        setTimeout(() => resetMoreIdeasButton(button, labelEl, label), 2200);
         return;
       }
 
@@ -16215,9 +16308,7 @@ What would make this more useful for someone in your situation?`;
         total_ideas_count: state.ideas.length
       });
       updateMapAuxiliaryPanels();
-      labelEl.textContent = label;
-      button.disabled = false;
-      button.classList.remove("is-loading");
+      resetMoreIdeasButton(button, labelEl, label);
       const firstNewIndex = state.ideas.length - newIdeas.length;
       setTimeout(() => scrollToPathDetail(firstNewIndex), 120);
     }
@@ -18059,10 +18150,8 @@ What would make this more useful for someone in your situation?`;
       }
       const moreBtn = $("#more-ideas-btn");
       if (moreBtn) {
-        moreBtn.disabled = false;
-        moreBtn.classList.remove("is-loading");
         const moreLabel = moreBtn.querySelector(".btn-label");
-        if (moreLabel) moreLabel.textContent = "Show me more paths";
+        resetMoreIdeasButton(moreBtn, moreLabel || moreBtn, getMoreIdeasButtonLabel(moreBtn));
       }
       updateMapsNav();
       renderSavedMapsHome();
