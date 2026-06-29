@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-map-chat-fix -->
+<!-- whatimado build: 2026-06-29-beta-badge -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-map-chat-fix">
+  <meta name="whatimado-build" content="2026-06-29-beta-badge">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -268,18 +268,48 @@
       overflow: hidden;
     }
 
+    html[data-color-scheme="adult"] .dashboard-brand-wrap {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      margin-bottom: 1.5rem;
+      padding: 0 .35rem;
+    }
+
     html[data-color-scheme="adult"] .dashboard-brand {
       flex-shrink: 0;
       display: flex;
       align-items: center;
       gap: .65rem;
-      margin-bottom: 1.5rem;
-      padding: 0 .35rem;
+      margin-bottom: 0;
+      padding: 0;
       color: var(--ink);
       text-decoration: none;
       font-size: 1.05rem;
       font-weight: 800;
       letter-spacing: -.02em;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-beta-badge {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .18rem .42rem;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: .58rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      line-height: 1;
+      opacity: .82;
+      cursor: default;
+      pointer-events: none;
+      user-select: none;
     }
 
     html[data-color-scheme="adult"] .dashboard-brand-mark {
@@ -10284,12 +10314,15 @@
 
   <div class="dashboard-shell">
     <aside class="dashboard-sidebar" id="dashboard-sidebar" aria-label="Sidebar">
-      <a class="dashboard-brand" href="#main" data-screen-link="main">
-        <span class="dashboard-brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path></svg>
-        </span>
-        WhatImADo
-      </a>
+      <div class="dashboard-brand-wrap">
+        <a class="dashboard-brand" href="#main" data-screen-link="main">
+          <span class="dashboard-brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path></svg>
+          </span>
+          WhatImADo
+        </a>
+        <span class="dashboard-beta-badge" aria-hidden="true">Beta</span>
+      </div>
       <nav class="dashboard-nav" aria-label="Primary">
         <button type="button" class="dashboard-nav-btn active" data-screen-link="main">
           <svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
@@ -16198,6 +16231,7 @@ What would make this more useful for someone in your situation?`;
         if ((category.createdAt || 0) > (previous.createdAt || 0)) {
           previous.title = category.title;
           previous.mapId = category.mapId ?? previous.mapId;
+          previous.manual = category.manual ?? previous.manual;
         }
       });
       return [...byId.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -16257,6 +16291,57 @@ What would make this more useful for someone in your situation?`;
       const byMap = state.roadmapCategories.find((entry) => entry.mapId === state.activeMapId);
       if (byMap) return byMap;
       return ensureCategoryForCurrentMap();
+    }
+
+    function isManualRoadmapCategory(category) {
+      return Boolean(category?.manual);
+    }
+
+    function syncRoadmapSidebarWithCurrentMap() {
+      const mapId = state.activeMapId;
+      if (!mapId || !Array.isArray(state.ideas) || !state.ideas.length) return;
+
+      const titlesByIndex = state.ideas.map((idea) => idea.title);
+      const titleSet = new Set(titlesByIndex);
+
+      state.roadmapCategories.forEach((category) => {
+        const keptByIndex = new Map();
+        const otherItems = [];
+
+        (category.items || []).forEach((item) => {
+          if (item.mapId !== mapId) {
+            otherItems.push(item);
+            return;
+          }
+
+          let ideaIndex = item.ideaIndex;
+          if (!Number.isInteger(ideaIndex) || ideaIndex < 0 || ideaIndex >= state.ideas.length) {
+            ideaIndex = state.ideas.findIndex((idea) => idea.title === item.ideaTitle);
+          }
+
+          if (ideaIndex < 0 || !titleSet.has(titlesByIndex[ideaIndex])) {
+            if (titleSet.has(item.ideaTitle)) {
+              ideaIndex = state.ideas.findIndex((idea) => idea.title === item.ideaTitle);
+            } else {
+              return;
+            }
+          }
+
+          if (ideaIndex < 0) return;
+
+          const normalized = {
+            ...item,
+            ideaIndex,
+            ideaTitle: titlesByIndex[ideaIndex]
+          };
+          const previous = keptByIndex.get(ideaIndex);
+          if (!previous || (normalized.addedAt || 0) >= (previous.addedAt || 0)) {
+            keptByIndex.set(ideaIndex, normalized);
+          }
+        });
+
+        category.items = [...otherItems, ...keptByIndex.values()];
+      });
     }
 
     function registerRoadmapInSidebar(idea, ideaIndex) {
@@ -16326,6 +16411,7 @@ What would make this more useful for someone in your situation?`;
         id: createRoadmapCategoryId(),
         title: title.trim(),
         mapId: null,
+        manual: true,
         createdAt: Date.now(),
         items: []
       };
@@ -16360,7 +16446,11 @@ What would make this more useful for someone in your situation?`;
           ...category,
           items: (category.items || []).filter((item) => !item.mapId || savedIds.has(item.mapId))
         }))
-        .filter((category) => (category.items || []).length > 0 || (category.mapId && savedIds.has(category.mapId)));
+        .filter((category) =>
+          (category.items || []).length > 0
+          || (category.mapId && savedIds.has(category.mapId))
+          || isManualRoadmapCategory(category)
+        );
       if (state.activeRoadmapCategoryId && !state.roadmapCategories.some((c) => c.id === state.activeRoadmapCategoryId)) {
         state.activeRoadmapCategoryId = null;
       }
@@ -16499,6 +16589,7 @@ What would make this more useful for someone in your situation?`;
       if (!sub || !container) return;
 
       migrateRoadmapCategoriesFromLibrary();
+      syncRoadmapSidebarWithCurrentMap();
       syncRoadmapCategoriesWithLibrary();
 
       const hasCategories = state.roadmapCategories.length > 0;
@@ -16623,7 +16714,7 @@ What would make this more useful for someone in your situation?`;
           ...category,
           items: (category.items || []).filter((item) => item.mapId !== mapId)
         }))
-        .filter((category) => (category.items || []).length > 0 || category.mapId);
+        .filter((category) => (category.items || []).length > 0 || category.mapId || isManualRoadmapCategory(category));
       if (state.activeRoadmapCategoryId && !state.roadmapCategories.some((c) => c.id === state.activeRoadmapCategoryId)) {
         state.activeRoadmapCategoryId = null;
       }
@@ -17531,6 +17622,8 @@ What would make this more useful for someone in your situation?`;
 
       state.ideas = extractJsonArray(response, getFallbackIdeas());
       state.allRoadmaps = {};
+      state.allTaskChats = {};
+      syncRoadmapSidebarWithCurrentMap();
       state.currentIdea = null;
       state.roadmapKey = null;
       state.roadmapStages = [];
@@ -17584,9 +17677,12 @@ What would make this more useful for someone in your situation?`;
       }
 
       const oldKey = slugify(idea.title);
+      const oldTitle = idea.title;
       state.ideas[index] = newIdeas[0];
       delete state.allRoadmaps[oldKey];
       if (state.allTaskChats[oldKey]) delete state.allTaskChats[oldKey];
+      removeRoadmapSidebarItems(oldTitle, state.activeMapId);
+      purgeRoadmapFromLibrary(state.activeMapId, oldTitle);
       if (state.roadmapKey === oldKey) {
         state.currentIdea = null;
         state.roadmapKey = null;
