@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-confirm-dialog -->
+<!-- whatimado build: 2026-06-28-stats-adult-theme -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-confirm-dialog">
+  <meta name="whatimado-build" content="2026-06-28-stats-adult-theme">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1119,6 +1119,187 @@
     html[data-color-scheme="adult"] .roadmap-complete-title,
     html[data-color-scheme="adult"] .stats-title {
       color: var(--ink);
+      font-size: clamp(1.75rem, 4vw, 2.35rem);
+      font-weight: 800;
+      letter-spacing: -.03em;
+    }
+
+    html[data-color-scheme="adult"] .stats-title em {
+      color: #2563eb;
+      font-style: normal;
+    }
+
+    html[data-color-scheme="adult"] .stats-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      margin: 0 0 .35rem;
+      color: #2563eb;
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    html[data-color-scheme="adult"] .stats-kicker::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    html[data-color-scheme="adult"] .stats-sub,
+    html[data-color-scheme="adult"] .stats-funnel-caption,
+    html[data-color-scheme="adult"] .stats-updated,
+    html[data-color-scheme="adult"] .stats-legend {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .stats-panel-title {
+      color: var(--ink);
+      font-size: .82rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    html[data-color-scheme="adult"] #screen-stats .stats-card,
+    html[data-color-scheme="adult"] #screen-stats .stats-panel {
+      background: #fff;
+      border-color: var(--line);
+      box-shadow: var(--plan-card-shadow);
+    }
+
+    html[data-color-scheme="adult"] .stats-card-label,
+    html[data-color-scheme="adult"] .stats-funnel-step-label,
+    html[data-color-scheme="adult"] .stats-metric-label {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .stats-card-value--visits {
+      color: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .stats-card-value--started {
+      color: #d97706;
+    }
+
+    html[data-color-scheme="adult"] .stats-card-value--maps {
+      color: #059669;
+    }
+
+    html[data-color-scheme="adult"] .stats-period-btn {
+      color: var(--ink-muted);
+      background: #fff;
+      border-color: var(--line);
+      box-shadow: var(--plan-card-shadow);
+    }
+
+    html[data-color-scheme="adult"] .stats-period-btn:hover {
+      color: var(--ink);
+      background: var(--bg-soft);
+      border-color: #d1d5db;
+    }
+
+    html[data-color-scheme="adult"] .stats-period-btn.active {
+      color: #fff;
+      background: #2563eb;
+      border-color: #2563eb;
+      box-shadow: 0 1px 2px rgba(37, 99, 235, .18);
+    }
+
+    html[data-color-scheme="adult"] .stats-funnel-step--visits {
+      background: rgba(37, 99, 235, .06);
+      border-color: rgba(37, 99, 235, .18);
+    }
+
+    html[data-color-scheme="adult"] .stats-funnel-step--started {
+      background: rgba(217, 119, 6, .08);
+      border-color: rgba(217, 119, 6, .22);
+    }
+
+    html[data-color-scheme="adult"] .stats-funnel-step--maps {
+      background: rgba(5, 150, 105, .08);
+      border-color: rgba(5, 150, 105, .22);
+    }
+
+    html[data-color-scheme="adult"] .stats-funnel-step--visits .stats-funnel-step-num {
+      color: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .stats-funnel-step--started .stats-funnel-step-num {
+      color: #d97706;
+    }
+
+    html[data-color-scheme="adult"] .stats-funnel-step--maps .stats-funnel-step-num {
+      color: #059669;
+    }
+
+    html[data-color-scheme="adult"] .stats-funnel-connector,
+    html[data-color-scheme="adult"] .stats-funnel-connector-arrow {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .stats-day-card {
+      background: var(--bg-soft);
+      border-color: var(--line);
+    }
+
+    html[data-color-scheme="adult"] .stats-day-head {
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .stats-metric-num {
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .stats-metric-bar-track {
+      background: #eef2f7;
+    }
+
+    html[data-color-scheme="adult"] .stats-metric-bar--visits {
+      background: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .stats-metric-bar--started {
+      background: #d97706;
+    }
+
+    html[data-color-scheme="adult"] .stats-metric-bar--maps {
+      background: #059669;
+    }
+
+    html[data-color-scheme="adult"] .stats-legend i.legend-visits {
+      background: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .stats-legend i.legend-started {
+      background: #d97706;
+    }
+
+    html[data-color-scheme="adult"] .stats-legend i.legend-maps {
+      background: #059669;
+    }
+
+    html[data-color-scheme="adult"] .stats-legend {
+      border-top-color: var(--line);
+    }
+
+    html[data-color-scheme="adult"] .stats-msg.loading {
+      color: var(--ink-muted);
+      background: var(--bg-soft);
+      border-color: var(--line);
+    }
+
+    html[data-color-scheme="adult"] .stats-msg.error {
+      color: #b91c1c;
+      background: #fef2f2;
+      border-color: rgba(185, 28, 28, .22);
+    }
+
+    html[data-color-scheme="adult"] #screen-stats .stats-page {
+      max-width: 960px;
+      padding: 1.25rem 1.5rem 3rem;
     }
 
     html[data-color-scheme="adult"] #screen-map .page-title em {
@@ -10047,8 +10228,8 @@
 
     <section class="screen" id="screen-stats">
       <div class="stats-page">
-        <p class="stats-kicker"><span class="stats-kicker-light">Founder</span> <span class="stats-kicker-accent">dashboard</span></p>
-        <h2 class="stats-title"><span class="stats-title-light">Launch</span> <span class="stats-title-accent">stats</span></h2>
+        <p class="stats-kicker">Founder dashboard</p>
+        <h2 class="stats-title">Launch <em>stats</em></h2>
         <p class="stats-sub">Real visitors only. Any session where you signed in is excluded, even the parts before login.</p>
 
         <div class="stats-toolbar">
@@ -10083,9 +10264,9 @@
           <h3 class="stats-panel-title">Daily activity (Central time)</h3>
           <div class="stats-chart" id="stats-chart"></div>
           <div class="stats-legend">
-            <span><i class="legend-visits" aria-hidden="true"></i> Visits (blue)</span>
-            <span><i class="legend-started" aria-hidden="true"></i> Started (gold)</span>
-            <span><i class="legend-maps" aria-hidden="true"></i> Got map (green)</span>
+            <span><i class="legend-visits" aria-hidden="true"></i> Visits</span>
+            <span><i class="legend-started" aria-hidden="true"></i> Started</span>
+            <span><i class="legend-maps" aria-hidden="true"></i> Got map</span>
           </div>
         </div>
 
