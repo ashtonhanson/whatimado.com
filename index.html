@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-script-trim">
+  <meta name="whatimado-build" content="2026-06-29-category-resources">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6563,12 +6563,53 @@
       font-size: .84rem;
       font-weight: 600;
       line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .overview-task .task-text-link {
+      color: var(--teal);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    html[data-color-scheme="adult"] .overview-task .task-text-link:hover {
+      color: #0d9488;
+    }
+
+    html[data-color-scheme="adult"] .overview-task .task-check {
+      margin-top: .12rem;
       cursor: pointer;
     }
 
     html[data-color-scheme="adult"] .overview-task.is-done .task-text {
       color: var(--ink-muted);
       text-decoration: line-through;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-why {
+      margin-top: .45rem;
+      padding: .55rem .65rem;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, .04);
+      border: 1px solid rgba(15, 23, 42, .06);
+    }
+
+    html[data-color-scheme="adult"] .overview-task-why-copy {
+      margin: .25rem 0 0;
+      color: var(--ink-muted);
+      font-size: .78rem;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .task-alternatives-copy {
+      margin: .25rem 0 0;
+      color: var(--ink-muted);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .task-contacts--global {
+      margin-top: .45rem;
     }
 
     html[data-color-scheme="adult"] .overview-task-chips {
@@ -7692,13 +7733,27 @@
       font-size: .9rem;
       font-weight: 600;
       line-height: 1.5;
-      cursor: pointer;
     }
 
-    .task-check:checked + .task-text {
+    .task-text-link {
+      color: #7ec8ff;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .task-text-link:hover {
+      color: #a8dcff;
+    }
+
+    .task-item.is-done .task-text {
       color: rgba(170, 196, 226, .55);
       text-decoration: line-through;
       text-decoration-color: rgba(120, 130, 200, .5);
+    }
+
+    .task-item.is-done .task-text-link {
+      color: #8ab8e8;
+      text-decoration: underline line-through;
     }
 
     .task-label {
@@ -7829,8 +7884,13 @@
       color: var(--brand-purple-dark);
     }
 
-    #screen-roadmap .task-check:checked + .task-text {
+    #screen-roadmap .task-text-link {
+      color: #2563eb;
+    }
+
+    #screen-roadmap .task-item.is-done .task-text {
       color: rgba(36, 18, 53, .52);
+      text-decoration: line-through;
       text-decoration-color: rgba(36, 18, 53, .35);
     }
 
@@ -10942,11 +11002,16 @@
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each.\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and how it connects to the path","tasks":[{"text":"Clear headline — then 2-3 sentences explaining exactly what to do, where to do it, and what finished looks like","steps":["First concrete micro-step (5-15 min)","Second step with a named tool, page, or person","Final step: what to save, send, or check off"],"why":"1-2 sentences on why THIS step matters now for this person","outcome":"1 sentence on the tangible thing they will have when done (file sent, post live, call booked, number calculated)","duration":"~30-45 min","cost":"Free or estimated cost","local":"Specific real org/program name in their city (not a category label)","links":["https://official-site.example"],"contacts":[{"name":"Contact name or title","org":"Organization full name","phone":"published main line or empty string","email":"published program email or empty string","url":"https://official-contact-page"}],"script":"Ready to copy: email subject + 3-4 sentence body OR phone opener"}]}]\n' +
-      'Every task object MUST include text, steps (2-4 items), why, outcome, duration, and cost. Include local, links[], contacts[], and script only when the task involves outreach, applications, licensing, or local programs — otherwise use empty strings/arrays.\n' +
-      'Write like a patient coach for someone who may not know Reddit, subreddits, or tech jargon. In text, spell things out: "Post in Reddit\'s r/Findapath forum (people exploring career paths)" — not just "Post in r/Findapath". steps[] must be distinct micro-actions (open X, write Y, click Z) — never repeat or rephrase the headline.\n' +
-      'For writing tasks, include a ready-to-copy sample in script (founder story, post draft, or email) the user can paste and edit.\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and how it connects to the path","tasks":[{"text":"Category-based action headline — what to DO (e.g. meet a free small business advisor near you), NOT a hardcoded org from another country","steps":["First concrete micro-step (5-15 min)","Second step with a named tool, page, or person","Final step: what to save, send, or check off"],"why":"1-2 sentences on why THIS step matters now for this person","alternatives":"If this step doesn\'t apply in their country or situation, name a different route","outcome":"1 sentence on the tangible thing they will have when done","duration":"~30-45 min","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization serving their city/region","phone":"published line or empty string","email":"published email or empty string","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government or national program name","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Coursera, edX, Khan Academy, etc.","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page-needed.example"],"contacts":[],"script":"Email subject + body OR call opener — only when outreach is needed; otherwise empty string"}]}]\n' +
+      'Every task object MUST include text, steps (2-4 items), why, alternatives, outcome, duration, and cost.\n' +
+      'For tasks involving local programs, applications, licensing, or outreach: fill resourceCategories[], resources.local (1-3 real orgs for their city/region), resources.national when a country-wide portal applies, and resources.global for online options that work anywhere.\n' +
+      'Task text = the action. resources.* = the discovered organizations. Never put only a category in resources — always resolve to real names + official URLs for THIS user\'s location.\n' +
+      'Write like a patient coach for someone who may not know Reddit, subreddits, or tech jargon.\n' +
+      'For writing tasks, include a ready-to-copy sample in script when helpful.\n' +
       'Do not reuse stage titles across different paths on the same map.';
+
+    const RESOURCE_CATEGORY_HINTS =
+      'employment_agency, career_center, apprenticeship, small_business_advisor, business_incubator, startup_grants, government_grants, nonprofit, scholarship, community_college, certification_program, library, coworking, food_assistance, transportation_assistance, housing_assistance, childcare_assistance, veteran_resources, disability_services, legal_aid, financial_literacy, business_networking, makerspace, industry_association, id_documents, municipal_services, reentry_support';
 
     let roadmapLocalEnrichInFlight = false;
     let roadmapLocalEnrichProgress = null;
@@ -10955,9 +11020,9 @@
 
     const LOCAL_ENRICH_STEPS = [
       { label: "Reading your path and location", cap: 14 },
-      { label: "Finding organizations in your area", cap: 52 },
-      { label: "Adding contacts, links, and scripts", cap: 78 },
-      { label: "Double-checking outreach details", cap: 90 },
+      { label: "Matching resource categories to your area", cap: 52 },
+      { label: "Adding local, national, and online options", cap: 78 },
+      { label: "Double-checking resource details", cap: 90 },
       { label: "Updating your tasks", cap: 98 }
     ];
 
@@ -11036,17 +11101,20 @@
     };
 
     const ACTIONABLE_TASK_RULES =
-      'LOW-EFFORT / DO-THIS-FOR-THEM RULES:\n' +
-      '- The user should NOT have to hunt for basics. Give real organization names, official https:// links, published phone numbers, and published emails when you know them for their city.\n' +
-      '- For outreach tasks: include 1-3 specific local orgs in contacts[] with url/phone/email, plus a copy-paste script (subject line + email body or call opener).\n' +
-      '- For licensing/registration tasks: link to the exact state/city agency page and list the fee in cost.\n' +
-      '- Every task needs steps[] with 2-4 distinct micro-actions (open this page, write this paragraph, click publish) — never restate the headline.\n' +
-      '- why and outcome must each be a full sentence the user can understand without guessing.\n' +
-      '- Use plain English first. Explain Reddit forums, Stripe, and other jargon in parentheses. Never assume the user knows what r/Findapath means.\n' +
-      '- BAD: "List 10 local organizations" or "Find workforce resources near you" or "SBDC near Austin".\n' +
-      '- GOOD: contacts for Caritas of Austin Re-Entry, Austin Public Library Job Center, Workforce Solutions Capital Area with URLs + script: "Subject: Free career roadmap pilot for your clients…"\n' +
-      '- Never invent fake grant names or personal @gmail addresses. Use official sites; if unsure of a phone/email, leave it "" and put "Find contact on website" in script with the URL.\n' +
-      '- links[] should be the exact pages they need open to complete the task.\n';
+      'CATEGORY-FIRST RESOURCE RULES:\n' +
+      '- The AI must know the TYPE of resource to find — not memorize organizations from other countries.\n' +
+      '- Task text = what to DO using categories (e.g. "Meet with a free small business advisor near you before writing your business plan").\n' +
+      '- resources.local / resources.national / resources.global = where you RESOLVE those categories to real orgs, portals, and URLs for THIS user\'s exact location.\n' +
+      '- Three layers: LOCAL (city/county/region orgs), NATIONAL (country government programs, grants, benefits), GLOBAL (Coursera, edX, Khan Academy, Google Career Certificates, remote job boards — when online works).\n' +
+      `- Resource category examples: ${RESOURCE_CATEGORY_HINTS}.\n` +
+      '- Every relevant task needs alternatives explaining another route if the main step doesn\'t apply in their country.\n' +
+      '- steps[]: 2-4 distinct micro-actions (open this page, book this appointment, save this number).\n' +
+      '- why and outcome: full sentences a beginner understands.\n' +
+      '- Use plain English; explain jargon in parentheses.\n' +
+      '- BAD task text: "Call Workforce Solutions Austin" or "Find workforce resources near you" with no resources filled in.\n' +
+      '- GOOD: text says "Contact your regional employment service…" AND resources.local lists NAV Troms og Finnmark (or the correct agency for their city) with nav.no URL.\n' +
+      '- Never invent fake grants or personal @gmail addresses. Use official sites; leave phone/email "" if not published.\n' +
+      '- links[] = exact pages they need open. Prefer resources.* over bare links when both apply.\n';
     let roadmapAutoContinueTimer = null;
 
     function getFounderPathTemplate(idea) {
@@ -11413,12 +11481,24 @@
       return (
         `\nLOCATION-SPECIFIC RULES for ${locRaw} (${pb.countryLabel}):\n` +
         `- Every task must match what a resident of ${pb.countryLabel} would ACTUALLY do — same ID documents, government agencies, job boards, benefits systems, business registration, and local customs.\n` +
-        `- Employment: ${pb.employmentGuide}.\n` +
-        `- Business/self-employment: ${pb.businessGuide}.\n` +
-        `- Training: ${pb.learningGuide}.\n` +
+        `- Employment category → ${pb.employmentGuide}.\n` +
+        `- Business/self-employment category → ${pb.businessGuide}.\n` +
+        `- Training category → ${pb.learningGuide}.\n` +
         `- NEVER use US-only steps (211.org, United Way 211, SNAP, Medicaid, DMV, Social Security card, American Job Center, SBDC, SCORE, county clerk, "25 miles") unless the user is in the United States.\n` +
         `- Use local currency, local distance units (km outside the US), and official country websites (.no, .uk, .ca, .gov, etc.).\n` +
-        `- Name real organizations in ${locRaw} with published URLs and phone numbers.\n`
+        `- Resolve resource CATEGORIES to real organizations serving ${locRaw} — put names in resources.local / resources.national, not in the task headline.\n`
+      );
+    }
+
+    function getResourceCategoryPromptBlock() {
+      return (
+        `\nRESOURCE DISCOVERY (think in categories, resolve to real orgs):\n` +
+        `For THIS user, when a task needs help, look for categories like: ${RESOURCE_CATEGORY_HINTS}.\n` +
+        `Fill three layers in resources{}:\n` +
+        `- local: city/region/municipal orgs with official URLs\n` +
+        `- national: country government portals, national grants, benefits\n` +
+        `- global: online options that work anywhere (Coursera, edX, Khan Academy, Google Career Certificates, remote job boards)\n` +
+        `Never assume a US organization applies outside the US. Never leave resources empty when the task clearly needs a local agency.\n`
       );
     }
 
@@ -11529,7 +11609,136 @@
     }
 
     function emptyUserLocation() {
-      return { city: "", region: "", country: "", raw: "" };
+      return { city: "", region: "", country: "", postal: "", raw: "" };
+    }
+
+    function emptyLocationDraft() {
+      return { country: "", region: "", city: "", postal: "" };
+    }
+
+    function isLocationIntakeSkip(text) {
+      return /^(skip|n\/a|na|none|not applicable|no|pass)$/i.test(String(text || "").trim());
+    }
+
+    function buildUserLocationFromDraft(draft) {
+      const country = String(draft.country || "").trim();
+      const region = isLocationIntakeSkip(draft.region) ? "" : String(draft.region || "").trim();
+      const city = String(draft.city || "").trim();
+      const postal = isLocationIntakeSkip(draft.postal) ? "" : String(draft.postal || "").trim();
+      const parts = [city, region, country].filter(Boolean);
+      const raw = postal ? `${parts.join(", ")} ${postal}`.trim() : parts.join(", ");
+      const parsed = enrichLocationFromKnownCities(parseLocationAnswer(raw));
+      return { ...parsed, postal, raw: raw || parsed.raw };
+    }
+
+    function tryParseFullLocationAnswer(text) {
+      const trimmed = String(text || "").trim();
+      if (!trimmed || !looksLikeRealLocation(trimmed)) return null;
+      const parsed = parseLocationAnswer(trimmed);
+      if (parsed.country || (parsed.city && parsed.region) || lookupKnownCity(parsed.city)) return parsed;
+      if (trimmed.includes(",") && parsed.city && parsed.region) return parsed;
+      return null;
+    }
+
+    function finalizeLocationIntake() {
+      state.locationIntakeStep = null;
+      state.userLocation = buildUserLocationFromDraft(state.locationDraft);
+      state.locationDraft = emptyLocationDraft();
+      state.locationConfirmed = true;
+      updateRoadmapOverviewHeader();
+      updateRoadmapLocalResourcesList();
+      schedulePersist();
+    }
+
+    async function continueIntakeAfterLocation() {
+      trackEvent("location_answer_submitted", {
+        intake_mode: state.intakeMode || "standard",
+        has_city: Boolean(state.userLocation.city),
+        has_region: Boolean(state.userLocation.region),
+        has_country: Boolean(state.userLocation.country),
+        has_postal: Boolean(state.userLocation.postal)
+      });
+      if (state.intakeMode === "quick") {
+        showReplyBox(false);
+        addTypingBubble(PATH_BUILDING_MSG);
+        trackEvent("path_generation_started", {
+          history_count: state.history.length,
+          intake_mode: "quick",
+          has_location: true
+        });
+        await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
+        return;
+      }
+      addTypingBubble();
+      askNameStep();
+    }
+
+    function askLocationIntakeStep(step) {
+      state.locationIntakeStep = step;
+      const draft = state.locationDraft;
+      let reply = "";
+      if (step === "country") {
+        reply = "I have a few questions so I can personalize your roadmap.\n\nWhat country do you live in?";
+      } else if (step === "region") {
+        reply = `Got it — ${draft.country}.\n\nWhat state, province, or region? (Type skip if that doesn't apply.)`;
+      } else if (step === "city") {
+        const place = [draft.region, draft.country].filter(Boolean).join(", ");
+        reply = place ? `What city or town in ${place}?` : "What city or town?";
+      } else if (step === "postal") {
+        reply = `ZIP or postal code for ${draft.city || "your area"}? (Optional — type skip to continue.)`;
+      }
+      resolveTyping(reply);
+      state.history.push({ role: "assistant", content: reply });
+      showReplyBox(true);
+      schedulePersist();
+    }
+
+    function handleStructuredLocationIntake(text) {
+      const trimmed = String(text || "").trim();
+      if (!trimmed) return false;
+
+      const full = tryParseFullLocationAnswer(trimmed);
+      if (full) {
+        state.locationDraft = {
+          country: full.country || state.locationDraft.country,
+          region: full.region || state.locationDraft.region,
+          city: full.city || state.locationDraft.city,
+          postal: full.postal || ""
+        };
+        finalizeLocationIntake();
+        return "done";
+      }
+
+      const step = state.locationIntakeStep || "country";
+      if (step === "country") {
+        state.locationDraft.country = formatCountryLabel(normalizeCountryKey(trimmed)) || trimmed;
+        askLocationIntakeStep("region");
+        return "step";
+      }
+      if (step === "region") {
+        if (!isLocationIntakeSkip(trimmed)) state.locationDraft.region = trimmed;
+        askLocationIntakeStep("city");
+        return "step";
+      }
+      if (step === "city") {
+        state.locationDraft.city = trimmed;
+        const enriched = enrichLocationFromKnownCities({
+          city: trimmed,
+          region: state.locationDraft.region,
+          country: state.locationDraft.country,
+          raw: trimmed
+        });
+        if (enriched.country && !state.locationDraft.country) state.locationDraft.country = enriched.country;
+        if (enriched.region && !state.locationDraft.region) state.locationDraft.region = enriched.region;
+        askLocationIntakeStep("postal");
+        return "step";
+      }
+      if (step === "postal") {
+        if (!isLocationIntakeSkip(trimmed)) state.locationDraft.postal = trimmed;
+        finalizeLocationIntake();
+        return "done";
+      }
+      return false;
     }
 
     function normalizeUserLocation(value) {
@@ -11542,6 +11751,7 @@
         city: String(value.city || "").trim(),
         region: String(value.region || "").trim(),
         country: String(value.country || "").trim(),
+        postal: String(value.postal || "").trim(),
         raw: String(value.raw || "").trim()
       };
     }
@@ -12251,6 +12461,38 @@ What would make this more useful for someone in your situation?`;
       return parts.join("");
     }
 
+    function normalizeTaskResourceLayers(task, fallback = {}) {
+      const resources = task?.resources && typeof task.resources === "object" ? task.resources : {};
+      const local = normalizeTaskContacts(resources.local ?? task.resourcesLocal ?? task.localResources ?? fallback.resourcesLocal ?? []);
+      const national = normalizeTaskContacts(resources.national ?? task.resourcesNational ?? task.nationalResources ?? fallback.resourcesNational ?? []);
+      const globalRes = normalizeTaskContacts(resources.global ?? task.resourcesGlobal ?? task.globalResources ?? fallback.resourcesGlobal ?? []);
+      return { local, national, global: globalRes };
+    }
+
+    function hasLayeredResources(task) {
+      const layers = task?.resourceLayers || normalizeTaskResourceLayers(task);
+      return Boolean(layers.local?.length || layers.national?.length || layers.global?.length);
+    }
+
+    function attachResourceLayers(normalized, source = {}) {
+      const layers = normalizeTaskResourceLayers(source, normalized);
+      if (!layers.local.length && normalized.contacts?.length) {
+        layers.local = normalized.contacts.map((contact) => ({ ...contact }));
+      }
+      normalized.resourceLayers = layers;
+      normalized.resourcesLocal = layers.local;
+      normalized.resourcesNational = layers.national;
+      normalized.resourcesGlobal = layers.global;
+      normalized.alternatives = String(source.alternatives ?? normalized.alternatives ?? "").trim();
+      normalized.resourceCategories = Array.isArray(source.resourceCategories)
+        ? source.resourceCategories.map((item) => String(item || "").trim()).filter(Boolean)
+        : (normalized.resourceCategories || []);
+      if (!normalized.local && layers.local.length) {
+        normalized.local = layers.local.map((entry) => entry.org || entry.name).filter(Boolean).slice(0, 2).join(" · ");
+      }
+      return normalized;
+    }
+
     function normalizeRoadmapTask(task, fallback = {}) {
       let normalized;
       if (typeof task === "string") {
@@ -12258,41 +12500,48 @@ What would make this more useful for someone in your situation?`;
           text: task.trim(),
           steps: normalizeTaskSteps(fallback.steps),
           why: fallback.why || "",
+          alternatives: fallback.alternatives || "",
           outcome: fallback.outcome || "",
           duration: fallback.duration || "",
           cost: fallback.cost || "",
           local: fallback.local || "",
           links: normalizeTaskLinks(fallback.links),
           contacts: normalizeTaskContacts(fallback.contacts),
-          script: fallback.script || ""
+          script: fallback.script || "",
+          resourceCategories: fallback.resourceCategories || []
         };
       } else if (task && typeof task === "object") {
         normalized = {
           text: getTaskText(task),
           steps: normalizeTaskSteps(task.steps ?? task.substeps ?? task.checklist ?? fallback.steps),
           why: String(task.why || fallback.why || "").trim(),
+          alternatives: String(task.alternatives || fallback.alternatives || "").trim(),
           outcome: String(task.outcome || fallback.outcome || "").trim(),
           duration: String(task.duration || fallback.duration || "").trim(),
           cost: String(task.cost || fallback.cost || "").trim(),
           local: String(task.local || task.localTip || fallback.local || "").trim(),
           links: normalizeTaskLinks(task.links ?? task.link ?? task.urls ?? fallback.links),
           contacts: normalizeTaskContacts(task.contacts ?? task.contact ?? fallback.contacts),
-          script: String(task.script || task.outreach || task.template || fallback.script || "").trim()
+          script: String(task.script || task.outreach || task.template || fallback.script || "").trim(),
+          resourceCategories: Array.isArray(task.resourceCategories) ? task.resourceCategories : (fallback.resourceCategories || [])
         };
       } else {
         normalized = {
           text: String(task ?? "").trim(),
           steps: [],
           why: "",
+          alternatives: "",
           outcome: "",
           duration: "",
           cost: "",
           local: "",
           links: [],
           contacts: [],
-          script: ""
+          script: "",
+          resourceCategories: []
         };
       }
+      attachResourceLayers(normalized, typeof task === "object" && task ? task : fallback);
       return scrubRedundantTaskResources(localizeTaskForUserLocation(normalized));
     }
 
@@ -12336,10 +12585,27 @@ What would make this more useful for someone in your situation?`;
       return `https://${trimmed.replace(/^\/\//, "")}`;
     }
 
+    function linkifyTaskTextHtml(text) {
+      const escaped = escapeHtml(String(text || ""));
+      const pattern = /(\()?(https?:\/\/[^\s<>,]+|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?:\/[^\s<>,)]*)?)(\))?/gi;
+      return escaped.replace(pattern, (full, openParen, rawUrl, closeParen) => {
+        if (!rawUrl) return full;
+        let url = rawUrl;
+        let trailing = "";
+        while (/[.,;:!?]+$/.test(url)) {
+          trailing = url.slice(-1) + trailing;
+          url = url.slice(0, -1);
+        }
+        if (!/\./.test(url) || url.length < 4 || !/^[a-z0-9]/i.test(url)) return full;
+        const href = formatExternalUrl(url);
+        return `${openParen || ""}<a class="task-text-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>${trailing}${closeParen || ""}`;
+      });
+    }
+
     function getRoadmapAdvisorTokenLimit(founderMode) {
       const hasLocation = Boolean(getUserLocation());
-      if (founderMode) return hasLocation ? 4096 : 2800;
-      return hasLocation ? 3600 : 2200;
+      if (founderMode) return hasLocation ? 4608 : 3000;
+      return hasLocation ? 4096 : 2400;
     }
 
     function capAdvisorTokens(requested) {
@@ -12420,11 +12686,35 @@ What would make this more useful for someone in your situation?`;
 
     function shouldShowTaskResources(task, stage, stageIndex, idea = state.currentIdea) {
       const normalized = normalizeRoadmapTask(task);
-      if (!normalized.contacts.length && !normalized.links.length && !normalized.script) return false;
+      const layers = normalized.resourceLayers || { local: [], national: [], global: [] };
+      const hasResources = Boolean(
+        layers.local.length || layers.national.length || layers.global.length ||
+        normalized.contacts.length || normalized.links.length || normalized.script || normalized.alternatives
+      );
+      if (!hasResources) return false;
       if (isMisplacedPackResources(normalized, stage, stageIndex, idea)) return false;
       if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return true;
       if (taskNeedsTaskToolResources(normalized.text)) return true;
+      if (hasLayeredResources(normalized)) return true;
+      if (normalized.alternatives) return true;
       return normalized.contacts.some((contact) => !isKnownPackOrg(contact.org));
+    }
+
+    function renderResourceContactCardsHtml(entries) {
+      return entries.map((contact) => {
+        const title = [contact.org, contact.name].filter(Boolean).join(" — ") || "Resource";
+        const meta = [];
+        if (contact.url) {
+          meta.push(`<a href="${escapeHtml(formatExternalUrl(contact.url))}" target="_blank" rel="noopener noreferrer">Website</a>`);
+        }
+        if (contact.phone) {
+          meta.push(`<a href="tel:${escapeHtml(contact.phone.replace(/[^\d+]/g, ""))}">${escapeHtml(contact.phone)}</a>`);
+        }
+        if (contact.email) {
+          meta.push(`<a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a>`);
+        }
+        return `<div class="task-contact-card"><div class="task-contact-title">${escapeHtml(title)}</div>${meta.length ? `<div class="task-contact-meta">${meta.join(" · ")}</div>` : ""}</div>`;
+      }).join("");
     }
 
     function renderTaskActionPackHtml(task, options = {}) {
@@ -12432,23 +12722,17 @@ What would make this more useful for someone in your situation?`;
       const { stage, stageIndex, idea = state.currentIdea } = options;
       if (stage && !shouldShowTaskResources(normalized, stage, stageIndex, idea)) return "";
       const blocks = [];
+      const layers = normalized.resourceLayers || { local: [], national: [], global: [] };
+      const nearYou = [...layers.local, ...layers.national];
 
-      if (normalized.contacts.length) {
-        const cards = normalized.contacts.map((contact) => {
-          const title = [contact.org, contact.name].filter(Boolean).join(" — ") || "Contact";
-          const meta = [];
-          if (contact.url) {
-            meta.push(`<a href="${escapeHtml(formatExternalUrl(contact.url))}" target="_blank" rel="noopener noreferrer">Website</a>`);
-          }
-          if (contact.phone) {
-            meta.push(`<a href="tel:${escapeHtml(contact.phone.replace(/[^\d+]/g, ""))}">${escapeHtml(contact.phone)}</a>`);
-          }
-          if (contact.email) {
-            meta.push(`<a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a>`);
-          }
-          return `<div class="task-contact-card"><div class="task-contact-title">${escapeHtml(title)}</div>${meta.length ? `<div class="task-contact-meta">${meta.join(" · ")}</div>` : ""}</div>`;
-        }).join("");
-        blocks.push(`<div class="task-contacts"><div class="task-action-label">Who to contact</div>${cards}</div>`);
+      if (nearYou.length) {
+        blocks.push(`<div class="task-contacts"><div class="task-action-label">Resources near you</div>${renderResourceContactCardsHtml(nearYou)}</div>`);
+      } else if (normalized.contacts.length) {
+        blocks.push(`<div class="task-contacts"><div class="task-action-label">Resources near you</div>${renderResourceContactCardsHtml(normalized.contacts)}</div>`);
+      }
+
+      if (layers.global.length) {
+        blocks.push(`<div class="task-contacts task-contacts--global"><div class="task-action-label">Online / anywhere</div>${renderResourceContactCardsHtml(layers.global)}</div>`);
       }
 
       if (normalized.links.length) {
@@ -12462,6 +12746,10 @@ What would make this more useful for someone in your situation?`;
 
       if (normalized.script && shouldShowTaskScript(normalized)) {
         blocks.push(`<div class="task-script"><div class="task-action-label">What to say</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
+      }
+
+      if (normalized.alternatives) {
+        blocks.push(`<div class="task-alternatives"><div class="task-action-label">Alternatives</div><p class="task-alternatives-copy">${escapeHtml(humanizeTaskText(normalized.alternatives))}</p></div>`);
       }
 
       return blocks.length ? `<div class="task-action-pack">${blocks.join("")}</div>` : "";
@@ -12819,8 +13107,16 @@ What would make this more useful for someone in your situation?`;
       cloned.forEach((stage, stageIndex) => {
         stage.tasks = stage.tasks.map((task) => {
           let normalized = normalizeRoadmapTask(task);
+          const aiResourcesAlready = Boolean(
+            normalized.contacts.length ||
+            hasLayeredResources(normalized) ||
+            normalized.links.length
+          );
 
           if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea) && loc && resources.length) {
+            if (aiResourcesAlready && !force) {
+              return scrubRedundantTaskResources(normalized);
+            }
             if (!force && normalized.contacts.length && shouldShowTaskResources(normalized, stage, stageIndex, idea)) {
               normalized.contacts.forEach((contact) => {
                 if (contact.org) usedOrgKeys.add(contact.org);
@@ -12829,13 +13125,16 @@ What would make this more useful for someone in your situation?`;
               const picks = pickResourcesForTask(normalized.text, resources, usedOrgKeys);
               if (picks.length && scoreResourceForTask(picks[0], normalized.text) > 0) {
                 picks.forEach((entry) => usedOrgKeys.add(entry.org));
-                normalized.contacts = picks.map((entry) => ({
+                const injected = picks.map((entry) => ({
                   name: entry.name || "Program director",
                   org: entry.org,
                   phone: entry.phone || "",
                   email: entry.email || "",
                   url: entry.url || ""
                 }));
+                normalized.resourcesLocal = injected;
+                normalized.resourceLayers = { local: injected, national: [], global: [] };
+                normalized.contacts = injected;
                 normalized.links = picks.map((entry) => entry.url).filter(Boolean);
                 normalized.local = picks.length > 1 ? `${picks[0].org} · ${picks[1].org}` : picks[0].org;
                 normalized.script = buildLocalTaskScript(normalized.text, picks[0].org, loc);
@@ -13685,8 +13984,9 @@ What would make this more useful for someone in your situation?`;
         `NEVER use generic stage titles like "Launch the first test", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path.\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
         `- Every task must be written for a beginner: 2-4 sentences in text plus steps[] with 2-4 ordered micro-actions.\n` +
-        `- Each task object must answer: why, outcome, duration, cost, AND include contacts[], links[], and script when the task involves outreach, applications, licensing, or local programs.\n` +
-        `- Do NOT assign vague homework like "research local orgs" without naming the orgs and giving the outreach script in the same task.\n` +
+        `- Task text uses resource CATEGORIES (employment service, small business advisor) — resolve to real orgs in resources.local / resources.national / resources.global.\n` +
+        `- Each task object must answer: why, alternatives, outcome, duration, cost, and include layered resources when the task involves local programs, applications, licensing, or outreach.\n` +
+        `- Do NOT assign vague homework like "research local orgs" without filling resources.* with real names and URLs.\n` +
         `- Name real platforms, tools, audiences, numbers, time boxes, and deliverables.\n` +
         `- Reference details they actually said (skills, location, constraints, goals, industry, budget).\n` +
         `- Each task should be doable in a day or a week — not a vague category.\n` +
@@ -14131,8 +14431,10 @@ What would make this more useful for someone in your situation?`;
       mapFeedbackGiven: false,
       mapFeedbackSentiment: null,
       intakeMode: "standard",
-      userLocation: { city: "", region: "", country: "", raw: "" },
+      userLocation: { city: "", region: "", country: "", postal: "", raw: "" },
       locationConfirmed: false,
+      locationIntakeStep: null,
+      locationDraft: { country: "", region: "", city: "", postal: "" },
       awaitingLocationCountry: "",
       roadmapExhausted: false,
       roadmapAutoContinuePending: false,
@@ -14847,6 +15149,8 @@ What would make this more useful for someone in your situation?`;
         intakeMode: state.intakeMode || "standard",
         userLocation: normalizeUserLocation(state.userLocation),
         locationConfirmed: Boolean(state.locationConfirmed),
+        locationIntakeStep: state.locationIntakeStep || null,
+        locationDraft: state.locationDraft || emptyLocationDraft(),
         roadmapCategories: state.roadmapCategories,
         activeRoadmapCategoryId: state.activeRoadmapCategoryId,
         selectedPathIndexes: state.selectedPathIndexes,
@@ -14871,7 +15175,9 @@ What would make this more useful for someone in your situation?`;
         mapFeedbackSentiment: source.mapFeedbackSentiment,
         intakeMode: source.intakeMode || "standard",
         userLocation: normalizeUserLocation(source.userLocation),
-        locationConfirmed: Boolean(source.locationConfirmed)
+        locationConfirmed: Boolean(source.locationConfirmed),
+        locationIntakeStep: source.locationIntakeStep || null,
+        locationDraft: source.locationDraft || emptyLocationDraft()
       };
     }
 
@@ -14893,6 +15199,10 @@ What would make this more useful for someone in your situation?`;
       state.intakeMode = data.intakeMode || "standard";
       state.userLocation = normalizeUserLocation(data.userLocation);
       state.locationConfirmed = Boolean(data.locationConfirmed);
+      state.locationIntakeStep = data.locationIntakeStep || null;
+      state.locationDraft = data.locationDraft && typeof data.locationDraft === "object"
+        ? { ...emptyLocationDraft(), ...data.locationDraft }
+        : emptyLocationDraft();
       if (!hasSavedUserLocation()) {
         const inferred = inferLocationFromConversation();
         if (formatUserLocation(inferred) && looksLikeRealLocation(formatUserLocation(inferred))) {
@@ -16964,30 +17274,23 @@ What would make this more useful for someone in your situation?`;
       if (!loc) {
         return (
           `\nUser location: not provided yet.\n` +
-          `If a task would benefit from local programs, still give national official links — but prefer generic .gov workforce URLs over fake local names.\n`
+          getResourceCategoryPromptBlock() +
+          `If a task would benefit from local programs, still give national official links in resources.national — but prefer generic .gov URLs over fake local names.\n`
         );
       }
       const parsed = parseLocationAnswer(loc);
-      if (!isUSLocation(parsed)) {
-        return (
-          `\nUser location: ${loc}\n` +
-          getLocationCitizenRulesBlock(parsed, loc) +
-          `For each relevant task include in JSON:\n` +
-          `- contacts[] with org name + official url (+ phone/email only if published)\n` +
-          `- links[] with the exact page they need (apply, schedule, directory, licensing portal)\n` +
-          `- script with copy-paste outreach or what to say on a call\n` +
-          `Never output generic sidebar phrases like "Workforce near ${loc}" — only named places with URLs.\n`
-        );
-      }
       return (
         `\nUser location: ${loc}\n` +
-        `CRITICAL: Tasks must be LOW-EFFORT for this exact area. Name real organizations, campuses, workforce boards, libraries, re-entry nonprofits, SBDC/SCORE chapters, or government offices serving ${loc}.\n` +
+        getLocationCitizenRulesBlock(parsed, loc) +
+        getResourceCategoryPromptBlock() +
         `For each relevant task include in JSON:\n` +
-        `- contacts[] with org name + official url (+ phone/email only if published)\n` +
-        `- links[] with the exact page they need (apply, schedule, directory, licensing portal)\n` +
-        `- script with copy-paste outreach or what to say on a call\n` +
-        `Examples of specificity level (adapt to ${loc}): workforce board by name, main library branch job center, community college continuing ed, United Way 211, local SBDC at a named college.\n` +
-        `Never output generic sidebar phrases like "Workforce near ${loc}" — only named places with URLs.\n`
+        `- resourceCategories[] tagging what kinds of help apply\n` +
+        `- resources.local[] — real orgs serving ${loc} (name + official url + phone/email only if published)\n` +
+        `- resources.national[] — country-wide portals when applicable\n` +
+        `- resources.global[] — online options that work anywhere\n` +
+        `- alternatives — another route if the main step doesn't apply there\n` +
+        `- script only for outreach/calls when needed\n` +
+        `Task text stays category-based; resources.* holds the discovered organizations.\n`
       );
     }
 
@@ -17128,15 +17431,15 @@ What would make this more useful for someone in your situation?`;
     }
 
     function askLocationStep() {
-      const reply = "Where are you based? City name alone is fine — or add region/country (e.g. Tromsø, Norway). I'll look for local programs and resources that could help.";
-      resolveTyping(reply);
-      state.history.push({ role: "assistant", content: reply });
+      state.locationDraft = emptyLocationDraft();
+      state.locationIntakeStep = "country";
+      state.awaitingLocationCountry = "";
+      askLocationIntakeStep("country");
       state.step = 3;
       trackEvent("location_prompt_shown", {
-        intake_mode: state.intakeMode || "standard"
+        intake_mode: state.intakeMode || "standard",
+        structured: true
       });
-      showReplyBox(true);
-      schedulePersist();
     }
 
     function getFirstUserMessage() {
@@ -17602,29 +17905,17 @@ What would make this more useful for someone in your situation?`;
       }
 
       if (state.step === 3) {
-        if (state.awaitingLocationCountry) {
-          const city = state.awaitingLocationCountry;
-          state.awaitingLocationCountry = "";
-          saveUserLocation(`${city}, ${text.trim()}`, { confirmed: true });
-        } else if (locationNeedsCountryFollowUp(text)) {
-          const parsed = parseLocationAnswer(text);
-          state.awaitingLocationCountry = parsed.city;
-          state.userLocation = parsed;
-          state.locationConfirmed = false;
-          addTypingBubble();
-          const followup = `Got it — ${parsed.city}. Which country is that in? (Just the country name is fine.)`;
-          resolveTyping(followup);
-          state.history.push({ role: "assistant", content: followup });
-          showReplyBox(true);
+        addTypingBubble();
+        const intakeResult = handleStructuredLocationIntake(text);
+        if (intakeResult === "step") {
           schedulePersist();
-          trackEvent("location_country_followup_shown", {
-            city: parsed.city,
-            intake_mode: state.intakeMode || "standard"
-          });
           return;
-        } else {
-          saveUserLocation(text, { confirmed: true });
         }
+        if (intakeResult === "done") {
+          await continueIntakeAfterLocation();
+          return;
+        }
+        saveUserLocation(text, { confirmed: true });
         trackEvent("location_answer_submitted", {
           reply_length: text.length,
           intake_mode: state.intakeMode || "standard",
@@ -17644,7 +17935,6 @@ What would make this more useful for someone in your situation?`;
           await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
           return;
         }
-        addTypingBubble();
         askNameStep();
         return;
       }
@@ -18756,14 +19046,6 @@ What would make this more useful for someone in your situation?`;
       }
 
       const extraParts = [];
-      if (normalized.why) {
-        extraParts.push(`
-          <div class="overview-task-detail-block">
-            <span class="overview-task-detail-label">Why this step</span>
-            <p class="overview-task-detail-copy">${escapeHtml(humanizeTaskText(normalized.why))}</p>
-          </div>`);
-      }
-
       if (normalized.outcome) {
         extraParts.push(`
           <div class="overview-task-detail-block">
@@ -18807,13 +19089,17 @@ What would make this more useful for someone in your situation?`;
       const detailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const actionPack = showResources ? renderTaskActionPackHtml(normalized, { stage, stageIndex }) : "";
+      const whyBlock = normalized.why
+        ? `<div class="overview-task-why"><span class="overview-task-detail-label">Why</span><p class="overview-task-why-copy">${escapeHtml(humanizeTaskText(normalized.why))}</p></div>`
+        : "";
 
       return `
         <div class="task-item overview-task" data-task-id="${id}">
           <div class="overview-task-main">
-            <input class="task-check" type="checkbox" id="${id}">
+            <input class="task-check" type="checkbox" id="${id}" aria-labelledby="${id}-label">
             <div class="overview-task-content">
-              <label class="task-text" for="${id}">${escapeHtml(text)}</label>
+              <div class="task-text" id="${id}-label">${linkifyTaskTextHtml(text)}</div>
+              ${whyBlock}
               ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
               ${plainExplain}
               ${detailBlock}
@@ -18942,8 +19228,8 @@ What would make this more useful for someone in your situation?`;
         normalized.text = text;
         state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = normalized;
         const id = `task-${target.stageIndex}-${target.taskIndex}`;
-        const label = document.querySelector(`label.task-text[for="${id}"]`);
-        if (label) label.textContent = text;
+        const textEl = document.getElementById(`${id}-label`) || document.querySelector(`.task-item[data-task-id="${id}"] .task-text`);
+        if (textEl) textEl.innerHTML = linkifyTaskTextHtml(humanizeTaskText(text));
       });
 
       if (state.roadmapKey) {
@@ -19370,6 +19656,8 @@ What would make this more useful for someone in your situation?`;
       state.intakeMode = "standard";
       state.userLocation = emptyUserLocation();
       state.locationConfirmed = false;
+      state.locationIntakeStep = null;
+      state.locationDraft = emptyLocationDraft();
       state.awaitingLocationCountry = "";
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
