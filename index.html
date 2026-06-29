@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-copy-signout -->
+<!-- whatimado build: 2026-06-29-explore-grid -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-copy-signout">
+  <meta name="whatimado-build" content="2026-06-29-explore-grid">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1117,11 +1117,12 @@
 
     html[data-color-scheme="adult"] .dashboard-explore-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 1rem;
     }
 
     html[data-color-scheme="adult"] .dashboard-explore-card {
+      grid-column: span 2;
       padding: 1.1rem 1rem;
       border: 1px solid var(--line);
       border-radius: 16px;
@@ -1133,6 +1134,14 @@
 
     html[data-color-scheme="adult"] .dashboard-explore-card:hover {
       background: var(--bg-soft);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-explore-card:nth-child(4) {
+      grid-column: 2 / span 2;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-explore-card:nth-child(5) {
+      grid-column: 4 / span 2;
     }
 
     html[data-color-scheme="adult"] .dashboard-explore-icon {
@@ -1728,6 +1737,12 @@
       html[data-color-scheme="adult"] .saved-maps-home-list,
       html[data-color-scheme="adult"] .dashboard-explore-grid {
         grid-template-columns: 1fr;
+      }
+
+      html[data-color-scheme="adult"] .dashboard-explore-card,
+      html[data-color-scheme="adult"] .dashboard-explore-card:nth-child(4),
+      html[data-color-scheme="adult"] .dashboard-explore-card:nth-child(5) {
+        grid-column: 1 / -1;
       }
 
       html[data-color-scheme="adult"] .map-plans-actions {
