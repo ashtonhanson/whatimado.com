@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-roadmap-clarity">
+  <meta name="whatimado-build" content="2026-06-29-location-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -11198,6 +11198,7 @@
       "germany", "deutschland", "france", "spain", "italy", "portugal", "netherlands", "belgium", "poland",
       "uk", "united kingdom", "england", "scotland", "wales", "northern ireland", "ireland", "canada",
       "australia", "new zealand", "mexico", "brazil", "india", "japan", "south korea", "korea", "china",
+      "kenya", "nigeria", "south africa", "ghana", "uganda", "tanzania", "ethiopia",
       "united states", "usa", "us", "u s a"
     ]);
 
@@ -11241,7 +11242,9 @@
       helsinki: { city: "Helsinki", region: "Uusimaa", country: "Finland" },
       reykjavik: { city: "Reykjavík", region: "Capital Region", country: "Iceland" },
       amsterdam: { city: "Amsterdam", region: "North Holland", country: "Netherlands" },
-      dublin: { city: "Dublin", region: "Leinster", country: "Ireland" }
+      dublin: { city: "Dublin", region: "Leinster", country: "Ireland" },
+      nairobi: { city: "Nairobi", region: "Nairobi County", country: "Kenya" },
+      mombasa: { city: "Mombasa", region: "Mombasa County", country: "Kenya" }
     };
 
     const ACTIONABLE_TASK_RULES =
@@ -11346,7 +11349,14 @@
         usa: "United States",
         us: "United States",
         "u s a": "United States",
-        "united states": "United States"
+        "united states": "United States",
+        kenya: "Kenya",
+        nigeria: "Nigeria",
+        "south africa": "South Africa",
+        ghana: "Ghana",
+        uganda: "Uganda",
+        tanzania: "Tanzania",
+        ethiopia: "Ethiopia"
       };
       return labels[key] || String(key || "").replace(/\b\w/g, (char) => char.toUpperCase());
     }
@@ -11766,6 +11776,78 @@
       return /^(skip|n\/a|na|none|not applicable|no|pass)$/i.test(String(text || "").trim());
     }
 
+    const LOCATION_INTAKE_HINT = "\n\n(Type back for the previous question, change country to start location over, or paste a full location like \"Nairobi, Kenya\".)";
+
+    function isLocationIntakeBack(text) {
+      return /^(back|go back|previous|previous question)$/i.test(String(text || "").trim());
+    }
+
+    function isLocationIntakeCorrection(text) {
+      const t = String(text || "").trim().toLowerCase();
+      if (isLocationIntakeBack(text)) return true;
+      return (
+        /^(change country|wrong country|restart location|start over|fix location|change location|start location over)$/i.test(t) ||
+        /^change (country|region|state|city)$/i.test(t) ||
+        (/\b(wrong|mistake|meant|actually|i meant)\b/.test(t) && /\b(country|state|region|city)\b/.test(t))
+      );
+    }
+
+    function getLocationIntakeCorrectionStep(text) {
+      const t = String(text || "").trim().toLowerCase();
+      if (isLocationIntakeBack(text)) return "back";
+      if (/change country|wrong country|restart location|start over|fix location|change location/.test(t)) return "country";
+      if (/change (region|state)/.test(t)) return "region";
+      if (/change city/.test(t)) return "city";
+      return "country";
+    }
+
+    function getPreviousLocationIntakeStep(step) {
+      return ({ region: "country", city: "region", postal: "city" })[step] || null;
+    }
+
+    function detectCountryName(text) {
+      if (!text || isLocationIntakeSkip(text)) return null;
+      const key = normalizeCountryKey(text);
+      if (!KNOWN_COUNTRY_KEYS.has(key)) return null;
+      return formatCountryLabel(key);
+    }
+
+    function countriesAreDifferent(a, b) {
+      if (!a || !b) return false;
+      return normalizeCountryKey(a) !== normalizeCountryKey(b);
+    }
+
+    function regionLooksLikeDifferentCountry(regionInput, currentCountry) {
+      if (!regionInput || isLocationIntakeSkip(regionInput)) return null;
+      if (isUSStatePart(regionInput) && isUSLocation({ country: currentCountry, region: "", city: "", raw: "" })) return null;
+      const asCountry = detectCountryName(regionInput);
+      if (!asCountry) return null;
+      if (!currentCountry) return asCountry;
+      if (countriesAreDifferent(asCountry, currentCountry)) return asCountry;
+      return null;
+    }
+
+    function rewindLocationIntake(toStep) {
+      if (toStep === "country") {
+        state.locationDraft = emptyLocationDraft();
+      } else if (toStep === "region") {
+        state.locationDraft.region = "";
+        state.locationDraft.city = "";
+        state.locationDraft.postal = "";
+      } else if (toStep === "city") {
+        state.locationDraft.city = "";
+        state.locationDraft.postal = "";
+      }
+      askLocationIntakeStep(toStep);
+    }
+
+    function replyLocationIntake(text) {
+      resolveTyping(text);
+      state.history.push({ role: "assistant", content: text });
+      showReplyBox(true);
+      schedulePersist();
+    }
+
     function buildUserLocationFromDraft(draft) {
       const country = String(draft.country || "").trim();
       const region = isLocationIntakeSkip(draft.region) ? "" : String(draft.region || "").trim();
@@ -11828,11 +11910,12 @@
       } else if (step === "region") {
         reply = `Got it — ${draft.country}.\n\nWhat state, province, or region? (Type skip if that doesn't apply.)`;
       } else if (step === "city") {
-        const place = [draft.region, draft.country].filter(Boolean).join(", ");
+        const place = draft.region ? `${draft.region}, ${draft.country}` : (draft.country || "");
         reply = place ? `What city or town in ${place}?` : "What city or town?";
       } else if (step === "postal") {
         reply = `ZIP or postal code for ${draft.city || "your area"}? (Optional — type skip to continue.)`;
       }
+      reply += LOCATION_INTAKE_HINT;
       resolveTyping(reply);
       state.history.push({ role: "assistant", content: reply });
       showReplyBox(true);
@@ -11856,17 +11939,55 @@
       }
 
       const step = state.locationIntakeStep || "country";
+
+      if (isLocationIntakeCorrection(trimmed)) {
+        const correction = getLocationIntakeCorrectionStep(trimmed);
+        if (correction === "back") {
+          const prev = getPreviousLocationIntakeStep(step);
+          if (prev) {
+            rewindLocationIntake(prev);
+            return "step";
+          }
+        }
+        rewindLocationIntake(correction === "back" ? "country" : correction);
+        return "step";
+      }
+
       if (step === "country") {
         state.locationDraft.country = formatCountryLabel(normalizeCountryKey(trimmed)) || trimmed;
         askLocationIntakeStep("region");
         return "step";
       }
       if (step === "region") {
-        if (!isLocationIntakeSkip(trimmed)) state.locationDraft.region = trimmed;
+        if (!isLocationIntakeSkip(trimmed)) {
+          const differentCountry = regionLooksLikeDifferentCountry(trimmed, state.locationDraft.country);
+          if (differentCountry) {
+            const previousCountry = state.locationDraft.country;
+            state.locationDraft.country = differentCountry;
+            state.locationDraft.region = "";
+            state.locationIntakeStep = "city";
+            replyLocationIntake(
+              `Got it — sounds like you're in ${differentCountry}, not ${previousCountry}. What city or town in ${differentCountry}?${LOCATION_INTAKE_HINT}`
+            );
+            return "step";
+          }
+          state.locationDraft.region = trimmed;
+        }
         askLocationIntakeStep("city");
         return "step";
       }
       if (step === "city") {
+        const countryFix = regionLooksLikeDifferentCountry(trimmed, state.locationDraft.country);
+        if (countryFix) {
+          state.locationDraft.country = countryFix;
+          state.locationDraft.region = "";
+          state.locationDraft.city = "";
+          replyLocationIntake(
+            `Switching to ${countryFix}. What city or town in ${countryFix}?${LOCATION_INTAKE_HINT}`
+          );
+          state.locationIntakeStep = "city";
+          return "step";
+        }
         state.locationDraft.city = trimmed;
         const enriched = enrichLocationFromKnownCities({
           city: trimmed,
@@ -11874,7 +11995,7 @@
           country: state.locationDraft.country,
           raw: trimmed
         });
-        if (enriched.country && !state.locationDraft.country) state.locationDraft.country = enriched.country;
+        if (enriched.country) state.locationDraft.country = enriched.country;
         if (enriched.region && !state.locationDraft.region) state.locationDraft.region = enriched.region;
         askLocationIntakeStep("postal");
         return "step";
