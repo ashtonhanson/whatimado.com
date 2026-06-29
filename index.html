@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-resource-dedupe">
+  <meta name="whatimado-build" content="2026-06-29-grounded-all">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10990,37 +10990,37 @@
 
     const logoDesignerFallbackIdeas = [
       {
-        title: "Logo Client Pipeline Online",
-        type: "Creative — freelance",
-        tagline: "Use Behance, Dribbble, and freelance platforms to reach startups and rebrand clients — you already have the skill.",
-        why: "You said you've been making logos for years and want to keep that business going — this path focuses on finding clients online, not retraining.",
-        cost: "$0",
-        timeline: "2-4 weeks",
-        income: "$500-3000/mo"
-      },
-      {
-        title: "Startup & Rebrand Outreach",
-        type: "Creative — direct sales",
-        tagline: "Pitch founders and small businesses that need a new logo or brand refresh — mostly LinkedIn, email, and local networking.",
-        why: "You want clients starting businesses or redesigning brands — outreach beats workforce programs for an experienced designer.",
-        cost: "$0-50",
-        timeline: "1-3 weeks",
-        income: "$1000+/project"
-      },
-      {
-        title: "Package Your Logo Offer",
-        type: "Creative — productize",
-        tagline: "Turn your logo work into 2-3 clear packages with prices, turnaround, and a simple booking page.",
-        why: "A clear offer helps startups buy from you faster instead of shopping around endlessly.",
+        title: "Premium Local Logo Studio",
+        type: "Creative — premium freelance",
+        tagline: "Position as an experienced local logo designer with simple packages — not cheap Fiverr-style gigs.",
+        why: "You said you've been making logos for years and want to keep that business going — compete on expertise and local trust, not race-to-the-bottom platforms.",
         cost: "$0-100",
-        timeline: "1-2 weeks",
-        income: "Higher per-project rates"
+        timeline: "2-4 weeks",
+        income: "$400-1200/project"
+      },
+      {
+        title: "Niche Portfolio & Daily Visibility",
+        type: "Creative — marketing",
+        tagline: "Organize work by industry (restaurants, contractors, salons) and post one logo story every day.",
+        why: "Clients hire designers whose work looks like their business — a niche portfolio plus daily posts builds credibility faster than a random Behance dump.",
+        cost: "$0",
+        timeline: "2-3 weeks",
+        income: "More inbound leads"
+      },
+      {
+        title: "Local Outreach Pipeline",
+        type: "Creative — direct sales",
+        tagline: "Find 20 local businesses with weak logos each week and lead with a free concept — not 'need a logo?'",
+        why: "You want startups and rebrands in your city — value-first outreach to contractors, food trucks, salons, and realtors beats generic Upwork proposals.",
+        cost: "$0",
+        timeline: "Ongoing weekly",
+        income: "$800+/project"
       }
     ];
 
     function getFallbackIdeas() {
       if (isReentrySituation()) return reentryFallbackIdeas;
-      if (hasExistingCreativeSkill()) return logoDesignerFallbackIdeas;
+      if (isGroundedPractitioner()) return getGroundedFallbackIdeas();
       return fallbackIdeas;
     }
 
@@ -11534,8 +11534,10 @@
       );
     }
 
-    function getActionableTaskRules() {
-      return ACTIONABLE_TASK_RULES;
+    function getActionableTaskRules(idea = state.currentIdea) {
+      return isGroundedPractitioner(idea)
+        ? `${ACTIONABLE_TASK_RULES}\n${GROUNDED_UNIVERSAL_RULES}`
+        : ACTIONABLE_TASK_RULES;
     }
 
     function applyPlaybookTokens(text, idea, parsed, locRaw) {
@@ -12810,7 +12812,7 @@ What would make this more useful for someone in your situation?`;
       if (pathNeedsLocalResources(idea) && getUserLocation()) {
         return hasAny;
       }
-      if (isOnlineFirstCreativePath(idea)) {
+      if (isGroundedPractitioner(idea)) {
         return (stages || []).some((stage, stageIndex) =>
           (stage.tasks || []).some((task) => shouldShowTaskResources(normalizeRoadmapTask(task), stage, stageIndex, idea))
         );
@@ -12904,7 +12906,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     function pathNeedsLocalResources(idea = state.currentIdea) {
-      if (isOnlineFirstCreativePath(idea)) return false;
+      if (isGroundedPractitioner(idea)) return false;
       const blob = `${getFirstUserMessage()} ${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
       return /\b(local|shelter|recovery|workforce|partner|outreach|nonprofit|library|re-?entry|incarcerat|jail|prison|parole|community|employ|job|train|license|sbdc|score|housing|background check|second chance|certif|apprenticeship|college|credential|id card|211)\b/.test(blob);
     }
@@ -13051,7 +13053,7 @@ What would make this more useful for someone in your situation?`;
       const taskText = normalized.text;
       if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
       if (taskIsBrowseOnlyTask(taskText)) return false;
-      if (isOnlineFirstCreativePath(idea)) {
+      if (isGroundedPractitioner(idea)) {
         if (/\b(workforce|american job center|211|staffing agenc|job center|community college|training route|temp firm|union hall|workforce board)\b/i.test(taskText)) return false;
         if (/\b(behance|dribbble|upwork|99design|contra|fiverr|linkedin|portfolio|freelance|platform|pitch|online|logo|brand identity|case study)\b/i.test(taskText)) return false;
       }
@@ -13230,7 +13232,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     function enrichCreativeOnlineResources(stages, idea = state.currentIdea) {
-      if (!isOnlineFirstCreativePath(idea)) return stages;
+      if (!hasExistingCreativeSkill(idea)) return stages;
       return (stages || []).map((stage) => ({
         ...stage,
         tasks: (stage.tasks || []).map((task) => {
@@ -13292,11 +13294,11 @@ What would make this more useful for someone in your situation?`;
         ? "whatimado.com founder partnership with shelters, recovery centers, and workforce programs"
         : isReentryPath(idea)
           ? `${idea.title} — reentry, employment, housing, and ID basics`
-          : isOnlineFirstCreativePath(idea)
-            ? `${idea.title} — online creative client acquisition (Behance, Dribbble, Upwork, 99designs, startup outreach)`
+          : isGroundedPractitioner(idea)
+            ? `${idea.title} — premium local ${getUserSituationProfile(idea).craftLabel} business (positioning, packages, niche proof, outreach, reviews)`
             : `${idea.title} — ${idea.type || "local path"}`;
-      const resourceRule = isOnlineFirstCreativePath(idea)
-        ? "At least 5 tasks must include resources.global with real online platforms (Behance, Dribbble, 99designs, Upwork, Contra, LinkedIn). Do NOT use workforce boards or 211.\n"
+      const resourceRule = isGroundedPractitioner(idea)
+        ? "Include script fields with copy-paste outreach, positioning lines, and package copy. resources.global only for tools the task mentions (Google Business, LinkedIn, Behance, etc.) — NOT Upwork/Fiverr/workforce boards as default.\n"
         : `At least 5 tasks must include real ${loc} organizations in resources.local with official urls.\n`;
       return (
         `You are whatimado. Return ONLY a raw JSON array — no markdown, no commentary.\n` +
@@ -13340,9 +13342,10 @@ What would make this more useful for someone in your situation?`;
         employment: `Employment path in ${pb.countryLabel} — ${pb.employmentGuide}. Tailored CV/resume, networking, interviews, local apprenticeships. Do NOT use generic US startup language or wrong-country agencies.`,
         business: `Local service or small business in ${pb.countryLabel} — ${pb.businessGuide}. Licensing, pricing, first customers, local marketing. Do NOT use US SBDC/SCORE outside the US.`,
         learning: `Training path in ${pb.countryLabel} — ${pb.learningGuide}. Program enrollment, local funding, portfolio proof. Do NOT assume US community college or 211.`,
-        creative: `Creative / design income — ONLINE FIRST for experienced designers. Behance, Dribbble, 99designs, Upwork, Contra, Fiverr, LinkedIn startup outreach, portfolio refresh, logo packages. Do NOT default to workforce boards or American Job Center unless they asked for employment help.`
+        creative: `Creative / design income — for EXPERIENCED practitioners: premium positioning, 2-tier pricing, niche proof by industry, weekly content, value-first local outreach, Google local SEO. Do NOT default to Upwork/Fiverr/99designs or workforce programs as the main strategy.`,
+        grounded: `Experienced practitioner in ${pb.countryLabel} — they ALREADY have years in their craft. Stage focus: positioning, 2-tier packages with prices, proof organized by niche, weekly outreach to local businesses, Google Business Profile + reviews. Do NOT assign workforce boards, 211, community college, staffing agencies, or cheap gig platforms as primary strategy. Tasks must reference their craft, city, and niches by name.`
       };
-      return guides[archetype] || guides.creative;
+      return guides[archetype] || guides.business;
     }
 
     function getTaskTextById(taskId) {
@@ -13690,6 +13693,193 @@ What would make this more useful for someone in your situation?`;
       return pickUniqueFounderFallbackStages(idea, templates, template);
     }
 
+    const GROUNDED_UNIVERSAL_RULES =
+      'GROUNDED PRACTITIONER RULES (when user already has years of experience in a craft):\n' +
+      '- They are NOT a beginner. Do NOT assign workforce boards, 211, community college, staffing agencies, or "compare training routes" unless they explicitly asked to change careers or need a job.\n' +
+      '- Do NOT compete on cheap gig platforms (Fiverr, Upwork contests) as the PRIMARY strategy for experienced professionals.\n' +
+      '- Build a real business: positioning, 1-2 simple packages with prices, proof organized by niche, weekly outreach, local SEO, reviews.\n' +
+      '- Tasks must include specific dollar amounts, niche names, scripts, and deliverables — reference THEIR craft and city from the conversation.\n' +
+      '- Value-first outreach beats "need a job?" or "need a logo?" — lead with insight or a free sample concept.\n';
+
+    const GENERIC_GROUNDED_FALLBACK_IDEAS = [
+      {
+        title: "Premium Local {craftTitle}",
+        type: "Experienced — grow practice",
+        tagline: "Position as the go-to {craftLabel} provider in {city} — packages, proof, and local trust.",
+        why: "You already have the skill — this path focuses on premium positioning and local clients, not retraining or gig-platform race to the bottom.",
+        cost: "$0-150",
+        timeline: "2-4 weeks",
+        income: "Varies by craft"
+      },
+      {
+        title: "Niche Proof & Weekly Visibility",
+        type: "Experienced — marketing",
+        tagline: "Organize your best work by client type and post consistently so the right people find you.",
+        why: "Clients hire people whose work looks like their industry — not a generic portfolio or Skill Sprint template.",
+        cost: "$0",
+        timeline: "2-3 weeks",
+        income: "More inbound leads"
+      },
+      {
+        title: "Local Outreach Pipeline",
+        type: "Experienced — direct sales",
+        tagline: "Find 20 local businesses each week that fit your niche and lead with value — not a cold pitch.",
+        why: "Direct outreach to businesses that need {craftLabel} beats generic employment or platform spam.",
+        cost: "$0",
+        timeline: "Ongoing weekly",
+        income: "Project-based"
+      }
+    ];
+
+    const USER_CRAFT_PLAYBOOKS = {
+      logo_design: {
+        craftKey: "logo_design",
+        craftLabel: "logo design",
+        craftTitle: "Logo Studio",
+        serviceType: "logo and brand identity",
+        detect: /\b(logo|logos|brand identity|visual identity|branding|brand design)\b/,
+        niches: "contractors, electricians, food trucks, coffee shops, tattoo studios, salons, fitness businesses, realtors, landscapers, clothing brands",
+        pricingBasic: "$400-600",
+        pricingPremium: "$800-1200",
+        packageBasic: "3 concepts, 2 revisions, AI/SVG/PDF/PNG, black & white versions",
+        packagePremium: "everything in Basic + usage guide, social profile versions, favicon, more concepts/revisions",
+        proofType: "portfolio sections by industry (Restaurant Logos, Construction Logos, Fitness Logos)",
+        outreachScript: "I noticed your company has grown, and I put together a logo concept that better reflects your business. I'd love to send it over if you're interested.",
+        seoHint: "{city} Logo Designer, Logo Design {city}, Restaurant Logo Design {city}, Minimal Logo Designer {city}",
+        avoidStrategies: "Fiverr, 99designs contests, Upwork as primary channel, workforce boards",
+        sidebarTools: [
+          { name: "Local search", org: "Google Business Profile", url: "https://business.google.com/" },
+          { name: "Professional network", org: "LinkedIn", url: "https://www.linkedin.com/" },
+          { name: "Portfolio", org: "Behance", url: "https://www.behance.net/" }
+        ]
+      },
+      creative_design: {
+        craftKey: "creative_design",
+        craftLabel: "design services",
+        craftTitle: "Design Studio",
+        serviceType: "graphic and visual design",
+        detect: /\b(graphic design|illustrat|designer|visual design|brand designer|layout design|print design)\b/,
+        niches: "restaurants, retail shops, nonprofits, startups, event promoters, local brands",
+        pricingBasic: "$350-750",
+        pricingPremium: "$900-2000",
+        packageBasic: "one focused deliverable (menu, flyer, social kit), 2 revisions, print-ready files",
+        packagePremium: "multi-piece brand kit, extra revisions, source files, style guide",
+        proofType: "case studies by industry showing before/after and business outcome",
+        outreachScript: "I saw your brand online and sketched one improvement that could help customers recognize you faster. Happy to share if useful.",
+        seoHint: "{city} Graphic Designer, Brand Design {city}, Restaurant Menu Design {city}",
+        avoidStrategies: "cheap gig platforms as primary channel, workforce training",
+        sidebarTools: [
+          { name: "Local search", org: "Google Business Profile", url: "https://business.google.com/" },
+          { name: "Portfolio", org: "Behance", url: "https://www.behance.net/" },
+          { name: "Network", org: "LinkedIn", url: "https://www.linkedin.com/" }
+        ]
+      },
+      photography: {
+        craftKey: "photography",
+        craftLabel: "photography",
+        craftTitle: "Photo Studio",
+        serviceType: "photography and visual content",
+        detect: /\b(photograph|photographer|videograph|video production|headshot|portrait photo|wedding photo)\b/,
+        niches: "realtors, restaurants, salons, fitness studios, small retailers, local events",
+        pricingBasic: "$250-500",
+        pricingPremium: "$750-1500",
+        packageBasic: "1-hour session, 15 edited images, web-ready delivery",
+        packagePremium: "half-day shoot, 40+ images, commercial usage license, rush option",
+        proofType: "galleries by niche (Real Estate, Food, Portraits) with client permission",
+        outreachScript: "Your business photos could showcase what makes you different — I'd love to offer a short test shoot at a friendly rate.",
+        seoHint: "{city} Photographer, Headshots {city}, Real Estate Photography {city}",
+        avoidStrategies: "workforce programs, generic employment paths",
+        sidebarTools: [
+          { name: "Local search", org: "Google Business Profile", url: "https://business.google.com/" },
+          { name: "Portfolio", org: "Instagram", url: "https://www.instagram.com/" },
+          { name: "Network", org: "LinkedIn", url: "https://www.linkedin.com/" }
+        ]
+      },
+      skilled_trade: {
+        craftKey: "skilled_trade",
+        craftLabel: "trade services",
+        craftTitle: "Trade Business",
+        serviceType: "licensed trade or home services",
+        detect: /\b(electrician|plumber|hvac|contractor|carpenter|roofer|landscap|handyman|mechanic|welder|mason|painter)\b/,
+        niches: "homeowners, property managers, small commercial buildings, real estate investors",
+        pricingBasic: "service call / diagnostic fee ($75-150)",
+        pricingPremium: "project quotes with clear scope ($500-5000+ depending on job)",
+        packageBasic: "diagnostic visit + written estimate + timeline",
+        packagePremium: "full project scope, warranty terms, maintenance plan option",
+        proofType: "before/after photos of jobs, Google reviews, license/insurance visible on site",
+        outreachScript: "I work with property owners in {city} — if you have upcoming maintenance, I can stop by for a free estimate this week.",
+        seoHint: "{city} {tradeType}, Emergency {tradeType} {city}, Licensed {tradeType} near me",
+        avoidStrategies: "American Job Center, staffing agencies, unrelated training programs",
+        sidebarTools: [
+          { name: "Local search", org: "Google Business Profile", url: "https://business.google.com/" },
+          { name: "Reviews", org: "Google Reviews", url: "https://business.google.com/" },
+          { name: "Local leads", org: "Nextdoor Business", url: "https://business.nextdoor.com/" }
+        ]
+      },
+      local_service: {
+        craftKey: "local_service",
+        craftLabel: "local services",
+        craftTitle: "Local Service",
+        serviceType: "local help-for-hire or neighborhood services",
+        detect: /\b(cleaning|organiz|pet sit|dog walk|tutor|childcare|caregiv|errand|delivery|moving help|junk removal|house sit)\b/,
+        niches: "busy families, seniors, small offices, Airbnb hosts, local neighborhoods",
+        pricingBasic: "$40-80/hour or flat visit fee",
+        pricingPremium: "recurring weekly/monthly packages with priority booking",
+        packageBasic: "single visit with checklist and flat price",
+        packagePremium: "recurring plan + add-ons (deep clean, organizing session)",
+        proofType: "reviews, before/after photos, repeat client count",
+        outreachScript: "I help neighbors in {city} with {serviceType} — I have an opening this week if you'd like a trial visit.",
+        seoHint: "{city} {serviceType}, {serviceType} near me {city}",
+        avoidStrategies: "workforce boards when they already run a service business",
+        sidebarTools: [
+          { name: "Local search", org: "Google Business Profile", url: "https://business.google.com/" },
+          { name: "Neighborhood", org: "Nextdoor", url: "https://nextdoor.com/" },
+          { name: "Local listings", org: "Facebook Marketplace", url: "https://www.facebook.com/marketplace/" }
+        ]
+      },
+      professional: {
+        craftKey: "professional",
+        craftLabel: "professional services",
+        craftTitle: "Consulting Practice",
+        serviceType: "consulting, coaching, or professional advice",
+        detect: /\b(consultant|consulting|coach|coaching|accountant|bookkeep|therapist|counselor|advisor|strategist|paralegal|trainer)\b/,
+        niches: "small businesses, startups, nonprofits, professionals in transition",
+        pricingBasic: "$150-300/session or project discovery fee",
+        pricingPremium: "$1000-5000/month retainer or packaged engagement",
+        packageBasic: "discovery call + written recommendations",
+        packagePremium: "multi-week engagement with milestones and check-ins",
+        proofType: "case studies, testimonials, niche focus (e.g. restaurant bookkeeping)",
+        outreachScript: "I help {niche} in {city} with {serviceType} — would a 15-minute call to see if I can point you in the right direction be useful?",
+        seoHint: "{city} {serviceType} Consultant, {serviceType} for small business {city}",
+        avoidStrategies: "workforce retraining, generic job search when they already consult",
+        sidebarTools: [
+          { name: "Professional network", org: "LinkedIn", url: "https://www.linkedin.com/" },
+          { name: "Local search", org: "Google Business Profile", url: "https://business.google.com/" },
+          { name: "Scheduling", org: "Calendly", url: "https://calendly.com/" }
+        ]
+      },
+      default: {
+        craftKey: "default",
+        craftLabel: "professional services",
+        craftTitle: "Local Practice",
+        serviceType: "your stated craft or trade",
+        detect: /.^/,
+        niches: "local small businesses, startups, and homeowners in your area",
+        pricingBasic: "one clear starter offer with a published price",
+        pricingPremium: "premium package with more scope and support",
+        packageBasic: "define deliverables, timeline, revisions, and price",
+        packagePremium: "expanded deliverables + faster turnaround or ongoing support",
+        proofType: "3-5 case studies or examples organized by client type",
+        outreachScript: "I work with people in {city} on {serviceType} — I noticed something specific about your business and have an idea that might help. Open to a quick chat?",
+        seoHint: "{city} + your service + specialist",
+        avoidStrategies: "workforce boards, 211, community college, cheap gig platforms as primary strategy",
+        sidebarTools: [
+          { name: "Local search", org: "Google Business Profile", url: "https://business.google.com/" },
+          { name: "Network", org: "LinkedIn", url: "https://www.linkedin.com/" }
+        ]
+      }
+    };
+
     function getConversationCareerBlob(idea = null) {
       return [
         getFirstUserMessage(),
@@ -13701,34 +13891,146 @@ What would make this more useful for someone in your situation?`;
       ].filter(Boolean).join(" ").toLowerCase();
     }
 
-    function hasExistingCreativeSkill(idea = null) {
+    function getLocationCityLabel(parsed = parseLocationAnswer(getUserLocation() || ""), locRaw = formatUserLocation(parsed)) {
+      return parsed.city || locRaw.split(",")[0]?.trim() || "your city";
+    }
+
+    function isExplicitJobSeeker(blob = getConversationCareerBlob()) {
+      return /\b(need a job|need employment|looking for (?:a )?job|job search|unemployed|laid off|fired|between jobs|want to be hired|need work|need income fast|can't find work)\b/.test(blob);
+    }
+
+    function hasExperienceSignals(blob = getConversationCareerBlob()) {
+      return /\b(\d+\+?\s*years?|twenty[- ]?five|twenty|25 years|20 years|15 years|10 years|experienced|been doing|been making|been working|veteran|already (?:make|run|do|have)|keep (?:the|my) business|keep making|my own clients|freelanc|established|decades|long time|since \d{4})\b/.test(blob);
+    }
+
+    function detectUserCraft(idea = null) {
       const blob = getConversationCareerBlob(idea);
-      const hasCraft = /\b(logo|logos|graphic design|brand design|branding|designer|visual identity|illustrat)\b/.test(blob);
-      const hasExperience = /\b(\d+\s*years?|twenty years|20 years|experienced|been making|been doing|veteran|already make|keep the business|keep making|my own clients|freelanc)\b/.test(blob);
-      return hasCraft && hasExperience;
+      for (const key of Object.keys(USER_CRAFT_PLAYBOOKS)) {
+        if (key === "default") continue;
+        const pb = USER_CRAFT_PLAYBOOKS[key];
+        if (pb.detect.test(blob)) return pb;
+      }
+      return USER_CRAFT_PLAYBOOKS.default;
+    }
+
+    function getUserSituationProfile(idea = null) {
+      const blob = getConversationCareerBlob(idea);
+      const parsed = parseLocationAnswer(getUserLocation() || "");
+      const city = getLocationCityLabel(parsed);
+      const playbook = detectUserCraft(idea);
+      const experienced = hasExperienceSignals(blob);
+      const jobSeeker = isExplicitJobSeeker(blob);
+      const reentry = isReentrySituation(idea);
+      const selfEmployed = /\b(freelanc|my own|self[- ]?employ|run my|own business|my clients|keep (?:the|my) business|consult|contractor|studio)\b/.test(blob);
+      const craftMatched = playbook.craftKey !== "default";
+      const grounded = experienced && !jobSeeker && !reentry && (craftMatched || selfEmployed);
+      return {
+        situation: reentry ? "reentry" : grounded ? "grounded" : jobSeeker ? "job_seeker" : "exploring",
+        craftKey: playbook.craftKey,
+        craftLabel: playbook.craftLabel,
+        craftTitle: playbook.craftTitle,
+        serviceType: playbook.serviceType,
+        niches: playbook.niches,
+        pricingBasic: playbook.pricingBasic,
+        pricingPremium: playbook.pricingPremium,
+        packageBasic: playbook.packageBasic,
+        packagePremium: playbook.packagePremium,
+        proofType: playbook.proofType,
+        outreachScript: playbook.outreachScript.replaceAll("{city}", city).replaceAll("{serviceType}", playbook.serviceType),
+        seoHint: playbook.seoHint.replaceAll("{city}", city),
+        avoidStrategies: playbook.avoidStrategies,
+        sidebarTools: playbook.sidebarTools || [],
+        grounded,
+        experienced,
+        city,
+        playbook
+      };
+    }
+
+    function isGroundedPractitioner(idea = null) {
+      return getUserSituationProfile(idea).grounded;
+    }
+
+    function isPremiumLogoDesigner(idea = null) {
+      const profile = getUserSituationProfile(idea);
+      return profile.grounded && profile.craftKey === "logo_design";
+    }
+
+    function hasExistingCreativeSkill(idea = null) {
+      const profile = getUserSituationProfile(idea);
+      return profile.grounded && /^(logo_design|creative_design|photography)$/.test(profile.craftKey);
     }
 
     function isOnlineFirstCreativePath(idea = null) {
-      if (hasExistingCreativeSkill(idea)) return true;
-      const blob = getConversationCareerBlob(idea);
-      return /\b(logo|logos|graphic design|brand design|illustrat|creative freelance|design portfolio|behance|dribbble)\b/.test(blob)
-        && !/\b(re-?enter|incarcerat|just released|need a job|need employment|workforce)\b/.test(blob);
+      return isGroundedPractitioner(idea);
+    }
+
+    function getGroundedBusinessBlock(idea = null) {
+      if (!isGroundedPractitioner(idea)) return "";
+      const profile = getUserSituationProfile(idea);
+      const pb = profile.playbook;
+      const parsed = parseLocationAnswer(getUserLocation() || "");
+      const city = profile.city;
+      const region = parsed.region || "";
+      const locLabel = [city, region].filter(Boolean).join(", ") || city;
+      return (
+        GROUNDED_UNIVERSAL_RULES +
+        `\nGROUNDED PRACTITIONER BUSINESS MODEL (NON-NEGOTIABLE — experienced ${pb.craftLabel} provider, NOT a beginner):\n` +
+        `- Do NOT use ${pb.avoidStrategies} as the PRIMARY strategy.\n` +
+        `- Positioning example: "Professional ${pb.serviceType} for ${locLabel} — built on real experience, not generic templates."\n` +
+        `- Target niches: ${pb.niches}.\n` +
+        `- Pricing: TWO packages — Basic (${pb.pricingBasic}): ${pb.packageBasic}. Premium (${pb.pricingPremium}): ${pb.packagePremium}.\n` +
+        `- Proof: ${pb.proofType}.\n` +
+        `- Weekly outreach: identify 20 ${city} businesses that fit your niches. Value-first pitch — NOT a cold "need ${pb.craftLabel}?" — use: "${profile.outreachScript}"\n` +
+        `- Local SEO: ${profile.seoHint}.\n` +
+        `- After each project: ask for Google review, showcase permission, short testimonial.\n` +
+        `- Tasks must be SPECIFIC with dollar amounts, niche names, scripts, and deliverables — reference THEIR craft and ${city}.\n`
+      );
+    }
+
+    function getPremiumLogoBusinessBlock(idea = null) {
+      return isPremiumLogoDesigner(idea) ? getGroundedBusinessBlock(idea) : "";
     }
 
     function getUserStatedCraftBlock(idea = null) {
-      if (!isOnlineFirstCreativePath(idea)) return "";
-      const blob = getConversationCareerBlob(idea);
-      const craftHint = /\blogo/.test(blob) ? "logo and brand identity work"
-        : /\bgraphic design/.test(blob) ? "graphic design work"
-        : "creative design work";
-      return (
-        `\nUSER STATED CRAFT (NON-NEGOTIABLE):\n` +
-        `- This person already does ${craftHint}. Treat them as experienced — NOT someone who needs workforce training, community college, or American Job Center intake.\n` +
-        `- Do NOT assign 211, workforce board, staffing agencies, or "compare training routes" unless they explicitly asked to change careers.\n` +
-        `- Prioritize ONLINE client-acquisition steps: Behance, Dribbble, 99designs, Upwork, Contra, Fiverr, LinkedIn outreach to startups, email pitches for rebrands, portfolio refresh, pricing packages.\n` +
-        `- resources.global MUST list real platforms (behance.net, dribbble.com, 99designs.com, upwork.com, contra.com) where relevant.\n` +
-        `- Reference what they actually said (logos, startups, rebrands, years of experience).\n`
-      );
+      return isGroundedPractitioner(idea) ? getGroundedBusinessBlock(idea) : "";
+    }
+
+    function getGroundedFallbackIdeas(idea = null) {
+      const profile = getUserSituationProfile(idea);
+      const pb = profile.playbook;
+      const city = profile.city;
+      const replace = (text) => String(text || "")
+        .replaceAll("{craftTitle}", pb.craftTitle)
+        .replaceAll("{craftLabel}", pb.craftLabel)
+        .replaceAll("{city}", city)
+        .replaceAll("{serviceType}", pb.serviceType);
+      return GENERIC_GROUNDED_FALLBACK_IDEAS.map((entry) => ({
+        ...entry,
+        title: replace(entry.title),
+        tagline: replace(entry.tagline),
+        why: replace(entry.why)
+      }));
+    }
+
+    function roadmapHasGenericMismatch(stages, idea = null) {
+      if (!isGroundedPractitioner(idea)) return false;
+      const text = (stages || []).flatMap((s) => s.tasks || []).map(getTaskText).join(" ");
+      return /\b(workforce|american job center|211|staffing agenc|community college|compare training|upwork|fiverr|99designs?|skill sprint|local help-for-hire|contra\.com)\b/i.test(text);
+    }
+
+    function getGroundedSidebarResources(idea = null) {
+      return (getUserSituationProfile(idea).sidebarTools || []).map((entry) => ({
+        name: entry.name,
+        org: entry.org,
+        url: entry.url,
+        phone: "",
+        email: ""
+      }));
+    }
+
+    function getPremiumLogoSidebarResources() {
+      return getGroundedSidebarResources();
     }
 
     function getCreativeGlobalResources() {
@@ -13784,12 +14086,12 @@ What would make this more useful for someone in your situation?`;
 
     function getPathArchetype(idea) {
       if (isReentrySituation(idea)) return "reentry";
-      if (hasExistingCreativeSkill(idea) || isOnlineFirstCreativePath(idea)) return "creative";
+      if (isGroundedPractitioner(idea)) return "grounded";
       const blob = getConversationCareerBlob(idea);
       const ideaBlob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
       if (/portfolio/.test(ideaBlob) && /\b(logo|design|creative|art|brand|graphic)\b/.test(blob)) return "creative";
-      if (/learn|skill|training|certif|course|degree|apprent/.test(ideaBlob) && !hasExistingCreativeSkill(idea)) return "learning";
-      if (/portfolio/.test(ideaBlob) && !hasExistingCreativeSkill(idea)) return "learning";
+      if (/learn|skill|training|certif|course|degree|apprent/.test(ideaBlob) && !hasExperienceSignals(blob)) return "learning";
+      if (/portfolio/.test(ideaBlob) && !hasExperienceSignals(blob)) return "learning";
       if (/job|employ|hire|career|income|work for|staff|shift|union/.test(ideaBlob)) return "employment";
       if (/business|freelance|client|startup|sell|shop|service|gig|contractor/.test(ideaBlob)) return "business";
       if (/creative|design|art|content|music|write|maker|logo|brand/.test(ideaBlob)) return "creative";
@@ -13951,41 +14253,41 @@ What would make this more useful for someone in your situation?`;
             ]
           }
         ],
-        existingCreative: [
+        groundedPractitioner: [
           {
-            label: "Refresh your online portfolio",
-            desc: "You already have the skill — make it easy for startup and rebrand clients to find and trust you.",
+            label: "Position as premium {city} {craftLabel}",
+            desc: "You already have the skill — separate yourself from cheap alternatives and generic job-search paths.",
             tasks: [
-              "Upload 3 logo case studies to behance.net and dribbble.com — before/after, client type, and what problem the logo solved",
-              "Update your LinkedIn headline to mention logo/brand identity for startups and small businesses — link to your best portfolio piece",
-              "List 10 businesses in {locRaw} (or online) that look like they need a rebrand — note their name and why"
+              "Write your positioning line for {serviceType} in {city} — put it on your site, Google Business Profile, LinkedIn, and email signature",
+              "Pick 2 target niches from: {niches} — write one sentence on why each invests in {craftLabel}",
+              "Draft Basic ({pricingBasic}) and Premium ({pricingPremium}) packages: list deliverables, timeline, revisions, and what's included in each tier"
             ]
           },
           {
-            label: "Activate freelance platforms",
-            desc: "Go where clients post logo work today.",
+            label: "Build proof that sells",
+            desc: "{proofType} — clients hire people whose work looks like their industry.",
             tasks: [
-              "Complete upwork.com and 99designs.com profiles for logo + brand identity — match your 20 years of experience in the bio",
-              "Submit 3 proposals on Upwork or 99designs for logo projects posted in the last 7 days — customize each opening line",
-              "Compare contra.com vs fiverr.com for your price point — pick one and publish a single clear logo package offer"
+              "Reorganize your best work into 3 client-type sections — 3-4 examples each with before/after and what problem you solved",
+              "Write one reusable case study template: client type, challenge, your approach, final deliverables",
+              "Publish the organized proof on your site or primary portfolio — each section gets its own header"
             ]
           },
           {
-            label: "Pitch startups and rebrands",
-            desc: "Direct outreach for the clients you said you want.",
+            label: "Weekly visibility + outreach",
+            desc: "Post consistently and reach local businesses with value — not a cold pitch.",
             tasks: [
-              "Send 5 LinkedIn or email pitches to founders or marketing leads — offer a free 15-minute brand review or a fixed-price logo sprint",
-              "Join one online community where small business owners ask for design help (Facebook group, Reddit r/logodesign, Indie Hackers) — answer 3 posts helpfully before mentioning your services",
-              "Track every outreach in a sheet: date, contact, channel, response, follow-up date"
+              "Block 30 minutes daily to post one piece of work or process insight related to {craftLabel} — add 2 sentences on why it matters",
+              "This week: identify 20 {city} businesses that fit your niches (Google Maps, Instagram, drive-bys) — list name, industry, and one specific gap you could help with",
+              "Draft your value-first outreach script — NOT \"need {craftLabel}?\" — use: \"{outreachScript}\""
             ]
           },
           {
-            label: "Stabilize the pipeline",
-            desc: "Keep logo work coming without burning out.",
+            label: "Local search & social proof",
+            desc: "Capture people already searching for {craftLabel} in {city} and stack trust signals.",
             tasks: [
-              "Define 2 logo packages with price, turnaround, and deliverables — Starter and Full Brand — and put them on your site or profile",
-              "Ask 2 past clients for referrals or a Google review mentioning your logo work",
-              "Set a weekly minimum: 5 outreach touches + 1 portfolio post — protect that time for 4 weeks"
+              "Create or update Google Business Profile + one landing page for {serviceType} in {city} — use headings from: {seoHint}",
+              "After your next project (or last 2 clients): ask for a Google review, permission to showcase the work, and a one-sentence testimonial",
+              "Set a weekly rhythm: 20 outreach touches + 5 posts + follow up on your best warm lead from the business list"
             ]
           }
         ],
@@ -14033,7 +14335,20 @@ What would make this more useful for someone in your situation?`;
     function personalizeFallbackStages(stages, idea) {
       const locRaw = getUserLocation() || "your area";
       const parsed = parseLocationAnswer(locRaw);
-      const replaceTokens = (text) => applyPlaybookTokens(text, idea, parsed, locRaw);
+      const city = getLocationCityLabel(parsed, locRaw);
+      const profile = getUserSituationProfile(idea);
+      const replaceTokens = (text) => applyPlaybookTokens(text, idea, parsed, locRaw)
+        .replaceAll("{city}", city)
+        .replaceAll("{locCity}", city)
+        .replaceAll("{craftLabel}", profile.craftLabel)
+        .replaceAll("{craftTitle}", profile.craftTitle)
+        .replaceAll("{serviceType}", profile.serviceType)
+        .replaceAll("{niches}", profile.niches)
+        .replaceAll("{pricingBasic}", profile.pricingBasic)
+        .replaceAll("{pricingPremium}", profile.pricingPremium)
+        .replaceAll("{proofType}", profile.proofType)
+        .replaceAll("{outreachScript}", profile.outreachScript)
+        .replaceAll("{seoHint}", profile.seoHint);
 
       return stages.map((stage) => ({
         label: replaceTokens(stage.label),
@@ -14046,10 +14361,12 @@ What would make this more useful for someone in your situation?`;
       const templates = buildStandardFallbackTemplates();
       const order = isReentrySituation(idea)
         ? ["reentry", "employment", "business", "learning", "creative"]
-        : hasExistingCreativeSkill(idea)
-          ? ["existingCreative", "creative", "business", "employment", "learning"]
+        : isGroundedPractitioner(idea)
+          ? ["groundedPractitioner", "business", "creative", "employment", "learning"]
           : ["employment", "business", "learning", "creative"];
-      const preferred = hasExistingCreativeSkill(idea) ? "existingCreative" : getPathArchetype(idea);
+      const preferred = isGroundedPractitioner(idea)
+        ? "groundedPractitioner"
+        : getPathArchetype(idea);
       const tryOrder = [preferred, ...order.filter((entry) => entry !== preferred)];
 
       for (const key of tryOrder) {
@@ -14219,7 +14536,7 @@ What would make this more useful for someone in your situation?`;
         `- "Tell five people what you are trying"\n` +
         `- "Create a basic online presence"\n` +
         `- "Network with people in your field"\n` +
-        `- "Call your workforce board" or "Compare training routes" for someone who already has 20 years of logo design experience\n\n` +
+        `- "Call your workforce board" or "Compare training routes" for someone who already has 20+ years of experience in their stated craft\n\n` +
         `GOOD TASKS (match this level of detail):\n` +
         `- "Draft a 150-word Facebook post explaining why you built whatimado.com for people stuck on career direction — include one screenshot of the map screen and publish to your profile"\n` +
         `- "Email 3 recovery-center program directors you can name locally, attach a 1-page pilot outline for a free whatimado workshop, and ask for a 15-minute call"\n` +
@@ -17923,11 +18240,11 @@ What would make this more useful for someone in your situation?`;
       const excludeBlock = excludeTitles.length
         ? `\n\nDO NOT repeat or closely resemble these ideas already shown:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n\nGenerate exactly ${count} completely NEW and different ideas that are SPECIFIC to this person`
         : `\n\nGenerate exactly ${count} ideas that are SPECIFIC to this person`;
-      const resourceHint = isOnlineFirstCreativePath()
-        ? "online platforms for designers (Behance, Dribbble, Upwork, 99designs, Contra) and direct outreach to startups"
+      const resourceHint = isGroundedPractitioner()
+        ? `premium local ${getUserSituationProfile().craftLabel} positioning, Google Business Profile, niche proof, value-first outreach to local businesses`
         : getLocationResourceHint();
-      const creativeIdeasNote = hasExistingCreativeSkill()
-        ? "They ALREADY have design/logo experience — paths must focus on finding clients and keeping their business going, NOT learning a new skill, NOT workforce programs, NOT generic \"Skill Sprint Portfolio\".\n\n"
+      const groundedIdeasNote = isGroundedPractitioner()
+        ? `They are an EXPERIENCED ${getUserSituationProfile().craftLabel} provider keeping their practice going — paths must focus on PREMIUM local positioning, 2-tier pricing (${getUserSituationProfile().pricingBasic} / ${getUserSituationProfile().pricingPremium}), niche proof, weekly marketing, and value-first local outreach. NOT 'Skill Sprint Portfolio', NOT Upwork/Fiverr-first, NOT workforce programs.\n\n`
         : "";
 
       return (
@@ -17938,7 +18255,7 @@ What would make this more useful for someone in your situation?`;
         getReentryIdeasPromptBlock() +
         excludeBlock +
         " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\n" +
-        creativeIdeasNote +
+        groundedIdeasNote +
         "Each idea must use a DIFFERENT primary strategy (for example: direct employment, self-employment, short training/certification, gig work, creative portfolio, or community-based route). Do NOT copy-paste structure between ideas — titles, taglines, first steps, and income models should feel distinct.\n" +
         `When location is known, at least one idea should reference resources they could use (${resourceHint}).\n\n` +
         "Each idea should be something they could realistically start given their stated resources. Include a mix when appropriate: zero-cost options, skill-building paths, gig/local work, or unconventional paths — but only if they fit THIS person.\n\n" +
@@ -18551,11 +18868,11 @@ What would make this more useful for someone in your situation?`;
         if (enriched) stages = enriched;
       }
 
-      if (stages && isOnlineFirstCreativePath(idea) && /\b(workforce|american job center|211|staffing agenc|training route)\b/i.test(stages.flatMap((s) => s.tasks || []).map(getTaskText).join(" "))) {
+      if (stages && roadmapHasGenericMismatch(stages, idea)) {
         response = await callAdvisor(
           `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n\n` +
-          `${getUserStatedCraftBlock(idea)}\n` +
-          "Your last draft wrongly included workforce boards or training programs. Regenerate with ONLINE designer client-acquisition tasks only.\n",
+          `${getGroundedBusinessBlock(idea)}\n` +
+          `Your last draft wrongly pushed cheap freelance platforms, workforce programs, or beginner training. Regenerate with grounded practitioner tasks: positioning, packages with prices, niche proof, weekly posts, 20-business outreach with value-first script, Google local SEO — for their stated craft in their city.\n`,
           getRoadmapAdvisorTokenLimit(founderMode)
         );
         const corrected = parseRoadmapResponse(response, idea);
@@ -18907,8 +19224,8 @@ What would make this more useful for someone in your situation?`;
     function getSidebarLocalResources() {
       const fromTasks = collectLocalResourcesFromRoadmap();
       if (fromTasks.length) return fromTasks;
-      if (isOnlineFirstCreativePath(state.currentIdea)) {
-        return getCreativeGlobalResources().map((entry) => ({
+      if (isGroundedPractitioner(state.currentIdea)) {
+        return getGroundedSidebarResources(state.currentIdea).map((entry) => ({
           type: "contact",
           key: entry.org || entry.url,
           name: entry.name,
@@ -19004,9 +19321,12 @@ What would make this more useful for someone in your situation?`;
       const cardTitle = card?.querySelector(".roadmap-side-card-title");
       if (!list) return;
 
-      const creativeOnline = isOnlineFirstCreativePath(state.currentIdea);
+      const grounded = isGroundedPractitioner(state.currentIdea);
+      const profile = grounded ? getUserSituationProfile(state.currentIdea) : null;
       if (cardTitle) {
-        cardTitle.textContent = creativeOnline ? "Online resources for you" : "Local resources for you";
+        cardTitle.textContent = grounded
+          ? `Tools for your ${profile.craftLabel} business`
+          : "Local resources for you";
       }
 
       const hasLocation = Boolean(getUserLocation());
@@ -19014,7 +19334,7 @@ What would make this more useful for someone in your situation?`;
       if (locationInput && hasLocation) locationInput.value = getUserLocation();
 
       const resources = getSidebarLocalResources();
-      if (!hasLocation && !creativeOnline) {
+      if (!hasLocation && !grounded) {
         list.innerHTML = "";
         if (card) card.hidden = false;
         if (moreBtn) moreBtn.hidden = true;
@@ -19040,8 +19360,8 @@ What would make this more useful for someone in your situation?`;
             `Use <strong>Change this path</strong> for a fresh roadmap, or check the tasks below.</p>` +
             `<button type="button" class="roadmap-side-link" id="roadmap-refresh-local-btn">Try again</button>` +
             `</li>`;
-        } else if (creativeOnline) {
-          list.innerHTML = getCreativeGlobalResources()
+        } else if (grounded) {
+          list.innerHTML = getGroundedSidebarResources(state.currentIdea)
             .map((entry) => renderLocalResourceItem({
               type: "contact",
               org: entry.org,
