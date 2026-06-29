@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-reentry-first -->
+<!-- whatimado build: 2026-06-29-change-path -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-reentry-first">
+  <meta name="whatimado-build" content="2026-06-29-change-path">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10412,6 +10412,7 @@
           <div class="reply-actions">
             <div class="reply-map-actions" id="reply-map-actions" hidden>
               <button type="button" class="reply-map-btn" id="reply-apply-map-btn">Update my paths</button>
+              <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-regen-roadmap-btn" hidden>Regenerate roadmap</button>
               <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-map-btn">Back to map</button>
             </div>
             <button class="reset-pill" id="reply-reset-btn" type="button">Start new map</button>
@@ -15574,7 +15575,7 @@ What would make this more useful for someone in your situation?`;
       const idea = state.ideas[index];
       if (!idea) return;
       const { fromRoadmap = false } = options;
-      state.mapChat = { type: "idea", index };
+      state.mapChat = { type: "idea", index, fromRoadmap };
       state.alterPathMode = false;
       trackEvent("idea_discuss_started", {
         idea_index: index,
@@ -15583,26 +15584,112 @@ What would make this more useful for someone in your situation?`;
       });
       showScreen("convo");
       const prompt = fromRoadmap
-        ? `Let's change "${idea.title}" — the current roadmap isn't the right fit. What's off: too generic, wrong focus, timing, budget, or a direction you'd rather take? Chat as long as you like; tap "Update this path" when you're ready for a revised path on your map (that clears the old roadmap for this path).`
+        ? `Let's fix "${idea.title}". Tell me what's wrong (too generic, wrong focus, timing, budget), or say "regenerate roadmap" for new steps with this same path, or "replace this path" for a different option on your map. You can also use the buttons below anytime.`
         : `Let's talk about "${idea.title}". What questions do you have — fit, timing, money, or how you'd actually start? Chat as long as you like; tap "Update this path" when you're ready for a revised version, or go back to your map anytime.`;
       addTypingBubble();
       resolveTyping(prompt);
       state.history.push({ role: "assistant", content: prompt });
       const reply = $("#reply-textarea");
-      if (reply) reply.placeholder = "e.g. Is this realistic if I only have weekends? Could it work part-time?";
+      if (reply) {
+        reply.placeholder = fromRoadmap
+          ? "e.g. Regenerate the roadmap — I need reentry steps first, not training"
+          : "e.g. Is this realistic if I only have weekends? Could it work part-time?";
+      }
       showReplyBox(true);
       updateReplyMapActions();
       schedulePersist();
     }
 
+    function detectMapChatIntent(text) {
+      const q = String(text || "").trim().toLowerCase();
+      if (!q) return null;
+
+      const wantsPathReplace =
+        /\b(replace|revise|update|change|different|new)\b.*\b(path|option|opportunity|idea)\b/.test(q) ||
+        /\b(update this path|replace this path|change this path|new path|different path)\b/.test(q);
+      if (wantsPathReplace && !/\broadmap\b/.test(q)) return "replace_path";
+
+      const wantsRoadmap =
+        /\b(regenerat|redo|refresh|new|another|different)\b.*\b(roadmap|steps|tasks|plan)\b/.test(q) ||
+        /\b(new steps|different steps|fresh roadmap|redo (the |my )?roadmap|regenerate (the |my )?roadmap)\b/.test(q);
+      if (wantsRoadmap) return "regenerate_roadmap";
+
+      if (/\b(regenerat|redo|refresh)\b.*\b(path|option)\b/.test(q)) {
+        return state.mapChat?.fromRoadmap ? "regenerate_roadmap" : "replace_path";
+      }
+
+      if (/^(regenerate|redo|refresh)\b/.test(q) && q.length < 100) {
+        return state.mapChat?.fromRoadmap ? "regenerate_roadmap" : "replace_path";
+      }
+
+      return null;
+    }
+
+    function getMapChatErrorFallback() {
+      if (/api key is missing/i.test(lastAdvisorError)) {
+        return (
+          "The AI helper isn't connected yet — add ANTHROPIC_API_KEY in Vercel and redeploy. " +
+          "You can still tap Regenerate roadmap or Update this path below to revise without chatting."
+        );
+      }
+      const actionHint = state.mapChat?.fromRoadmap
+        ? " Tap Regenerate roadmap for new steps, or Update this path to replace this option on your map."
+        : state.mapChat?.type === "idea"
+          ? " Tap Update this path when you're ready to apply changes."
+          : " Tap Update my paths when you're ready to apply changes.";
+      return (
+        `I couldn't reach the AI helper just now${lastAdvisorError ? ` (${abbreviateQuestion(lastAdvisorError, 60)})` : ""}. ` +
+        `Try again in a moment, or use the buttons below instead of chat.${actionHint}`
+      );
+    }
+
+    async function regenerateRoadmapFromChat(options = {}) {
+      const index = Number.isInteger(options.index) ? options.index : (state.mapChat?.index ?? getCurrentIdeaIndex());
+      const idea = state.ideas[index];
+      if (!idea) {
+        resolveTyping("That path isn't available anymore — head back to your map.");
+        state.history.push({ role: "assistant", content: "That path isn't available anymore — head back to your map." });
+        showReplyBox(true);
+        return;
+      }
+
+      trackEvent("roadmap_regenerate_from_chat", { idea_index: index, from_roadmap: Boolean(state.mapChat?.fromRoadmap) });
+      showReplyBox(false);
+      addTypingBubble("Regenerating your roadmap with new steps...");
+      state.mapChat = null;
+      state.alterPathMode = false;
+      updateReplyMapActions();
+      const reply = $("#reply-textarea");
+      if (reply) reply.placeholder = "Type your response...";
+
+      const key = slugify(idea.title);
+      const previousStages = key && state.allRoadmaps[key]?.stages?.length
+        ? normalizeRoadmapStages(state.allRoadmaps[key].stages)
+        : normalizeRoadmapStages(state.roadmapStages);
+      if (key) {
+        delete state.allRoadmaps[key];
+        if (state.allTaskChats[key]) delete state.allTaskChats[key];
+      }
+      state.currentIdea = idea;
+      state.roadmapKey = key;
+      state.roadmapStages = [];
+      setRoadmapNavVisible(true);
+      schedulePersist();
+      await viewRoadmap(idea, index, { force: true, previousStages });
+    }
+
     function updateReplyMapActions() {
       const actions = $("#reply-map-actions");
       const applyBtn = $("#reply-apply-map-btn");
+      const regenBtn = $("#reply-regen-roadmap-btn");
       if (!actions) return;
       const active = Boolean(state.mapChat);
       actions.hidden = !active;
       if (applyBtn) {
         applyBtn.textContent = state.mapChat?.type === "idea" ? "Update this path" : "Update my paths";
+      }
+      if (regenBtn) {
+        regenBtn.hidden = !(state.mapChat?.type === "idea" && state.mapChat?.fromRoadmap);
       }
     }
 
@@ -15641,7 +15728,7 @@ What would make this more useful for someone in your situation?`;
         history_count: state.history.length
       });
       const response = await callAdvisor(buildMapChatPrompt(summary), 550);
-      const answer = response || "I'm having trouble connecting right now — try again in a moment.";
+      const answer = response || getMapChatErrorFallback();
       resolveTyping(answer);
       state.history.push({ role: "assistant", content: answer });
       showReplyBox(true);
@@ -15703,8 +15790,11 @@ What would make this more useful for someone in your situation?`;
       );
       const newIdeas = extractJsonArray(response, []).filter((entry) => entry.title);
       if (!newIdeas.length) {
-        resolveTyping("I couldn't revise that path just now — your map is unchanged. Try again or keep chatting.");
-        state.history.push({ role: "assistant", content: "I couldn't revise that path just now — your map is unchanged. Try again or keep chatting." });
+        const failMsg = lastAdvisorError
+          ? `I couldn't revise that path just now (${abbreviateQuestion(lastAdvisorError, 60)}). Your map is unchanged — try again or tap Regenerate roadmap if you only need new steps.`
+          : "I couldn't revise that path just now — your map is unchanged. Try again or keep chatting.";
+        resolveTyping(failMsg);
+        state.history.push({ role: "assistant", content: failMsg });
         showReplyBox(true);
         schedulePersist();
         return;
@@ -16885,6 +16975,17 @@ What would make this more useful for someone in your situation?`;
       state.history.push({ role: "user", content: text });
 
       if (state.mapChat) {
+        const intent = detectMapChatIntent(text);
+        if (intent === "regenerate_roadmap" && state.mapChat.type === "idea") {
+          await regenerateRoadmapFromChat();
+          return;
+        }
+        if (intent === "replace_path" && state.mapChat.type === "idea") {
+          showReplyBox(false);
+          addTypingBubble(PATH_BUILDING_MSG);
+          await applyIdeaDiscussChanges();
+          return;
+        }
         addTypingBubble();
         await submitMapChatReply();
         return;
@@ -20253,6 +20354,7 @@ What would make this more useful for someone in your situation?`;
       });
       $("#reply-reset-btn")?.addEventListener("click", confirmStartNewMap);
       $("#reply-apply-map-btn")?.addEventListener("click", applyMapChatChanges);
+      $("#reply-regen-roadmap-btn")?.addEventListener("click", () => regenerateRoadmapFromChat());
       $("#reply-back-map-btn")?.addEventListener("click", exitMapChat);
 
       $("#reset-btn").addEventListener("click", confirmStartNewMap);
