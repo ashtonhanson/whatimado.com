@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-location-playbook -->
+<!-- whatimado build: 2026-06-29-map-chat-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-location-fix">
+  <meta name="whatimado-build" content="2026-06-29-map-chat-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -15012,11 +15012,47 @@ What would make this more useful for someone in your situation?`;
       return origin;
     }
 
+    function extractAnthropicErrorMessage(value) {
+      if (!value) return "";
+      if (typeof value === "string") {
+        const trimmed = value.replace(/^Anthropic API Error:\s*/i, "").trim();
+        const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            const nested = parsed?.error?.message || parsed?.message;
+            if (nested) return String(nested).trim();
+          } catch {
+            /* keep plain-text fallback below */
+          }
+        }
+        return trimmed;
+      }
+      if (value?.message) return String(value.message).trim();
+      return "";
+    }
+
+    function humanizeAdvisorError(raw) {
+      const msg = String(raw || "").trim();
+      if (!msg) return "";
+      if (/credit balance is too low|insufficient.*credit|purchase credits/i.test(msg)) {
+        return "The AI service is out of credits — add Anthropic billing in your account, then try again.";
+      }
+      if (/rate limit|too many requests/i.test(msg)) {
+        return "Too many requests right now — wait a moment and try again.";
+      }
+      if (/overloaded|529/i.test(msg)) {
+        return "The AI service is busy — try again in a moment.";
+      }
+      return msg;
+    }
+
     function getAdvisorErrorMessage(data) {
       if (!data) return "";
-      if (typeof data.error === "string") return data.error;
-      if (data.error?.message) return data.error.message;
-      if (data.message) return data.message;
+      if (typeof data.error === "string") return extractAnthropicErrorMessage(data.error);
+      if (data.error) return extractAnthropicErrorMessage(data.error);
+      if (data.type === "error" && data.error) return extractAnthropicErrorMessage(data.error);
+      if (data.message) return String(data.message).trim();
       return "";
     }
 
@@ -15125,6 +15161,12 @@ What would make this more useful for someone in your situation?`;
         return (
           "The AI helper is not connected on the live site yet — the Anthropic API key needs to be added in your Vercel project settings (ANTHROPIC_API_KEY), then redeployed. " +
           "Until then, here's a starting point for your question: open Notes and draft a short, honest post about who whatimado.com helps, what makes the map different, and invite feedback at https://whatimado.com."
+        );
+      }
+      if (/out of credits|credit balance is too low|purchase credits/i.test(lastAdvisorError)) {
+        return (
+          "The AI helper is paused — the Anthropic account needs more credits (Plans & Billing at console.anthropic.com). " +
+          `For this step — "${abbreviateQuestion(taskText, 90)}" — pick one concrete 30-minute action, do it, and note what happened.`
         );
       }
 
@@ -17326,11 +17368,46 @@ What would make this more useful for someone in your situation?`;
       return null;
     }
 
+    function getMapChatLocalFallback(userText) {
+      const idea = state.mapChat?.type === "idea" ? state.ideas[state.mapChat.index] : null;
+      const q = String(userText || "").trim().toLowerCase();
+      const title = idea?.title || "this path";
+
+      if (/\b(different|another|new)\s+(angle|approach|direction|take|spin)\b/.test(q) || /\btry something (else|different)\b/.test(q)) {
+        return (
+          `Got it — you want a fresh take on "${title}". What's off about it: too slow, wrong audience, needs less money upfront, or doesn't fit your skills? ` +
+          `Share that here, then tap Update this path when you're ready and I'll rewrite it on your map.`
+        );
+      }
+
+      if (/\b(realistic|part[- ]?time|weekend|side hustle|while working)\b/.test(q)) {
+        return (
+          `For "${title}": most people start part-time — one focused block per week on the highest-leverage step (usually outreach or a small paid pilot). ` +
+          `Tell me your weekly hours and budget and I'll steer you; tap Update this path if you want the map entry rewritten to match.`
+        );
+      }
+
+      if (/\b(fits?|fit me|right for me|good for me)\b/.test(q)) {
+        return (
+          `"${title}" works best when you can commit to its timeline and upfront cost. ` +
+          `Say what you have for time, money, and skills — or tap Update this path if you want a version tailored to you.`
+        );
+      }
+
+      return "";
+    }
+
     function getMapChatErrorFallback() {
       if (/api key is missing/i.test(lastAdvisorError)) {
         return (
           "The AI helper isn't connected yet — add ANTHROPIC_API_KEY in Vercel and redeploy. " +
           "You can still tap Regenerate roadmap or Update this path below to revise without chatting."
+        );
+      }
+      if (/out of credits|credit balance is too low|purchase credits/i.test(lastAdvisorError)) {
+        return (
+          "The AI helper is paused — the Anthropic account needs more credits (Plans & Billing at console.anthropic.com). " +
+          "Until that's fixed, tap Update this path below to revise this option, or Regenerate roadmap for new steps."
         );
       }
       const actionHint = state.mapChat?.fromRoadmap
@@ -17424,12 +17501,17 @@ What would make this more useful for someone in your situation?`;
 
     async function submitMapChatReply() {
       const summary = getConversationSummary();
+      const lastUser = [...state.history].reverse().find((entry) => entry.role === "user")?.content || "";
       trackEvent("map_chat_reply", {
         chat_type: state.mapChat?.type || "unknown",
         history_count: state.history.length
       });
-      const response = await callAdvisor(buildMapChatPrompt(summary), 550);
-      const answer = response || getMapChatErrorFallback();
+      let response = await callAdvisor(buildMapChatPrompt(summary), 550);
+      if (!response) {
+        const compactSummary = truncateAdvisorPrompt(getConversationSummary(), 6000);
+        response = await callAdvisor(buildMapChatPrompt(compactSummary), 550);
+      }
+      const answer = response || getMapChatLocalFallback(lastUser) || getMapChatErrorFallback();
       resolveTyping(answer);
       state.history.push({ role: "assistant", content: answer });
       showReplyBox(true);
@@ -17931,7 +18013,7 @@ What would make this more useful for someone in your situation?`;
           return "";
         }
         if (!response.ok || data.type === "error" || data.error) {
-          lastAdvisorError = getAdvisorErrorMessage(data) || `Request failed (${response.status})`;
+          lastAdvisorError = humanizeAdvisorError(getAdvisorErrorMessage(data) || `Request failed (${response.status})`);
           console.error("Advisor API error:", data.error || data);
           return "";
         }
