@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-28-task-detail-clarity -->
+<!-- whatimado build: 2026-06-28-task-plain-writing -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-28-task-detail-clarity">
+  <meta name="whatimado-build" content="2026-06-28-task-plain-writing">
   <title>whatimado.com | Let us help figure out what ya gonna do</title>
   <meta name="description" content="whatimado.com helps you land on your own what Ima do: personalized paths and step-by-step roadmaps when life feels stuck. Free for everyone.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -6143,6 +6143,58 @@
       text-decoration: none;
     }
 
+    html[data-color-scheme="adult"] .task-plain-explain,
+    html[data-color-scheme="adult"] .task-writing-assist {
+      margin-top: .65rem;
+      padding: .75rem .85rem;
+      border-radius: 12px;
+      border: 1px solid rgba(37, 99, 235, .14);
+      background: rgba(37, 99, 235, .05);
+    }
+
+    html[data-color-scheme="adult"] .task-writing-assist-copy,
+    html[data-color-scheme="adult"] .task-plain-explain-copy {
+      margin: .35rem 0 0;
+      color: var(--ink-muted);
+      font-size: .74rem;
+      line-height: 1.5;
+    }
+
+    html[data-color-scheme="adult"] .task-writing-assist-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+      margin-top: .55rem;
+    }
+
+    html[data-color-scheme="adult"] .task-writing-assist-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .5rem .75rem;
+      border: 0;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #fff;
+      font: inherit;
+      font-size: .72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .task-writing-assist-btn--ghost {
+      background: #fff;
+      color: #2563eb;
+      border: 1px solid rgba(37, 99, 235, .24);
+    }
+
+    html[data-color-scheme="adult"] .task-writing-assist-note {
+      margin: .55rem 0 0;
+      color: #166534;
+      font-size: .7rem;
+      line-height: 1.4;
+    }
+
     html[data-color-scheme="adult"] .task-action-pack {
       display: grid;
       gap: .65rem;
@@ -9886,7 +9938,8 @@
       'Return exactly 4 stages with 3 tasks each.\n' +
       'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and how it connects to the path","tasks":[{"text":"Clear headline — then 2-3 sentences explaining exactly what to do, where to do it, and what finished looks like","steps":["First concrete micro-step (5-15 min)","Second step with a named tool, page, or person","Final step: what to save, send, or check off"],"why":"1-2 sentences on why THIS step matters now for this person","outcome":"1 sentence on the tangible thing they will have when done (file sent, post live, call booked, number calculated)","duration":"~30-45 min","cost":"Free or estimated cost","local":"Specific real org/program name in their city (not a category label)","links":["https://official-site.example"],"contacts":[{"name":"Contact name or title","org":"Organization full name","phone":"published main line or empty string","email":"published program email or empty string","url":"https://official-contact-page"}],"script":"Ready to copy: email subject + 3-4 sentence body OR phone opener"}]}]\n' +
       'Every task object MUST include text, steps (2-4 items), why, outcome, duration, and cost. Include local, links[], contacts[], and script only when the task involves outreach, applications, licensing, or local programs — otherwise use empty strings/arrays.\n' +
-      'Write like a patient coach: assume the reader has never done this before. Name the screen, button, doc, or person. No vague homework.\n' +
+      'Write like a patient coach for someone who may not know Reddit, subreddits, or tech jargon. In text, spell things out: "Post in Reddit\'s r/Findapath forum (people exploring career paths)" — not just "Post in r/Findapath". steps[] must be distinct micro-actions (open X, write Y, click Z) — never repeat or rephrase the headline.\n' +
+      'For writing tasks, include a ready-to-copy sample in script (founder story, post draft, or email) the user can paste and edit.\n' +
       'Do not reuse stage titles across different paths on the same map.';
 
     let roadmapLocalEnrichInFlight = false;
@@ -9918,8 +9971,9 @@
       '- The user should NOT have to hunt for basics. Give real organization names, official https:// links, published phone numbers, and published emails when you know them for their city.\n' +
       '- For outreach tasks: include 1-3 specific local orgs in contacts[] with url/phone/email, plus a copy-paste script (subject line + email body or call opener).\n' +
       '- For licensing/registration tasks: link to the exact state/city agency page and list the fee in cost.\n' +
-      '- Every task needs steps[] with 2-4 numbered micro-actions the user can follow in order — not one vague paragraph.\n' +
+      '- Every task needs steps[] with 2-4 distinct micro-actions (open this page, write this paragraph, click publish) — never restate the headline.\n' +
       '- why and outcome must each be a full sentence the user can understand without guessing.\n' +
+      '- Use plain English first. Explain Reddit forums, Stripe, and other jargon in parentheses. Never assume the user knows what r/Findapath means.\n' +
       '- BAD: "List 10 local organizations" or "Find workforce resources near you" or "SBDC near Austin".\n' +
       '- GOOD: contacts for Caritas of Austin Re-Entry, Austin Public Library Job Center, Workforce Solutions Capital Area with URLs + script: "Subject: Free career roadmap pilot for your clients…"\n' +
       '- Never invent fake grant names or personal @gmail addresses. Use official sites; if unsure of a phone/email, leave it "" and put "Find contact on website" in script with the URL.\n' +
@@ -10080,32 +10134,307 @@
       return [];
     }
 
+    function normalizeTextForCompare(text) {
+      return String(text || "")
+        .toLowerCase()
+        .replace(/https?:\/\/[^\s]+/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function textSimilarity(a, b) {
+      const left = normalizeTextForCompare(a);
+      const right = normalizeTextForCompare(b);
+      if (!left || !right) return 0;
+      if (left === right) return 1;
+      if (left.includes(right) || right.includes(left)) {
+        return Math.min(left.length, right.length) / Math.max(left.length, right.length);
+      }
+      const wordsLeft = new Set(left.split(" ").filter((word) => word.length > 2));
+      const wordsRight = new Set(right.split(" ").filter((word) => word.length > 2));
+      let overlap = 0;
+      wordsLeft.forEach((word) => {
+        if (wordsRight.has(word)) overlap += 1;
+      });
+      return overlap / Math.max(wordsLeft.size, wordsRight.size, 1);
+    }
+
+    function stepsAreRedundantWithText(text, steps) {
+      if (!steps?.length) return true;
+      const combined = normalizeTextForCompare(steps.join(" "));
+      const headline = normalizeTextForCompare(text);
+      if (!combined || combined === headline) return true;
+      if (textSimilarity(text, steps.join(" — ")) > 0.82) return true;
+      const redundantCount = steps.filter((step) => textSimilarity(text, step) > 0.72).length;
+      return redundantCount >= Math.max(1, steps.length - 1);
+    }
+
+    function dedupeTaskSteps(text, steps) {
+      const list = (steps || []).map((step) => String(step || "").trim()).filter(Boolean);
+      if (!list.length || stepsAreRedundantWithText(text, list)) return [];
+      return list.filter((step, index, arr) => {
+        if (textSimilarity(text, step) > 0.72) return false;
+        return !arr.slice(0, index).some((prev) => textSimilarity(prev, step) > 0.9);
+      });
+    }
+
     function inferTaskStepsFromText(text) {
       const raw = String(text || "").trim();
       if (!raw) return [];
 
       if (/\d+[\).\]]\s/.test(raw)) {
         const numbered = raw.split(/\d+[\).\]]\s+/).map((part) => part.trim()).filter(Boolean);
-        if (numbered.length >= 2) return numbered.slice(0, 4);
+        const cleaned = dedupeTaskSteps(raw, numbered);
+        if (cleaned.length >= 2) return cleaned.slice(0, 4);
       }
 
       const dashParts = raw.split(/\s—\s|\s-\s+/).map((part) => part.trim()).filter(Boolean);
-      if (dashParts.length >= 2) return dashParts.slice(0, 4);
+      if (dashParts.length >= 2) {
+        const cleaned = dedupeTaskSteps(raw, dashParts);
+        if (cleaned.length >= 2) return cleaned.slice(0, 4);
+      }
 
       if (/\band then\b|\bthen\b/i.test(raw)) {
         const split = raw.split(/\band then\b|\bthen\b/i).map((part) => part.trim()).filter(Boolean);
-        if (split.length >= 2) return split.slice(0, 4);
+        const cleaned = dedupeTaskSteps(raw, split);
+        if (cleaned.length >= 2) return cleaned.slice(0, 4);
       }
 
       const sentences = raw.split(/(?<=[.!?])\s+/).map((part) => part.trim()).filter((part) => part.length > 18);
-      if (sentences.length >= 2) return sentences.slice(0, 4);
+      const cleaned = dedupeTaskSteps(raw, sentences);
+      if (cleaned.length >= 2) return cleaned.slice(0, 4);
 
       return [];
     }
 
     function getTaskDisplaySteps(normalized) {
-      if (normalized.steps?.length) return normalized.steps;
-      return inferTaskStepsFromText(normalized.text);
+      const steps = normalized.steps?.length ? normalized.steps : inferTaskStepsFromText(normalized.text);
+      return dedupeTaskSteps(normalized.text, steps);
+    }
+
+    function humanizeTaskText(text) {
+      let copy = String(text || "").trim();
+      if (!copy) return copy;
+
+      copy = copy.replace(/\bopen notes\b/gi, "Use the My Notes box below");
+
+      const redditNames = {
+        findapath: "Reddit's r/Findapath forum (people exploring career paths)",
+        careerchange: "Reddit's r/careerchange forum (people changing careers)",
+        sidehustle: "Reddit's r/sidehustle forum (extra income ideas)",
+        smallbusiness: "Reddit's r/smallbusiness forum",
+        entrepeneur: "Reddit's r/Entrepreneur forum",
+        entrepreneur: "Reddit's r/Entrepreneur forum",
+        homeless: "Reddit's r/homeless support forum",
+        povertyfinance: "Reddit's r/povertyfinance forum"
+      };
+
+      copy = copy.replace(/\br\/([a-z0-9_]+)\b/gi, (match, sub) => {
+        const key = sub.toLowerCase();
+        return redditNames[key] || `Reddit's r/${sub} forum (a community on Reddit.com)`;
+      });
+
+      copy = copy.replace(/\bsub rules\b/gi, "that forum's posting rules");
+      copy = copy.replace(/\bsubreddit\b/gi, "Reddit forum");
+      copy = copy.replace(/\bchatgpt\b/gi, "ChatGPT (a general AI chat tool)");
+
+      return copy;
+    }
+
+    function taskNeedsPlainExplain(normalized) {
+      const blob = `${normalized.text} ${normalized.why} ${(normalized.steps || []).join(" ")}`.toLowerCase();
+      return /\br\/|reddit|subreddit|sub rules|facebook group|post in r\//.test(blob);
+    }
+
+    function renderTaskPlainExplainHtml(normalized) {
+      if (!taskNeedsPlainExplain(normalized)) return "";
+      const text = `${normalized.text} ${normalized.why}`.toLowerCase();
+      const lines = [];
+
+      if (/\breddit\b|r\/|subreddit/.test(text)) {
+        lines.push(
+          "Reddit is a website made of small forums called subreddits — each one is a community around a topic (like career change). You post as yourself; read a few recent posts first to match their tone."
+        );
+      }
+      if (/sub rules|links aren't allowed|first comment/.test(text)) {
+        lines.push(
+          "Each forum has its own rules. Some don't allow links in the main post — if so, write your story first and put https://whatimado.com in your first comment underneath."
+        );
+      }
+      if (/facebook/.test(text)) {
+        lines.push(
+          "On Facebook, share on your own profile or in a group you already belong to — write like you're telling one friend, not running an ad."
+        );
+      }
+
+      if (!lines.length) return "";
+      return `
+        <div class="task-plain-explain">
+          <span class="overview-task-detail-label">In plain English</span>
+          <p class="task-plain-explain-copy">${escapeHtml(lines.join(" "))}</p>
+        </div>`;
+    }
+
+    function isWritingTask(normalized) {
+      const blob = `${normalized.text} ${normalized.script}`.toLowerCase();
+      return /\b(write|draft|120-word|founder story|post draft|caption|intro|save two post|notes doc)\b/.test(blob);
+    }
+
+    function generateLocalTaskDraft(normalized) {
+      const text = normalized.text.toLowerCase();
+      const site = "https://whatimado.com";
+
+      if (normalized.script && normalized.script.length > 40) {
+        return normalized.script;
+      }
+
+      if (/\b120-word\b|\bfounder story\b/.test(text)) {
+        return `[Edit this draft in My Notes — aim for about 120 words]
+
+I built whatimado.com for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding, under-resourced, or tired of advice that doesn't fit your life.
+
+Most tools either dump a chat wall of text or charge you before you've explored anything real. whatimado stays free because paths shouldn't be paywalled.
+
+The difference: you see a visual possibility map of paths that fit you, then open step-by-step roadmaps with tasks — not just another ChatGPT thread.
+
+Try it at ${site} and tell me what would make it more useful for someone in your situation.`;
+      }
+
+      if (/\bsave two post drafts\b|\bpost drafts\b/.test(text)) {
+        return `[Draft A — Reddit help-first intro]
+
+Title: I built a free tool for people stuck on what's next
+
+Body:
+I've watched a lot of people freeze when they need a direction — not because they're lazy, but because every option feels vague or expensive.
+
+I made whatimado.com to map real paths visually, then break each path into small tasks you can actually do. It's free.
+
+If you're exploring what's next, I'd love honest feedback: ${site}
+(If the forum doesn't allow links in posts, I'll put the link in my first comment.)
+
+---
+
+[Draft B — Facebook personal post]
+
+I've been working on something for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding or don't have money for another paid course.
+
+whatimado.com is free. It shows you a map of paths that might fit, then gives you step-by-step tasks for each one — not just another AI chat.
+
+I'd really value your take if you try it: ${site}
+What would make this more useful for someone in your situation?`;
+      }
+
+      if (/\breddit\b|r\//.test(text) && !/\bfacebook\b/.test(text)) {
+        return `[Reddit post draft — edit before posting]
+
+Title: I built a free tool for people stuck on "what's next"
+
+Body:
+I've watched a lot of people freeze when they need a direction — not because they're lazy, but because every option feels vague or expensive.
+
+I made whatimado.com to map real paths visually, then break each path into small tasks you can actually do. It's free.
+
+If you're exploring what's next, I'd love honest feedback: ${site}
+(If this forum doesn't allow links in posts, I'll put the link in my first comment.)`;
+      }
+
+      if (/\bfacebook\b/.test(text)) {
+        return `[Facebook post draft — edit to sound like you]
+
+I've been working on something for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding or don't have money for another paid course.
+
+whatimado.com is free. It shows you a map of paths that might fit, then gives you step-by-step tasks for each one — not just another AI chat.
+
+I'd really value your take if you try it: ${site}
+What would make this more useful for someone in your situation?`;
+      }
+
+      return null;
+    }
+
+    function renderTaskWritingAssistHtml(taskId, normalized) {
+      if (!isWritingTask(normalized)) return "";
+      const draft = generateLocalTaskDraft(normalized);
+      if (!draft) return "";
+
+      const isFounder = /\b120-word\b|\bfounder story\b/i.test(normalized.text);
+      const headline = isFounder ? "Want help getting started?" : "Need a starting draft?";
+      const copy = isFounder
+        ? "Most people aren't sure how to open a founder story. Paste our sample into My Notes and edit until it sounds like you — or ask below to rewrite it."
+        : "We can drop a ready-to-edit draft into My Notes so you're not staring at a blank box.";
+
+      return `
+        <div class="task-writing-assist" data-task-id="${escapeHtml(taskId)}">
+          <span class="overview-task-detail-label">${escapeHtml(headline)}</span>
+          <p class="task-writing-assist-copy">${escapeHtml(copy)}</p>
+          <div class="task-writing-assist-actions">
+            <button type="button" class="task-writing-assist-btn" data-action="insert-draft" data-task-id="${escapeHtml(taskId)}">Write a draft for me</button>
+            <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="view-sample" data-task-id="${escapeHtml(taskId)}">Show sample text</button>
+          </div>
+        </div>`;
+    }
+
+    function handleTaskAssistClick(event) {
+      const btn = event.target.closest(".task-writing-assist-btn");
+      if (!btn) return;
+
+      const taskId = btn.dataset.taskId;
+      const action = btn.dataset.action;
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      if (!item || !match) return;
+
+      const stageIndex = Number(match[1]);
+      const taskIndex = Number(match[2]);
+      const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
+      const normalized = normalizeRoadmapTask(task);
+      const draft = generateLocalTaskDraft(normalized);
+      if (!draft) return;
+
+      const box = btn.closest(".task-writing-assist");
+
+      if (action === "insert-draft") {
+        const notes = item.querySelector(".task-textarea");
+        const data = getRoadmapTaskData(taskId);
+        if (notes) {
+          notes.value = draft;
+          data.notes = draft;
+          schedulePersist();
+          trackEvent("task_draft_inserted", { task_id: taskId });
+        }
+        let note = box?.querySelector(".task-writing-assist-note");
+        if (!note && box) {
+          note = document.createElement("p");
+          note.className = "task-writing-assist-note";
+          box.appendChild(note);
+        }
+        if (note) note.textContent = "Draft added to My Notes — edit until it sounds like you.";
+        notes?.focus();
+        return;
+      }
+
+      if (action === "view-sample") {
+        let preview = box?.querySelector(".task-writing-sample");
+        if (!preview && box) {
+          preview = document.createElement("pre");
+          preview.className = "task-writing-sample overview-task-detail-copy";
+          preview.style.whiteSpace = "pre-wrap";
+          preview.style.marginTop = ".55rem";
+          preview.textContent = draft;
+          box.appendChild(preview);
+          btn.textContent = "Hide sample text";
+          btn.dataset.action = "hide-sample";
+        }
+        return;
+      }
+
+      if (action === "hide-sample") {
+        box?.querySelector(".task-writing-sample")?.remove();
+        btn.textContent = "Show sample text";
+        btn.dataset.action = "view-sample";
+      }
     }
 
     function enrichTaskClarity(stages) {
@@ -10114,7 +10443,10 @@
         tasks: stage.tasks.map((task) => {
           const normalized = normalizeRoadmapTask(task);
           if (!normalized.steps.length) {
-            normalized.steps = inferTaskStepsFromText(normalized.text);
+            const inferred = inferTaskStepsFromText(normalized.text);
+            normalized.steps = stepsAreRedundantWithText(normalized.text, inferred) ? [] : inferred;
+          } else {
+            normalized.steps = dedupeTaskSteps(normalized.text, normalized.steps);
           }
           return normalized;
         })
@@ -11559,8 +11891,8 @@
 
       if (/\b120-word\b/.test(task) || /\bfounder story\b/.test(task) || /\bfounder story\b/.test(q)) {
         return (
-          "Structure your 120-word founder story in Notes: Line 1 — who it's for (stuck, rebuilding, under-resourced). Lines 2–3 — why you built it and why it stays free. " +
-          "Line 4 — what's different (visual map + roadmaps with tasks). Last line — invite people to try https://whatimado.com. Count words in Notes and trim until you're close to 120."
+          "Tap Write a draft for me above My Notes for a starter founder story you can edit. Structure: Line 1 — who it's for (stuck, rebuilding, under-resourced). Lines 2–3 — why you built it and why it stays free. " +
+          "Line 4 — what's different (visual map + roadmaps with tasks). Last line — invite people to try https://whatimado.com. Trim until you're close to 120 words."
         );
       }
 
@@ -11573,8 +11905,8 @@
 
       if (/\breddit\b/.test(task) || /\breddit\b/.test(q) || /\bsubreddit\b/.test(q)) {
         return (
-          "Start with r/Findapath or r/careerchange — read a few recent posts and match their tone. Title idea: \"I built a free tool for people stuck on what's next.\" " +
-          "If the sub doesn't allow links in the post body, put https://whatimado.com in your first comment. Lead with helping, not pitching."
+          "Reddit is a site of small forums (subreddits). Try Reddit's r/Findapath forum (people exploring career paths) or r/careerchange — read a few recent posts and match their tone. " +
+          "Title idea: \"I built a free tool for people stuck on what's next.\" If the forum doesn't allow links in the post body, put https://whatimado.com in your first comment. Lead with helping, not pitching."
         );
       }
 
@@ -13883,6 +14215,10 @@
     }
 
     function handleTaskThreadClick(event) {
+      if (event.target.closest(".task-writing-assist-btn")) {
+        handleTaskAssistClick(event);
+        return;
+      }
       const collapsed = event.target.closest(".task-thread-collapsed");
       if (collapsed) {
         expandThread(collapsed.dataset.taskId, collapsed.dataset.threadId);
@@ -15800,12 +16136,12 @@
           </div>`);
       }
 
-      if (steps.length > 1) {
+      if (steps.length >= 2) {
         parts.push(`
           <div class="overview-task-detail-block">
             <span class="overview-task-detail-label">Steps</span>
             <ol class="overview-task-steps">
-              ${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+              ${steps.map((step) => `<li>${escapeHtml(humanizeTaskText(step))}</li>`).join("")}
             </ol>
           </div>`);
       }
@@ -15814,7 +16150,7 @@
         parts.push(`
           <div class="overview-task-detail-block">
             <span class="overview-task-detail-label">Why this step</span>
-            <p class="overview-task-detail-copy">${escapeHtml(normalized.why)}</p>
+            <p class="overview-task-detail-copy">${escapeHtml(humanizeTaskText(normalized.why))}</p>
           </div>`);
       }
 
@@ -15822,7 +16158,7 @@
         parts.push(`
           <div class="overview-task-detail-block">
             <span class="overview-task-detail-label">When you're done</span>
-            <p class="overview-task-detail-copy">${escapeHtml(normalized.outcome)}</p>
+            <p class="overview-task-detail-copy">${escapeHtml(humanizeTaskText(normalized.outcome))}</p>
           </div>`);
       }
 
@@ -15838,11 +16174,13 @@
       const normalized = normalizeRoadmapTask(task);
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "" };
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
-      const text = normalized.text;
+      const text = humanizeTaskText(normalized.text);
       const chips = [];
       if (showResources && normalized.local) {
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
+      const plainExplain = renderTaskPlainExplainHtml(normalized);
+      const writingAssist = renderTaskWritingAssistHtml(id, normalized);
       const detailBlock = renderTaskDetailSectionsHtml(normalized, showResources);
       const actionPack = showResources ? renderTaskActionPackHtml(normalized, { stage, stageIndex }) : "";
 
@@ -15853,6 +16191,8 @@
             <div class="overview-task-content">
               <label class="task-text" for="${id}">${escapeHtml(text)}</label>
               ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
+              ${plainExplain}
+              ${writingAssist}
               ${detailBlock}
               ${actionPack}
             </div>
@@ -15873,7 +16213,7 @@
       const task = String(taskText || "").toLowerCase();
 
       if (/\b(write|draft|story|post|notes doc|120-word|founder story|pitch|caption)\b/.test(task)) {
-        return "Ask a question or request a change (e.g. I'm stuck on how to start writing this)...";
+        return "Ask a question or request a change (e.g. rewrite the draft in my voice, or shorten it)...";
       }
       if (/\b(bookkeep|business|client|customer|offer|service|freelance|gig|accounting)\b/.test(task)) {
         return "Ask a question or request a change (e.g. how do I land my first client with no budget?)...";
