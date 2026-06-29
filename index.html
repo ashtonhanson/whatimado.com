@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-reentry -->
+<!-- whatimado build: 2026-06-29-copy-signout -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-reentry">
+  <meta name="whatimado-build" content="2026-06-29-copy-signout">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -9973,8 +9973,8 @@
       <div class="dashboard-home">
         <div class="dashboard-hero">
           <p class="dashboard-badge">Free for everyone · No paywall on personal use</p>
-          <h1>Let us help you figure out what you're gonna do.</h1>
-          <p class="dashboard-lead">Stuck on what's next? Share your situation — skills, constraints, timeline, what you care about. You'll get a visual map of realistic paths, then a step-by-step roadmap with small tasks you can actually do.</p>
+          <h1>Stuck on what's next?</h1>
+          <p class="dashboard-lead">whatimado sits between brainstorming and action. Describe your situation, get realistic paths you can compare, choose one, and follow small steps you can actually do this week — not another chat thread you'll lose.</p>
 
           <div class="prompt-box dashboard-search">
             <textarea class="prompt-textarea" id="main-input" rows="2" placeholder=""></textarea>
@@ -9999,21 +9999,21 @@
         </div>
 
         <section class="dashboard-value" aria-label="Why whatimado">
-          <p class="dashboard-value-kicker">Not just another chatbot</p>
-          <h2 class="dashboard-value-title">See your options. Then take the next step.</h2>
-          <p class="dashboard-value-lead">Chat tools dump paragraphs you can't find later. Whatimado turns your story into paths you can see and compare, then roadmaps with checkboxes, notes, draft help, and Ask on each task — built for people who are rebuilding, low on budget, or tired of generic advice.</p>
+          <p class="dashboard-value-kicker">Between brainstorming and action</p>
+          <h2 class="dashboard-value-title">Structured hope — one small step at a time</h2>
+          <p class="dashboard-value-lead">Most people don't need another possibility. They need one thing to do Tuesday morning. Whatimado turns your story into paths you can see, then roadmaps with checkboxes, notes, and Ask on each task — built for anyone rebuilding, low on budget, or tired of generic advice.</p>
           <div class="dashboard-value-grid">
             <div class="dashboard-value-item dashboard-value-item--highlight">
-              <strong>Possibility map</strong>
-              <span>Your options appear as paths you can click and compare — not a scrolling chat wall.</span>
+              <strong>See your options</strong>
+              <span>Your paths appear as a visual map you can click and compare — not a scrolling chat wall.</span>
             </div>
             <div class="dashboard-value-item">
-              <strong>Step-by-step roadmaps</strong>
-              <span>Pick one path and get concrete tasks, time estimates, and "when you're done" clarity.</span>
+              <strong>Small steps</strong>
+              <span>Pick one path and get concrete tasks with time estimates and "when you're done" clarity — momentum, not overwhelm.</span>
             </div>
             <div class="dashboard-value-item">
-              <strong>Help when you're stuck</strong>
-              <span>Notes, sample drafts, and Ask on each task — your conversation stays with that roadmap.</span>
+              <strong>Help on the step you're on</strong>
+              <span>Notes, sample drafts, and Ask on each task — your conversation stays with that roadmap, not lost in a new thread.</span>
             </div>
           </div>
         </section>
@@ -18181,6 +18181,41 @@ What would make this more useful for someone in your situation?`;
       if (state.currentUser && supabaseClient) {
         supabaseClient.from("user_journeys").delete().eq("user_id", state.currentUser.id).then(() => {});
       }
+      resetSessionUIAfterClear();
+    }
+
+    function clearSessionOnSignOut(userId) {
+      intakeInProgress = false;
+      state.savedMaps = [];
+      state.activeMapId = null;
+      state.roadmapCategories = [];
+      state.activeRoadmapCategoryId = null;
+      state.selectedPathIndexes = [];
+      state.journeyId = null;
+      state.syncedLibraryStats = null;
+      state.lastSyncStatus = "idle";
+      state.lastCloudSyncError = "";
+      state.sidebarRoadmapsExpanded = false;
+      clearIntakeSession({ clearMainInput: true });
+      state.lastScreen = "main";
+      setSaveStatus("idle");
+      $("#save-status-bar")?.classList.remove("visible");
+      try {
+        if (userId) localStorage.removeItem(`whatimado_journey_${userId}`);
+        localStorage.removeItem(STORAGE_GUEST);
+      } catch {
+        /* ignore */
+      }
+      const nameInput = $("#site-suggestion-name");
+      if (nameInput) nameInput.value = "";
+      resetSessionUIAfterClear();
+    }
+
+    function resetSessionUIAfterClear() {
+      const oppGrid = $("#opp-grid");
+      if (oppGrid) oppGrid.innerHTML = "";
+      const mapsList = $("#maps-library-list");
+      if (mapsList) mapsList.innerHTML = "";
       const moreBtn = $("#more-ideas-btn");
       if (moreBtn) {
         const moreLabel = moreBtn.querySelector(".btn-label");
@@ -18189,7 +18224,10 @@ What would make this more useful for someone in your situation?`;
       updateMapsNav();
       renderSavedMapsHome();
       renderSidebarRoadmaps();
-      showScreen("main");
+      renderMapsLibrary();
+      updateMapAuxiliaryPanels();
+      updateSaveButtonVisibility();
+      showScreen("main", { skipPersist: true });
     }
 
     function showAuth(tab) {
@@ -18590,6 +18628,11 @@ What would make this more useful for someone in your situation?`;
       const previousId = state.currentUser?.id ?? null;
       const nextId = user?.id ?? null;
       const freshSignIn = Boolean(nextId && !previousId);
+
+      if (previousId && !nextId) {
+        clearSessionOnSignOut(previousId);
+      }
+
       state.currentUser = user;
       updateAuthNavUI(user);
       updateSaveButtonVisibility();
