@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-grounded-all">
+  <meta name="whatimado-build" content="2026-06-29-ask-suggestions">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7792,6 +7792,52 @@
       border-top: 1px solid rgba(120, 130, 200, .12);
     }
 
+    .task-ask-suggestions {
+      margin-top: .65rem;
+    }
+
+    .task-ask-suggestions-label {
+      display: block;
+      margin-bottom: .4rem;
+      color: var(--text3, rgba(36, 18, 53, .58));
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .task-ask-suggestions-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+
+    .task-ask-suggest-btn {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      padding: .38rem .68rem;
+      border: 1px solid rgba(124, 111, 205, .28);
+      border-radius: 999px;
+      background: rgba(124, 111, 205, .08);
+      color: var(--brand-purple-dark, #241235);
+      font: inherit;
+      font-size: .72rem;
+      font-weight: 600;
+      line-height: 1.25;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .12s ease;
+    }
+
+    .task-ask-suggest-btn:hover {
+      background: rgba(124, 111, 205, .16);
+      border-color: rgba(124, 111, 205, .42);
+    }
+
+    .task-ask-suggest-btn:active {
+      transform: translateY(1px);
+    }
+
     .task-ask-btn {
       min-height: 44px;
       padding: .55rem 1.15rem;
@@ -9830,6 +9876,32 @@
 
     html[data-color-scheme="adult"] #screen-roadmap .task-ask-btn:hover {
       background: #1d4ed8;
+    }
+
+    html[data-color-scheme="adult"] .task-ask-suggestions-label {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .task-ask-suggest-btn {
+      border-color: rgba(37, 99, 235, .22);
+      background: rgba(37, 99, 235, .06);
+      color: #1e3a8a;
+    }
+
+    html[data-color-scheme="adult"] .task-ask-suggest-btn:hover {
+      background: rgba(37, 99, 235, .12);
+      border-color: rgba(37, 99, 235, .34);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-ask-suggest-btn {
+      border-color: rgba(37, 99, 235, .22);
+      background: rgba(37, 99, 235, .06);
+      color: #1e3a8a;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-ask-suggest-btn:hover {
+      background: rgba(37, 99, 235, .12);
+      border-color: rgba(37, 99, 235, .34);
     }
 
     html[data-color-scheme="adult"] .map-library-card {
@@ -19708,6 +19780,7 @@ What would make this more useful for someone in your situation?`;
             <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
             ${notesExtras}
             <div class="task-threads" id="threads-${id}"></div>
+            ${renderTaskAskSuggestionsHtml(id, text)}
             <div class="task-ask-row">
               <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
               <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
@@ -19748,6 +19821,130 @@ What would make this more useful for someone in your situation?`;
       }
 
       return "Ask a question or request a change (e.g. how do I start this, or make it fit my situation?)...";
+    }
+
+    function getTaskAskSuggestions(taskText) {
+      const task = String(taskText || "").toLowerCase();
+      const suggestions = [];
+      const add = (label, question) => {
+        if (suggestions.length >= 4) return;
+        if (suggestions.some((entry) => entry.label === label || entry.question === question)) return;
+        suggestions.push({ label, question });
+      };
+
+      if (/\b(deck|sponsor(?:ship)?|sponsorship)\b/.test(task)) {
+        add("Deck outline", "Help me outline each section of this sponsorship deck — what belongs in mission, traction, sponsor benefits, and the ask?");
+        add("Mission copy", "Help me write the mission section explaining who this helps and why sponsors should care.");
+        add("Traction ideas", "What should I include as traction if I'm early — maps generated, testimonials, screenshots?");
+        add("Word the ask", "How do I phrase the sponsor tier and dollar amount without sounding pushy?");
+      }
+      if (/\b(write|draft|story|post|notes doc|120-word|founder story|pitch|caption)\b/.test(task)) {
+        add("Draft for me", "Can you write a first draft I can edit for this task?");
+        add("Shorten it", "Help me shorten this so it sounds natural and not salesy.");
+        add("Tone check", "How do I say this without sounding pushy or desperate?");
+        add("Hook ideas", "Give me 3 opening lines that would grab the right reader.");
+      }
+      if (/\b(email|call|meet|demo|workshop|pilot|director|outreach|reach out)\b/.test(task)) {
+        add("Draft opener", "Help me draft the opening lines for this outreach.");
+        add("Subject line", "Suggest 2–3 email subject lines for this message.");
+        add("Follow-up", "What should I say if they don't reply in a week?");
+        add("Who to contact", "How do I find the right person to send this to?");
+      }
+      if (/\b(reddit|facebook|social|post in|community|group|outreach|subreddit)\b/.test(task)) {
+        add("Which group?", "Which platform or group fits this task best for my situation?");
+        add("Post title", "Suggest a post title that follows community rules and gets attention.");
+        add("Comment vs post", "Should I put the link in the post or the first comment — and why?");
+        add("Tone for groups", "How do I share this without looking spammy?");
+      }
+      if (/\b(donat|stripe|grant|pay-what|tip jar|checkout)\b/.test(task)) {
+        add("Soft ask copy", "Help me word the donation ask so it feels mission-first, not pushy.");
+        add("Example line", "Give me one sentence I can paste near the donate button.");
+        add("Explain the why", "How do I explain why optional tips matter without guilt?");
+      }
+      if (/\b(screenshot|photo|capture|screenshots|before\/after)\b/.test(task)) {
+        add("What to capture", "What exactly should I screenshot or photograph for this task?");
+        add("How many", "How many examples do I need, and what should each one show?");
+        add("Crop & caption", "How should I crop and caption these so they look credible?");
+      }
+      if (/\b(interview|job|hired|resume|apply|career|employ)\b/.test(task)) {
+        add("No experience yet", "What if I don't have much experience yet — how should I approach this?");
+        add("What to highlight", "Which parts of my background should I emphasize for this task?");
+        add("Answer template", "Help me draft a short answer I could use in an application or interview.");
+      }
+      if (/\b(bookkeep|business|client|customer|offer|service|freelance|gig|accounting|package|pricing)\b/.test(task)) {
+        add("First client", "How do I land my first client for this with no budget?");
+        add("Price it", "Help me pick a believable price for this offer.");
+        add("Simple offer", "Help me write a one-paragraph offer I can send today.");
+      }
+      if (/\b(portfolio|case study|proof|testimonial|showcase|behance|dribbble)\b/.test(task)) {
+        add("What to show", "Which 3 pieces of work best prove I'm ready for this?");
+        add("Case study", "Help me write a short case study caption for one project.");
+        add("Ask for proof", "How do I ask a past client for a testimonial or permission to show their work?");
+      }
+      if (/\b(google business|local seo|review|nextdoor|maps)\b/.test(task)) {
+        add("Profile copy", "Help me write the business description and service headings for local search.");
+        add("Review ask", "How do I ask for a Google review without awkwardness?");
+        add("Local keywords", "Which search phrases should I target for my city and craft?");
+      }
+      if (/\b(list \d|find \d|name \d|identify \d|communities|people, groups|20 .*(business|local))\b/.test(task)) {
+        add("Where to start", "I don't know anyone yet — where should I start finding names for this list?");
+        add("Research tips", "What's the fastest way to build this list in one sitting?");
+        add("Qualify leads", "How do I tell which names on my list are worth contacting first?");
+      }
+      if (/\b(compare|research|training|certif|program|college|apprenticeship|workforce)\b/.test(task)) {
+        add("Pick one path", "Help me compare my options and pick the fastest credible route.");
+        add("Questions to ask", "What questions should I ask before enrolling or applying?");
+        add("If none fit", "What should I do if none of these programs fit my situation?");
+      }
+      if (/\b(license|permit|register|incorporat|llc|insurance)\b/.test(task)) {
+        add("Do I need this?", "Do I actually need this license or registration for my situation?");
+        add("First step", "What's the first official step, and where do I do it locally?");
+        add("Cost & timeline", "What should I expect for cost and how long it takes?");
+      }
+      if (/\b(30.?min|45.?min|hour|today|this week|daily|weekly)\b/.test(task)) {
+        add("Break it down", "Break this task into smaller steps I can finish in one sitting.");
+        add("Time box", "What can I realistically finish in 30 minutes vs. this whole week?");
+      }
+
+      if (suggestions.length < 3) {
+        add("Where to start", "What's the very first thing I should do for this task?");
+        add("Fit my situation", "How should I adapt this step for my situation and location?");
+        add("Example", "Can you give me a concrete example of what done looks like?");
+        add("Stuck", "I'm stuck on this step — what's the simplest way forward?");
+      }
+
+      return suggestions.slice(0, 4);
+    }
+
+    function renderTaskAskSuggestionsHtml(taskId, taskText) {
+      const suggestions = getTaskAskSuggestions(taskText);
+      if (!suggestions.length) return "";
+      const buttons = suggestions.map((entry) =>
+        `<button type="button" class="task-ask-suggest-btn" data-task-id="${escapeHtml(taskId)}" data-question="${escapeHtml(entry.question)}" title="${escapeHtml(entry.question)}">${escapeHtml(entry.label)}</button>`
+      ).join("");
+      return `
+        <div class="task-ask-suggestions" data-task-id="${escapeHtml(taskId)}">
+          <span class="task-ask-suggestions-label">Try asking</span>
+          <div class="task-ask-suggestions-list">${buttons}</div>
+        </div>`;
+    }
+
+    function bindTaskAskSuggestions() {
+      $$(".task-ask-suggest-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          const taskId = button.dataset.taskId;
+          const question = button.dataset.question || "";
+          const questionEl = $(`#question-${taskId}`);
+          if (!questionEl || !question) return;
+          questionEl.value = question;
+          questionEl.focus();
+          questionEl.setSelectionRange(question.length, question.length);
+          trackEvent("task_ask_suggestion_clicked", {
+            task_id: taskId,
+            suggestion_label: button.textContent?.trim() || ""
+          });
+        });
+      });
     }
 
     function renderStages(stages) {
@@ -19793,6 +19990,7 @@ What would make this more useful for someone in your situation?`;
       $$(".task-ask-btn").forEach((button) => {
         button.addEventListener("click", () => askTask(button.dataset.taskId, getTaskTextById(button.dataset.taskId)));
       });
+      bindTaskAskSuggestions();
       bindTaskPersistence();
       updateRoadmapOverviewHeader();
       updateRoadmapOverviewChrome();
