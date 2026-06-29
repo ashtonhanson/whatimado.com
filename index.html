@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-local-layout -->
+<!-- whatimado build: 2026-06-29-reentry-first -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-local-layout">
+  <meta name="whatimado-build" content="2026-06-29-reentry-first">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10902,6 +10902,40 @@
       }
     ];
 
+    const reentryFallbackIdeas = [
+      {
+        title: "Stabilize & Earn This Week",
+        type: "Reentry — immediate",
+        tagline: "ID basics, local reentry help, and background-check-friendly temp work before anything long-term.",
+        why: "You said you need realistic income with background checks and limited money — stability comes first.",
+        cost: "$0",
+        timeline: "This week",
+        income: "First paycheck in 1-2 weeks"
+      },
+      {
+        title: "Reentry Workforce Track",
+        type: "Reentry — employment",
+        tagline: "Work through your local workforce or reentry program into a steady job.",
+        why: "Public workforce and reentry programs exist to place people with records — use them before paying for training.",
+        cost: "$0",
+        timeline: "2-6 weeks",
+        income: "Hourly work → steady job"
+      },
+      {
+        title: "Skills After Stability",
+        type: "Reentry — longer path",
+        tagline: "Once ID, housing, and first income are handled — one funded training route tied to hiring.",
+        why: "Training pays off after basics are covered; workforce boards often fund certs once you are placed.",
+        cost: "$0-500",
+        timeline: "After first 30 days stable",
+        income: "Higher wage after cert"
+      }
+    ];
+
+    function getFallbackIdeas() {
+      return isReentrySituation() ? reentryFallbackIdeas : fallbackIdeas;
+    }
+
     const GENERIC_FALLBACK_SIGNATURE = "Write the simplest version of your offer";
     const BANNED_GENERIC_STAGE_LABELS = new Set([
       "launch the first test",
@@ -11962,9 +11996,73 @@ What would make this more useful for someone in your situation?`;
       return !needsAny || hasAny;
     }
 
+    function isReentrySituation(idea = null) {
+      const parts = [getFirstUserMessage(), getConversationSummary()];
+      if (idea) {
+        parts.push(idea.type, idea.title, idea.tagline, idea.why);
+      }
+      const blob = parts.filter(Boolean).join(" ").toLowerCase();
+      return /\b(re-?enter(?:ing)?|reentry|incarcerat|jail|prison|release|released|parole|probation|second chance|background check|record expung|just got out|getting out|after incarceration|formerly incarcerat|rebuilding after release)\b/.test(blob);
+    }
+
     function isReentryPath(idea = state.currentIdea) {
-      const blob = `${getFirstUserMessage()} ${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
-      return /\b(re-?enter|incarcerat|jail|prison|release|parole|probation|second chance|background check|record expung|just got out|getting out)\b/.test(blob);
+      return isReentrySituation(idea);
+    }
+
+    function getReentryPromptBlock(idea = state.currentIdea) {
+      if (!isReentrySituation(idea)) return "";
+      const loc = getUserLocation() || "their city";
+      const pathTitle = idea?.title || "their chosen path";
+      return (
+        `\nREENTRY / RECENTLY RELEASED — NON-NEGOTIABLE ROADMAP ORDER:\n` +
+        `- This person is rebuilding after incarceration or similar disruption. Do NOT start with training, certifications, portfolios, or "compare 3 programs."\n` +
+        `- Stage 1 MUST be stability in ${loc}: valid ID/documents (birth certificate, Social Security card, state ID), safe housing or 211/shelter intake, and contacting a local reentry or workforce program by name.\n` +
+        `- Stage 2 MUST be fast, background-check-aware income: temp/staffing agencies, day-labor boards, reentry-friendly employers, or workforce placement — not long courses.\n` +
+        `- Stage 3: benefits eligibility (SNAP/Medicaid if applicable), transportation, parole/probation compliance, and weekly routine.\n` +
+        `- Stage 4 ONLY: longer steps toward "${pathTitle}" (training, certification, or self-employment) — and only after stages 1–3 are underway.\n` +
+        `- Every stage must reference constraints they stated (money, timeline, background checks, housing, parole).\n`
+      );
+    }
+
+    function getReentryIdeasPromptBlock() {
+      if (!isReentrySituation()) return "";
+      return (
+        `\nREENTRY SITUATION — this conversation is from someone rebuilding after incarceration or with background-check and stability constraints.\n` +
+        `- At least ONE path must focus on stability + income THIS WEEK (ID/housing basics, reentry workforce program, temp/staffing work) — NOT long training first.\n` +
+        `- Do NOT offer three paths that all start with certifications, college, or business building.\n` +
+        `- Longer skill or business paths are OK only if the tagline clearly says they come AFTER ID, housing, and first income are handled.\n` +
+        `- Reference background checks, parole/probation, and limited money explicitly when relevant.\n`
+      );
+    }
+
+    function getReentryRoadmapCorrectionBlock(idea = state.currentIdea) {
+      const loc = getUserLocation() || "their city";
+      const pathTitle = idea?.title || "their chosen path";
+      return (
+        `\nREENTRY CORRECTION — your last draft started with training, business validation, or long-term skills BEFORE stability basics.\n` +
+        `Regenerate all 4 stages for someone recently released. MANDATORY order:\n` +
+        `1) ID/documents + housing/211 + local reentry workforce intake (named orgs in ${loc})\n` +
+        `2) Fast background-check-aware income (temp/staffing/reentry employers)\n` +
+        `3) Benefits, transportation, parole/probation compliance\n` +
+        `4) ONLY THEN steps toward "${pathTitle}" — training or business growth\n` +
+        `Do NOT put "compare training programs", "build a portfolio", or "validate your offer" in stage 1 or 2.\n`
+      );
+    }
+
+    function roadmapSkipsReentryStability(stages) {
+      if (!isReentrySituation() || !Array.isArray(stages) || !stages.length) return false;
+      const first = stages[0];
+      const blob = [
+        first.label,
+        first.desc,
+        ...(first.tasks || []).slice(0, 3).map((task) => getTaskText(task))
+      ].join(" ").toLowerCase();
+
+      const stabilityRx = /\b(id|identification|birth certificate|social security|ssn|driver'?s license|housing|shelter|211|parole|probation|re-?entry|workforce|background check|temp agenc|staffing|day labor|snap|medicaid|benefits|document|transitional|workforce solutions)\b/;
+      if (stabilityRx.test(blob)) return false;
+
+      const trainingFirstRx = /\b(compare 3 training|certification|enroll in|community college|portfolio|credential|apprenticeship|degree program|learn (a |to )|skill sprint|training route|tuition|course|pick the credential|validate demand|interview 3 people|micro business test|side gig offer)\b/;
+      return trainingFirstRx.test(blob);
     }
 
     function getKnownLocalResourcesForPath(idea = state.currentIdea, loc = getUserLocation()) {
@@ -12282,6 +12380,7 @@ What would make this more useful for someone in your situation?`;
     function getRoadmapArchetypeGuidance(idea) {
       const archetype = getPathArchetype(idea);
       const guides = {
+        reentry: "Reentry / recently released — Stage 1–3 MUST be stability before career building: ID and documents, housing or 211 intake, reentry workforce program, background-check-friendly temp income, benefits, parole compliance. Stage 4 may connect to the chosen path title. NEVER open with training, certifications, or business validation.",
         employment: "Employment path — certifications, tailored resume, networking, interviews, workforce boards, apprenticeships. Do NOT use generic startup validation language.",
         business: "Local service or small business path — licensing, pricing, first customers, local marketing, SBDC/SCORE mentors. Do NOT use job-search tasks.",
         learning: "Training or credential path — program enrollment, financial aid, portfolio proof, practicum hours, trade school applications.",
@@ -12636,6 +12735,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     function getPathArchetype(idea) {
+      if (isReentrySituation(idea)) return "reentry";
       const blob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
       if (/learn|skill|training|certif|portfolio|course|degree|apprent/.test(blob)) return "learning";
       if (/job|employ|hire|career|income|work for|staff|shift|union/.test(blob)) return "employment";
@@ -12798,6 +12898,44 @@ What would make this more useful for someone in your situation?`;
               "Decide keep / pivot / pause for \"{title}\" based on paid interest vs. effort — write the next milestone"
             ]
           }
+        ],
+        reentry: [
+          {
+            label: "Secure ID and shelter basics in {locRaw}",
+            desc: "Get documents and a safe place to stay before anything long-term — this unlocks jobs, benefits, and programs.",
+            tasks: [
+              "Call United Way 211 (dial 211) or visit 211.org and ask for reentry housing, ID help, and emergency shelter options in {locRaw} — write down 3 program names and phone numbers",
+              "Visit your county clerk or DMV website for {locRaw} and list every document you need for a state ID or driver's license (birth certificate, Social Security card, proof of address) — note cost and where to apply",
+              "Call or walk in to your local American Job Center / workforce board in {locRaw} and say you were recently released and need reentry employment help — book the earliest appointment and ask what ID they require"
+            ]
+          },
+          {
+            label: "First paycheck-friendly work",
+            desc: "Line up income that fits background checks and your timeline — temp and reentry programs first.",
+            tasks: [
+              "Register with 2 temp or staffing agencies in {locRaw} that place warehouse, hospitality, or general labor — ask directly which clients accept recent release backgrounds",
+              "Search Indeed and Google Jobs for \"second chance employer\" or \"background friendly\" roles within 15 miles of {locRaw}; save 5 listings with pay rate and how to apply",
+              "Ask your workforce or reentry contact from stage 1 for a list of employers they place people with — apply to at least 2 this week"
+            ]
+          },
+          {
+            label: "Stabilize the week",
+            desc: "Benefits, transportation, and compliance so work does not fall apart.",
+            tasks: [
+              "Check SNAP and Medicaid eligibility for {locRaw} on your state benefits portal — start an application if you qualify and note any documents you still need from stage 1",
+              "Map how you will get to interviews and shifts (bus pass, ride share budget, or bike) — cost it for 2 weeks and identify one backup plan",
+              "If you are on parole or probation, confirm your next reporting date and write a one-page weekly schedule: work search hours, reporting, and one rest block"
+            ]
+          },
+          {
+            label: "Grow toward {title}",
+            desc: "Once basics are moving, take the first step on your longer path — not before.",
+            tasks: [
+              "With ID and at least one income lead in progress, ask your workforce contact whether short training for \"{title}\" is funded — get one program name, length, and start date in {locRaw}",
+              "Complete one small proof task for \"{title}\" this week (one job application, one paid gig, or one info session) — log what you finished",
+              "Review stages 1–3: note what is still missing (housing, ID, income) and set the single next action for Monday"
+            ]
+          }
         ]
       };
     }
@@ -12820,7 +12958,9 @@ What would make this more useful for someone in your situation?`;
 
     function pickUniqueStandardFallbackStages(idea) {
       const templates = buildStandardFallbackTemplates();
-      const order = ["employment", "business", "learning", "creative"];
+      const order = isReentrySituation(idea)
+        ? ["reentry", "employment", "business", "learning", "creative"]
+        : ["employment", "business", "learning", "creative"];
       const preferred = getPathArchetype(idea);
       const tryOrder = [preferred, ...order.filter((entry) => entry !== preferred)];
 
@@ -12971,6 +13111,7 @@ What would make this more useful for someone in your situation?`;
         dedupeNote +
         refreshBlock +
         getLocationContextBlock() +
+        getReentryPromptBlock(idea) +
         `\nPath type guidance: ${getRoadmapArchetypeGuidance(idea)}\n` +
         `\n${ACTIONABLE_TASK_RULES}\n` +
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
@@ -15518,7 +15659,7 @@ What would make this more useful for someone in your situation?`;
         900
       );
 
-      state.ideas = extractJsonArray(response, fallbackIdeas);
+      state.ideas = extractJsonArray(response, getFallbackIdeas());
       state.allRoadmaps = {};
       state.currentIdea = null;
       state.roadmapKey = null;
@@ -16361,6 +16502,9 @@ What would make this more useful for someone in your situation?`;
       if (isFounderOrProjectPrompt(userText)) {
         return "What's your tightest constraint right now — time, budget, or getting your first real users to try the site?";
       }
+      if (isReentrySituation({ title: userText })) {
+        return "Do you have stable housing and ID right now, or is getting those settled the most urgent thing this week?";
+      }
       if (isDetailedPrompt(userText)) {
         return "What's the single most important outcome you want in the next 30 days?";
       }
@@ -16371,6 +16515,13 @@ What would make this more useful for someone in your situation?`;
       if (isFounderOrProjectPrompt(userText)) {
         return (
           "You are whatimado, a practical advisor to the founder of whatimado.com. They are NOT asking for a personal job path — they are planning how to grow the site itself. Read their message carefully. Even if it is long and detailed, ask ONE short follow-up question that references something specific they said about launch, sustainability, users, donations, partnerships, or constraints — to narrow what they should focus on first. Plain text only.\n\nFounder message:\n" +
+          userText
+        );
+      }
+
+      if (isReentrySituation({ title: userText })) {
+        return (
+          "You are whatimado, an empathetic advisor for someone rebuilding after incarceration or release. Read their message carefully. Ask ONE short follow-up question that references something specific they said — housing, ID/documents, parole or probation, background checks, urgent income timeline, or skills they already have. Do not ask where they live — the app asks that separately next. Do not ask about long-term training or business ideas yet. Plain text only.\n\nUser: " +
           userText
         );
       }
@@ -16444,7 +16595,7 @@ What would make this more useful for someone in your situation?`;
         1200
       );
 
-      let ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : fallbackIdeas);
+      let ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : getFallbackIdeas());
       if (!founderMode && ideasAreTooSimilar(ideas)) {
         response = await callAdvisor(
           `${buildIdeasPrompt(summary, 3)}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps.`,
@@ -16571,6 +16722,7 @@ What would make this more useful for someone in your situation?`;
         "You are whatimado, a practical possibility advisor. Read this entire conversation carefully.\n\nConversation:\n" +
         summary +
         getLocationContextBlock() +
+        getReentryIdeasPromptBlock() +
         excludeBlock +
         " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\n" +
         "Each idea must use a DIFFERENT primary strategy (for example: direct employment, self-employment, short training/certification, gig work, creative portfolio, or community-based route). Do NOT copy-paste structure between ideas — titles, taglines, first steps, and income models should feel distinct.\n" +
@@ -17170,7 +17322,35 @@ What would make this more useful for someone in your situation?`;
         stages = parseRoadmapResponse(response, idea);
       }
 
-      if (!stages || roadmapOverlapsSibling(stages, idea)) {
+      if (stages && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
+        response = await callAdvisor(
+          `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n` +
+          `${getReentryRoadmapCorrectionBlock(idea)}\n` +
+          `${ACTIONABLE_TASK_RULES}\n`,
+          getRoadmapAdvisorTokenLimit(founderMode)
+        );
+        const corrected = parseRoadmapResponse(response, idea);
+        if (corrected) {
+          stages = corrected;
+          trackEvent("roadmap_reentry_corrected", {
+            idea_index: ideaIndex,
+            still_training_first: roadmapSkipsReentryStability(corrected)
+          });
+        }
+        if (roadmapSkipsReentryStability(stages)) {
+          stages = getFallbackStages(idea);
+          roadmapSource = "fallback";
+          trackEvent("roadmap_reentry_fallback", { idea_index: ideaIndex });
+        }
+      }
+
+      if (
+        !stages ||
+        (
+          roadmapOverlapsSibling(stages, idea) &&
+          !(isReentrySituation(idea) && !roadmapSkipsReentryStability(stages))
+        )
+      ) {
         stages = getFallbackStages(idea);
         roadmapSource = "fallback";
         trackEvent("roadmap_used_fallback", {
