@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-location-playbook">
+  <meta name="whatimado-build" content="2026-06-29-script-trim">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -11476,7 +11476,10 @@
       const lineReplacements = [
         [/Search Indeed \+ Google Jobs for 10 roles[^\n]+/gi, fill(pb.jobSearchRoles)],
         [/Search Indeed and Google Jobs for[^\n]+/gi, fill(pb.reentry.jobSearch)],
-        [/Call or visit your local American Job Center \/ workforce board[^\n]+/gi, fill(pb.employmentOffice)],
+        [/Call or visit your local American Job Center \/ workforce board[^\n]+/gi, fill(pb.reentry.workforce)],
+        [/Call or walk in to your local American Job Center[^\n]+/gi, fill(pb.reentry.workforce)],
+        [/Call or walk in to your local NAV \/ NAV[^\n]+/gi, fill(pb.reentry.workforce)],
+        [/Call or visit your local NAV \/ NAV[^\n]+/gi, fill(pb.reentry.workforce)],
         [/Visit your county clerk or DMV website[^\n]+/gi, fill(pb.reentry.id)],
         [/Check SNAP and Medicaid eligibility[^\n]+/gi, fill(pb.reentry.benefits)],
         [/Call United Way 211 \(dial 211\) or visit 211\.org[^\n]+/gi, pb.reentry.housing],
@@ -12290,7 +12293,7 @@ What would make this more useful for someone in your situation?`;
           script: ""
         };
       }
-      return localizeTaskForUserLocation(normalized);
+      return scrubRedundantTaskResources(localizeTaskForUserLocation(normalized));
     }
 
     function normalizeTaskContact(entry) {
@@ -12457,7 +12460,7 @@ What would make this more useful for someone in your situation?`;
         blocks.push(`<div class="task-links"><div class="task-action-label">Links</div><div class="task-link-list">${links}</div></div>`);
       }
 
-      if (normalized.script) {
+      if (normalized.script && shouldShowTaskScript(normalized)) {
         blocks.push(`<div class="task-script"><div class="task-action-label">What to say</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
       }
 
@@ -12614,6 +12617,66 @@ What would make this more useful for someone in your situation?`;
       ];
     }
 
+    function taskTextIncludesCallScript(taskText) {
+      const text = String(taskText || "");
+      if (/\b(say you|ask (?:for|about|whether|what)|tell them|mention that)\b/i.test(text)) return true;
+      if (/\b(call|phone|walk in|walk-in)\b/i.test(text) && /[?]/.test(text)) return true;
+      if (/—\s*(?:write down|book|list|start|note|ask|register|check)/i.test(text)) return true;
+      return false;
+    }
+
+    function taskIsBrowseOnlyTask(taskText) {
+      const text = String(taskText || "");
+      return /\b(visit|go to|check|open)\b/i.test(text)
+        && /\b[a-z0-9.-]+\.(?:no|gov(?:\.[a-z]{2})?|[a-z]{2})\b/i.test(text)
+        && !/\b(call|phone|email|walk in|walk-in)\b/i.test(text);
+    }
+
+    function isGenericLocalScript(script) {
+      return /working on my next step\. Does .+ have programs for training, jobs, or re-?entry support/i.test(String(script || ""));
+    }
+
+    function extractDomainsFromText(text) {
+      const domains = new Set();
+      const re = /(?:https?:\/\/)?(?:www\.)?([a-z0-9.-]+\.[a-z]{2,}(?:\.[a-z]{2})?)/gi;
+      let match;
+      while ((match = re.exec(String(text || "")))) {
+        domains.add(match[1].replace(/^www\./, "").toLowerCase());
+      }
+      return domains;
+    }
+
+    function linkDomainAlreadyInTask(taskText, url) {
+      const domain = String(url || "").replace(/^https?:\/\//i, "").replace(/^www\./, "").split("/")[0].toLowerCase();
+      return extractDomainsFromText(taskText).has(domain);
+    }
+
+    function shouldShowTaskScript(normalized) {
+      const script = String(normalized.script || "").trim();
+      if (!script) return false;
+      if (isGenericLocalScript(script)) return false;
+      if (taskTextIncludesCallScript(normalized.text)) return false;
+      if (taskIsBrowseOnlyTask(normalized.text)) return false;
+      if (/^Subject:/im.test(script)) return true;
+      if (isWritingTask(normalized) && script.length > 50) return true;
+      if (isFounderOrProjectPrompt(getFirstUserMessage()) && /whatimado\.com/i.test(script)) return true;
+      return false;
+    }
+
+    function scrubRedundantTaskResources(normalized) {
+      const result = { ...normalized };
+      if (!shouldShowTaskScript(result)) result.script = "";
+
+      if (taskIsBrowseOnlyTask(result.text)) {
+        result.contacts = [];
+        result.script = "";
+        result.local = "";
+      }
+
+      result.links = (result.links || []).filter((link) => !linkDomainAlreadyInTask(result.text, link));
+      return result;
+    }
+
     function buildOutreachScript(orgName, loc) {
       return (
         `Subject: Free career roadmap pilot for your clients\n\n` +
@@ -12625,22 +12688,17 @@ What would make this more useful for someone in your situation?`;
     }
 
     function buildLocalTaskScript(taskText, orgName, loc) {
+      if (taskTextIncludesCallScript(taskText) || taskIsBrowseOnlyTask(taskText)) return "";
       if (isFounderOrProjectPrompt(getFirstUserMessage()) && /\b(outreach|pitch|pilot|partner|offer free|email \d|reach out)\b/i.test(taskText)) {
         return buildOutreachScript(orgName, loc);
       }
-      if (/\b(call|phone|visit|walk in|walk-in)\b/i.test(String(taskText || ""))) {
+      if (/\b(email|e-mail)\b/i.test(String(taskText || "")) && /\b(send|draft|write)\b/i.test(String(taskText || ""))) {
         return (
-          `"Hi — I'm in ${loc} and working on my next step. Does ${orgName} have programs for training, jobs, or re-entry support? ` +
-          `What should I do first to get started, and is there anything I should bring?"`
+          `Subject: Question about programs at ${orgName}\n\n` +
+          `Hi — I'm in ${loc} and exploring my next steps. Could you tell me what programs you offer and how to get started? Thank you.`
         );
       }
-      if (/\b(compare|research|find|enroll|apply|training|certif|college|apprenticeship|credential)\b/i.test(String(taskText || ""))) {
-        return (
-          `At ${orgName}: ask which program fits your timeline and budget, whether they serve people rebuilding after incarceration if that's relevant, ` +
-          `and exactly what documents or steps you need to enroll this week.`
-        );
-      }
-      return `Contact ${orgName} in ${loc} — ask what fits your situation and what the first step is this week.`;
+      return "";
     }
 
     function taskExplicitlyExcludesLocalContacts(taskText) {
@@ -12652,6 +12710,7 @@ What would make this more useful for someone in your situation?`;
       const normalized = normalizeRoadmapTask(task);
       const taskText = normalized.text;
       if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
+      if (taskIsBrowseOnlyTask(taskText)) return false;
 
       const outreachAction = /\b(email|e-mail|call|phone|visit|meet with|reach out|contact|outreach|pitch to|schedule a (?:call|meeting|demo)|set up a (?:call|meeting|demo)|send (?:an )?email|introduce yourself|ask (?:the|a) director|partner with|pilot with|demo (?:at|for|to)|organizational accounts|offer free (?:organizational )?accounts|live demos?|structured feedback)\b/i.test(taskText);
       const orgTarget = /\b(shelters?|recovery centers?|workforce programs?|libraries?|nonprofits?|non-profits?|community foundations?|homeless|re-?entry|partner orgs?|local orgs?|programs? to (?:offer|reach|contact)|organizations? to (?:offer|reach|contact)|name \d|list \d|identify \d|find \d|research \d|3-5|5-10|\d+ homeless|\d+ (?:shelters?|libraries?|programs?|centers?|organizations?))\b/i.test(taskText);
@@ -12692,7 +12751,7 @@ What would make this more useful for someone in your situation?`;
           if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return normalized;
 
           const hasPackContacts = normalized.contacts.some((contact) => isKnownPackOrg(contact.org));
-          const hasGenericScript = normalized.script && /whatimado\.com, a free ai possibility map/i.test(normalized.script);
+          const hasGenericScript = normalized.script && (/whatimado\.com, a free ai possibility map/i.test(normalized.script) || isGenericLocalScript(normalized.script));
           const hasPackLinks = normalized.links.some((url) =>
             knownUrls.has(String(url).replace(/^https?:\/\//i, "").replace(/\/$/, "").toLowerCase())
           );
@@ -12716,14 +12775,19 @@ What would make this more useful for someone in your situation?`;
       const text = String(taskText || "").toLowerCase();
       const orgBlob = `${entry.org || ""} ${entry.name || ""}`.toLowerCase();
       let score = 0;
-      if (/\b(shelter|homeless|housing)\b/.test(text) && /\b(shelter|front steps|caritas|housing|lifeworks|foundation communities)\b/.test(orgBlob)) score += 12;
-      if (/\b(workforce|job|employment|career)\b/.test(text) && /\b(workforce|wfscapital|job)\b/.test(orgBlob)) score += 12;
+      if (/\b(politiet|skatteetaten|bank id|d-number|passport|national id)\b/.test(text) && /\b(nav|karriere|folkeuniversitet|workforce)\b/.test(orgBlob)) score -= 20;
+      if (/\b(nav\.no|call nav|visit nav|nav in)\b/.test(text) && /\bnav\b/.test(orgBlob) && !/\bkarriere|folkeuniversitet\b/.test(orgBlob)) score += 22;
+      if (/\b(kommune)\b/.test(text) && /\bkommune\b/.test(orgBlob)) score += 20;
+      if (/\b(recently released|reentry employment|getting back to work)\b/.test(text) && /\bnav\b/.test(orgBlob) && !/\bkarriere|folkeuniversitet\b/.test(orgBlob)) score += 18;
+      if (/\b(folkeuniversitet|folkehøgskole|fagskole|adult education|training|certif)\b/.test(text) && /\b(folkeuniversitet|folkehøgskole|fagskole|uit)\b/.test(orgBlob)) score += 16;
+      if (/\b(shelter|homeless|housing)\b/.test(text) && /\b(shelter|front steps|caritas|housing|lifeworks|foundation communities|kommune)\b/.test(orgBlob)) score += 12;
+      if (/\b(workforce|job|employment|career)\b/.test(text) && /\b(workforce|wfscapital|job|nav)\b/.test(orgBlob)) score += 12;
       if (/\b(library|libraries)\b/.test(text) && /\b(library)\b/.test(orgBlob)) score += 12;
-      if (/\b(recovery|re-?entry|incarcerat|release|parole|second chance|background check)\b/.test(text) && /\b(recovery|re-?entry|caritas|front steps|lifeworks)\b/.test(orgBlob)) score += 14;
-      if (/\b(training|certif|college|apprenticeship|credential|program)\b/.test(text) && /\b(workforce|library|lifeworks|community)\b/.test(orgBlob)) score += 12;
+      if (/\b(recovery|re-?entry|incarcerat|release|parole|second chance|background check)\b/.test(text) && /\b(recovery|re-?entry|caritas|front steps|lifeworks|nav)\b/.test(orgBlob)) score += 14;
+      if (/\b(training|certif|college|apprenticeship|credential|program)\b/.test(text) && /\b(workforce|library|lifeworks|folkeuniversitet|nav)\b/.test(orgBlob)) score += 10;
       if (/\b(housing|shelter|rent|homeless)\b/.test(text) && /\b(shelter|housing|caritas|front steps|foundation communities)\b/.test(orgBlob)) score += 13;
       if (/\b(youth|family)\b/.test(text) && /\b(lifeworks|youth|family)\b/.test(orgBlob)) score += 10;
-      if (/\b(nonprofit|partner|pilot|community)\b/.test(text) && !/\b(shelter|library|workforce)\b/.test(text)) score += 1;
+      if (/\b(nonprofit|partner|pilot|community)\b/.test(text) && !/\b(shelter|library|workforce|nav)\b/.test(text)) score += 1;
       return score;
     }
 
@@ -12763,7 +12827,7 @@ What would make this more useful for someone in your situation?`;
               });
             } else {
               const picks = pickResourcesForTask(normalized.text, resources, usedOrgKeys);
-              if (picks.length) {
+              if (picks.length && scoreResourceForTask(picks[0], normalized.text) > 0) {
                 picks.forEach((entry) => usedOrgKeys.add(entry.org));
                 normalized.contacts = picks.map((entry) => ({
                   name: entry.name || "Program director",
@@ -12779,7 +12843,7 @@ What would make this more useful for someone in your situation?`;
             }
           } else if (taskNeedsTaskToolResources(normalized.text)) {
             if (!force && shouldShowTaskResources(normalized, stage, stageIndex, idea)) {
-              return normalized;
+              return scrubRedundantTaskResources(normalized);
             }
             const tools = getTaskToolResources(normalized.text);
             if (tools.links.length || tools.contacts.length) {
@@ -12790,7 +12854,7 @@ What would make this more useful for someone in your situation?`;
             }
           }
 
-          return normalized;
+          return scrubRedundantTaskResources(normalized);
         });
       });
 
