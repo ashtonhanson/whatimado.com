@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-glance-spacing -->
+<!-- whatimado build: 2026-06-29-intl-location -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-glance-spacing">
+  <meta name="whatimado-build" content="2026-06-29-intl-location">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10969,7 +10969,70 @@
         { name: "Shelter services", org: "Front Steps", url: "https://frontsteps.org/", phone: "512-305-4100", email: "" },
         { name: "Youth & family services", org: "LifeWorks Austin", url: "https://www.lifeworksaustin.org/", phone: "512-735-2400", email: "" },
         { name: "Affordable housing & support", org: "Foundation Communities", url: "https://foundcom.org/", phone: "512-447-2026", email: "" }
+      ],
+      tromso: [
+        { name: "Employment & benefits", org: "NAV Troms og Finnmark", url: "https://www.nav.no/", phone: "55 55 33 33", email: "" },
+        { name: "Municipal services", org: "Tromsø kommune", url: "https://www.tromso.kommune.no/", phone: "77 79 00 00", email: "" },
+        { name: "Career guidance", org: "NAV Karriere", url: "https://www.nav.no/karriere", phone: "", email: "" },
+        { name: "Adult education", org: "Folkeuniversitetet Tromsø", url: "https://www.folkeuniversitetet.no/", phone: "", email: "" },
+        { name: "University careers", org: "UiT The Arctic University of Norway", url: "https://uit.no/", phone: "", email: "" }
+      ],
+      oslo: [
+        { name: "Employment & benefits", org: "NAV Oslo", url: "https://www.nav.no/", phone: "55 55 33 33", email: "" },
+        { name: "Municipal services", org: "Oslo kommune", url: "https://www.oslo.kommune.no/", phone: "", email: "" },
+        { name: "Career guidance", org: "NAV Karriere", url: "https://www.nav.no/karriere", phone: "", email: "" }
       ]
+    };
+
+    const KNOWN_COUNTRY_KEYS = new Set([
+      "norway", "norge", "sweden", "sverige", "denmark", "danmark", "finland", "suomi", "iceland", "island",
+      "germany", "deutschland", "france", "spain", "italy", "portugal", "netherlands", "belgium", "poland",
+      "uk", "united kingdom", "england", "scotland", "wales", "northern ireland", "ireland", "canada",
+      "australia", "new zealand", "mexico", "brazil", "india", "japan", "south korea", "korea", "china",
+      "united states", "usa", "us", "u s a"
+    ]);
+
+    const US_STATE_CODES = new Set([
+      "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id", "il", "in", "ia", "ks", "ky", "la",
+      "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok",
+      "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "dc"
+    ]);
+
+    const KNOWN_CITY_LOCATIONS = {
+      tromso: { city: "Tromsø", region: "Troms", country: "Norway" },
+      oslo: { city: "Oslo", region: "Oslo", country: "Norway" },
+      bergen: { city: "Bergen", region: "Vestland", country: "Norway" },
+      trondheim: { city: "Trondheim", region: "Trøndelag", country: "Norway" },
+      stavanger: { city: "Stavanger", region: "Rogaland", country: "Norway" },
+      bodo: { city: "Bodø", region: "Nordland", country: "Norway" },
+      narvik: { city: "Narvik", region: "Nordland", country: "Norway" },
+      alta: { city: "Alta", region: "Finnmark", country: "Norway" },
+      harstad: { city: "Harstad", region: "Troms", country: "Norway" },
+      london: { city: "London", region: "England", country: "United Kingdom" },
+      paris: { city: "Paris", region: "Île-de-France", country: "France" },
+      berlin: { city: "Berlin", region: "Berlin", country: "Germany" },
+      toronto: { city: "Toronto", region: "Ontario", country: "Canada" },
+      vancouver: { city: "Vancouver", region: "British Columbia", country: "Canada" },
+      sydney: { city: "Sydney", region: "New South Wales", country: "Australia" },
+      melbourne: { city: "Melbourne", region: "Victoria", country: "Australia" },
+      austin: { city: "Austin", region: "Texas", country: "United States" },
+      "new york": { city: "New York", region: "New York", country: "United States" },
+      "los angeles": { city: "Los Angeles", region: "California", country: "United States" },
+      chicago: { city: "Chicago", region: "Illinois", country: "United States" },
+      houston: { city: "Houston", region: "Texas", country: "United States" },
+      dallas: { city: "Dallas", region: "Texas", country: "United States" },
+      seattle: { city: "Seattle", region: "Washington", country: "United States" },
+      denver: { city: "Denver", region: "Colorado", country: "United States" },
+      miami: { city: "Miami", region: "Florida", country: "United States" },
+      atlanta: { city: "Atlanta", region: "Georgia", country: "United States" },
+      boston: { city: "Boston", region: "Massachusetts", country: "United States" },
+      phoenix: { city: "Phoenix", region: "Arizona", country: "United States" },
+      copenhagen: { city: "Copenhagen", region: "Capital Region", country: "Denmark" },
+      stockholm: { city: "Stockholm", region: "Stockholm County", country: "Sweden" },
+      helsinki: { city: "Helsinki", region: "Uusimaa", country: "Finland" },
+      reykjavik: { city: "Reykjavík", region: "Capital Region", country: "Iceland" },
+      amsterdam: { city: "Amsterdam", region: "North Holland", country: "Netherlands" },
+      dublin: { city: "Dublin", region: "Leinster", country: "Ireland" }
     };
 
     const ACTIONABLE_TASK_RULES =
@@ -11036,6 +11099,122 @@
       return String(text || "").toLowerCase().replace(/\s+/g, " ").trim();
     }
 
+    function normalizeCityKey(text) {
+      return String(text || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/ø/g, "o")
+        .replace(/å/g, "a")
+        .replace(/æ/g, "ae")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function normalizeCountryKey(text) {
+      return normalizeCityKey(text).replace(/\./g, "");
+    }
+
+    function formatCountryLabel(key) {
+      const labels = {
+        norway: "Norway",
+        norge: "Norway",
+        sweden: "Sweden",
+        sverige: "Sweden",
+        denmark: "Denmark",
+        danmark: "Denmark",
+        finland: "Finland",
+        suomi: "Finland",
+        iceland: "Iceland",
+        island: "Iceland",
+        uk: "United Kingdom",
+        "united kingdom": "United Kingdom",
+        usa: "United States",
+        us: "United States",
+        "u s a": "United States",
+        "united states": "United States"
+      };
+      return labels[key] || String(key || "").replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function isLikelyCountryPart(text) {
+      return KNOWN_COUNTRY_KEYS.has(normalizeCountryKey(text));
+    }
+
+    function isUSStatePart(text) {
+      const key = normalizeCityKey(text);
+      if (US_STATE_CODES.has(key)) return true;
+      return /\b(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)\b/.test(key);
+    }
+
+    function enrichLocationFromKnownCities(parsed) {
+      if (!parsed?.city) return parsed;
+      const known = KNOWN_CITY_LOCATIONS[normalizeCityKey(parsed.city)];
+      if (!known) return parsed;
+      return {
+        city: known.city || parsed.city,
+        region: parsed.region || known.region || "",
+        country: parsed.country || known.country || "",
+        raw: parsed.raw
+      };
+    }
+
+    function lookupKnownCity(text) {
+      return KNOWN_CITY_LOCATIONS[normalizeCityKey(text)] || null;
+    }
+
+    function locationNeedsCountryFollowUp(text) {
+      const parsed = parseLocationAnswer(text);
+      if (parsed.country || parsed.region) return false;
+      if (!parsed.city || parsed.city.length < 2) return false;
+      return !lookupKnownCity(parsed.city);
+    }
+
+    function isUSLocation(parsed = normalizeUserLocation(state.userLocation)) {
+      const country = normalizeCountryKey(parsed.country || "");
+      if (country && (country === "united states" || country === "usa" || country === "us" || country === "u s a")) return true;
+      if (country && !["united states", "usa", "us", "u s a"].includes(country)) return false;
+      if (isUSStatePart(parsed.region)) return true;
+      if (/\b\d{5}(?:-\d{4})?\b/.test(parsed.raw || "")) return true;
+      if (lookupKnownCity(parsed.city)?.country === "United States") return true;
+      return !parsed.country;
+    }
+
+    function getCountryDefaultResources(parsed) {
+      const countryKey = normalizeCountryKey(parsed.country || "");
+      const cityLabel = parsed.city || formatUserLocation(parsed);
+      if (countryKey === "norway" || countryKey === "norge") {
+        return [
+          { name: "Employment & benefits", org: `NAV — ${cityLabel}`, url: "https://www.nav.no/", phone: "55 55 33 33", email: "" },
+          { name: "Career guidance", org: "NAV Karriere", url: "https://www.nav.no/karriere", phone: "", email: "" },
+          { name: "Labour rules", org: "Arbeidstilsynet", url: "https://www.arbeidstilsynet.no/", phone: "", email: "" }
+        ];
+      }
+      if (countryKey === "united kingdom" || countryKey === "uk" || countryKey === "england") {
+        return [
+          { name: "Job search help", org: "Find a Job (GOV.UK)", url: "https://www.gov.uk/find-a-job", phone: "", email: "" },
+          { name: "Careers advice", org: "National Careers Service", url: "https://nationalcareers.service.gov.uk/", phone: "0800 100 900", email: "" }
+        ];
+      }
+      if (countryKey === "canada") {
+        return [
+          { name: "Job bank", org: "Job Bank Canada", url: "https://www.jobbank.gc.ca/", phone: "", email: "" },
+          { name: "Employment services", org: "Service Canada", url: "https://www.canada.ca/en/employment-social-development/corporate/portfolio/service-canada.html", phone: "", email: "" }
+        ];
+      }
+      return [
+        {
+          name: "Local government services",
+          org: `Official services — ${formatUserLocation(parsed)}`,
+          url: "https://www.google.com/search?q=" + encodeURIComponent(`government employment services ${formatUserLocation(parsed)}`),
+          phone: "",
+          email: ""
+        }
+      ];
+    }
+
     function emptyUserLocation() {
       return { city: "", region: "", country: "", raw: "" };
     }
@@ -11058,13 +11237,19 @@
       const trimmed = String(text || "").trim();
       if (!trimmed) return emptyUserLocation();
       const parts = trimmed.split(/[,|\n]/).map((part) => part.trim()).filter(Boolean);
+      let parsed = emptyUserLocation();
       if (parts.length >= 3) {
-        return { city: parts[0], region: parts[1], country: parts.slice(2).join(", "), raw: trimmed };
+        parsed = { city: parts[0], region: parts[1], country: parts.slice(2).join(", "), raw: trimmed };
+      } else if (parts.length === 2) {
+        if (isLikelyCountryPart(parts[1]) && !isUSStatePart(parts[1])) {
+          parsed = { city: parts[0], region: "", country: formatCountryLabel(normalizeCountryKey(parts[1])), raw: trimmed };
+        } else {
+          parsed = { city: parts[0], region: parts[1], country: "", raw: trimmed };
+        }
+      } else {
+        parsed = { city: trimmed, region: "", country: "", raw: trimmed };
       }
-      if (parts.length === 2) {
-        return { city: parts[0], region: parts[1], country: "", raw: trimmed };
-      }
-      return { city: trimmed, region: "", country: "", raw: trimmed };
+      return enrichLocationFromKnownCities(parsed);
     }
 
     function formatUserLocation(loc = state.userLocation) {
@@ -11085,7 +11270,8 @@
       if (falsePositive) return false;
 
       const parsed = parseLocationAnswer(formatted);
-      if (parsed.region || parsed.country) return true;
+      if (parsed.country || parsed.region) return true;
+      if (lookupKnownCity(parsed.city)) return true;
       if (formatted.includes(",") && parsed.city.length >= 2) return true;
       return /\b\d{5}(?:-\d{4})?\b/.test(formatted);
     }
@@ -12083,9 +12269,12 @@ What would make this more useful for someone in your situation?`;
 
     function getKnownLocalResources(loc = getUserLocation()) {
       const parsed = parseLocationAnswer(loc);
-      const cityKey = String(parsed.city || loc.split(",")[0] || "").trim().toLowerCase();
+      const cityKey = normalizeCityKey(parsed.city || loc.split(",")[0] || "");
       if (KNOWN_LOCAL_RESOURCE_PACKS[cityKey]?.length) {
         return KNOWN_LOCAL_RESOURCE_PACKS[cityKey].map((entry) => ({ ...entry }));
+      }
+      if (parsed.country && !isUSLocation(parsed)) {
+        return getCountryDefaultResources(parsed);
       }
       const cityLabel = parsed.city || loc.split(",")[0]?.trim() || loc;
       return [
@@ -13562,6 +13751,7 @@ What would make this more useful for someone in your situation?`;
       intakeMode: "standard",
       userLocation: { city: "", region: "", country: "", raw: "" },
       locationConfirmed: false,
+      awaitingLocationCountry: "",
       roadmapExhausted: false,
       roadmapAutoContinuePending: false,
       expandedRoadmapPhases: null,
@@ -16395,6 +16585,20 @@ What would make this more useful for someone in your situation?`;
           `If a task would benefit from local programs, still give national official links — but prefer generic .gov workforce URLs over fake local names.\n`
         );
       }
+      const parsed = parseLocationAnswer(loc);
+      if (!isUSLocation(parsed)) {
+        return (
+          `\nUser location: ${loc}\n` +
+          `CRITICAL: Tasks must use real organizations in ${parsed.country || loc} — official government employment services, municipal resources, public libraries, vocational colleges, and nonprofits serving ${parsed.city || loc}.\n` +
+          `Use official country websites (.no, .uk, .ca, etc.). Do NOT use US-only resources (211.org, American Job Center, SBDC, SNAP/Medicaid) unless the user is in the United States.\n` +
+          `For Norway: name NAV office, kommune services, folkeuniversitetet, fylkeskommune programs, and UiT or local college career services when relevant.\n` +
+          `For each relevant task include in JSON:\n` +
+          `- contacts[] with org name + official url (+ phone/email only if published)\n` +
+          `- links[] with the exact page they need (apply, schedule, directory, licensing portal)\n` +
+          `- script with copy-paste outreach or what to say on a call\n` +
+          `Never output generic sidebar phrases like "Workforce near ${loc}" — only named places with URLs.\n`
+        );
+      }
       return (
         `\nUser location: ${loc}\n` +
         `CRITICAL: Tasks must be LOW-EFFORT for this exact area. Name real organizations, campuses, workforce boards, libraries, re-entry nonprofits, SBDC/SCORE chapters, or government offices serving ${loc}.\n` +
@@ -16544,7 +16748,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     function askLocationStep() {
-      const reply = "Where are you based? City, state or province, and country — comma-separated is fine. I'll look for local programs, training funds, and resources that could help.";
+      const reply = "Where are you based? City name alone is fine — or add region/country (e.g. Tromsø, Norway). I'll look for local programs and resources that could help.";
       resolveTyping(reply);
       state.history.push({ role: "assistant", content: reply });
       state.step = 3;
@@ -17008,7 +17212,29 @@ What would make this more useful for someone in your situation?`;
       }
 
       if (state.step === 3) {
-        saveUserLocation(text, { confirmed: true });
+        if (state.awaitingLocationCountry) {
+          const city = state.awaitingLocationCountry;
+          state.awaitingLocationCountry = "";
+          saveUserLocation(`${city}, ${text.trim()}`, { confirmed: true });
+        } else if (locationNeedsCountryFollowUp(text)) {
+          const parsed = parseLocationAnswer(text);
+          state.awaitingLocationCountry = parsed.city;
+          state.userLocation = parsed;
+          state.locationConfirmed = false;
+          addTypingBubble();
+          const followup = `Got it — ${parsed.city}. Which country is that in? (Just the country name is fine.)`;
+          resolveTyping(followup);
+          state.history.push({ role: "assistant", content: followup });
+          showReplyBox(true);
+          schedulePersist();
+          trackEvent("location_country_followup_shown", {
+            city: parsed.city,
+            intake_mode: state.intakeMode || "standard"
+          });
+          return;
+        } else {
+          saveUserLocation(text, { confirmed: true });
+        }
         trackEvent("location_answer_submitted", {
           reply_length: text.length,
           intake_mode: state.intakeMode || "standard",
@@ -18754,6 +18980,7 @@ What would make this more useful for someone in your situation?`;
       state.intakeMode = "standard";
       state.userLocation = emptyUserLocation();
       state.locationConfirmed = false;
+      state.awaitingLocationCountry = "";
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
       if (roadmapAutoContinueTimer) {
