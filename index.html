@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-glance-trim -->
+<!-- whatimado build: 2026-06-30-user-profile -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-glance-trim">
+  <meta name="whatimado-build" content="2026-06-30-user-profile">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4800,6 +4800,54 @@
       display: none;
       margin-top: .65rem;
       padding: .85rem;
+    }
+
+    .profile-intake-chips {
+      padding: 0 .75rem .65rem;
+    }
+
+    .profile-intake-chips-label {
+      display: block;
+      margin-bottom: .45rem;
+      color: var(--muted);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .profile-intake-chips-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+
+    .profile-intake-chip {
+      border: 1px solid rgba(120, 130, 200, .24);
+      border-radius: 999px;
+      padding: .42rem .78rem;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .72);
+      font-size: .74rem;
+      font-weight: 700;
+      line-height: 1.25;
+      transition: .15s ease;
+    }
+
+    .profile-intake-chip:hover {
+      border-color: rgba(37, 99, 235, .35);
+      background: #fff;
+    }
+
+    html[data-color-scheme="adult"] .profile-intake-chip {
+      color: var(--brand-purple-dark);
+      border-color: rgba(36, 18, 53, .16);
+      background: rgba(36, 18, 53, .04);
+    }
+
+    html[data-color-scheme="adult"] .profile-intake-chip:hover {
+      border-color: var(--brand-purple-dark);
+      background: rgba(36, 18, 53, .08);
     }
 
     .reply-box.surface-card {
@@ -10741,6 +10789,7 @@
           <textarea class="reply-textarea" id="reply-textarea" rows="4" placeholder="Type your response..."></textarea>
           <button class="send-btn" id="reply-send-btn">Send</button>
           </div>
+          <div class="profile-intake-chips" id="profile-intake-chips" hidden aria-label="Quick answer options"></div>
           <div class="reply-actions">
             <div class="reply-map-actions" id="reply-map-actions" hidden>
               <button type="button" class="reply-map-btn" id="reply-apply-map-btn">Update my paths</button>
@@ -12030,6 +12079,19 @@
         has_postal: Boolean(state.userLocation.postal)
       });
       if (state.intakeMode === "quick") {
+        mergeUserProfileFromConversation();
+        const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+        if (!profileIntakeIsComplete(founder)) {
+          const profile = normalizeUserProfile(state.userProfile);
+          if (!profile.incomeUrgency) {
+            askProfileIncomeStep();
+            return;
+          }
+          if (founder && !profile.founderStage) {
+            askProfileFounderStageStep();
+            return;
+          }
+        }
         showReplyBox(false);
         addTypingBubble(PATH_BUILDING_MSG);
         trackEvent("path_generation_started", {
@@ -14342,6 +14404,7 @@ What would make this more useful for someone in your situation?`;
       return [
         getFirstUserMessage(),
         getConversationSummary(),
+        getUserProfileBlob(),
         idea?.title,
         idea?.type,
         idea?.tagline,
@@ -14856,6 +14919,8 @@ What would make this more useful for someone in your situation?`;
     }
 
     function inferFounderProductStage(context = "") {
+      const profileStage = normalizeUserProfile(state.userProfile).founderStage;
+      if (profileStage) return profileStage;
       const blob = String(context || "").toLowerCase();
       if (
         /\b(still (building|testing|fixing)|closed beta|functional test|test if it (works|functions)|just testing|bug|doesn'?t work|core feature|see if it functions)\b/.test(blob) &&
@@ -15562,7 +15627,7 @@ What would make this more useful for someone in your situation?`;
       const parsed = parseTaskId(taskId);
       const stage = parsed ? state.roadmapStages[parsed.stageIndex] : null;
       const task = parsed ? state.roadmapStages[parsed.stageIndex]?.tasks?.[parsed.taskIndex] : null;
-      const context = getConversationSummary();
+      const context = getAdvisorContext();
 
       const fullPrompt = buildTaskCoachPrompt({ taskText, thread, question, context, stage, task });
       let text = await callAdvisor(fullPrompt, 900);
@@ -15600,7 +15665,7 @@ What would make this more useful for someone in your situation?`;
 
     async function resolveTaskRewrite(taskId, scope, thread, targets) {
       const userRequest = getLastUserMessage(thread);
-      const context = getConversationSummary();
+      const context = getAdvisorContext();
 
       const fullResponse = await callAdvisor(
         buildTaskAdjustPrompt(taskId, scope, thread, targets, context),
@@ -15694,7 +15759,9 @@ What would make this more useful for someone in your situation?`;
       saveStatus: "idle",
       lastSyncStatus: "idle",
       lastCloudSyncError: "",
-      syncedLibraryStats: null
+      syncedLibraryStats: null,
+      userProfile: emptyUserProfile(),
+      profileIntakeStep: null
     };
 
     const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
@@ -16285,6 +16352,8 @@ What would make this more useful for someone in your situation?`;
       payload.mapFeedbackSentiment = activeEntry.mapFeedbackSentiment ?? null;
       payload.intakeMode = activeEntry.intakeMode || payload.intakeMode || "standard";
       payload.userLocation = normalizeUserLocation(activeEntry.userLocation || payload.userLocation);
+      payload.userProfile = normalizeUserProfile(activeEntry.userProfile || payload.userProfile);
+      payload.profileIntakeStep = activeEntry.profileIntakeStep || payload.profileIntakeStep || null;
       return payload;
     }
 
@@ -16400,6 +16469,8 @@ What would make this more useful for someone in your situation?`;
         locationConfirmed: Boolean(state.locationConfirmed),
         locationIntakeStep: state.locationIntakeStep || null,
         locationDraft: state.locationDraft || emptyLocationDraft(),
+        userProfile: normalizeUserProfile(state.userProfile),
+        profileIntakeStep: state.profileIntakeStep || null,
         roadmapCategories: state.roadmapCategories,
         activeRoadmapCategoryId: state.activeRoadmapCategoryId,
         selectedPathIndexes: state.selectedPathIndexes,
@@ -16427,7 +16498,9 @@ What would make this more useful for someone in your situation?`;
         userLocation: normalizeUserLocation(source.userLocation),
         locationConfirmed: Boolean(source.locationConfirmed),
         locationIntakeStep: source.locationIntakeStep || null,
-        locationDraft: source.locationDraft || emptyLocationDraft()
+        locationDraft: source.locationDraft || emptyLocationDraft(),
+        userProfile: normalizeUserProfile(source.userProfile),
+        profileIntakeStep: source.profileIntakeStep || null
       };
     }
 
@@ -16456,6 +16529,8 @@ What would make this more useful for someone in your situation?`;
       state.locationDraft = data.locationDraft && typeof data.locationDraft === "object"
         ? { ...emptyLocationDraft(), ...data.locationDraft }
         : emptyLocationDraft();
+      state.userProfile = normalizeUserProfile(data.userProfile);
+      state.profileIntakeStep = data.profileIntakeStep || null;
       if (!hasSavedUserLocation()) {
         const inferred = inferLocationFromConversation();
         if (formatUserLocation(inferred) && looksLikeRealLocation(formatUserLocation(inferred))) {
@@ -16475,6 +16550,10 @@ What would make this more useful for someone in your situation?`;
       const lastAssistant = [...state.history].reverse().find((entry) => entry.role === "assistant")?.content || "";
       if (state.step === 3 && /what your name/i.test(lastAssistant)) {
         state.step = 4;
+      }
+      if (state.profileIntakeStep && state.ideas.length) {
+        state.profileIntakeStep = null;
+        hideProfileIntakeChips();
       }
     }
 
@@ -17942,7 +18021,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     async function submitMapChatReply() {
-      const summary = getConversationSummary();
+      const summary = getAdvisorContext();
       const lastUser = [...state.history].reverse().find((entry) => entry.role === "user")?.content || "";
       trackEvent("map_chat_reply", {
         chat_type: state.mapChat?.type || "unknown",
@@ -17950,7 +18029,7 @@ What would make this more useful for someone in your situation?`;
       });
       let response = await callAdvisor(buildMapChatPrompt(summary), 550);
       if (!response) {
-        const compactSummary = truncateAdvisorPrompt(getConversationSummary(), 6000);
+        const compactSummary = truncateAdvisorPrompt(getAdvisorContext(), 6000);
         response = await callAdvisor(buildMapChatPrompt(compactSummary), 550);
       }
       const answer = response || getMapChatLocalFallback(lastUser) || getMapChatErrorFallback();
@@ -17961,7 +18040,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     async function applyAlterPathChanges() {
-      const summary = getConversationSummary();
+      const summary = getAdvisorContext();
       trackEvent("alter_path_submitted", {
         history_count: state.history.length,
         previous_ideas_count: state.ideas.length
@@ -18005,7 +18084,7 @@ What would make this more useful for someone in your situation?`;
       const idea = Number.isInteger(index) ? state.ideas[index] : null;
       if (!idea) return;
 
-      const summary = getConversationSummary();
+      const summary = getAdvisorContext();
       const existingTitles = state.ideas.map((entry) => entry.title);
       trackEvent("idea_discuss_applied", {
         idea_index: index,
@@ -18182,7 +18261,7 @@ What would make this more useful for someone in your situation?`;
       const taskData = getRoadmapTaskData(taskId);
       const thread = taskData.threads?.find((item) => item.id === threadId);
       const threadContext = buildTaskThreadContext(thread);
-      const summary = getConversationSummary();
+      const summary = getAdvisorContext();
       const existingTitles = state.ideas.map((entry) => entry.title);
       const feedbackBlock = threadContext
         ? `\n\nTask Ask chat — user needs a different path:\n${threadContext}\n\nReplace with ONE path that matches where they ACTUALLY are (e.g. closed beta with 3-5 testers if still testing functionality — NOT a 15-30 user impact pilot).\n`
@@ -18829,6 +18908,439 @@ What would make this more useful for someone in your situation?`;
       return state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
     }
 
+    const USER_PROFILE_FIELD_LABELS = {
+      incomeUrgency: {
+        immediate: "Needs income immediately",
+        three_months: "Within ~3 months",
+        long_term: "Long-term — no rush"
+      },
+      pathPreference: {
+        employment: "Get hired / employment",
+        business: "Start or grow own business",
+        either: "Open to employment or business"
+      },
+      workMode: {
+        remote: "Remote work",
+        hybrid: "Hybrid",
+        in_person: "In-person only",
+        flexible: "Flexible / no strong preference"
+      },
+      willingToRelocate: {
+        yes: "Willing to relocate",
+        no: "Not willing to relocate",
+        maybe: "Maybe relocate for the right fit"
+      },
+      founderStage: {
+        beta: "Closed beta — still testing if it works",
+        validation: "Getting first strangers to try it",
+        pilot: "Structured pilot with a partner",
+        growth: "Grants, sponsors, or scaling"
+      }
+    };
+
+    function emptyUserProfile() {
+      return {
+        name: "",
+        incomeUrgency: "",
+        pathPreference: "",
+        workMode: "",
+        willingToRelocate: "",
+        founderStage: "",
+        skills: "",
+        constraints: "",
+        goals: "",
+        summary: "",
+        updatedAt: 0
+      };
+    }
+
+    function normalizeUserProfile(profile = emptyUserProfile()) {
+      const source = profile && typeof profile === "object" ? profile : {};
+      return {
+        name: String(source.name || "").trim(),
+        incomeUrgency: String(source.incomeUrgency || "").trim(),
+        pathPreference: String(source.pathPreference || "").trim(),
+        workMode: String(source.workMode || "").trim(),
+        willingToRelocate: String(source.willingToRelocate || "").trim(),
+        founderStage: String(source.founderStage || "").trim(),
+        skills: String(source.skills || "").trim(),
+        constraints: String(source.constraints || "").trim(),
+        goals: String(source.goals || "").trim(),
+        summary: String(source.summary || "").trim(),
+        updatedAt: Number(source.updatedAt) || 0
+      };
+    }
+
+    function setUserProfileField(field, value) {
+      if (!field) return;
+      state.userProfile = normalizeUserProfile(state.userProfile);
+      state.userProfile[field] = String(value || "").trim();
+      state.userProfile.updatedAt = Date.now();
+      distillUserProfileSummary();
+    }
+
+    function distillUserProfileSummary() {
+      const profile = normalizeUserProfile(state.userProfile);
+      const parts = [];
+      const pushLabel = (field) => {
+        const value = profile[field];
+        const label = USER_PROFILE_FIELD_LABELS[field]?.[value];
+        if (label) parts.push(label);
+      };
+      pushLabel("incomeUrgency");
+      pushLabel("pathPreference");
+      pushLabel("workMode");
+      pushLabel("willingToRelocate");
+      pushLabel("founderStage");
+      if (profile.goals) parts.push(profile.goals);
+      profile.summary = parts.join(" · ");
+      profile.updatedAt = Date.now();
+      state.userProfile = profile;
+    }
+
+    function getUserProfileBlob() {
+      const profile = normalizeUserProfile(state.userProfile);
+      return [
+        profile.summary,
+        profile.skills,
+        profile.constraints,
+        profile.goals,
+        Object.entries(USER_PROFILE_FIELD_LABELS).map(([field, labels]) => {
+          const value = profile[field];
+          return value ? labels[value] : "";
+        }).filter(Boolean).join(" ")
+      ].filter(Boolean).join(" ").toLowerCase();
+    }
+
+    function getUserProfileBlock() {
+      const profile = normalizeUserProfile(state.userProfile);
+      const lines = [];
+      if (profile.name) lines.push(`Name: ${profile.name}`);
+      if (getUserLocation()) lines.push(`Location: ${getUserLocation()}`);
+      if (profile.incomeUrgency) lines.push(`Income urgency: ${USER_PROFILE_FIELD_LABELS.incomeUrgency[profile.incomeUrgency] || profile.incomeUrgency}`);
+      if (profile.pathPreference) lines.push(`Path preference: ${USER_PROFILE_FIELD_LABELS.pathPreference[profile.pathPreference] || profile.pathPreference}`);
+      if (profile.workMode) lines.push(`Work mode: ${USER_PROFILE_FIELD_LABELS.workMode[profile.workMode] || profile.workMode}`);
+      if (profile.willingToRelocate) lines.push(`Relocate: ${USER_PROFILE_FIELD_LABELS.willingToRelocate[profile.willingToRelocate] || profile.willingToRelocate}`);
+      if (profile.founderStage) lines.push(`Founder / product stage: ${USER_PROFILE_FIELD_LABELS.founderStage[profile.founderStage] || profile.founderStage}`);
+      if (profile.skills) lines.push(`Skills / strengths: ${profile.skills}`);
+      if (profile.constraints) lines.push(`Constraints: ${profile.constraints}`);
+      if (profile.goals) lines.push(`Primary goal: ${profile.goals}`);
+      if (profile.summary) lines.push(`Profile summary: ${profile.summary}`);
+      if (!lines.length) return "";
+      return `\nUSER PROFILE (authoritative — use this for fit, pacing, and path choice; do not contradict it):\n${lines.join("\n")}\n`;
+    }
+
+    function getAdvisorContext() {
+      return getConversationSummary() + getUserProfileBlock();
+    }
+
+    function parseIncomeUrgency(text) {
+      const q = String(text || "").toLowerCase();
+      if (/\b(immediate|asap|right away|this week|urgent|need income now|need money now)\b/.test(q)) return "immediate";
+      if (/\b(3 month|three month|few month|couple month|within months)\b/.test(q)) return "three_months";
+      if (/\b(long[- ]?term|no rush|eventually|not urgent|year|someday)\b/.test(q)) return "long_term";
+      return "";
+    }
+
+    function parsePathPreference(text) {
+      const q = String(text || "").toLowerCase();
+      if (/\b(either|both|open to|not sure|either works)\b/.test(q)) return "either";
+      if (/\b(business|own thing|self[- ]?employ|freelance|startup|entrepreneur|my own)\b/.test(q)) return "business";
+      if (/\b(hired|job|employ|work for someone|get a job)\b/.test(q)) return "employment";
+      return "";
+    }
+
+    function parseWorkMode(text) {
+      const q = String(text || "").toLowerCase();
+      if (/\b(remote|work from home|wfh|anywhere)\b/.test(q)) return "remote";
+      if (/\b(hybrid)\b/.test(q)) return "hybrid";
+      if (/\b(in[- ]?person|on[- ]?site|local only)\b/.test(q)) return "in_person";
+      if (/\b(flexible|no preference|doesn'?t matter|any)\b/.test(q)) return "flexible";
+      return "";
+    }
+
+    function parseRelocatePreference(text) {
+      const q = String(text || "").toLowerCase();
+      if (/\b(yes|willing|would move|relocate)\b/.test(q) && !/\b(not|no)\b/.test(q)) return "yes";
+      if (/\b(maybe|depends|possibly)\b/.test(q)) return "maybe";
+      if (/\b(no|not willing|stay here|can'?t move)\b/.test(q)) return "no";
+      return "";
+    }
+
+    function parseFounderStage(text) {
+      const q = String(text || "").toLowerCase();
+      if (/\b(beta|bug|function|test if it works|just testing|closed beta)\b/.test(q)) return "beta";
+      if (/\b(first (real )?strangers|validation|early users|community launch)\b/.test(q)) return "validation";
+      if (/\b(pilot|partner|workforce|library|15.?30|impact data)\b/.test(q)) return "pilot";
+      if (/\b(grant|sponsor|scale|sustain|growth)\b/.test(q)) return "growth";
+      return "";
+    }
+
+    function mergeUserProfileFromConversation() {
+      const blob = [
+        getFirstUserMessage(),
+        ...state.history.filter((entry) => entry.role === "user").map((entry) => entry.content)
+      ].join("\n");
+      const profile = normalizeUserProfile(state.userProfile);
+      if (!profile.incomeUrgency) profile.incomeUrgency = parseIncomeUrgency(blob);
+      if (!profile.pathPreference) profile.pathPreference = parsePathPreference(blob);
+      if (!profile.workMode) profile.workMode = parseWorkMode(blob);
+      if (!profile.willingToRelocate) profile.willingToRelocate = parseRelocatePreference(blob);
+      if (!profile.founderStage && isFounderOrProjectPrompt(getFirstUserMessage())) {
+        profile.founderStage = parseFounderStage(blob);
+      }
+      if (!profile.goals && getFirstUserMessage()) {
+        profile.goals = abbreviateQuestion(getFirstUserMessage(), 160);
+      }
+      state.userProfile = profile;
+      distillUserProfileSummary();
+    }
+
+    function profileIntakeIsComplete(founderMode = isFounderOrProjectPrompt(getFirstUserMessage())) {
+      const profile = normalizeUserProfile(state.userProfile);
+      if (!profile.incomeUrgency || !profile.pathPreference) return false;
+      if (founderMode) return Boolean(profile.founderStage);
+      return Boolean(profile.workMode);
+    }
+
+    function hideProfileIntakeChips() {
+      const container = $("#profile-intake-chips");
+      if (!container) return;
+      container.hidden = true;
+      container.innerHTML = "";
+    }
+
+    function renderProfileIntakeChips(options = []) {
+      const container = $("#profile-intake-chips");
+      if (!container) return;
+      if (!options.length) {
+        hideProfileIntakeChips();
+        return;
+      }
+      container.hidden = false;
+      const buttons = options.map((option) =>
+        `<button type="button" class="profile-intake-chip" data-profile-field="${escapeHtml(option.field)}" data-profile-value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</button>`
+      ).join("");
+      container.innerHTML = `<span class="profile-intake-chips-label">Tap one or type your own</span><div class="profile-intake-chips-list">${buttons}</div>`;
+    }
+
+    function pushProfileIntakeAssistantMessage(text) {
+      resolveTyping(text);
+      state.history.push({ role: "assistant", content: text });
+      showReplyBox(true);
+      schedulePersist();
+    }
+
+    function askProfileIncomeStep() {
+      state.profileIntakeStep = "income";
+      pushProfileIntakeAssistantMessage(
+        "I have a few quick questions so your paths fit you — not generic advice.\n\nWhen do you need income to start?"
+      );
+      renderProfileIntakeChips([
+        { field: "incomeUrgency", value: "immediate", label: "Immediately" },
+        { field: "incomeUrgency", value: "three_months", label: "Within 3 months" },
+        { field: "incomeUrgency", value: "long_term", label: "Long-term is OK" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "income" });
+    }
+
+    function askProfilePathPreferenceStep() {
+      state.profileIntakeStep = "path";
+      const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+      pushProfileIntakeAssistantMessage(
+        founder
+          ? "For whatimado.com right now, what's the main focus?"
+          : "What are you mainly aiming for?"
+      );
+      renderProfileIntakeChips(
+        founder
+          ? [
+              { field: "pathPreference", value: "business", label: "Grow the site / product" },
+              { field: "pathPreference", value: "either", label: "Mix of product + partnerships" },
+              { field: "pathPreference", value: "employment", label: "Keep my day job too" }
+            ]
+          : [
+              { field: "pathPreference", value: "employment", label: "Get hired" },
+              { field: "pathPreference", value: "business", label: "Start my own thing" },
+              { field: "pathPreference", value: "either", label: "Either works" }
+            ]
+      );
+      trackEvent("profile_intake_step_shown", { step: "path" });
+    }
+
+    function askProfileWorkModeStep() {
+      state.profileIntakeStep = "work_mode";
+      pushProfileIntakeAssistantMessage("For work, what setup fits you best?");
+      renderProfileIntakeChips([
+        { field: "workMode", value: "remote", label: "Remote" },
+        { field: "workMode", value: "hybrid", label: "Hybrid" },
+        { field: "workMode", value: "in_person", label: "In-person" },
+        { field: "workMode", value: "flexible", label: "Flexible" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "work_mode" });
+    }
+
+    function askProfileRelocateStep() {
+      state.profileIntakeStep = "relocate";
+      pushProfileIntakeAssistantMessage("Would you relocate for the right opportunity?");
+      renderProfileIntakeChips([
+        { field: "willingToRelocate", value: "yes", label: "Yes" },
+        { field: "willingToRelocate", value: "maybe", label: "Maybe" },
+        { field: "willingToRelocate", value: "no", label: "No" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "relocate" });
+    }
+
+    function askProfileFounderStageStep() {
+      state.profileIntakeStep = "founder_stage";
+      pushProfileIntakeAssistantMessage("Where is whatimado.com at right now?");
+      renderProfileIntakeChips([
+        { field: "founderStage", value: "beta", label: "Still testing if it works" },
+        { field: "founderStage", value: "validation", label: "First strangers to try it" },
+        { field: "founderStage", value: "pilot", label: "Formal pilot with a partner" },
+        { field: "founderStage", value: "growth", label: "Grants / sponsors / scaling" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "founder_stage" });
+    }
+
+    function finishProfileIntake() {
+      state.profileIntakeStep = null;
+      hideProfileIntakeChips();
+      distillUserProfileSummary();
+      trackEvent("profile_intake_completed", {
+        founder_mode: isFounderOrProjectPrompt(getFirstUserMessage()),
+        income_urgency: state.userProfile.incomeUrgency || "",
+        path_preference: state.userProfile.pathPreference || "",
+        founder_stage: state.userProfile.founderStage || ""
+      });
+
+      if (state.intakeMode === "quick" && (hasSavedUserLocation() || getUserLocation())) {
+        showReplyBox(false);
+        addTypingBubble(PATH_BUILDING_MSG);
+        trackEvent("path_generation_started", {
+          history_count: state.history.length,
+          intake_mode: "quick",
+          has_location: true,
+          profile_intake: true
+        });
+        void generateAndShowMap({
+          founderMode: isFounderOrProjectPrompt(getFirstUserMessage()),
+          intakeMode: "quick"
+        });
+        return;
+      }
+
+      addTypingBubble();
+      if (shouldAskLocation()) askLocationStep();
+      else askNameStep();
+    }
+
+    function advanceProfileIntake() {
+      const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+      const step = state.profileIntakeStep;
+      const profile = normalizeUserProfile(state.userProfile);
+
+      if (step === "income") {
+        if (!profile.incomeUrgency) return askProfileIncomeStep();
+        askProfilePathPreferenceStep();
+        return;
+      }
+      if (step === "path") {
+        if (!profile.pathPreference) return askProfilePathPreferenceStep();
+        if (founder) {
+          if (!profile.founderStage) return askProfileFounderStageStep();
+          finishProfileIntake();
+          return;
+        }
+        if (!profile.workMode) return askProfileWorkModeStep();
+        if (!profile.willingToRelocate) return askProfileRelocateStep();
+        finishProfileIntake();
+        return;
+      }
+      if (step === "work_mode") {
+        if (!profile.workMode) return askProfileWorkModeStep();
+        if (!profile.willingToRelocate) return askProfileRelocateStep();
+        finishProfileIntake();
+        return;
+      }
+      if (step === "relocate" || step === "founder_stage") {
+        finishProfileIntake();
+      }
+    }
+
+    function beginProfileIntake() {
+      mergeUserProfileFromConversation();
+      const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+      if (profileIntakeIsComplete(founder)) {
+        finishProfileIntake();
+        return;
+      }
+      const profile = normalizeUserProfile(state.userProfile);
+      if (!profile.incomeUrgency) {
+        askProfileIncomeStep();
+        return;
+      }
+      if (!profile.pathPreference) {
+        askProfilePathPreferenceStep();
+        return;
+      }
+      if (founder) {
+        if (!profile.founderStage) askProfileFounderStageStep();
+        else finishProfileIntake();
+        return;
+      }
+      if (!profile.workMode) {
+        askProfileWorkModeStep();
+        return;
+      }
+      if (!profile.willingToRelocate) {
+        askProfileRelocateStep();
+        return;
+      }
+      finishProfileIntake();
+    }
+
+    function applyProfileIntakeField(field, value) {
+      if (!field || !value) return;
+      setUserProfileField(field, value);
+      advanceProfileIntake();
+    }
+
+    function handleProfileIntakeSubmit(text) {
+      const step = state.profileIntakeStep;
+      const trimmed = String(text || "").trim();
+      if (!trimmed) return;
+      addUserBubble(trimmed);
+      state.history.push({ role: "user", content: trimmed });
+
+      const parsers = {
+        income: ["incomeUrgency", parseIncomeUrgency],
+        path: ["pathPreference", parsePathPreference],
+        work_mode: ["workMode", parseWorkMode],
+        relocate: ["willingToRelocate", parseRelocatePreference],
+        founder_stage: ["founderStage", parseFounderStage]
+      };
+      const parser = parsers[step];
+      if (parser) {
+        const parsed = parser[1](trimmed) || trimmed.slice(0, 80);
+        setUserProfileField(parser[0], parsed);
+      }
+      hideProfileIntakeChips();
+      advanceProfileIntake();
+      schedulePersist();
+    }
+
+    function handleProfileChipClick(button) {
+      if (!button) return;
+      const field = button.dataset.profileField;
+      const value = button.dataset.profileValue;
+      const label = button.textContent?.trim() || value;
+      addUserBubble(label);
+      state.history.push({ role: "user", content: label });
+      applyProfileIntakeField(field, value);
+      schedulePersist();
+    }
+
     function inferLocationFromConversation() {
       for (const entry of state.history) {
         if (entry.role !== "user") continue;
@@ -19183,7 +19695,8 @@ What would make this more useful for someone in your situation?`;
 
     async function generateAndShowMap(options = {}) {
       const founderMode = options.founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
-      const summary = getConversationSummary();
+      mergeUserProfileFromConversation();
+      const summary = getAdvisorContext();
       let response = await callAdvisor(
         founderMode ? buildFounderIdeasPrompt(summary) : buildIdeasPrompt(summary, 3),
         1200
@@ -19358,7 +19871,7 @@ What would make this more useful for someone in your situation?`;
       button.classList.add("is-loading");
       labelEl.textContent = "Finding more paths...";
 
-      const summary = getConversationSummary();
+      const summary = getAdvisorContext();
       const existingIdeas = state.ideas.slice();
       const existingTitles = existingIdeas.map((idea) => idea.title);
       const founderMode = isFounderOrProjectPrompt(getFirstUserMessage());
@@ -19529,11 +20042,12 @@ What would make this more useful for someone in your situation?`;
           intake_mode: state.intakeMode || "standard"
         });
         addTypingBubble();
-        if (shouldAskLocation()) {
-          askLocationStep();
-        } else {
-          askNameStep();
-        }
+        beginProfileIntake();
+        return;
+      }
+
+      if (state.profileIntakeStep) {
+        handleProfileIntakeSubmit(text);
         return;
       }
 
@@ -19557,6 +20071,19 @@ What would make this more useful for someone in your situation?`;
           has_country: Boolean(state.userLocation.country)
         });
         if (state.intakeMode === "quick") {
+          mergeUserProfileFromConversation();
+          const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+          if (!profileIntakeIsComplete(founder)) {
+            const profile = normalizeUserProfile(state.userProfile);
+            if (!profile.incomeUrgency) {
+              askProfileIncomeStep();
+              return;
+            }
+            if (founder && !profile.founderStage) {
+              askProfileFounderStageStep();
+              return;
+            }
+          }
           showReplyBox(false);
           addTypingBubble(PATH_BUILDING_MSG);
           trackEvent("path_generation_started", {
@@ -19565,7 +20092,7 @@ What would make this more useful for someone in your situation?`;
             intake_mode: "quick",
             has_location: true
           });
-          await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
+          await generateAndShowMap({ founderMode: founder, intakeMode: "quick" });
           return;
         }
         askNameStep();
@@ -19573,6 +20100,9 @@ What would make this more useful for someone in your situation?`;
       }
 
       if (state.step === 4) {
+        if (text) {
+          setUserProfileField("name", text.split(/\s+/).slice(0, 3).join(" "));
+        }
         trackEvent("name_answer_submitted", {
           reply_length: text.length,
           intake_mode: state.intakeMode || "standard",
@@ -19955,7 +20485,7 @@ What would make this more useful for someone in your situation?`;
 
       let roadmapSource = "ai";
       try {
-      const context = getConversationSummary();
+      const context = getAdvisorContext();
       const refreshBlock = [
         options.previousStages?.length ? buildRoadmapRefreshBlock(options.previousStages) : "",
         options.extraRefreshBlock || ""
@@ -21268,7 +21798,7 @@ What would make this more useful for someone in your situation?`;
         reason_length: options.reason?.length || 0
       });
 
-      const context = getConversationSummary();
+      const context = getAdvisorContext();
       const founderMode = isFounderRoadmapForIdea(state.currentIdea);
       const stuckNote = options.reason
         ? `\nUser is stuck or blocked: "${options.reason}"\nReplace unreachable steps with practical alternatives — do not repeat the same impossible step.\n`
@@ -21353,7 +21883,7 @@ What would make this more useful for someone in your situation?`;
         auto
       });
 
-      const context = getConversationSummary();
+      const context = getAdvisorContext();
       const founderMode = isFounderRoadmapForIdea(state.currentIdea);
       const completedStages = buildCompletedRoadmapSummary();
 
@@ -21628,6 +22158,9 @@ What would make this more useful for someone in your situation?`;
       state.locationIntakeStep = null;
       state.locationDraft = emptyLocationDraft();
       state.awaitingLocationCountry = "";
+      state.userProfile = emptyUserProfile();
+      state.profileIntakeStep = null;
+      hideProfileIntakeChips();
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
       if (roadmapAutoContinueTimer) {
@@ -23214,6 +23747,12 @@ What would make this more useful for someone in your situation?`;
       });
 
       $("#reply-send-btn").addEventListener("click", submitReply);
+      $("#reply-box")?.addEventListener("click", (event) => {
+        const chip = event.target.closest(".profile-intake-chip");
+        if (!chip) return;
+        event.preventDefault();
+        handleProfileChipClick(chip);
+      });
       $("#reply-textarea").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
