@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-task-path-actions -->
+<!-- whatimado build: 2026-06-30-glance-trim -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-task-path-actions">
+  <meta name="whatimado-build" content="2026-06-30-glance-trim">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10857,8 +10857,10 @@
 
             <section class="roadmap-glance" id="roadmap-glance" hidden aria-label="Roadmap at a glance">
               <div class="roadmap-glance-head">
-                <h3 class="roadmap-glance-title">Your plan at a glance</h3>
+                <h3 class="roadmap-glance-title" id="roadmap-glance-title">This phase</h3>
+                <span class="roadmap-glance-meta" id="roadmap-glance-meta" hidden></span>
               </div>
+              <p class="roadmap-glance-lead" id="roadmap-glance-lead" hidden></p>
               <div class="roadmap-glance-track" id="roadmap-glance-track"></div>
               <button type="button" class="roadmap-glance-next-btn" id="roadmap-glance-next-btn">Jump to your next task</button>
             </section>
@@ -11423,13 +11425,21 @@
       }));
     }
 
+    function trimFounderInitialStages(stages) {
+      return (stages || []).slice(0, 2).map((stage) => ({
+        label: String(stage.label || ""),
+        desc: String(stage.desc || ""),
+        tasks: (stage.tasks || []).slice(0, 2).map(String)
+      }));
+    }
+
     function pickUniqueFounderFallbackStages(idea, templates, preferred) {
       const tryOrder = [...new Set([preferred, "beta", "launch", "sponsorship", "donation", "partnership", "general"])];
       for (const key of tryOrder) {
-        const stages = cloneRoadmapStages(templates[key] || templates.general);
+        const stages = trimFounderInitialStages(cloneRoadmapStages(templates[key] || templates.general));
         if (!roadmapOverlapsSibling(stages, idea)) return stages;
       }
-      return cloneRoadmapStages(templates.general);
+      return trimFounderInitialStages(cloneRoadmapStages(templates.general));
     }
 
     function getRoadmapSubtitle(founderMode, source = "ai") {
@@ -14876,6 +14886,29 @@ What would make this more useful for someone in your situation?`;
       return blocks[stage] || blocks.unknown;
     }
 
+    const ROADMAP_JSON_SCHEMA_TAIL = ROADMAP_JSON_INSTRUCTION.replace(/^Return exactly \d+ stages with \d+ tasks each\.\n/, "");
+
+    function getRoadmapJsonInstruction({ founderMode = false, context = "", phase = "initial" } = {}) {
+      let header;
+      if (founderMode) {
+        const productStage = inferFounderProductStage(context);
+        if (phase === "continue") {
+          header = "Return exactly 2 stages with 2 tasks each.";
+        } else if (productStage === "beta" || productStage === "unknown") {
+          header =
+            "Return exactly 2 stages with 2 tasks each. Cover only the next 2-3 weeks — closed beta or first functionality test. Do NOT include formal pilots, grant research, sponsor decks, or 15-30 user cohorts in this roadmap.";
+        } else {
+          header =
+            "Return exactly 2 stages with 3 tasks each. Cover only the NEXT phase of this path (next 2-4 weeks). Grants, sponsors, scaling, and later pilot stages come via Continue this plan — not packed into one roadmap.";
+        }
+      } else if (phase === "continue") {
+        header = "Return exactly 4 stages with 3 tasks each.";
+      } else {
+        header = "Return exactly 3 stages with 2 tasks each.";
+      }
+      return `${header}\n${ROADMAP_JSON_SCHEMA_TAIL}`;
+    }
+
     function buildFounderRoadmapPrompt(idea, context, { phase = "initial", dedupe = false, refreshBlock = "" } = {}) {
       const ideaBlock = [
         `Title: ${idea.title}`,
@@ -14888,8 +14921,8 @@ What would make this more useful for someone in your situation?`;
       ].filter(Boolean).join("\n");
 
       const phaseNote = phase === "continue"
-        ? "Generate the NEXT 4 stages after their completed roadmap for growing whatimado.com. Do not repeat completed tasks."
-        : "Generate the FIRST 4 stages to execute this founder path for whatimado.com.";
+        ? "Generate the NEXT 2 stages after their completed roadmap for growing whatimado.com. Do not repeat completed tasks."
+        : "Generate the FIRST 2 stages only — the immediate next 2-4 weeks for this founder path. Do not pack the entire 30-90 day journey into one roadmap.";
 
       const pathFocus = {
         beta: "closed beta with 3-5 trusted testers, live watch sessions, friction logging, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 user cohorts",
@@ -14950,7 +14983,7 @@ What would make this more useful for someone in your situation?`;
         `- "Post in r/Findapath with title 'I built a free possibility map for people stuck on what's next' — follow sub rules; put whatimado.com in comment if links banned in body"\n` +
         `- "Email workforce director at [local org]: 'Hi [Name], I built whatimado.com — free AI roadmaps for clients rebuilding careers. 4-week pilot, zero cost. 15-min call?'"\n` +
         `- "Add donate line after map: 'Free forever — $3 optional tip covers ~6 sessions for someone else' and track stripe_checkout_redirected in Supabase for 7 days"\n\n` +
-        ROADMAP_JSON_INSTRUCTION
+        getRoadmapJsonInstruction({ founderMode: true, context, phase })
       );
     }
 
@@ -14990,7 +15023,7 @@ What would make this more useful for someone in your situation?`;
 
       const phaseNote = phase === "continue"
         ? "Generate the NEXT 4 stages after their completed roadmap. Do not repeat completed tasks. Logical progression: validation → first revenue → optimization → scaling → next expansion. Only stop when there is no meaningful next phase."
-        : "Generate the FIRST 4 stages to get this path off the ground.";
+        : "Generate the FIRST 3 stages only — the immediate next steps for this path. Later phases unlock via Continue this plan.";
 
       const siblingBlock = getSiblingRoadmapContext(idea);
       const dedupeNote = dedupe
@@ -15036,7 +15069,7 @@ What would make this more useful for someone in your situation?`;
         `- "Draft a 150-word Facebook post explaining why you built whatimado.com for people stuck on career direction — include one screenshot of the map screen and publish to your profile"\n` +
         `- "Email 3 recovery-center program directors you can name locally, attach a 1-page pilot outline for a free whatimado workshop, and ask for a 15-minute call"\n` +
         `- "Spend 45 minutes in r/Findapath or a local career-change Facebook group, reply helpfully to 5 posts, and note which questions match your tool"\n\n` +
-        ROADMAP_JSON_INSTRUCTION
+        getRoadmapJsonInstruction({ founderMode: false, context, phase })
       );
     }
 
@@ -20251,35 +20284,68 @@ What would make this more useful for someone in your situation?`;
       });
     }
 
+    function getActiveGlanceStageIndex(stages = state.roadmapStages) {
+      if (!stages?.length) return 0;
+      for (let stageIndex = 0; stageIndex < stages.length; stageIndex += 1) {
+        const { done, total } = getStageProgressFromIndices(stageIndex);
+        if (total > 0 && done < total) return stageIndex;
+      }
+      return stages.length - 1;
+    }
+
     function renderRoadmapGlance(stages = state.roadmapStages) {
       const section = $("#roadmap-glance");
       const track = $("#roadmap-glance-track");
       const nextBtn = $("#roadmap-glance-next-btn");
+      const titleEl = $("#roadmap-glance-title");
+      const metaEl = $("#roadmap-glance-meta");
+      const leadEl = $("#roadmap-glance-lead");
       if (!section || !track) return;
 
       if (!stages?.length) {
         section.hidden = true;
         track.innerHTML = "";
         if (nextBtn) nextBtn.hidden = true;
+        if (metaEl) metaEl.hidden = true;
+        if (leadEl) leadEl.hidden = true;
         return;
       }
 
+      const activeStageIndex = getActiveGlanceStageIndex(stages);
+      const activeStage = stages[activeStageIndex];
       const items = [];
-      stages.forEach((stage, stageIndex) => {
-        (stage.tasks || []).forEach((task, taskIndex) => {
-          const text = humanizeTaskText(getTaskText(task));
-          if (text) items.push({ stageIndex, taskIndex, text });
-        });
+      (activeStage?.tasks || []).forEach((task, taskIndex) => {
+        const text = humanizeTaskText(getTaskText(task));
+        if (text) items.push({ stageIndex: activeStageIndex, taskIndex, text });
       });
 
       if (!items.length) {
         section.hidden = true;
         track.innerHTML = "";
         if (nextBtn) nextBtn.hidden = true;
+        if (metaEl) metaEl.hidden = true;
+        if (leadEl) leadEl.hidden = true;
         return;
       }
 
       section.hidden = false;
+      if (titleEl) {
+        titleEl.textContent = activeStage?.label ? String(activeStage.label) : "This phase";
+      }
+      if (metaEl) {
+        metaEl.textContent = `Phase ${activeStageIndex + 1} of ${stages.length}`;
+        metaEl.hidden = stages.length <= 1;
+      }
+      if (leadEl) {
+        const remainingPhases = stages.length - activeStageIndex - 1;
+        if (remainingPhases > 0) {
+          leadEl.textContent = `${remainingPhases} more phase${remainingPhases === 1 ? "" : "s"} unlock as you finish this one.`;
+          leadEl.hidden = false;
+        } else {
+          leadEl.hidden = true;
+        }
+      }
+
       track.innerHTML = items.map(({ stageIndex, taskIndex, text }) => {
         const status = getTaskGlanceStatus(stageIndex, taskIndex);
         return `<button type="button" class="roadmap-glance-task ${status}" data-glance-stage="${stageIndex}" data-glance-task="${taskIndex}">${escapeHtml(text)}</button>`;
