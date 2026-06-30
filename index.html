@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-map-ui -->
+<!-- whatimado build: 2026-06-30-task-path-actions -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-map-ui">
+  <meta name="whatimado-build" content="2026-06-30-task-path-actions">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -11400,11 +11400,13 @@
       const meta = `${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
       const blob = `${title} ${meta}`;
 
+      if (/\bclosed beta|functional test|3.?5 test|bug watch/.test(title)) return "beta";
       if (/social proof|sponsorship deck|sponsor deck|sponsor-ready|sponsor read/.test(title)) return "sponsorship";
       if (/quiet launch|community launch|validation sprint|5 communit|feedback-first|reddit launch|facebook launch/.test(title)) return "launch";
       if (/donation-first|pay-what|supporter loop|sustainability loop/.test(title)) return "donation";
       if (/grant|nonprofit partnership|partnership pipeline|workforce program|library pilot/.test(title)) return "partnership";
 
+      if (/\bclosed beta|functional test|3.?5 test/.test(blob)) return "beta";
       if (/social proof|sponsorship deck|sponsor deck/.test(blob)) return "sponsorship";
       if (/quiet launch|validation sprint|feedback-first|5 communit|community sprint|first users/.test(blob)) return "launch";
       if (/launch|valid/.test(blob) && !/partnership pipeline|nonprofit partner|grant pipeline|help-for-hire|help for hire|local service|paid jobs|neighborhood/.test(blob)) return "launch";
@@ -11422,7 +11424,7 @@
     }
 
     function pickUniqueFounderFallbackStages(idea, templates, preferred) {
-      const tryOrder = [...new Set([preferred, "launch", "sponsorship", "donation", "partnership", "general"])];
+      const tryOrder = [...new Set([preferred, "beta", "launch", "sponsorship", "donation", "partnership", "general"])];
       for (const key of tryOrder) {
         const stages = cloneRoadmapStages(templates[key] || templates.general);
         if (!roadmapOverlapsSibling(stages, idea)) return stages;
@@ -13906,6 +13908,44 @@ What would make this more useful for someone in your situation?`;
       const template = getFounderPathTemplate(idea);
 
       const templates = {
+        beta: [
+          {
+            label: "Recruit 3-5 beta testers",
+            desc: "Find a handful of real users before any formal pilot — watch them use the site.",
+            tasks: [
+              "List 5 people who fit your mission (friends, former colleagues, or one small cohort) and message 3: \"I'm testing whatimado.com — free AI roadmaps for people stuck on what's next. Can you try it for 15 minutes this week and tell me where you get confused?\"",
+              "Create a 1-page closed beta outline in Notes (copy from Ask if needed): free access, what you need from them (one session + honest feedback), zero cost — NOT a 15-30 user impact study",
+              "Schedule one live watch session: sit on Zoom or in person while they use the site — note the exact step where they hesitate"
+            ]
+          },
+          {
+            label: "Watch and log friction",
+            desc: "Your job this week is learning what breaks — not scaling outreach.",
+            tasks: [
+              "Run 2 more beta sessions this week — same rule: watch, don't coach unless they're completely stuck",
+              "Log every friction point in a spreadsheet: date, user type, step stuck, fix idea — also check Supabase site_suggestions for patterns",
+              "Fix the #1 friction point (homepage copy, confusing button, mobile bug), redeploy index.html, and ask one prior tester to retry"
+            ]
+          },
+          {
+            label: "Decide if it's ready",
+            desc: "Only move to pilots or grants after basic functionality feels solid.",
+            tasks: [
+              "Ask all beta testers: \"Would you recommend this to someone in a worse spot than you?\" — write answers verbatim in Notes",
+              "Count this week's site_events (prompt_submitted, map_generated, roadmap_opened) — if numbers are near zero, fix onboarding before recruiting more people",
+              "Write a 5-sentence decision note: \"Ready for strangers / needs X fix / not ready for pilot yet\" — this gates your next path"
+            ]
+          },
+          {
+            label: "Plan the next stage",
+            desc: "Choose validation sprint, donation test, or partner pilot — only after beta passes.",
+            tasks: [
+              "If beta passed: pick ONE next move — community launch (5-15 strangers), donation ask test, or one nonprofit conversation — not all three",
+              "If beta failed: list the top 3 bugs or confusions and block 4 hours to fix them before any outreach",
+              "Update your possibility map note with what you learned so the next roadmap starts at the right stage"
+            ]
+          }
+        ],
         launch: [
           {
             label: "Prep your launch story",
@@ -14027,7 +14067,7 @@ What would make this more useful for someone in your situation?`;
             tasks: [
               "Choose ONE target for the next 30 days: public library, workforce program, shelter, community college career center, or nonprofit re-entry org",
               "List 10 local organizations with a program director name and email from their website — put them in a spreadsheet",
-              "Create a 1-page pilot outline (Google Doc or PDF): free whatimado.com access, what staff get, what feedback you need, zero cost to clients, no paywall"
+              "Create a 1-page pilot outline in Notes — tap Ask on this task for a full draft to copy, then customize: free whatimado.com access, what staff get, what feedback you need, zero cost to clients, no paywall"
             ]
           },
           {
@@ -14805,6 +14845,37 @@ What would make this more useful for someone in your situation?`;
       );
     }
 
+    function inferFounderProductStage(context = "") {
+      const blob = String(context || "").toLowerCase();
+      if (
+        /\b(still (building|testing|fixing)|closed beta|functional test|test if it (works|functions)|just testing|bug|doesn'?t work|core feature|see if it functions)\b/.test(blob) &&
+        !/\b(impact data|grant funder|15.?30|formal pilot|partnership pilot)\b/.test(blob)
+      ) {
+        return "beta";
+      }
+      if (/\b(first (real )?strangers|early users|validation sprint|community launch|5 communit)\b/.test(blob)) return "validation";
+      if (/\b(grant|sponsor|impact data|funder|15.?30|workforce program|library pilot|nonprofit partner)\b/.test(blob)) return "pilot";
+      if (/\b(scale|sustain|revenue|donation|monthly)\b/.test(blob)) return "growth";
+      return "unknown";
+    }
+
+    function getFounderStageBlock(context) {
+      const stage = inferFounderProductStage(context);
+      const blocks = {
+        beta:
+          "FOUNDER STAGE: Closed beta / functionality testing. Roadmaps must focus on 3-8 test users, watching sessions, bug fixes, and friction notes — NOT formal 15-30 user pilots, grant impact studies, or partnership outreach at scale.\n",
+        validation:
+          "FOUNDER STAGE: Early validation with real strangers. Small cohorts (5-15), feedback loops, light outreach — not grant-grade impact studies yet.\n",
+        pilot:
+          "FOUNDER STAGE: Ready for structured pilots with partners. Cohorts of 15-30 may be appropriate IF the conversation confirms they need impact data for grants or sponsors.\n",
+        growth:
+          "FOUNDER STAGE: Proving sustainability — donations, sponsors, grants, and partnerships with some traction already shown.\n",
+        unknown:
+          "FOUNDER STAGE: Infer from conversation. Do NOT jump to grant pilots or 15-30 user cohorts unless they explicitly need impact data for funders. Default to the smallest credible next step.\n"
+      };
+      return blocks[stage] || blocks.unknown;
+    }
+
     function buildFounderRoadmapPrompt(idea, context, { phase = "initial", dedupe = false, refreshBlock = "" } = {}) {
       const ideaBlock = [
         `Title: ${idea.title}`,
@@ -14821,12 +14892,20 @@ What would make this more useful for someone in your situation?`;
         : "Generate the FIRST 4 stages to execute this founder path for whatimado.com.";
 
       const pathFocus = {
+        beta: "closed beta with 3-5 trusted testers, live watch sessions, friction logging, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 user cohorts",
         launch: "community validation, Reddit/Facebook launch posts, first real users, analytics from Supabase site_events, suggestions box feedback",
         donation: "Stripe donation copy, pay-what-you-can framing, soft asks without paywalls, supporter loop, cost-per-session math",
         sponsorship: "testimonials, 1-page sponsor deck, local business outreach, social proof quotes, ethical sponsor tiers that keep end users free",
         partnership: "nonprofit/library/workforce/shelter pilot outreach, email templates, demo script, grant paths that keep end users free",
         general: "low-cost 30-90 day founder milestones mixing validation, feedback, donations, and partnerships"
       }[getFounderPathTemplate(idea)];
+      const founderStage = inferFounderProductStage(context);
+      const stageAwareFocus =
+        founderStage === "beta"
+          ? "closed beta with 3-5 trusted testers, live watch sessions, friction logging, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 user cohorts"
+          : founderStage === "validation"
+            ? "small validation cohorts (5-15), community posts, first strangers, feedback loops — not grant-grade impact pilots yet"
+            : pathFocus;
 
       const siblingBlock = getSiblingRoadmapContext(idea);
       const dedupeNote = dedupe
@@ -14844,12 +14923,13 @@ What would make this more useful for someone in your situation?`;
         `- Mission: free for under-resourced, stuck, low-income, homeless, or rebuilding users — never suggest premium SaaS tiers for individuals\n\n` +
         `Chosen founder path:\n${ideaBlock}\n\n` +
         `Founder conversation:\n${context}\n` +
+        getFounderStageBlock(context) +
         siblingBlock +
         dedupeNote +
         refreshBlock +
         getLocationContextBlock() +
         `\n${getActionableTaskRules()}\n` +
-        `\nFocus this roadmap ONLY on: ${pathFocus}.\n` +
+        `\nFocus this roadmap ONLY on: ${stageAwareFocus}.\n` +
         `This path must feel different from the other paths on the map — use stage labels and tasks that match "${idea.title}" specifically.\n` +
         `Do NOT reuse stage names or tasks from other paths (for example, do not copy donation-setup tasks into a launch or partnership path).\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
@@ -14857,7 +14937,8 @@ What would make this more useful for someone in your situation?`;
         `- Write 2-4 sentences in text plus steps[] with 2-4 ordered micro-actions (open X, paste Y, send Z).\n` +
         `- Include why and outcome as full sentences so the founder knows why now and what done looks like.\n` +
         `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real deliverables, time boxes, email subject lines, and copy snippets.\n` +
-        `- Include ready-to-use templates where helpful (Reddit post title, outreach email opening, donation ask line, demo script bullet).\n` +
+        `- Include ready-to-use templates where helpful (Reddit post title, outreach email opening, donation ask line, demo script bullet, pilot outline draft).\n` +
+        `- When a task needs a deliverable (pilot outline, email, deck section), include a starter draft in script or steps — do NOT tell the founder to invent it from scratch.\n` +
         `- Reference Stripe, Supabase analytics/suggestions, and social launch — not generic "build an audience" advice.\n` +
         `- Each task doable in one sitting (30–90 min) or one week max.\n` +
         `- Never suggest paywalling personal users or $9+/mo individual subscriptions.\n\n` +
@@ -15003,8 +15084,103 @@ What would make this more useful for someone in your situation?`;
       );
     }
 
+    function isPathLevelChangeRequest(question) {
+      const q = String(question || "").toLowerCase().trim();
+      return (
+        /\b(replace|change|update|swap|redo|revise)\s+(this\s+)?(path|roadmap|plan)\b/.test(q) ||
+        /\b(new|different)\s+(path|roadmap|plan)\b/.test(q) ||
+        /\bregenerat(e|ing)\s+(the\s+)?(whole\s+)?(roadmap|path|plan)\b/.test(q) ||
+        /\bregenerat(e|ing)\s+(my|this)\s+roadmap\b/.test(q) ||
+        (/\bregenerat(e|ing)\b/.test(q) && /\broadmap\b/.test(q) && !/\btask\b/.test(q))
+      );
+    }
+
+    function detectTaskPathIntent(question, thread) {
+      const q = String(question || "").toLowerCase().trim();
+      if (!q) return null;
+
+      if (isPathLevelChangeRequest(question)) {
+        if (/\b(path|option|opportunity|idea)\b/.test(q) && !/\broadmap\b/.test(q)) return "replace_path";
+        if (/\broadmap\b/.test(q) || /\bregenerat/.test(q)) return "regenerate_roadmap";
+        return /\bpath\b/.test(q) ? "replace_path" : "regenerate_roadmap";
+      }
+
+      const threadBlob = buildTaskThreadContext(thread).toLowerCase();
+      if (/\bregenerat(e|ing)\s+(the\s+)?roadmap\b/.test(q)) return "regenerate_roadmap";
+      if (/\b(replace|change)\s+this\s+path\b/.test(q)) return "replace_path";
+      if (/\b(smaller test|closed beta|functional test)\b/.test(q) && /\bregenerat/.test(q)) return "regenerate_roadmap";
+      if (/\b(smaller test|closed beta|functional test|just testing|test if it)\b/.test(threadBlob) && /\bregenerat|replace|different path|new path\b/.test(q)) {
+        return /\bpath\b/.test(q) && !/\broadmap\b/.test(q) ? "replace_path" : "regenerate_roadmap";
+      }
+
+      return null;
+    }
+
+    function buildTaskThreadContext(thread) {
+      return (thread?.messages || [])
+        .filter((message) => message.content && !/^(Thinking\.\.\.|Got it —)/.test(message.content))
+        .map((message) => `${message.role === "user" ? "User" : "Advisor"}: ${message.content}`)
+        .join("\n");
+    }
+
+    function getTaskThreadBlob(thread) {
+      return (thread?.messages || []).map((message) => message.content || "").join("\n").toLowerCase();
+    }
+
+    function shouldOfferTaskPathActions(thread, taskText) {
+      const blob = getTaskThreadBlob(thread);
+      if (!blob.trim()) return false;
+      if (/\bdone — (your roadmap|path|remaining|replaced|was regenerated)\b/.test(blob)) return false;
+      if (/\breplaced ".*" with\b/.test(blob)) return false;
+
+      const mismatchSignals = [
+        /\b(closed beta|functional test|just testing|test if it (works|functions)|still building|bug fix)/,
+        /\b(overkill|too (big|advanced|much)|jumped ahead|wrong (path|stage)|not ready for)/,
+        /\b(15.?30|impact data|grant funder)/,
+        /\b(smaller test|3.?5 users|replace this path|different path|regenerate)/,
+        /\b(which direction fits|cannot actually rewrite|use the buttons below)/,
+        /\b(formal pilot|data-gathering pilot)\b.*\b(beta|function)/,
+        /\b(beta|function)\b.*\b(pilot|15.?30)/
+      ];
+
+      return mismatchSignals.some((pattern) => pattern.test(blob));
+    }
+
+    function getTaskThreadPathActions(thread) {
+      if (!shouldOfferTaskPathActions(thread)) return [];
+      const blob = getTaskThreadBlob(thread);
+      const actions = [];
+
+      if (/\b(replace|different path|smaller test|closed beta|wrong path|jumped ahead|new path)\b/.test(blob)) {
+        actions.push({ id: "replace_path", label: "Replace this path" });
+      }
+      if (/\b(regenerat|roadmap|steps|smaller test|too advanced|overkill)\b/.test(blob)) {
+        actions.push({ id: "regenerate_roadmap", label: "Regenerate roadmap" });
+      }
+      if (/\b(stuck|blocker|remaining|following tasks|rebuild)\b/.test(blob)) {
+        actions.push({ id: "rebuild_remaining", label: "Rebuild remaining steps" });
+      }
+
+      if (!actions.length) {
+        actions.push({ id: "regenerate_roadmap", label: "Regenerate roadmap" });
+        actions.push({ id: "replace_path", label: "Replace this path" });
+      }
+
+      return actions;
+    }
+
+    function renderTaskThreadActionsHtml(taskId, thread) {
+      const actions = getTaskThreadPathActions(thread);
+      if (!actions.length) return "";
+      const buttons = actions.map((action) =>
+        `<button type="button" class="task-adjust-btn" data-task-id="${escapeHtml(taskId)}" data-thread-id="${escapeHtml(thread.id)}" data-path-action="${escapeHtml(action.id)}">${escapeHtml(action.label)}</button>`
+      ).join("");
+      return `<div class="task-thread-actions"><span class="task-ask-suggestions-label">Update your plan</span>${buttons}</div>`;
+    }
+
     function isTaskChangeRequest(question) {
       const q = question.toLowerCase().trim();
+      if (isPathLevelChangeRequest(question)) return false;
       if (isStuckOrBlockedRequest(question)) return true;
       const looksLikeQuestion = /^(how|what|why|when|where|who|which|should i|is there|are there|can you explain|could you explain|help me understand|any tips|any advice)\b/.test(q);
 
@@ -15191,6 +15367,43 @@ What would make this more useful for someone in your situation?`;
       const q = question.toLowerCase();
       const task = taskText.toLowerCase();
 
+      if (/\b(pilot outline|pilot doc|1-page pilot|closed beta outline)\b/.test(q) || (/\b(draft|outline)\b/.test(q) && /\bpilot\b/.test(task))) {
+        const closedBeta = /\b(closed beta|functional test|3.?5|just testing|test if it)\b/.test(q) || /\b(closed beta|functional test|3.?5|just testing)\b/.test(task);
+        if (closedBeta) {
+          return (
+            "Here's a draft **closed beta test outline** — copy into Notes:\n\n" +
+            "**Header:** WhatimaDo Closed Beta – Help Me Test If It Works\n\n" +
+            "**What you get:**\n" +
+            "- Free access to whatimado.com for 2 weeks\n" +
+            "- A 15-minute walkthrough if you want one\n" +
+            "- Direct line to report bugs or confusing steps\n\n" +
+            "**What I need from you:**\n" +
+            "- Use the site once on your own (10–20 minutes)\n" +
+            "- Tell me where you got stuck — screenshot optional\n" +
+            "- One honest sentence: did the roadmap feel useful?\n\n" +
+            "**Your cost:** Zero.\n\n" +
+            "Want me to shorten this for a text or email invite?"
+          );
+        }
+        return (
+          "Here's a draft **1-page pilot outline** — copy into Notes:\n\n" +
+          "**Header:** WhatimaDo Workforce Pilot – Free Access in Exchange for Impact Data\n\n" +
+          "**What you get:**\n" +
+          "- Free 90-day access to whatimado.com for 15–30 clients\n" +
+          "- Staff onboarding session (1 hour virtual walkthrough)\n" +
+          "- Weekly check-in emails with usage stats\n\n" +
+          "**What we need from you:**\n" +
+          "- Help recruiting 15–30 participants from your workforce program\n" +
+          "- Brief pre/post survey (we provide the questions) to measure goal clarity and confidence\n" +
+          "- 30-minute debrief call at day 45 and day 90\n\n" +
+          "**What your clients get:**\n" +
+          "- Personalized roadmaps for career goals, no paywall or upsells\n" +
+          "- AI coaching available via chat\n\n" +
+          "**Your cost:** Zero. No strings, no invoice later.\n\n" +
+          "If you're still testing whether the platform works, use **Regenerate roadmap** below for a 3–5 user closed beta version instead."
+        );
+      }
+
       if (
         /\b(stuck|help|how|what).*(write|writing|post|story|caption|intro|draft)\b/.test(q) ||
         /\bengaging post\b/.test(q) ||
@@ -15280,9 +15493,11 @@ What would make this more useful for someone in your situation?`;
         (threadHistory ? `Task chat so far:\n${threadHistory}\n\n` : "") +
         `Broader conversation context:\n${contextTail}\n\n` +
         `Answer helpfully in 2-5 sentences. Be specific to THIS task and THIS question.\n` +
+        `When the user asks you to draft something (pilot outline, email, post, deck section), provide a FULL copy-paste draft — not an outline of what to write.\n` +
         `When mentioning websites, tools, or platforms, include full https:// URLs.\n` +
         `Prefer the contacts, links, and script already on the task before sending them to research from scratch.\n` +
-        `If they want to change the task wording, tell them to say what to change (for example: "change Reddit to Facebook") and the task will update automatically.\n` +
+        `If the conversation shows the roadmap is too advanced for where they are (e.g. they need a closed beta but tasks assume a formal pilot), acknowledge that and tell them to use the action buttons below this chat (Replace this path or Regenerate roadmap).\n` +
+        `For single-task wording tweaks only, they can say what to change (e.g. "change Reddit to Facebook") and the task will update automatically.\n` +
         `Do NOT reply with vague advice like "try one small step today" unless that is truly the best specific answer.`
       );
     }
@@ -17907,6 +18122,7 @@ What would make this more useful for someone in your situation?`;
         const messages = (thread.messages || []).map((message) => `
           <div class="task-thread-msg ${message.role} rich-text">${formatRichText(message.content)}</div>
         `).join("");
+        const actionsHtml = renderTaskThreadActionsHtml(taskId, thread);
 
         return `
           <div class="task-thread-expanded" data-thread-id="${escapeHtml(thread.id)}">
@@ -17918,8 +18134,142 @@ What would make this more useful for someone in your situation?`;
               </div>
             </div>
             <div class="task-thread-msgs rich-text">${messages}</div>
+            ${actionsHtml}
           </div>`;
       }).join("");
+    }
+
+    async function replacePathFromTaskChat(taskId, threadId) {
+      const index = getCurrentIdeaIndex();
+      const idea = state.currentIdea;
+      if (!idea || index < 0) {
+        return { ok: false, message: "Open a roadmap path first, then try again." };
+      }
+
+      const taskData = getRoadmapTaskData(taskId);
+      const thread = taskData.threads?.find((item) => item.id === threadId);
+      const threadContext = buildTaskThreadContext(thread);
+      const summary = getConversationSummary();
+      const existingTitles = state.ideas.map((entry) => entry.title);
+      const feedbackBlock = threadContext
+        ? `\n\nTask Ask chat — user needs a different path:\n${threadContext}\n\nReplace with ONE path that matches where they ACTUALLY are (e.g. closed beta with 3-5 testers if still testing functionality — NOT a 15-30 user impact pilot).\n`
+        : "";
+
+      trackEvent("task_replace_path_requested", { task_id: taskId, idea_index: index });
+
+      const response = await callAdvisor(
+        `${buildIdeasPrompt(summary, 1, existingTitles.filter((_, i) => i !== index))}${feedbackBlock}\nReplace path "${idea.title}" with ONE new idea reflecting the task chat above.`,
+        700
+      );
+      const newIdeas = extractJsonArray(response, []).filter((entry) => entry.title);
+      if (!newIdeas.length) {
+        return {
+          ok: false,
+          message: lastAdvisorError
+            ? `I couldn't replace this path just now (${abbreviateQuestion(lastAdvisorError, 60)}). Try again in a moment.`
+            : "I couldn't replace this path just now — try again in a moment."
+        };
+      }
+
+      const oldKey = slugify(idea.title);
+      const oldTitle = idea.title;
+      state.ideas[index] = newIdeas[0];
+      delete state.allRoadmaps[oldKey];
+      if (state.allTaskChats[oldKey]) delete state.allTaskChats[oldKey];
+      removeRoadmapSidebarItems(oldTitle, state.activeMapId);
+      purgeRoadmapFromLibrary(state.activeMapId, oldTitle);
+
+      state.currentIdea = newIdeas[0];
+      state.roadmapKey = slugify(newIdeas[0].title);
+      state.roadmapStages = [];
+      schedulePersist();
+
+      await viewRoadmap(newIdeas[0], index, {
+        force: true,
+        extraRefreshBlock: threadContext
+          ? `\nUser replaced this path from task Ask because the previous one was too advanced:\n${threadContext}\n`
+          : ""
+      });
+
+      return {
+        ok: true,
+        message: `Done — replaced "${oldTitle}" with "${newIdeas[0].title}" and generated a new roadmap. Start with the first unchecked task.`
+      };
+    }
+
+    async function regenerateRoadmapFromTaskChat(taskId, threadId) {
+      const index = getCurrentIdeaIndex();
+      const idea = state.currentIdea;
+      if (!idea || index < 0) {
+        return { ok: false, message: "Open a roadmap path first, then try again." };
+      }
+
+      const taskData = getRoadmapTaskData(taskId);
+      const thread = taskData.threads?.find((item) => item.id === threadId);
+      const threadContext = buildTaskThreadContext(thread);
+      const key = state.roadmapKey;
+      const previousStages = key && state.allRoadmaps[key]?.stages?.length
+        ? normalizeRoadmapStages(state.allRoadmaps[key].stages)
+        : normalizeRoadmapStages(state.roadmapStages);
+      const extraRefreshBlock = threadContext
+        ? `\nUser feedback from task Ask chat:\n${threadContext}\n\nRegenerate ALL steps to match where they ACTUALLY are. If they need a closed beta with 3-5 users, do NOT assign formal pilots with 15-30 users or grant impact studies yet. Include ready-to-use drafts in tasks (pilot outlines, emails) — not vague homework like "create your own outline."\n`
+        : "";
+
+      trackEvent("task_regenerate_roadmap_requested", { task_id: taskId, idea_index: index });
+
+      if (key) {
+        delete state.allRoadmaps[key];
+        if (state.allTaskChats[key]) delete state.allTaskChats[key];
+      }
+      state.roadmapStages = [];
+      schedulePersist();
+
+      await viewRoadmap(idea, index, { force: true, previousStages, extraRefreshBlock });
+
+      return {
+        ok: true,
+        message: "Done — your roadmap was regenerated with steps that match where you are now. Start with the first unchecked task."
+      };
+    }
+
+    async function handleTaskPathAction(taskId, threadId, action) {
+      const taskData = getRoadmapTaskData(taskId);
+      const thread = taskData.threads?.find((item) => item.id === threadId);
+      if (!thread) return;
+
+      const pendingLabel =
+        action === "replace_path"
+          ? "Replacing this path and building a new roadmap..."
+          : action === "rebuild_remaining"
+            ? "Rebuilding your remaining steps..."
+            : "Regenerating your roadmap...";
+      thread.messages.push({ role: "assistant", content: pendingLabel });
+      renderTaskThreads(taskId);
+      $$(`.task-adjust-btn[data-thread-id="${threadId}"]`).forEach((btn) => { btn.disabled = true; });
+
+      let result = { ok: false, message: "Something went wrong — try again." };
+      if (action === "replace_path") {
+        result = await replacePathFromTaskChat(taskId, threadId);
+      } else if (action === "regenerate_roadmap") {
+        result = await regenerateRoadmapFromTaskChat(taskId, threadId);
+      } else if (action === "rebuild_remaining") {
+        const rebuilt = await regenerateRemainingRoadmap({
+          skipConfirm: true,
+          reason: buildTaskThreadContext(thread)
+        });
+        result = {
+          ok: rebuilt,
+          message: rebuilt
+            ? "Done — your remaining steps are updated. Start with the next unchecked task."
+            : "I couldn't rebuild the remaining steps right now. Try again in a moment."
+        };
+      }
+
+      thread.messages = thread.messages.filter((message) => message.content !== pendingLabel);
+      thread.messages.push({ role: "assistant", content: result.message });
+      renderTaskThreads(taskId);
+      schedulePersist();
+      trackEvent("task_path_action_applied", { task_id: taskId, action, ok: result.ok });
     }
 
     function expandThread(taskId, threadId) {
@@ -17933,6 +18283,14 @@ What would make this more useful for someone in your situation?`;
     }
 
     function handleTaskThreadClick(event) {
+      const pathActionBtn = event.target.closest(".task-adjust-btn[data-path-action]");
+      if (pathActionBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (pathActionBtn.disabled) return;
+        handleTaskPathAction(pathActionBtn.dataset.taskId, pathActionBtn.dataset.threadId, pathActionBtn.dataset.pathAction);
+        return;
+      }
       if (event.target.closest(".task-writing-assist-btn, .task-notes-action-btn")) {
         handleTaskAssistClick(event);
         return;
@@ -18691,7 +19049,7 @@ What would make this more useful for someone in your situation?`;
 
     function getClarifyingFallback(userText) {
       if (isFounderOrProjectPrompt(userText)) {
-        return "What's your tightest constraint right now — time, budget, or getting your first real users to try the site?";
+        return "Are you still testing if the site works with a few people, getting your first strangers to try it, or ready to run a formal pilot with a partner for grant/sponsor data?";
       }
       if (isReentrySituation({ title: userText })) {
         return "Do you have stable housing and ID right now, or is getting those settled the most urgent thing this week?";
@@ -18705,7 +19063,7 @@ What would make this more useful for someone in your situation?`;
     function buildClarifyingPrompt(userText) {
       if (isFounderOrProjectPrompt(userText)) {
         return (
-          "You are whatimado, a practical advisor to the founder of whatimado.com. They are NOT asking for a personal job path — they are planning how to grow the site itself. Read their message carefully. Even if it is long and detailed, ask ONE short follow-up question that references something specific they said about launch, sustainability, users, donations, partnerships, or constraints — to narrow what they should focus on first. Plain text only.\n\nFounder message:\n" +
+          "You are whatimado, a practical advisor to the founder of whatimado.com. They are NOT asking for a personal job path — they are planning how to grow the site itself. Read their message carefully. Ask ONE short follow-up question to learn what STAGE they are at: still testing if the app works (closed beta with a few people), getting first strangers to try it, running a structured pilot with a partner, or seeking grants/sponsors. Reference something specific they said. Plain text only.\n\nFounder message:\n" +
           userText
         );
       }
@@ -18733,10 +19091,13 @@ What would make this more useful for someone in your situation?`;
     function buildFounderIdeasPrompt(summary) {
       return (
         "You are whatimado, a practical advisor helping the FOUNDER grow whatimado.com into a sustainable mission-driven project without paywalling regular users.\n\n" +
+        getFounderStageBlock(summary) +
         "Conversation:\n" +
         summary +
         "\n\nGenerate exactly 3 realistic path options for whatimado.com over the next 30-90 days and beyond.\n" +
-        "Each path must use a DIFFERENT primary strategy — for example: (1) community launch/validation, (2) donation or pay-what-you-can sustainability, (3) sponsorship deck OR nonprofit/grant partnership pipeline. Do not give three variations of the same tactic.\n" +
+        "Each path must use a DIFFERENT primary strategy — for example: (1) closed beta / functionality test OR community launch/validation, (2) donation or pay-what-you-can sustainability, (3) sponsorship deck OR nonprofit/grant partnership pipeline. Do not give three variations of the same tactic.\n" +
+        "If they are still testing whether the site works, one path MUST be a closed beta with 3-8 testers — NOT a 15-30 user impact pilot.\n" +
+        "Only suggest formal workforce/library pilots with impact data when the conversation shows they are past basic functionality testing.\n" +
         "Focus on low-cost validation, social launch, donations (Stripe is already set up), sponsors/grants, nonprofit/community partnerships, feedback loops, and analytics.\n" +
         "Personal user pricing must stay free, donation-based, pay-what-you-can, or very low — never premium SaaS tiers for individuals.\n" +
         "Each idea must be specific to whatimado.com and reference details from what they said.\n\n" +
@@ -18748,6 +19109,15 @@ What would make this more useful for someone in your situation?`;
 
     function getFounderFallbackIdeas() {
       return [
+        {
+          title: "Closed Beta Functional Test",
+          type: "Validation",
+          tagline: "Test with 3-5 real users before any formal pilot or grant outreach.",
+          why: "You need proof the site works smoothly before asking partners for 15-30 clients or impact data.",
+          cost: "$0",
+          timeline: "2-3 weeks",
+          income: "Learning + bug fixes"
+        },
         {
           title: "30-Day Community Launch Sprint",
           type: "Validation",
@@ -19553,9 +19923,10 @@ What would make this more useful for someone in your situation?`;
       let roadmapSource = "ai";
       try {
       const context = getConversationSummary();
-      const refreshBlock = options.previousStages?.length
-        ? buildRoadmapRefreshBlock(options.previousStages)
-        : "";
+      const refreshBlock = [
+        options.previousStages?.length ? buildRoadmapRefreshBlock(options.previousStages) : "",
+        options.extraRefreshBlock || ""
+      ].filter(Boolean).join("\n");
       const promptOptions = {
         founderMode,
         dedupe: Boolean(options.force || refreshBlock),
@@ -20544,6 +20915,12 @@ What would make this more useful for someone in your situation?`;
         add("Follow-up", "What should I say if they don't reply in a week?");
         add("Who to contact", "How do I find the right person to send this to?");
       }
+      if (/\b(pilot outline|1-page pilot|pilot doc|closed beta)\b/.test(task)) {
+        add("Pilot outline", "Help me draft a pilot outline I can copy into Notes.");
+        add("Too big?", "Is 15–30 users too much if I'm still testing if it works?");
+        add("Closed beta", "Rewrite this as a 3–5 user closed beta test instead.");
+        add("Email invite", "Draft a short email I can send to recruit beta testers.");
+      }
       if (/\b(reddit|facebook|social|post in|community|group|outreach|subreddit)\b/.test(task)) {
         add("Which group?", "Which platform or group fits this task best for my situation?");
         add("Post title", "Suggest a post title that follows community rules and gets attention.");
@@ -21068,6 +21445,44 @@ What would make this more useful for someone in your situation?`;
             : "I couldn't refresh resources just now. Make sure your location is saved if this path needs local orgs, then try again."
         });
         trackEvent("task_resources_refreshed", { task_id: taskId, ok: refreshed });
+        if (askBtn) askBtn.disabled = false;
+        renderTaskThreads(taskId);
+        schedulePersist();
+        return;
+      }
+
+      const pathIntent = detectTaskPathIntent(question, thread);
+      if (pathIntent) {
+        const pendingLabel =
+          pathIntent === "replace_path"
+            ? "Replacing this path and building a new roadmap..."
+            : pathIntent === "rebuild_remaining"
+              ? "Rebuilding your remaining steps..."
+              : "Regenerating your roadmap...";
+        thread.messages.push({ role: "assistant", content: pendingLabel });
+        renderTaskThreads(taskId);
+
+        let result = { ok: false, message: "Something went wrong — try again." };
+        if (pathIntent === "replace_path") {
+          result = await replacePathFromTaskChat(taskId, thread.id);
+        } else if (pathIntent === "regenerate_roadmap") {
+          result = await regenerateRoadmapFromTaskChat(taskId, thread.id);
+        } else if (pathIntent === "rebuild_remaining") {
+          const rebuilt = await regenerateRemainingRoadmap({
+            skipConfirm: true,
+            reason: buildTaskThreadContext(thread)
+          });
+          result = {
+            ok: rebuilt,
+            message: rebuilt
+              ? "Done — your remaining steps are updated. Start with the next unchecked task."
+              : "I couldn't rebuild the remaining steps right now. Try again in a moment."
+          };
+        }
+
+        thread.messages = thread.messages.filter((message) => message.content !== pendingLabel);
+        thread.messages.push({ role: "assistant", content: result.message });
+        trackEvent("task_path_action_applied", { task_id: taskId, action: pathIntent, ok: result.ok, source: "chat" });
         if (askBtn) askBtn.disabled = false;
         renderTaskThreads(taskId);
         schedulePersist();
