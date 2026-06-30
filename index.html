@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-29-logo-text -->
+<!-- whatimado build: 2026-06-30-map-ui -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-29-logo-text">
+  <meta name="whatimado-build" content="2026-06-30-map-ui">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -798,12 +798,61 @@
       height: var(--topbar-h);
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
       gap: .65rem;
       padding: 0 1.5rem;
       background: rgba(255, 255, 255, .92);
       border-bottom: 1px solid var(--line);
       backdrop-filter: blur(12px);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-topbar-start,
+    html[data-color-scheme="adult"] .dashboard-topbar-end {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    html[data-color-scheme="adult"] .screen-nav-controls {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    html[data-color-scheme="adult"] .screen-nav-btn {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--ink-muted);
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+
+    html[data-color-scheme="adult"] .screen-nav-btn:hover:not(:disabled):not(.is-disabled) {
+      border-color: #d1d5db;
+      color: var(--ink);
+      background: var(--bg-soft);
+    }
+
+    html[data-color-scheme="adult"] .screen-nav-btn:disabled,
+    html[data-color-scheme="adult"] .screen-nav-btn.is-disabled {
+      opacity: .34;
+      cursor: default;
+    }
+
+    html[data-color-scheme="adult"] .screen-nav-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     html[data-color-scheme="adult"] .dashboard-topbar-btn {
@@ -1470,6 +1519,39 @@
 
     html[data-color-scheme="adult"] .map-heading-kicker::before {
       box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-header-actions .screen-nav-btn {
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] #screen-map .page-header--map .screen-nav-btn,
+    html[data-color-scheme="adult"] #screen-roadmap .roadmap-header-actions .screen-nav-btn {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--ink-muted);
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] #screen-map .page-header--map .screen-nav-btn:hover:not(:disabled):not(.is-disabled),
+    html[data-color-scheme="adult"] #screen-roadmap .roadmap-header-actions .screen-nav-btn:hover:not(:disabled):not(.is-disabled) {
+      border-color: #d1d5db;
+      color: var(--ink);
+      background: var(--bg-soft);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .page-header--map .screen-nav-btn:disabled,
+    html[data-color-scheme="adult"] #screen-map .page-header--map .screen-nav-btn.is-disabled,
+    html[data-color-scheme="adult"] #screen-roadmap .roadmap-header-actions .screen-nav-btn:disabled,
+    html[data-color-scheme="adult"] #screen-roadmap .roadmap-header-actions .screen-nav-btn.is-disabled {
+      opacity: .34;
+      cursor: default;
     }
 
     html[data-color-scheme="adult"] .back-btn,
@@ -5492,6 +5574,32 @@
       text-underline-offset: 2px;
     }
 
+    .map-paths-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      margin: 1.1rem 0 1.65rem;
+      padding-top: .15rem;
+    }
+
+    .opp-batch + .opp-batch {
+      margin-top: .5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+    }
+
+    #screen-map .page-header--map {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: .75rem 1rem;
+    }
+
+    #screen-map .page-header--map .map-heading {
+      text-align: center;
+      min-width: 0;
+    }
+
     .map-plans-toolbar {
       display: flex;
       flex-direction: column;
@@ -6363,11 +6471,44 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-track {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-      gap: .65rem;
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
       min-width: 0;
       max-width: 100%;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-task {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: .55rem .7rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: .78rem;
+      font-weight: 600;
+      line-height: 1.35;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-task:hover {
+      border-color: rgba(37, 99, 235, .28);
+      background: rgba(248, 250, 252, .95);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-task.is-complete {
+      color: var(--ink-muted);
+      opacity: .72;
+      text-decoration: line-through;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-task.is-in-progress {
+      border-color: rgba(37, 99, 235, .35);
+      background: rgba(37, 99, 235, .06);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase {
@@ -7387,26 +7528,20 @@
 
       html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
       html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
-      html[data-color-scheme="adult"] .roadmap-purpose-card { order: 25; }
       html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:first-child { order: 40; }
-      html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:nth-child(2) { order: 50; }
+      html[data-color-scheme="adult"] .roadmap-side > #roadmap-side-local-card { order: 50; }
       html[data-color-scheme="adult"] .roadmap-content { order: 60; }
-      html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:nth-child(4) { order: 70; }
+      html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:nth-child(3) { order: 70; }
       html[data-color-scheme="adult"] .roadmap-side-help { order: 80; }
       html[data-color-scheme="adult"] .roadmap-overview-footer { order: 90; }
 
       html[data-color-scheme="adult"] .roadmap-glance-track {
         display: flex;
-        gap: .65rem;
-        overflow-x: auto;
-        padding: .15rem .1rem .35rem;
-        scroll-snap-type: x proximity;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      html[data-color-scheme="adult"] .roadmap-glance-phase {
-        flex: 0 0 min(11rem, 82vw);
-        scroll-snap-align: start;
+        flex-direction: column;
+        gap: .35rem;
+        overflow: visible;
+        padding: 0;
+        scroll-snap-type: none;
       }
 
       html[data-color-scheme="adult"] .overview-task {
@@ -9717,28 +9852,25 @@
         padding: 1.25rem 1rem 4rem;
       }
 
-      #screen-map .page-header {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-areas:
-          "title title"
-          "back reset";
+      #screen-map .page-header--map {
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas: "back title forward";
         gap: .65rem .75rem;
         margin-bottom: 1.1rem;
       }
 
-      #screen-map .page-header > div.map-heading {
+      #screen-map .page-header--map .map-heading {
         grid-area: title;
         text-align: center;
       }
 
-      #screen-map .page-header .map-header-nav {
+      #screen-map .page-header--map #map-page-nav-back {
         grid-area: back;
         justify-self: start;
       }
 
-      #screen-map .page-header #reset-btn {
-        grid-area: reset;
+      #screen-map .page-header--map #map-page-nav-forward {
+        grid-area: forward;
         justify-self: end;
       }
 
@@ -10384,15 +10516,19 @@
 
     <div class="dashboard-main">
       <header class="dashboard-topbar">
-        <button type="button" class="dashboard-topbar-btn dashboard-mobile-menu" id="dashboard-mobile-menu" aria-label="Open menu">
-          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
-        </button>
+        <div class="dashboard-topbar-start">
+          <button type="button" class="dashboard-topbar-btn dashboard-mobile-menu" id="dashboard-mobile-menu" aria-label="Open menu">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+          </button>
+        </div>
+        <div class="dashboard-topbar-end">
         <button type="button" class="dashboard-topbar-btn" id="dashboard-notify-btn" aria-label="Notifications">
           <svg viewBox="0 0 24 24"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg>
         </button>
         <button type="button" class="dashboard-topbar-avatar" id="dashboard-top-avatar" aria-label="Account">
           <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect fill='%23dbeafe' width='80' height='80'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%2393c5fd'/%3E%3Cpath d='M16 68c4-14 16-22 24-22s20 8 24 22' fill='%2393c5fd'/%3E%3C/svg%3E" alt="">
         </button>
+        </div>
       </header>
 
   <main>
@@ -10619,29 +10755,18 @@
 
     <section class="screen" id="screen-map">
       <div class="page">
-        <div class="page-header">
-          <div class="map-header-nav">
-            <button class="back-btn" id="map-back-btn" type="button">Back</button>
-            <button class="back-btn" id="map-all-maps-btn" type="button" hidden>All maps</button>
-          </div>
+        <div class="page-header page-header--map">
+          <button type="button" class="screen-nav-btn page-screen-nav-back" id="map-page-nav-back" aria-label="Go back">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+          </button>
           <div class="map-heading">
-            <p class="map-heading-kicker">Generated paths</p>
-            <h2 class="page-title">Your <em>Possibility Map</em></h2>
+            <h2 class="page-title">Your <em>Possibility Maps</em></h2>
             <p class="page-subtitle">Review each path below, then open a step-by-step roadmap for the one that fits you best.</p>
           </div>
-          <button class="back-btn" id="reset-btn">New map</button>
+          <button type="button" class="screen-nav-btn page-screen-nav-forward" id="map-page-nav-forward" aria-label="Go forward" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+          </button>
         </div>
-
-        <div class="map-how-it-works" aria-label="What happens next">
-          <p class="map-how-title">What happens next</p>
-          <ol class="map-how-steps">
-            <li>Read the full details for each path below</li>
-            <li>Open a step-by-step roadmap for the path you choose</li>
-            <li>Check off tasks, add notes, and Ask if you get stuck</li>
-          </ol>
-        </div>
-
-        <p class="map-workflow-note"><strong>My maps</strong> stores this whole exploration. <strong>Roadmaps</strong> in the sidebar lists step-by-step plans you've opened. Use <strong>Sync progress</strong> at the bottom of the menu to back up to your account.</p>
 
         <div class="map-overview">
         <div class="map-panel">
@@ -10666,22 +10791,7 @@
           </div>
         </div>
 
-        <div class="map-plans-toolbar">
-          <span class="map-plans-toolbar-line" aria-hidden="true"></span>
-          <div class="map-plans-toolbar-inner">
-            <div class="map-plans-actions">
-              <button class="back-btn map-toolbar-btn more-ideas-btn" id="more-ideas-btn" type="button"><span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Show me more paths</span></button>
-              <button class="back-btn map-toolbar-btn" id="alter-path-btn" type="button">Refine or add paths</button>
-              <button class="back-btn map-toolbar-btn" id="map-toolbar-reset-btn" type="button">New map</button>
-            </div>
-            <span class="map-plans-divider-label">Full path details</span>
-          </div>
-          <span class="map-plans-toolbar-line" aria-hidden="true"></span>
-        </div>
-
-        <div class="opp-plans-section">
-        <div class="opp-grid" id="opp-grid"></div>
-        </div>
+        <div class="opp-plans-section" id="opp-plans-section"></div>
 
         <div class="map-feedback-card" id="map-feedback-card" hidden>
           <p class="map-feedback-title">Did this help so far?</p>
@@ -10718,9 +10828,11 @@
       <div class="page roadmap-layout roadmap-page" id="roadmap-page">
         <div class="roadmap-main">
           <div class="roadmap-header-actions">
-            <button class="back-btn roadmap-back-btn" data-screen-link="map" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
-              Back to map
+            <button class="screen-nav-btn roadmap-page-nav-back" id="roadmap-page-nav-back" type="button" aria-label="Back to map">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+            </button>
+            <button class="screen-nav-btn roadmap-page-nav-forward" id="roadmap-page-nav-forward" type="button" aria-label="Go forward" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
             </button>
             <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
             <button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button>
@@ -10739,12 +10851,6 @@
             </div>
           </header>
 
-          <section class="roadmap-purpose-card" id="roadmap-purpose-card" aria-label="What this roadmap is for">
-            <span class="roadmap-purpose-label">What this roadmap is for</span>
-            <p class="roadmap-purpose-headline" id="roadmap-purpose-headline"></p>
-            <p class="roadmap-purpose-detail" id="roadmap-purpose-detail"></p>
-          </section>
-
           <div class="roadmap-content" id="roadmap-content">
             <p class="roadmap-sub" id="roadmap-sub" hidden>Building your personalised roadmap...</p>
             <span id="roadmap-type" hidden></span>
@@ -10752,9 +10858,7 @@
             <section class="roadmap-glance" id="roadmap-glance" hidden aria-label="Roadmap at a glance">
               <div class="roadmap-glance-head">
                 <h3 class="roadmap-glance-title">Your plan at a glance</h3>
-                <span class="roadmap-glance-meta" id="roadmap-glance-meta"></span>
               </div>
-              <p class="roadmap-glance-lead">The full journey in one view — tap a phase to jump to its tasks. Work one small step at a time below.</p>
               <div class="roadmap-glance-track" id="roadmap-glance-track"></div>
               <button type="button" class="roadmap-glance-next-btn" id="roadmap-glance-next-btn">Jump to your next task</button>
             </section>
@@ -10815,12 +10919,6 @@
             </div>
             <p class="roadmap-progress-summary" id="roadmap-progress-summary">0 of 0 tasks completed</p>
             <button type="button" class="roadmap-side-link" id="roadmap-view-progress-btn">View progress</button>
-          </div>
-
-          <div class="roadmap-side-card">
-            <h3 class="roadmap-side-card-title">About this roadmap</h3>
-            <p class="roadmap-side-copy" id="roadmap-side-about">This plan is built from your skills, goals, and situation — with local resources when we know where you are.</p>
-            <button type="button" class="roadmap-side-link" id="roadmap-how-works-btn">How this works</button>
           </div>
 
           <div class="roadmap-side-card" id="roadmap-side-local-card">
@@ -15343,6 +15441,7 @@ What would make this more useful for someone in your situation?`;
       roadmapCategories: [],
       activeRoadmapCategoryId: null,
       selectedPathIndexes: [],
+      ideaBatches: [],
       sidebarRoadmapsExpanded: false,
       saveStatus: "idle",
       lastSyncStatus: "idle",
@@ -15386,6 +15485,9 @@ What would make this more useful for someone in your situation?`;
     let themeNetworkLineRgb = "124, 111, 205";
     let intakeAbandonTracked = false;
     let intakeInProgress = false;
+    let screenNavPast = [];
+    let screenNavFuture = [];
+    const SCREEN_NAV_SCREENS = new Set(["convo", "map", "roadmap"]);
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -16073,6 +16175,7 @@ What would make this more useful for someone in your situation?`;
         mapFeedbackGiven: source.mapFeedbackGiven,
         mapFeedbackSentiment: source.mapFeedbackSentiment,
         intakeMode: source.intakeMode || "standard",
+        ideaBatches: Array.isArray(source.ideaBatches) ? source.ideaBatches : [],
         userLocation: normalizeUserLocation(source.userLocation),
         locationConfirmed: Boolean(source.locationConfirmed),
         locationIntakeStep: source.locationIntakeStep || null,
@@ -16096,6 +16199,9 @@ What would make this more useful for someone in your situation?`;
       state.mapFeedbackGiven = Boolean(data.mapFeedbackGiven);
       state.mapFeedbackSentiment = data.mapFeedbackSentiment ?? null;
       state.intakeMode = data.intakeMode || "standard";
+      state.ideaBatches = Array.isArray(data.ideaBatches) && data.ideaBatches.length
+        ? data.ideaBatches
+        : (state.ideas.length ? [state.ideas.length] : []);
       state.userLocation = normalizeUserLocation(data.userLocation);
       state.locationConfirmed = Boolean(data.locationConfirmed);
       state.locationIntakeStep = data.locationIntakeStep || null;
@@ -16871,13 +16977,11 @@ What would make this more useful for someone in your situation?`;
 
     function updateMapsNav() {
       const mapsBtn = $("#nav-maps-btn");
-      const allMapsBtn = $("#map-all-maps-btn");
       const sidebarMapBtn = $("#sidebar-map-btn");
       syncActiveMapIntoLibrary();
       const visible = state.savedMaps.length > 0 || state.ideas.length > 0;
       if (mapsBtn) mapsBtn.hidden = !visible;
       if (sidebarMapBtn) sidebarMapBtn.hidden = !state.ideas.length;
-      if (allMapsBtn) allMapsBtn.hidden = state.savedMaps.length <= 1;
     }
 
     function openMapsFromNav() {
@@ -17336,13 +17440,14 @@ What would make this more useful for someone in your situation?`;
         renderStages(state.roadmapStages);
       }
       if (state.lastScreen && state.lastScreen !== "main" && state.history.length) {
-        showScreen(state.lastScreen, { skipPersist: true });
+        showScreen(state.lastScreen, { skipPersist: true, skipNavHistory: true });
       }
       updateMapAuxiliaryPanels();
       updateSaveButtonVisibility();
       updateMapsNav();
       renderSavedMapsHome();
       renderSidebarRoadmaps();
+      updateScreenNavButtons();
     }
 
     function isMapChatIntroMessage(content) {
@@ -17370,16 +17475,14 @@ What would make this more useful for someone in your situation?`;
     }
 
     function backFromMap() {
-      const trimmedIntro = trimDanglingMapChatIntro();
-      state.mapChat = null;
-      state.alterPathMode = false;
-      updateReplyMapActions();
-      const reply = $("#reply-textarea");
-      if (reply) reply.placeholder = "Type your response...";
-      showReplyBox(false);
-      if (trimmedIntro) restoreConversationBubbles();
-      showScreen("convo");
+      prepareLeaveMapForConvo();
+      if (screenNavPast.length && screenNavPast[screenNavPast.length - 1] === "convo") {
+        screenNavPast.pop();
+        screenNavFuture.unshift("map");
+      }
+      showScreen("convo", { skipNavHistory: true });
       schedulePersist();
+      updateScreenNavButtons();
     }
 
     function startAlterPathChat() {
@@ -17621,6 +17724,7 @@ What would make this more useful for someone in your situation?`;
       );
 
       state.ideas = extractJsonArray(response, getFallbackIdeas());
+      state.ideaBatches = [state.ideas.length];
       state.allRoadmaps = {};
       state.allTaskChats = {};
       syncRoadmapSidebarWithCurrentMap();
@@ -17971,8 +18075,101 @@ What would make this more useful for someone in your situation?`;
       setTimeout(() => alignConvoViewport("smooth"), 80);
     }
 
+    function resetScreenNavHistory() {
+      screenNavPast = [];
+      screenNavFuture = [];
+      updateScreenNavButtons();
+    }
+
+    function canScreenNavBack() {
+      if (screenNavPast.length) return true;
+      if (state.lastScreen === "map") return state.history.length > 0;
+      if (state.lastScreen === "roadmap") return true;
+      if (state.lastScreen === "convo") return true;
+      return false;
+    }
+
+    function updateScreenNavButtons() {
+      const canBack = canScreenNavBack();
+      const canForward = screenNavFuture.length > 0;
+
+      [
+        $("#map-page-nav-back"),
+        $("#roadmap-page-nav-back")
+      ].forEach((button) => {
+        if (!button) return;
+        button.disabled = !canBack;
+        button.classList.toggle("is-disabled", !canBack);
+      });
+
+      [
+        $("#map-page-nav-forward"),
+        $("#roadmap-page-nav-forward")
+      ].forEach((button) => {
+        if (!button) return;
+        button.hidden = !canForward;
+      });
+    }
+
+    function prepareLeaveMapForConvo() {
+      const trimmedIntro = trimDanglingMapChatIntro();
+      state.mapChat = null;
+      state.alterPathMode = false;
+      updateReplyMapActions();
+      const reply = $("#reply-textarea");
+      if (reply) reply.placeholder = "Type your response...";
+      showReplyBox(false);
+      if (trimmedIntro) restoreConversationBubbles();
+    }
+
+    function navigateScreenBack() {
+      const current = state.lastScreen;
+      if (screenNavPast.length) {
+        const previous = screenNavPast.pop();
+        screenNavFuture.unshift(current);
+        if (current === "map" && previous === "convo") {
+          prepareLeaveMapForConvo();
+        }
+        showScreen(previous, { skipNavHistory: true });
+        schedulePersist();
+        updateScreenNavButtons();
+        return;
+      }
+      if (current === "map") {
+        backFromMap();
+        return;
+      }
+      if (current === "roadmap") {
+        showScreen("map", { skipNavHistory: true });
+        updateScreenNavButtons();
+        return;
+      }
+      if (current === "convo") {
+        showScreen("main", { skipNavHistory: true });
+        updateScreenNavButtons();
+      }
+    }
+
+    function navigateScreenForward() {
+      const next = screenNavFuture.shift();
+      if (!next) return;
+      screenNavPast.push(state.lastScreen);
+      showScreen(next, { skipNavHistory: true });
+      updateScreenNavButtons();
+    }
+
     function showScreen(name, options = {}) {
       const previousScreen = state.lastScreen;
+      if (
+        !options.skipNavHistory
+        && previousScreen
+        && previousScreen !== name
+        && SCREEN_NAV_SCREENS.has(previousScreen)
+        && SCREEN_NAV_SCREENS.has(name)
+      ) {
+        screenNavPast.push(previousScreen);
+        screenNavFuture = [];
+      }
       state.lastScreen = name;
       $$(".screen").forEach((screen) => screen.classList.toggle("active", screen.id === `screen-${name}`));
       $$(".nav-btn[data-screen-link], .dashboard-nav-btn[data-screen-link]").forEach((button) => button.classList.remove("active"));
@@ -18010,6 +18207,7 @@ What would make this more useful for someone in your situation?`;
         refreshLaunchStats();
       }
       renderSidebarRoadmaps();
+      updateScreenNavButtons();
       requestAnimationFrame(updateScrollProgress);
     }
 
@@ -18486,30 +18684,6 @@ What would make this more useful for someone in your situation?`;
       return /\b(whatimado\.com|supabase|site_events|site_suggestions|maps generated|sessions started|ship week 1 validation|feedback loop|mission-safe revenue)\b/i.test(text);
     }
 
-    function getRoadmapPurposeCopy(idea = state.currentIdea) {
-      if (!idea) return { headline: "", detail: "" };
-      const title = idea.title || "This path";
-      const loc = getUserLocation();
-      const founder = isFounderRoadmapForIdea(idea);
-
-      if (founder) {
-        return {
-          headline: `Grow whatimado.com through “${title}”.`,
-          detail: idea.tagline
-            ? `${idea.tagline} Each phase below is a small batch of tasks — check them off one at a time.`
-            : "Each phase below lists concrete tasks for launching, getting feedback, and keeping the site free for users."
-        };
-      }
-
-      const headline = `Your step-by-step plan for “${title}”.`;
-      const detailParts = [];
-      if (idea.why && idea.why !== idea.tagline) detailParts.push(idea.why);
-      else if (idea.tagline) detailParts.push(idea.tagline);
-      detailParts.push("Work one task at a time below — check the box when done, use My Notes, and tap Ask if anything is unclear.");
-      if (loc) detailParts.push(`Local resources for ${loc} appear when a step needs them.`);
-      return { headline, detail: detailParts.join(" ") };
-    }
-
     function isDetailedPrompt(text) {
       const value = String(text || "").trim();
       return value.length > 520 || (value.split(/\n+/).filter(Boolean).length >= 3 && value.length > 280);
@@ -18621,6 +18795,7 @@ What would make this more useful for someone in your situation?`;
         ideas = extractJsonArray(response, ideas);
       }
       state.ideas = ideas;
+      state.ideaBatches = [ideas.length];
       const closing = founderMode
         ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
         : "Here are your paths. Tap any opportunity to see your full roadmap.";
@@ -18769,8 +18944,8 @@ What would make this more useful for someone in your situation?`;
       );
     }
 
-    async function fetchMoreIdeas() {
-      const button = $("#more-ideas-btn");
+    async function fetchMoreIdeas(triggerButton) {
+      const button = triggerButton || document.querySelector(".map-paths-more-btn:not(:disabled)");
       if (!button || button.disabled) return;
       trackEvent("more_paths_requested", { existing_ideas_count: state.ideas.length });
 
@@ -18810,6 +18985,8 @@ What would make this more useful for someone in your situation?`;
       }
 
       state.ideas = [...state.ideas, ...newIdeas];
+      state.ideaBatches = Array.isArray(state.ideaBatches) ? [...state.ideaBatches] : [];
+      state.ideaBatches.push(newIdeas.length);
       buildOpportunityMap(state.ideas);
       trackEvent("more_paths_added", {
         added_count: newIdeas.length,
@@ -19075,11 +19252,89 @@ What would make this more useful for someone in your situation?`;
       element.addEventListener("blur", () => setMapPathHighlight(index, false));
     }
 
+    function getIdeaBatchRanges() {
+      const batches = Array.isArray(state.ideaBatches) && state.ideaBatches.length
+        ? state.ideaBatches
+        : (state.ideas.length ? [state.ideas.length] : []);
+      let start = 0;
+      return batches
+        .map((count) => {
+          const range = { start, count: Math.max(0, Number(count) || 0) };
+          start += range.count;
+          return range;
+        })
+        .filter((range) => range.count > 0 && range.start < state.ideas.length);
+    }
+
+    function renderMapPathsActionsHtml() {
+      return (
+        `<div class="map-paths-actions">` +
+        `<button type="button" class="back-btn map-toolbar-btn more-ideas-btn map-paths-more-btn">` +
+        `<span class="btn-spinner" aria-hidden="true"></span>` +
+        `<span class="btn-label">Show me more paths</span>` +
+        `</button>` +
+        `<button type="button" class="back-btn map-toolbar-btn map-paths-alter-btn">Refine or add paths</button>` +
+        `<button type="button" class="back-btn map-toolbar-btn map-paths-reset-btn">New map</button>` +
+        `</div>`
+      );
+    }
+
+    function createOppCardElement(idea, index, color) {
+      const number = index + 1;
+      const card = document.createElement("article");
+      card.className = "opp-card";
+      card.id = `opp-detail-${index}`;
+      card.innerHTML = `
+          <div class="opp-card-inner">
+            <span class="opp-card-number">${number}</span>
+            <div class="opp-card-body">
+              <div class="opp-card-open-zone" role="button" tabindex="0" aria-label="Open step-by-step roadmap for ${escapeHtml(idea.title)}">
+                <div class="opp-card-head">
+          <div class="opp-type">${escapeHtml(idea.type || "Opportunity")}</div>
+          <div class="opp-name">${escapeHtml(idea.title)}</div>
+                </div>
+          <div class="opp-tagline">${escapeHtml(idea.tagline || "")}</div>
+          <div class="opp-meta">
+            ${idea.cost ? `<span>${escapeHtml(idea.cost)}</span>` : ""}
+            ${idea.timeline ? `<span>${escapeHtml(idea.timeline)}</span>` : ""}
+            ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
+          </div>
+                ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
+                <p class="opp-card-open-hint">Click path to open step-by-step roadmap</p>
+              </div>
+              <div class="opp-card-actions">
+                <button type="button" class="opp-card-discuss-btn">Alter this path</button>
+                ${hasRoadmapProgress(idea.title) ? `<button type="button" class="opp-card-remove-roadmap-btn" data-remove-roadmap-index="${index}">Remove roadmap</button>` : ""}
+              </div>
+            </div>
+          </div>`;
+      card.querySelector(".opp-card-number").style.background = color;
+      card.querySelector(".opp-card-discuss-btn").addEventListener("click", (event) => {
+        event.stopPropagation();
+        startIdeaDiscussChat(index);
+      });
+      card.querySelector(".opp-card-remove-roadmap-btn")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        void removeRoadmapForPath(idea.title, { ideaIndex: index });
+      });
+      const openZone = card.querySelector(".opp-card-open-zone");
+      const openRoadmap = () => viewRoadmap(idea, index);
+      openZone?.addEventListener("click", openRoadmap);
+      openZone?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openRoadmap();
+        }
+      });
+      bindMapPathHover(card, index);
+      return card;
+    }
+
     function buildOpportunityMap(ideas, options = {}) {
       const nodes = $("#svg-nodes");
       const connections = $("#svg-connections");
       const labels = $("#opp-labels");
-      const grid = $("#opp-grid");
+      const batchesSection = $("#opp-plans-section");
       const svg = $("#opportunity-svg");
       const opportunityColors = getOpportunityColors();
       const isMarioMap = document.documentElement.dataset.colorScheme === "mario";
@@ -19090,7 +19345,7 @@ What would make this more useful for someone in your situation?`;
       if (nodes) nodes.innerHTML = "";
       if (connections) connections.innerHTML = "";
       if (labels) labels.innerHTML = "";
-      if (grid) grid.innerHTML = "";
+      if (batchesSection) batchesSection.innerHTML = "";
 
       const count = ideas.length;
       const centerRadius = 52;
@@ -19170,57 +19425,27 @@ What would make this more useful for someone in your situation?`;
         });
       }
 
-      ideas.forEach((idea, index) => {
-        const number = index + 1;
-        const color = opportunityColors[index % opportunityColors.length];
-        const card = document.createElement("article");
-        card.className = "opp-card";
-        card.id = `opp-detail-${index}`;
-        card.innerHTML = `
-          <div class="opp-card-inner">
-            <span class="opp-card-number">${number}</span>
-            <div class="opp-card-body">
-              <div class="opp-card-open-zone" role="button" tabindex="0" aria-label="Open step-by-step roadmap for ${escapeHtml(idea.title)}">
-                <div class="opp-card-head">
-          <div class="opp-type">${escapeHtml(idea.type || "Opportunity")}</div>
-          <div class="opp-name">${escapeHtml(idea.title)}</div>
-                </div>
-          <div class="opp-tagline">${escapeHtml(idea.tagline || "")}</div>
-          <div class="opp-meta">
-            ${idea.cost ? `<span>${escapeHtml(idea.cost)}</span>` : ""}
-            ${idea.timeline ? `<span>${escapeHtml(idea.timeline)}</span>` : ""}
-            ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
-          </div>
-                ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
-                <p class="opp-card-open-hint">Click path to open step-by-step roadmap</p>
-              </div>
-              <div class="opp-card-actions">
-                <button type="button" class="opp-card-discuss-btn">Alter this path</button>
-                ${hasRoadmapProgress(idea.title) ? `<button type="button" class="opp-card-remove-roadmap-btn" data-remove-roadmap-index="${index}">Remove roadmap</button>` : ""}
-              </div>
-            </div>
-          </div>`;
-        card.querySelector(".opp-card-number").style.background = color;
-        card.querySelector(".opp-card-discuss-btn").addEventListener("click", (event) => {
-          event.stopPropagation();
-          startIdeaDiscussChat(index);
-        });
-        card.querySelector(".opp-card-remove-roadmap-btn")?.addEventListener("click", (event) => {
-          event.stopPropagation();
-          void removeRoadmapForPath(idea.title, { ideaIndex: index });
-        });
-        const openZone = card.querySelector(".opp-card-open-zone");
-        const openRoadmap = () => viewRoadmap(idea, index);
-        openZone?.addEventListener("click", openRoadmap);
-        openZone?.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            openRoadmap();
-          }
-        });
-        bindMapPathHover(card, index);
-        if (grid) grid.append(card);
+      const batchRanges = getIdeaBatchRanges();
+      if (!batchRanges.length && ideas.length) {
+        state.ideaBatches = [ideas.length];
+      }
+      getIdeaBatchRanges().forEach((range) => {
+        const batchEl = document.createElement("div");
+        batchEl.className = "opp-batch";
+        const grid = document.createElement("div");
+        grid.className = "opp-grid";
+
+        for (let index = range.start; index < range.start + range.count && index < ideas.length; index++) {
+          const idea = ideas[index];
+          const color = opportunityColors[index % opportunityColors.length];
+          grid.append(createOppCardElement(idea, index, color));
+        }
+
+        batchEl.append(grid);
+        batchEl.insertAdjacentHTML("beforeend", renderMapPathsActionsHtml());
+        batchesSection?.append(batchEl);
       });
+
       syncPathSelectionUi();
       if (!options.skipPersist) schedulePersist();
     }
@@ -19606,6 +19831,26 @@ What would make this more useful for someone in your situation?`;
       return { phaseCount, taskCount };
     }
 
+    function jumpToRoadmapTask(stageIndex, taskIndex) {
+      if (!Number.isInteger(stageIndex) || stageIndex < 0) return;
+      if (!Number.isInteger(taskIndex) || taskIndex < 0) return;
+      if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+      state.expandedRoadmapPhases.add(stageIndex);
+      const phase = document.querySelector(`.roadmap-phase[data-phase-index="${stageIndex}"]`);
+      phase?.classList.add("is-open", "open");
+      const taskId = `task-${stageIndex}-${taskIndex}`;
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      scrollRoadmapTargetIntoView(item || phase?.querySelector(".roadmap-phase-head") || phase, { extraOffset: 16 });
+    }
+
+    function getTaskGlanceStatus(stageIndex, taskIndex) {
+      const data = getRoadmapTaskData(`task-${stageIndex}-${taskIndex}`);
+      if (data?.checked) return "is-complete";
+      const pos = getFirstIncompleteTaskPosition();
+      if (pos && pos.stageIndex === stageIndex && pos.taskIndex === taskIndex) return "is-in-progress";
+      return "is-upcoming";
+    }
+
     function jumpToRoadmapPhase(stageIndex) {
       if (!Number.isInteger(stageIndex) || stageIndex < 0) return;
       if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
@@ -19638,43 +19883,44 @@ What would make this more useful for someone in your situation?`;
     function renderRoadmapGlance(stages = state.roadmapStages) {
       const section = $("#roadmap-glance");
       const track = $("#roadmap-glance-track");
-      const meta = $("#roadmap-glance-meta");
       const nextBtn = $("#roadmap-glance-next-btn");
       if (!section || !track) return;
 
       if (!stages?.length) {
         section.hidden = true;
         track.innerHTML = "";
-        if (meta) meta.textContent = "";
+        if (nextBtn) nextBtn.hidden = true;
+        return;
+      }
+
+      const items = [];
+      stages.forEach((stage, stageIndex) => {
+        (stage.tasks || []).forEach((task, taskIndex) => {
+          const text = humanizeTaskText(getTaskText(task));
+          if (text) items.push({ stageIndex, taskIndex, text });
+        });
+      });
+
+      if (!items.length) {
+        section.hidden = true;
+        track.innerHTML = "";
         if (nextBtn) nextBtn.hidden = true;
         return;
       }
 
       section.hidden = false;
-      const { phaseCount, taskCount } = getRoadmapTaskTotals(stages);
-      if (meta) {
-        meta.textContent = `${phaseCount} phase${phaseCount === 1 ? "" : "s"} · ${taskCount} task${taskCount === 1 ? "" : "s"}`;
-      }
-
-      track.innerHTML = stages.map((stage, stageIndex) => {
-        const progress = getStageProgressFromIndices(stageIndex);
-        const status = getPhaseStatusClass(stageIndex);
-        const desc = humanizeTaskText(String(stage.desc || "").trim());
-        const descShort = desc.length > 88 ? `${desc.slice(0, 85)}…` : desc;
-        const nodeLabel = progress.total > 0 && progress.done === progress.total ? "✓" : String(stageIndex + 1);
-        return `
-          <button type="button" class="roadmap-glance-phase ${status}" data-glance-phase="${stageIndex}">
-            <span class="roadmap-glance-node" aria-hidden="true">${nodeLabel}</span>
-            <span class="roadmap-glance-copy">
-              <span class="roadmap-glance-label">${escapeHtml(humanizeTaskText(stage.label || `Phase ${stageIndex + 1}`))}</span>
-              ${descShort ? `<span class="roadmap-glance-desc">${escapeHtml(descShort)}</span>` : ""}
-              <span class="roadmap-glance-count">${progress.done}/${progress.total} tasks</span>
-            </span>
-          </button>`;
+      track.innerHTML = items.map(({ stageIndex, taskIndex, text }) => {
+        const status = getTaskGlanceStatus(stageIndex, taskIndex);
+        return `<button type="button" class="roadmap-glance-task ${status}" data-glance-stage="${stageIndex}" data-glance-task="${taskIndex}">${escapeHtml(text)}</button>`;
       }).join("");
 
-      track.querySelectorAll("[data-glance-phase]").forEach((button) => {
-        button.addEventListener("click", () => jumpToRoadmapPhase(Number(button.dataset.glancePhase)));
+      track.querySelectorAll("[data-glance-stage]").forEach((button) => {
+        button.addEventListener("click", () => {
+          jumpToRoadmapTask(
+            Number(button.dataset.glanceStage),
+            Number(button.dataset.glanceTask)
+          );
+        });
       });
 
       if (nextBtn) nextBtn.hidden = !getFirstIncompleteTaskPosition();
@@ -19793,14 +20039,6 @@ What would make this more useful for someone in your situation?`;
         desc.hidden = !desc.textContent;
       }
 
-      const purpose = getRoadmapPurposeCopy(idea);
-      const purposeCard = $("#roadmap-purpose-card");
-      const purposeHeadline = $("#roadmap-purpose-headline");
-      const purposeDetail = $("#roadmap-purpose-detail");
-      if (purposeHeadline) purposeHeadline.textContent = purpose.headline;
-      if (purposeDetail) purposeDetail.textContent = purpose.detail;
-      if (purposeCard) purposeCard.hidden = !purpose.headline;
-
       const setMeta = (el, value) => {
         if (!el) return;
         if (value) {
@@ -19825,13 +20063,6 @@ What would make this more useful for someone in your situation?`;
       if (goalEl) goalEl.textContent = goal;
       if (detailsEl) detailsEl.textContent = details || "—";
       if (updatedEl) updatedEl.textContent = `Last updated ${formatMapDate(Date.now())}`;
-
-      const about = $("#roadmap-side-about");
-      if (about) {
-        const totalTasks = state.roadmapStages?.reduce((sum, stage) => sum + (stage.tasks?.length || 0), 0) || 0;
-        const phaseCount = state.roadmapStages?.length || 4;
-        about.textContent = `${phaseCount} phases, ${totalTasks || 12} tasks — each one is a small action you can finish in a day or a week. Start with phase 1 below.`;
-      }
 
       const why = $("#roadmap-side-why");
       if (why) {
@@ -20923,6 +21154,7 @@ What would make this more useful for someone in your situation?`;
         roadmapAutoContinueTimer = null;
       }
       state.selectedPathIndexes = [];
+      state.ideaBatches = [];
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
       setRoadmapNavVisible(false);
@@ -20955,6 +21187,7 @@ What would make this more useful for someone in your situation?`;
       }
       if (!confirm(`Start a new map? You'll answer fresh questions on Home.${detail}`)) return;
       beginNewIntake();
+      resetScreenNavHistory();
       state.lastScreen = "main";
       setSaveStatus("idle");
       updateMapsNav();
@@ -20988,6 +21221,7 @@ What would make this more useful for someone in your situation?`;
       state.roadmapCategories = [];
       state.activeRoadmapCategoryId = null;
       state.selectedPathIndexes = [];
+      resetScreenNavHistory();
       clearIntakeSession({ clearMainInput: true });
       state.lastScreen = "main";
       setSaveStatus("idle");
@@ -21031,15 +21265,11 @@ What would make this more useful for someone in your situation?`;
     }
 
     function resetSessionUIAfterClear() {
-      const oppGrid = $("#opp-grid");
-      if (oppGrid) oppGrid.innerHTML = "";
+      const batchesSection = $("#opp-plans-section");
+      if (batchesSection) batchesSection.innerHTML = "";
       const mapsList = $("#maps-library-list");
       if (mapsList) mapsList.innerHTML = "";
-      const moreBtn = $("#more-ideas-btn");
-      if (moreBtn) {
-        const moreLabel = moreBtn.querySelector(".btn-label");
-        resetMoreIdeasButton(moreBtn, moreLabel || moreBtn, getMoreIdeasButtonLabel(moreBtn));
-      }
+      resetScreenNavHistory();
       updateMapsNav();
       renderSavedMapsHome();
       renderSidebarRoadmaps();
@@ -22514,11 +22744,28 @@ What would make this more useful for someone in your situation?`;
       $("#reply-regen-roadmap-btn")?.addEventListener("click", () => regenerateRoadmapFromChat());
       $("#reply-back-map-btn")?.addEventListener("click", exitMapChat);
 
-      $("#reset-btn").addEventListener("click", confirmStartNewMap);
-      $("#map-toolbar-reset-btn")?.addEventListener("click", confirmStartNewMap);
-      $("#more-ideas-btn").addEventListener("click", fetchMoreIdeas);
-      $("#map-back-btn")?.addEventListener("click", backFromMap);
-      $("#alter-path-btn").addEventListener("click", startAlterPathChat);
+      $("#opp-plans-section")?.addEventListener("click", (event) => {
+        const moreBtn = event.target.closest(".map-paths-more-btn");
+        if (moreBtn) {
+          fetchMoreIdeas(moreBtn);
+          return;
+        }
+        if (event.target.closest(".map-paths-alter-btn")) {
+          startAlterPathChat();
+          return;
+        }
+        if (event.target.closest(".map-paths-reset-btn")) {
+          confirmStartNewMap();
+        }
+      });
+      [
+        $("#map-page-nav-back"),
+        $("#roadmap-page-nav-back")
+      ].forEach((button) => button?.addEventListener("click", navigateScreenBack));
+      [
+        $("#map-page-nav-forward"),
+        $("#roadmap-page-nav-forward")
+      ].forEach((button) => button?.addEventListener("click", navigateScreenForward));
       $("#roadmap-save-path-btn")?.addEventListener("click", () => saveCurrentPath({ manual: true }));
       $("#roadmap-location-save")?.addEventListener("click", saveLocationFromRoadmapSidebar);
       $("#roadmap-local-list")?.addEventListener("click", (event) => {
@@ -22539,9 +22786,6 @@ What would make this more useful for someone in your situation?`;
       $("#roadmap-glance-next-btn")?.addEventListener("click", focusFirstOpenTaskAsk);
       $("#roadmap-ask-assistant-btn")?.addEventListener("click", focusFirstOpenTaskAsk);
       $("#roadmap-load-phases-btn")?.addEventListener("click", () => continueCompletedPlan());
-      $("#roadmap-how-works-btn")?.addEventListener("click", () => {
-        $("#roadmap-side-about")?.closest(".roadmap-side-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      });
       $("#roadmap-more-resources-btn")?.addEventListener("click", scrollToActivePhase);
       $("#roadmap-change-path-btn")?.addEventListener("click", changeCurrentPath);
       $("#roadmap-remove-btn")?.addEventListener("click", () => { void removeCurrentRoadmap(); });
@@ -22564,7 +22808,6 @@ What would make this more useful for someone in your situation?`;
         }
       });
       $("#nav-maps-btn")?.addEventListener("click", openMapsFromNav);
-      $("#map-all-maps-btn")?.addEventListener("click", () => showScreen("maps"));
       $("#nav-save-btn").addEventListener("click", manualSave);
       $("#save-signin-link")?.addEventListener("click", () => showAuth("signin"));
       $("#stage-list")?.addEventListener("click", handleTaskThreadClick);
