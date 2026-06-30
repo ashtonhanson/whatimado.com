@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-task-mentor -->
+<!-- whatimado build: 2026-06-30-plain-language -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-task-mentor">
+  <meta name="whatimado-build" content="2026-06-30-plain-language">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -11155,7 +11155,7 @@
           </div>
 
           <div class="roadmap-side-card roadmap-side-help">
-            <h3 class="roadmap-side-card-title">Need help or want to pivot?</h3>
+            <h3 class="roadmap-side-card-title">Need help or want to change direction?</h3>
             <p class="roadmap-side-copy">Stuck on a step? Ask below any task, or jump to your next open step.</p>
             <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-ask-assistant-btn">
               <span aria-hidden="true">💬</span> Ask AI assistant
@@ -11398,7 +11398,7 @@
         income: "$200-1000/mo"
       },
       {
-        title: "Skill Sprint Portfolio",
+        title: "Skill-Building Portfolio",
         type: "Learning path",
         tagline: "Pick one practical skill and build three small proof projects fast.",
         why: "A visible portfolio helps people trust you before you have formal experience.",
@@ -11502,7 +11502,7 @@
       '- Every task object MUST include text, why, outcome, duration, and difficulty.\n' +
       'For tasks involving local programs, applications, licensing, or outreach: fill resourceCategories[], resources.local (1-3 real orgs for their city/region), resources.national when a country-wide portal applies, and resources.global for online options that work anywhere.\n' +
       'Task text = the action. resources.* = the discovered organizations. Never put only a category in resources — always resolve to real names + official URLs for THIS user\'s location.\n' +
-      'Write like a patient mentor for someone who may not know Reddit, subreddits, or tech jargon.\n' +
+      'Write like a patient mentor for someone with NO business background — middle-school reading level. Never use startup or consultant jargon in task text, stage labels, why, or outcome.\n' +
       'For writing or outreach tasks, include a ready-to-copy sample in script when helpful.\n' +
       'Do not reuse stage titles across different paths on the same map.';
 
@@ -11616,7 +11616,9 @@
       '- Every relevant task needs alternatives explaining another route if the main step doesn\'t apply in their country.\n' +
       '- steps[]: 2-4 distinct micro-actions (open this page, book this appointment, save this number).\n' +
       '- why and outcome: full sentences a beginner understands.\n' +
-      '- Use plain English; explain jargon in parentheses.\n' +
+      '- Use plain English; short sentences a 12-year-old could follow.\n' +
+      '- NEVER use startup/consultant words: validate, validation, sprint, traction, pivot, social validation, go-to-market, value proposition, product-market fit, user acquisition, MVP, iterate, friction point, feedback loop, ship, leverage, scalable, cohort, monetize, GTM, activation.\n' +
+      '- BAD: "Validate demand." GOOD: "Talk to three people who might actually use your idea and ask whether it would help them."\n' +
       '- BAD task text: "Call Workforce Solutions Austin" or "Find workforce resources near you" with no resources filled in.\n' +
       '- GOOD: text says "Contact your regional employment service…" AND resources.local lists NAV Troms og Finnmark (or the correct agency for their city) with nav.no URL.\n' +
       '- Never invent fake grants or personal @gmail addresses. Use official sites; leave phone/email "" if not published.\n' +
@@ -12025,10 +12027,20 @@
       );
     }
 
+    const PLAIN_LANGUAGE_AI_RULES =
+      'PLAIN LANGUAGE (middle-school reading level — NON-NEGOTIABLE):\n' +
+      '- Sound like an experienced mentor talking to a friend — NOT a startup consultant, MBA, or business coach.\n' +
+      '- Assume the reader has ZERO business background.\n' +
+      '- BANNED words/phrases in tasks, stage labels, descriptions, why, and outcome: validate, validation, sprint, traction, pivot, social validation, go-to-market, value proposition, product-market fit, user acquisition, MVP, iterate, friction point, feedback loop, baseline metrics, ship, GTM, leverage, scalable, cohort, monetize, activation, optics, narrative (use "story"), ICP.\n' +
+      '- Say "people" not "users" (unless you mean website testers). Say "try" or "put out" not "ship". Say "ask" not "leverage". Say "change direction" not "pivot".\n' +
+      '- BAD: "Validate demand." / "Run a validation sprint." / "Build traction." / "Test your value proposition."\n' +
+      '- GOOD: "Talk to three people who might actually use your idea and ask whether it would help them." / "Spend two weeks sharing it in real communities and listen to what people say." / "Write down signs that people are interested (messages, signups, thank-yous)."\n';
+
     function getActionableTaskRules(idea = state.currentIdea) {
-      return isGroundedPractitioner(idea)
+      const base = isGroundedPractitioner(idea)
         ? `${ACTIONABLE_TASK_RULES}\n${GROUNDED_UNIVERSAL_RULES}`
         : ACTIONABLE_TASK_RULES;
+      return `${base}\n${PLAIN_LANGUAGE_AI_RULES}`;
     }
 
     function applyPlaybookTokens(text, idea, parsed, locRaw) {
@@ -12668,12 +12680,20 @@
       copy = copy.replace(/\bsubreddit\b/gi, "Reddit forum");
       copy = copy.replace(/\bchatgpt\b/gi, "ChatGPT (a general AI chat tool)");
       copy = copy.replace(/\bstripe\b/gi, "Stripe (a payment page for tips and donations)");
-      copy = copy.replace(/\bquiet launch\b/gi, "quiet launch (sharing softly with a few communities first)");
-      copy = copy.replace(/\bvalidation\b/gi, "validation (learning whether people actually want this)");
       copy = copy.replace(/\bpwyc\b/gi, "pay-what-you-can");
       copy = copy.replace(/\bpay-what-you-want\b/gi, "pay-what-you-can tips");
-      copy = copy.replace(/\bship week 1 validation\b/gi, "Week 1: test your idea with real people");
-      copy = copy.replace(/\bfeedback loop\b/gi, "feedback loop (ask people what's working and what's confusing)");
+
+      copy = copy.replace(/\bgo-to-market\b/gi, "getting it in front of people");
+      copy = copy.replace(/\bvalue proposition\b/gi, "what you offer and why it helps");
+      copy = copy.replace(/\bproduct[- ]market fit\b/gi, "whether your idea fits what people need");
+      copy = copy.replace(/\buser acquisition\b/gi, "getting people to try it");
+      copy = copy.replace(/\bsocial validation\b/gi, "seeing if real people find it helpful");
+      copy = copy.replace(/\bvalidation sprint\b/gi, "two-week test with real people");
+      copy = copy.replace(/\bvalidate(?:\s+(?:demand|your offer|the idea|with|locally))?/gi, "check whether people actually want this");
+      copy = copy.replace(/\bvalidation\b/gi, "checking whether this actually helps people");
+      copy = copy.replace(/\bship week 1 validation\b/gi, "Week 1: try it with real people");
+      copy = copy.replace(/\bquiet launch\b/gi, "share softly with a few groups first");
+      copy = copy.replace(/\bfeedback loop\b/gi, "keep asking people what works and what confuses them");
       copy = copy.replace(/\bbaseline\b/gi, "starting number");
       copy = copy.replace(/\bmetrics?\b/gi, "numbers to track");
       copy = copy.replace(/\bsessions started\b/gi, "people who started a session");
@@ -12681,14 +12701,47 @@
       copy = copy.replace(/\bfeedback submissions\b/gi, "people who sent feedback");
       copy = copy.replace(/\bfriction point\b/gi, "step where people get stuck");
       copy = copy.replace(/\bmeasurable test\b/gi, "simple real-world test");
-      copy = copy.replace(/\btraction\b/gi, "proof that people are interested");
+      copy = copy.replace(/\btraction\b/gi, "signs that people are interested");
       copy = copy.replace(/\bsupabase\b/gi, "your site's data dashboard");
       copy = copy.replace(/\bsite_events\b/gi, "site usage stats");
       copy = copy.replace(/\biterate\b/gi, "improve based on what you learn");
       copy = copy.replace(/\bMVP\b/g, "smallest working version");
-      copy = copy.replace(/\boutreach\b/gi, "reaching out to people who might hire or refer you");
+      copy = copy.replace(/\boutreach\b/gi, "reaching out");
+      copy = copy.replace(/\bpivot\b/gi, "change direction");
+      copy = copy.replace(/\bsprint\b/gi, "focused push");
+      copy = copy.replace(/\bmonetize\b/gi, "ask for payment");
+      copy = copy.replace(/\bleverage\b/gi, "use");
+      copy = copy.replace(/\bscalable\b/gi, "something that can grow");
+      copy = copy.replace(/\bcohort\b/gi, "group");
+      copy = copy.replace(/\bactivation\b/gi, "getting people to actually try it");
+      copy = copy.replace(/\bICP\b/g, "ideal customer");
+      copy = copy.replace(/\bGTM\b/g, "launch plan");
+      copy = copy.replace(/\bnarrative\b/gi, "story");
+      copy = copy.replace(/\boptics\b/gi, "how it looks to others");
+      copy = copy.replace(/\bship\b/gi, "put out");
+      copy = copy.replace(/\busers\b/gi, "people");
+      copy = copy.replace(/\bend users\b/gi, "people who use the site");
+      copy = copy.replace(/\banalytics\b/gi, "usage numbers");
+      copy = copy.replace(/\bonboarding\b/gi, "first-time setup");
+      copy = copy.replace(/\boptimize\b/gi, "improve");
+      copy = copy.replace(/\boptimization\b/gi, "improvement");
+      copy = copy.replace(/\bconversion\b/gi, "people who actually sign up or pay");
+      copy = copy.replace(/\bfunnel\b/gi, "path people take");
+      copy = copy.replace(/\bROI\b/g, "return on money spent");
+      copy = copy.replace(/\bKPI\b/g, "key number to track");
+      copy = copy.replace(/\bdeck\b/gi, "short slide presentation");
+      copy = copy.replace(/\bsocial proof\b/gi, "quotes and examples from real people");
 
       return copy;
+    }
+
+    function applyPlainLanguageToTask(normalized) {
+      normalized.text = humanizeTaskText(normalized.text);
+      normalized.why = humanizeTaskText(normalized.why);
+      normalized.outcome = humanizeTaskText(normalized.outcome);
+      normalized.alternatives = humanizeTaskText(normalized.alternatives);
+      normalized.steps = (normalized.steps || []).map((step) => humanizeTaskText(step));
+      return normalized;
     }
 
     function taskNeedsPlainExplain(normalized) {
@@ -12744,8 +12797,8 @@
       if (/\bstripe\b|\bdonat/.test(text)) {
         lines.push("Stripe is a simple payment page where people can leave optional tips. Mention it after your story — keep the focus on helping people first.");
       }
-      if (/quiet launch|validation/.test(text)) {
-        lines.push("A quiet launch means sharing with a few communities first and listening. Validation means checking whether real people find it useful — not just getting likes.");
+      if (/quiet launch|validation|checking whether/.test(text)) {
+        lines.push("Start by sharing with a few groups and listening. You're checking whether real people find it useful — not just counting likes.");
       }
       if (/\bscreenshot\b/.test(text)) {
         lines.push("Square crop means the image is as wide as it is tall (1:1). On iPhone: open the photo → Edit → crop icon → choose square.");
@@ -13468,7 +13521,9 @@ What would make this more useful for someone in your situation?`;
         };
       }
       attachResourceLayers(normalized, typeof task === "object" && task ? task : fallback);
-      return enrichTaskMentorFields(scrubRedundantTaskResources(localizeTaskForUserLocation(normalized)));
+      return applyPlainLanguageToTask(
+        enrichTaskMentorFields(scrubRedundantTaskResources(localizeTaskForUserLocation(normalized)))
+      );
     }
 
     function normalizeTaskContact(entry) {
@@ -13686,6 +13741,8 @@ What would make this more useful for someone in your situation?`;
     function normalizeRoadmapStages(stages) {
       return (stages || []).map((stage) => ({
         ...stage,
+        label: humanizeTaskText(stage.label || ""),
+        desc: humanizeTaskText(stage.desc || ""),
         tasks: (stage.tasks || []).map((task) => normalizeRoadmapTask(task))
       }));
     }
@@ -14422,12 +14479,12 @@ What would make this more useful for someone in your situation?`;
             ]
           },
           {
-            label: "Watch and log friction",
-            desc: "Your job this week is learning what breaks — not scaling outreach.",
+            label: "Watch and note where people get stuck",
+            desc: "Your job this week is learning what breaks — not trying to reach everyone at once.",
             tasks: [
               "Run 2 more beta sessions this week — same rule: watch, don't coach unless they're completely stuck",
-              "Log every friction point in a spreadsheet: date, user type, step stuck, fix idea — also check Supabase site_suggestions for patterns",
-              "Fix the #1 friction point (homepage copy, confusing button, mobile bug), redeploy index.html, and ask one prior tester to retry"
+              "Log every step where people get stuck in a spreadsheet: date, person type, step stuck, fix idea — also check your site's suggestions inbox for patterns",
+              "Fix the #1 confusing step (homepage copy, confusing button, mobile bug), redeploy index.html, and ask one prior tester to retry"
             ]
           },
           {
@@ -14435,13 +14492,13 @@ What would make this more useful for someone in your situation?`;
             desc: "Only move to pilots or grants after basic functionality feels solid.",
             tasks: [
               "Ask all beta testers: \"Would you recommend this to someone in a worse spot than you?\" — write answers verbatim in Notes",
-              "Count this week's site_events (prompt_submitted, map_generated, roadmap_opened) — if numbers are near zero, fix onboarding before recruiting more people",
+              "Count this week's usage numbers (people who started, got a map, opened a roadmap) — if numbers are near zero, fix the first-time experience before recruiting more people",
               "Write a 5-sentence decision note: \"Ready for strangers / needs X fix / not ready for pilot yet\" — this gates your next path"
             ]
           },
           {
             label: "Plan the next stage",
-            desc: "Choose validation sprint, donation test, or partner pilot — only after beta passes.",
+            desc: "Choose sharing in communities, a donation test, or one partner conversation — only after beta passes.",
             tasks: [
               "If beta passed: pick ONE next move — community launch (5-15 strangers), donation ask test, or one nonprofit conversation — not all three",
               "If beta failed: list the top 3 bugs or confusions and block 4 hours to fix them before any outreach",
@@ -14469,19 +14526,19 @@ What would make this more useful for someone in your situation?`;
             ]
           },
           {
-            label: "Watch 5 real users",
-            desc: "Learn where people actually get stuck — fix that before scaling outreach.",
+            label: "Watch 5 real people",
+            desc: "Learn where people actually get stuck — fix that before trying to reach more people.",
             tasks: [
               "Ask 3 people from those threads (or friends who fit your mission) to use whatimado.com for 10 minutes while you watch — note the exact step where they hesitate",
-              "Log every friction point in a spreadsheet with columns: date, user type, step stuck, fix idea — also check your Supabase suggestions inbox for patterns",
-              "Fix the #1 friction point this week (homepage copy, confusing button, or mobile bug), redeploy index.html, and ask one prior tester to retry"
+              "Log every step where people get stuck in a spreadsheet with columns: date, person type, step stuck, fix idea — also check your suggestions inbox for patterns",
+              "Fix the #1 confusing step this week (homepage copy, confusing button, or mobile bug), redeploy index.html, and ask one prior tester to retry"
             ]
           },
           {
-            label: "Measure and iterate (weeks 2–4)",
-            desc: "Use analytics and feedback to decide what to double down on.",
+            label: "Count results and improve (weeks 2–4)",
+            desc: "Use simple numbers and feedback to decide what to do more of.",
             tasks: [
-              "In Supabase site_events, count this week's prompt_submitted, map_generated, and roadmap_opened events — write the numbers in your tracker",
+              "In your site's data dashboard, count this week's starts, maps finished, and roadmaps opened — write the numbers in your tracker",
               "In your next community post, ask one question after people try the map: \"Did this help? What would make it better?\" — point them to the suggestions box on the site",
               "Publish one honest update post with what you learned and a soft donate line: \"Free forever — optional tips keep it running for others\" with your existing Stripe link"
             ]
@@ -14507,8 +14564,8 @@ What would make this more useful for someone in your situation?`;
             ]
           },
           {
-            label: "Build a supporter loop",
-            desc: "Turn grateful users into recurring supporters at a very low price.",
+            label: "Turn grateful people into repeat supporters",
+            desc: "Ask people who liked the tool if they want to chip in — at a very low price.",
             tasks: [
               "Message or email 5 people who completed a roadmap: ask for 2 minutes of feedback and mention your optional $2/mo supporter tier if you have one in Stripe",
               "Write one transparent cost post for social: monthly hosting, API usage, your time — show the math without begging",
@@ -14530,14 +14587,14 @@ What would make this more useful for someone in your situation?`;
             label: "Build your sponsorship deck",
             desc: `Turn "${title}" into a 1-page sponsor story for whatimado.com.`,
             tasks: [
-              "Create a 1-page PDF or Google Slides deck with 4 sections: mission (who whatimado.com helps), traction (maps generated, testimonials, screenshots), sponsor benefits (logo, shoutout, optional co-branded workshop), and ask ($250–500 local sponsor tier)",
+              "Create a 1-page PDF or Google Slides with 4 sections: who whatimado.com helps, signs people are interested (maps finished, quotes, screenshots), what a sponsor gets (logo, shoutout, optional workshop), and what you're asking for ($250–500 local sponsor)",
               "Collect 3 proof points: one user quote (with permission), one screenshot of the map/roadmap flow, and one sentence on why the tool stays free for end users",
               "Write a 60-second verbal pitch: problem → whatimado.com → what sponsor money covers → why it matters locally"
             ]
           },
           {
-            label: "Gather social proof",
-            desc: "Sponsors fund impact — collect evidence this tool actually helps.",
+            label: "Gather quotes from real people",
+            desc: "Sponsors want to see that this tool actually helps people.",
             tasks: [
               "Ask 5 people who completed a roadmap for a one-sentence testimonial you can paste into the deck — note whether you have permission to use their first name",
               "Screenshot 2 success moments on the site (map generated, roadmap with checked tasks) and add short captions explaining what happened",
@@ -14603,39 +14660,39 @@ What would make this more useful for someone in your situation?`;
         ],
         general: [
           {
-            label: "Ship week 1 validation",
-            desc: `Turn "${title}" into one measurable test for whatimado.com this week.`,
+            label: "Week 1: try it with real people",
+            desc: `Turn "${title}" into one simple real-world test for whatimado.com this week.`,
             tasks: [
-              "Write a one-page 30-day plan doc with 3 metrics: sessions started, maps generated, and feedback submissions — baseline all three at zero today",
-              "Share whatimado.com in one community where stuck people actually post (Reddit career sub, Facebook job group, or local mutual aid) using a help-first message, not an ad",
-              "Block 2 hours on your calendar for fixing the top user friction point from suggestions or live tests"
+              "Write a one-page 30-day plan with 3 numbers to track: people who started, people who got a map, and people who sent feedback — write today's starting count for each (zero is fine)",
+              "Share whatimado.com in one community where stuck people actually post (Reddit career forum, Facebook job group, or local mutual aid) using a help-first message, not an ad",
+              "Block 2 hours on your calendar for fixing the top step where people get stuck — from suggestions or live tests"
             ]
           },
           {
-            label: "Feedback loop",
-            desc: "Make it easy for users to tell you what's broken or missing.",
+            label: "Listen and fix",
+            desc: "Make it easy for people to tell you what's broken or missing.",
             tasks: [
-              "Read every row in your Supabase site_suggestions table and group issues into: bugs, confusing copy, missing paths, praise",
-              "Fix or clarify the #1 issue this week and note the change in your next social post",
-              "Ask 3 testers: \"Would you recommend this to someone in a worse spot than you?\" — write their answers verbatim"
+              "Read every row in your site's suggestions inbox and group issues into: bugs, confusing copy, missing paths, praise",
+              "Fix or clarify the #1 issue this week and mention the change in your next social post",
+              "Ask 3 testers: \"Would you recommend this to someone in a worse spot than you?\" — write their answers word for word"
             ]
           },
           {
-            label: "Mission-safe revenue test",
-            desc: "Test sustainability without charging regular users.",
+            label: "Test staying free while asking for support",
+            desc: "See if optional tips can work without charging regular people.",
             tasks: [
               "Try one donation ask tied to a real cost number — use existing Stripe checkout, keep personal access free",
               "Identify one nonprofit, library, or workforce program contact for a free pilot conversation this month",
-              "Log which funding lever fits best so far: donations, grants, sponsors, or org partnerships — pick one to prioritize for days 31–60"
+              "Write down which funding path fits best so far: donations, grants, sponsors, or org partnerships — pick one to focus on for days 31–60"
             ]
           },
           {
             label: "90-day checkpoint",
-            desc: "Decide keep, pivot, or pause based on evidence.",
+            desc: "Decide whether to keep going, change direction, or pause — based on what actually happened.",
             tasks: [
-              "Compare analytics (prompt_submitted, map_generated, roadmap_opened, donations) against your day-1 baseline",
-              "Write a short public update: what worked, what didn't, what's next — invite community input via suggestions box",
-              "Set the single next milestone for days 61–90 (e.g. 100 map sessions, first $50 in donations, or one signed pilot MOU)"
+              "Compare your usage numbers and donations against your day-1 starting numbers",
+              "Write a short public update: what worked, what didn't, what's next — invite community input via the suggestions box",
+              "Set the single next goal for days 61–90 (e.g. 100 map sessions, first $50 in donations, or one signed pilot agreement)"
             ]
           }
         ]
@@ -15073,7 +15130,7 @@ What would make this more useful for someone in your situation?`;
             ]
           },
           {
-            label: "Run a two-week sprint",
+            label: "Push hard for two weeks",
             desc: "Turn applications and conversations into momentum for \"{title}\".",
             tasks: [
               "Apply to 5 targeted roles or programs for \"{title}\" this week and log date, contact, and follow-up date",
@@ -15086,17 +15143,17 @@ What would make this more useful for someone in your situation?`;
             desc: "Decide whether \"{title}\" stays your lead option or needs a tweak.",
             tasks: [
               "Compare responses from employers vs. training programs — note which channel produced real conversations",
-              "Set one 30-day measurable target for \"{title}\" (interviews, callbacks, enrolled program, or hours worked)",
-              "Write a keep / pivot / pause decision for \"{title}\" and the one action that makes it obvious next week"
+              "Set one clear 30-day goal for \"{title}\" (interviews, callbacks, enrolled program, or hours worked)",
+              "Write a keep / change direction / pause decision for \"{title}\" and the one action that makes the next step obvious"
             ]
           }
         ],
         business: [
           {
-            label: "Validate demand locally",
-            desc: "Test whether anyone near {locRaw} will pay for \"{title}\" before you invest more.",
+            label: "See if people near you would pay",
+            desc: "Talk to people near {locRaw} before you invest more in \"{title}\".",
             tasks: [
-              "Interview 3 people in {locRaw} who would buy or refer \"{title}\" — ask what they already pay for and what's missing",
+              "Talk to 3 people in {locRaw} who would buy or refer \"{title}\" — ask what they already pay for and what's missing",
               "{biz_marketplace}",
               "{biz_license}"
             ]
@@ -15369,13 +15426,13 @@ What would make this more useful for someone in your situation?`;
       const stage = inferFounderProductStage(context);
       const blocks = {
         beta:
-          "FOUNDER STAGE: Closed beta / functionality testing. Roadmaps must focus on 3-8 test users, watching sessions, bug fixes, and friction notes — NOT formal 15-30 user pilots, grant impact studies, or partnership outreach at scale.\n",
+          "FOUNDER STAGE: Closed beta / functionality testing. Roadmaps must focus on 3-8 testers, watching sessions, bug fixes, and notes on where people get stuck — NOT formal 15-30 person pilots, grant impact studies, or partnership outreach at scale.\n",
         validation:
-          "FOUNDER STAGE: Early validation with real strangers. Small cohorts (5-15), feedback loops, light outreach — not grant-grade impact studies yet.\n",
+          "FOUNDER STAGE: First strangers trying it. Small groups (5-15), listening to feedback, light sharing — not grant-grade impact studies yet.\n",
         pilot:
-          "FOUNDER STAGE: Ready for structured pilots with partners. Cohorts of 15-30 may be appropriate IF the conversation confirms they need impact data for grants or sponsors.\n",
+          "FOUNDER STAGE: Ready for structured pilots with partners. Groups of 15-30 may be appropriate IF the conversation confirms they need impact data for grants or sponsors.\n",
         growth:
-          "FOUNDER STAGE: Proving sustainability — donations, sponsors, grants, and partnerships with some traction already shown.\n",
+          "FOUNDER STAGE: Proving the site can keep running — donations, sponsors, grants, and partnerships with some signs people are already interested.\n",
         unknown:
           "FOUNDER STAGE: Infer from conversation. Do NOT jump to grant pilots or 15-30 user cohorts unless they explicitly need impact data for funders. Default to the smallest credible next step.\n"
       };
@@ -15421,19 +15478,19 @@ What would make this more useful for someone in your situation?`;
         : "Generate the FIRST 2 stages only — the immediate next 2-4 weeks for this founder path. Do not pack the entire 30-90 day journey into one roadmap.";
 
       const pathFocus = {
-        beta: "closed beta with 3-5 trusted testers, live watch sessions, friction logging, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 user cohorts",
-        launch: "community validation, Reddit/Facebook launch posts, first real users, analytics from Supabase site_events, suggestions box feedback",
-        donation: "Stripe donation copy, pay-what-you-can framing, soft asks without paywalls, supporter loop, cost-per-session math",
-        sponsorship: "testimonials, 1-page sponsor deck, local business outreach, social proof quotes, ethical sponsor tiers that keep end users free",
-        partnership: "nonprofit/library/workforce/shelter pilot outreach, email templates, demo script, grant paths that keep end users free",
-        general: "low-cost 30-90 day founder milestones mixing validation, feedback, donations, and partnerships"
+        beta: "closed beta with 3-5 trusted testers, live watch sessions, noting where people get stuck, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 person groups",
+        launch: "sharing in communities, Reddit/Facebook posts, first real strangers, simple usage numbers, suggestions box feedback",
+        donation: "Stripe donation copy, pay-what-you-can framing, soft asks without paywalls, repeat supporters, cost-per-session math",
+        sponsorship: "testimonials, 1-page sponsor presentation, local business outreach, quotes from real people, ethical sponsor tiers that keep end people free",
+        partnership: "nonprofit/library/workforce/shelter pilot outreach, email templates, demo script, grant paths that keep end people free",
+        general: "low-cost 30-90 day founder milestones mixing real-world tests, listening to feedback, donations, and partnerships"
       }[getFounderPathTemplate(idea)];
       const founderStage = inferFounderProductStage(context);
       const stageAwareFocus =
         founderStage === "beta"
-          ? "closed beta with 3-5 trusted testers, live watch sessions, friction logging, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 user cohorts"
+          ? "closed beta with 3-5 trusted testers, live watch sessions, noting where people get stuck, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 person groups"
           : founderStage === "validation"
-            ? "small validation cohorts (5-15), community posts, first strangers, feedback loops — not grant-grade impact pilots yet"
+            ? "small test groups (5-15), community posts, first strangers, listening to what people say — not grant-grade impact pilots yet"
             : pathFocus;
 
       const siblingBlock = getSiblingRoadmapContext(idea);
@@ -15519,7 +15576,7 @@ What would make this more useful for someone in your situation?`;
       ].filter(Boolean).join("\n");
 
       const phaseNote = phase === "continue"
-        ? "Generate the NEXT 4 stages after their completed roadmap. Do not repeat completed tasks. Logical progression: validation → first revenue → optimization → scaling → next expansion. Only stop when there is no meaningful next phase."
+        ? "Generate the NEXT 4 stages after their completed roadmap. Do not repeat completed tasks. Logical progression: try with real people → first income → improve → grow. Only stop when there is no meaningful next phase."
         : "Generate the FIRST 3 stages only — the immediate next steps for this path. Later phases unlock via Continue this plan.";
 
       const siblingBlock = getSiblingRoadmapContext(idea);
@@ -15552,9 +15609,10 @@ What would make this more useful for someone in your situation?`;
         `- Each task should be doable in a day or a week — not a vague category.\n` +
         `- Stage labels and descriptions must also reference their situation, not generic startup language.\n` +
         `PLAIN LANGUAGE (required for every task):\n` +
-        `- Write for someone with no startup or tech background. No jargon without a plain-English explanation in the same sentence.\n` +
-        `- BAD: "Ship week 1 validation", "baseline metrics", "feedback loop", "friction point", "traction".\n` +
-        `- GOOD: "Try your offer with 3 real people this week", "Write down three numbers to track", "Ask users what confused them".\n` +
+        `- Write for someone with NO business background — middle-school reading level.\n` +
+        `- Sound like a mentor, not a startup consultant. Never use: validate, validation, sprint, traction, pivot, social validation, go-to-market, value proposition, product-market fit, user acquisition.\n` +
+        `- BAD: "Validate demand." / "Ship week 1 validation." / "baseline metrics." / "feedback loop." / "friction point." / "traction."\n` +
+        `- GOOD: "Talk to three people who might actually use your idea and ask whether it would help them." / "Try your offer with 3 real people this week." / "Write down three numbers to track." / "Ask people what confused them."\n` +
         `- Every task MUST include a why field in plain English explaining why this step matters for THIS person and path.\n` +
         `- Do NOT mention whatimado.com, Supabase, site analytics, or founder metrics unless this is explicitly a whatimado.com growth path.\n\n` +
         `BAD TASKS (never write these):\n` +
@@ -18375,7 +18433,7 @@ What would make this more useful for someone in your situation?`;
         const cachedEntry = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
         setRoadmapNavVisible(true);
         $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
-        $("#roadmap-title").textContent = state.currentIdea.title || "";
+        $("#roadmap-title").textContent = humanizeTaskText(state.currentIdea.title || "");
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedEntry?.source || "ai");
         $("#momentum-card").style.display = "flex";
         setRoadmapLoading(false);
@@ -20101,7 +20159,7 @@ What would make this more useful for someone in your situation?`;
           income: "Grants / sponsorship"
         },
         {
-          title: "Organic Discovery Sprint (SEO + Short Posts)",
+          title: "Help People Find You Online (SEO + Short Posts)",
           type: "Growth",
           tagline: "Publish 8 helpful pages or posts answering 'stuck on what's next' — link back to the free tool.",
           why: "People searching for career clarity may find whatimado without paid ads if content matches how they talk about being stuck.",
@@ -20110,13 +20168,13 @@ What would make this more useful for someone in your situation?`;
           income: "Donations + signups"
         },
         {
-          title: "Founder Feedback Circle (5 Sessions)",
-          type: "Validation",
-          tagline: "Run five 20-minute user interviews with strangers who feel stuck — watch them use the map live.",
-          why: "Direct observation beats guessing which parts of the flow confuse people before you scale outreach.",
+          title: "Talk to 5 Strangers (20 Minutes Each)",
+          type: "Testing",
+          tagline: "Run five 20-minute conversations with strangers who feel stuck — watch them use the map live.",
+          why: "Watching real people beats guessing which parts of the flow confuse them before you try to reach more people.",
           cost: "$0",
           timeline: "2-3 weeks",
-          income: "Product insight"
+          income: "Learning what to fix"
         },
         {
           title: "Local Micro-Grant Application Pack",
@@ -20128,9 +20186,9 @@ What would make this more useful for someone in your situation?`;
           income: "$2k-25k grants"
         },
         {
-          title: "Monthly Supporter Email Loop",
+          title: "Monthly Supporter Email",
           type: "Revenue",
-          tagline: "Ask map completers for optional $3/mo or one-time tips — share one honest progress email per month.",
+          tagline: "Ask people who finished a map for optional $3/mo or one-time tips — share one honest progress email per month.",
           why: "Stripe is already set up; a small supporter list tests sustainability without paywalling personal use.",
           cost: "$0",
           timeline: "3-5 weeks",
@@ -20265,45 +20323,46 @@ What would make this more useful for someone in your situation?`;
       return (
         "You are whatimado, a practical advisor helping the FOUNDER grow whatimado.com into a sustainable mission-driven project without paywalling regular users.\n\n" +
         getFounderStageBlock(summary) +
+        PLAIN_LANGUAGE_AI_RULES +
         "Conversation:\n" +
         summary +
         "\n\nGenerate exactly 3 realistic path options for whatimado.com over the next 30-90 days and beyond.\n" +
-        "Each path must use a DIFFERENT primary strategy — for example: (1) closed beta / functionality test OR community launch/validation, (2) donation or pay-what-you-can sustainability, (3) sponsorship deck OR nonprofit/grant partnership pipeline. Do not give three variations of the same tactic.\n" +
-        "If they are still testing whether the site works, one path MUST be a closed beta with 3-8 testers — NOT a 15-30 user impact pilot.\n" +
+        "Each path must use a DIFFERENT primary strategy — for example: (1) closed beta / functionality test OR sharing in communities, (2) donation or pay-what-you-can sustainability, (3) sponsor pitch OR nonprofit/grant partnership pipeline. Do not give three variations of the same tactic.\n" +
+        "If they are still testing whether the site works, one path MUST be a closed beta with 3-8 testers — NOT a 15-30 person impact pilot.\n" +
         "Only suggest formal workforce/library pilots with impact data when the conversation shows they are past basic functionality testing.\n" +
-        "Focus on low-cost validation, social launch, donations (Stripe is already set up), sponsors/grants, nonprofit/community partnerships, feedback loops, and analytics.\n" +
-        "Personal user pricing must stay free, donation-based, pay-what-you-can, or very low — never premium SaaS tiers for individuals.\n" +
-        "Each idea must be specific to whatimado.com and reference details from what they said.\n\n" +
+        "Focus on low-cost tests with real people, sharing in communities, donations (Stripe is already set up), sponsors/grants, nonprofit/community partnerships, listening to feedback, and simple usage numbers.\n" +
+        "Personal pricing must stay free, donation-based, pay-what-you-can, or very low — never premium SaaS tiers for individuals.\n" +
+        "Each idea must be specific to whatimado.com and reference details from what they said. Use plain language in titles and taglines — no startup jargon.\n\n" +
         "BAD: \"Start a business\" or \"Build an audience\" or three paths that all focus on Reddit posts\n" +
-        "GOOD: \"30-day Reddit + Facebook validation sprint — post in 5 career-change communities, collect 100 email signups, ask for $1-3 donations via existing Stripe checkout\"\n\n" +
-        "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. donations / grants / sponsorship\"}]"
+        "GOOD: \"30 days sharing on Reddit + Facebook — post in 5 career-change communities, collect 100 emails, ask for $1-3 optional tips via Stripe\"\n\n" +
+        "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence in plain English\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. donations / grants / sponsorship\"}]"
       );
     }
 
     function getFounderFallbackIdeas() {
       return [
         {
-          title: "Closed Beta Functional Test",
-          type: "Validation",
-          tagline: "Test with 3-5 real users before any formal pilot or grant outreach.",
+          title: "Closed Beta Test",
+          type: "Testing",
+          tagline: "Try the site with 3-5 real people before any formal pilot or grant outreach.",
           why: "You need proof the site works smoothly before asking partners for 15-30 clients or impact data.",
           cost: "$0",
           timeline: "2-3 weeks",
           income: "Learning + bug fixes"
         },
         {
-          title: "30-Day Community Launch Sprint",
-          type: "Validation",
-          tagline: "Test whatimado.com with real stuck people before scaling anything.",
-          why: "You already have a working app — the next step is proof that strangers find it useful enough to return or donate.",
+          title: "30-Day Community Share",
+          type: "Testing",
+          tagline: "Share whatimado.com with real stuck people before scaling anything.",
+          why: "You already have a working app — the next step is seeing whether strangers find it useful enough to return or donate.",
           cost: "$0-50",
           timeline: "30 days",
           income: "Donations + feedback"
         },
         {
-          title: "Donation-First Sustainability Loop",
+          title: "Optional Tips Test",
           type: "Revenue",
-          tagline: "Use the existing Stripe setup to learn what supporters will actually pay for.",
+          tagline: "Use the existing Stripe setup to learn what supporters will actually pay.",
           why: "This keeps the mission free while testing whether pay-what-you-can or monthly support can cover hosting and AI costs.",
           cost: "$0",
           timeline: "2-6 weeks",
@@ -20313,7 +20372,7 @@ What would make this more useful for someone in your situation?`;
           title: "Partnership Pilot Outreach",
           type: "Partnerships",
           tagline: "Pitch shelters, libraries, workforce programs, or nonprofits on a free pilot.",
-          why: "Mission-driven organizations can send you users, feedback, and later grant or sponsor conversations without charging the people who need help.",
+          why: "Mission-driven organizations can send you people, feedback, and later grant or sponsor conversations without charging the people who need help.",
           cost: "$0",
           timeline: "4-8 weeks",
           income: "Grants / sponsorship"
@@ -20471,7 +20530,9 @@ What would make this more useful for someone in your situation?`;
         : "";
 
       return (
-        "You are whatimado, a practical possibility advisor. Read this entire conversation carefully.\n\nConversation:\n" +
+        "You are whatimado, a practical possibility advisor. Read this entire conversation carefully.\n\n" +
+        PLAIN_LANGUAGE_AI_RULES +
+        "Conversation:\n" +
         summary +
         getLocationContextBlock() +
         getUserStatedCraftBlock() +
@@ -20484,7 +20545,7 @@ What would make this more useful for someone in your situation?`;
         "Each idea should be something they could realistically start given their stated resources. Include a mix when appropriate: zero-cost options, skill-building paths, gig/local work, or unconventional paths — but only if they fit THIS person.\n\n" +
         "Pricing realism: When suggesting monetization, use bootstrapped, believable 2026 consumer pricing. ALWAYS lead with free / pay-what-you-can / donations. For any paid INDIVIDUAL or personal tier, keep it very low — $0 to $5/mo, or a one-time tip of a few dollars; never suggest $9+/mo for an unproven individual product. Do NOT invent multi-tier SaaS pricing ladders. Avoid inflated B2B SaaS pricing ($99+/mo, $300–500/mo white-label) entirely unless the user EXPLICITLY says they target enterprise buyers. Every set of ideas must include at least one fully $0 path. Keep income projections modest and realistic.\n\n" +
         "BAD: \"Freelance web developer\" (too generic)\nGOOD: \"Weekend furniture refinishing side gig — you mentioned loving hands-on work and having a garage; start by fixing one thrift-store piece and listing it on Facebook Marketplace\"\n\n" +
-        "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. $500-1500/mo\"}]"
+        "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence in plain English\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. $500-1500/mo\"}]"
       );
     }
 
@@ -20861,16 +20922,16 @@ What would make this more useful for someone in your situation?`;
             <div class="opp-card-body">
               <div class="opp-card-open-zone" role="button" tabindex="0" aria-label="Open step-by-step roadmap for ${escapeHtml(idea.title)}">
                 <div class="opp-card-head">
-          <div class="opp-type">${escapeHtml(idea.type || "Opportunity")}</div>
-          <div class="opp-name">${escapeHtml(idea.title)}</div>
+          <div class="opp-type">${escapeHtml(humanizeTaskText(idea.type || "Opportunity"))}</div>
+          <div class="opp-name">${escapeHtml(humanizeTaskText(idea.title))}</div>
                 </div>
-          <div class="opp-tagline">${escapeHtml(idea.tagline || "")}</div>
+          <div class="opp-tagline">${escapeHtml(humanizeTaskText(idea.tagline || ""))}</div>
           <div class="opp-meta">
             ${idea.cost ? `<span>${escapeHtml(idea.cost)}</span>` : ""}
             ${idea.timeline ? `<span>${escapeHtml(idea.timeline)}</span>` : ""}
             ${idea.income ? `<span>${escapeHtml(idea.income)}</span>` : ""}
           </div>
-                ${idea.why ? `<div class="opp-why">${escapeHtml(idea.why)}</div>` : ""}
+                ${idea.why ? `<div class="opp-why">${escapeHtml(humanizeTaskText(idea.why))}</div>` : ""}
                 <p class="opp-card-open-hint">Click path to open step-by-step roadmap</p>
               </div>
               <div class="opp-card-actions">
@@ -21067,7 +21128,7 @@ What would make this more useful for someone in your situation?`;
       setRoadmapNavVisible(true);
       updateRoadmapOverviewHeader(idea);
       $("#roadmap-type").textContent = idea.type || "Roadmap";
-      $("#roadmap-title").textContent = idea.title;
+      $("#roadmap-title").textContent = humanizeTaskText(idea.title);
 
       const cached = !options.force ? state.allRoadmaps[state.roadmapKey] : null;
       const cachedIsUsable = Boolean(cached?.stages?.length) && !isGenericFallbackRoadmap(cached.stages);
@@ -22148,10 +22209,10 @@ What would make this more useful for someone in your situation?`;
       };
 
       if (/\b(deck|sponsor(?:ship)?|sponsorship)\b/.test(task)) {
-        add("Deck outline", "Help me outline each section of this sponsorship deck — what belongs in mission, traction, sponsor benefits, and the ask?");
-        add("Mission copy", "Help me write the mission section explaining who this helps and why sponsors should care.");
-        add("Traction ideas", "What should I include as traction if I'm early — maps generated, testimonials, screenshots?");
-        add("Word the ask", "How do I phrase the sponsor tier and dollar amount without sounding pushy?");
+        add("Presentation outline", "Help me outline each section of this sponsor presentation — who it helps, signs people are interested, what a sponsor gets, and what I'm asking for?");
+        add("Mission copy", "Help me write the section explaining who this helps and why sponsors should care.");
+        add("Proof ideas", "What should I include as proof if I'm early — people who finished maps, testimonials, screenshots?");
+        add("Word the ask", "How do I phrase the sponsor amount without sounding pushy?");
       }
       if (/\b(metrics|baseline|30-day plan|scorecard|track|measure|numbers to track)\b/.test(task)) {
         add("Plain English", "Explain this task in plain English — what am I actually doing?");
