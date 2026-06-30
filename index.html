@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-user-profile -->
+<!-- whatimado build: 2026-06-30-task-mentor -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-user-profile">
+  <meta name="whatimado-build" content="2026-06-30-task-mentor">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -948,11 +948,24 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-lead {
-      max-width: 38rem;
-      margin: .85rem auto 1.5rem;
+      max-width: 42rem;
+      margin: 0 auto;
       color: var(--ink-muted);
       font-size: 1rem;
-      line-height: 1.6;
+      line-height: 1.65;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-intro .dashboard-lead + .dashboard-lead {
+      margin-top: .85rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-intro {
+      margin-bottom: 1.5rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-intro .dashboard-lead:first-child {
+      color: var(--ink);
+      font-size: 1.02rem;
     }
 
     html[data-color-scheme="adult"] .dashboard-value {
@@ -4746,6 +4759,38 @@
       color: #fff;
       background: var(--purple);
       border-top-right-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: .35rem;
+    }
+
+    .bubble-user-text {
+      align-self: stretch;
+    }
+
+    .bubble-edit-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: .2rem .55rem;
+      color: rgba(255, 255, 255, .92);
+      background: rgba(0, 0, 0, .16);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .bubble-edit-btn:hover {
+      background: rgba(0, 0, 0, .28);
+    }
+
+    html[data-color-scheme="adult"] .bubble-edit-btn {
+      color: var(--brand-purple-dark);
+      background: rgba(36, 18, 53, .08);
+    }
+
+    html[data-color-scheme="adult"] .bubble-edit-btn:hover {
+      background: rgba(36, 18, 53, .14);
     }
 
     .bubble.ai {
@@ -6964,6 +7009,179 @@
       font-size: .72rem;
       font-weight: 700;
       text-decoration: none;
+    }
+
+    .task-mentor-card .task-mentor-section + .task-mentor-section {
+      margin-top: .85rem;
+      padding-top: .85rem;
+      border-top: 1px solid rgba(120, 130, 200, .1);
+    }
+
+    .task-mentor-label {
+      margin: 0 0 .4rem;
+      color: var(--text3, rgba(36, 18, 53, .58));
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .task-mentor-copy {
+      margin: 0;
+      color: var(--ink-muted, rgba(232, 236, 255, .78));
+      font-size: .8rem;
+      line-height: 1.55;
+    }
+
+    .task-mentor-hint {
+      margin: 0 0 .5rem;
+      color: var(--ink-muted, rgba(232, 236, 255, .65));
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    .task-mentor-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .55rem;
+    }
+
+    .task-mentor-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: .22rem .55rem;
+      border-radius: 999px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .01em;
+    }
+
+    .task-mentor-badge--time {
+      color: var(--brand-purple-dark, #d0e8ff);
+      background: rgba(124, 111, 205, .14);
+      border: 1px solid rgba(124, 111, 205, .22);
+    }
+
+    .task-mentor-badge--difficulty {
+      border: 1px solid transparent;
+    }
+
+    .task-difficulty--easy {
+      color: #166534;
+      background: rgba(34, 197, 94, .12);
+      border-color: rgba(34, 197, 94, .28);
+    }
+
+    .task-difficulty--medium {
+      color: #92400e;
+      background: rgba(245, 158, 11, .12);
+      border-color: rgba(245, 158, 11, .28);
+    }
+
+    .task-difficulty--advanced {
+      color: #9f1239;
+      background: rgba(244, 63, 94, .1);
+      border-color: rgba(244, 63, 94, .24);
+    }
+
+    .task-mentor-breakdown {
+      margin-top: .55rem;
+      font-size: .74rem;
+    }
+
+    .task-mentor-breakdown summary {
+      cursor: pointer;
+      color: var(--purple-2, #9b8fe0);
+      font-weight: 600;
+    }
+
+    .task-mentor-checklist {
+      margin: .55rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .task-mentor-checklist label {
+      display: flex;
+      align-items: flex-start;
+      gap: .45rem;
+      color: var(--ink-muted, rgba(232, 236, 255, .78));
+      font-size: .74rem;
+      line-height: 1.45;
+    }
+
+    .task-ai-assist-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+
+    .task-ai-assist-btn {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      padding: .42rem .72rem;
+      border: 1px solid rgba(124, 111, 205, .28);
+      border-radius: 999px;
+      background: rgba(124, 111, 205, .1);
+      color: var(--brand-purple-dark, #241235);
+      font: inherit;
+      font-size: .72rem;
+      font-weight: 600;
+      line-height: 1.25;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .12s ease;
+    }
+
+    .task-ai-assist-btn:hover {
+      background: rgba(124, 111, 205, .18);
+      border-color: rgba(124, 111, 205, .42);
+    }
+
+    .task-ai-assist-btn:active {
+      transform: translateY(1px);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-label {
+      color: rgba(15, 23, 42, .52);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-copy,
+    html[data-color-scheme="adult"] .task-mentor-hint {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-card .task-mentor-section + .task-mentor-section {
+      border-top-color: rgba(15, 23, 42, .08);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-badge--time {
+      color: #1d4ed8;
+      background: rgba(37, 99, 235, .08);
+      border-color: rgba(37, 99, 235, .18);
+    }
+
+    html[data-color-scheme="adult"] .task-ai-assist-btn {
+      color: #1d4ed8;
+      background: rgba(37, 99, 235, .07);
+      border-color: rgba(37, 99, 235, .2);
+    }
+
+    html[data-color-scheme="adult"] .task-ai-assist-btn:hover {
+      background: rgba(37, 99, 235, .12);
+      border-color: rgba(37, 99, 235, .32);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-section--resources .task-action-pack {
+      margin-top: .35rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+
+    html[data-color-scheme="adult"] .overview-task-tools .task-mentor-section--notes {
+      margin-bottom: .75rem;
     }
 
     html[data-color-scheme="adult"] .task-plain-explain,
@@ -10584,9 +10802,10 @@
       <div class="main-workspace">
       <div class="dashboard-home">
         <div class="dashboard-hero">
-          <p class="dashboard-badge">Free for everyone · No paywall on personal use</p>
-          <h1>Stuck on what's next?</h1>
-          <p class="dashboard-lead">whatimado sits between brainstorming and action. Describe your situation, get realistic paths you can compare, choose one, and follow small steps you can actually do this week — not another chat thread you'll lose.</p>
+          <div class="dashboard-intro">
+            <p class="dashboard-lead">WhatImADo sits between brainstorming and action. Most people don't need another idea, they need to know the next step that moves them closer to their goal. We turn your story into personalized paths, then actionable roadmaps with checklists, notes, with relevant AI guidance on every task. Built for anyone rebuilding, starting over, low on budget, or tired of generic advice.</p>
+            <p class="dashboard-lead">Describe your situation, get realistic paths you can compare, choose one, and follow small steps you can actually do this week, not another chat thread you'll lose.</p>
+          </div>
 
           <div class="prompt-box dashboard-search">
             <textarea class="prompt-textarea" id="main-input" rows="2" placeholder=""></textarea>
@@ -10610,66 +10829,12 @@
           </div>
         </div>
 
-        <section class="dashboard-value" aria-label="Why whatimado">
-          <p class="dashboard-value-kicker">Between brainstorming and action</p>
-          <h2 class="dashboard-value-title">Structured hope — one small step at a time</h2>
-          <p class="dashboard-value-lead">Most people don't need another possibility. They need one thing to do Tuesday morning. Whatimado turns your story into paths you can see, then roadmaps with checkboxes, notes, and Ask on each task — built for anyone rebuilding, low on budget, or tired of generic advice.</p>
-          <div class="dashboard-value-grid">
-            <div class="dashboard-value-item dashboard-value-item--highlight">
-              <strong>See your options</strong>
-              <span>Your paths appear as a visual map you can click and compare — not a scrolling chat wall.</span>
-            </div>
-            <div class="dashboard-value-item">
-              <strong>Small steps</strong>
-              <span>Pick one path and get concrete tasks with time estimates and "when you're done" clarity — momentum, not overwhelm.</span>
-            </div>
-            <div class="dashboard-value-item">
-              <strong>Help on the step you're on</strong>
-              <span>Notes, sample drafts, and Ask on each task — your conversation stays with that roadmap, not lost in a new thread.</span>
-            </div>
-          </div>
-        </section>
-
         <section class="saved-maps-home dashboard-section" id="saved-maps-home" hidden aria-label="Continue where you left off">
           <div class="saved-maps-home-head dashboard-section-head">
             <h2 class="saved-maps-home-title">Continue where you left off</h2>
             <button type="button" class="dashboard-link-btn" data-screen-link="maps" id="saved-maps-view-all">View all</button>
           </div>
           <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
-        </section>
-
-        <section class="dashboard-section dashboard-explore" aria-label="Explore roadmaps towards popular career paths">
-          <div class="dashboard-section-head">
-            <h2>Explore roadmaps towards these popular career paths</h2>
-            <button type="button" class="dashboard-link-btn" id="dashboard-explore-all">View all</button>
-          </div>
-          <div class="dashboard-explore-grid">
-            <button type="button" class="dashboard-explore-card" data-prompt="I'm creative and want paths in design, content, art, or building something expressive">
-              <span class="dashboard-explore-icon" style="background:#fff7ed;color:#ea580c">✏️</span>
-              <strong>Creative</strong>
-              <span>Design, content, art, and other expressive paths.</span>
-            </button>
-            <button type="button" class="dashboard-explore-card" data-prompt="I want business, sales, or entrepreneurship paths where I can build income and independence">
-              <span class="dashboard-explore-icon" style="background:#eff6ff;color:#2563eb">💼</span>
-              <strong>Business</strong>
-              <span>Entrepreneurship, sales, and income-building routes.</span>
-            </button>
-            <button type="button" class="dashboard-explore-card" data-prompt="I'm good with technology and want paths in tech, automation, or digital skills">
-              <span class="dashboard-explore-icon" style="background:#f5f3ff;color:#7c3aed">💻</span>
-              <strong>Technology</strong>
-              <span>Tech skills, automation, and digital careers.</span>
-            </button>
-            <button type="button" class="dashboard-explore-card" data-prompt="I want to help people through coaching, care, teaching, or community work">
-              <span class="dashboard-explore-icon" style="background:#fef2f2;color:#dc2626">❤️</span>
-              <strong>Helping</strong>
-              <span>Teaching, care, coaching, and community impact.</span>
-            </button>
-            <button type="button" class="dashboard-explore-card" data-prompt="I'm reentering after incarceration and need realistic paths to income, training, or self-employment that account for background checks, tight timelines, limited budget, and rebuilding basics like ID and housing">
-              <span class="dashboard-explore-icon" style="background:#ecfdf5;color:#059669">🛤️</span>
-              <strong>Reentry</strong>
-              <span>Realistic paths after release — income, training, and next steps.</span>
-            </button>
-          </div>
         </section>
 
         <section class="site-suggestions dashboard-settings-panel" id="site-suggestions" aria-label="Suggest a site improvement">
@@ -11328,12 +11493,17 @@
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each.\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and how it connects to the path","tasks":[{"text":"Category-based action headline — what to DO (e.g. meet a free small business advisor near you), NOT a hardcoded org from another country","steps":["First concrete micro-step (5-15 min)","Second step with a named tool, page, or person","Final step: what to save, send, or check off"],"why":"1-2 sentences on why THIS step matters now for this person","alternatives":"If this step doesn\'t apply in their country or situation, name a different route","outcome":"1 sentence on the tangible thing they will have when done","duration":"~30-45 min","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization serving their city/region","phone":"published line or empty string","email":"published email or empty string","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government or national program name","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Coursera, edX, Khan Academy, etc.","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page-needed.example"],"contacts":[],"script":"Email subject + body OR call opener — only when outreach is needed; otherwise empty string"}]}]\n' +
-      'Every task object MUST include text, steps (2-4 items), why, alternatives, outcome, duration, and cost.\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and how it connects to the path","tasks":[{"text":"ONE clear action in plain English — what to DO right now (not a checklist title)","why":"1-2 simple sentences — why this matters for THIS person now","outcome":"1 sentence — success looks like (what they will have when done)","duration":"10 minutes|30 minutes|1 hour|2 hours (pick one realistic estimate)","difficulty":"Easy|Medium|Advanced","steps":["Optional micro-step only if it truly helps — max 3 short items"],"alternatives":"If this step doesn\'t apply in their country or situation, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization serving their city/region","phone":"published line or empty string","email":"published email or empty string","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government or national program name","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Coursera, edX, Khan Academy, etc.","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page-needed.example"],"contacts":[],"script":"Email subject + body OR call opener — only when outreach is needed; otherwise empty string"}]}]\n' +
+      'MENTOR TASK RULES:\n' +
+      '- Each task = ONE approachable action a personal mentor would assign — not a vague project.\n' +
+      '- text must be short and concrete. steps[] are optional extras (max 3), not a second task list.\n' +
+      '- why = "Why this matters" in warm, simple language. outcome = "Success looks like".\n' +
+      '- duration = realistic estimate (10 minutes, 30 minutes, 1 hour, 2 hours). difficulty = Easy, Medium, or Advanced.\n' +
+      '- Every task object MUST include text, why, outcome, duration, and difficulty.\n' +
       'For tasks involving local programs, applications, licensing, or outreach: fill resourceCategories[], resources.local (1-3 real orgs for their city/region), resources.national when a country-wide portal applies, and resources.global for online options that work anywhere.\n' +
       'Task text = the action. resources.* = the discovered organizations. Never put only a category in resources — always resolve to real names + official URLs for THIS user\'s location.\n' +
-      'Write like a patient coach for someone who may not know Reddit, subreddits, or tech jargon.\n' +
-      'For writing tasks, include a ready-to-copy sample in script when helpful.\n' +
+      'Write like a patient mentor for someone who may not know Reddit, subreddits, or tech jargon.\n' +
+      'For writing or outreach tasks, include a ready-to-copy sample in script when helpful.\n' +
       'Do not reuse stage titles across different paths on the same map.';
 
     const RESOURCE_CATEGORY_HINTS =
@@ -11430,6 +11600,13 @@
     };
 
     const ACTIONABLE_TASK_RULES =
+      'MENTOR TASK STRUCTURE (every task):\n' +
+      '- text: ONE clear action — what to do right now.\n' +
+      '- why: Why this matters (simple, warm language).\n' +
+      '- outcome: Success looks like — tangible proof they finished.\n' +
+      '- duration: 10 minutes | 30 minutes | 1 hour | 2 hours (realistic).\n' +
+      '- difficulty: Easy | Medium | Advanced.\n' +
+      '- resources.*: real orgs whenever the task involves local help, applications, or outreach.\n' +
       'CATEGORY-FIRST RESOURCE RULES:\n' +
       '- The AI must know the TYPE of resource to find — not memorize organizations from other countries.\n' +
       '- Task text = what to DO using categories (e.g. "Meet with a free small business advisor near you before writing your business plan").\n' +
@@ -11968,7 +12145,7 @@
       return /^(skip|n\/a|na|none|not applicable|no|pass)$/i.test(String(text || "").trim());
     }
 
-    const LOCATION_INTAKE_HINT = "\n\n(Type back for the previous question, change country to start location over, or paste a full location like \"Nairobi, Kenya\".)";
+    const LOCATION_INTAKE_HINT = "";
 
     function isLocationIntakeBack(text) {
       return /^(back|go back|previous|previous question)$/i.test(String(text || "").trim());
@@ -12948,9 +13125,7 @@ What would make this more useful for someone in your situation?`;
       if (!Array.isArray(data.outcomeChecks)) data.outcomeChecks = [];
 
       return `
-        <div class="overview-task-detail-block">
-          <span class="overview-task-detail-label">Check when done</span>
-          <ul class="task-outcome-checklist">
+        <ul class="task-mentor-checklist">
             ${items.map((item, index) => `
               <li>
                 <label>
@@ -12958,8 +13133,141 @@ What would make this more useful for someone in your situation?`;
                   <span>${escapeHtml(item)}</span>
                 </label>
               </li>`).join("")}
-          </ul>
+          </ul>`;
+    }
+
+    function renderTaskMentorMetaHtml(normalized) {
+      const duration = formatDisplayDuration(normalized.duration);
+      const difficulty = normalizeTaskDifficulty(normalized.difficulty) || "Easy";
+      const difficultyClass = `task-difficulty--${difficulty.toLowerCase()}`;
+      return `
+        <div class="task-mentor-meta">
+          ${duration ? `<span class="task-mentor-badge task-mentor-badge--time">${escapeHtml(duration)}</span>` : ""}
+          <span class="task-mentor-badge task-mentor-badge--difficulty ${difficultyClass}">${escapeHtml(difficulty)}</span>
         </div>`;
+    }
+
+    function renderTaskBreakdownHtml(normalized) {
+      const steps = getTaskDisplaySteps(normalized);
+      if (steps.length < 2) return "";
+      return `
+        <details class="task-mentor-breakdown">
+          <summary>Break it down</summary>
+          <ol class="overview-task-steps">
+            ${steps.slice(0, 3).map((step) => `<li>${escapeHtml(humanizeTaskText(step))}</li>`).join("")}
+          </ol>
+        </details>`;
+    }
+
+    function getTaskAiAssistActions(normalized) {
+      const blob = `${normalized.text} ${normalized.script}`.toLowerCase();
+      const actions = [];
+      const add = (id, label, question, { when = true, local = null } = {}) => {
+        if (!when || actions.length >= 7) return;
+        if (actions.some((entry) => entry.id === id)) return;
+        actions.push({ id, label, question, local });
+      };
+
+      add(
+        "explain",
+        "Explain this task",
+        "Explain this task in plain English — what am I actually doing, in what order, and what should I not worry about yet?"
+      );
+      add(
+        "example",
+        "Show an example",
+        "Show me a concrete example of what finished looks like for this task — use realistic details for my situation."
+      );
+      add(
+        "email",
+        "Generate email",
+        "Draft a ready-to-send email for this task. Put the full subject line and body in your reply so I can copy it to My Notes.",
+        { when: /\b(email|e-mail|outreach|reach out|director|partner|follow-up|subject line)\b/.test(blob) }
+      );
+      add(
+        "phone",
+        "Generate phone script",
+        "Write a short phone script I can read word-for-word — include what to say if they put me on hold or say no.",
+        { when: /\b(call|phone|dial|voicemail|211)\b/.test(blob) }
+      );
+      add(
+        "checklist",
+        "Generate checklist",
+        "Turn this into a short checkbox checklist (5 bullets max) I can follow step by step.",
+        { local: "checklist" }
+      );
+      add(
+        "rewrite",
+        "Rewrite my message",
+        "Rewrite the draft in My Notes to sound more like me — warmer, shorter, and less salesy.",
+        { when: isWritingTask(normalized) || /\b(draft|write|post|caption|story)\b/.test(blob) }
+      );
+      add(
+        "practice",
+        "Practice conversation",
+        "Let's practice — you play the person I'd contact and I'll practice what to say. Start with their first likely question.",
+        { when: /\b(call|meet|demo|interview|outreach|partner|director|workshop)\b/.test(blob) }
+      );
+      if (isWritingTask(normalized) && generateLocalTaskDraft(normalized)) {
+        add("draft", "Write a draft for me", "", { local: "draft" });
+      }
+
+      return actions.slice(0, 7);
+    }
+
+    function renderTaskAiAssistHtml(taskId, normalized) {
+      const actions = getTaskAiAssistActions(normalized);
+      if (!actions.length) return "";
+      const buttons = actions.map((entry) =>
+        `<button type="button" class="task-ai-assist-btn" data-task-id="${escapeHtml(taskId)}" data-action="${escapeHtml(entry.id)}" title="${escapeHtml(entry.label)}">${escapeHtml(entry.label)}</button>`
+      ).join("");
+      return `
+        <section class="task-mentor-section task-mentor-section--ai">
+          <h4 class="task-mentor-label">AI Assistance</h4>
+          <p class="task-mentor-hint">Tap an action — or type your own question below.</p>
+          <div class="task-ai-assist-list">${buttons}</div>
+        </section>`;
+    }
+
+    async function triggerTaskAiAssist(taskId, actionId) {
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      if (!match) return;
+      const stageIndex = Number(match[1]);
+      const taskIndex = Number(match[2]);
+      const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
+      const normalized = normalizeRoadmapTask(task);
+      const action = getTaskAiAssistActions(normalized).find((entry) => entry.id === actionId);
+      if (!action) return;
+
+      trackEvent("task_ai_assist_clicked", { task_id: taskId, action: actionId });
+
+      if (action.local === "checklist") {
+        const items = getOutcomeChecklistItems(normalized);
+        const lines = items.length >= 2
+          ? items.map((item) => `[ ] ${item}`)
+          : (normalized.steps.length ? normalized.steps : [normalized.text]).map((step) => `[ ] ${humanizeTaskText(step)}`);
+        insertDraftIntoNotes(
+          taskId,
+          `[Checklist for this task]\n\n${lines.join("\n")}\n\n[ ] Done — I can describe what I finished`,
+          "append"
+        );
+        return;
+      }
+
+      if (action.local === "draft") {
+        const draft = generateLocalTaskDraft(normalized);
+        if (draft) {
+          const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+          const notes = item?.querySelector(".task-textarea");
+          insertDraftIntoNotes(taskId, draft, notes?.value.trim() ? "append" : "replace");
+        }
+        return;
+      }
+
+      const questionEl = $(`#question-${taskId}`);
+      if (!questionEl || !action.question) return;
+      questionEl.value = action.question;
+      await askTask(taskId, getTaskTextById(taskId));
     }
 
     function renderTaskNotesExtrasHtml(taskId, normalized) {
@@ -13009,6 +13317,105 @@ What would make this more useful for someone in your situation?`;
       return normalized;
     }
 
+    function normalizeTaskDifficulty(value) {
+      const raw = String(value || "").trim().toLowerCase();
+      if (!raw) return "";
+      if (/easy|beginner|simple|quick/.test(raw)) return "Easy";
+      if (/adv|hard|complex|expert/.test(raw)) return "Advanced";
+      if (/med|moderate|intermediate/.test(raw)) return "Medium";
+      return "";
+    }
+
+    function formatDisplayDuration(duration) {
+      let value = String(duration || "").trim().replace(/^~+\s*/, "");
+      if (!value) return "";
+      value = value
+        .replace(/\s*mins?\b/gi, " minutes")
+        .replace(/\s*hrs?\b/gi, " hours")
+        .replace(/\s+/g, " ")
+        .trim();
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function inferTaskDuration(normalized) {
+      const existing = formatDisplayDuration(normalized.duration);
+      if (existing) return existing;
+      const blob = normalized.text.toLowerCase();
+      if (/\b(5[- ]?10 min|10 min|quick|one email)\b/.test(blob)) return "10 minutes";
+      if (/\b(15 min|20 min)\b/.test(blob)) return "15 minutes";
+      if (/\b(30 min|half an hour)\b/.test(blob)) return "30 minutes";
+      if (/\b(45 min)\b/.test(blob)) return "45 minutes";
+      if (/\b(60 min|1 hour|one hour)\b/.test(blob)) return "1 hour";
+      if (/\b(2 hour|couple hour)\b/.test(blob)) return "2 hours";
+      if (/\b(this week)\b/.test(blob)) return "1–2 hours";
+      const stepCount = normalized.steps?.length || 0;
+      if (stepCount <= 2) return "30 minutes";
+      if (stepCount <= 3) return "1 hour";
+      return "2 hours";
+    }
+
+    function inferTaskDifficulty(normalized) {
+      const existing = normalizeTaskDifficulty(normalized.difficulty);
+      if (existing) return existing;
+      const blob = `${normalized.text} ${normalized.duration}`.toLowerCase();
+      if (/\b(advanced|complex|multi-week|grant application|legal|incorporat|partnership pipeline|sponsor deck|15-30 user)\b/.test(blob)) return "Advanced";
+      if (/\b(compare 3|research 10|outreach to 10|build a deck|formal pilot)\b/.test(blob)) return "Advanced";
+      if (/\b(call|email|visit|apply|sign up|open|list|save|screenshot|post)\b/.test(blob) && !/\b(10 orgs|research 10|deck)\b/.test(blob)) return "Easy";
+      if (/\b(draft|write|prepare|schedule|practice)\b/.test(blob)) return "Medium";
+      if ((normalized.steps?.length || 0) > 3) return "Medium";
+      return "Easy";
+    }
+
+    function inferTaskWhy(normalized) {
+      if (normalized.why) return humanizeTaskText(normalized.why);
+      const text = normalized.text.toLowerCase();
+      if (/\b(email|call|outreach|reach out)\b/.test(text)) {
+        return "Real conversations unlock opportunities that job boards never show — one good contact can shortcut weeks of guessing.";
+      }
+      if (/\b(resume|cv|apply|interview)\b/.test(text)) {
+        return "Employers decide fast from the first impression — tightening this now means more real chances, not more rejections.";
+      }
+      if (/\b(draft|write|post|story)\b/.test(text)) {
+        return "A clear message helps the right people understand what you're offering — you don't need perfection, just a version you can send.";
+      }
+      if (/\b(list|research|name \d|find \d)\b/.test(text)) {
+        return "A short list turns a vague goal into something you can act on today — you only need a few good leads to start.";
+      }
+      if (/\b(visit|book|appointment|schedule)\b/.test(text)) {
+        return "Showing up beats researching forever — most people wait too long before they ask for help.";
+      }
+      return "Small steps add up — finishing this unlocks the next one and keeps you moving instead of stuck.";
+    }
+
+    function inferTaskOutcome(normalized) {
+      if (normalized.outcome) return humanizeTaskText(normalized.outcome);
+      const text = normalized.text.toLowerCase();
+      if (/\b(email|message|outreach)\b/.test(text)) {
+        return "You sent (or have ready to send) the message and noted who you contacted and when to follow up.";
+      }
+      if (/\b(call|phone)\b/.test(text)) {
+        return "You made the call (or left a voicemail) and wrote down what they said and the next step.";
+      }
+      if (/\b(list|name \d|find \d)\b/.test(text)) {
+        return "You have a written list with names, links, or phone numbers saved somewhere you'll actually use.";
+      }
+      if (/\b(draft|write|post)\b/.test(text)) {
+        return "You have a draft saved that you could send or post after one quick read-through.";
+      }
+      if (/\b(apply|submit)\b/.test(text)) {
+        return "You submitted the application and logged the date so you can follow up.";
+      }
+      return "You can point to something concrete you finished — a file, a sent message, a booked appointment, or a checked box.";
+    }
+
+    function enrichTaskMentorFields(normalized) {
+      normalized.duration = inferTaskDuration(normalized);
+      normalized.difficulty = inferTaskDifficulty(normalized);
+      if (!normalized.why) normalized.why = inferTaskWhy(normalized);
+      if (!normalized.outcome) normalized.outcome = inferTaskOutcome(normalized);
+      return normalized;
+    }
+
     function normalizeRoadmapTask(task, fallback = {}) {
       let normalized;
       if (typeof task === "string") {
@@ -13019,6 +13426,7 @@ What would make this more useful for someone in your situation?`;
           alternatives: fallback.alternatives || "",
           outcome: fallback.outcome || "",
           duration: fallback.duration || "",
+          difficulty: fallback.difficulty || "",
           cost: fallback.cost || "",
           local: fallback.local || "",
           links: normalizeTaskLinks(fallback.links),
@@ -13034,6 +13442,7 @@ What would make this more useful for someone in your situation?`;
           alternatives: String(task.alternatives || fallback.alternatives || "").trim(),
           outcome: String(task.outcome || fallback.outcome || "").trim(),
           duration: String(task.duration || fallback.duration || "").trim(),
+          difficulty: normalizeTaskDifficulty(task.difficulty || fallback.difficulty),
           cost: String(task.cost || fallback.cost || "").trim(),
           local: String(task.local || task.localTip || fallback.local || "").trim(),
           links: normalizeTaskLinks(task.links ?? task.link ?? task.urls ?? fallback.links),
@@ -13049,6 +13458,7 @@ What would make this more useful for someone in your situation?`;
           alternatives: "",
           outcome: "",
           duration: "",
+          difficulty: "",
           cost: "",
           local: "",
           links: [],
@@ -13058,7 +13468,7 @@ What would make this more useful for someone in your situation?`;
         };
       }
       attachResourceLayers(normalized, typeof task === "object" && task ? task : fallback);
-      return scrubRedundantTaskResources(localizeTaskForUserLocation(normalized));
+      return enrichTaskMentorFields(scrubRedundantTaskResources(localizeTaskForUserLocation(normalized)));
     }
 
     function normalizeTaskContact(entry) {
@@ -13236,19 +13646,19 @@ What would make this more useful for someone in your situation?`;
     function renderTaskActionPackHtml(task, options = {}) {
       const normalized = normalizeRoadmapTask(task);
       const { stage, stageIndex, idea = state.currentIdea } = options;
-      if (stage && !shouldShowTaskResources(normalized, stage, stageIndex, idea)) return "";
+      const allowLocal = !stage || shouldShowTaskResources(normalized, stage, stageIndex, idea);
       const blocks = [];
       const layers = normalized.resourceLayers || { local: [], national: [], global: [] };
       const nearYou = [...layers.local, ...layers.national];
 
-      if (nearYou.length) {
-        blocks.push(`<div class="task-contacts"><div class="task-action-label">Resources near you</div>${renderResourceContactCardsHtml(nearYou)}</div>`);
-      } else if (normalized.contacts.length) {
-        blocks.push(`<div class="task-contacts"><div class="task-action-label">Resources near you</div>${renderResourceContactCardsHtml(normalized.contacts)}</div>`);
+      if (allowLocal && nearYou.length) {
+        blocks.push(`<div class="task-contacts"><div class="task-action-label">Near you</div>${renderResourceContactCardsHtml(nearYou)}</div>`);
+      } else if (allowLocal && normalized.contacts.length) {
+        blocks.push(`<div class="task-contacts"><div class="task-action-label">Near you</div>${renderResourceContactCardsHtml(normalized.contacts)}</div>`);
       }
 
       if (layers.global.length) {
-        blocks.push(`<div class="task-contacts task-contacts--global"><div class="task-action-label">Online / anywhere</div>${renderResourceContactCardsHtml(layers.global)}</div>`);
+        blocks.push(`<div class="task-contacts task-contacts--global"><div class="task-action-label">Online</div>${renderResourceContactCardsHtml(layers.global)}</div>`);
       }
 
       if (normalized.links.length) {
@@ -13261,14 +13671,16 @@ What would make this more useful for someone in your situation?`;
       }
 
       if (normalized.script && shouldShowTaskScript(normalized)) {
-        blocks.push(`<div class="task-script"><div class="task-action-label">What to say</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
+        blocks.push(`<div class="task-script"><div class="task-action-label">Starter script</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
       }
 
       if (normalized.alternatives) {
-        blocks.push(`<div class="task-alternatives"><div class="task-action-label">Alternatives</div><p class="task-alternatives-copy">${escapeHtml(humanizeTaskText(normalized.alternatives))}</p></div>`);
+        blocks.push(`<div class="task-alternatives"><div class="task-action-label">If this doesn't fit</div><p class="task-alternatives-copy">${escapeHtml(humanizeTaskText(normalized.alternatives))}</p></div>`);
       }
 
-      return blocks.length ? `<div class="task-action-pack">${blocks.join("")}</div>` : "";
+      return blocks.length
+        ? `<section class="task-mentor-section task-mentor-section--resources"><h4 class="task-mentor-label">Resources</h4><div class="task-action-pack">${blocks.join("")}</div></section>`
+        : "";
     }
 
     function normalizeRoadmapStages(stages) {
@@ -13303,15 +13715,25 @@ What would make this more useful for someone in your situation?`;
     }
 
     function isReentrySituation(idea = null) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (idea && isFounderRoadmapForIdea(idea)) return false;
       const parts = [getFirstUserMessage(), getConversationSummary()];
       if (idea) {
         parts.push(idea.type, idea.title, idea.tagline, idea.why);
       }
       const blob = parts.filter(Boolean).join(" ").toLowerCase();
+      if (
+        idea &&
+        /\bre-?entry\b/.test(blob) &&
+        /\b(reentry program|mutual[- ]?aid|beta|pilot|cohort|invite|users from|partner|whatimado|functionality test|validation sprint)\b/.test(blob)
+      ) {
+        return false;
+      }
       return /\b(re-?enter(?:ing)?|reentry|incarcerat|jail|prison|release|released|parole|probation|second chance|background check|record expung|just got out|getting out|after incarceration|formerly incarcerat|rebuilding after release)\b/.test(blob);
     }
 
     function isReentryPath(idea = state.currentIdea) {
+      if (isFounderRoadmapForIdea(idea)) return false;
       return isReentrySituation(idea);
     }
 
@@ -13389,8 +13811,17 @@ What would make this more useful for someone in your situation?`;
 
     function pathNeedsLocalResources(idea = state.currentIdea) {
       if (isGroundedPractitioner(idea)) return false;
+      if (isFounderRoadmapForIdea(idea)) {
+        const template = getFounderPathTemplate(idea);
+        return template === "partnership" || template === "launch" || template === "sponsorship";
+      }
       const blob = `${getFirstUserMessage()} ${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
       return /\b(local|shelter|recovery|workforce|partner|outreach|nonprofit|library|re-?entry|incarcerat|jail|prison|parole|community|employ|job|train|license|sbdc|score|housing|background check|second chance|certif|apprenticeship|college|credential|id card|211)\b/.test(blob);
+    }
+
+    function roadmapLooksLikeEndUserReentry(stages) {
+      const text = (stages || []).flatMap((stage) => stage.tasks || []).map(getTaskText).join(" ").toLowerCase();
+      return /\b(united way 211|\bdial 211\b|secure id and shelter|county clerk or dmv|american job center|state id or driver'?s license)\b/.test(text);
     }
 
     function roadmapNeedsLocalEnrichment(stages = state.roadmapStages, idea = state.currentIdea) {
@@ -15032,9 +15463,9 @@ What would make this more useful for someone in your situation?`;
         `Do NOT reuse stage names or tasks from other paths (for example, do not copy donation-setup tasks into a launch or partnership path).\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
         `- Every task is for the FOUNDER building whatimado.com — NOT for a random user finding a job.\n` +
-        `- Write 2-4 sentences in text plus steps[] with 2-4 ordered micro-actions (open X, paste Y, send Z).\n` +
-        `- Include why and outcome as full sentences so the founder knows why now and what done looks like.\n` +
-        `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real deliverables, time boxes, email subject lines, and copy snippets.\n` +
+        `- Mentor format: text = ONE clear action; why; outcome; duration (10 minutes|30 minutes|1 hour|2 hours); difficulty (Easy|Medium|Advanced).\n` +
+        `- Optional steps[] only if they truly help (max 3 micro-actions) — not a second task list.\n` +
+        `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real deliverables, and copy snippets.\n` +
         `- Include ready-to-use templates where helpful (Reddit post title, outreach email opening, donation ask line, demo script bullet, pilot outline draft).\n` +
         `- When a task needs a deliverable (pilot outline, email, deck section), include a starter draft in script or steps — do NOT tell the founder to invent it from scratch.\n` +
         `- Reference Stripe, Supabase analytics/suggestions, and social launch — not generic "build an audience" advice.\n` +
@@ -15043,7 +15474,8 @@ What would make this more useful for someone in your situation?`;
         `BAD TASKS:\n` +
         `- "Build your online presence"\n` +
         `- "Network with entrepreneurs"\n` +
-        `- "Define your target market"\n\n` +
+        `- "Define your target market"\n` +
+        `- End-user reentry survival steps (211, DMV/ID, housing intake, American Job Center) — the founder is NOT the person needing ID or shelter unless the task is explicitly recruiting beta testers\n\n` +
         `GOOD TASKS:\n` +
         `- "Post in r/Findapath with title 'I built a free possibility map for people stuck on what's next' — follow sub rules; put whatimado.com in comment if links banned in body"\n` +
         `- "Email workforce director at [local org]: 'Hi [Name], I built whatimado.com — free AI roadmaps for clients rebuilding careers. 4-week pilot, zero cost. 15-min call?'"\n` +
@@ -15110,9 +15542,10 @@ What would make this more useful for someone in your situation?`;
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
         `NEVER use generic stage titles like "Launch the first test", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path.\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
-        `- Every task must be written for a beginner: 2-4 sentences in text plus steps[] with 2-4 ordered micro-actions.\n` +
-        `- Task text uses resource CATEGORIES (employment service, small business advisor) — resolve to real orgs in resources.local / resources.national / resources.global.\n` +
-        `- Each task object must answer: why, alternatives, outcome, duration, cost, and include layered resources when the task involves local programs, applications, licensing, or outreach.\n` +
+        `- Mentor format per task: text = ONE clear action; why = why this matters; outcome = success looks like; duration; difficulty (Easy|Medium|Advanced).\n` +
+        `- Optional steps[] only when helpful (max 3 short items) — the main action lives in text.\n` +
+        `- Task text uses resource CATEGORIES — resolve to real orgs in resources.local / resources.national / resources.global.\n` +
+        `- Each task object must include why, outcome, duration, difficulty, and layered resources when the task involves local programs, applications, licensing, or outreach.\n` +
         `- Do NOT assign vague homework like "research local orgs" without filling resources.* with real names and URLs.\n` +
         `- Name real platforms, tools, audiences, numbers, time boxes, and deliverables.\n` +
         `- Reference details they actually said (skills, location, constraints, goals, industry, budget).\n` +
@@ -17734,15 +18167,197 @@ What would make this more useful for someone in your situation?`;
       const chain = $("#bubble-chain");
       if (!chain || !state.history.length) return;
       chain.innerHTML = "";
-      state.history.forEach((entry) => {
+      state.history.forEach((entry, index) => {
         if (entry.role === "user") {
-          addUserBubble(entry.content);
+          const editable = intakeEditAllowed() && entry.intakeMeta;
+          addUserBubble(entry.content, editable ? { editable: true, historyIndex: index } : {});
         } else {
           addTypingBubble();
           resolveTyping(entry.content);
         }
       });
       if (state.step >= 2 && state.step < INTAKE_STEP_MAP) showReplyBox(true);
+    }
+
+    function intakeEditAllowed() {
+      return (
+        state.step >= 2 &&
+        state.step < INTAKE_STEP_MAP &&
+        !state.mapChat &&
+        !state.alterPathMode &&
+        !state.ideas?.length
+      );
+    }
+
+    function pushUserMessage(text, intakeMeta = null) {
+      const historyIndex = state.history.length;
+      const editable = intakeMeta && intakeEditAllowed();
+      addUserBubble(text, editable ? { editable: true, historyIndex } : {});
+      const entry = { role: "user", content: text };
+      if (intakeMeta) entry.intakeMeta = intakeMeta;
+      state.history.push(entry);
+    }
+
+    function applyLocationAnswerToDraft(text, step) {
+      const trimmed = String(text || "").trim();
+      if (!trimmed) return;
+      if (step === "country") {
+        state.locationDraft.country = formatCountryLabel(normalizeCountryKey(trimmed)) || trimmed;
+      } else if (step === "region" && !isLocationIntakeSkip(trimmed)) {
+        state.locationDraft.region = trimmed;
+      } else if (step === "city") {
+        state.locationDraft.city = trimmed;
+      } else if (step === "postal" && !isLocationIntakeSkip(trimmed)) {
+        state.locationDraft.postal = trimmed;
+      }
+    }
+
+    function clearLocationDraftAfterStep(step) {
+      if (step === "country") {
+        state.locationDraft = emptyLocationDraft();
+      } else if (step === "region") {
+        state.locationDraft.region = "";
+        state.locationDraft.city = "";
+        state.locationDraft.postal = "";
+      } else if (step === "city") {
+        state.locationDraft.city = "";
+        state.locationDraft.postal = "";
+      } else if (step === "postal") {
+        state.locationDraft.postal = "";
+      }
+    }
+
+    function applyProfileHistoryEntry(profile, entry) {
+      const meta = entry.intakeMeta || {};
+      if (meta.field && meta.value) {
+        profile[meta.field] = meta.value;
+        return;
+      }
+      const parsers = {
+        income: ["incomeUrgency", parseIncomeUrgency],
+        path: ["pathPreference", parsePathPreference],
+        work_mode: ["workMode", parseWorkMode],
+        relocate: ["willingToRelocate", parseRelocatePreference],
+        founder_stage: ["founderStage", parseFounderStage]
+      };
+      const parser = parsers[meta.step];
+      if (parser) {
+        const parsed = parser[1](entry.content) || entry.content.slice(0, 80);
+        profile[parser[0]] = parsed;
+      }
+    }
+
+    function renderProfileChipsForStep(step) {
+      const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+      if (step === "income") {
+        renderProfileIntakeChips([
+          { field: "incomeUrgency", value: "immediate", label: "Immediately" },
+          { field: "incomeUrgency", value: "three_months", label: "Within 3 months" },
+          { field: "incomeUrgency", value: "long_term", label: "Long-term is OK" }
+        ]);
+        return;
+      }
+      if (step === "path") {
+        renderProfileIntakeChips(
+          founder
+            ? [
+                { field: "pathPreference", value: "business", label: "Grow the site / product" },
+                { field: "pathPreference", value: "either", label: "Mix of product + partnerships" },
+                { field: "pathPreference", value: "employment", label: "Keep my day job too" }
+              ]
+            : [
+                { field: "pathPreference", value: "employment", label: "Get hired" },
+                { field: "pathPreference", value: "business", label: "Start my own thing" },
+                { field: "pathPreference", value: "either", label: "Either works" }
+              ]
+        );
+        return;
+      }
+      if (step === "work_mode") {
+        renderProfileIntakeChips([
+          { field: "workMode", value: "remote", label: "Remote" },
+          { field: "workMode", value: "hybrid", label: "Hybrid" },
+          { field: "workMode", value: "in_person", label: "In-person" },
+          { field: "workMode", value: "flexible", label: "Flexible" }
+        ]);
+        return;
+      }
+      if (step === "relocate") {
+        renderProfileIntakeChips([
+          { field: "willingToRelocate", value: "yes", label: "Yes" },
+          { field: "willingToRelocate", value: "maybe", label: "Maybe" },
+          { field: "willingToRelocate", value: "no", label: "No" }
+        ]);
+        return;
+      }
+      if (step === "founder_stage") {
+        renderProfileIntakeChips([
+          { field: "founderStage", value: "beta", label: "Still testing if it works" },
+          { field: "founderStage", value: "validation", label: "First strangers to try it" },
+          { field: "founderStage", value: "pilot", label: "Formal pilot with a partner" },
+          { field: "founderStage", value: "growth", label: "Grants / sponsors / scaling" }
+        ]);
+        return;
+      }
+      hideProfileIntakeChips();
+    }
+
+    function rebuildIntakeStateAfterTruncate(editingMeta) {
+      state.locationDraft = emptyLocationDraft();
+      state.locationIntakeStep = null;
+      state.locationConfirmed = false;
+      state.userLocation = emptyUserLocation();
+      state.profileIntakeStep = null;
+      hideProfileIntakeChips();
+
+      const profile = emptyUserProfile();
+      for (const entry of state.history) {
+        if (entry.role !== "user" || !entry.intakeMeta) continue;
+        const meta = entry.intakeMeta;
+        if (meta.kind === "location") applyLocationAnswerToDraft(entry.content, meta.step);
+        else if (meta.kind === "profile") applyProfileHistoryEntry(profile, entry);
+        else if (meta.kind === "name") profile.name = entry.content.split(/\s+/).slice(0, 3).join(" ");
+      }
+      state.userProfile = normalizeUserProfile(profile);
+
+      if (editingMeta.kind === "initial") {
+        state.step = 2;
+        return;
+      }
+      if (editingMeta.kind === "clarifying") {
+        state.step = 2;
+        return;
+      }
+      if (editingMeta.kind === "profile") {
+        state.step = 2;
+        state.profileIntakeStep = editingMeta.step;
+        renderProfileChipsForStep(editingMeta.step);
+        return;
+      }
+      if (editingMeta.kind === "location") {
+        state.step = 3;
+        state.locationIntakeStep = editingMeta.step;
+        clearLocationDraftAfterStep(editingMeta.step);
+        return;
+      }
+      if (editingMeta.kind === "name") {
+        state.step = 4;
+      }
+    }
+
+    function editIntakeAnswer(historyIndex) {
+      if (!intakeEditAllowed()) return;
+      const entry = state.history[historyIndex];
+      if (!entry || entry.role !== "user" || !entry.intakeMeta) return;
+      const prefill = entry.content;
+      const editingMeta = entry.intakeMeta;
+      state.history = state.history.slice(0, historyIndex);
+      rebuildIntakeStateAfterTruncate(editingMeta);
+      restoreConversationBubbles();
+      const textarea = $("#reply-textarea");
+      if (textarea) textarea.value = prefill;
+      showReplyBox(true);
+      schedulePersist();
     }
 
     function restoreSessionUI() {
@@ -18407,6 +19022,14 @@ What would make this more useful for someone in your situation?`;
         handleTaskAssistClick(event);
         return;
       }
+      const aiAssistBtn = event.target.closest(".task-ai-assist-btn");
+      if (aiAssistBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (aiAssistBtn.disabled) return;
+        void triggerTaskAiAssist(aiAssistBtn.dataset.taskId, aiAssistBtn.dataset.action);
+        return;
+      }
       const outcomeCheck = event.target.closest(".task-outcome-check");
       if (outcomeCheck) {
         const taskId = outcomeCheck.dataset.taskId;
@@ -18695,10 +19318,18 @@ What would make this more useful for someone in your situation?`;
       trackEvent("suggest_nav_click", { source });
     }
 
-    function addUserBubble(text) {
+    function addUserBubble(text, options = {}) {
+      const { editable = false, historyIndex = -1 } = options;
       const wrapper = document.createElement("div");
       wrapper.className = "bubble-pair";
-      wrapper.innerHTML = `<div class="bubble-user"><div class="bubble user">${formatText(text)}</div></div>`;
+      const editBtn = editable
+        ? `<button type="button" class="bubble-edit-btn" data-history-index="${historyIndex}" aria-label="Edit this answer">Edit</button>`
+        : "";
+      if (editable) {
+        wrapper.innerHTML = `<div class="bubble-user"><div class="bubble user"><div class="bubble-user-text">${formatText(text)}</div>${editBtn}</div></div>`;
+      } else {
+        wrapper.innerHTML = `<div class="bubble-user"><div class="bubble user">${formatText(text)}</div></div>`;
+      }
       $("#bubble-chain").append(wrapper);
       scrollConversation();
     }
@@ -19310,8 +19941,6 @@ What would make this more useful for someone in your situation?`;
       const step = state.profileIntakeStep;
       const trimmed = String(text || "").trim();
       if (!trimmed) return;
-      addUserBubble(trimmed);
-      state.history.push({ role: "user", content: trimmed });
 
       const parsers = {
         income: ["incomeUrgency", parseIncomeUrgency],
@@ -19335,8 +19964,7 @@ What would make this more useful for someone in your situation?`;
       const field = button.dataset.profileField;
       const value = button.dataset.profileValue;
       const label = button.textContent?.trim() || value;
-      addUserBubble(label);
-      state.history.push({ role: "user", content: label });
+      pushUserMessage(label, intakeEditAllowed() ? { kind: "profile", step: state.profileIntakeStep, field, value } : null);
       applyProfileIntakeField(field, value);
       schedulePersist();
     }
@@ -19929,9 +20557,8 @@ What would make this more useful for someone in your situation?`;
         intake_mode: "standard"
       });
       showScreen("convo");
-      addUserBubble(text);
       addTypingBubble();
-      state.history.push({ role: "user", content: text });
+      pushUserMessage(text);
 
       try {
         const answer = await callAdvisor(buildClarifyingPrompt(text), 450);
@@ -19976,8 +20603,7 @@ What would make this more useful for someone in your situation?`;
       });
       trackEvent("quick_try_started", { prompt_length: text.length });
       showScreen("convo");
-      addUserBubble(text);
-      state.history.push({ role: "user", content: text });
+      pushUserMessage(text);
       if (shouldAskLocation()) {
         addTypingBubble();
         askLocationStep();
@@ -20009,8 +20635,20 @@ What would make this more useful for someone in your situation?`;
       const text = textarea.value.trim();
       if (!text) return;
       textarea.value = "";
-      addUserBubble(text);
-      state.history.push({ role: "user", content: text });
+
+      let intakeMeta = null;
+      if (intakeEditAllowed()) {
+        if (state.profileIntakeStep) {
+          intakeMeta = { kind: "profile", step: state.profileIntakeStep };
+        } else if (state.step === 2) {
+          intakeMeta = { kind: "clarifying" };
+        } else if (state.step === 3 && state.locationIntakeStep) {
+          intakeMeta = { kind: "location", step: state.locationIntakeStep };
+        } else if (state.step === 4) {
+          intakeMeta = { kind: "name" };
+        }
+      }
+      pushUserMessage(text, intakeMeta);
 
       if (state.mapChat) {
         const intent = detectMapChatIntent(text);
@@ -20440,7 +21078,11 @@ What would make this more useful for someone in your situation?`;
         const enrichedStages = ensureRoadmapLocalContacts(normalizedStages, idea);
         let stagesToRender = enrichedStages;
         let cachedSource = cached.source || "ai";
-        if (roadmapHasFounderMismatch(stagesToRender, idea)) {
+        if (founderMode && roadmapLooksLikeEndUserReentry(stagesToRender)) {
+          stagesToRender = normalizeRoadmapStages(getFounderFallbackStages(idea));
+          cachedSource = "fallback";
+          trackEvent("roadmap_founder_reentry_mismatch_fixed", { idea_index: ideaIndex, cached: true });
+        } else if (roadmapHasFounderMismatch(stagesToRender, idea)) {
           stagesToRender = normalizeRoadmapStages(getFallbackStages(idea));
           cachedSource = "fallback";
           trackEvent("roadmap_founder_mismatch_fixed", { idea_index: ideaIndex, cached: true });
@@ -20548,6 +21190,12 @@ What would make this more useful for someone in your situation?`;
         if (corrected) stages = corrected;
       }
 
+      if (stages && founderMode && roadmapLooksLikeEndUserReentry(stages)) {
+        stages = getFounderFallbackStages(idea);
+        roadmapSource = "fallback";
+        trackEvent("roadmap_founder_reentry_mismatch_fallback", { idea_index: ideaIndex });
+      }
+
       if (stages && roadmapHasFounderMismatch(stages, idea)) {
         stages = getFallbackStages(idea);
         roadmapSource = "fallback";
@@ -20559,7 +21207,7 @@ What would make this more useful for someone in your situation?`;
         stages = parseRoadmapResponse(response, idea);
       }
 
-      if (stages && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
+      if (stages && !founderMode && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
         response = await callAdvisor(
           `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n` +
           `${getReentryRoadmapCorrectionBlock(idea)}\n` +
@@ -21403,39 +22051,51 @@ What would make this more useful for someone in your situation?`;
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "" };
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
       const text = humanizeTaskText(normalized.text);
+      const why = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
+      const outcome = humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized));
       const chips = [];
       if (showResources && normalized.local) {
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
-      const plainExplain = renderTaskPlainExplainHtml(normalized, stageIndex, taskIndex);
-      const writingAssist = renderTaskWritingAssistHtml(id, normalized);
-      const detailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
+      const meta = renderTaskMentorMetaHtml(normalized);
+      const breakdown = renderTaskBreakdownHtml(normalized);
+      const outcomeChecklist = renderTaskOutcomeChecklistHtml(id, normalized);
+      const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
-      const actionPack = showResources ? renderTaskActionPackHtml(normalized, { stage, stageIndex }) : "";
-      const whyBlock = normalized.why
-        ? `<div class="overview-task-why"><span class="overview-task-detail-label">Why</span><p class="overview-task-why-copy">${escapeHtml(humanizeTaskText(normalized.why))}</p></div>`
-        : "";
+      const aiAssist = renderTaskAiAssistHtml(id, normalized);
 
       return `
-        <div class="task-item overview-task" data-task-id="${id}">
+        <div class="task-item overview-task task-mentor-card" data-task-id="${id}">
           <div class="overview-task-main">
             <input class="task-check" type="checkbox" id="${id}" aria-labelledby="${id}-label">
             <div class="overview-task-content">
-              <div class="task-text" id="${id}-label">${linkifyTaskTextHtml(text)}</div>
-              ${whyBlock}
-              ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
-              ${plainExplain}
-              ${detailBlock}
+              <section class="task-mentor-section task-mentor-section--task">
+                <h4 class="task-mentor-label">Task</h4>
+                <div class="task-text" id="${id}-label">${linkifyTaskTextHtml(text)}</div>
+                ${meta}
+                ${breakdown}
+                ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
+              </section>
+              <section class="task-mentor-section">
+                <h4 class="task-mentor-label">Why this matters</h4>
+                <p class="task-mentor-copy">${escapeHtml(why)}</p>
+              </section>
+              <section class="task-mentor-section">
+                <h4 class="task-mentor-label">Success looks like</h4>
+                <p class="task-mentor-copy">${escapeHtml(outcome)}</p>
+                ${outcomeChecklist}
+              </section>
               ${actionPack}
             </div>
           </div>
           <div class="overview-task-tools">
-            ${writingAssist}
-            <div class="task-label">My Notes</div>
-            <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
-            ${notesExtras}
+            <section class="task-mentor-section task-mentor-section--notes">
+              <h4 class="task-mentor-label">My Notes</h4>
+              <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
+              ${notesExtras}
+            </section>
+            ${aiAssist}
             <div class="task-threads" id="threads-${id}"></div>
-            ${renderTaskAskSuggestionsHtml(id, text)}
             <div class="task-ask-row">
               <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
               <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
@@ -21657,7 +22317,6 @@ What would make this more useful for someone in your situation?`;
       $$(".task-ask-btn").forEach((button) => {
         button.addEventListener("click", () => askTask(button.dataset.taskId, getTaskTextById(button.dataset.taskId)));
       });
-      bindTaskAskSuggestions();
       bindTaskPersistence();
       updateRoadmapOverviewHeader();
       updateRoadmapOverviewChrome();
@@ -23682,7 +24341,7 @@ What would make this more useful for someone in your situation?`;
         closeDashboardMobileNav();
         showScreen("main", { skipScrollTop: true });
         requestAnimationFrame(() => {
-          document.querySelector(".dashboard-explore")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          document.querySelector(".dashboard-quick-actions")?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
       $("#sidebar-settings-btn")?.addEventListener("click", () => {
@@ -23692,10 +24351,7 @@ What would make this more useful for someone in your situation?`;
           $("#site-suggestions")?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
-      $("#dashboard-explore-all")?.addEventListener("click", () => {
-        document.querySelector(".dashboard-explore")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-      $$(".dashboard-quick-btn, .dashboard-explore-card").forEach((button) => {
+      $$(".dashboard-quick-btn").forEach((button) => {
         button.addEventListener("click", () => {
           applyDashboardPrompt(button.dataset.prompt);
         });
@@ -23743,6 +24399,16 @@ What would make this more useful for someone in your situation?`;
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
           startFlow();
+        }
+      });
+
+      $("#bubble-chain")?.addEventListener("click", (event) => {
+        const editBtn = event.target.closest(".bubble-edit-btn");
+        if (editBtn) {
+          event.preventDefault();
+          const idx = Number(editBtn.dataset.historyIndex);
+          if (Number.isFinite(idx)) editIntakeAnswer(idx);
+          return;
         }
       });
 
