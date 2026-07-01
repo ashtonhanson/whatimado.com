@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-task-labels -->
+<!-- whatimado build: 2026-07-01-mentor-voice -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-task-labels">
+  <meta name="whatimado-build" content="2026-07-01-mentor-voice">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -12537,13 +12537,19 @@
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Outcome-focused mission title — e.g. Find your first organization willing to test your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"First person: how you already helped — I found 8 orgs, ranked the top 3, drafted the email…","howTo":"2-4 plain-English sentences: exactly how to complete this mission using what you prepared","why":"Why this mission moves them toward their goal right now","outcome":"Expected outcome — measurable proof the mission succeeded","talkingPoints":"3-5 bullet lines they can say on a call or in person — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after deliverables exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"Full outreach email (subject + body), grant shortlist, phone script, or post — required when outreach/writing is involved"}]}]\n' +
-      'MISSION PHILOSOPHY (non-negotiable):\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Outcome-focused mission title — e.g. Find your first organization willing to test your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line naming the gap you filled — e.g. You needed names and emails, not another reminder to reach out. Empty string if nothing specific.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after deliverables exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED deliverable pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
+      'ASSET-FIRST RULE (non-negotiable):\n' +
+      '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
+      '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
+      '- NEVER write paragraphs explaining what the task means. Generate useful artifacts the user can copy, send, or fill in.\n' +
+      '- Contact 5 orgs → resources (names, emails, phones) + script (draft + follow-up email + phone script + spreadsheet tracker).\n' +
+      '- Build a logo → script (logo brief + mood board keywords + color palette hex + typography + AI image prompts + SVG recommendations).\n' +
+      '- Interview customers → script (interview questions + Google Form field list + short survey + call script + note template table).\n' +
+      'MISSION PHILOSOPHY:\n' +
       '- Think in MISSIONS (measurable progress toward the goal), not homework tasks.\n' +
       '- BAD mission: "Find 10 nonprofits." GOOD mission: "Find your first organization willing to test your idea."\n' +
-      '- YOU provide: organizations, contacts, emails, phone numbers, suggested first contact, outreach email, talking points, follow-up message, expected outcome.\n' +
-      '- mission = the goal. text = what they do now. mentorHelp = what you already did. howTo = how to do it. outcome = success looks like.\n' +
-      '- NEVER assign: research, find, look up, write from scratch — fill resources + script + talkingPoints + followUp instead.\n' +
+      '- YOU provide the work product. text = what they do with it (review, send, call).\n' +
+      '- NEVER assign: research, find, look up, write from scratch — put results in resources + script + talkingPoints + followUp.\n' +
       '- resources.local = 3-8 real named orgs with phones/emails/URLs. First contact in list = suggested first contact.\n' +
       '- Every mission must move the user measurably closer to their goal — they should never wonder what to do now.\n' +
       'Write in plain English — middle-school reading level. No startup jargon.\n' +
@@ -12643,17 +12649,20 @@
     };
 
     const ACTIONABLE_TASK_RULES =
-      'MISSION PHILOSOPHY — experienced guide who already did the work:\n' +
-      '- Each item is a MISSION (measurable step toward their goal), not a homework task.\n' +
+      'ASSET-FIRST — experienced guide who already did the work:\n' +
+      '- Every field answers: "What would genuinely help the user complete THIS exact task?"\n' +
+      '- NEVER restate mission, text, or task title. NEVER write paragraphs explaining the task.\n' +
+      '- Generate copy-paste artifacts: org lists, emails, scripts, trackers, briefs, question lists, form fields.\n' +
+      '- Contact orgs → resources + script (draft email, follow-up, phone script, spreadsheet tracker).\n' +
+      '- Build logo → script (brief, mood keywords, hex palette, fonts, AI prompts, SVG tips).\n' +
+      '- Interview customers → script (questions, Google Form fields, survey, call script, note template).\n' +
+      '- Each item is a MISSION (measurable step), not homework.\n' +
       '- BAD: "Find 10 nonprofits." GOOD: "Find your first organization willing to test your idea."\n' +
-      '- YOU provide: organizations, contacts, emails, phones, suggested first contact, outreach email, talking points, follow-up, expected outcome.\n' +
-      '- mission = outcome-focused title. text = what they do now. mentorHelp = how you helped. howTo = how to do it. outcome = success looks like.\n' +
-      '- talkingPoints = 3-5 ready lines for calls/meetings. followUp = message if no reply in 3-5 days. script = full email/grant/post draft.\n' +
-      '- FORBIDDEN: research, find, look up, write a draft, create a list — do that in resources + script + mentorHelp.\n' +
+      '- mentorHelp = bullet list of prepared assets. howTo = max 2 lines pointing at assets. script = full deliverable pack.\n' +
+      '- FORBIDDEN: research, find, look up, write a draft, create a list — do that in resources + script.\n' +
       '- resources.*: 3-8 REAL orgs with official URLs, phones, emails for their location. First in list = suggested first contact.\n' +
       `- Category hints (resolve to real names): ${RESOURCE_CATEGORY_HINTS}.\n` +
-      '- why, outcome, duration, difficulty required. steps[] optional (max 2).\n' +
-      '- User must always know: what to do, why, how, what success looks like, how you helped.\n' +
+      '- outcome = measurable proof only. why = gap you filled (one line) or empty.\n' +
       '- Plain English. No startup jargon.\n' +
       '- Never invent fake grants or personal @gmail addresses.\n';
     let roadmapAutoContinueTimer = null;
@@ -13108,13 +13117,18 @@
     }
 
     const PLAIN_LANGUAGE_AI_RULES =
-      'PLAIN LANGUAGE (middle-school reading level — NON-NEGOTIABLE):\n' +
-      '- Sound like an experienced mentor talking to a friend — NOT a startup consultant, MBA, or business coach.\n' +
-      '- Assume the reader has ZERO business background.\n' +
-      '- BANNED words/phrases in tasks, stage labels, descriptions, why, and outcome: validate, validation, sprint, traction, pivot, social validation, go-to-market, value proposition, product-market fit, user acquisition, MVP, iterate, friction point, feedback loop, baseline metrics, ship, GTM, leverage, scalable, cohort, monetize, activation, optics, narrative (use "story"), ICP.\n' +
-      '- Say "people" not "users" (unless you mean website testers). Say "try" or "put out" not "ship". Say "ask" not "leverage". Say "change direction" not "pivot".\n' +
-      '- BAD: "Validate demand." / "Run a validation sprint." / "Build traction." / "Test your value proposition."\n' +
-      '- GOOD: "Talk to three people who might actually use your idea and ask whether it would help them." / "Spend two weeks sharing it in real communities and listen to what people say." / "Write down signs that people are interested (messages, signups, thank-yous)."\n';
+      'MENTOR VOICE (non-negotiable — every stage label, description, mission, why, and outcome):\n' +
+      '- Sound like a helpful mentor talking to a friend — NOT an AI, startup coach, MBA, or business consultant.\n' +
+      '- Assume the reader has ZERO business background. If your grandma would not understand it, rewrite it.\n' +
+      '- Use short, concrete sentences. Say what to DO and WHO to talk to — not abstract strategy.\n' +
+      '- BANNED words/phrases: validate, validation, social validation, stakeholders, market fit, product-market fit, reentry ecosystem, sprint, deliverable, initiative, pilot, touchpoint, execute, framework, go-to-market, value proposition, user acquisition, MVP, iterate, friction point, feedback loop, traction, pivot, leverage, scalable, cohort, monetize, activation, optics, GTM, ICP, aligned with your mission, identify organizations aligned.\n' +
+      '- Say "people" not "users". Say "try" or "share" not "ship". Say "use" not "leverage". Say "change direction" not "pivot". Say "small test" not "pilot". Say "finished piece" not "deliverable". Say "do" not "execute". Say "simple plan" not "framework".\n' +
+      '- BAD: "Validate local demand before investing."\n' +
+      '- GOOD: "Before you spend more time or money, find out if people actually want this."\n' +
+      '- BAD: "Identify organizations aligned with your mission."\n' +
+      '- GOOD: "Find local organizations that already help people like the ones you\'re trying to reach."\n' +
+      '- BAD: "Run a validation sprint." / "Engage stakeholders." / "Execute the outreach framework."\n' +
+      '- GOOD: "Spend two weeks sharing it with real people and listen to what they say." / "Talk to the people who make decisions at each org." / "Send the emails below — one org at a time."\n';
 
     function getActionableTaskRules(idea = state.currentIdea) {
       const base = isGroundedPractitioner(idea)
@@ -13635,6 +13649,68 @@
       return overlap / Math.max(wordsLeft.size, wordsRight.size, 1);
     }
 
+    function getTaskReferenceTexts(normalized) {
+      if (!normalized) return [];
+      const refs = new Set();
+      [normalized.mission, normalized.text, normalized.outcome].forEach((entry) => {
+        const copy = String(entry || "").trim();
+        if (copy) refs.add(copy);
+      });
+      try {
+        const inferred = inferMissionTitle(normalized);
+        if (inferred) refs.add(inferred);
+      } catch (_) { /* inferMissionTitle may not exist yet during parse */ }
+      return [...refs];
+    }
+
+    function isTaskRestatement(text, normalized, threshold = 0.68) {
+      const copy = String(text || "").trim();
+      if (!copy || !normalized) return false;
+      return getTaskReferenceTexts(normalized).some((ref) => textSimilarity(copy, ref) >= threshold);
+    }
+
+    function isExplanatoryTaskCopy(text) {
+      const copy = String(text || "").trim();
+      if (!copy) return false;
+      const hasAssetMarkers = /\n[-•*]|subject:|dear |hi [a-z]|@\w|https?:\/\/|\|\s*\w+\s*\||\d+\.\s+\[|org:|phone:|email:/i.test(copy);
+      if (hasAssetMarkers) return false;
+      if (copy.length > 160 && !/\n/.test(copy)) return true;
+      return /\b(this step|this mission|this task|you (should|need to|will)|helps you|moves you toward|unlock|finishing this|small steps add up|real conversations unlock)\b/i.test(copy);
+    }
+
+    function inferTaskAssetProfile(normalized) {
+      const blob = `${normalized.text} ${normalized.mission || ""} ${normalized.why || ""} ${normalized.outcome || ""}`.toLowerCase();
+      if (/\b(logo|brand(?:ing)?|visual identity|brand mark|icon design|wordmark)\b/.test(blob)) return "logo";
+      if (/\b(interview|survey|customer feedback|user research|focus group|poll|questionnaire|talk to \d+ (people|customers|users))\b/.test(blob)) return "interview";
+      if (/\b(contact \d|outreach|reach out|organizations?|nonprofits?|partners?|call \d|email \d|five org|5 org)\b/.test(blob)) return "outreach";
+      if (/\b(resume|curriculum vitae|\bcv\b)\b/.test(blob)) return "resume";
+      if (/\b(grant|funding|scholarship)\b/.test(blob)) return "grant";
+      if (/\b(post|reddit|facebook|social|launch|share)\b/.test(blob)) return "social";
+      return "general";
+    }
+
+    function sanitizeMentorFieldText(text, normalized) {
+      const copy = String(text || "").trim();
+      if (!copy) return "";
+      if (isGenericMentorCopy(copy, normalized)) return "";
+      if (isTaskRestatement(copy, normalized)) return "";
+      if (isExplanatoryTaskCopy(copy)) return "";
+      return humanizeTaskText(copy);
+    }
+
+    function sanitizeTaskMentorFields(normalized) {
+      if (!normalized || typeof normalized !== "object") return normalized;
+      ["why", "howTo", "mentorHelp", "mentorFindings", "outcome"].forEach((field) => {
+        normalized[field] = sanitizeMentorFieldText(normalized[field], normalized);
+      });
+      const script = String(normalized.script || "").trim();
+      if (!script || script.length < 40 || isTaskRestatement(script, normalized) || isExplanatoryTaskCopy(script)) {
+        const pack = buildLocalTaskAssetPack(normalized);
+        if (pack && pack.length > (script?.length || 0)) normalized.script = pack;
+      }
+      return normalized;
+    }
+
     function stepsAreRedundantWithText(text, steps) {
       if (!steps?.length) return true;
       const combined = normalizeTextForCompare(steps.join(" "));
@@ -13985,6 +14061,9 @@
       if (/\b(linkedin)\b/.test(blob)) return "linkedin_post";
       if (/\b(facebook|fb post)\b/.test(blob)) return "facebook_post";
       if (/\b(reddit|subreddit|r\/)\b/.test(blob)) return "reddit_post";
+      if (/\b(logo|brand mark|visual identity|wordmark)\b/.test(blob)) return "logo_brief";
+      if (/\b(interview|customer feedback|user research|focus group|survey people|talk to customers)\b/.test(blob)) return "interview_kit";
+      if (/\b(outreach tracker|contact \d|track outreach|spreadsheet|tracker)\b/.test(blob)) return "outreach_pack";
       if (/\b(spreadsheet|budget sheet|tracking sheet|excel|google sheet)\b/.test(blob)) return "spreadsheet";
       if (/\b(meeting agenda|run the meeting|agenda for)\b/.test(blob)) return "meeting_agenda";
       if (/\b(proposal template|proposal|pitch deck|sponsor deck|one.pager)\b/.test(blob)) return "proposal";
@@ -14314,10 +14393,171 @@ ${outcomeLine}
       }
     }
 
+    function buildLocalTaskAssetPack(normalized) {
+      const profile = inferTaskAssetProfile(normalized);
+      const typed = getWritingDeliverableType(normalized);
+      if (typed && typed !== "general_writing") {
+        const draft = buildLocalDeliverableDraft(typed, normalized);
+        if (draft) return draft;
+      }
+
+      const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
+      const resources = getFlatTaskResources(normalized);
+      const script = String(normalized.script || "").trim();
+      const followUp = String(normalized.followUp || "").trim();
+      const sections = [];
+
+      if (profile === "outreach" || (resources.length >= 1 && /\b(contact|outreach|email|call|organi)/i.test(normalized.text))) {
+        if (resources.length) {
+          sections.push("ORGANIZATION LIST (start at #1)");
+          resources.slice(0, 8).forEach((entry, index) => {
+            const label = [entry.org, entry.name].filter(Boolean).join(" — ") || `Organization ${index + 1}`;
+            const bits = [`${index + 1}. ${label}`];
+            if (entry.name && entry.org) bits.push(`Contact: ${entry.name}`);
+            if (entry.phone) bits.push(`Phone: ${entry.phone}`);
+            if (entry.email) bits.push(`Email: ${entry.email}`);
+            if (entry.url) bits.push(`Web: ${entry.url}`);
+            sections.push(bits.join("\n   "));
+          });
+          sections.push("");
+        }
+        if (script.length > 40 && !isExplanatoryTaskCopy(script)) {
+          sections.push("DRAFT EMAIL", script, "");
+        } else {
+          sections.push("DRAFT EMAIL", buildLocalDeliverableDraft("email", normalized) || "", "");
+        }
+        if (followUp) {
+          sections.push("FOLLOW-UP EMAIL (3–5 days later)", followUp, "");
+        } else {
+          sections.push(
+            "FOLLOW-UP EMAIL (3–5 days later)",
+            `Subject: Re: Quick question — following up\n\nHi [Name],\n\nI wanted to follow up on my note from [day]. Still hoping for 10 minutes of guidance on ${pathTitle.toLowerCase()}.\n\nThank you,\n[Your name]`,
+            ""
+          );
+        }
+        sections.push("PHONE SCRIPT", buildLocalDeliverableDraft("phone_script", normalized) || "", "");
+        sections.push("OUTREACH TRACKER", buildLocalDeliverableDraft("spreadsheet", normalized) || "");
+        return sections.filter(Boolean).join("\n").trim();
+      }
+
+      if (profile === "logo") {
+        return `LOGO BRIEF
+Project: ${pathTitle}
+Audience: [Who sees this logo first]
+Personality: [3 adjectives — e.g. warm, practical, trustworthy]
+Must include: [Name/wordmark/icon requirements]
+Must avoid: [Colors, styles, clichés to skip]
+
+MOOD BOARD KEYWORDS
+• [Keyword 1 — e.g. hand-drawn]
+• [Keyword 2 — e.g. community]
+• [Keyword 3 — e.g. sunrise / fresh start]
+Search Pinterest or Google Images with these + "${pathTitle.toLowerCase()}"
+
+COLOR PALETTE
+Primary:   #______  [Name — e.g. deep teal]
+Secondary: #______  [Name — e.g. warm sand]
+Accent:    #______  [Name — e.g. coral]
+Neutral:   #______  [Background/text gray]
+
+TYPOGRAPHY
+Headlines: [Font name — e.g. DM Sans Bold] — free at fonts.google.com
+Body:      [Font name — e.g. Source Sans 3]
+
+AI IMAGE PROMPTS (paste into Midjourney, DALL·E, or Ideogram)
+1. "Minimal flat logo for ${pathTitle.toLowerCase()}, [mood keyword], simple icon + wordmark, white background, vector style"
+2. "Icon-only mark for ${pathTitle.toLowerCase()}, [shape metaphor], two-color, scalable"
+
+SVG RECOMMENDATIONS
+• Keep paths simple — under 12 anchor points for the icon
+• Export at 512×512 and 64×64 to test readability
+• Use SVGOMG (jakearchibald.github.io/svgomg/) to shrink file size
+• Save wordmark and icon as separate SVG files`;
+      }
+
+      if (profile === "interview") {
+        return `INTERVIEW QUESTIONS
+1. Walk me through the last time you [problem this path solves]. What happened?
+2. What have you already tried? What worked or didn't?
+3. If you could fix one thing about [topic], what would it be?
+4. What would make you trust a new [service/product/approach]?
+5. What would you pay for — or what would need to be free?
+6. Who else should I talk to?
+
+GOOGLE FORM FIELDS (create at forms.google.com)
+• Name (short answer, optional)
+• Email (short answer, optional)
+• Q1: [Paste question 1] — Paragraph
+• Q2: [Paste question 2] — Paragraph
+• Q3: [Paste question 3] — Multiple choice
+• Q4: Anything else we should know? — Paragraph
+
+SHORT SURVEY (5 questions max — Typeform or Google Form)
+1. How often does [problem] affect you? (Never / Sometimes / Often)
+2. What do you use today? (Open text)
+3. Biggest frustration? (Open text)
+4. Would you try [${pathTitle}] if it were free? (Yes / Maybe / No)
+5. Best way to reach you? (Email / Phone / Don't contact)
+
+CALL / VIDEO SCRIPT
+"Hi, I'm [name]. I'm in ${location} researching ${pathTitle.toLowerCase()}. I'm not selling anything — I want to learn from people who've lived this. Do you have 15 minutes this week? I can do phone or video."
+
+NOTE TEMPLATE
+| Date | Name | Key quote | Pain point | Idea mentioned | Follow-up? |
+|------|------|-----------|------------|----------------|------------|
+|      |      |           |            |                |            |`;
+      }
+
+      if (script.length > 80 && !isExplanatoryTaskCopy(script) && !isTaskRestatement(script, normalized)) {
+        return script;
+      }
+      return null;
+    }
+
+    function buildTaskAssetGenerationPrompt(normalized, options = {}) {
+      const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
+      const profile = options.profile || inferTaskAssetProfile(normalized);
+      const deliverable = options.deliverable || getWritingDeliverableType(normalized) || profile;
+      const resources = getFlatTaskResources(normalized);
+      const resourceBlock = resources.length
+        ? `\nOrganizations already on this task (use these names/contacts):\n${resources.slice(0, 8).map((e, i) => `${i + 1}. ${[e.org, e.name].filter(Boolean).join(" — ")} ${e.phone || ""} ${e.email || ""}`.trim()).join("\n")}`
+        : "";
+
+      const assetRules = {
+        outreach: "Output ONLY copy-paste assets with section headers:\nORGANIZATION LIST\nDRAFT EMAIL\nFOLLOW-UP EMAIL\nPHONE SCRIPT\nOUTREACH TRACKER (markdown table)\nNo paragraphs explaining outreach.",
+        logo: "Output ONLY:\nLOGO BRIEF\nMOOD BOARD KEYWORDS\nCOLOR PALETTE (hex codes)\nTYPOGRAPHY\nAI IMAGE PROMPTS (2+)\nSVG RECOMMENDATIONS\nNo paragraphs explaining what a logo is.",
+        interview: "Output ONLY:\nINTERVIEW QUESTIONS (6+)\nGOOGLE FORM FIELDS\nSHORT SURVEY\nCALL SCRIPT\nNOTE TEMPLATE (markdown table)\nNo paragraphs explaining interviewing.",
+        grant: "Output a complete grant application draft with numbered sections ready to paste into a form.",
+        resume: "Output a complete resume draft with clear section headers.",
+        social: "Output ready-to-post drafts with platform-appropriate formatting.",
+        general: "Output the most useful ready-to-use artifact for this task — templates, lists, scripts, or drafts. Section headers required. Zero explanation of what the task means."
+      };
+
+      return (
+        `Generate useful ASSETS for this task — not an explanation of the task.\n\n` +
+        `Situation: ${situation || "Not specified"}\n` +
+        `Location: ${location}\n` +
+        `Path: ${pathTitle}\n` +
+        `Task: ${normalized.text}\n` +
+        `Asset type: ${deliverable.replace(/_/g, " ")}\n` +
+        resourceBlock +
+        `\nRules:\n` +
+        `- ${assetRules[profile] || assetRules.general}\n` +
+        `- NEVER restate or paraphrase the task title or mission.\n` +
+        `- Plain English, middle-school reading level.\n` +
+        `- Use [brackets] only for facts you cannot infer.\n` +
+        `- They should paste this into My Notes and start using it immediately.\n` +
+        `- Output ONLY the asset pack — no preamble.`
+      );
+    }
+
     function generateLocalTaskDraft(normalized) {
+      const assetPack = buildLocalTaskAssetPack(normalized);
+      if (assetPack) return assetPack;
+
       const text = normalized.text.toLowerCase();
 
-      if (normalized.script && normalized.script.length > 40) {
+      if (normalized.script && normalized.script.length > 40 && !isExplanatoryTaskCopy(normalized.script) && !isTaskRestatement(normalized.script, normalized)) {
         return normalized.script;
       }
 
@@ -14373,54 +14613,26 @@ What would make this more useful for someone in your situation?`;
       }
 
       if (isWritingTask(normalized)) {
-        const { situation, pathTitle, location } = getTaskDraftContext(normalized);
-        return `[Starter draft — edit everything below]
-
-${situation ? `Context: ${situation}\n\n` : ""}Task: ${humanizeTaskText(normalized.text)}
-
----
-
-[Write your draft here — replace this section]
-
-${humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized))}
-
----
-Path: ${pathTitle}
-Location: ${location}`;
+        return buildLocalTaskAssetPack(normalized) || null;
       }
 
       return null;
     }
 
     async function generateAiTaskDraft(taskId, normalized) {
-      const deliverable = getWritingDeliverableType(normalized) || "document";
-      const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
-      const deliverableLabel = deliverable.replace(/_/g, " ");
+      const profile = inferTaskAssetProfile(normalized);
+      const deliverable = getWritingDeliverableType(normalized) || profile;
+      const prompt = buildTaskAssetGenerationPrompt(normalized, { profile, deliverable });
 
-      const prompt =
-        `Write a complete, ready-to-edit ${deliverableLabel} for this person. Output ONLY the draft text — no preamble.\n\n` +
-        `Situation: ${situation || "Not specified"}\n` +
-        `Location: ${location}\n` +
-        `Path: ${pathTitle}\n` +
-        `Task: ${normalized.text}\n` +
-        `Why: ${normalized.why || inferTaskWhy(normalized)}\n` +
-        `Success looks like: ${normalized.outcome || inferTaskOutcome(normalized)}\n` +
-        (contactLine ? `Contact/org context: ${contactLine}\n` : "") +
-        `\nRules:\n` +
-        `- Plain English, middle-school reading level.\n` +
-        `- Use [brackets] only for personal facts you cannot infer.\n` +
-        `- Format correctly for a ${deliverableLabel} (Subject: for email, sections for grants/resumes, etc.).\n` +
-        `- They should be able to paste this into My Notes and start editing immediately.`;
-
-      return callAdvisor(prompt, 1400, { timeoutMs: 50000 });
+      return callAdvisor(prompt, 1800, { timeoutMs: 55000 });
     }
 
     function getTaskWritingNotesPlaceholder(normalized) {
       if (generateLocalTaskDraft(normalized) || isWritingTask(normalized)) {
-        return "Your starter draft appears here — edit anything to match your voice…";
+        return "Your prepared assets appear here — org lists, drafts, scripts, trackers…";
       }
       if (taskHasMentorDeliverable(normalized)) {
-        return "Your mission brief, contacts, and drafts appear here — edit anything…";
+        return "Your contacts, drafts, and asset pack appear here — edit anything…";
       }
       return "Jot down thoughts, progress, links...";
     }
@@ -15376,31 +15588,18 @@ Location: ${location}`;
     }
 
     function inferTaskWhy(normalized) {
-      if (normalized.why) return humanizeTaskText(normalized.why);
-      const text = normalized.text.toLowerCase();
-      if (/\b(email|call|outreach|reach out)\b/.test(text)) {
-        return "Real conversations unlock opportunities that job boards never show — one good contact can shortcut weeks of guessing.";
+      if (normalized.why) {
+        const copy = sanitizeMentorFieldText(normalized.why, normalized);
+        if (copy) return copy;
       }
-      if (/\b(resume|cv|apply|interview)\b/.test(text)) {
-        return "Employers decide fast from the first impression — tightening this now means more real chances, not more rejections.";
-      }
-      if (/\b(draft|write|post|story)\b/.test(text)) {
-        return "A clear message helps the right people understand what you're offering — you don't need perfection, just a version you can send.";
-      }
-      if (/\b(list|research|name \d|find \d)\b/.test(text)) {
-        return "A short list turns a vague goal into something you can act on today — you only need a few good leads to start.";
-      }
-      if (/\b(visit|book|appointment|schedule)\b/.test(text)) {
-        return "Showing up beats researching forever — most people wait too long before they ask for help.";
-      }
-      return "Small steps add up — finishing this unlocks the next one and keeps you moving instead of stuck.";
+      return "";
     }
 
     function isGenericOutcomeText(text) {
       const copy = String(text || "").trim();
       if (!copy) return true;
       if (isGenericMentorCopy(copy)) return true;
-      return /you can point to something concrete|written list with names, links, or phone numbers|something concrete you finished|draft saved that you could send|you sent \(or have ready to send\)|you made the call \(or left a voicemail\)|you submitted the application/i.test(copy);
+      return /you can point to something concrete|written list with names, links, or phone numbers|something concrete you finished|draft saved that you could send|you sent \(or have ready to send\)|you made the call \(or left a voicemail\)|you submitted the application|message sent \(or ready|tracker updated|tracker filled|logo brief saved|interviews completed/i.test(copy);
     }
 
     function summarizeMissionTitle(text) {
@@ -15426,24 +15625,33 @@ Location: ${location}`;
     }
 
     function inferTaskOutcome(normalized) {
-      if (normalized.outcome) return humanizeTaskText(normalized.outcome);
+      if (normalized.outcome) {
+        const copy = sanitizeMentorFieldText(normalized.outcome, normalized);
+        if (copy) return copy;
+      }
       const text = normalized.text.toLowerCase();
       if (/\b(email|message|outreach)\b/.test(text)) {
-        return "You sent (or have ready to send) the message and noted who you contacted and when to follow up.";
+        return "Message sent (or ready in draft) and tracker updated with contact date.";
       }
       if (/\b(call|phone)\b/.test(text)) {
-        return "You made the call (or left a voicemail) and wrote down what they said and the next step.";
+        return "Call made and notes captured in the tracker below.";
       }
-      if (/\b(list|name \d|find \d)\b/.test(text)) {
-        return "You have a written list with names, links, or phone numbers saved somewhere you'll actually use.";
+      if (/\b(list|name \d|find \d|contact \d)\b/.test(text)) {
+        return "Tracker filled with at least 3 contacts and next follow-up dates.";
+      }
+      if (/\b(logo|brand)\b/.test(text)) {
+        return "Logo brief saved and at least one AI prompt tested.";
+      }
+      if (/\b(interview|survey|customer)\b/.test(text)) {
+        return "At least 2 interviews completed and notes captured in the template.";
       }
       if (/\b(draft|write|post)\b/.test(text)) {
-        return "You have a draft saved that you could send or post after one quick read-through.";
+        return "Draft saved and ready to send or post after one read-through.";
       }
       if (/\b(apply|submit)\b/.test(text)) {
-        return "You submitted the application and logged the date so you can follow up.";
+        return "Application submitted and date logged for follow-up.";
       }
-      return "You can point to something concrete you finished — a file, a sent message, a booked appointment, or a checked box.";
+      return "";
     }
 
     function inferMissionTitle(normalized, context = {}) {
@@ -15476,37 +15684,39 @@ Location: ${location}`;
     }
 
     function inferHowTo(normalized) {
-      const existing = String(normalized.howTo || "").trim();
-      if (existing) return humanizeTaskText(existing);
+      const existing = sanitizeMentorFieldText(normalized.howTo, normalized);
+      if (existing) return existing;
       const resources = getFlatTaskResources(normalized);
       const parts = [];
       if (resources.length) {
-        const first = resources[0].org || resources[0].name || "the first contact";
-        parts.push(`Start with ${first} — phone, email, and website are in the list below.`);
+        const first = resources[0].org || resources[0].name || "contact #1";
+        parts.push(`Send the draft below to ${first} (details in the contact list).`);
       }
       if (String(normalized.script || "").length > 60) {
-        parts.push("Use the ready-to-send draft below — personalize anything in [brackets].");
+        parts.push("Edit the prepared draft below — swap anything in [brackets], then use it.");
       }
       if (normalized.talkingPoints) {
-        parts.push("On a call, use the talking points below as a guide.");
+        parts.push("On a call, read from the talking points below.");
       }
       if (normalized.followUp) {
-        parts.push("If you do not hear back in 3-5 days, send the follow-up below.");
+        parts.push("If no reply in 3–5 days, send the follow-up below.");
       }
-      if (parts.length) return humanizeTaskText(parts.join(" "));
+      if (parts.length) return humanizeTaskText(parts.slice(0, 2).join(" "));
       if (normalized.steps?.length) {
-        return humanizeTaskText(normalized.steps.join(" "));
+        const steps = normalized.steps.map((step) => sanitizeMentorFieldText(step, normalized)).filter(Boolean);
+        if (steps.length) return humanizeTaskText(steps.join(" "));
       }
-      return humanizeTaskText(normalized.text);
+      return "";
     }
 
     function inferMentorHelp(normalized) {
-      const help = String(normalized.mentorHelp || normalized.mentorFindings || "").trim();
-      if (help) return humanizeTaskText(help);
+      const help = sanitizeMentorFieldText(normalized.mentorHelp || normalized.mentorFindings, normalized);
+      if (help) return help;
       return buildMentorFindingsText(normalized);
     }
 
     function enrichTaskMentorFields(normalized, context = {}) {
+      sanitizeTaskMentorFields(normalized);
       normalized.mission = inferMissionTitle(normalized, context);
       normalized.howTo = inferHowTo(normalized);
       normalized.mentorHelp = inferMentorHelp(normalized);
@@ -15519,6 +15729,7 @@ Location: ${location}`;
       if (!normalized.outcome) normalized.outcome = inferTaskOutcome(normalized);
       if (!normalized.mentorFindings) normalized.mentorFindings = buildMentorFindingsText(normalized);
       normalized.text = buildMentorUserActionText(normalized);
+      sanitizeTaskMentorFields(normalized);
       return normalized;
     }
 
@@ -15537,10 +15748,15 @@ Location: ${location}`;
       /\broles matching\b/i
     ];
 
-    function isGenericMentorCopy(text) {
+    function isGenericMentorCopy(text, normalized = null) {
       const copy = String(text || "").trim();
       if (!copy) return true;
-      return /small steps add up|finishing this unlocks the next one|you can point to something concrete you finished/i.test(copy);
+      if (/small steps add up|finishing this unlocks the next one|you can point to something concrete you finished|real conversations unlock|employers decide fast|a clear message helps|a short list turns a vague goal|showing up beats researching/i.test(copy)) {
+        return true;
+      }
+      if (normalized && isTaskRestatement(copy, normalized)) return true;
+      if (isExplanatoryTaskCopy(copy)) return true;
+      return false;
     }
 
     function isJobSearchHomeworkText(text) {
@@ -15557,7 +15773,9 @@ Location: ${location}`;
       const why = String(normalized.why || inferTaskWhy(normalized)).trim();
       const howTo = String(normalized.howTo || inferHowTo(normalized)).trim();
       if (text && (text === why || text === howTo || why === howTo)) return true;
-      if (isGenericMentorCopy(why) && isGenericMentorCopy(String(normalized.outcome || inferTaskOutcome(normalized)))) return true;
+      if (isTaskRestatement(why, normalized) || isTaskRestatement(howTo, normalized)) return true;
+      if (!why && !howTo) return true;
+      if (isGenericMentorCopy(why, normalized) && isGenericMentorCopy(String(normalized.outcome || inferTaskOutcome(normalized)), normalized)) return true;
       return false;
     }
 
@@ -15576,7 +15794,8 @@ Location: ${location}`;
     function taskHasMentorDeliverable(normalized) {
       const scriptLen = String(normalized.script || "").trim().length;
       const resources = getFlatTaskResources(normalized);
-      return scriptLen > 60 || resources.length >= 2 || String(normalized.mentorFindings || "").length > 40;
+      const findings = String(normalized.mentorFindings || normalized.mentorHelp || "").trim();
+      return scriptLen > 60 || resources.length >= 2 || (findings.length > 12 && !isGenericMentorCopy(findings, normalized));
     }
 
     function isHomeworkTaskText(text) {
@@ -15591,50 +15810,30 @@ Location: ${location}`;
     }
 
     function buildMentorFindingsText(normalized) {
-      const existing = String(normalized.mentorFindings || "").trim();
-      if (existing.length > 30) return humanizeTaskText(existing);
+      const existing = sanitizeMentorFieldText(normalized.mentorFindings || normalized.mentorHelp, normalized);
+      if (existing.length > 24) return existing;
 
       const resources = getFlatTaskResources(normalized);
       const script = String(normalized.script || "").trim();
-      const blob = `${normalized.text} ${normalized.why || ""}`.toLowerCase();
-      const parts = [];
+      const assets = [];
 
       if (resources.length) {
-        const count = resources.length;
-        const top = resources.slice(0, 3).map((entry) => entry.org || entry.name).filter(Boolean);
-        let line = `I found ${count} ${count === 1 ? "option" : "options"} that match your goal`;
-        if (/\b(grant|funding|scholarship)\b/.test(blob)) {
-          line = `I pulled together ${count} grant or funding ${count === 1 ? "option" : "options"} worth applying to`;
-        } else if (/\b(job|employ|hire|career|workforce)\b/.test(blob)) {
-          line = `I found ${count} employment and workforce ${count === 1 ? "resource" : "resources"} near you`;
-        } else if (/\b(training|certif|course|program)\b/.test(blob)) {
-          line = `I compared ${count} training ${count === 1 ? "route" : "routes"} that fit your timeline`;
-        }
-        if (top.length) {
-          line += ` — I'd start with ${top.join(", ")}`;
-        }
-        line += ".";
-        parts.push(line);
+        assets.push(`${resources.length} org${resources.length === 1 ? "" : "s"} with contacts`);
       }
+      if (script.length > 80 && !isExplanatoryTaskCopy(script)) {
+        const profile = inferTaskAssetProfile(normalized);
+        if (profile === "outreach") assets.push("draft email, follow-up, phone script, tracker");
+        else if (profile === "logo") assets.push("logo brief, palette, typography, AI prompts");
+        else if (profile === "interview") assets.push("questions, form fields, survey, note template");
+        else if (/\bsubject:/i.test(script)) assets.push("draft email");
+        else if (/\b(grant|funding)\b/i.test(script.slice(0, 120))) assets.push("grant draft");
+        else assets.push("ready-to-edit draft");
+      }
+      if (normalized.talkingPoints) assets.push("talking points");
+      if (normalized.followUp) assets.push("follow-up message");
 
-      if (script.length > 80) {
-        if (/\b(grant|funding)\b/.test(blob) || /\bgrant\b/i.test(script.slice(0, 120))) {
-          parts.push("The grant shortlist and application talking points are ready below — you are not starting from scratch.");
-        } else if (/\b(call|phone|voicemail)\b/.test(blob)) {
-          parts.push("I wrote a phone script you can read word-for-word — tweak anything that does not sound like you.");
-        } else if (/\b(email|subject:|dear |hi )\b/i.test(script.slice(0, 200))) {
-          parts.push("Your outreach email is drafted below — swap anything in [brackets] and send when it sounds like you.");
-        } else if (/\b(post|reddit|facebook|caption)\b/i.test(blob)) {
-          parts.push("A post draft is ready below — edit the tone until it feels like your voice.");
-        } else {
-          parts.push("A ready-to-edit draft is below — review it instead of writing from a blank page.");
-        }
-      }
-
-      if (!parts.length && normalized.why) {
-        return humanizeTaskText(normalized.why);
-      }
-      return humanizeTaskText(parts.join(" "));
+      if (assets.length) return `Prepared: ${assets.join("; ")}.`;
+      return "";
     }
 
     function buildMentorUserActionText(normalized) {
@@ -15689,9 +15888,11 @@ Location: ${location}`;
       const normalized = typeof task === "object" && task?.text !== undefined
         ? { ...task }
         : normalizeRoadmapTask(task);
+      sanitizeTaskMentorFields(normalized);
       if (!normalized.mentorFindings) {
         normalized.mentorFindings = buildMentorFindingsText(normalized);
       }
+      normalized.mentorHelp = normalized.mentorFindings;
       normalized.text = buildMentorUserActionText(normalized);
       if (normalized.steps?.length > 2) {
         normalized.steps = normalized.steps.slice(0, 2);
@@ -15796,39 +15997,40 @@ Location: ${location}`;
     }
 
     function buildMentorBriefForNotes(normalized) {
-      const mission = inferMissionTitle(normalized);
-      const help = inferMentorHelp(normalized);
-      const howTo = inferHowTo(normalized);
       const resources = getFlatTaskResources(normalized);
       const script = String(normalized.script || "").trim();
-      const lines = ["[Mission brief]", "", `Mission: ${mission}`, ""];
+      const lines = ["[Your prepared assets]", ""];
 
-      if (help) lines.push("How we're helping:", help, "");
-      if (howTo) lines.push("How to do it:", howTo, "");
-      lines.push(`What to do: ${buildMentorUserActionText(normalized)}`, "");
       if (resources.length) {
-        lines.push("Organizations & contacts (best first):");
+        lines.push("ORGANIZATIONS & CONTACTS (best first):");
         resources.slice(0, 8).forEach((entry, index) => {
           const label = [entry.org, entry.name].filter(Boolean).join(" — ") || `Option ${index + 1}`;
-          const bits = [label];
+          const bits = [`${index + 1}. ${label}`];
           if (entry.phone) bits.push(entry.phone);
           if (entry.email) bits.push(entry.email);
           if (entry.url) bits.push(entry.url);
-          lines.push(`${index + 1}. ${bits.join(" · ")}`);
+          lines.push(bits.join(" · "));
         });
         lines.push("");
       }
-      if (normalized.talkingPoints) {
-        lines.push("Talking points:", normalized.talkingPoints, "");
+
+      if (script.length > 40 && !isExplanatoryTaskCopy(script) && !isTaskRestatement(script, normalized)) {
+        lines.push(script, "");
+      } else {
+        const pack = buildLocalTaskAssetPack(normalized);
+        if (pack) lines.push(pack, "");
       }
-      if (script.length > 40) {
-        lines.push("Outreach draft:", script, "");
+
+      if (normalized.talkingPoints) {
+        lines.push("TALKING POINTS", normalized.talkingPoints, "");
       }
       if (normalized.followUp) {
-        lines.push("Follow-up if no reply:", normalized.followUp, "");
+        lines.push("FOLLOW-UP IF NO REPLY", normalized.followUp, "");
       }
-      lines.push(`Success looks like: ${normalized.outcome || inferTaskOutcome(normalized)}`);
-      return humanizeDraftFormatting(lines.join("\n").trim());
+
+      const brief = lines.join("\n").trim();
+      if (brief.length < 80) return "";
+      return humanizeDraftFormatting(brief);
     }
 
     async function ensureMentorBriefInNotes(taskId, options = {}) {
@@ -16122,11 +16324,11 @@ Location: ${location}`;
 
     function renderMentorFindingsHtml(normalized, options = {}) {
       const help = String(normalized.mentorHelp || normalized.mentorFindings || buildMentorFindingsText(normalized) || "").trim();
-      if (!help || help.length < 24 || isGenericMentorCopy(help)) return "";
-      if (options.simplified && isGenericMentorCopy(help)) return "";
+      if (!help || help.length < 12 || isGenericMentorCopy(help, normalized)) return "";
+      if (options.simplified && isGenericMentorCopy(help, normalized)) return "";
       return `
         <section class="task-mentor-section task-mentor-section--findings">
-          <h4 class="task-mentor-label">How we're helping</h4>
+          <h4 class="task-mentor-label">What's prepared</h4>
           <p class="task-mentor-copy task-mentor-copy--findings">${escapeHtml(help)}</p>
         </section>`;
     }
@@ -19137,7 +19339,7 @@ Location: ${location}`;
         (threadHistory ? `Task chat so far:\n${threadHistory}\n\n` : "") +
         `Broader conversation context:\n${contextTail}\n\n` +
         `Answer helpfully in 2-5 sentences. Be specific to THIS task and THIS question.\n` +
-        `When the user asks you to draft something (pilot outline, email, post, deck section), provide a FULL copy-paste draft — not an outline of what to write.\n` +
+        `When the user asks you to draft something, provide FULL copy-paste assets (emails, lists, scripts, trackers, question sets) — never paragraphs that restate what the task already says.\n` +
         `When mentioning websites, tools, or platforms, include full https:// URLs.\n` +
         `Prefer the contacts, links, and script already on the task before sending them to research from scratch.\n` +
         `If the conversation shows the roadmap is too advanced for where they are (e.g. they need a closed beta but tasks assume a formal pilot), acknowledge that and tell them to use the action buttons below this chat (Replace this path or Regenerate roadmap).\n` +
@@ -25924,19 +26126,25 @@ Location: ${location}`;
                   ${breakdown}
                 </section>
                 ${mentorHelp}
+                ${why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) ? `
                 <section class="task-mentor-section">
-                  <h4 class="task-mentor-label">Why this matters</h4>
+                  <h4 class="task-mentor-label">Gap filled</h4>
                   <p class="task-mentor-copy">${escapeHtml(why)}</p>
-                </section>
+                </section>` : ""}
+                ${howTo && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
                 <section class="task-mentor-section">
-                  <h4 class="task-mentor-label">How to do it</h4>
+                  <h4 class="task-mentor-label">Next action</h4>
                   <p class="task-mentor-copy">${escapeHtml(howTo)}</p>
-                </section>
+                </section>` : ""}
+                ${outcome && !isTaskRestatement(outcome, normalized) ? `
                 <section class="task-mentor-section">
-                  <h4 class="task-mentor-label">Success looks like</h4>
+                  <h4 class="task-mentor-label">Done when</h4>
                   <p class="task-mentor-copy">${escapeHtml(outcome)}</p>
                   ${outcomeChecklist}
-                </section>`;
+                </section>` : outcomeChecklist ? `
+                <section class="task-mentor-section">
+                  ${outcomeChecklist}
+                </section>` : ""}`;
 
       return `
         <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
@@ -25945,7 +26153,7 @@ Location: ${location}`;
             <div class="task-compressed-main-wrap">
               <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}"${canExpand ? "" : " disabled"}>
                 <span class="task-compressed-mission">${escapeHtml(mission)}</span>
-                ${taskData.draft?.trim() ? `<span class="task-compressed-draft-hint"><span aria-hidden="true">▼</span> Draft</span>` : ""}
+                ${taskData.draft?.trim() ? `<span class="task-compressed-draft-hint"><span aria-hidden="true">▼</span> Assets</span>` : ""}
                 ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
               </button>
               ${compressedBreakdown}
@@ -25961,7 +26169,13 @@ Location: ${location}`;
                   <div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>
                   ${meta}
                   ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
-                  ${simplified && !isGenericMentorCopy(why) ? `<p class="task-mentor-copy task-mentor-copy--inline">${escapeHtml(why)}</p>` : ""}
+                  ${simplified && !isGenericMentorCopy(why, normalized) && why ? `<p class="task-mentor-copy task-mentor-copy--inline">${escapeHtml(why)}</p>` : ""}
+                  ${simplified ? `
+                <section class="task-mentor-section task-mentor-section--task">
+                  <h4 class="task-mentor-label">What to do</h4>
+                  <div class="task-text">${linkifyTaskTextHtml(text)}</div>
+                </section>
+                ${mentorHelp}` : ""}
                   ${simplified && displaySteps.length >= 2 ? renderTaskBreakdownHtml(normalized, id) : ""}
                 </section>
                 ${detailSections}
@@ -25971,10 +26185,10 @@ Location: ${location}`;
             <div class="overview-task-tools">
               ${hasDraftPanel ? `
               <section class="task-mentor-section task-mentor-section--draft">
-                <h4 class="task-mentor-label">Prepared draft</h4>
-                <p class="task-draft-hint">We fill this in for you — edit or copy it here. My Notes below is only for your own thoughts.</p>
+                <h4 class="task-mentor-label">Prepared assets</h4>
+                <p class="task-draft-hint">Copy-paste deliverables for this task — org lists, emails, scripts, trackers. Edit anything below.</p>
                 <div class="task-draft-panel" data-draft-panel>
-                  <p class="task-draft-expand-hint">We generate a draft for you here — expand it to read and edit the full text.</p>
+                  <p class="task-draft-expand-hint">Your asset pack appears here — expand to copy org lists, emails, scripts, or trackers.</p>
                   <div class="task-draft-generating" hidden aria-live="polite">
                     <span class="task-draft-progress-status">Generating draft…</span>
                     <div class="task-draft-progress">
