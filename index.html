@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-home-hero -->
+<!-- whatimado build: 2026-06-30-roadmap-delete-persist -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-home-hero">
+  <meta name="whatimado-build" content="2026-06-30-roadmap-delete-persist">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -17307,7 +17307,12 @@ What would make this more useful for someone in your situation?`;
         ...primary,
         savedMaps,
         activeMapId,
-        roadmapCategories: mergeRoadmapCategories(localPayload?.roadmapCategories, cloudPayload?.roadmapCategories),
+        roadmapCategories: pickRoadmapCategories(
+          localPayload?.roadmapCategories,
+          cloudPayload?.roadmapCategories,
+          localTime,
+          cloudTime
+        ),
         activeRoadmapCategoryId: cloudTime >= localTime
           ? (cloudPayload?.activeRoadmapCategoryId ?? localPayload?.activeRoadmapCategoryId ?? null)
           : (localPayload?.activeRoadmapCategoryId ?? cloudPayload?.activeRoadmapCategoryId ?? null),
@@ -17415,7 +17420,8 @@ What would make this more useful for someone in your situation?`;
         locationIntakeStep: source.locationIntakeStep || null,
         locationDraft: source.locationDraft || emptyLocationDraft(),
         userProfile: normalizeUserProfile(source.userProfile),
-        profileIntakeStep: source.profileIntakeStep || null
+        profileIntakeStep: source.profileIntakeStep || null,
+        removedRoadmapKeys: Array.isArray(source.removedRoadmapKeys) ? source.removedRoadmapKeys : []
       };
     }
 
@@ -17558,39 +17564,104 @@ What would make this more useful for someone in your situation?`;
         : `rli-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     }
 
-    function mergeRoadmapCategories(local = [], cloud = []) {
-      const byId = new Map();
-      [...(local || []), ...(cloud || [])].forEach((category) => {
-        if (!category?.id) return;
-        const previous = byId.get(category.id);
-        if (!previous) {
-          byId.set(category.id, {
-            ...category,
-            items: Array.isArray(category.items) ? [...category.items] : []
-          });
-          return;
+    function pickRoadmapCategories(local = [], cloud = [], localTime = 0, cloudTime = 0) {
+      if (!local?.length && !cloud?.length) return [];
+      if (!local?.length) return [...(cloud || [])];
+      if (!cloud?.length) return [...(local || [])];
+      return (cloudTime >= localTime ? cloud : local).map((category) => ({
+        ...category,
+        items: Array.isArray(category.items) ? [...category.items] : []
+      }));
+    }
+
+    function mergeRoadmapCategories(local = [], cloud = [], localTime = 0, cloudTime = 0) {
+      return pickRoadmapCategories(local, cloud, localTime, cloudTime);
+    }
+
+    function getMapRemovedRoadmapKeys(mapId = state.activeMapId) {
+      if (!mapId) return new Set();
+      const map = state.savedMaps.find((entry) => entry.id === mapId);
+      return new Set(Array.isArray(map?.removedRoadmapKeys) ? map.removedRoadmapKeys : []);
+    }
+
+    function markRoadmapRemovedInLibrary(ideaTitle, mapId = state.activeMapId) {
+      const key = slugify(ideaTitle);
+      const touchMap = (entry) => {
+        if (!entry) return;
+        if (entry.allRoadmaps && typeof entry.allRoadmaps === "object") {
+          entry.allRoadmaps = { ...entry.allRoadmaps };
+          delete entry.allRoadmaps[key];
         }
-        const seenItems = new Set(previous.items.map((item) => item.id));
-        (category.items || []).forEach((item) => {
-          if (!item?.id || seenItems.has(item.id)) return;
-          previous.items.push(item);
-          seenItems.add(item.id);
-        });
-        if ((category.createdAt || 0) > (previous.createdAt || 0)) {
-          previous.title = category.title;
-          previous.mapId = category.mapId ?? previous.mapId;
-          previous.manual = category.manual ?? previous.manual;
+        if (entry.allTaskChats && typeof entry.allTaskChats === "object") {
+          entry.allTaskChats = { ...entry.allTaskChats };
+          delete entry.allTaskChats[key];
         }
-      });
-      return [...byId.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        if (entry.roadmapKey === key) {
+          entry.roadmapKey = null;
+          entry.currentIdea = null;
+          entry.roadmapStages = [];
+        }
+        const removed = new Set(Array.isArray(entry.removedRoadmapKeys) ? entry.removedRoadmapKeys : []);
+        removed.add(key);
+        entry.removedRoadmapKeys = [...removed];
+        entry.updatedAt = Date.now();
+      };
+
+      if (mapId) {
+        touchMap(state.savedMaps.find((map) => map.id === mapId));
+      } else {
+        state.savedMaps.forEach(touchMap);
+      }
+    }
+
+    function clearRemovedRoadmapKey(ideaTitle, mapId = state.activeMapId) {
+      if (!mapId || !ideaTitle) return;
+      const entry = state.savedMaps.find((map) => map.id === mapId);
+      if (!entry?.removedRoadmapKeys?.length) return;
+      const key = slugify(ideaTitle);
+      entry.removedRoadmapKeys = entry.removedRoadmapKeys.filter((item) => item !== key);
+    }
+
+    function mapHasStoredRoadmapData(ideaTitle, mapId = state.activeMapId) {
+      if (!ideaTitle) return false;
+      const key = slugify(ideaTitle);
+      if (getMapRemovedRoadmapKeys(mapId).has(key)) return false;
+      if (mapId === state.activeMapId) {
+        if (state.allRoadmaps[key]?.stages?.length) return true;
+        if (state.allTaskChats[key] && Object.keys(state.allTaskChats[key]).length) return true;
+      }
+      const map = state.savedMaps.find((entry) => entry.id === mapId);
+      if (map?.allRoadmaps?.[key]?.stages?.length) return true;
+      if (map?.allTaskChats?.[key] && Object.keys(map.allTaskChats[key]).length) return true;
+      return false;
+    }
+
+    function pruneRoadmapSidebarAgainstData() {
+      state.roadmapCategories = state.roadmapCategories
+        .map((category) => ({
+          ...category,
+          items: (category.items || []).filter((item) =>
+            mapHasStoredRoadmapData(item.ideaTitle, item.mapId || category.mapId || state.activeMapId)
+          )
+        }))
+        .filter((category) =>
+          (category.items || []).length > 0
+          || (category.mapId && state.savedMaps.some((map) => map.id === category.mapId))
+          || isManualRoadmapCategory(category)
+        );
+      if (state.activeRoadmapCategoryId && !state.roadmapCategories.some((c) => c.id === state.activeRoadmapCategoryId)) {
+        state.activeRoadmapCategoryId = null;
+      }
     }
 
     function migrateRoadmapCategoriesFromLibrary() {
+      pruneRoadmapSidebarAgainstData();
       if (state.roadmapCategories.length) return;
       state.savedMaps.forEach((map) => {
+        const removed = new Set(Array.isArray(map.removedRoadmapKeys) ? map.removedRoadmapKeys : []);
         const roadmaps = map.allRoadmaps && typeof map.allRoadmaps === "object" ? map.allRoadmaps : {};
         const items = Object.entries(roadmaps)
-          .filter(([, entry]) => entry?.stages?.length)
+          .filter(([key, entry]) => entry?.stages?.length && !removed.has(key))
           .map(([key, entry]) => {
             const ideaIndex = Array.isArray(map.ideas)
               ? map.ideas.findIndex((idea) => slugify(idea.title) === key)
@@ -17694,6 +17765,7 @@ What would make this more useful for someone in your situation?`;
 
     function registerRoadmapInSidebar(idea, ideaIndex) {
       if (!idea?.title) return;
+      clearRemovedRoadmapKey(idea.title);
       const category = getTargetCategoryForNewRoadmap();
       if (!category) return;
 
@@ -17805,14 +17877,12 @@ What would make this more useful for someone in your situation?`;
     }
 
     function hasRoadmapProgress(ideaTitle, mapId = state.activeMapId) {
-      const key = slugify(ideaTitle);
-      if (state.allRoadmaps[key]?.stages?.length) return true;
-      if (state.allTaskChats[key] && Object.keys(state.allTaskChats[key]).length) return true;
+      if (mapHasStoredRoadmapData(ideaTitle, mapId)) return true;
       return state.roadmapCategories.some((category) =>
         (category.items || []).some((item) => {
           if (item.ideaTitle !== ideaTitle) return false;
           if (mapId && item.mapId && item.mapId !== mapId) return false;
-          return true;
+          return mapHasStoredRoadmapData(ideaTitle, item.mapId || category.mapId || mapId);
         })
       );
     }
@@ -17834,25 +17904,11 @@ What would make this more useful for someone in your situation?`;
     }
 
     function purgeRoadmapFromLibrary(mapId, ideaTitle) {
-      if (!mapId || !ideaTitle) return;
-      const entry = state.savedMaps.find((map) => map.id === mapId);
-      if (!entry) return;
-      const key = slugify(ideaTitle);
+      markRoadmapRemovedInLibrary(ideaTitle, mapId);
+    }
 
-      if (entry.allRoadmaps && typeof entry.allRoadmaps === "object") {
-        entry.allRoadmaps = { ...entry.allRoadmaps };
-        delete entry.allRoadmaps[key];
-      }
-      if (entry.allTaskChats && typeof entry.allTaskChats === "object") {
-        entry.allTaskChats = { ...entry.allTaskChats };
-        delete entry.allTaskChats[key];
-      }
-      if (entry.roadmapKey === key) {
-        entry.roadmapKey = null;
-        entry.currentIdea = null;
-        entry.roadmapStages = [];
-      }
-      entry.updatedAt = Date.now();
+    function purgeRoadmapFromAllLibraryMaps(ideaTitle) {
+      markRoadmapRemovedInLibrary(ideaTitle, null);
     }
 
     function removeRoadmapForPath(ideaTitle, options = {}) {
@@ -17862,7 +17918,7 @@ What would make this more useful for someone in your situation?`;
 
         delete state.allRoadmaps[key];
         delete state.allTaskChats[key];
-        if (mapId) purgeRoadmapFromLibrary(mapId, ideaTitle);
+        purgeRoadmapFromAllLibraryMaps(ideaTitle);
         removeRoadmapSidebarItems(ideaTitle, mapId);
 
         let resolvedIndex = Number.isInteger(ideaIndex) ? ideaIndex : state.ideas.findIndex((entry) => entry.title === ideaTitle);
@@ -17886,6 +17942,7 @@ What would make this more useful for someone in your situation?`;
         updateMapsNav();
         if (state.ideas.length) buildOpportunityMap(state.ideas, { skipPersist: true });
         schedulePersist();
+        void flushPersist();
         trackEvent("roadmap_removed", {
           idea_title: ideaTitle,
           map_id: mapId || null,
@@ -17898,7 +17955,14 @@ What would make this more useful for someone in your situation?`;
       if (!ideaTitle) return Promise.resolve(false);
 
       const key = slugify(ideaTitle);
-      if (!hasRoadmapProgress(ideaTitle, mapId) && !state.allRoadmaps[key] && !state.allTaskChats[key]) {
+      const sidebarHasItem = state.roadmapCategories.some((category) =>
+        (category.items || []).some((item) => {
+          if (item.ideaTitle !== ideaTitle) return false;
+          if (mapId && item.mapId && item.mapId !== mapId) return false;
+          return true;
+        })
+      );
+      if (!hasRoadmapProgress(ideaTitle, mapId) && !sidebarHasItem && !state.allRoadmaps[key] && !state.allTaskChats[key]) {
         return Promise.resolve(false);
       }
 
@@ -18018,13 +18082,19 @@ What would make this more useful for someone in your situation?`;
         return;
       }
 
-      state.roadmapCategories = state.roadmapCategories.filter((entry) => entry.id !== categoryId);
-      if (state.activeRoadmapCategoryId === categoryId) {
-        state.activeRoadmapCategoryId = null;
-      }
-      renderSidebarRoadmaps();
-      schedulePersist();
-      trackEvent("roadmap_category_deleted", { had_map: false });
+      const items = [...(category.items || [])];
+      Promise.all(items.map((item) => removeRoadmapForPath(item.ideaTitle, {
+        mapId: item.mapId || category.mapId || state.activeMapId,
+        skipConfirm: true
+      }))).then(() => {
+        state.roadmapCategories = state.roadmapCategories.filter((entry) => entry.id !== categoryId);
+        if (state.activeRoadmapCategoryId === categoryId) {
+          state.activeRoadmapCategoryId = null;
+        }
+        renderSidebarRoadmaps();
+        void flushPersist();
+        trackEvent("roadmap_category_deleted", { had_map: false });
+      });
     }
 
     async function openRoadmapFromSidebar(categoryId, itemId) {
@@ -18089,14 +18159,16 @@ What would make this more useful for someone in your situation?`;
       const id = state.activeMapId || createMapId();
       state.activeMapId = id;
 
+      const existingIndex = state.savedMaps.findIndex((map) => map.id === id);
+      const prior = existingIndex >= 0 ? state.savedMaps[existingIndex] : null;
       const entry = {
         id,
         title: deriveMapTitle(snapshot.history),
         updatedAt: Date.now(),
-        ...snapshot
+        ...snapshot,
+        removedRoadmapKeys: prior?.removedRoadmapKeys || snapshot.removedRoadmapKeys || []
       };
 
-      const existingIndex = state.savedMaps.findIndex((map) => map.id === id);
       if (existingIndex >= 0) {
         state.savedMaps[existingIndex] = entry;
       } else {
@@ -18151,6 +18223,7 @@ What would make this more useful for someone in your situation?`;
       state.activeRoadmapCategoryId = data.activeRoadmapCategoryId ?? null;
       state.selectedPathIndexes = Array.isArray(data.selectedPathIndexes) ? data.selectedPathIndexes : [];
       migrateRoadmapCategoriesFromLibrary();
+      pruneRoadmapSidebarAgainstData();
       restoreActiveSavedMapSnapshot();
     }
 
@@ -18210,6 +18283,7 @@ What would make this more useful for someone in your situation?`;
       updateMapsNav();
       renderSidebarRoadmaps();
       schedulePersist();
+      void flushPersist();
     }
 
     function setRoadmapNavVisible(visible) {
@@ -21534,6 +21608,7 @@ What would make this more useful for someone in your situation?`;
     async function viewRoadmap(idea, ideaIndex, options = {}) {
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
+      if (options.force) clearRemovedRoadmapKey(idea.title);
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
       state.expandedRoadmapPhases = null;
@@ -21554,7 +21629,9 @@ What would make this more useful for someone in your situation?`;
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = humanizeTaskText(idea.title);
 
-      const cached = !options.force ? state.allRoadmaps[state.roadmapKey] : null;
+      const cached = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
+        ? state.allRoadmaps[state.roadmapKey]
+        : null;
       const cachedIsUsable = Boolean(cached?.stages?.length) && !isGenericFallbackRoadmap(cached.stages) && !roadmapHasGenericStages(cached.stages, idea);
       if (cachedIsUsable) {
         setRoadmapLoading(false);
@@ -21749,6 +21826,7 @@ What would make this more useful for someone in your situation?`;
       state.roadmapStages = normalizeRoadmapStages(stages);
       state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, idea);
         state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
+        clearRemovedRoadmapKey(idea.title);
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
       renderStages(state.roadmapStages);
         trackEvent("roadmap_generated", {
@@ -25065,12 +25143,12 @@ What would make this more useful for someone in your situation?`;
         ]);
         window.addEventListener("pagehide", () => {
           trackIntakeAbandonment();
-          if (state.currentUser && hasSavableProgress()) flushPersist();
+          if (hasSavableProgress()) void flushPersist();
         });
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "hidden") {
             trackIntakeAbandonment();
-            if (state.currentUser && hasSavableProgress()) flushPersist();
+            if (hasSavableProgress()) void flushPersist();
             return;
           }
           if (state.currentUser) syncSessionFromCloud();
