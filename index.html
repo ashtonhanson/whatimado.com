@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-fast-roadmap -->
+<!-- whatimado build: 2026-07-01-first-mission-ready -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-fast-roadmap">
+  <meta name="whatimado-build" content="2026-07-01-first-mission-ready">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -12260,7 +12260,7 @@
       <div class="roadmap-loading" id="roadmap-loading" hidden>
         <div class="loader-inner">
           <img class="loader-logo" src="/logo.png" alt="" width="251" height="150">
-          <p class="loader-tagline">Preparing your missions…</p>
+          <p class="loader-tagline">Preparing your first mission…</p>
           <div class="site-loading-progress" id="roadmap-loader-progress" aria-live="polite">
             <div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <span class="site-loading-progress-fill"></span>
@@ -15596,9 +15596,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       taskDraftGenerationInFlight.add(taskId);
-      draftEl.placeholder = "Generating your draft…";
-      draftEl.classList.add("is-generating-draft");
-      const draftProgress = startDraftGeneratingProgress(taskId);
+      const silent = Boolean(options.silent);
+      if (!silent) {
+        draftEl.placeholder = "Generating your draft…";
+        draftEl.classList.add("is-generating-draft");
+      }
+      const draftProgress = silent ? null : startDraftGeneratingProgress(taskId);
 
       try {
         const aiDraft = await generateAiTaskDraft(taskId, normalized);
@@ -15618,34 +15621,48 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         taskDraftGenerationInFlight.delete(taskId);
         draftProgress?.complete();
         stopDraftGeneratingProgress(taskId);
-        draftEl.classList.remove("is-generating-draft");
-        draftEl.placeholder = "Your prepared draft will appear here…";
+        if (!silent) {
+          draftEl.classList.remove("is-generating-draft");
+          draftEl.placeholder = "Your prepared draft will appear here…";
+        }
         syncDraftPanelUi(taskId);
       }
     }
 
-    function queueWritingDraftsForVisibleTasks() {
+    function queueWritingDraftsForVisibleTasks(options = {}) {
+      const excludeStages = new Set(options.excludeStageIndexes || []);
+      const onlyStages = Array.isArray(options.stageIndexesOnly) ? new Set(options.stageIndexesOnly) : null;
       $$(".task-item").forEach((item) => {
         const taskId = item.dataset.taskId;
+        const match = taskId?.match(/^task-(\d+)-/);
+        const stageIndex = match ? Number(match[1]) : -1;
+        if (excludeStages.has(stageIndex)) return;
+        if (onlyStages && !onlyStages.has(stageIndex)) return;
         const phase = item.closest(".roadmap-phase, .stage-card");
         if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
-        void ensureTaskDraftInNotes(taskId);
+        void ensureTaskDraftInNotes(taskId, { silent: Boolean(options.silent) });
       });
     }
 
     let deferredDraftGenerationTimer = null;
 
-    function deferTaskDraftGeneration() {
+    function deferTaskDraftGeneration(options = {}) {
       if (deferredDraftGenerationTimer) return;
       const run = () => {
         deferredDraftGenerationTimer = null;
-        queueWritingDraftsForVisibleTasks();
+        queueWritingDraftsForVisibleTasks(options);
       };
       if (typeof requestIdleCallback === "function") {
         deferredDraftGenerationTimer = requestIdleCallback(run, { timeout: 3000 });
       } else {
         deferredDraftGenerationTimer = setTimeout(run, 180);
       }
+    }
+
+    function queueDeferredFirstMissionDrafts() {
+      setTimeout(() => {
+        queueWritingDraftsForVisibleTasks({ excludeStageIndexes: [], silent: true, stageIndexesOnly: [0] });
+      }, 4500);
     }
 
     function renderTaskWritingAssistHtml(taskId, normalized) {
@@ -26125,8 +26142,67 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
     }
 
-    function publishRoadmapToUi(idea, ideaIndex, stages, roadmapSource, founderMode, { isFinal = true } = {}) {
+    function firstMissionIsReady(stages = state.roadmapStages) {
+      const first = stages?.[0];
+      if (!first?.label?.trim()) return false;
+      const tasks = Array.isArray(first.tasks) ? first.tasks : [];
+      if (!tasks.length) return false;
+      return tasks.every((task) => Boolean(getTaskText(task)?.trim()));
+    }
+
+    function prepareFirstMissionForReveal(idea) {
+      if (!state.roadmapStages?.length || !firstMissionIsReady(state.roadmapStages)) return false;
+
+      const loc = getUserLocation();
+      if (loc && pathNeedsLocalResources(idea) && roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
+        const enriched = applyLocalResourceFallback(state.roadmapStages, loc);
+        if (roadmapHasRichLocalData(enriched, idea)) {
+          state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(enriched), idea);
+          if (state.roadmapKey) {
+            state.allRoadmaps[state.roadmapKey] = {
+              ...(state.allRoadmaps[state.roadmapKey] || {}),
+              stages: state.roadmapStages,
+              localEnriched: true,
+              localEnrichFailed: false
+            };
+          }
+        }
+      }
+
+      const firstStage = state.roadmapStages[0];
+      state.roadmapStages[0] = {
+        ...firstStage,
+        tasks: (firstStage.tasks || []).map((task) => normalizeRoadmapTask(task))
+      };
+
+      (state.roadmapStages[0].tasks || []).forEach((task, taskIndex) => {
+        const taskId = `task-0-${taskIndex}`;
+        const normalized = normalizeRoadmapTask(task);
+        const data = getRoadmapTaskData(taskId);
+        if (normalized.script?.trim() && isUsableDraftContent(normalized.script, normalized)) {
+          data.draft = normalized.script.trim();
+          data.draftGenerated = true;
+          data.draftSource = "roadmap";
+          return;
+        }
+        const draftType = taskNeedsUsableDraft(normalized);
+        if (!draftType) return;
+        const localDraft = generateLocalTaskDraft(normalized);
+        if (localDraft && isUsableDraftContent(localDraft, normalized)) {
+          data.draft = localDraft;
+          data.draftGenerated = true;
+          data.draftSource = "local";
+        }
+      });
+
+      state.expandedRoadmapPhases = new Set([0]);
+      state.expandedRoadmapTasks = new Set(["task-0-0"]);
+      return true;
+    }
+
+    function publishRoadmapToUi(idea, ideaIndex, stages, roadmapSource, founderMode, { isFinal = true, initialReveal = false } = {}) {
       state.roadmapStages = stages;
+      if (initialReveal) prepareFirstMissionForReveal(idea);
       state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
       clearRemovedRoadmapKey(idea.title);
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
@@ -26143,8 +26219,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           founder_mode: founderMode,
           source: roadmapSource
         });
-        void maybeEnrichRoadmapLocalContacts();
-        deferTaskDraftGeneration();
+        if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
+          void maybeEnrichRoadmapLocalContacts({ silent: true });
+        }
+        if (initialReveal) {
+          deferTaskDraftGeneration({ excludeStageIndexes: [0] });
+          queueDeferredFirstMissionDrafts();
+        } else {
+          deferTaskDraftGeneration();
+        }
       }
     }
 
@@ -26165,16 +26248,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       let roadmapSource = "ai";
 
       let response = await callAdvisor(basePrompt, tokenLimit);
-      const preview = parseRoadmapPreviewResponse(response, idea);
-      if (preview) {
-        callbacks.onPreviewStages?.(preview);
-      }
-
       let stages = parseRoadmapResponse(response, idea);
-
-      if (stages && stagesAreMeaningful(stages)) {
-        callbacks.onEarlyStages?.(stages);
-      }
 
       let issues = stages
         ? collectRoadmapGenerationIssues(stages, idea, {
@@ -26278,6 +26352,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           stages: stagesToRender,
           source: cachedSource
         };
+        prepareFirstMissionForReveal(idea);
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedSource);
         renderStages(state.roadmapStages);
         trackEvent("roadmap_loaded_cached", {
@@ -26293,8 +26368,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         registerRoadmapInSidebar(idea, ideaIndex);
         renderSidebarRoadmaps();
         schedulePersist();
-        void maybeEnrichRoadmapLocalContacts();
-        deferTaskDraftGeneration();
+        if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
+          void maybeEnrichRoadmapLocalContacts({ silent: true });
+        }
+        deferTaskDraftGeneration({ excludeStageIndexes: [0] });
+        queueDeferredFirstMissionDrafts();
         return;
       }
 
@@ -26302,31 +26380,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setRoadmapRefining(false);
       $("#roadmap-sub").textContent = founderMode
         ? "Building your whatimado.com launch roadmap..."
-        : "Building your personalised roadmap...";
+        : "Preparing your first mission…";
       const completeCard = $("#roadmap-complete-card");
       if (completeCard) {
         completeCard.hidden = true;
         completeCard.classList.remove("visible");
       }
       showScreen("roadmap");
-      setRoadmapLoading(true, { shell: true });
-      renderRoadmapSkeleton();
+      setRoadmapLoading(true);
 
-      let previewPublished = false;
-      const publishPreviewOnce = (stages, founderModeForGen) => {
-        if (previewPublished) return;
-        previewPublished = true;
-        publishRoadmapToUi(
-          idea,
-          ideaIndex,
-          ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
-          "ai",
-          founderModeForGen,
-          { isFinal: false }
-        );
-        setRoadmapLoading(false);
-      };
-
+      let revealed = false;
       try {
         const founderModeForGen = isFounderRoadmapForIdea(idea);
         const result = await generateRoadmapStagesFromAi(
@@ -26336,32 +26399,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             force: options.force,
             previousStages: options.previousStages,
             extraRefreshBlock: options.extraRefreshBlock
-          },
-          {
-            onPreviewStages(stages) {
-              publishPreviewOnce(stages, founderModeForGen);
-            },
-            onEarlyStages(stages) {
-              publishPreviewOnce(stages, founderModeForGen);
-            },
-            onRefining(active) {
-              if (active && previewPublished) setRoadmapRefining(true);
-              else if (!active) setRoadmapRefining(false);
-            }
           }
         );
-        publishRoadmapToUi(idea, ideaIndex, result.stages, result.roadmapSource, founderModeForGen, { isFinal: true });
-        previewPublished = true;
+        if (!firstMissionIsReady(result.stages)) {
+          throw new Error("First mission was not ready");
+        }
+        publishRoadmapToUi(idea, ideaIndex, result.stages, result.roadmapSource, founderModeForGen, {
+          isFinal: true,
+          initialReveal: true
+        });
+        revealed = true;
       } catch (error) {
         console.error(error);
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
         const founderModeForGen = isFounderRoadmapForIdea(idea);
         const fallbackStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
-        publishRoadmapToUi(idea, ideaIndex, fallbackStages, "fallback", founderModeForGen, { isFinal: true });
-        previewPublished = true;
+        publishRoadmapToUi(idea, ideaIndex, fallbackStages, "fallback", founderModeForGen, {
+          isFinal: true,
+          initialReveal: true
+        });
+        revealed = true;
       } finally {
-        if (!previewPublished) setRoadmapLoading(false);
-        setRoadmapRefining(false);
+        if (revealed) setRoadmapLoading(false);
       }
     }
 
@@ -26968,7 +27027,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function maybeEnrichRoadmapLocalContacts(options = {}) {
-      const { force = false } = options;
+      const { force = false, silent = false } = options;
       const key = state.roadmapKey;
       const idea = state.currentIdea;
       if (!key || !idea || !getUserLocation()) return false;
@@ -26977,11 +27036,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const cached = state.allRoadmaps[key];
       if (cached?.localEnrichFailed && !force) return false;
+      if (cached?.localEnriched && !force) return false;
 
       roadmapLocalEnrichInFlight = true;
       lastLocalEnrichError = "";
       const loc = getUserLocation();
-      startLocalEnrichProgress(loc);
+      if (!silent) startLocalEnrichProgress(loc);
 
       trackEvent("roadmap_local_enrich_started", {
         roadmap_key: key,
@@ -26990,7 +27050,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
 
       if (loc && pathNeedsLocalResources(idea) && state.roadmapStages?.length) {
-        setLocalEnrichProgress(0, 78, "Applying local org list");
+        if (!silent) setLocalEnrichProgress(0, 78, "Applying local org list");
         const fastFallbackStages = applyLocalResourceFallback(state.roadmapStages, loc);
         if (roadmapHasRichLocalData(fastFallbackStages, idea)) {
           const founderMode = isFounderRoadmapForIdea(idea);
@@ -27003,9 +27063,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             localEnriched: true,
             localEnrichFailed: false
           };
-          renderStages(state.roadmapStages);
-          schedulePersist();
-          finishLocalEnrichProgress(true);
+          if (!silent) {
+            renderStages(state.roadmapStages);
+          } else {
+            schedulePersist();
+          }
+          if (!silent) finishLocalEnrichProgress(true);
           trackEvent("roadmap_local_enrich_succeeded", { roadmap_key: key, source: "fallback_fast" });
           roadmapLocalEnrichInFlight = false;
           return true;
@@ -27019,10 +27082,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const advisorTimeoutMs = 90000;
         const tokenLimit = capAdvisorTokens(getRoadmapAdvisorTokenLimit(founderMode));
 
-        setLocalEnrichProgress(0, 14);
-        await new Promise((resolve) => setTimeout(resolve, 80));
-
-        setLocalEnrichProgress(1, 55);
+        if (!silent) {
+          setLocalEnrichProgress(0, 14);
+          await new Promise((resolve) => setTimeout(resolve, 80));
+          setLocalEnrichProgress(1, 55);
+        }
         let response = await callAdvisor(
           buildCompactLocalEnrichPrompt(idea, loc, founderMode),
           tokenLimit,
@@ -27031,7 +27095,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         let stages = parseRoadmapResponse(response, idea);
 
         if (!stages || !roadmapHasRichLocalData(stages, idea)) {
-          setLocalEnrichProgress(3, 82);
+          if (!silent) setLocalEnrichProgress(3, 82);
           response = await callAdvisor(
             `${buildCompactLocalEnrichPrompt(idea, loc, founderMode)}\n` +
             "CRITICAL: Return ONLY valid JSON. Include contacts[] with org, url, phone on outreach tasks.\n",
@@ -27042,7 +27106,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
 
         if (!stages || !roadmapHasRichLocalData(stages, idea)) {
-          setLocalEnrichProgress(3, 90, "Using verified local org list");
+          if (!silent) setLocalEnrichProgress(3, 90, "Using verified local org list");
           stages = applyLocalResourceFallback(state.roadmapStages, loc);
           enrichSource = "fallback";
         }
@@ -27051,7 +27115,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           throw new Error(lastAdvisorError || "Could not add local contacts");
         }
 
-        setLocalEnrichProgress(4, 98);
+        if (!silent) setLocalEnrichProgress(4, 98);
         state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea);
         state.allRoadmaps[key] = {
           ...(state.allRoadmaps[key] || {}),
@@ -27061,10 +27125,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           localEnriched: true,
           localEnrichFailed: false
         };
-        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, enrichSource === "fallback" ? "fallback" : "ai");
-        renderStages(state.roadmapStages);
+        if (!silent) {
+          $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, enrichSource === "fallback" ? "fallback" : "ai");
+          renderStages(state.roadmapStages);
+        }
         schedulePersist();
-        finishLocalEnrichProgress(true);
+        if (!silent) finishLocalEnrichProgress(true);
         trackEvent("roadmap_local_enrich_succeeded", {
           roadmap_key: key,
           source: enrichSource
@@ -27073,7 +27139,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } catch (error) {
         console.error(error);
         lastLocalEnrichError = error?.message || lastAdvisorError || "unknown error";
-        finishLocalEnrichProgress(false);
+        if (!silent) finishLocalEnrichProgress(false);
 
         const fallbackStages = applyLocalResourceFallback(state.roadmapStages, loc);
         if (roadmapHasRichLocalData(fallbackStages, idea)) {
@@ -27086,9 +27152,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             localEnriched: true,
             localEnrichFailed: false
           };
-          renderStages(state.roadmapStages);
+          if (!silent) renderStages(state.roadmapStages);
           schedulePersist();
-          finishLocalEnrichProgress(true);
+          if (!silent) finishLocalEnrichProgress(true);
           trackEvent("roadmap_local_enrich_succeeded", { roadmap_key: key, source: "fallback_rescue" });
           return true;
         }
