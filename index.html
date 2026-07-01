@@ -12522,7 +12522,14 @@
       /\bdecide the next 30\b/i,
       /\b(?:test|try) with (?:real )?people\b/i,
       /\bfirst (?:real )?(?:test|try|customers?)\b/i,
-      /\bvalidate (?:demand|idea|offer|market)\b/i,
+      /\bvalidate (?:demand|idea|offer|market|local)\b/i,
+      /\b(?:identify|find) organizations aligned\b/i,
+      /\bstakeholders?\b/i,
+      /\btouchpoints?\b/i,
+      /\b(?:execute|executing) (?:the|an|your)\b/i,
+      /\b(?:reentry|re-entry) ecosystem\b/i,
+      /\bmarket fit\b/i,
+      /\bsocial validation\b/i,
       /\bfeedback loop\b/i,
       /\biterate and improve\b/i,
       /\bget (?:early )?feedback\b/i,
@@ -12537,7 +12544,7 @@
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Outcome-focused mission title — e.g. Find your first organization willing to test your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line naming the gap you filled — e.g. You needed names and emails, not another reminder to reach out. Empty string if nothing specific.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after deliverables exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED deliverable pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line naming the gap you filled — e.g. You needed names and emails, not another reminder to reach out. Empty string if nothing specific.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
@@ -12547,12 +12554,12 @@
       '- Interview customers → script (interview questions + Google Form field list + short survey + call script + note template table).\n' +
       'MISSION PHILOSOPHY:\n' +
       '- Think in MISSIONS (measurable progress toward the goal), not homework tasks.\n' +
-      '- BAD mission: "Find 10 nonprofits." GOOD mission: "Find your first organization willing to test your idea."\n' +
+      '- BAD mission: "Find 10 nonprofits." GOOD mission: "Get one local org to say yes to trying your idea."\n' +
       '- YOU provide the work product. text = what they do with it (review, send, call).\n' +
       '- NEVER assign: research, find, look up, write from scratch — put results in resources + script + talkingPoints + followUp.\n' +
       '- resources.local = 3-8 real named orgs with phones/emails/URLs. First contact in list = suggested first contact.\n' +
       '- Every mission must move the user measurably closer to their goal — they should never wonder what to do now.\n' +
-      'Write in plain English — middle-school reading level. No startup jargon.\n' +
+      'Write like a helpful mentor — plain English, middle-school reading level. No business jargon, no startup language.\n' +
       'Stage labels must be specific to THIS path — never generic test → feedback → repeat.';
 
     const RESOURCE_CATEGORY_HINTS =
@@ -12657,13 +12664,13 @@
       '- Build logo → script (brief, mood keywords, hex palette, fonts, AI prompts, SVG tips).\n' +
       '- Interview customers → script (questions, Google Form fields, survey, call script, note template).\n' +
       '- Each item is a MISSION (measurable step), not homework.\n' +
-      '- BAD: "Find 10 nonprofits." GOOD: "Find your first organization willing to test your idea."\n' +
-      '- mentorHelp = bullet list of prepared assets. howTo = max 2 lines pointing at assets. script = full deliverable pack.\n' +
+      '- BAD: "Find 10 nonprofits." GOOD: "Get one local org to say yes to trying your idea."\n' +
+      '- mentorHelp = bullet list of prepared assets. howTo = max 2 lines pointing at assets. script = full ready-to-use asset pack.\n' +
       '- FORBIDDEN: research, find, look up, write a draft, create a list — do that in resources + script.\n' +
       '- resources.*: 3-8 REAL orgs with official URLs, phones, emails for their location. First in list = suggested first contact.\n' +
       `- Category hints (resolve to real names): ${RESOURCE_CATEGORY_HINTS}.\n` +
       '- outcome = measurable proof only. why = gap you filled (one line) or empty.\n' +
-      '- Plain English. No startup jargon.\n' +
+      '- Write like a helpful mentor — plain English, no business jargon, no startup language.\n' +
       '- Never invent fake grants or personal @gmail addresses.\n';
     let roadmapAutoContinueTimer = null;
     let roadmapAdaptTimer = null;
@@ -12723,8 +12730,8 @@
           : "Using a backup roadmap — your mentor prepared starter steps; run through again for a fully custom plan.";
       }
       return founderMode
-        ? "Your mentor prepared concrete steps for whatimado.com — drafts, channels, and templates are filled in."
-        : "Your guide did the legwork — each mission moves you closer. Review what's ready, then act.";
+        ? "Your mentor prepared concrete steps for whatimado.com — drafts, channels, and templates are ready to use."
+        : "Your mentor did the legwork — each step moves you closer. Review what's ready, then act.";
     }
 
     function normalizeRoadmapText(text) {
@@ -12736,7 +12743,7 @@
       if (!norm) return false;
       if (BANNED_GENERIC_STAGE_LABELS.has(norm)) return true;
       if (GENERIC_STAGE_LABEL_PATTERNS.some((pattern) => pattern.test(norm))) return true;
-      if (/^(test|launch|feedback|repeat|iterate|validate|grow|improve|scale|pilot)$/.test(norm)) return true;
+      if (/^(test|launch|feedback|repeat|iterate|validate|grow|improve|scale|pilot|execute|framework|initiative)$/.test(norm)) return true;
       return false;
     }
 
@@ -13690,12 +13697,12 @@
     }
 
     function sanitizeMentorFieldText(text, normalized) {
-      const copy = String(text || "").trim();
+      let copy = humanizeTaskText(String(text || "").trim());
       if (!copy) return "";
       if (isGenericMentorCopy(copy, normalized)) return "";
       if (isTaskRestatement(copy, normalized)) return "";
       if (isExplanatoryTaskCopy(copy)) return "";
-      return humanizeTaskText(copy);
+      return copy;
     }
 
     function sanitizeTaskMentorFields(normalized) {
@@ -13926,6 +13933,35 @@
       copy = copy.replace(/\bKPI\b/g, "key number to track");
       copy = copy.replace(/\bdeck\b/gi, "short slide presentation");
       copy = copy.replace(/\bsocial proof\b/gi, "quotes and examples from real people");
+
+      copy = copy.replace(/\bvalidate local demand before investing\b/gi, "before you spend more time or money, find out if people actually want this");
+      copy = copy.replace(/\bidentify organizations aligned with your mission\b/gi, "find local organizations that already help people like the ones you're trying to reach");
+      copy = copy.replace(/\borganizations aligned with your mission\b/gi, "organizations that already help people you're trying to reach");
+      copy = copy.replace(/\baligned with your mission\b/gi, "that fit what you're trying to do");
+      copy = copy.replace(/\bidentify organizations\b/gi, "find local organizations");
+      copy = copy.replace(/\breentry ecosystem\b/gi, "local reentry programs and support services");
+      copy = copy.replace(/\bmarket fit\b/gi, "whether people actually want this");
+      copy = copy.replace(/\bstakeholders\b/gi, "people involved");
+      copy = copy.replace(/\bstakeholder\b/gi, "person involved");
+      copy = copy.replace(/\bdeliverables\b/gi, "finished pieces");
+      copy = copy.replace(/\bdeliverable\b/gi, "finished piece");
+      copy = copy.replace(/\binitiatives\b/gi, "projects");
+      copy = copy.replace(/\binitiative\b/gi, "project");
+      copy = copy.replace(/\btouchpoints\b/gi, "conversations");
+      copy = copy.replace(/\btouchpoint\b/gi, "conversation");
+      copy = copy.replace(/\bexecute\b/gi, "do");
+      copy = copy.replace(/\bexecution\b/gi, "getting it done");
+      copy = copy.replace(/\bframeworks\b/gi, "simple plans");
+      copy = copy.replace(/\bframework\b/gi, "simple plan");
+      copy = copy.replace(/\bpilot program\b/gi, "small test run");
+      copy = copy.replace(/\bpilot partner\b/gi, "test partner organization");
+      copy = copy.replace(/\bpilot outline\b/gi, "one-page test plan");
+      copy = copy.replace(/\bfree pilot\b/gi, "free trial run");
+      copy = copy.replace(/\b4-week pilot\b/gi, "4-week trial run");
+      copy = copy.replace(/\bformal pilot\b/gi, "formal test run");
+      copy = copy.replace(/\borg pilots\b/gi, "partnership tests with organizations");
+      copy = copy.replace(/\bpilot\b/gi, "small test");
+      copy = copy.replace(/\bsigned pilot agreement\b/gi, "signed test agreement");
 
       return copy;
     }
@@ -14544,7 +14580,7 @@ NOTE TEMPLATE
         `\nRules:\n` +
         `- ${assetRules[profile] || assetRules.general}\n` +
         `- NEVER restate or paraphrase the task title or mission.\n` +
-        `- Plain English, middle-school reading level.\n` +
+        `- Write like a helpful mentor — plain English, no business jargon.\n` +
         `- Use [brackets] only for facts you cannot infer.\n` +
         `- They should paste this into My Notes and start using it immediately.\n` +
         `- Output ONLY the asset pack — no preamble.`
@@ -15661,7 +15697,7 @@ What would make this more useful for someone in your situation?`;
       const blob = `${normalized.text} ${normalized.why || ""}`.toLowerCase();
       const path = state.currentIdea?.title || "your goal";
       if (/\b(organi[sz]|nonprofit|partner|pilot|test your idea|workshop)\b/.test(blob)) {
-        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Find your first organization willing to test your idea";
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Get one local org to say yes to trying your idea";
       }
       if (/\b(grant|funding|scholarship)\b/.test(blob)) {
         return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : `Secure your first grant or funding source for ${path}`;
@@ -17104,12 +17140,12 @@ What would make this more useful for someone in your situation?`;
         reentry: `Reentry / recently released in ${pb.countryLabel} — Stage 1–3 MUST be stability before career building: ID and documents per local rules, housing via ${pb.region === "norway" ? "NAV/kommune" : pb.region === "us" ? "211/shelter (US only)" : "official social services"}, ${pb.employmentGuide}, background-check-aware temp income, local benefits, compliance. Stage 4 may connect to the chosen path title. NEVER open with training first. Stage names example: "ID + shelter in ${locRaw}", "First paycheck work", "Benefits week" — NOT "Launch first test".`,
         employment: `Employment path in ${pb.countryLabel} — ${pb.employmentGuide}. Tailored CV/resume, networking, interviews, local apprenticeships. Stage names must reference the job target and city — e.g. "Scan ${locRaw} hiring lanes", "Package proof for [role]", "Two-week application push". Do NOT use generic US startup language or wrong-country agencies.`,
         career_change: `Career change toward "${idea?.title || "new field"}" in ${pb.countryLabel} — map transferable skills, talk to people already in the field, close specific skill gaps, then interviews/trial work. Stage names must reflect the NEW field and transition — NOT generic test/feedback/repeat.`,
-        nonprofit: `Starting or growing a nonprofit for "${idea?.title || "mission"}" in ${pb.countryLabel} — mission clarity, legal structure (501c3 or local equivalent), board/advisors, first small program or pilot. Stage names reference the cause and community — NOT startup validation language.`,
+        nonprofit: `Starting or growing a nonprofit for "${idea?.title || "mission"}" in ${pb.countryLabel} — get clear on your cause, handle legal setup (501c3 or local equivalent), find advisors, run one small program with real people. Stage names reference the cause and community — plain language only, no business jargon.`,
         housing: `Rebuilding after homelessness or housing instability in ${pb.countryLabel} — Stage 1: safe place tonight + this week. Stage 2: ID, mail, benefits. Stage 3: income that fits housing timeline. Stage 4: first step on "${idea?.title || "longer path"}". NEVER open with business launches or online stores.`,
         skilled_trade: `Skilled trade path "${idea?.title || "trade"}" in ${pb.countryLabel} — license/insurance verification, apprenticeship or journeyman route, first paid jobs/service calls, repeat customers. Reference the trade by name and local licensing rules — NOT generic freelance or gig economy stages.`,
         online_business: `Online business "${idea?.title || "offer"}" — pick ONE product/channel, set up store + payments, first 10 sales/signups, double what worked. Stage names name the product, platform, or audience — NOT "Launch first test" / "Gather feedback".`,
         business: `Local service or small business in ${pb.countryLabel} — ${pb.businessGuide}. Licensing, pricing, first customers, local marketing. Stage names reference the offer and city. Do NOT use US SBDC/SCORE outside the US.`,
-        learning: `Training path in ${pb.countryLabel} — ${pb.learningGuide}. Program enrollment, local funding, portfolio proof. Stage names reference the credential or skill — NOT generic validation phases.`,
+        learning: `Training path in ${pb.countryLabel} — ${pb.learningGuide}. Program enrollment, local funding, portfolio proof. Stage names reference the credential or skill — NOT generic "test and feedback" phases.`,
         creative: `Creative / design income — for EXPERIENCED practitioners: premium positioning, 2-tier pricing, niche proof by industry, weekly content, value-first local outreach, Google local SEO. Do NOT default to Upwork/Fiverr/99designs or workforce programs as the main strategy.`,
         grounded: `Experienced practitioner in ${pb.countryLabel} — they ALREADY have years in their craft. Stage focus: positioning, 2-tier packages with prices, proof organized by niche, weekly outreach to local businesses, Google Business Profile + reviews. Do NOT assign workforce boards, 211, community college, staffing agencies, or cheap gig platforms as primary strategy. Tasks must reference their craft, city, and niches by name.`
       };
@@ -17528,9 +17564,9 @@ What would make this more useful for someone in your situation?`;
         beta: [
           {
             label: "Recruit 3-5 beta testers",
-            desc: "Find a handful of real users before any formal pilot — watch them use the site.",
+            desc: "Find a handful of real people to try the site before any formal test run with an organization — watch them use it.",
             tasks: [
-              "List 5 people who fit your mission (friends, former colleagues, or one small cohort) and message 3: \"I'm testing whatimado.com — free AI roadmaps for people stuck on what's next. Can you try it for 15 minutes this week and tell me where you get confused?\"",
+              "List 5 people who fit your mission (friends, former colleagues, or one small group) and message 3: \"I'm testing whatimado.com — free AI roadmaps for people stuck on what's next. Can you try it for 15 minutes this week and tell me where you get confused?\"",
               "Create a 1-page closed beta outline in Notes (copy from Ask if needed): free access, what you need from them (one session + honest feedback), zero cost — NOT a 15-30 user impact study",
               "Schedule one live watch session: sit on Zoom or in person while they use the site — note the exact step where they hesitate"
             ]
@@ -17546,11 +17582,11 @@ What would make this more useful for someone in your situation?`;
           },
           {
             label: "Decide if it's ready",
-            desc: "Only move to pilots or grants after basic functionality feels solid.",
+            desc: "Only move to partnership tests or grants after basic functionality feels solid.",
             tasks: [
               "Ask all beta testers: \"Would you recommend this to someone in a worse spot than you?\" — write answers verbatim in Notes",
               "Count this week's usage numbers (people who started, got a map, opened a roadmap) — if numbers are near zero, fix the first-time experience before recruiting more people",
-              "Write a 5-sentence decision note: \"Ready for strangers / needs X fix / not ready for pilot yet\" — this gates your next path"
+              "Write a 5-sentence decision note: \"Ready for strangers / needs X fix / not ready for a formal test yet\" — this gates your next path"
             ]
           },
           {
@@ -17634,8 +17670,8 @@ What would make this more useful for someone in your situation?`;
             desc: "Decide whether donations, grants, or partnerships should lead — not user paywalls.",
             tasks: [
               "Calculate cost per active session: monthly spend ÷ map_generated events — write whether donations could realistically cover it at current traffic",
-              "Document one decision page: \"We will never paywall personal users; next funding lever is donations, then grants/sponsors, then org pilots\"",
-              "If donations are below costs, prioritize one free nonprofit/library pilot before considering any paid individual tier above pay-what-you-can"
+              "Document one decision page: \"We will never paywall personal users; next funding lever is donations, then grants/sponsors, then partnership tests with organizations\"",
+              "If donations are below costs, prioritize one free nonprofit/library trial run before considering any paid individual tier above pay-what-you-can"
             ]
           }
         ],
@@ -17679,37 +17715,37 @@ What would make this more useful for someone in your situation?`;
         ],
         partnership: [
           {
-            label: "Pick one pilot partner type",
-            desc: "Focus on a single org category before spraying outreach everywhere.",
+            label: "Pick one type of partner org",
+            desc: "Focus on a single org category before emailing everyone.",
             tasks: [
               "Choose ONE target for the next 30 days: public library, workforce program, shelter, community college career center, or nonprofit re-entry org",
               "List 10 local organizations with a program director name and email from their website — put them in a spreadsheet",
-              "Create a 1-page pilot outline in Notes — tap Ask on this task for a full draft to copy, then customize: free whatimado.com access, what staff get, what feedback you need, zero cost to clients, no paywall"
+              "Create a 1-page test plan in Notes — tap Ask on this task for a full draft to copy, then customize: free whatimado.com access, what staff get, what feedback you need, zero cost to clients, no paywall"
             ]
           },
           {
             label: "Send 5 outreach emails",
             desc: "Personal beats bulk — one org type, five tailored messages.",
             tasks: [
-              "Send this email to 5 directors (customize org name and one sentence about their mission): \"Hi [Name] — I built whatimado.com, a free AI possibility map for people stuck on what's next. I'd love a 4-week free pilot with [org]: your clients use it at no cost, I collect anonymized feedback to improve it. Could we do a 15-minute call?\"",
+              "Send this email to 5 directors (customize org name and one sentence about their work): \"Hi [Name] — I built whatimado.com, a free AI possibility map for people stuck on what's next. I'd love a 4-week free trial with [org]: your clients use it at no cost, I collect anonymized feedback to improve it. Could we do a 15-minute call?\"",
               "Follow up once after 5 business days with a 2-sentence bump and link to whatimado.com",
               "Prepare a 20-minute live demo using a realistic scenario (career change, housing instability, workforce re-entry) so you're ready if someone says yes"
             ]
           },
           {
-            label: "Run the pilot",
+            label: "Run the trial with one org",
             desc: "One working partnership beats ten maybes.",
             tasks: [
               "If an org agrees: schedule a short intro for staff or clients — share a simple handout with QR code to whatimado.com and 3 steps to start",
-              "Tag feedback in your notes by org name; ask users to submit suggestions through the on-site box when something confuses them",
+              "Tag feedback in your notes by org name; ask people to submit suggestions through the on-site box when something confuses them",
               "After 2 weeks, document 3 outcomes: sessions started, quotes (with permission), and one thing you improved from their feedback"
             ]
           },
           {
             label: "Expand or fund",
-            desc: "Turn a pilot into testimonials, grants, or ethical sponsorship.",
+            desc: "Turn a successful trial into testimonials, grants, or ethical sponsorship.",
             tasks: [
-              "Ask your pilot partner for a short testimonial or letter of support you can put on the site (still free for end users)",
+              "Ask your partner org for a short testimonial or letter of support you can put on the site (still free for end users)",
               "Research 2 grants that fit digital equity, workforce development, or homeless services tech — note deadlines and one-sentence fit",
               "Draft a 1-page sponsor outline: logo on site, co-branded landing page optional, end users always free — for local businesses or foundations, not user subscriptions"
             ]
@@ -17763,7 +17799,7 @@ What would make this more useful for someone in your situation?`;
       '- They are NOT a beginner. Do NOT assign workforce boards, 211, community college, staffing agencies, or "compare training routes" unless they explicitly asked to change careers or need a job.\n' +
       '- Do NOT compete on cheap gig platforms (Fiverr, Upwork contests) as the PRIMARY strategy for experienced professionals.\n' +
       '- Build a real business: positioning, 1-2 simple packages with prices, proof organized by niche, weekly outreach, local SEO, reviews.\n' +
-      '- Tasks must include specific dollar amounts, niche names, scripts, and deliverables — reference THEIR craft and city from the conversation.\n' +
+      '- Tasks must include specific dollar amounts, niche names, scripts, and finished pieces — reference THEIR craft and city from the conversation.\n' +
       '- Value-first outreach beats "need a job?" or "need a logo?" — lead with insight or a free sample concept.\n';
 
     const GENERIC_GROUNDED_FALLBACK_IDEAS = [
@@ -17780,7 +17816,7 @@ What would make this more useful for someone in your situation?`;
         title: "Niche Proof & Weekly Visibility",
         type: "Experienced — marketing",
         tagline: "Organize your best work by client type and post consistently so the right people find you.",
-        why: "Clients hire people whose work looks like their industry — not a generic portfolio or Skill Sprint template.",
+        why: "Clients hire people whose work looks like their industry — not a generic portfolio or rushed template.",
         cost: "$0",
         timeline: "2-3 weeks",
         income: "More inbound leads"
@@ -17827,7 +17863,7 @@ What would make this more useful for someone in your situation?`;
         niches: "restaurants, retail shops, nonprofits, startups, event promoters, local brands",
         pricingBasic: "$350-750",
         pricingPremium: "$900-2000",
-        packageBasic: "one focused deliverable (menu, flyer, social kit), 2 revisions, print-ready files",
+        packageBasic: "one focused finished piece (menu, flyer, social kit), 2 revisions, print-ready files",
         packagePremium: "multi-piece brand kit, extra revisions, source files, style guide",
         proofType: "case studies by industry showing before/after and business outcome",
         outreachScript: "I saw your brand online and sketched one improvement that could help customers recognize you faster. Happy to share if useful.",
@@ -18768,7 +18804,7 @@ What would make this more useful for someone in your situation?`;
         : "";
 
       return (
-        `You are whatimado, a practical advisor to the FOUNDER of whatimado.com — a free AI possibility map for people landing on their own what Ima do.\n\n` +
+        `You are whatimado — a practical mentor helping the FOUNDER of whatimado.com (a free possibility map for people stuck on what's next). Talk like a normal person, not a startup coach.\n\n` +
         `${phaseNote}\n\n` +
         `Site facts you can reference in tasks:\n` +
         `- Live single-page app at whatimado.com with AI chat intake, visual possibility map, roadmaps with tasks/notes/checkboxes, Ask AI per task\n` +
@@ -18791,20 +18827,20 @@ What would make this more useful for someone in your situation?`;
         `- Mission philosophy: outcome-focused missions that move measurably toward the goal — not homework tasks.\n` +
         `- Every mission needs: mission (title), mentorHelp, howTo, text (what to do), why, outcome, talkingPoints, followUp (when outreach), resources, script.\n` +
         `- Optional steps[] only if helpful (max 2) — not a second homework list.\n` +
-        `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real deliverables, and copy snippets.\n` +
+        `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real finished pieces, and copy snippets.\n` +
         `- Include ready-to-use templates in script — do NOT tell the founder to invent emails, posts, or outlines from scratch.\n` +
         `- Reference Stripe, Supabase analytics/suggestions, and social launch — not generic "build an audience" advice.\n` +
         `- Each task doable in one sitting (30–90 min) or one week max.\n` +
         `- Never suggest paywalling personal users or $9+/mo individual subscriptions.\n\n` +
         `BAD MISSIONS:\n` +
-        `- "Find 10 nonprofits"\n` +
-        `- "Build your online presence"\n` +
-        `- "Research local nonprofits to partner with"\n` +
-        `- "Write an outreach email"\n\n` +
+        `- "Validate demand before scaling"\n` +
+        `- "Identify stakeholder organizations"\n` +
+        `- "Execute the outreach framework"\n` +
+        `- "Build your online presence"\n\n` +
         `GOOD MISSIONS:\n` +
-        `- mission: "Find your first organization willing to test your idea" + mentorHelp + resources + script + talkingPoints + followUp\n` +
-        `- mission: "Get your first Reddit conversation started" + full post in script\n` +
-        `- mission: "Land your first pilot partner" + email draft + 4 real orgs ranked\n\n` +
+        `- mission: "Get one local org to try your idea" + contacts + draft email + follow-up\n` +
+        `- mission: "Start your first Reddit conversation" + full post in script\n` +
+        `- mission: "Find a library or workforce program to test with" + email draft + 4 real orgs ranked\n\n` +
         getRoadmapJsonInstruction({ founderMode: true, context, phase })
       );
     }
@@ -18855,7 +18891,7 @@ What would make this more useful for someone in your situation?`;
         : "";
 
       return (
-        `You are whatimado, a mentor who does the legwork alongside them. ${phaseNote}\n\n` +
+        `You are whatimado — a helpful mentor who does the legwork alongside them. You talk like a normal person, not a business consultant or AI. ${phaseNote}\n\n` +
         `Chosen path:\n${ideaBlock}\n\n` +
         `Full conversation:\n${context}\n` +
         siblingBlock +
@@ -18870,16 +18906,15 @@ What would make this more useful for someone in your situation?`;
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
         `NEVER use generic stage titles like "Launch the first test", "Launch first test", "Gather feedback", "Repeat", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path and this person's situation.\n\n` +
         `CRITICAL RULES FOR MISSIONS:\n` +
-        `- Think in MISSIONS (measurable progress), not homework tasks. BAD: "Find 10 nonprofits." GOOD: "Find your first organization willing to test your idea."\n` +
-        `- YOU provide: orgs, contacts, emails, phones, suggested first contact, outreach email, talking points, follow-up, expected outcome.\n` +
-        `- mission = goal title. mentorHelp = what you prepared. howTo = how to do it. text = what they do now. outcome = success looks like.\n` +
-        `- script + talkingPoints + followUp required for outreach missions. resources.* = 3-8 real orgs with URLs.\n` +
+        `- Think in MISSIONS (real progress they can see), not homework tasks. BAD: "Find 10 nonprofits." GOOD: "Get one local org to say yes to trying your idea."\n` +
+        `- YOU provide: orgs, contacts, emails, phones, draft emails, talking points, follow-ups — they review and act.\n` +
+        `- mission = plain-language goal. mentorHelp = what you prepared. howTo = next small action. text = what they do now. outcome = how they'll know it's done.\n` +
+        `- script + talkingPoints + followUp required for reaching-out missions. resources.* = 3-8 real orgs with URLs.\n` +
         `- NEVER assign homework: research, find, look up, write from scratch.\n` +
         `- Reference their actual situation (skills, location, constraints, goals).\n` +
-        `- Plain English — middle-school reading level. No startup jargon.\n` +
         `- Do NOT mention whatimado.com unless this is a founder growth path.\n\n` +
-        `BAD MISSIONS: "Find 10 nonprofits" / "Research local organizations" / "Write an outreach email"\n` +
-        `GOOD MISSIONS: mission + mentorHelp + howTo + ranked resources + script + talkingPoints + followUp + outcome — user only reviews and acts.\n\n` +
+        `BAD MISSIONS: "Validate local demand" / "Identify organizations aligned with your mission" / "Execute outreach framework"\n` +
+        `GOOD MISSIONS: "Find out if people actually want this before you spend more" / "Find local orgs that already help your kind of person" / mission + contacts + draft email + follow-up — user only reviews and sends.\n\n` +
         getRoadmapJsonInstruction({ founderMode: false, context, phase })
       );
     }
@@ -19338,7 +19373,7 @@ What would make this more useful for someone in your situation?`;
         `Latest question: ${question}\n\n` +
         (threadHistory ? `Task chat so far:\n${threadHistory}\n\n` : "") +
         `Broader conversation context:\n${contextTail}\n\n` +
-        `Answer helpfully in 2-5 sentences. Be specific to THIS task and THIS question.\n` +
+        `Answer helpfully in 2-5 sentences. Be specific to THIS task and THIS question. Sound like a helpful mentor — no business jargon.\n` +
         `When the user asks you to draft something, provide FULL copy-paste assets (emails, lists, scripts, trackers, question sets) — never paragraphs that restate what the task already says.\n` +
         `When mentioning websites, tools, or platforms, include full https:// URLs.\n` +
         `Prefer the contacts, links, and script already on the task before sending them to research from scratch.\n` +
