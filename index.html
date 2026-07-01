@@ -1,13 +1,13 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-living-roadmap -->
+<!-- whatimado build: 2026-06-30-ui-polish-2 -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-living-roadmap">
+  <meta name="whatimado-build" content="2026-06-30-ui-polish-2">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
-  <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
+  <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
   <!-- Google Search Console: add property at search.google.com/search-console, choose HTML tag, paste the meta line Google gives you below this comment. -->
   <script type="application/ld+json">
@@ -16,7 +16,7 @@
     "@type": "WebApplication",
     "name": "whatimado.com",
     "url": "https://whatimado.com/",
-    "description": "Free visual map of career and life paths, step-by-step roadmaps, and task-by-task help when you feel stuck on what's next.",
+    "description": "Free visual map of career and life paths, mission-by-mission roadmaps with contacts and drafts ready when you feel stuck on what's next.",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Web browser",
     "browserRequirements": "Requires JavaScript",
@@ -31,7 +31,7 @@
   <meta property="og:site_name" content="whatimado.com">
   <meta property="og:url" content="https://whatimado.com/">
   <meta property="og:title" content="whatimado.com — Map paths you haven't considered">
-  <meta property="og:description" content="Stuck on what's next? Free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
+  <meta property="og:description" content="Stuck on what's next? Free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <meta property="og:image" content="https://whatimado.com/og-image.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -39,7 +39,7 @@
   <meta property="og:image:alt" content="whatimado.com — map paths you haven't considered">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="whatimado.com — Map paths you haven't considered">
-  <meta name="twitter:description" content="Stuck on what's next? Free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
+  <meta name="twitter:description" content="Stuck on what's next? Free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <meta name="twitter:image" content="https://whatimado.com/og-image.png?v=2">
   <meta name="theme-color" content="#07080f">
   <script>
@@ -96,7 +96,9 @@
           inset: 0;
           z-index: 2147483647;
           display: grid;
-          place-items: center;
+          align-items: start;
+          justify-items: start;
+          padding: 2.75rem 2rem 1.5rem 2.85rem;
           background: ${shell.loader};
         }
       `;
@@ -1090,11 +1092,20 @@
       min-height: 58px;
       max-height: 160px;
       padding: 1rem 4.5rem 1rem 1.15rem;
-      border: 1px solid var(--line);
+      border: 2px solid rgba(37, 99, 235, .42);
       border-radius: 18px;
       background: #fff;
       box-shadow: 0 8px 30px rgba(15, 23, 42, .06);
-      resize: none;
+      resize: vertical;
+    }
+
+    @media (max-width: 720px) {
+      html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
+        min-height: 132px;
+        max-height: 280px;
+        padding-top: 1.1rem;
+        padding-bottom: 1.1rem;
+      }
     }
 
     html[data-color-scheme="adult"] .dashboard-search .prompt-textarea:focus {
@@ -5727,16 +5738,40 @@
       border-top: 1px solid var(--line);
     }
 
-    #screen-map .page-header--map {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
+    #screen-map .page-header.page-header--map {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: .85rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .map-header-nav-row {
+      display: flex;
       align-items: center;
-      gap: .75rem 1rem;
+      justify-content: flex-start;
+      width: 100%;
+      min-height: 40px;
+      flex-shrink: 0;
+    }
+
+    .map-header-nav-row .page-screen-nav-forward {
+      margin-left: auto;
     }
 
     #screen-map .page-header--map .map-heading {
       text-align: center;
+      width: 100%;
+      max-width: 40rem;
+      margin: 0 auto;
       min-width: 0;
+    }
+
+    #screen-map .map-parent-context {
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
     }
 
     .map-plans-toolbar {
@@ -7068,6 +7103,72 @@
       text-decoration: none;
     }
 
+    .task-mission-title {
+      color: var(--ink, #f4f0ff);
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.45;
+      letter-spacing: -.01em;
+    }
+
+    .task-talking-points {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: var(--ink-muted, rgba(232, 236, 255, .85));
+      font-size: .78rem;
+      line-height: 1.55;
+    }
+
+    html[data-color-scheme="adult"] .task-mission-title {
+      color: var(--text, #241235);
+    }
+
+    .task-mentor-copy--findings {
+      color: var(--ink, #f4f0ff);
+      font-size: .84rem;
+      line-height: 1.6;
+    }
+
+    .task-mentor-section--findings {
+      background: rgba(120, 130, 255, .06);
+      margin: 0 -.15rem;
+      padding: .75rem .85rem;
+      border-radius: .65rem;
+      border: 1px solid rgba(120, 130, 200, .12);
+    }
+
+    .task-contact-rank {
+      display: inline-block;
+      margin-bottom: .25rem;
+      padding: .12rem .45rem;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, .14);
+      color: #6366f1;
+      font-size: .58rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .task-contact-card--top {
+      border-color: rgba(99, 102, 241, .28);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, .08);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-section--findings {
+      background: rgba(36, 18, 53, .04);
+      border-color: rgba(36, 18, 53, .08);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-copy--findings {
+      color: var(--text, #241235);
+    }
+
+    html[data-color-scheme="adult"] .task-contact-rank {
+      background: rgba(99, 102, 241, .1);
+      color: #4f46e5;
+    }
+
     .task-mentor-card .task-mentor-section + .task-mentor-section {
       margin-top: .85rem;
       padding-top: .85rem;
@@ -7207,6 +7308,211 @@
     html[data-color-scheme="adult"] .task-mentor-copy,
     html[data-color-scheme="adult"] .task-mentor-hint {
       color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .task-question {
+      border: 2px solid rgba(37, 99, 235, .42);
+      background: #fff;
+    }
+
+    html[data-color-scheme="adult"] .task-question:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    html[data-color-scheme="adult"] .task-ask-btn {
+      background: #2563eb;
+    }
+
+    .roadmap-float-progress {
+      position: fixed;
+      top: calc(var(--header-h, 64px) + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      padding: .32rem .7rem .32rem .45rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .94);
+      border: 1px solid rgba(37, 99, 235, .14);
+      box-shadow: 0 6px 24px rgba(15, 23, 42, .1);
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .roadmap-float-progress-track {
+      width: 88px;
+      height: .35rem;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .12);
+      overflow: hidden;
+    }
+
+    .roadmap-float-progress-fill {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb, #22c55e);
+      transition: width .25s ease;
+    }
+
+    .roadmap-float-progress-text {
+      color: #2563eb;
+      font-size: .68rem;
+      font-weight: 800;
+      min-width: 2rem;
+    }
+
+    .task-compressed-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: .65rem;
+      width: 100%;
+    }
+
+    .task-expand-btn {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border: 2px solid rgba(37, 99, 235, .35);
+      border-radius: 999px;
+      background: #fff;
+      color: #2563eb;
+      font-size: .82rem;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .task-expand-btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .task-item.is-expanded .task-expand-btn {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+
+    .task-compressed-main {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .task-compressed-mission {
+      color: var(--text, #241235);
+      font-size: .84rem;
+      font-weight: 700;
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .task-item.is-done .task-compressed-mission {
+      color: var(--ink-muted);
+      text-decoration: line-through;
+      text-decoration-color: rgba(37, 99, 235, .35);
+    }
+
+    .task-compressed-done {
+      flex-shrink: 0;
+      padding: .12rem .45rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, .12);
+      color: #15803d;
+      font-size: .58rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .task-check--compressed {
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .task-expanded-panel[hidden] {
+      display: none !important;
+    }
+
+    .task-item:not(.is-expanded) .overview-task-main,
+    .task-item:not(.is-expanded) .overview-task-tools {
+      display: none;
+    }
+
+    .task-item.is-expanded .task-compressed-row {
+      margin-bottom: .75rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid rgba(120, 130, 200, .12);
+    }
+
+    .task-collapse-btn {
+      display: inline-flex;
+      align-items: center;
+      margin-top: .65rem;
+      padding: .35rem .7rem;
+      border: 1px solid rgba(37, 99, 235, .22);
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .06);
+      color: #2563eb;
+      font-size: .72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .task-notes-draft-panel .task-textarea {
+      width: 100%;
+      margin-top: .45rem;
+      min-height: 7rem;
+    }
+
+    .task-notes-draft-panel {
+      margin-bottom: .55rem;
+      padding: .55rem .65rem;
+      border: 1px solid rgba(37, 99, 235, .18);
+      border-radius: .55rem;
+      background: rgba(37, 99, 235, .04);
+    }
+
+    .task-notes-draft-panel summary {
+      cursor: pointer;
+      color: #2563eb;
+      font-size: .74rem;
+      font-weight: 700;
+      list-style: none;
+    }
+
+    .task-notes-draft-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .task-copy-draft-btn {
+      margin-top: .45rem;
+      padding: .32rem .65rem;
+      border: 1px solid rgba(37, 99, 235, .25);
+      border-radius: 999px;
+      background: #fff;
+      color: #2563eb;
+      font-size: .7rem;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     html[data-color-scheme="adult"] .task-mentor-card .task-mentor-section + .task-mentor-section {
@@ -7945,10 +8251,11 @@
       inset: 0;
       z-index: 20;
       display: grid;
-      place-items: center;
+      align-items: start;
+      justify-items: start;
       min-height: calc(100dvh - var(--header-h));
-      padding: 1.5rem;
-      text-align: center;
+      padding: 2.25rem 1.75rem 1.5rem 2.25rem;
+      text-align: left;
       background: var(--bg-gradient);
     }
 
@@ -7961,7 +8268,62 @@
     }
 
     .roadmap-loading .loader-inner {
-      gap: 1.15rem;
+      gap: 1rem;
+      justify-items: start;
+      text-align: left;
+      width: min(100%, 28rem);
+    }
+
+    .site-loading-progress {
+      width: min(100%, 22rem);
+      margin-top: .35rem;
+    }
+
+    .site-loading-progress-track {
+      height: .5rem;
+      border-radius: 999px;
+      background: rgba(120, 130, 200, .16);
+      overflow: hidden;
+    }
+
+    .site-loading-progress-fill {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--purple, #7c6fcd), var(--teal, #4ecdc4));
+      transition: width .25s ease;
+    }
+
+    .site-loading-progress-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem .65rem;
+      margin: .45rem 0 0;
+      color: var(--ink-muted, rgba(232, 236, 255, .72));
+      font-size: .72rem;
+      line-height: 1.4;
+    }
+
+    .site-loading-progress-pct {
+      font-weight: 800;
+      color: var(--ink, #f0f2ff);
+    }
+
+    html[data-color-scheme="adult"] .site-loading-progress-track {
+      background: rgba(15, 23, 42, .1);
+    }
+
+    html[data-color-scheme="adult"] .site-loading-progress-fill {
+      background: linear-gradient(90deg, #2563eb, #22c55e);
+    }
+
+    html[data-color-scheme="adult"] .site-loading-progress-pct {
+      color: var(--text, #241235);
+    }
+
+    html[data-color-scheme="adult"] .site-loading-progress-meta {
+      color: var(--ink-muted);
     }
 
     body.roadmap-loading-active {
@@ -8853,8 +9215,9 @@
       inset: 0;
       z-index: 100;
       display: grid;
-      place-items: center;
-      padding: 1.5rem;
+      align-items: start;
+      justify-items: start;
+      padding: 2.75rem 2rem 1.5rem 2.85rem;
       background: var(--bg-gradient);
       transition: opacity .55s ease;
     }
@@ -8876,11 +9239,11 @@
 
     .loader-inner {
       display: grid;
-      gap: 1.15rem;
-      justify-items: center;
-      text-align: center;
-      width: min(100%, 36rem);
-      padding: 0 .75rem;
+      gap: 1rem;
+      justify-items: start;
+      text-align: left;
+      width: min(100%, 28rem);
+      padding: 0;
       box-sizing: border-box;
     }
 
@@ -10181,25 +10544,12 @@
       }
 
       #screen-map .page-header--map {
-        grid-template-columns: auto 1fr auto;
-        grid-template-areas: "back title forward";
-        gap: .65rem .75rem;
-        margin-bottom: 1.1rem;
+        gap: .75rem;
+        margin-bottom: 1rem;
       }
 
       #screen-map .page-header--map .map-heading {
-        grid-area: title;
         text-align: center;
-      }
-
-      #screen-map .page-header--map #map-page-nav-back {
-        grid-area: back;
-        justify-self: start;
-      }
-
-      #screen-map .page-header--map #map-page-nav-forward {
-        grid-area: forward;
-        justify-self: end;
       }
 
       #screen-map .page-title {
@@ -10458,6 +10808,15 @@
       <img class="loader-logo" src="/logo.png" alt="whatimado.com" width="251" height="150">
       <p class="loader-quote">"The two most important days in your life are the day you are born and the day you find out why."</p>
       <small class="loader-tagline">Let us help you figure out what you're gonna do.</small>
+      <div class="site-loading-progress" id="loader-progress" aria-live="polite">
+        <div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span class="site-loading-progress-fill"></span>
+        </div>
+        <p class="site-loading-progress-meta">
+          <span class="site-loading-progress-pct">0%</span>
+          <span class="site-loading-progress-eta">Starting up…</span>
+        </p>
+      </div>
     </div>
   </div>
 
@@ -11022,17 +11381,19 @@
     <section class="screen" id="screen-map">
       <div class="page">
         <div class="page-header page-header--map">
-          <button type="button" class="screen-nav-btn page-screen-nav-back" id="map-page-nav-back" aria-label="Go back">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
-          </button>
+          <div class="map-header-nav-row">
+            <button type="button" class="screen-nav-btn page-screen-nav-back" id="map-page-nav-back" aria-label="Go back">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+            </button>
+            <button type="button" class="screen-nav-btn page-screen-nav-forward" id="map-page-nav-forward" aria-label="Go forward" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+            </button>
+          </div>
           <div class="map-heading">
             <h2 class="page-title">Your <em>Possibility Maps</em></h2>
             <p class="map-parent-context" id="map-page-context" hidden></p>
             <p class="page-subtitle">Review each path below, then open a step-by-step roadmap for the one that fits you best.</p>
           </div>
-          <button type="button" class="screen-nav-btn page-screen-nav-forward" id="map-page-nav-forward" aria-label="Go forward" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
-          </button>
         </div>
 
         <div class="map-overview">
@@ -11085,10 +11446,25 @@
     </section>
 
     <section class="screen" id="screen-roadmap">
+      <div class="roadmap-float-progress" id="roadmap-float-progress" hidden aria-hidden="true">
+        <div class="roadmap-float-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span class="roadmap-float-progress-fill" id="roadmap-float-progress-fill"></span>
+        </div>
+        <span class="roadmap-float-progress-text" id="roadmap-float-progress-text">0%</span>
+      </div>
       <div class="roadmap-loading" id="roadmap-loading" hidden>
         <div class="loader-inner">
           <img class="loader-logo" src="/logo.png" alt="" width="251" height="150">
-          <p class="loader-tagline">Building your personalised roadmap...</p>
+          <p class="loader-tagline">Preparing your missions…</p>
+          <div class="site-loading-progress" id="roadmap-loader-progress" aria-live="polite">
+            <div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span class="site-loading-progress-fill"></span>
+            </div>
+            <p class="site-loading-progress-meta">
+              <span class="site-loading-progress-pct">0%</span>
+              <span class="site-loading-progress-eta">Preparing your missions…</span>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -11107,7 +11483,7 @@
           </div>
 
           <header class="roadmap-overview-header" id="roadmap-overview-header">
-            <span class="roadmap-status-badge" id="roadmap-status-badge">Living roadmap</span>
+            <span class="roadmap-status-badge" id="roadmap-status-badge">Active missions</span>
             <p class="roadmap-parent-context" id="roadmap-parent-context" hidden></p>
             <h2 class="roadmap-title" id="roadmap-title"></h2>
             <p class="roadmap-overview-desc" id="roadmap-overview-desc"></p>
@@ -11130,7 +11506,7 @@
               </div>
               <p class="roadmap-glance-lead" id="roadmap-glance-lead" hidden></p>
               <div class="roadmap-glance-track" id="roadmap-glance-track"></div>
-              <button type="button" class="roadmap-glance-next-btn" id="roadmap-glance-next-btn">Jump to your next task</button>
+              <button type="button" class="roadmap-glance-next-btn" id="roadmap-glance-next-btn">Jump to your next mission</button>
             </section>
 
             <div class="momentum-card" id="momentum-card" hidden aria-hidden="true">
@@ -11580,21 +11956,18 @@
     ];
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
-      'Return exactly 4 stages with 3 tasks each.\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and how it connects to the path","tasks":[{"text":"ONE clear action in plain English — what to DO right now (not a checklist title)","why":"1-2 simple sentences — why this matters for THIS person now","outcome":"1 sentence — success looks like (what they will have when done)","duration":"10 minutes|30 minutes|1 hour|2 hours (pick one realistic estimate)","difficulty":"Easy|Medium|Advanced","steps":["Optional micro-step only if it truly helps — max 3 short items"],"alternatives":"If this step doesn\'t apply in their country or situation, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization serving their city/region","phone":"published line or empty string","email":"published email or empty string","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government or national program name","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Coursera, edX, Khan Academy, etc.","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page-needed.example"],"contacts":[],"script":"Email subject + body OR call opener — only when outreach is needed; otherwise empty string"}]}]\n' +
-      'MENTOR TASK RULES:\n' +
-      '- Each task = ONE approachable action a personal mentor would assign — not a vague project.\n' +
-      '- text must be short and concrete. steps[] are optional extras (max 3), not a second task list.\n' +
-      '- why = "Why this matters" in warm, simple language. outcome = "Success looks like".\n' +
-      '- duration = realistic estimate (10 minutes, 30 minutes, 1 hour, 2 hours). difficulty = Easy, Medium, or Advanced.\n' +
-      '- Every task object MUST include text, why, outcome, duration, and difficulty.\n' +
-      'For tasks involving local programs, applications, licensing, or outreach: fill resourceCategories[], resources.local (1-3 real orgs for their city/region), resources.national when a country-wide portal applies, and resources.global for online options that work anywhere.\n' +
-      'Task text = the action. resources.* = the discovered organizations. Never put only a category in resources — always resolve to real names + official URLs for THIS user\'s location.\n' +
-      'Write like a patient mentor for someone with NO business background — middle-school reading level. Never use startup or consultant jargon in task text, stage labels, why, or outcome.\n' +
-      'For ANY task that asks the user to write, draft, compose, fill out, or prepare text (email, letter, grant, resume, business plan, flyer, social post, phone script, spreadsheet, checklist, agenda, proposal, etc.): script MUST contain a complete ready-to-edit draft — not instructions, not placeholders-only. Use [brackets] only for facts you cannot infer from their situation.\n' +
-      'If the task is not a writing task, script may be an empty string.\n' +
-      'Do not reuse stage titles across different paths on the same map.\n' +
-      'Each stage label MUST name something specific to THIS path (job title, trade, nonprofit mission, business type, or life situation) — never a reusable 3-step template like test → feedback → repeat.';
+      'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Outcome-focused mission title — e.g. Find your first organization willing to test your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"First person: how you already helped — I found 8 orgs, ranked the top 3, drafted the email…","howTo":"2-4 plain-English sentences: exactly how to complete this mission using what you prepared","why":"Why this mission moves them toward their goal right now","outcome":"Expected outcome — measurable proof the mission succeeded","talkingPoints":"3-5 bullet lines they can say on a call or in person — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after deliverables exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"Full outreach email (subject + body), grant shortlist, phone script, or post — required when outreach/writing is involved"}]}]\n' +
+      'MISSION PHILOSOPHY (non-negotiable):\n' +
+      '- Think in MISSIONS (measurable progress toward the goal), not homework tasks.\n' +
+      '- BAD mission: "Find 10 nonprofits." GOOD mission: "Find your first organization willing to test your idea."\n' +
+      '- YOU provide: organizations, contacts, emails, phone numbers, suggested first contact, outreach email, talking points, follow-up message, expected outcome.\n' +
+      '- mission = the goal. text = what they do now. mentorHelp = what you already did. howTo = how to do it. outcome = success looks like.\n' +
+      '- NEVER assign: research, find, look up, write from scratch — fill resources + script + talkingPoints + followUp instead.\n' +
+      '- resources.local = 3-8 real named orgs with phones/emails/URLs. First contact in list = suggested first contact.\n' +
+      '- Every mission must move the user measurably closer to their goal — they should never wonder what to do now.\n' +
+      'Write in plain English — middle-school reading level. No startup jargon.\n' +
+      'Stage labels must be specific to THIS path — never generic test → feedback → repeat.';
 
     const RESOURCE_CATEGORY_HINTS =
       'employment_agency, career_center, apprenticeship, small_business_advisor, business_incubator, startup_grants, government_grants, nonprofit, scholarship, community_college, certification_program, library, coworking, food_assistance, transportation_assistance, housing_assistance, childcare_assistance, veteran_resources, disability_services, legal_aid, financial_literacy, business_networking, makerspace, industry_association, id_documents, municipal_services, reentry_support';
@@ -11690,29 +12063,19 @@
     };
 
     const ACTIONABLE_TASK_RULES =
-      'MENTOR TASK STRUCTURE (every task):\n' +
-      '- text: ONE clear action — what to do right now.\n' +
-      '- why: Why this matters (simple, warm language).\n' +
-      '- outcome: Success looks like — tangible proof they finished.\n' +
-      '- duration: 10 minutes | 30 minutes | 1 hour | 2 hours (realistic).\n' +
-      '- difficulty: Easy | Medium | Advanced.\n' +
-      '- resources.*: real orgs whenever the task involves local help, applications, or outreach.\n' +
-      'CATEGORY-FIRST RESOURCE RULES:\n' +
-      '- The AI must know the TYPE of resource to find — not memorize organizations from other countries.\n' +
-      '- Task text = what to DO using categories (e.g. "Meet with a free small business advisor near you before writing your business plan").\n' +
-      '- resources.local / resources.national / resources.global = where you RESOLVE those categories to real orgs, portals, and URLs for THIS user\'s exact location.\n' +
-      '- Three layers: LOCAL (city/county/region orgs), NATIONAL (country government programs, grants, benefits), GLOBAL (Coursera, edX, Khan Academy, Google Career Certificates, remote job boards — when online works).\n' +
-      `- Resource category examples: ${RESOURCE_CATEGORY_HINTS}.\n` +
-      '- Every relevant task needs alternatives explaining another route if the main step doesn\'t apply in their country.\n' +
-      '- steps[]: 2-4 distinct micro-actions (open this page, book this appointment, save this number).\n' +
-      '- why and outcome: full sentences a beginner understands.\n' +
-      '- Use plain English; short sentences a 12-year-old could follow.\n' +
-      '- NEVER use startup/consultant words: validate, validation, sprint, traction, pivot, social validation, go-to-market, value proposition, product-market fit, user acquisition, MVP, iterate, friction point, feedback loop, ship, leverage, scalable, cohort, monetize, GTM, activation.\n' +
-      '- BAD: "Validate demand." GOOD: "Talk to three people who might actually use your idea and ask whether it would help them."\n' +
-      '- BAD task text: "Call Workforce Solutions Austin" or "Find workforce resources near you" with no resources filled in.\n' +
-      '- GOOD: text says "Contact your regional employment service…" AND resources.local lists NAV Troms og Finnmark (or the correct agency for their city) with nav.no URL.\n' +
-      '- Never invent fake grants or personal @gmail addresses. Use official sites; leave phone/email "" if not published.\n' +
-      '- links[] = exact pages they need open. Prefer resources.* over bare links when both apply.\n';
+      'MISSION PHILOSOPHY — experienced guide who already did the work:\n' +
+      '- Each item is a MISSION (measurable step toward their goal), not a homework task.\n' +
+      '- BAD: "Find 10 nonprofits." GOOD: "Find your first organization willing to test your idea."\n' +
+      '- YOU provide: organizations, contacts, emails, phones, suggested first contact, outreach email, talking points, follow-up, expected outcome.\n' +
+      '- mission = outcome-focused title. text = what they do now. mentorHelp = how you helped. howTo = how to do it. outcome = success looks like.\n' +
+      '- talkingPoints = 3-5 ready lines for calls/meetings. followUp = message if no reply in 3-5 days. script = full email/grant/post draft.\n' +
+      '- FORBIDDEN: research, find, look up, write a draft, create a list — do that in resources + script + mentorHelp.\n' +
+      '- resources.*: 3-8 REAL orgs with official URLs, phones, emails for their location. First in list = suggested first contact.\n' +
+      `- Category hints (resolve to real names): ${RESOURCE_CATEGORY_HINTS}.\n` +
+      '- why, outcome, duration, difficulty required. steps[] optional (max 2).\n' +
+      '- User must always know: what to do, why, how, what success looks like, how you helped.\n' +
+      '- Plain English. No startup jargon.\n' +
+      '- Never invent fake grants or personal @gmail addresses.\n';
     let roadmapAutoContinueTimer = null;
     let roadmapAdaptTimer = null;
     let roadmapAdaptInFlight = false;
@@ -11767,12 +12130,12 @@
     function getRoadmapSubtitle(founderMode, source = "ai") {
       if (source === "fallback") {
         return founderMode
-          ? "Using a detailed backup roadmap for whatimado.com — tasks include Reddit posts, donation copy, and outreach templates."
-          : "Using a backup roadmap — tasks are tailored to your path, but run through the flow again for a fully custom plan.";
+          ? "Using a detailed backup roadmap for whatimado.com — drafts, contacts, and outreach are ready to use."
+          : "Using a backup roadmap — your mentor prepared starter steps; run through again for a fully custom plan.";
       }
       return founderMode
-        ? "Mission-driven steps for whatimado.com — each task includes concrete steps, copy, channels, or templates."
-        : "Follow these stages to get this off the ground — each task includes steps, timing, and what done looks like.";
+        ? "Your mentor prepared concrete steps for whatimado.com — drafts, channels, and templates are filled in."
+        : "Your guide did the legwork — each mission moves you closer. Review what's ready, then act.";
     }
 
     function normalizeRoadmapText(text) {
@@ -12632,6 +12995,25 @@
       return String(task ?? "").trim();
     }
 
+    function getMissionTitle(task) {
+      if (typeof task === "object" && task) {
+        return String(task.mission || task.missionTitle || "").trim();
+      }
+      return "";
+    }
+
+    function normalizeTalkingPoints(value) {
+      if (!value) return "";
+      if (Array.isArray(value)) {
+        return value.map((line) => String(line || "").trim()).filter(Boolean).join("\n");
+      }
+      return String(value)
+        .split(/\n+|(?:^|\n)\s*[-•]\s+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join("\n");
+    }
+
     function normalizeTaskSteps(value) {
       if (!value) return [];
       if (Array.isArray(value)) {
@@ -12877,6 +13259,10 @@
       normalized.why = humanizeTaskText(normalized.why);
       normalized.outcome = humanizeTaskText(normalized.outcome);
       normalized.alternatives = humanizeTaskText(normalized.alternatives);
+      normalized.mission = humanizeTaskText(normalized.mission || "");
+      normalized.howTo = humanizeTaskText(normalized.howTo || "");
+      normalized.mentorHelp = humanizeTaskText(normalized.mentorHelp || "");
+      normalized.mentorFindings = humanizeTaskText(normalized.mentorFindings || "");
       normalized.steps = (normalized.steps || []).map((step) => humanizeTaskText(step));
       return normalized;
     }
@@ -13433,6 +13819,9 @@ Location: ${location}`;
       if (generateLocalTaskDraft(normalized) || isWritingTask(normalized)) {
         return "Your starter draft appears here — edit anything to match your voice…";
       }
+      if (taskHasMentorDeliverable(normalized)) {
+        return "Your mission brief, contacts, and drafts appear here — edit anything…";
+      }
       return "Jot down thoughts, progress, links...";
     }
 
@@ -13499,6 +13888,7 @@ Location: ${location}`;
         const phase = item.closest(".roadmap-phase, .stage-card");
         if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
         void ensureTaskDraftInNotes(taskId);
+        void ensureMentorBriefInNotes(taskId);
       });
     }
 
@@ -13526,23 +13916,139 @@ Location: ${location}`;
         </div>`;
     }
 
+    function humanizeDraftFormatting(text) {
+      return String(text || "")
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/^\*\*([^*\n]+)\*\*\s*$/gm, "$1:")
+        .replace(/^\*\s+/gm, "• ")
+        .replace(/^-\s+/gm, "– ")
+        .replace(/^\d+\.\s+/gm, (match) => match)
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/\*([^*\n]+)\*/g, "$1")
+        .replace(/^\|[-| :]+\|$/gm, "")
+        .replace(/\|/g, " · ")
+        .replace(/^_{3,}$/gm, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function resourceHostBase(url) {
+      const host = String(url || "")
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .split("/")[0]
+        .split("?")[0];
+      return host.split(".")[0] || "";
+    }
+
+    function resourceMatchesHost(resource, hostBase) {
+      if (!hostBase) return false;
+      const org = String(resource.org || resource.name || resource.text || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+      const entryHost = resourceHostBase(resource.url);
+      return (org && (org.includes(hostBase) || hostBase.includes(org.slice(0, Math.max(4, hostBase.length))))
+        || (entryHost && entryHost === hostBase);
+    }
+
+    function normalizeResourceDedupeKey(resource) {
+      const org = String(resource.org || resource.name || "").toLowerCase().replace(/\s+/g, " ").trim();
+      const url = String(resource.url || "")
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/\/$/, "")
+        .split("?")[0];
+      const hostBase = resourceHostBase(resource.url);
+      if (org) return `org:${org}`;
+      if (hostBase) return `host:${hostBase}`;
+      if (url) return `url:${url}`;
+      const email = String(resource.email || "").toLowerCase().trim();
+      if (email) return `email:${email}`;
+      return String(resource.text || resource.key || "").toLowerCase().trim();
+    }
+
+    function resetRoadmapExpandedTasks() {
+      state.expandedRoadmapTasks = new Set();
+    }
+
+    function isTaskExpanded(taskId) {
+      if (!state.expandedRoadmapTasks) resetRoadmapExpandedTasks();
+      return state.expandedRoadmapTasks.has(taskId);
+    }
+
+    function canExpandTask(stageIndex, taskIndex) {
+      if (taskIndex <= 0) return true;
+      const prevId = `task-${stageIndex}-${taskIndex - 1}`;
+      return Boolean(getRoadmapTaskData(prevId).checked);
+    }
+
+    function setTaskExpanded(taskId, expanded) {
+      if (!state.expandedRoadmapTasks) resetRoadmapExpandedTasks();
+      if (expanded) {
+        state.expandedRoadmapTasks.clear();
+        state.expandedRoadmapTasks.add(taskId);
+      } else {
+        state.expandedRoadmapTasks.delete(taskId);
+      }
+      syncTaskExpandUi(taskId);
+      queueWritingDraftsForVisibleTasks();
+    }
+
+    function syncTaskExpandUi(taskId) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (!item) return;
+      const expanded = isTaskExpanded(taskId);
+      const panel = item.querySelector(".task-expanded-panel");
+      const expandBtn = item.querySelector(".task-expand-btn");
+      if (panel) panel.hidden = !expanded;
+      if (expandBtn) expandBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      item.classList.toggle("is-expanded", expanded);
+    }
+
+    function syncAllTaskExpandUi() {
+      $$(".task-item[data-task-id]").forEach((item) => syncTaskExpandUi(item.dataset.taskId));
+    }
+
+    function updateRoadmapFloatProgress(percent) {
+      const bar = $("#roadmap-float-progress");
+      const fill = $("#roadmap-float-progress-fill");
+      const text = $("#roadmap-float-progress-text");
+      const track = bar?.querySelector(".roadmap-float-progress-track");
+      const rounded = Math.round(percent || 0);
+      if (fill) fill.style.width = `${rounded}%`;
+      if (text) text.textContent = `${rounded}%`;
+      if (track) track.setAttribute("aria-valuenow", String(rounded));
+      if (bar) {
+        const onRoadmap = $("#screen-roadmap")?.classList.contains("active") && !$("#screen-roadmap")?.classList.contains("is-loading");
+        bar.hidden = !onRoadmap || !state.roadmapStages?.length;
+        bar.setAttribute("aria-hidden", bar.hidden ? "true" : "false");
+      }
+    }
+
     function insertDraftIntoNotes(taskId, draft, mode = "append", options = {}) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       const notes = item?.querySelector(".task-textarea");
       const data = getRoadmapTaskData(taskId);
       const box = item?.querySelector(".task-writing-assist");
-      if (!notes || !draft) return false;
+      const cleanedDraft = humanizeDraftFormatting(draft);
+      if (!notes || !cleanedDraft) return false;
 
       const existing = notes.value.trim();
       if (mode === "replace" || !existing) {
-        notes.value = draft;
+        notes.value = cleanedDraft;
       } else {
-        notes.value = `${existing}\n\n---\n\n${draft}`;
+        notes.value = `${existing}\n\n---\n\n${cleanedDraft}`;
       }
       data.notes = notes.value;
       schedulePersist();
       updateTaskNotesWordCount(taskId);
       updateTaskWritingAssistButtons(taskId);
+
+      const draftPanel = item?.querySelector(".task-notes-draft-panel");
+      if (draftPanel && (mode === "replace" || !existing)) {
+        draftPanel.open = true;
+      }
 
       let note = box?.querySelector(".task-writing-assist-note");
       if (!note && box) {
@@ -13552,10 +14058,12 @@ Location: ${location}`;
       }
       if (note) {
         note.textContent = mode === "replace" || !existing
-          ? "Draft ready in My Notes — edit until it sounds like you."
-          : "Draft added below your notes — scroll to see it.";
+          ? "Draft is in My Notes below — expand the panel or tap Copy draft."
+          : "Draft added below your notes — expand My Notes to see it.";
       }
-      if (options.focus !== false) notes.focus();
+      if (options.focus !== false) {
+        draftPanel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
       trackEvent("task_draft_inserted", { task_id: taskId, mode: existing && mode !== "replace" ? "append" : "replace" });
       return true;
     }
@@ -13803,6 +14311,8 @@ Location: ${location}`;
 
     function getTaskAiAssistActions(normalized) {
       const blob = `${normalized.text} ${normalized.script}`.toLowerCase();
+      const hasDraft = String(normalized.script || "").trim().length > 60;
+      const hasResources = getFlatTaskResources(normalized).length > 0;
       const actions = [];
       const add = (id, label, question, { when = true, local = null } = {}) => {
         if (!when || actions.length >= 7) return;
@@ -13812,37 +14322,48 @@ Location: ${location}`;
 
       add(
         "explain",
-        "Explain this task",
-        "Explain this task in plain English — what am I actually doing, in what order, and what should I not worry about yet?"
+        "Explain my step",
+        "Explain what I should do right now in plain English — you already did the research, so tell me exactly how to use what's prepared."
+      );
+      add(
+        "why-first",
+        "Why contact #1 first?",
+        "Why did you rank the first contact or grant at the top of this list? Explain in plain English for my situation.",
+        { when: hasResources }
       );
       add(
         "example",
-        "Show an example",
-        "Show me a concrete example of what finished looks like for this task — use realistic details for my situation."
+        "What does done look like?",
+        "Show me what finished looks like for this task — use the draft and contacts you already prepared.",
+        { when: !hasDraft && !hasResources }
       );
       add(
         "email",
-        "Generate email",
-        "Draft a ready-to-send email for this task. Put the full subject line and body in your reply so I can copy it to My Notes.",
+        hasDraft ? "Improve this email" : "Generate email",
+        hasDraft
+          ? "Improve the email draft below — keep my voice, make it shorter and warmer."
+          : "Draft a ready-to-send email for this task. Put the full subject line and body in your reply so I can copy it to My Notes.",
         { when: /\b(email|e-mail|outreach|reach out|director|partner|follow-up|subject line)\b/.test(blob) }
       );
       add(
         "phone",
-        "Generate phone script",
-        "Write a short phone script I can read word-for-word — include what to say if they put me on hold or say no.",
+        hasDraft ? "Improve phone script" : "Generate phone script",
+        hasDraft
+          ? "Tighten the phone script below — shorter, friendlier, and easier to read aloud."
+          : "Write a short phone script I can read word-for-word — include what to say if they put me on hold or say no.",
         { when: /\b(call|phone|dial|voicemail|211)\b/.test(blob) }
       );
       add(
         "checklist",
-        "Generate checklist",
-        "Turn this into a short checkbox checklist (5 bullets max) I can follow step by step.",
+        "Quick checklist",
+        "Turn my one next step into a 3-item checklist — you already did the heavy lifting.",
         { local: "checklist" }
       );
       add(
         "rewrite",
         "Rewrite my message",
         "Rewrite the draft in My Notes to sound more like me — warmer, shorter, and less salesy.",
-        { when: isWritingTask(normalized) || /\b(draft|write|post|caption|story)\b/.test(blob) }
+        { when: isWritingTask(normalized) || hasDraft || /\b(draft|write|post|caption|story)\b/.test(blob) }
       );
       add(
         "practice",
@@ -13865,8 +14386,8 @@ Location: ${location}`;
       ).join("");
       return `
         <section class="task-mentor-section task-mentor-section--ai">
-          <h4 class="task-mentor-label">AI Assistance</h4>
-          <p class="task-mentor-hint">Tap an action — or type your own question below.</p>
+          <h4 class="task-mentor-label">Need a tweak?</h4>
+          <p class="task-mentor-hint">Your mentor already did the heavy lifting — ask for a shorter email, a different angle, or practice what to say.</p>
           <div class="task-ai-assist-list">${buttons}</div>
         </section>`;
     }
@@ -14047,12 +14568,361 @@ Location: ${location}`;
       return "You can point to something concrete you finished — a file, a sent message, a booked appointment, or a checked box.";
     }
 
+    function inferMissionTitle(normalized) {
+      const existing = String(normalized.mission || "").trim();
+      if (existing) return humanizeTaskText(existing);
+      const blob = `${normalized.text} ${normalized.why || ""} ${normalized.outcome || ""}`.toLowerCase();
+      const path = state.currentIdea?.title || "your goal";
+      if (/\b(organi[sz]|nonprofit|partner|pilot|test your idea|workshop)\b/.test(blob)) {
+        return "Find your first organization willing to test your idea";
+      }
+      if (/\b(grant|funding|scholarship)\b/.test(blob)) {
+        return `Secure your first grant or funding source for ${path}`;
+      }
+      if (/\b(employ|job|hire|interview|resume|workforce)\b/.test(blob)) {
+        return `Land your first real opportunity for ${path}`;
+      }
+      if (/\b(email|outreach|call|contact|director)\b/.test(blob)) {
+        return "Get a yes from the right person — starting with your best contact";
+      }
+      if (/\b(client|customer|first sale|booking)\b/.test(blob)) {
+        return "Win your first paying client";
+      }
+      if (/\b(post|reddit|facebook|launch|share)\b/.test(blob)) {
+        return "Put your work in front of the right people";
+      }
+      return humanizeTaskText(normalized.outcome || normalized.text);
+    }
+
+    function inferHowTo(normalized) {
+      const existing = String(normalized.howTo || "").trim();
+      if (existing) return humanizeTaskText(existing);
+      const resources = getFlatTaskResources(normalized);
+      const parts = [];
+      if (resources.length) {
+        const first = resources[0].org || resources[0].name || "the first contact";
+        parts.push(`Start with ${first} — phone, email, and website are in the list below.`);
+      }
+      if (String(normalized.script || "").length > 60) {
+        parts.push("Use the ready-to-send draft below — personalize anything in [brackets].");
+      }
+      if (normalized.talkingPoints) {
+        parts.push("On a call, use the talking points below as a guide.");
+      }
+      if (normalized.followUp) {
+        parts.push("If you do not hear back in 3-5 days, send the follow-up below.");
+      }
+      if (parts.length) return humanizeTaskText(parts.join(" "));
+      if (normalized.steps?.length) {
+        return humanizeTaskText(normalized.steps.join(" "));
+      }
+      return humanizeTaskText(normalized.text);
+    }
+
+    function inferMentorHelp(normalized) {
+      const help = String(normalized.mentorHelp || normalized.mentorFindings || "").trim();
+      if (help) return humanizeTaskText(help);
+      return buildMentorFindingsText(normalized);
+    }
+
     function enrichTaskMentorFields(normalized) {
+      normalized.mission = inferMissionTitle(normalized);
+      normalized.howTo = inferHowTo(normalized);
+      normalized.mentorHelp = inferMentorHelp(normalized);
+      normalized.mentorFindings = normalized.mentorHelp;
+      normalized.talkingPoints = normalizeTalkingPoints(normalized.talkingPoints);
+      normalized.followUp = String(normalized.followUp || "").trim();
       normalized.duration = inferTaskDuration(normalized);
       normalized.difficulty = inferTaskDifficulty(normalized);
       if (!normalized.why) normalized.why = inferTaskWhy(normalized);
       if (!normalized.outcome) normalized.outcome = inferTaskOutcome(normalized);
+      if (!normalized.mentorFindings) normalized.mentorFindings = buildMentorFindingsText(normalized);
+      normalized.text = buildMentorUserActionText(normalized);
       return normalized;
+    }
+
+    const HOMEWORK_TASK_PATTERNS = [
+      /^\s*(research|find|look up|look for|identify|explore|investigate|search for|compile|gather|learn about|discover)\b/i,
+      /\b(go research|start researching|do research|research local|research organizations|research grants)\b/i,
+      /\b(make a list|create a list|build a list|put together a list)\b/i,
+      /\b(compare (?:3 |three |several )?(?:programs|options|routes|paths|orgs|organizations))\b/i,
+      /\b(write (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan|message|outreach))\b/i,
+      /\b(draft (?:a |an |your )(?:email|letter|post|resume|grant|proposal|script|plan|message))\b/i,
+      /\b(create (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan))\b/i,
+      /\b(prepare (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan))\b/i
+    ];
+
+    function getFlatTaskResources(normalized) {
+      const layers = normalized.resourceLayers || { local: [], national: [], global: [] };
+      const merged = [...layers.local, ...layers.national, ...layers.global, ...(normalized.contacts || [])];
+      const seen = new Set();
+      return merged.filter((entry) => {
+        const key = `${entry.org || ""}|${entry.name || ""}|${entry.url || ""}`.toLowerCase();
+        if (!key.replace(/\|/g, "").trim() || seen.has(key)) return false;
+        seen.add(key);
+        return Boolean(entry.org || entry.name || entry.url);
+      });
+    }
+
+    function taskHasMentorDeliverable(normalized) {
+      const scriptLen = String(normalized.script || "").trim().length;
+      const resources = getFlatTaskResources(normalized);
+      return scriptLen > 60 || resources.length >= 2 || String(normalized.mentorFindings || "").length > 40;
+    }
+
+    function isHomeworkTaskText(text) {
+      const copy = String(text || "").trim();
+      if (!copy) return false;
+      return HOMEWORK_TASK_PATTERNS.some((pattern) => pattern.test(copy));
+    }
+
+    function taskLooksLikeHomework(normalized) {
+      if (!isHomeworkTaskText(normalized.text)) return false;
+      return !taskHasMentorDeliverable(normalized);
+    }
+
+    function buildMentorFindingsText(normalized) {
+      const existing = String(normalized.mentorFindings || "").trim();
+      if (existing.length > 30) return humanizeTaskText(existing);
+
+      const resources = getFlatTaskResources(normalized);
+      const script = String(normalized.script || "").trim();
+      const blob = `${normalized.text} ${normalized.why || ""}`.toLowerCase();
+      const parts = [];
+
+      if (resources.length) {
+        const count = resources.length;
+        const top = resources.slice(0, 3).map((entry) => entry.org || entry.name).filter(Boolean);
+        let line = `I found ${count} ${count === 1 ? "option" : "options"} that match your goal`;
+        if (/\b(grant|funding|scholarship)\b/.test(blob)) {
+          line = `I pulled together ${count} grant or funding ${count === 1 ? "option" : "options"} worth applying to`;
+        } else if (/\b(job|employ|hire|career|workforce)\b/.test(blob)) {
+          line = `I found ${count} employment and workforce ${count === 1 ? "resource" : "resources"} near you`;
+        } else if (/\b(training|certif|course|program)\b/.test(blob)) {
+          line = `I compared ${count} training ${count === 1 ? "route" : "routes"} that fit your timeline`;
+        }
+        if (top.length) {
+          line += ` — I'd start with ${top.join(", ")}`;
+        }
+        line += ".";
+        parts.push(line);
+      }
+
+      if (script.length > 80) {
+        if (/\b(grant|funding)\b/.test(blob) || /\bgrant\b/i.test(script.slice(0, 120))) {
+          parts.push("The grant shortlist and application talking points are ready below — you are not starting from scratch.");
+        } else if (/\b(call|phone|voicemail)\b/.test(blob)) {
+          parts.push("I wrote a phone script you can read word-for-word — tweak anything that does not sound like you.");
+        } else if (/\b(email|subject:|dear |hi )\b/i.test(script.slice(0, 200))) {
+          parts.push("Your outreach email is drafted below — swap anything in [brackets] and send when it sounds like you.");
+        } else if (/\b(post|reddit|facebook|caption)\b/i.test(blob)) {
+          parts.push("A post draft is ready below — edit the tone until it feels like your voice.");
+        } else {
+          parts.push("A ready-to-edit draft is below — review it instead of writing from a blank page.");
+        }
+      }
+
+      if (!parts.length && normalized.why) {
+        return humanizeTaskText(normalized.why);
+      }
+      return humanizeTaskText(parts.join(" "));
+    }
+
+    function buildMentorUserActionText(normalized) {
+      const text = String(normalized.text || "").trim();
+      const script = String(normalized.script || "").trim();
+      const resources = getFlatTaskResources(normalized);
+      const blob = text.toLowerCase();
+
+      if (!isHomeworkTaskText(text)) return text;
+
+      if (script.length > 80) {
+        if (/\b(grant|funding|scholarship)\b/.test(blob) || /\bgrant\b/i.test(script.slice(0, 120))) {
+          return "Review the grant shortlist below and start with the first one that fits your situation.";
+        }
+        if (/\b(call|phone|dial|voicemail|211)\b/.test(blob)) {
+          return "Read the phone script below out loud once, then call the top contact on the list.";
+        }
+        if (/\b(email|e-mail|outreach|subject)\b/.test(blob) || /\bsubject:/i.test(script)) {
+          return "Review the email below, personalize anything in [brackets], and send it.";
+        }
+        if (/\b(post|reddit|facebook|caption|social)\b/.test(blob)) {
+          return "Review the post draft below, tweak it to sound like you, and publish when ready.";
+        }
+        if (/\b(resume|cv|cover letter)\b/.test(blob)) {
+          return "Review the draft below and adjust any details so they match your real experience.";
+        }
+        return "Review the draft below, make any edits, and use it when you are ready.";
+      }
+
+      if (resources.length) {
+        const first = resources[0].org || resources[0].name || "the first contact";
+        if (/\b(grant|funding|apply|application)\b/.test(blob)) {
+          return `Review the list below and apply to ${first} first — details are ready for you.`;
+        }
+        if (/\b(call|phone)\b/.test(blob)) {
+          return `Call ${first} using the number below — I put the best starting point at the top.`;
+        }
+        return `Review the ${resources.length} options below and reach out to ${first} today.`;
+      }
+
+      if (isHomeworkTaskText(text)) {
+        return "Review what I prepared below and take the one small step that moves you forward.";
+      }
+      return text;
+    }
+
+    function mentorizeTask(task) {
+      const normalized = typeof task === "object" && task?.text !== undefined
+        ? { ...task }
+        : normalizeRoadmapTask(task);
+      if (!normalized.mentorFindings) {
+        normalized.mentorFindings = buildMentorFindingsText(normalized);
+      }
+      normalized.text = buildMentorUserActionText(normalized);
+      if (normalized.steps?.length > 2) {
+        normalized.steps = normalized.steps.slice(0, 2);
+      }
+      return normalized;
+    }
+
+    function mentorizeRoadmapStages(stages) {
+      return (stages || []).map((stage) => ({
+        ...stage,
+        tasks: (stage.tasks || []).map((task) => mentorizeTask(task))
+      }));
+    }
+
+    function getRawTaskFields(task) {
+      if (typeof task === "string") return { text: task.trim(), mentorFindings: "", script: "", resources: [] };
+      if (!task || typeof task !== "object") return { text: "", mentorFindings: "", script: "", resources: [] };
+      const layers = [
+        ...(task.resources?.local || []),
+        ...(task.resources?.national || []),
+        ...(task.resources?.global || []),
+        ...(task.contacts || [])
+      ];
+      return {
+        text: getTaskText(task),
+        mentorFindings: String(task.mentorFindings || task.mentorBrief || task.findings || "").trim(),
+        script: String(task.script || task.outreach || task.template || "").trim(),
+        resources: layers
+      };
+    }
+
+    function rawTaskNeedsMentorWork(raw) {
+      const blob = `${raw.text} ${raw.mentorFindings}`.toLowerCase();
+      return (
+        isHomeworkTaskText(raw.text) ||
+        /\b(organi[sz]ation|grant|funding|email|outreach|employ|workforce|program|apply|nonprofit|partner)\b/.test(blob)
+      );
+    }
+
+    function rawTaskHasMentorDeliverable(raw) {
+      return raw.mentorFindings.length > 30 || raw.script.length > 60 || raw.resources.length >= 2;
+    }
+
+    function roadmapLacksMentorWork(stages) {
+      let needsWork = 0;
+      let missing = 0;
+      (stages || []).forEach((stage) => {
+        (stage.tasks || []).forEach((task) => {
+          const raw = getRawTaskFields(task);
+          if (!rawTaskNeedsMentorWork(raw)) return;
+          needsWork += 1;
+          if (!rawTaskHasMentorDeliverable(raw)) missing += 1;
+        });
+      });
+      if (needsWork < 2) return false;
+      return missing / needsWork > 0.45;
+    }
+
+    function roadmapHasTooMuchHomework(stages) {
+      let total = 0;
+      let homework = 0;
+      (stages || []).forEach((stage) => {
+        (stage.tasks || []).forEach((task) => {
+          const raw = getRawTaskFields(task);
+          total += 1;
+          if (isHomeworkTaskText(raw.text) && !rawTaskHasMentorDeliverable(raw)) homework += 1;
+        });
+      });
+      if (total < 3) return false;
+      return homework / total > 0.35;
+    }
+
+    function buildMentorBriefForNotes(normalized) {
+      const mission = inferMissionTitle(normalized);
+      const help = inferMentorHelp(normalized);
+      const howTo = inferHowTo(normalized);
+      const resources = getFlatTaskResources(normalized);
+      const script = String(normalized.script || "").trim();
+      const lines = ["[Mission brief]", "", `Mission: ${mission}`, ""];
+
+      if (help) lines.push("How we're helping:", help, "");
+      if (howTo) lines.push("How to do it:", howTo, "");
+      lines.push(`What to do: ${buildMentorUserActionText(normalized)}`, "");
+      if (resources.length) {
+        lines.push("Organizations & contacts (best first):");
+        resources.slice(0, 8).forEach((entry, index) => {
+          const label = [entry.org, entry.name].filter(Boolean).join(" — ") || `Option ${index + 1}`;
+          const bits = [label];
+          if (entry.phone) bits.push(entry.phone);
+          if (entry.email) bits.push(entry.email);
+          if (entry.url) bits.push(entry.url);
+          lines.push(`${index + 1}. ${bits.join(" · ")}`);
+        });
+        lines.push("");
+      }
+      if (normalized.talkingPoints) {
+        lines.push("Talking points:", normalized.talkingPoints, "");
+      }
+      if (script.length > 40) {
+        lines.push("Outreach draft:", script, "");
+      }
+      if (normalized.followUp) {
+        lines.push("Follow-up if no reply:", normalized.followUp, "");
+      }
+      lines.push(`Success looks like: ${normalized.outcome || inferTaskOutcome(normalized)}`);
+      return humanizeDraftFormatting(lines.join("\n").trim());
+    }
+
+    async function ensureMentorBriefInNotes(taskId, options = {}) {
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      if (!match) return;
+
+      const stageIndex = Number(match[1]);
+      const taskIndex = Number(match[2]);
+      const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
+      if (!task) return;
+
+      const normalized = normalizeRoadmapTask(task);
+      if (isWritingTask(normalized)) return;
+      if (!taskHasMentorDeliverable(normalized)) return;
+
+      const data = getRoadmapTaskData(taskId);
+      if (data.notes?.trim() && !options.force) return;
+      if (data.mentorBriefGenerated && !options.force) return;
+
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const notes = item?.querySelector(".task-textarea");
+      if (!notes) return;
+
+      const brief = buildMentorBriefForNotes(normalized);
+      if (!brief || brief.length < 80) return;
+
+      insertDraftIntoNotes(taskId, brief, "replace", { focus: false });
+      data.mentorBriefGenerated = true;
+      schedulePersist();
+    }
+
+    function queueMentorBriefsForVisibleTasks() {
+      $$(".task-item").forEach((item) => {
+        const taskId = item.dataset.taskId;
+        const phase = item.closest(".roadmap-phase, .stage-card");
+        if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
+        void ensureMentorBriefInNotes(taskId);
+      });
     }
 
     function normalizeRoadmapTask(task, fallback = {}) {
@@ -14071,6 +14941,12 @@ Location: ${location}`;
           links: normalizeTaskLinks(fallback.links),
           contacts: normalizeTaskContacts(fallback.contacts),
           script: fallback.script || "",
+          mission: fallback.mission || "",
+          howTo: fallback.howTo || "",
+          mentorHelp: fallback.mentorHelp || fallback.mentorFindings || "",
+          mentorFindings: fallback.mentorFindings || fallback.mentorHelp || "",
+          talkingPoints: fallback.talkingPoints || "",
+          followUp: fallback.followUp || "",
           resourceCategories: fallback.resourceCategories || []
         };
       } else if (task && typeof task === "object") {
@@ -14087,6 +14963,12 @@ Location: ${location}`;
           links: normalizeTaskLinks(task.links ?? task.link ?? task.urls ?? fallback.links),
           contacts: normalizeTaskContacts(task.contacts ?? task.contact ?? fallback.contacts),
           script: String(task.script || task.outreach || task.template || fallback.script || "").trim(),
+          mission: String(task.mission || task.missionTitle || fallback.mission || "").trim(),
+          howTo: String(task.howTo || task.how || fallback.howTo || "").trim(),
+          mentorHelp: String(task.mentorHelp || task.mentorFindings || task.mentorBrief || task.findings || fallback.mentorHelp || fallback.mentorFindings || "").trim(),
+          mentorFindings: String(task.mentorFindings || task.mentorHelp || task.mentorBrief || task.findings || fallback.mentorFindings || fallback.mentorHelp || "").trim(),
+          talkingPoints: normalizeTalkingPoints(task.talkingPoints ?? task.talking_points ?? fallback.talkingPoints),
+          followUp: String(task.followUp || task.follow_up || task.followup || fallback.followUp || "").trim(),
           resourceCategories: Array.isArray(task.resourceCategories) ? task.resourceCategories : (fallback.resourceCategories || [])
         };
       } else {
@@ -14103,6 +14985,12 @@ Location: ${location}`;
           links: [],
           contacts: [],
           script: "",
+          mission: "",
+          howTo: "",
+          mentorHelp: "",
+          mentorFindings: "",
+          talkingPoints: "",
+          followUp: "",
           resourceCategories: []
         };
       }
@@ -14267,8 +15155,9 @@ Location: ${location}`;
       return normalized.contacts.some((contact) => !isKnownPackOrg(contact.org));
     }
 
-    function renderResourceContactCardsHtml(entries) {
-      return entries.map((contact) => {
+    function renderResourceContactCardsHtml(entries, options = {}) {
+      const { ranked = false } = options;
+      return entries.map((contact, index) => {
         const title = [contact.org, contact.name].filter(Boolean).join(" — ") || "Resource";
         const meta = [];
         if (contact.url) {
@@ -14280,8 +15169,44 @@ Location: ${location}`;
         if (contact.email) {
           meta.push(`<a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a>`);
         }
-        return `<div class="task-contact-card"><div class="task-contact-title">${escapeHtml(title)}</div>${meta.length ? `<div class="task-contact-meta">${meta.join(" · ")}</div>` : ""}</div>`;
+        const rankBadge = ranked && index < 3
+          ? `<span class="task-contact-rank">#${index + 1} start here</span>`
+          : "";
+        return `<div class="task-contact-card${ranked && index === 0 ? " task-contact-card--top" : ""}">${rankBadge}<div class="task-contact-title">${escapeHtml(title)}</div>${meta.length ? `<div class="task-contact-meta">${meta.join(" · ")}</div>` : ""}</div>`;
       }).join("");
+    }
+
+    function renderMentorFindingsHtml(normalized) {
+      const help = String(normalized.mentorHelp || normalized.mentorFindings || buildMentorFindingsText(normalized) || "").trim();
+      if (!help || help.length < 24) return "";
+      return `
+        <section class="task-mentor-section task-mentor-section--findings">
+          <h4 class="task-mentor-label">How we're helping</h4>
+          <p class="task-mentor-copy task-mentor-copy--findings">${escapeHtml(help)}</p>
+        </section>`;
+    }
+
+    function renderMissionTalkingPointsHtml(normalized) {
+      const points = String(normalized.talkingPoints || "").trim();
+      if (!points) return "";
+      const lines = points.split(/\n+/).filter(Boolean);
+      return `
+        <div class="task-script task-script--talking-points">
+          <div class="task-action-label">Talking points</div>
+          <ul class="task-talking-points">
+            ${lines.map((line) => `<li>${escapeHtml(humanizeTaskText(line.replace(/^[-•]\s*/, "")))}</li>`).join("")}
+          </ul>
+        </div>`;
+    }
+
+    function renderMissionFollowUpHtml(normalized) {
+      const followUp = String(normalized.followUp || "").trim();
+      if (!followUp) return "";
+      return `
+        <div class="task-script task-script--follow-up">
+          <div class="task-action-label">Follow-up if no reply</div>
+          <pre class="task-script-block">${escapeHtml(followUp)}</pre>
+        </div>`;
     }
 
     function renderTaskActionPackHtml(task, options = {}) {
@@ -14293,13 +15218,13 @@ Location: ${location}`;
       const nearYou = [...layers.local, ...layers.national];
 
       if (allowLocal && nearYou.length) {
-        blocks.push(`<div class="task-contacts"><div class="task-action-label">Near you</div>${renderResourceContactCardsHtml(nearYou)}</div>`);
+        blocks.push(`<div class="task-contacts"><div class="task-action-label">Contact these first</div>${renderResourceContactCardsHtml(nearYou, { ranked: true })}</div>`);
       } else if (allowLocal && normalized.contacts.length) {
-        blocks.push(`<div class="task-contacts"><div class="task-action-label">Near you</div>${renderResourceContactCardsHtml(normalized.contacts)}</div>`);
+        blocks.push(`<div class="task-contacts"><div class="task-action-label">Contact these first</div>${renderResourceContactCardsHtml(normalized.contacts, { ranked: true })}</div>`);
       }
 
       if (layers.global.length) {
-        blocks.push(`<div class="task-contacts task-contacts--global"><div class="task-action-label">Online</div>${renderResourceContactCardsHtml(layers.global)}</div>`);
+        blocks.push(`<div class="task-contacts task-contacts--global"><div class="task-action-label">Online options</div>${renderResourceContactCardsHtml(layers.global)}</div>`);
       }
 
       if (normalized.links.length) {
@@ -14308,29 +15233,42 @@ Location: ${location}`;
           const label = link.replace(/^https?:\/\//i, "").replace(/\/$/, "");
           return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
         }).join(" · ");
-        blocks.push(`<div class="task-links"><div class="task-action-label">Links</div><div class="task-link-list">${links}</div></div>`);
+        blocks.push(`<div class="task-links"><div class="task-action-label">Direct links</div><div class="task-link-list">${links}</div></div>`);
       }
 
       if (normalized.script && shouldShowTaskScript(normalized)) {
-        blocks.push(`<div class="task-script"><div class="task-action-label">Starter script</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
+        const scriptLabel = /\b(grant|funding)\b/i.test(`${normalized.text} ${normalized.script}`.slice(0, 200))
+          ? "Grant shortlist & draft"
+          : /\bsubject:/i.test(normalized.script)
+            ? "Outreach email"
+            : /\b(call|phone|voicemail)\b/i.test(normalized.text)
+              ? "Phone script"
+              : "Ready-to-use draft";
+        blocks.push(`<div class="task-script"><div class="task-action-label">${escapeHtml(scriptLabel)}</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
       }
+
+      const talkingPoints = renderMissionTalkingPointsHtml(normalized);
+      if (talkingPoints) blocks.push(talkingPoints);
+
+      const followUp = renderMissionFollowUpHtml(normalized);
+      if (followUp) blocks.push(followUp);
 
       if (normalized.alternatives) {
         blocks.push(`<div class="task-alternatives"><div class="task-action-label">If this doesn't fit</div><p class="task-alternatives-copy">${escapeHtml(humanizeTaskText(normalized.alternatives))}</p></div>`);
       }
 
       return blocks.length
-        ? `<section class="task-mentor-section task-mentor-section--resources"><h4 class="task-mentor-label">Resources</h4><div class="task-action-pack">${blocks.join("")}</div></section>`
+        ? `<section class="task-mentor-section task-mentor-section--resources"><h4 class="task-mentor-label">Prepared for you</h4><div class="task-action-pack">${blocks.join("")}</div></section>`
         : "";
     }
 
     function normalizeRoadmapStages(stages) {
-      return (stages || []).map((stage) => ({
+      return mentorizeRoadmapStages((stages || []).map((stage) => ({
         ...stage,
         label: humanizeTaskText(stage.label || ""),
         desc: humanizeTaskText(stage.desc || ""),
         tasks: (stage.tasks || []).map((task) => normalizeRoadmapTask(task))
-      }));
+      })));
     }
 
     function roadmapHasRichLocalData(stages = state.roadmapStages, idea = state.currentIdea) {
@@ -14854,10 +15792,10 @@ Location: ${location}`;
             ? `${idea.title} — premium local ${getUserSituationProfile(idea).craftLabel} business (positioning, packages, niche proof, outreach, reviews)`
             : `${idea.title} — ${idea.type || "local path"}`;
       const resourceRule = isGroundedPractitioner(idea)
-        ? "Include script fields with copy-paste outreach, positioning lines, and package copy. resources.global only for tools the task mentions (Google Business, LinkedIn, Behance, etc.) — NOT Upwork/Fiverr/workforce boards as default.\n"
-        : `At least 5 tasks must include real ${loc} organizations in resources.local with official urls.\n`;
+        ? "Include script fields with copy-paste outreach, positioning lines, and package copy. mentorFindings must say what you prepared. resources.global only for tools the task mentions (Google Business, LinkedIn, Behance, etc.) — NOT Upwork/Fiverr/workforce boards as default.\n"
+        : `At least 5 tasks must include mentorFindings + real ${loc} organizations in resources.local with official urls. Task text must be the user's small next step — never homework.\n`;
       return (
-        `You are whatimado. Return ONLY a raw JSON array — no markdown, no commentary.\n` +
+        `You are whatimado — a mentor who does the legwork. Return ONLY a raw JSON array — no markdown, no commentary.\n` +
         `Rewrite 4 stages with 3 tasks each for:\n` +
         `Path: ${idea.title}\n` +
         `${idea.tagline ? `Goal: ${idea.tagline}\n` : ""}` +
@@ -15269,7 +16207,8 @@ Location: ${location}`;
           `${buildRoadmapPrompt(state.currentIdea, context, { phase: adaptPhase, founderMode })}\n\n` +
           `LIVING ROADMAP — progress snapshot:\n${progressBlock}\n\n` +
           `Completed work (keep checked — build ONLY what comes after):\n${completedSummary}\n\n` +
-          `Replace all remaining future stages. Shorten the path when possible. Never repeat completed or skipped tasks verbatim.`,
+          `Replace all remaining future stages. Shorten the path when possible. Never repeat completed or skipped tasks verbatim.\n` +
+          `Mission rule: every new mission includes title, mentorHelp, howTo, resources, script, talkingPoints, and followUp when relevant.\n`,
           getRoadmapAdvisorTokenLimit(founderMode)
         );
         const nextStages = parseRoadmapResponse(response, state.currentIdea);
@@ -16615,29 +17554,29 @@ Location: ${location}`;
       return blocks[stage] || blocks.unknown;
     }
 
-    const ROADMAP_JSON_SCHEMA_TAIL = ROADMAP_JSON_INSTRUCTION.replace(/^Return exactly \d+ stages with \d+ tasks each\.\n/, "");
+    const ROADMAP_JSON_SCHEMA_TAIL = ROADMAP_JSON_INSTRUCTION.replace(/^Return exactly \d+ stages with \d+ missions each[^\n]*\n/, "");
 
     function getRoadmapJsonInstruction({ founderMode = false, context = "", phase = "initial" } = {}) {
       let header;
       if (founderMode) {
         const productStage = inferFounderProductStage(context);
         if (phase === "continue") {
-          header = "Return exactly 2 stages with 2 tasks each.";
+          header = "Return exactly 2 stages with 2 missions each (JSON key: tasks).";
         } else if (phase === "adapt") {
-          header = "Return exactly 2 stages with 2 tasks each.";
+          header = "Return exactly 2 stages with 2 missions each (JSON key: tasks).";
         } else if (productStage === "beta" || productStage === "unknown") {
           header =
-            "Return exactly 2 stages with 2 tasks each. Cover only the next 2-3 weeks — closed beta or first functionality test. Do NOT include formal pilots, grant research, sponsor decks, or 15-30 user cohorts in this roadmap.";
+            "Return exactly 2 stages with 2 missions each (JSON key: tasks). Cover only the next 2-3 weeks — closed beta or first functionality test. Do NOT include formal pilots, grant research, sponsor decks, or 15-30 user cohorts in this roadmap.";
         } else {
           header =
-            "Return exactly 2 stages with 3 tasks each. Cover only the NEXT phase of this path (next 2-4 weeks). Grants, sponsors, scaling, and later pilot stages come via Continue this plan — not packed into one roadmap.";
+            "Return exactly 2 stages with 3 missions each (JSON key: tasks). Cover only the NEXT phase of this path (next 2-4 weeks). Grants, sponsors, scaling, and later pilot stages come via Continue this plan — not packed into one roadmap.";
         }
       } else if (phase === "continue") {
-        header = "Return exactly 4 stages with 3 tasks each.";
+        header = "Return exactly 4 stages with 3 missions each (JSON key: tasks).";
       } else if (phase === "adapt") {
-        header = "Return exactly 2 stages with 3 tasks each.";
+        header = "Return exactly 2 stages with 3 missions each (JSON key: tasks).";
       } else {
-        header = "Return exactly 3 stages with 2 tasks each.";
+        header = "Return exactly 3 stages with 2 missions each (JSON key: tasks).";
       }
       return `${header}\n${ROADMAP_JSON_SCHEMA_TAIL}`;
     }
@@ -16700,25 +17639,24 @@ Location: ${location}`;
         `\nFocus this roadmap ONLY on: ${stageAwareFocus}.\n` +
         `This path must feel different from the other paths on the map — use stage labels and tasks that match "${idea.title}" specifically.\n` +
         `Do NOT reuse stage names or tasks from other paths (for example, do not copy donation-setup tasks into a launch or partnership path).\n\n` +
-        `CRITICAL RULES FOR TASKS:\n` +
-        `- Every task is for the FOUNDER building whatimado.com — NOT for a random user finding a job.\n` +
-        `- Mentor format: text = ONE clear action; why; outcome; duration (10 minutes|30 minutes|1 hour|2 hours); difficulty (Easy|Medium|Advanced).\n` +
-        `- Optional steps[] only if they truly help (max 3 micro-actions) — not a second task list.\n` +
+        `CRITICAL RULES FOR MISSIONS:\n` +
+        `- Mission philosophy: outcome-focused missions that move measurably toward the goal — not homework tasks.\n` +
+        `- Every mission needs: mission (title), mentorHelp, howTo, text (what to do), why, outcome, talkingPoints, followUp (when outreach), resources, script.\n` +
+        `- Optional steps[] only if helpful (max 2) — not a second homework list.\n` +
         `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real deliverables, and copy snippets.\n` +
-        `- Include ready-to-use templates where helpful (Reddit post title, outreach email opening, donation ask line, demo script bullet, pilot outline draft).\n` +
-        `- When a task needs a deliverable (pilot outline, email, deck section), include a starter draft in script or steps — do NOT tell the founder to invent it from scratch.\n` +
+        `- Include ready-to-use templates in script — do NOT tell the founder to invent emails, posts, or outlines from scratch.\n` +
         `- Reference Stripe, Supabase analytics/suggestions, and social launch — not generic "build an audience" advice.\n` +
         `- Each task doable in one sitting (30–90 min) or one week max.\n` +
         `- Never suggest paywalling personal users or $9+/mo individual subscriptions.\n\n` +
-        `BAD TASKS:\n` +
+        `BAD MISSIONS:\n` +
+        `- "Find 10 nonprofits"\n` +
         `- "Build your online presence"\n` +
-        `- "Network with entrepreneurs"\n` +
-        `- "Define your target market"\n` +
-        `- End-user reentry survival steps (211, DMV/ID, housing intake, American Job Center) — the founder is NOT the person needing ID or shelter unless the task is explicitly recruiting beta testers\n\n` +
-        `GOOD TASKS:\n` +
-        `- "Post in r/Findapath with title 'I built a free possibility map for people stuck on what's next' — follow sub rules; put whatimado.com in comment if links banned in body"\n` +
-        `- "Email workforce director at [local org]: 'Hi [Name], I built whatimado.com — free AI roadmaps for clients rebuilding careers. 4-week pilot, zero cost. 15-min call?'"\n` +
-        `- "Add donate line after map: 'Free forever — $3 optional tip covers ~6 sessions for someone else' and track stripe_checkout_redirected in Supabase for 7 days"\n\n` +
+        `- "Research local nonprofits to partner with"\n` +
+        `- "Write an outreach email"\n\n` +
+        `GOOD MISSIONS:\n` +
+        `- mission: "Find your first organization willing to test your idea" + mentorHelp + resources + script + talkingPoints + followUp\n` +
+        `- mission: "Get your first Reddit conversation started" + full post in script\n` +
+        `- mission: "Land your first pilot partner" + email draft + 4 real orgs ranked\n\n` +
         getRoadmapJsonInstruction({ founderMode: true, context, phase })
       );
     }
@@ -16769,7 +17707,7 @@ Location: ${location}`;
         : "";
 
       return (
-        `You are whatimado, a practical roadmap coach. ${phaseNote}\n\n` +
+        `You are whatimado, a mentor who does the legwork alongside them. ${phaseNote}\n\n` +
         `Chosen path:\n${ideaBlock}\n\n` +
         `Full conversation:\n${context}\n` +
         siblingBlock +
@@ -16783,33 +17721,17 @@ Location: ${location}`;
         `\n${getActionableTaskRules()}\n` +
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
         `NEVER use generic stage titles like "Launch the first test", "Launch first test", "Gather feedback", "Repeat", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path and this person's situation.\n\n` +
-        `CRITICAL RULES FOR TASKS:\n` +
-        `- Mentor format per task: text = ONE clear action; why = why this matters; outcome = success looks like; duration; difficulty (Easy|Medium|Advanced).\n` +
-        `- Optional steps[] only when helpful (max 3 short items) — the main action lives in text.\n` +
-        `- Task text uses resource CATEGORIES — resolve to real orgs in resources.local / resources.national / resources.global.\n` +
-        `- Each task object must include why, outcome, duration, difficulty, and layered resources when the task involves local programs, applications, licensing, or outreach.\n` +
-        `- Do NOT assign vague homework like "research local orgs" without filling resources.* with real names and URLs.\n` +
-        `- Name real platforms, tools, audiences, numbers, time boxes, and deliverables.\n` +
-        `- Reference details they actually said (skills, location, constraints, goals, industry, budget).\n` +
-        `- Each task should be doable in a day or a week — not a vague category.\n` +
-        `- Stage labels and descriptions must also reference their situation, not generic startup language.\n` +
-        `PLAIN LANGUAGE (required for every task):\n` +
-        `- Write for someone with NO business background — middle-school reading level.\n` +
-        `- Sound like a mentor, not a startup consultant. Never use: validate, validation, sprint, traction, pivot, social validation, go-to-market, value proposition, product-market fit, user acquisition.\n` +
-        `- BAD: "Validate demand." / "Ship week 1 validation." / "baseline metrics." / "feedback loop." / "friction point." / "traction."\n` +
-        `- GOOD: "Talk to three people who might actually use your idea and ask whether it would help them." / "Try your offer with 3 real people this week." / "Write down three numbers to track." / "Ask people what confused them."\n` +
-        `- Every task MUST include a why field in plain English explaining why this step matters for THIS person and path.\n` +
-        `- Do NOT mention whatimado.com, Supabase, site analytics, or founder metrics unless this is explicitly a whatimado.com growth path.\n\n` +
-        `BAD TASKS (never write these):\n` +
-        `- "Write the simplest version of your offer"\n` +
-        `- "Tell five people what you are trying"\n` +
-        `- "Create a basic online presence"\n` +
-        `- "Network with people in your field"\n` +
-        `- "Call your workforce board" or "Compare training routes" for someone who already has 20+ years of experience in their stated craft\n\n` +
-        `GOOD TASKS (match this level of detail):\n` +
-        `- "Draft a 150-word Facebook post explaining why you built whatimado.com for people stuck on career direction — include one screenshot of the map screen and publish to your profile"\n` +
-        `- "Email 3 recovery-center program directors you can name locally, attach a 1-page pilot outline for a free whatimado workshop, and ask for a 15-minute call"\n` +
-        `- "Spend 45 minutes in r/Findapath or a local career-change Facebook group, reply helpfully to 5 posts, and note which questions match your tool"\n\n` +
+        `CRITICAL RULES FOR MISSIONS:\n` +
+        `- Think in MISSIONS (measurable progress), not homework tasks. BAD: "Find 10 nonprofits." GOOD: "Find your first organization willing to test your idea."\n` +
+        `- YOU provide: orgs, contacts, emails, phones, suggested first contact, outreach email, talking points, follow-up, expected outcome.\n` +
+        `- mission = goal title. mentorHelp = what you prepared. howTo = how to do it. text = what they do now. outcome = success looks like.\n` +
+        `- script + talkingPoints + followUp required for outreach missions. resources.* = 3-8 real orgs with URLs.\n` +
+        `- NEVER assign homework: research, find, look up, write from scratch.\n` +
+        `- Reference their actual situation (skills, location, constraints, goals).\n` +
+        `- Plain English — middle-school reading level. No startup jargon.\n` +
+        `- Do NOT mention whatimado.com unless this is a founder growth path.\n\n` +
+        `BAD MISSIONS: "Find 10 nonprofits" / "Research local organizations" / "Write an outreach email"\n` +
+        `GOOD MISSIONS: mission + mentorHelp + howTo + ranked resources + script + talkingPoints + followUp + outcome — user only reviews and acts.\n\n` +
         getRoadmapJsonInstruction({ founderMode: false, context, phase })
       );
     }
@@ -16823,6 +17745,7 @@ Location: ${location}`;
       if (stages.some((stage) => isGenericStageLabel(stage.label))) return null;
       if (roadmapHasGenericStages(stages, idea)) return null;
       if (isGenericFallbackRoadmap(stages)) return null;
+      if (roadmapHasTooMuchHomework(stages) || roadmapLacksMentorWork(stages)) return null;
       return normalizeRoadmapStages(stages);
     }
 
@@ -17427,6 +18350,7 @@ Location: ${location}`;
       roadmapLastAdaptAt: 0,
       roadmapAutoContinuePending: false,
       expandedRoadmapPhases: null,
+      expandedRoadmapTasks: null,
       activeMapId: null,
       savedMaps: [],
       roadmapCategories: [],
@@ -17463,7 +18387,7 @@ Location: ${location}`;
       "Skimming the self-help aisle at lightspeed…",
       "Bribing the roadmap elves with coffee…",
       "Checking that this isn't another pyramid scheme…",
-      "Turning confusion into checkboxes…",
+      "Turning confusion into missions with contacts attached…",
       "Running a background check on your potential…",
       "Fact-checking that side hustle you saw on TikTok…",
       "Negotiating with your future self…",
@@ -17472,6 +18396,72 @@ Location: ${location}`;
     ];
     let loadingQuipTimer = null;
     let loadingQuipIndex = 0;
+    const siteLoadingProgressControllers = new Map();
+
+    function formatLoadingEta(remainingMs) {
+      const sec = Math.ceil(remainingMs / 1000);
+      if (sec <= 3) return "Almost there…";
+      if (sec < 60) return `About ${sec}s left`;
+      const min = Math.ceil(sec / 60);
+      return `About ${min} min left`;
+    }
+
+    function updateSiteLoadingProgressUi(root, percent, remainingMs) {
+      if (!root) return;
+      const rounded = Math.round(percent);
+      const fill = root.querySelector(".site-loading-progress-fill");
+      const pctEl = root.querySelector(".site-loading-progress-pct");
+      const etaEl = root.querySelector(".site-loading-progress-eta");
+      const track = root.querySelector(".site-loading-progress-track");
+      if (fill) fill.style.width = `${rounded}%`;
+      if (pctEl) pctEl.textContent = `${rounded}%`;
+      if (etaEl) etaEl.textContent = formatLoadingEta(remainingMs);
+      if (track) track.setAttribute("aria-valuenow", String(rounded));
+    }
+
+    function startSiteLoadingProgress(root, options = {}) {
+      if (!root) return null;
+      stopSiteLoadingProgress(root);
+      const durationMs = options.durationMs || 50000;
+      let cap = options.cap ?? 94;
+      const startedAt = Date.now();
+      let percent = 0;
+      const tick = () => {
+        const elapsed = Date.now() - startedAt;
+        const target = Math.min(cap, (elapsed / durationMs) * cap);
+        percent = Math.max(percent, target);
+        updateSiteLoadingProgressUi(root, percent, Math.max(0, durationMs - elapsed));
+      };
+      tick();
+      const timer = setInterval(tick, 220);
+      const controller = {
+        timer,
+        bump(nextCap) {
+          cap = Math.max(cap, nextCap);
+        },
+        complete() {
+          updateSiteLoadingProgressUi(root, 100, 0);
+          const etaEl = root.querySelector(".site-loading-progress-eta");
+          if (etaEl) etaEl.textContent = "Done";
+          stopSiteLoadingProgress(root);
+        }
+      };
+      siteLoadingProgressControllers.set(root, controller);
+      return controller;
+    }
+
+    function stopSiteLoadingProgress(root) {
+      const controller = siteLoadingProgressControllers.get(root);
+      if (!controller) return;
+      clearInterval(controller.timer);
+      siteLoadingProgressControllers.delete(root);
+    }
+
+    function completeSiteLoadingProgress(root) {
+      const controller = siteLoadingProgressControllers.get(root);
+      if (controller) controller.complete();
+      else if (root) updateSiteLoadingProgressUi(root, 100, 0);
+    }
     let persistTimer = null;
     let saveToastTimer = null;
     let lastAdvisorError = "";
@@ -19084,7 +20074,6 @@ Location: ${location}`;
         const isCurrentSection = isCurrentRoadmapCategory(category);
         const deleteLabel = category.mapId ? "Delete map" : "Remove group";
         const shortTitle = abbreviateSidebarCategoryTitle(category.title);
-        const summary = getCategorySummary(category);
         const categoryClasses = [
           "dashboard-roadmap-category",
           isExpanded ? "is-expanded" : "",
@@ -19096,7 +20085,6 @@ Location: ${location}`;
           <div class="dashboard-roadmap-category-head">
             <button type="button" class="dashboard-roadmap-category-title" data-open-map-category="${escapeHtml(category.id)}" title="${escapeHtml(category.title)}" aria-label="${escapeHtml(category.title)}">
               <span class="dashboard-roadmap-category-label">${escapeHtml(shortTitle)}</span>
-              ${summary ? `<span class="dashboard-roadmap-category-summary">${escapeHtml(summary)}</span>` : ""}
             </button>
             <button type="button" class="dashboard-roadmap-category-toggle" data-roadmap-category="${escapeHtml(category.id)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="Show roadmaps for this map" title="Show roadmaps">
               <svg class="dashboard-roadmap-category-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
@@ -20971,6 +21959,7 @@ Location: ${location}`;
         trackEvent("screen_view", { screen: name, from: previousScreen });
       }
       if (name === "map") updateMapAuxiliaryPanels();
+      if (name === "roadmap") updateRoadmapOverviewChrome();
       if (name === "main") {
         renderSavedMapsHome();
         startRotatingPromptPlaceholder();
@@ -22720,8 +23709,11 @@ Location: ${location}`;
       document.body.classList.toggle("roadmap-loading-active", loading);
       if (loading) {
         startLoadingQuips("#roadmap-loading .loader-tagline");
+        startSiteLoadingProgress($("#roadmap-loader-progress"), { durationMs: 65000, cap: 92 });
       } else {
         stopLoadingQuips();
+        completeSiteLoadingProgress($("#roadmap-loader-progress"));
+        updateRoadmapOverviewChrome();
       }
     }
 
@@ -22894,6 +23886,35 @@ Location: ${location}`;
         if (corrected) stages = corrected;
       }
 
+      if (!stages && response?.trim()) {
+        response = await callAdvisor(
+          `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n\n` +
+          `Your last draft assigned homework (research, find, write from scratch) instead of doing the work.\n` +
+          `${getActionableTaskRules()}\n` +
+          `Regenerate all stages. Every relevant task needs mentorFindings (what you found), resources.* (real orgs/grants), and script (full drafts). Task text = only the smallest user step.\n`,
+          getRoadmapAdvisorTokenLimit(founderMode)
+        );
+        stages = parseRoadmapResponse(response, idea);
+        if (stages) trackEvent("roadmap_mentor_work_corrected", { idea_index: ideaIndex });
+      }
+
+      if (stages && (roadmapHasTooMuchHomework(stages) || roadmapLacksMentorWork(stages))) {
+        response = await callAdvisor(
+          `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n\n` +
+          `Too many tasks still look like homework. Do the legwork yourself:\n` +
+          `- mentorFindings: "I found 8 orgs… contact these 3 first because…"\n` +
+          `- resources.*: real names + URLs\n` +
+          `- script: full email/grant/post drafts\n` +
+          `- text: "Review the list and call [first org] today" — never "research" or "write a draft"\n`,
+          getRoadmapAdvisorTokenLimit(founderMode)
+        );
+        const mentorFixed = parseRoadmapResponse(response, idea);
+        if (mentorFixed) {
+          stages = mentorFixed;
+          trackEvent("roadmap_mentor_work_corrected", { idea_index: ideaIndex });
+        }
+      }
+
       if (stages && founderMode && roadmapLooksLikeEndUserReentry(stages)) {
         stages = getFounderFallbackStages(idea);
         roadmapSource = "fallback";
@@ -23034,6 +24055,75 @@ Location: ${location}`;
       await viewRoadmap(state.currentIdea, index, { force: true, previousStages });
     }
 
+    function refreshCompressedTaskRow(taskId) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (!item) return;
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      if (!match) return;
+      const stageIndex = Number(match[1]);
+      const taskIndex = Number(match[2]);
+      const data = getRoadmapTaskData(taskId);
+      const main = item.querySelector(".task-compressed-main");
+      let doneBadge = item.querySelector(".task-compressed-done");
+      if (data.checked) {
+        if (!doneBadge && main) {
+          doneBadge = document.createElement("span");
+          doneBadge.className = "task-compressed-done";
+          doneBadge.textContent = "Done";
+          main.appendChild(doneBadge);
+        }
+      } else if (doneBadge) {
+        doneBadge.remove();
+      }
+
+      const nextId = `task-${stageIndex}-${taskIndex + 1}`;
+      const nextItem = document.querySelector(`.task-item[data-task-id="${nextId}"]`);
+      if (nextItem) {
+        const nextCanExpand = canExpandTask(stageIndex, taskIndex + 1);
+        nextItem.querySelector(".task-expand-btn")?.toggleAttribute("disabled", !nextCanExpand);
+        nextItem.querySelector(".task-compressed-main")?.toggleAttribute("disabled", !nextCanExpand);
+      }
+    }
+
+    function bindTaskExpandControls(item, taskId) {
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      const stageIndex = match ? Number(match[1]) : -1;
+      const taskIndex = match ? Number(match[2]) : -1;
+
+      item.querySelectorAll("[data-task-expand]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (button.disabled || !canExpandTask(stageIndex, taskIndex)) return;
+          setTaskExpanded(taskId, true);
+          const panel = item.querySelector(".task-expanded-panel");
+          panel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+      });
+
+      item.querySelector("[data-task-collapse]")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setTaskExpanded(taskId, false);
+      });
+
+      item.querySelector("[data-copy-draft]")?.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        const notes = item.querySelector(".task-textarea");
+        const text = notes?.value.trim();
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          const btn = event.currentTarget;
+          const original = btn.textContent;
+          btn.textContent = "Copied!";
+          window.setTimeout(() => {
+            btn.textContent = original;
+          }, 1600);
+        } catch {
+          notes.select();
+        }
+      });
+    }
+
     function bindTaskPersistence() {
       $$(".task-item").forEach((item) => {
         const taskId = item.dataset.taskId;
@@ -23043,20 +24133,30 @@ Location: ${location}`;
         if (check) check.checked = Boolean(data.checked);
         item.classList.toggle("is-done", Boolean(check?.checked));
         if (notes) notes.value = data.notes || "";
+        const draftPanel = item.querySelector(".task-notes-draft-panel");
+        if (draftPanel && notes?.value.trim()) draftPanel.open = true;
         updateTaskWritingAssistButtons(taskId);
         updateTaskNotesWordCount(taskId);
+        bindTaskExpandControls(item, taskId);
+        syncTaskExpandUi(taskId);
+        const collapseBtn = item.querySelector("[data-task-collapse]");
+        if (collapseBtn) collapseBtn.hidden = !Boolean(check?.checked);
         item.querySelectorAll(".task-extra-detail").forEach((detailsEl) => {
           if (window.matchMedia("(max-width: 960px)").matches) detailsEl.removeAttribute("open");
         });
         check?.addEventListener("change", () => {
           data.checked = check.checked;
           item.classList.toggle("is-done", check.checked);
+          refreshCompressedTaskRow(taskId);
+          const collapseBtn = item.querySelector("[data-task-collapse]");
+          if (collapseBtn) collapseBtn.hidden = !check.checked;
           trackEvent("task_check_toggled", {
             task_id: taskId,
             checked: check.checked
           });
           schedulePersist();
           updateMomentum();
+          updateRoadmapOverviewChrome();
           if (check.checked) {
             scheduleRoadmapAdaptation("task_completed", { taskId });
           } else {
@@ -23092,6 +24192,7 @@ Location: ${location}`;
           }
         }
       });
+      syncAllTaskExpandUi();
       queueWritingDraftsForVisibleTasks();
     }
 
@@ -23131,6 +24232,7 @@ Location: ${location}`;
     function resetRoadmapExpandedPhases() {
       const active = getActivePhaseIndex();
       state.expandedRoadmapPhases = new Set([active]);
+      resetRoadmapExpandedTasks();
     }
 
     function isPhaseExpanded(stageIndex) {
@@ -23159,6 +24261,9 @@ Location: ${location}`;
       const phase = document.querySelector(`.roadmap-phase[data-phase-index="${stageIndex}"]`);
       phase?.classList.add("is-open", "open");
       const taskId = `task-${stageIndex}-${taskIndex}`;
+      if (canExpandTask(stageIndex, taskIndex)) {
+        setTaskExpanded(taskId, true);
+      }
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       scrollRoadmapTargetIntoView(item || phase?.querySelector(".roadmap-phase-head") || phase, { extraOffset: 16 });
     }
@@ -23211,72 +24316,7 @@ Location: ${location}`;
 
     function renderRoadmapGlance(stages = state.roadmapStages) {
       const section = $("#roadmap-glance");
-      const track = $("#roadmap-glance-track");
-      const nextBtn = $("#roadmap-glance-next-btn");
-      const titleEl = $("#roadmap-glance-title");
-      const metaEl = $("#roadmap-glance-meta");
-      const leadEl = $("#roadmap-glance-lead");
-      if (!section || !track) return;
-
-      if (!stages?.length) {
-        section.hidden = true;
-        track.innerHTML = "";
-        if (nextBtn) nextBtn.hidden = true;
-        if (metaEl) metaEl.hidden = true;
-        if (leadEl) leadEl.hidden = true;
-        return;
-      }
-
-      const activeStageIndex = getActiveGlanceStageIndex(stages);
-      const activeStage = stages[activeStageIndex];
-      const items = [];
-      (activeStage?.tasks || []).forEach((task, taskIndex) => {
-        const text = humanizeTaskText(getTaskText(task));
-        if (text) items.push({ stageIndex: activeStageIndex, taskIndex, text });
-      });
-
-      if (!items.length) {
-        section.hidden = true;
-        track.innerHTML = "";
-        if (nextBtn) nextBtn.hidden = true;
-        if (metaEl) metaEl.hidden = true;
-        if (leadEl) leadEl.hidden = true;
-        return;
-      }
-
-      section.hidden = false;
-      if (titleEl) {
-        titleEl.textContent = activeStage?.label ? String(activeStage.label) : "This phase";
-      }
-      if (metaEl) {
-        metaEl.textContent = `Phase ${activeStageIndex + 1} of ${stages.length}`;
-        metaEl.hidden = stages.length <= 1;
-      }
-      if (leadEl) {
-        const remainingPhases = stages.length - activeStageIndex - 1;
-        if (remainingPhases > 0) {
-          leadEl.textContent = `${remainingPhases} more phase${remainingPhases === 1 ? "" : "s"} unlock as you finish this one.`;
-          leadEl.hidden = false;
-        } else {
-          leadEl.hidden = true;
-        }
-      }
-
-      track.innerHTML = items.map(({ stageIndex, taskIndex, text }) => {
-        const status = getTaskGlanceStatus(stageIndex, taskIndex);
-        return `<button type="button" class="roadmap-glance-task ${status}" data-glance-stage="${stageIndex}" data-glance-task="${taskIndex}">${escapeHtml(text)}</button>`;
-      }).join("");
-
-      track.querySelectorAll("[data-glance-stage]").forEach((button) => {
-        button.addEventListener("click", () => {
-          jumpToRoadmapTask(
-            Number(button.dataset.glanceStage),
-            Number(button.dataset.glanceTask)
-          );
-        });
-      });
-
-      if (nextBtn) nextBtn.hidden = !getFirstIncompleteTaskPosition();
+      if (section) section.hidden = true;
     }
 
     function collectLocalResourcesFromRoadmap() {
@@ -23284,10 +24324,14 @@ Location: ${location}`;
       const seen = new Set();
 
       const addResource = (resource) => {
-        const key = resource.key || resource.url || resource.email || resource.org || resource.text;
+        const key = normalizeResourceDedupeKey(resource);
+        const hostBase = resourceHostBase(resource.url);
+        if (hostBase && seen.has(`host:${hostBase}`)) return;
+        if (hostBase && resources.some((entry) => resourceMatchesHost(entry, hostBase))) return;
         if (!key || seen.has(key)) return;
         seen.add(key);
-        resources.push(resource);
+        if (hostBase) seen.add(`host:${hostBase}`);
+        resources.push({ ...resource, key });
       };
 
       state.roadmapStages.forEach((stage, stageIndex) => {
@@ -23296,15 +24340,14 @@ Location: ${location}`;
           if (!shouldShowTaskResources(normalized, stage, stageIndex)) return;
 
           const addContact = (contact) => {
+            if (!contact?.org && !contact?.name && !contact?.url) return;
             addResource({
               type: "contact",
-              key: `${contact.org}|${contact.url}|${contact.email}`,
               name: contact.name,
               org: contact.org,
               phone: contact.phone,
               email: contact.email,
-              url: contact.url,
-              local: normalized.local
+              url: contact.url
             });
           };
 
@@ -23313,27 +24356,22 @@ Location: ${location}`;
           (normalized.resourcesNational || []).forEach(addContact);
           (normalized.resourcesGlobal || []).forEach(addContact);
 
-          normalized.links.forEach((url, index) => {
+          normalized.links.forEach((url) => {
             if (!url) return;
+            const hostBase = resourceHostBase(url);
+            if (hostBase && seen.has(`host:${hostBase}`)) return;
+            const orgAlreadyListed = resources.some((entry) => resourceMatchesHost(entry, hostBase));
+            if (orgAlreadyListed) return;
             addResource({
               type: "link",
-              key: url,
-              text: normalized.local || url.replace(/^https?:\/\//i, "").split("/")[0] || "Resource link",
+              text: url.replace(/^https?:\/\//i, "").replace(/\/$/, "").split("/")[0] || "Resource link",
               url
             });
           });
-          if (normalized.local && !/^workforce \/ american job center near/i.test(normalized.local)) {
-            addResource({
-              type: "local",
-              key: normalized.local,
-              text: normalized.local,
-              url: normalized.links[0] || normalized.contacts[0]?.url || ""
-            });
-          }
         });
       });
 
-      return resources.slice(0, 10);
+      return resources.slice(0, 8);
     }
 
     function getSidebarLocalResources() {
@@ -23656,7 +24694,8 @@ Location: ${location}`;
       const summaryEl = $("#roadmap-progress-summary");
       if (pctEl) pctEl.textContent = `${percent}%`;
       if (fillEl) fillEl.style.width = `${percent}%`;
-      if (summaryEl) summaryEl.textContent = `${done} of ${total} tasks completed`;
+      if (summaryEl) summaryEl.textContent = `${done} of ${total} missions completed`;
+      updateRoadmapFloatProgress(percent);
 
       const badge = $("#roadmap-status-badge");
       if (badge && !badge.classList.contains("is-adapting")) {
@@ -23664,7 +24703,7 @@ Location: ${location}`;
           badge.textContent = state.roadmapExhausted ? "Roadmap complete" : "Phase complete";
           badge.classList.add("is-complete");
         } else {
-          badge.textContent = roadmapAdaptInFlight ? "Updating your path…" : "Living roadmap";
+          badge.textContent = roadmapAdaptInFlight ? "Updating your missions…" : "Active missions";
           badge.classList.remove("is-complete");
         }
       }
@@ -23676,7 +24715,7 @@ Location: ${location}`;
         phase.classList.remove("is-complete", "is-in-progress", "is-upcoming");
         phase.classList.add(getPhaseStatusClass(stageIndex));
         const countEl = phase.querySelector(".roadmap-phase-count");
-        if (countEl) countEl.textContent = `${progress.done} / ${progress.total} tasks`;
+        if (countEl) countEl.textContent = `${progress.done} / ${progress.total} missions`;
       });
 
       $$(".overview-task").forEach((item) => {
@@ -23701,6 +24740,9 @@ Location: ${location}`;
       phase?.classList.add("is-open", "open");
 
       const taskId = `task-${pos.stageIndex}-${pos.taskIndex}`;
+      if (canExpandTask(pos.stageIndex, pos.taskIndex)) {
+        setTaskExpanded(taskId, true);
+      }
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       const question = item?.querySelector(".task-question");
       scrollRoadmapTargetIntoView(item || phase, { extraOffset: 16 });
@@ -23789,57 +24831,89 @@ Location: ${location}`;
       const normalized = normalizeRoadmapTask(task);
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "" };
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
+      const mission = humanizeTaskText(normalized.mission || inferMissionTitle(normalized));
       const text = humanizeTaskText(normalized.text);
+      const howTo = humanizeTaskText(normalized.howTo || inferHowTo(normalized));
       const why = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
       const outcome = humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized));
+      const taskData = state.roadmapKey ? getRoadmapTaskData(id) : { checked: false };
+      const isDone = Boolean(taskData.checked);
+      const canExpand = canExpandTask(stageIndex, taskIndex);
+      const hasDraftPanel = isWritingTask(normalized) || taskHasMentorDeliverable(normalized);
       const chips = [];
       if (showResources && normalized.local) {
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
       const meta = renderTaskMentorMetaHtml(normalized);
       const breakdown = renderTaskBreakdownHtml(normalized);
+      const mentorHelp = renderMentorFindingsHtml(normalized);
       const outcomeChecklist = renderTaskOutcomeChecklistHtml(id, normalized);
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const aiAssist = renderTaskAiAssistHtml(id, normalized);
 
       return `
-        <div class="task-item overview-task task-mentor-card" data-task-id="${id}">
-          <div class="overview-task-main">
-            <input class="task-check" type="checkbox" id="${id}" aria-labelledby="${id}-label">
-            <div class="overview-task-content">
-              <section class="task-mentor-section task-mentor-section--task">
-                <h4 class="task-mentor-label">Task</h4>
-                <div class="task-text" id="${id}-label">${linkifyTaskTextHtml(text)}</div>
-                ${meta}
-                ${breakdown}
-                ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
-              </section>
-              <section class="task-mentor-section">
-                <h4 class="task-mentor-label">Why this matters</h4>
-                <p class="task-mentor-copy">${escapeHtml(why)}</p>
-              </section>
-              <section class="task-mentor-section">
-                <h4 class="task-mentor-label">Success looks like</h4>
-                <p class="task-mentor-copy">${escapeHtml(outcome)}</p>
-                ${outcomeChecklist}
-              </section>
-              ${actionPack}
-            </div>
+        <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}">
+          <div class="task-compressed-row">
+            <button type="button" class="task-expand-btn" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand mission ${taskIndex + 1}"${canExpand ? "" : " disabled"}>${taskIndex + 1}</button>
+            <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}"${canExpand ? "" : " disabled"}>
+              <span class="task-compressed-mission">${escapeHtml(mission)}</span>
+              ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
+            </button>
+            <input class="task-check task-check--compressed" type="checkbox" id="${id}" aria-labelledby="${id}-label">
           </div>
-          <div class="overview-task-tools">
-            <section class="task-mentor-section task-mentor-section--notes">
-              <h4 class="task-mentor-label">My Notes</h4>
-              <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>
-              ${isWritingTask(normalized) ? renderTaskWritingAssistHtml(id, normalized) : ""}
-              ${notesExtras}
-            </section>
-            ${aiAssist}
-            <div class="task-threads" id="threads-${id}"></div>
-            <div class="task-ask-row">
-              <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
-              <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
+          <div class="task-expanded-panel" hidden>
+            <div class="overview-task-main">
+              <div class="overview-task-content">
+                <section class="task-mentor-section task-mentor-section--mission">
+                  <h4 class="task-mentor-label">Your mission</h4>
+                  <div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>
+                  ${meta}
+                  ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
+                </section>
+                <section class="task-mentor-section task-mentor-section--task">
+                  <h4 class="task-mentor-label">What to do</h4>
+                  <div class="task-text">${linkifyTaskTextHtml(text)}</div>
+                  ${breakdown}
+                </section>
+                ${mentorHelp}
+                <section class="task-mentor-section">
+                  <h4 class="task-mentor-label">Why this matters</h4>
+                  <p class="task-mentor-copy">${escapeHtml(why)}</p>
+                </section>
+                <section class="task-mentor-section">
+                  <h4 class="task-mentor-label">How to do it</h4>
+                  <p class="task-mentor-copy">${escapeHtml(howTo)}</p>
+                </section>
+                <section class="task-mentor-section">
+                  <h4 class="task-mentor-label">Success looks like</h4>
+                  <p class="task-mentor-copy">${escapeHtml(outcome)}</p>
+                  ${outcomeChecklist}
+                </section>
+                ${actionPack}
+              </div>
             </div>
+            <div class="overview-task-tools">
+              <section class="task-mentor-section task-mentor-section--notes">
+                <h4 class="task-mentor-label">My Notes</h4>
+                ${hasDraftPanel ? `
+                  <details class="task-notes-draft-panel">
+                    <summary>Your draft is here — expand to view, edit, or copy</summary>
+                    <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>
+                    <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(id)}">Copy draft</button>
+                  </details>` : `
+                  <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>`}
+                ${isWritingTask(normalized) ? renderTaskWritingAssistHtml(id, normalized) : ""}
+                ${notesExtras}
+              </section>
+              ${aiAssist}
+              <div class="task-threads" id="threads-${id}"></div>
+              <div class="task-ask-row">
+                <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
+                <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
+              </div>
+            </div>
+            <button type="button" class="task-collapse-btn" data-task-collapse="${escapeHtml(id)}"${isDone ? "" : " hidden"}>Collapse mission</button>
           </div>
         </div>`;
     }
@@ -24035,12 +25109,11 @@ Location: ${location}`;
             <span class="roadmap-phase-num stage-num">${stageIndex + 1}</span>
             <span class="roadmap-phase-info">
               <span class="roadmap-phase-label stage-label">${escapeHtml(humanizeTaskText(stage.label))}</span>
-              <span class="roadmap-phase-count">${progress.done} / ${progress.total} tasks</span>
+              <span class="roadmap-phase-count">${progress.done} / ${progress.total} missions</span>
             </span>
             <svg class="roadmap-phase-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
           </button>
           <div class="roadmap-phase-body stage-body">
-            <p class="roadmap-phase-desc stage-desc">${escapeHtml(humanizeTaskText(stage.desc || ""))}</p>
             <div class="tasks">${taskMarkup}</div>
           </div>`;
 
@@ -25573,6 +26646,7 @@ Location: ${location}`;
         loaderDismissTimer = null;
       }
       stopLoadingQuips();
+      completeSiteLoadingProgress($("#loader-progress"));
       const loader = $("#loader");
       if (!loader || loader.classList.contains("hidden")) return;
       loader.classList.add("hidden");
@@ -26236,6 +27310,7 @@ Location: ${location}`;
 
     window.addEventListener("load", async () => {
       startLoadingQuips("#loader .loader-tagline");
+      startSiteLoadingProgress($("#loader-progress"), { durationMs: 10000, cap: 88 });
       const loaderFallbackTimer = setTimeout(() => {
         if (!$("#loader")?.classList.contains("hidden")) {
           console.warn("Loader fallback: init took longer than expected.");
