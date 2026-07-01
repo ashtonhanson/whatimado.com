@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-outcome-labels -->
+<!-- whatimado build: 2026-07-01-mission-draft -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-outcome-labels">
+  <meta name="whatimado-build" content="2026-07-01-mission-draft">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -12687,6 +12687,7 @@
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
+      '- Task text must NEVER quote the path title verbatim. Point users at the prepared draft below instead of "Write a one-page mission for \\"{title}\\"".\n' +
       '- NEVER write paragraphs explaining what the task means. script = ONE immediately usable document only (email, proposal, resume, cover letter, spreadsheet, cold message, survey, business plan, marketing post, flyer, presentation, checklist, calendar, phone script, meeting agenda). If none applies, leave script empty.\n' +
       '- Contact 5 orgs → resources (names, emails, phones) + script (draft + follow-up email + phone script + spreadsheet tracker).\n' +
       '- Build a logo → script (logo brief + mood board keywords + color palette hex + typography + AI image prompts + SVG recommendations).\n' +
@@ -14217,6 +14218,40 @@
       return copy || humanizeTaskText(String(label || "").trim());
     }
 
+    function stripRepeatedPathReferences(text, options = {}) {
+      const idea = options.idea ?? state.currentIdea;
+      let copy = String(text || "").trim();
+      if (!copy) return copy;
+
+      if (/^Write a one-page mission\b/i.test(copy)) {
+        return "Review and edit the one-page mission below — who you help, what changes for them, and how you'll know it worked.";
+      }
+
+      const terms = [
+        idea?.title,
+        idea?.tagline && idea.tagline !== idea?.why ? idea.tagline : "",
+        options.stageLabel
+      ].filter(Boolean);
+
+      for (const term of [...terms].sort((a, b) => b.length - a.length)) {
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        copy = copy.replace(new RegExp(`["']${escaped}["']`, "gi"), "this");
+        copy = copy.replace(new RegExp(`for\\s+["']${escaped}["']`, "gi"), "for this");
+        copy = copy.replace(new RegExp(`about\\s+["']${escaped}["']`, "gi"), "about this");
+        copy = copy.replace(new RegExp(`problem\\s+["']${escaped}["']\\s+addresses`, "gi"), "problem you're solving");
+        copy = copy.replace(new RegExp(`gaps\\s+["']${escaped}["']\\s+would fill`, "gi"), "gaps you'd fill");
+        if (term.length > 28) {
+          copy = copy.replace(new RegExp(`\\b${escaped}\\b`, "gi"), "this project");
+        }
+      }
+
+      copy = copy.replace(/\bfor this addresses\b/gi, "this addresses");
+      copy = copy.replace(/\bproblem this project addresses\b/gi, "the problem you're solving");
+      copy = copy.replace(/\bgaps this project would fill\b/gi, "gaps you'd fill");
+      copy = copy.replace(/\s{2,}/g, " ").replace(/\s+([,.;:])/g, "$1").trim();
+      return copy;
+    }
+
     function formatPotentialMetricValue(raw) {
       let copy = String(raw || "").trim();
       if (!copy) return "";
@@ -14391,7 +14426,9 @@
     }
 
     function applyPlainLanguageToTask(normalized) {
+      normalized.text = stripRepeatedPathReferences(normalized.text, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
       normalized.text = humanizeTaskText(normalized.text);
+      normalized.why = stripRepeatedPathReferences(normalized.why, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
       normalized.why = humanizeTaskText(normalized.why);
       normalized.outcome = humanizeTaskText(normalized.outcome);
       normalized.alternatives = humanizeTaskText(normalized.alternatives);
@@ -14399,6 +14436,7 @@
       if (isMetaStageLabel(normalized.mission)) {
         normalized.mission = simplifyStageLabel(normalized.mission, state.currentIdea);
       }
+      normalized.howTo = stripRepeatedPathReferences(normalized.howTo, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
       normalized.howTo = humanizeTaskText(normalized.howTo || "");
       normalized.mentorHelp = humanizeTaskText(normalized.mentorHelp || "");
       normalized.mentorFindings = humanizeTaskText(normalized.mentorFindings || "");
@@ -14534,7 +14572,8 @@
       phone_script: "Phone script",
       meeting_agenda: "Meeting agenda",
       presentation: "Presentation",
-      logo_brief: "Logo brief"
+      logo_brief: "Logo brief",
+      mission_statement: "One-page mission"
     };
 
     function inferDraftTypeFromContent(text) {
@@ -14545,6 +14584,7 @@
       if (/\bdear .+\n/i.test(copy) && /\bsincerely\b/i.test(copy)) return "letter";
       if (/\bphone script\b/i.test(copy)) return "phone_script";
       if (/\bmeeting agenda\b/i.test(copy)) return "meeting_agenda";
+      if (/\b(one-page mission|mission statement|who we help|who you help)\b/i.test(copy)) return "mission_statement";
       if (/\b(one-page business plan|business plan)\b/i.test(copy)) return "business_plan";
       if (/\b(flyer draft|big headline)\b/i.test(copy)) return "flyer";
       if (/\b(tracking sheet|google sheets)\b/i.test(copy) || /^\| date \|/im.test(copy)) return "spreadsheet";
@@ -14565,7 +14605,7 @@
       if (normalized && isTaskRestatement(copy, normalized)) return false;
       if (/^\[(starter draft|edit this draft|write your draft here|your prepared assets|mission brief)/i.test(copy)) return false;
       if (/^no draft needed/i.test(copy)) return false;
-      const hasUsableMarkers = /\bsubject:|dear |hi [a-z]|^to:|^\[your name\]|^\| .+\||^\[ \]|^[A-Z][A-Z0-9 /&—-]{3,}(?:DRAFT|SCRIPT|PLAN|EMAIL|SURVEY|CHECKLIST|AGENDA|FLYER|RESUME|PROPOSAL|OUTLINE)|^1\. |phone script|google form|one-page business plan|cover letter|tracking sheet|title:\s|body:\s|forms\.google|when they answer:|week of |linkedin post draft|facebook post draft|reddit post draft|hey everyone|presentation outline/im.test(copy);
+      const hasUsableMarkers = /\bsubject:|dear |hi [a-z]|^to:|^\[your name\]|^\| .+\||^\[ \]|^[A-Z][A-Z0-9 /&—-]{3,}(?:DRAFT|SCRIPT|PLAN|EMAIL|SURVEY|CHECKLIST|AGENDA|FLYER|RESUME|PROPOSAL|OUTLINE|MISSION)|^1\. |phone script|google form|one-page business plan|one-page mission|mission statement|who we help|who you help|cover letter|tracking sheet|title:\s|body:\s|forms\.google|when they answer:|week of |linkedin post draft|facebook post draft|reddit post draft|hey everyone|presentation outline/im.test(copy);
       const looksLikeInstructions = /^(what to do|how to|your mission|step \d+:|first, you should|next, you should|you should|make sure you|this step is about|organization list \(start)/im.test(copy);
       if (/\bwhatimado\.com\b/i.test(copy) && copy.split(/\s+/).filter(Boolean).length >= 30 && !looksLikeInstructions) return true;
       return hasUsableMarkers && !looksLikeInstructions;
@@ -14576,6 +14616,7 @@
       const raw = getWritingDeliverableType(normalized);
       if (raw && USABLE_DRAFT_TYPE_LABELS[raw]) return raw;
 
+      if (/\b(one-page mission|mission statement|write (?:a |your )?mission)\b/.test(blob)) return "mission_statement";
       if (/\b(cold (?:email|message|dm|text|outreach)|unsolicited message|first-contact message)\b/.test(blob)) return "cold_message";
       if (/\b(calendar|weekly schedule|schedule (?:your|the) week|week plan)\b/.test(blob)) return "calendar";
       if (/\b(presentation|google slides|powerpoint|slide deck)\b/.test(blob)) return "presentation";
@@ -14615,6 +14656,7 @@
     function getWritingDeliverableType(normalized) {
       const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""}`.toLowerCase();
 
+      if (/\b(one-page mission|mission statement|write (?:a |your )?mission)\b/.test(blob)) return "mission_statement";
       if (/\b(phone script|call script|voicemail script|script to (?:read|say))\b/.test(blob)) return "phone_script";
       if (/\b(call|phone|dial|voicemail|211)\b/.test(blob) && /\b(script|say|read|word.for.word)\b/.test(blob)) return "phone_script";
       if (/\b(grant application|grant proposal|funding application|grant request|fill out.*grant)\b/.test(blob)) return "grant_application";
@@ -15037,6 +15079,32 @@ Colors to explore: [2–3 hex codes]
 Fonts: [Headline font] + [Body font]
 AI prompt: "Minimal flat logo for ${pathTitle.toLowerCase()}, [style keyword], simple icon + wordmark, white background"`;
 
+        case "mission_statement": {
+          const shortPath = pathTitle.length > 52 ? "this project" : pathTitle;
+          return `ONE-PAGE MISSION — edit everything in [brackets]
+
+Who we help
+We help [specific people — e.g. reentry counselors in ${location} who guide people rebuilding after release]. They need [concrete problem — e.g. a free tool that gives clients clear next steps without another paywall].
+
+What changes for them
+After using ${shortPath}, they can [specific outcome — e.g. walk a client through a personalized roadmap in one session instead of guessing what to suggest next].
+
+How we'll know it worked
+Within [timeframe — e.g. 4 weeks], success looks like:
+• [Number] people tried it with real clients or users
+• [Number] completed at least one mission on the roadmap
+• We collected [number] notes on what confused people
+
+Why now
+${situationLine}
+
+What we're asking people to do this month
+[One sentence — the smallest action you want counselors, partners, or users to take]
+
+What we're not promising yet
+[Be honest about what's still rough, untested, or missing]`;
+        }
+
         case "founder_story":
         case "social_post":
         default:
@@ -15284,7 +15352,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (data.draft?.trim() && !options.force && isUsableDraftContent(data.draft, normalized)) return;
-      if (data.draftGenerated && !options.force) return;
+      if (data.draftGenerated && !options.force && data.draft?.trim() && isUsableDraftContent(data.draft, normalized)) return;
       if (taskDraftGenerationInFlight.has(taskId)) return;
 
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
@@ -16269,6 +16337,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(draft|write|post)\b/.test(text)) {
         return "Draft saved and ready to send or post after one read-through.";
       }
+      if (/\b(one-page mission|mission statement)\b/.test(text)) {
+        return "One-page mission saved with who you help, what changes, and how you'll measure success.";
+      }
       if (/\b(apply|submit)\b/.test(text)) {
         return "Application submitted and date logged for follow-up.";
       }
@@ -16298,6 +16369,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (/\b(post|reddit|facebook|launch|share)\b/.test(blob)) {
         return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Put your work in front of the right people";
+      }
+      if (/\b(one-page mission|mission statement)\b/.test(blob)) {
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Lock in who you're helping";
       }
       const fromText = summarizeMissionTitle(normalized.text);
       if (fromText) return fromText;
@@ -16359,10 +16433,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       /\b(go research|start researching|do research|research local|research organizations|research grants)\b/i,
       /\b(make a list|create a list|build a list|put together a list)\b/i,
       /\b(compare (?:3 |three |several )?(?:programs|options|routes|paths|orgs|organizations))\b/i,
-      /\b(write (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan|message|outreach))\b/i,
-      /\b(draft (?:a |an |your )(?:email|letter|post|resume|grant|proposal|script|plan|message))\b/i,
-      /\b(create (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan))\b/i,
-      /\b(prepare (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan))\b/i,
+      /\b(write (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan|message|outreach|mission|one-page mission))\b/i,
+      /\b(draft (?:a |an |your )(?:email|letter|post|resume|grant|proposal|script|plan|message|mission))\b/i,
+      /\b(create (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan|mission))\b/i,
+      /\b(prepare (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan|mission))\b/i,
       /\bSearch Indeed\b/i,
       /\bGoogle Jobs\b/i,
       /\bsearch (?:indeed|google jobs|jobbank)\b/i,
@@ -16462,6 +16536,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const script = String(normalized.script || "").trim();
       const resources = getFlatTaskResources(normalized);
       const blob = text.toLowerCase();
+
+      if (/\b(one-page mission|mission statement|write (?:a |your )?one-page mission)\b/.test(blob)) {
+        return "Review the one-page mission below — edit who you help, what changes for them, and how you'll measure success.";
+      }
 
       if (!isHomeworkTaskText(text)) return text;
 
@@ -19103,9 +19181,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             label: "Decide who you're helping",
             desc: "Get crystal clear on the problem, audience, and outcome before paperwork.",
             tasks: [
-              "Write a one-page mission for \"{title}\": who you help, what changes for them, and how you will know it worked",
-              "Interview 3 people affected by the problem \"{title}\" addresses — note exact quotes about what they need now",
-              "List 5 existing orgs in {locRaw} doing similar work — note gaps \"{title}\" would fill"
+              "Review and edit the one-page mission below — who you help, what changes for them, and how you'll know it worked",
+              "Interview 3 people affected by the problem you're solving — note exact quotes about what they need now",
+              "List 5 existing orgs in {locRaw} doing similar work — note gaps you'd fill"
             ]
           },
           {
