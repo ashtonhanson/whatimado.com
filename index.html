@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-missions-draft-ux -->
+<!-- whatimado build: 2026-06-30-convo-missions -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-missions-draft-ux">
+  <meta name="whatimado-build" content="2026-06-30-convo-missions">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -14738,6 +14738,35 @@ Location: ${location}`;
       return "Small steps add up — finishing this unlocks the next one and keeps you moving instead of stuck.";
     }
 
+    function isGenericOutcomeText(text) {
+      const copy = String(text || "").trim();
+      if (!copy) return true;
+      if (isGenericMentorCopy(copy)) return true;
+      return /you can point to something concrete|written list with names, links, or phone numbers|something concrete you finished|draft saved that you could send|you sent \(or have ready to send\)|you made the call \(or left a voicemail\)|you submitted the application/i.test(copy);
+    }
+
+    function summarizeMissionTitle(text) {
+      let copy = humanizeTaskText(String(text || "").trim());
+      if (!copy || isGenericOutcomeText(copy)) return "";
+      copy = copy.replace(/^(review|use|read|call|send|apply to|start with)\s+/i, "");
+      const first = copy.split(/(?<=[.!?])\s+/).find((part) => part.trim().length > 12) || copy;
+      const trimmed = first.length > 92 ? `${first.slice(0, 89).trim()}…` : first.trim();
+      if (!trimmed || isGenericOutcomeText(trimmed)) return "";
+      return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    }
+
+    function buildProgressiveMissionTitle(normalized, taskIndex, stageLabel = "") {
+      const action = summarizeMissionTitle(buildMentorUserActionText(normalized) || normalized.text);
+      if (action) {
+        const prefix = taskIndex <= 0 ? "First" : taskIndex === 1 ? "Next" : "Then";
+        return `${prefix}: ${action}`;
+      }
+      const stageBit = summarizeMissionTitle(stageLabel);
+      return stageBit
+        ? `Step ${taskIndex + 1} — ${stageBit}`
+        : `Step ${taskIndex + 1} toward your goal`;
+    }
+
     function inferTaskOutcome(normalized) {
       if (normalized.outcome) return humanizeTaskText(normalized.outcome);
       const text = normalized.text.toLowerCase();
@@ -14759,30 +14788,33 @@ Location: ${location}`;
       return "You can point to something concrete you finished — a file, a sent message, a booked appointment, or a checked box.";
     }
 
-    function inferMissionTitle(normalized) {
+    function inferMissionTitle(normalized, context = {}) {
       const existing = String(normalized.mission || "").trim();
-      if (existing) return humanizeTaskText(existing);
-      const blob = `${normalized.text} ${normalized.why || ""} ${normalized.outcome || ""}`.toLowerCase();
+      if (existing && !isGenericOutcomeText(existing)) return humanizeTaskText(existing);
+      const taskIndex = Number.isInteger(context.taskIndex) ? context.taskIndex : 0;
+      const blob = `${normalized.text} ${normalized.why || ""}`.toLowerCase();
       const path = state.currentIdea?.title || "your goal";
       if (/\b(organi[sz]|nonprofit|partner|pilot|test your idea|workshop)\b/.test(blob)) {
-        return "Find your first organization willing to test your idea";
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Find your first organization willing to test your idea";
       }
       if (/\b(grant|funding|scholarship)\b/.test(blob)) {
-        return `Secure your first grant or funding source for ${path}`;
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : `Secure your first grant or funding source for ${path}`;
       }
-      if (/\b(employ|job|hire|interview|resume|workforce)\b/.test(blob)) {
-        return `Land your first real opportunity for ${path}`;
+      if (/\b(employ|job|hire|interview|resume|workforce|staffing|temp agency)\b/.test(blob)) {
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : `Land your first real opportunity for ${path}`;
       }
       if (/\b(email|outreach|call|contact|director)\b/.test(blob)) {
-        return "Get a yes from the right person — starting with your best contact";
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Get a yes from the right person — starting with your best contact";
       }
       if (/\b(client|customer|first sale|booking)\b/.test(blob)) {
-        return "Win your first paying client";
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Win your first paying client";
       }
       if (/\b(post|reddit|facebook|launch|share)\b/.test(blob)) {
-        return "Put your work in front of the right people";
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Put your work in front of the right people";
       }
-      return humanizeTaskText(normalized.outcome || normalized.text);
+      const fromText = summarizeMissionTitle(normalized.text);
+      if (fromText) return fromText;
+      return buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel);
     }
 
     function inferHowTo(normalized) {
@@ -14816,8 +14848,8 @@ Location: ${location}`;
       return buildMentorFindingsText(normalized);
     }
 
-    function enrichTaskMentorFields(normalized) {
-      normalized.mission = inferMissionTitle(normalized);
+    function enrichTaskMentorFields(normalized, context = {}) {
+      normalized.mission = inferMissionTitle(normalized, context);
       normalized.howTo = inferHowTo(normalized);
       normalized.mentorHelp = inferMentorHelp(normalized);
       normalized.mentorFindings = normalized.mentorHelp;
@@ -15009,11 +15041,42 @@ Location: ${location}`;
       return normalized;
     }
 
+    function dedupeMissionsInStage(tasks, stageLabel = "", stageIndex = 0) {
+      const seen = new Set();
+      return (tasks || []).map((task, taskIndex) => {
+        const normalized = typeof task === "object" && task?.text !== undefined ? { ...task } : normalizeRoadmapTask(task);
+        let mission = String(normalized.mission || "").trim();
+        if (!mission || isGenericOutcomeText(mission) || textSimilarity(mission, normalized.outcome || "") > 0.82) {
+          mission = inferMissionTitle(normalized, { taskIndex, stageIndex, stageLabel });
+        }
+        const key = normalizeTextForCompare(mission);
+        if (seen.has(key)) {
+          mission = buildProgressiveMissionTitle(normalized, taskIndex, stageLabel);
+        }
+        let retryKey = normalizeTextForCompare(mission);
+        let attempt = 0;
+        while (seen.has(retryKey) && attempt < 3) {
+          attempt += 1;
+          mission = buildProgressiveMissionTitle(normalized, taskIndex + attempt, stageLabel);
+          retryKey = normalizeTextForCompare(mission);
+        }
+        seen.add(normalizeTextForCompare(mission));
+        normalized.mission = mission;
+        if (isGenericOutcomeText(normalized.outcome)) {
+          normalized.outcome = inferTaskOutcome(normalized);
+        }
+        return normalized;
+      });
+    }
+
     function mentorizeRoadmapStages(stages) {
-      return (stages || []).map((stage) => ({
-        ...stage,
-        tasks: (stage.tasks || []).map((task) => mentorizeTask(task))
-      }));
+      return (stages || []).map((stage, stageIndex) => {
+        const tasks = (stage.tasks || []).map((task) => mentorizeTask(task));
+        return {
+          ...stage,
+          tasks: dedupeMissionsInStage(tasks, stage.label, stageIndex)
+        };
+      });
     }
 
     function getRawTaskFields(task) {
@@ -23458,9 +23521,8 @@ Location: ${location}`;
         intake_mode: "standard"
       });
       showScreen("convo");
-      addTypingBubble();
       pushUserMessage(text);
-
+      addTypingBubble();
       try {
         const answer = await callAdvisor(buildClarifyingPrompt(text), 450);
         const fallback = getClarifyingFallback(text);
