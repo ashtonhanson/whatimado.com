@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-draft-suggestions -->
+<!-- whatimado build: 2026-07-01-roadmap-reveal -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-draft-suggestions">
+  <meta name="whatimado-build" content="2026-07-01-roadmap-reveal">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4836,12 +4836,13 @@
     }
 
     html[data-color-scheme="adult"] .bubble-edit-btn {
-      color: var(--brand-purple-dark);
-      background: rgba(36, 18, 53, .08);
+      color: #fff;
+      background: rgba(0, 0, 0, .16);
     }
 
     html[data-color-scheme="adult"] .bubble-edit-btn:hover {
-      background: rgba(36, 18, 53, .14);
+      color: #fff;
+      background: rgba(0, 0, 0, .28);
     }
 
     .bubble.ai {
@@ -9020,6 +9021,14 @@
       background-size: 200% 100%;
     }
 
+    .roadmap-shell-status {
+      margin: .85rem 0 0;
+      color: var(--ink-muted);
+      font-size: .78rem;
+      line-height: 1.45;
+      text-align: center;
+    }
+
     .roadmap-loading {
       position: absolute;
       inset: 0;
@@ -12982,6 +12991,9 @@
       '- Write like a helpful mentor — plain English, no business jargon, no startup language.\n' +
       '- Never invent fake grants or personal @gmail addresses.\n';
     let roadmapAutoContinueTimer = null;
+    let roadmapShellWaitTimer = null;
+    const ROADMAP_ADVISOR_TIMEOUT_MS = 90000;
+    let roadmapBackgroundRefinementInFlight = false;
     let roadmapAdaptTimer = null;
     let roadmapAdaptInFlight = false;
     const ROADMAP_ADAPT_DEBOUNCE_MS = 3200;
@@ -17696,6 +17708,41 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const hasLocation = Boolean(getUserLocation());
       if (founderMode) return hasLocation ? 4608 : 3000;
       return hasLocation ? 4096 : 2400;
+    }
+
+    function stopRoadmapShellWait() {
+      if (roadmapShellWaitTimer) {
+        clearInterval(roadmapShellWaitTimer);
+        roadmapShellWaitTimer = null;
+      }
+    }
+
+    function updateRoadmapShellStatus(message) {
+      const sub = $("#roadmap-sub");
+      const shellStatus = $("#roadmap-shell-status");
+      if (sub) {
+        sub.hidden = false;
+        sub.textContent = message;
+      }
+      if (shellStatus) shellStatus.textContent = message;
+    }
+
+    function startRoadmapShellWait({ founderMode = false, isRevealed = () => false } = {}) {
+      stopRoadmapShellWait();
+      const startedAt = Date.now();
+      const tick = () => {
+        if (isRevealed()) return;
+        const elapsed = Math.round((Date.now() - startedAt) / 1000);
+        if (elapsed < 12) {
+          updateRoadmapShellStatus(
+            founderMode ? "Building your whatimado.com launch roadmap…" : "Preparing your first mission…"
+          );
+          return;
+        }
+        updateRoadmapShellStatus(`Building your roadmap… (${elapsed}s)`);
+      };
+      tick();
+      roadmapShellWaitTimer = setInterval(tick, 1000);
     }
 
     function capAdvisorTokens(requested) {
@@ -26630,7 +26677,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `<span class="roadmap-skeleton-line roadmap-skeleton-line--title"></span>` +
         `<span class="roadmap-skeleton-line roadmap-skeleton-line--meta"></span>` +
         `</span></div></article>`
-      )).join("");
+      )).join("") +
+        `<p class="roadmap-shell-status" id="roadmap-shell-status" role="status" aria-live="polite"></p>`;
     }
 
     function clearProgressMap() {
@@ -26752,7 +26800,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return roadmapHasRichLocalData(fallback, idea) ? fallback : stages;
     }
 
-    function finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource = "ai" } = {}) {
+    function finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource = "ai", lenient = false } = {}) {
+      if (lenient && stages?.length) {
+        const normalized = normalizeRoadmapStages(stages);
+        if (stageOneHasRevealableMission(normalized)) {
+          return {
+            stages: applyLocalResourceFixesIfPossible(normalized, idea),
+            roadmapSource
+          };
+        }
+      }
+
       let source = roadmapSource;
 
       if (stages && founderMode && roadmapLooksLikeEndUserReentry(stages)) {
@@ -26802,8 +26860,301 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return tasks.every((task) => Boolean(getTaskText(task)?.trim()));
     }
 
+    function stageOneHasRevealableMission(stages = state.roadmapStages) {
+      const first = stages?.[0];
+      if (!first?.label?.trim()) return false;
+      const tasks = Array.isArray(first.tasks) ? first.tasks : [];
+      if (!tasks.length) return false;
+      return tasks.some((task) => Boolean(getTaskText(task)?.trim()));
+    }
+
+    function logEarlyRevealSkipped(result, idea, ideaIndex, response) {
+      const payload = {
+        reason: result.reason || "unknown",
+        details: result.details || {},
+        idea_index: ideaIndex,
+        roadmap_key: slugify(idea?.title || ""),
+        response_length: String(response || "").length
+      };
+      console.info("[whatimado] early reveal skipped:", payload);
+      trackEvent("roadmap_early_reveal_skipped", payload);
+    }
+
+    function resolveEarlyRevealStages(response, idea) {
+      const details = {};
+      if (!String(response || "").trim()) {
+        return { stages: null, reason: "empty_response", details };
+      }
+
+      const raw = tryParseRoadmapJson(response);
+      if (!raw) {
+        return { stages: null, reason: "json_parse_failed", details: { hint: "extractJsonArray returned no array" } };
+      }
+
+      details.stage_count = raw.length;
+      const stageOne = raw[0];
+      if (!stageOne?.label?.trim()) {
+        return { stages: null, reason: "stage_one_missing_label", details };
+      }
+      if (!Array.isArray(stageOne.tasks) || !stageOne.tasks.length) {
+        return { stages: null, reason: "stage_one_missing_tasks", details };
+      }
+
+      const emptyTaskIndexes = stageOne.tasks
+        .map((task, index) => (!getTaskText(task)?.trim() ? index : -1))
+        .filter((index) => index >= 0);
+      if (emptyTaskIndexes.length === stageOne.tasks.length) {
+        return {
+          stages: null,
+          reason: "stage_one_empty_task_text",
+          details: { ...details, empty_task_indexes: emptyTaskIndexes }
+        };
+      }
+
+      if (raw.some((stage) => isGenericStageLabel(stage.label))) {
+        details.generic_stage_labels = raw
+          .map((stage, index) => (isGenericStageLabel(stage.label) ? index : -1))
+          .filter((index) => index >= 0);
+      }
+      if (isGenericFallbackRoadmap(raw)) {
+        details.generic_fallback_signature = true;
+      }
+      if (roadmapHasTooMuchHomework(raw)) {
+        details.homework_ratio_high = true;
+      }
+      if (roadmapLacksMentorWork(raw)) {
+        details.mentor_work_sparse = true;
+      }
+
+      let normalized;
+      try {
+        normalized = normalizeRoadmapStages(raw);
+      } catch (error) {
+        return {
+          stages: null,
+          reason: "normalize_failed",
+          details: { ...details, error: error?.message || String(error) }
+        };
+      }
+
+      if (!stageOneHasRevealableMission(normalized)) {
+        return {
+          stages: null,
+          reason: "stage_one_no_valid_mission_after_normalize",
+          details
+        };
+      }
+
+      return { stages: normalized, reason: null, details };
+    }
+
+    function prepareStagesForInitialReveal(stages, idea) {
+      let ready = normalizeRoadmapStages(stages);
+      ready = applyLocalResourceFixesIfPossible(ready, idea);
+      return ready;
+    }
+
+    function taskFieldIsEmpty(value) {
+      return !String(value || "").trim();
+    }
+
+    function taskResourcesAreSparse(normalized) {
+      return getFlatTaskResources(normalized).length < 2;
+    }
+
+    function mergeTaskForRefinement(existing, refined, issueCodes) {
+      const codes = issueCodes instanceof Set ? issueCodes : new Set(issueCodes || []);
+      const out = typeof existing === "object" ? { ...existing } : normalizeRoadmapTask(existing);
+      const ref = normalizeRoadmapTask(refined);
+      const existingNorm = normalizeRoadmapTask(out);
+
+      if (taskResourcesAreSparse(existingNorm) && !taskResourcesAreSparse(ref)) {
+        out.resourceLayers = ref.resourceLayers;
+        out.contacts = ref.contacts;
+        out.links = ref.links;
+        out.resourcesLocal = ref.resourcesLocal;
+        out.resourcesNational = ref.resourcesNational;
+        out.resourcesGlobal = ref.resourcesGlobal;
+      }
+
+      if (taskFieldIsEmpty(existingNorm.script) && !taskFieldIsEmpty(ref.script)) {
+        out.script = ref.script;
+      } else if ((codes.has("homework") || codes.has("parse_failed")) && String(ref.script || "").length > String(existingNorm.script || "").length + 40) {
+        out.script = ref.script;
+      }
+
+      const existingFindings = String(existingNorm.mentorFindings || existingNorm.mentorHelp || "").trim();
+      const refFindings = String(ref.mentorFindings || ref.mentorHelp || "").trim();
+      if (!existingFindings && refFindings) {
+        out.mentorFindings = ref.mentorFindings;
+        out.mentorHelp = ref.mentorHelp || ref.mentorFindings;
+      } else if ((codes.has("homework") || codes.has("parse_failed")) && refFindings.length > existingFindings.length + 30) {
+        out.mentorFindings = ref.mentorFindings;
+        out.mentorHelp = ref.mentorHelp || ref.mentorFindings;
+      }
+
+      if (taskFieldIsEmpty(existingNorm.followUp) && !taskFieldIsEmpty(ref.followUp)) {
+        out.followUp = ref.followUp;
+      }
+      if (taskFieldIsEmpty(existingNorm.talkingPoints) && !taskFieldIsEmpty(ref.talkingPoints)) {
+        out.talkingPoints = ref.talkingPoints;
+      }
+      if (taskFieldIsEmpty(existingNorm.howTo) && !taskFieldIsEmpty(ref.howTo)) {
+        out.howTo = ref.howTo;
+      }
+      if (taskFieldIsEmpty(existingNorm.outcome) && !taskFieldIsEmpty(ref.outcome)) {
+        out.outcome = ref.outcome;
+      }
+      if (taskFieldIsEmpty(existingNorm.why) && !taskFieldIsEmpty(ref.why)) {
+        out.why = ref.why;
+      }
+
+      if (codes.has("homework") || codes.has("parse_failed") || codes.has("generic_mismatch")) {
+        if (String(ref.text || "").trim() && !isHomeworkTaskText(ref.text)) {
+          out.text = ref.text;
+        }
+        if (String(ref.mission || "").trim()) {
+          out.mission = ref.mission;
+        }
+      }
+
+      return normalizeRoadmapTask(out);
+    }
+
+    function patchRoadmapStages(existingStages, refinedStages, issues = []) {
+      if (!Array.isArray(existingStages) || !existingStages.length) {
+        return normalizeRoadmapStages(refinedStages || []);
+      }
+      if (!Array.isArray(refinedStages) || !refinedStages.length) {
+        return existingStages;
+      }
+
+      const codes = new Set((issues || []).map((issue) => issue.code));
+      const stageLabelIssues = codes.has("generic_stages") || codes.has("overlap") || codes.has("refresh_stale");
+
+      const merged = existingStages.map((stage, stageIndex) => {
+        const refStage = refinedStages[stageIndex];
+        if (!refStage) return stage;
+
+        const tasks = (stage.tasks || []).map((task, taskIndex) => {
+          const refTask = refStage.tasks?.[taskIndex];
+          if (!refTask) return task;
+          return mergeTaskForRefinement(task, refTask, codes);
+        });
+
+        const refExtraTasks = (refStage.tasks || []).slice(tasks.length);
+        refExtraTasks.forEach((refTask) => tasks.push(normalizeRoadmapTask(refTask)));
+
+        return {
+          ...stage,
+          label: stageLabelIssues && refStage.label ? refStage.label : stage.label,
+          desc: refStage.desc || stage.desc,
+          tasks
+        };
+      });
+
+      for (let stageIndex = existingStages.length; stageIndex < refinedStages.length; stageIndex += 1) {
+        merged.push(refinedStages[stageIndex]);
+      }
+
+      return normalizeRoadmapStages(merged);
+    }
+
+    async function runRoadmapBackgroundRefinement(params) {
+      if (roadmapBackgroundRefinementInFlight) return;
+      roadmapBackgroundRefinementInFlight = true;
+
+      const {
+        idea,
+        ideaIndex,
+        founderMode,
+        context,
+        promptOptions,
+        tokenLimit,
+        basePrompt,
+        issues = [],
+        initialStages,
+        callbacks = {}
+      } = params;
+
+      try {
+        let working = state.roadmapStages?.length ? state.roadmapStages : initialStages;
+        if (!working?.length) return;
+
+        const issueCodes = issues.map((issue) => issue.code);
+        if (issues.length) callbacks.onRefining?.(true);
+
+        const needsLocalPatch = issues.some((issue) => issue.code === "local_resources")
+          || roadmapNeedsLocalEnrichment(working, idea);
+        if (needsLocalPatch) {
+          const locallyEnriched = ensureRoadmapLocalContacts(
+            applyLocalResourceFixesIfPossible(working, idea),
+            idea
+          );
+          working = patchRoadmapStages(working, locallyEnriched, [{ code: "local_resources" }]);
+        }
+
+        const aiIssueCodes = ["homework", "parse_failed", "generic_stages", "overlap", "refresh_stale", "generic_mismatch", "reentry"];
+        const needsAiCorrection = issues.some((issue) => aiIssueCodes.includes(issue.code));
+
+        if (needsAiCorrection) {
+          let correctionPrompt = basePrompt;
+          const needsDedupe = issues.some((issue) => issue.code === "overlap" || issue.code === "refresh_stale");
+          if (needsDedupe && !promptOptions.dedupe) {
+            correctionPrompt = getCachedRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true });
+          }
+          const correctionBlock = buildCombinedRoadmapCorrectionBlock(issues, idea, { founderMode });
+          const response = await callAdvisor(
+            `${correctionPrompt}\n\n${correctionBlock}`,
+            tokenLimit,
+            { timeoutMs: ROADMAP_ADVISOR_TIMEOUT_MS }
+          );
+          const corrected = parseRoadmapResponse(response, idea)
+            || parseRoadmapPreviewResponse(response, idea);
+          if (corrected) {
+            working = patchRoadmapStages(working, corrected, issues);
+            if (issues.some((issue) => issue.code === "homework" || issue.code === "parse_failed")) {
+              trackEvent("roadmap_mentor_work_corrected", { idea_index: ideaIndex, background: true });
+            }
+            if (issues.some((issue) => issue.code === "generic_stages")) {
+              trackEvent("roadmap_generic_stages_corrected", { idea_index: ideaIndex, background: true });
+            }
+            if (issues.some((issue) => issue.code === "reentry")) {
+              trackEvent("roadmap_reentry_corrected", {
+                idea_index: ideaIndex,
+                background: true,
+                still_training_first: roadmapSkipsReentryStability(corrected)
+              });
+            }
+          }
+        }
+
+        const finalized = finalizeRoadmapStages(working, idea, founderMode, ideaIndex, {
+          roadmapSource: "ai",
+          lenient: stageOneHasRevealableMission(working)
+        });
+        callbacks.onRefinementComplete?.(finalized.stages, {
+          roadmapSource: finalized.roadmapSource,
+          issues: issueCodes
+        });
+
+        if (roadmapNeedsLocalEnrichment(finalized.stages, idea)) {
+          void maybeEnrichRoadmapLocalContacts({ silent: true });
+        }
+      } catch (error) {
+        console.error("[whatimado] background roadmap refinement failed:", error);
+        trackEvent("roadmap_refinement_failed", {
+          idea_index: ideaIndex,
+          error: error?.message || "unknown"
+        });
+      } finally {
+        callbacks.onRefining?.(false);
+        roadmapBackgroundRefinementInFlight = false;
+      }
+    }
+
     function prepareFirstMissionForReveal(idea) {
-      if (!state.roadmapStages?.length || !firstMissionIsReady(state.roadmapStages)) return false;
+      if (!state.roadmapStages?.length || !stageOneHasRevealableMission(state.roadmapStages)) return false;
 
       const loc = getUserLocation();
       if (loc && pathNeedsLocalResources(idea) && roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
@@ -26837,9 +27188,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getRevealCandidateStages(response, stages, idea) {
-      if (stages && firstMissionIsReady(stages)) return stages;
+      const resolved = resolveEarlyRevealStages(response, idea);
+      if (resolved.stages) return resolved.stages;
+      if (stages && stageOneHasRevealableMission(stages)) return stages;
       const preview = parseRoadmapPreviewResponse(response, idea);
-      if (preview && firstMissionIsReady(preview)) return preview;
+      if (preview && stageOneHasRevealableMission(preview)) return preview;
       return null;
     }
 
@@ -26894,17 +27247,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       let basePrompt = getCachedRoadmapPrompt(idea, context, promptOptions);
       let roadmapSource = "ai";
 
-      let response = await callAdvisor(basePrompt, tokenLimit);
-      let stages = parseRoadmapResponse(response, idea);
+      let response = await callAdvisor(basePrompt, tokenLimit, { timeoutMs: ROADMAP_ADVISOR_TIMEOUT_MS });
 
-      const revealCandidate = getRevealCandidateStages(response, stages, idea);
-      if (revealCandidate) {
-        let readyStages = applyLocalResourceFixesIfPossible(revealCandidate, idea);
-        if (!firstMissionIsReady(readyStages)) readyStages = revealCandidate;
-        if (firstMissionIsReady(readyStages)) {
-          callbacks.onFirstMissionReady?.(normalizeRoadmapStages(readyStages));
-        }
+      const earlyReveal = resolveEarlyRevealStages(response, idea);
+      if (earlyReveal.stages) {
+        const readyStages = applyLocalResourceFixesIfPossible(earlyReveal.stages, idea);
+        callbacks.onFirstMissionReady?.(readyStages);
+        trackEvent("roadmap_early_reveal", {
+          idea_index: ideaIndex,
+          stage_count: readyStages.length,
+          task_count: readyStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0)
+        });
+      } else {
+        logEarlyRevealSkipped(earlyReveal, idea, ideaIndex, response);
       }
+
+      let stages = parseRoadmapResponse(response, idea)
+        || earlyReveal.stages
+        || parseRoadmapPreviewResponse(response, idea);
 
       let issues = stages
         ? collectRoadmapGenerationIssues(stages, idea, {
@@ -26922,38 +27282,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
 
-      if (issues.length) {
-        callbacks.onRefining?.(true);
-        const needsDedupe = issues.some((issue) => issue.code === "overlap" || issue.code === "refresh_stale");
-        if (needsDedupe && !promptOptions.dedupe) {
-          promptOptions.dedupe = true;
-          basePrompt = getCachedRoadmapPrompt(idea, context, promptOptions);
-        }
-        const correctionBlock = buildCombinedRoadmapCorrectionBlock(issues, idea, { founderMode });
-        try {
-          response = await callAdvisor(`${basePrompt}\n\n${correctionBlock}`, tokenLimit);
-          const corrected = parseRoadmapResponse(response, idea);
-          if (corrected) {
-            stages = applyLocalResourceFixesIfPossible(corrected, idea);
-            if (issues.some((issue) => issue.code === "homework" || issue.code === "parse_failed")) {
-              trackEvent("roadmap_mentor_work_corrected", { idea_index: ideaIndex });
-            }
-            if (issues.some((issue) => issue.code === "generic_stages")) {
-              trackEvent("roadmap_generic_stages_corrected", { idea_index: ideaIndex });
-            }
-            if (issues.some((issue) => issue.code === "reentry")) {
-              trackEvent("roadmap_reentry_corrected", {
-                idea_index: ideaIndex,
-                still_training_first: roadmapSkipsReentryStability(corrected)
-              });
-            }
-          }
-        } finally {
-          callbacks.onRefining?.(false);
-        }
-      }
+      const canShowLenient = Boolean(
+        earlyReveal.stages ||
+        (stages && stageOneHasRevealableMission(stages))
+      );
+      const initialReturn = finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, {
+        roadmapSource,
+        lenient: canShowLenient
+      });
 
-      return finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource });
+      void runRoadmapBackgroundRefinement({
+        idea,
+        ideaIndex,
+        founderMode,
+        context,
+        promptOptions,
+        tokenLimit,
+        basePrompt,
+        issues,
+        initialStages: initialReturn.stages,
+        refreshBlock,
+        previousStages: options.previousStages,
+        callbacks
+      });
+
+      return initialReturn;
     }
 
     async function viewRoadmap(idea, ideaIndex, options = {}) {
@@ -27045,8 +27398,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       renderRoadmapSkeleton();
 
       let revealed = false;
+      const founderModeForGen = isFounderRoadmapForIdea(idea);
+      startRoadmapShellWait({
+        founderMode: founderModeForGen,
+        isRevealed: () => revealed
+      });
       try {
-        const founderModeForGen = isFounderRoadmapForIdea(idea);
         const result = await generateRoadmapStagesFromAi(
           idea,
           ideaIndex,
@@ -27057,47 +27414,74 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           },
           {
             onFirstMissionReady(stages) {
-              if (revealed || !firstMissionIsReady(stages)) return;
+              if (revealed || !stageOneHasRevealableMission(stages)) return;
               revealed = true;
               publishRoadmapToUi(
                 idea,
                 ideaIndex,
-                ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
+                prepareStagesForInitialReveal(stages, idea),
                 "ai",
                 founderModeForGen,
                 { isFinal: false, initialReveal: true }
               );
               setRoadmapLoading(false);
-              setRoadmapRefining(true);
             },
             onRefining(active) {
               if (revealed) setRoadmapRefining(active);
+            },
+            onRefinementComplete(stages, meta = {}) {
+              if (!revealed || !stages?.length) return;
+              publishRoadmapToUi(
+                idea,
+                ideaIndex,
+                stages,
+                meta.roadmapSource || "ai",
+                founderModeForGen,
+                { isFinal: true, refineUpdate: true }
+              );
+              setRoadmapRefining(false);
+              trackEvent("roadmap_refinement_applied", {
+                idea_index: ideaIndex,
+                issues: meta.issues || []
+              });
             }
           }
         );
-        if (!firstMissionIsReady(result.stages)) {
-          throw new Error("First mission was not ready");
+
+        if (!revealed) {
+          if (stageOneHasRevealableMission(result.stages)) {
+            revealed = true;
+            publishRoadmapToUi(
+              idea,
+              ideaIndex,
+              prepareStagesForInitialReveal(result.stages, idea),
+              result.roadmapSource || "ai",
+              founderModeForGen,
+              { isFinal: false, initialReveal: true }
+            );
+            setRoadmapLoading(false);
+          } else {
+            throw new Error("Stage 1 had no revealable mission");
+          }
         }
-        publishRoadmapToUi(idea, ideaIndex, result.stages, result.roadmapSource, founderModeForGen, {
-          isFinal: true,
-          initialReveal: true,
-          refineUpdate: revealed
-        });
-        revealed = true;
       } catch (error) {
         console.error(error);
-        trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
-        const founderModeForGen = isFounderRoadmapForIdea(idea);
-        const fallbackStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
-        publishRoadmapToUi(idea, ideaIndex, fallbackStages, "fallback", founderModeForGen, {
-          isFinal: true,
-          initialReveal: true,
-          refineUpdate: revealed
-        });
-        revealed = true;
+        trackEvent("roadmap_generation_failed", { idea_index: ideaIndex, error: lastAdvisorError || error?.message || "unknown" });
+        if (!revealed) {
+          const fallbackStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
+          publishRoadmapToUi(idea, ideaIndex, fallbackStages, "fallback", founderModeForGen, {
+            isFinal: true,
+            initialReveal: true
+          });
+          revealed = true;
+          setRoadmapLoading(false);
+        }
       } finally {
-        setRoadmapRefining(false);
-        if (!revealed) setRoadmapLoading(false);
+        stopRoadmapShellWait();
+        setRoadmapLoading(false);
+        if (!revealed) setRoadmapRefining(false);
+        const sub = $("#roadmap-sub");
+        if (sub && revealed) sub.hidden = true;
       }
     }
 
