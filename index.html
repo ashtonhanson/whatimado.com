@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-draft-mission-ux -->
+<!-- whatimado build: 2026-06-30-roadmap-polish -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-draft-mission-ux">
+  <meta name="whatimado-build" content="2026-06-30-roadmap-polish">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -172,6 +172,8 @@
       color-scheme: light;
       --sidebar-w: 248px;
       --topbar-h: 64px;
+      --roadmap-progress-h: 0px;
+      --roadmap-sticky-offset: var(--topbar-h);
       --bg: #ffffff;
       --bg-soft: #f9fafb;
       --surface: #ffffff;
@@ -6804,11 +6806,11 @@
       background: rgba(255, 255, 255, .88);
       overflow: hidden;
       box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
-      scroll-margin-top: calc(var(--topbar-h, 64px) + 12px);
+      scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 12px);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase-head {
-      scroll-margin-top: calc(var(--topbar-h, 64px) + 12px);
+      scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 12px);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-in-progress {
@@ -6892,13 +6894,26 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-phase-body {
-      display: none;
-      padding: .85rem 1.35rem 1.35rem;
-      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-rows: 0fr;
+      padding: 0 1.35rem;
+      border-top: 1px solid transparent;
+      overflow: hidden;
+      transition: grid-template-rows .24s ease, padding .24s ease, border-color .24s ease;
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-open .roadmap-phase-body {
-      display: block;
+      grid-template-rows: 1fr;
+      padding: .85rem 1.35rem 1.35rem;
+      border-top-color: var(--line);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phase-body .tasks {
+      display: grid;
+      gap: .65rem;
+      min-height: 0;
+      overflow: hidden;
+      padding-top: .15rem;
     }
 
     html[data-color-scheme="adult"] .roadmap-phase-desc {
@@ -6906,10 +6921,6 @@
       color: var(--ink-muted);
       font-size: .8rem;
       line-height: 1.5;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-phase-body .tasks {
-      padding-top: .15rem;
     }
 
     html[data-color-scheme="adult"] .overview-task {
@@ -6927,6 +6938,12 @@
       border-radius: 14px;
       background: #fff;
       box-shadow: 0 4px 16px rgba(15, 23, 42, .04);
+      scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 12px);
+      padding: 1rem 1.05rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task:first-child {
+      padding-top: 1rem;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task:focus-within {
@@ -7052,14 +7069,49 @@
 
     html[data-color-scheme="adult"] .overview-task-steps {
       margin: 0;
-      padding-left: 1.15rem;
+      padding: 0;
+      list-style: none;
       color: var(--ink);
       font-size: .74rem;
       line-height: 1.5;
     }
 
-    html[data-color-scheme="adult"] .overview-task-steps li + li {
+    .task-alphabetic-steps {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .task-alphabetic-step {
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+    }
+
+    .task-alphabetic-step + .task-alphabetic-step {
       margin-top: .35rem;
+    }
+
+    .task-alphabetic-letter {
+      flex-shrink: 0;
+      min-width: 1.35rem;
+      color: #2563eb;
+      font-size: .76rem;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .task-alphabetic-text {
+      flex: 1;
+      min-width: 0;
+      color: var(--ink, #111827);
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .task-talking-points {
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
     html[data-color-scheme="adult"] .overview-task-detail-block {
@@ -7112,7 +7164,8 @@
 
     .task-talking-points {
       margin: 0;
-      padding-left: 1.1rem;
+      padding: 0;
+      list-style: none;
       color: var(--ink-muted, rgba(232, 236, 255, .85));
       font-size: .78rem;
       line-height: 1.55;
@@ -7342,21 +7395,45 @@
       pointer-events: none;
     }
 
+    .roadmap-float-progress[hidden] {
+      display: none !important;
+    }
+
+    @media (min-width: 961px) {
+      html[data-color-scheme="adult"] .roadmap-float-progress {
+        position: fixed;
+        top: calc(var(--topbar-h, 64px) + 10px);
+        left: 50%;
+        right: auto;
+        width: auto;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        border: 1px solid rgba(37, 99, 235, .14);
+        padding: .32rem .7rem .32rem .45rem;
+        box-shadow: 0 6px 24px rgba(15, 23, 42, .1);
+        z-index: 45;
+      }
+    }
+
     @media (max-width: 960px) {
       html[data-color-scheme="adult"] .roadmap-float-progress {
+        position: sticky;
         top: var(--topbar-h, 64px);
         left: 0;
         right: 0;
         width: 100%;
         transform: none;
+        flex-shrink: 0;
         border-radius: 0;
         border-left: 0;
         border-right: 0;
         border-top: 0;
+        border-bottom: 1px solid rgba(37, 99, 235, .12);
         padding: .45rem 1rem;
         gap: .65rem;
         box-shadow: 0 2px 14px rgba(15, 23, 42, .08);
         z-index: 19;
+        background: rgba(255, 255, 255, .96);
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-track {
@@ -7366,8 +7443,35 @@
         height: .42rem;
       }
 
-      html[data-color-scheme="adult"] #screen-roadmap.active:not(.is-loading) .roadmap-page {
-        padding-top: .35rem;
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
+        padding-top: .25rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-phases {
+        gap: .75rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task {
+        padding: 1rem 1rem;
+      }
+
+      html[data-color-scheme="adult"] .overview-task-tools {
+        margin: .75rem 0 0;
+        padding: .9rem .95rem .95rem;
+        gap: .7rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-phase-body {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-phase.is-open .roadmap-phase-body {
+        padding: .8rem 1rem 1.15rem;
+      }
+
+      html[data-color-scheme="adult"] .task-mission-actions {
+        margin-top: .75rem;
       }
     }
 
@@ -7398,7 +7502,7 @@
     .task-compressed-row {
       display: grid;
       grid-template-columns: auto 1fr auto;
-      align-items: start;
+      align-items: center;
       gap: .65rem;
       width: 100%;
     }
@@ -7487,10 +7591,14 @@
 
     .task-breakdown-expand-hint {
       color: #2563eb;
-      font-size: .64rem;
+      font-size: .68rem;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .04em;
+      line-height: 1;
+      transition: transform .18s ease;
+    }
+
+    .task-breakdown-step[open] .task-breakdown-expand-hint {
+      transform: rotate(180deg);
     }
 
     .task-breakdown-body {
@@ -7515,19 +7623,46 @@
     .task-mission-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: .55rem;
+      gap: .5rem;
       margin-top: .85rem;
+      align-items: center;
+      justify-content: flex-start;
     }
 
-    .task-see-next-btn {
-      padding: .42rem .85rem;
-      border: 1px solid rgba(37, 99, 235, .28);
-      border-radius: 999px;
-      background: #fff;
-      color: #2563eb;
-      font-size: .72rem;
-      font-weight: 700;
-      cursor: pointer;
+    .task-condense-btn,
+    .task-draft-toggle-btn,
+    .task-copy-draft-btn,
+    .task-delete-draft-btn {
+      min-height: 2rem;
+    }
+
+    .task-draft-body {
+      overflow: hidden;
+      transition: opacity .2s ease;
+    }
+
+    .task-draft-collapsed-view {
+      transition: opacity .2s ease;
+    }
+
+    .task-breakdown-step .task-breakdown-body {
+      animation: roadmap-reveal .2s ease;
+    }
+
+    @keyframes roadmap-reveal {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html[data-color-scheme="adult"] .roadmap-phase-body,
+      .task-expanded-panel,
+      .task-draft-body,
+      .task-draft-collapsed-view,
+      .task-breakdown-step .task-breakdown-body {
+        transition: none !important;
+        animation: none !important;
+      }
     }
 
     .task-draft-hint {
@@ -7539,10 +7674,18 @@
 
     .task-draft-panel {
       margin-bottom: .55rem;
-      padding: .55rem .65rem;
+      padding: .65rem .75rem;
       border: 1px solid rgba(37, 99, 235, .18);
       border-radius: .55rem;
       background: rgba(37, 99, 235, .04);
+    }
+
+    .task-draft-panel.has-draft {
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .task-draft-panel.is-generating {
+      background: rgba(37, 99, 235, .06);
     }
 
     .task-draft-expand-hint {
@@ -7552,19 +7695,70 @@
       line-height: 1.45;
     }
 
+    .task-draft-panel.has-draft .task-draft-expand-hint,
+    .task-draft-panel.is-generating .task-draft-expand-hint {
+      display: none;
+    }
+
+    .task-draft-collapsed-view[hidden] {
+      display: none !important;
+    }
+
     .task-draft-collapsed-preview {
-      margin: 0 0 .45rem;
+      margin: 0 0 .5rem;
+      padding: .5rem .6rem;
+      border: 1px solid rgba(37, 99, 235, .12);
+      border-radius: .45rem;
+      background: rgba(37, 99, 235, .03);
       color: var(--text, #374151);
       font-size: .76rem;
-      line-height: 1.45;
+      line-height: 1.5;
       overflow: hidden;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
+      white-space: pre-wrap;
+    }
+
+    .task-draft-panel.has-draft .task-draft-collapsed-preview:not([hidden]) {
+      cursor: pointer;
+    }
+
+    .task-draft-panel.has-draft .task-draft-collapsed-preview:not([hidden]):hover {
+      border-color: rgba(37, 99, 235, .24);
+      background: rgba(37, 99, 235, .05);
+    }
+
+    .task-draft-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .32rem .65rem;
+      border: 1px solid rgba(37, 99, 235, .24);
+      border-radius: 999px;
+      background: #fff;
+      color: #2563eb;
+      font-size: .68rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .task-draft-chevron {
+      font-size: .58rem;
+      line-height: 1;
+      opacity: .88;
     }
 
     .task-draft-generating {
       margin-bottom: .45rem;
+    }
+
+    .task-draft-progress-status {
+      display: block;
+      margin: 0 0 .35rem;
+      color: #2563eb;
+      font-size: .68rem;
+      font-weight: 700;
     }
 
     .task-draft-progress {
@@ -7597,6 +7791,7 @@
       font-weight: 700;
     }
 
+    .task-draft-actions,
     .task-draft-toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -7604,9 +7799,10 @@
       margin-top: .45rem;
     }
 
-    .task-draft-expand-btn,
-    .task-draft-compress-btn,
-    .task-delete-draft-btn {
+    .task-copy-draft-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
       padding: .32rem .65rem;
       border: 1px solid rgba(37, 99, 235, .24);
       border-radius: 999px;
@@ -7618,8 +7814,17 @@
     }
 
     .task-delete-draft-btn {
-      border-color: rgba(220, 38, 38, .22);
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .32rem .65rem;
+      border: 1px solid rgba(220, 38, 38, .22);
+      border-radius: 999px;
+      background: #fff;
       color: #dc2626;
+      font-size: .68rem;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .task-draft-body[hidden],
@@ -7713,13 +7918,47 @@
       text-transform: uppercase;
     }
 
+    .task-compressed-draft-hint {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: .2rem;
+      padding: .12rem .45rem;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .1);
+      color: #2563eb;
+      font-size: .58rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .task-compressed-draft-hint span {
+      font-size: .52rem;
+      line-height: 1;
+    }
+
     .task-check--compressed {
       margin: 0;
       flex-shrink: 0;
     }
 
+    .task-expanded-panel {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height .3s ease, opacity .22s ease;
+      pointer-events: none;
+    }
+
+    .task-item.is-expanded .task-expanded-panel {
+      max-height: 12000px;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     .task-expanded-panel[hidden] {
-      display: none !important;
+      display: block !important;
     }
 
     .task-item:not(.is-expanded) .overview-task-main,
@@ -7736,7 +7975,7 @@
     .task-condense-btn {
       display: inline-flex;
       align-items: center;
-      padding: .35rem .7rem;
+      padding: .42rem .85rem;
       border: 1px solid rgba(37, 99, 235, .22);
       border-radius: 999px;
       background: rgba(37, 99, 235, .06);
@@ -7744,6 +7983,13 @@
       font-size: .72rem;
       font-weight: 700;
       cursor: pointer;
+    }
+
+    .task-item.task-item--flow-focus .task-compressed-row {
+      border-radius: .55rem;
+      background: rgba(37, 99, 235, .05);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, .18);
+      transition: box-shadow .25s ease, background .25s ease;
     }
 
     .dashboard-undo-btn {
@@ -8125,11 +8371,13 @@
     }
 
     html[data-color-scheme="adult"] .overview-task-tools {
-      margin: .9rem 0 0 1.65rem;
+      margin: .9rem 0 0;
       padding: .95rem 1rem 1rem;
       border-radius: 12px;
       background: rgba(15, 23, 42, .025);
       border: 1px solid rgba(15, 23, 42, .06);
+      display: grid;
+      gap: .75rem;
     }
 
     html[data-color-scheme="adult"] .roadmap-load-phases-btn {
@@ -8514,19 +8762,6 @@
         scroll-snap-type: none;
       }
 
-      html[data-color-scheme="adult"] .overview-task {
-        padding: 1.25rem 1.15rem;
-      }
-
-      html[data-color-scheme="adult"] .overview-task-tools {
-        margin-left: 0;
-        padding: 1rem 1.05rem 1.05rem;
-      }
-
-      html[data-color-scheme="adult"] .roadmap-phase-body {
-        padding: .85rem 1rem 1.25rem;
-      }
-
       html[data-color-scheme="adult"] .roadmap-phase-head {
         padding: 1.1rem 1.15rem;
       }
@@ -8544,7 +8779,7 @@
 
     .roadmap-side {
       position: sticky;
-      top: 84px;
+      top: calc(var(--topbar-h, 64px) + 20px);
       display: flex;
       flex-direction: column;
       gap: 1rem;
@@ -11551,6 +11786,13 @@
         </div>
       </header>
 
+      <div class="roadmap-float-progress" id="roadmap-float-progress" hidden aria-hidden="true">
+        <div class="roadmap-float-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Roadmap progress">
+          <span class="roadmap-float-progress-fill" id="roadmap-float-progress-fill"></span>
+        </div>
+        <span class="roadmap-float-progress-text" id="roadmap-float-progress-text">0%</span>
+      </div>
+
   <main>
     <section class="screen active" id="screen-main">
       <div class="main-workspace">
@@ -11788,12 +12030,6 @@
     </section>
 
     <section class="screen" id="screen-roadmap">
-      <div class="roadmap-float-progress" id="roadmap-float-progress" hidden aria-hidden="true">
-        <div class="roadmap-float-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <span class="roadmap-float-progress-fill" id="roadmap-float-progress-fill"></span>
-        </div>
-        <span class="roadmap-float-progress-text" id="roadmap-float-progress-text">0%</span>
-      </div>
       <div class="roadmap-loading" id="roadmap-loading" hidden>
         <div class="loader-inner">
           <img class="loader-logo" src="/logo.png" alt="" width="251" height="150">
@@ -13454,6 +13690,22 @@
       return steps;
     }
 
+    function getSubtaskLetter(index) {
+      return String.fromCharCode(65 + Math.max(0, index));
+    }
+
+    function renderAlphabeticStepsHtml(steps, className = "task-alphabetic-steps") {
+      if (!steps?.length) return "";
+      return `
+        <ul class="${className}">
+          ${steps.map((step, index) => `
+            <li class="task-alphabetic-step">
+              <span class="task-alphabetic-letter">${getSubtaskLetter(index)}.</span>
+              <span class="task-alphabetic-text">${escapeHtml(humanizeTaskText(step))}</span>
+            </li>`).join("")}
+        </ul>`;
+    }
+
     function getTemplateTaskSteps(normalized) {
       const text = normalized.text.toLowerCase();
 
@@ -14192,7 +14444,7 @@ Location: ${location}`;
       const localIsSubstantial = localDraft && localDraft.length > 180 && !/^\[Starter draft/.test(localDraft);
 
       if (localIsSubstantial && !options.force) {
-        insertDraftIntoNotes(taskId, localDraft, "replace", { focus: false });
+        insertDraftIntoNotes(taskId, localDraft, "replace", { focus: false, expand: false });
         data.draftGenerated = true;
         data.draftSource = normalized.script?.length > 40 ? "roadmap" : "local";
         schedulePersist();
@@ -14208,7 +14460,7 @@ Location: ${location}`;
         const aiDraft = await generateAiTaskDraft(taskId, normalized);
         const draft = (aiDraft?.trim() || localDraft || "").trim();
         if (draft && (!data.draft?.trim() || options.force)) {
-          insertTaskDraft(taskId, draft, { focus: Boolean(options.force) });
+          insertTaskDraft(taskId, draft, { focus: Boolean(options.force), expand: false });
           data.draftGenerated = true;
           data.draftSource = aiDraft?.trim() ? "ai" : "local";
           schedulePersist();
@@ -14340,19 +14592,80 @@ Location: ${location}`;
       queueWritingDraftsForVisibleTasks();
     }
 
+    function getNextTaskId(stageIndex, taskIndex) {
+      const stage = state.roadmapStages?.[stageIndex];
+      const stageTaskCount = stage?.tasks?.length || 0;
+      if (taskIndex + 1 < stageTaskCount) {
+        return `task-${stageIndex}-${taskIndex + 1}`;
+      }
+      for (let nextStageIndex = stageIndex + 1; nextStageIndex < (state.roadmapStages?.length || 0); nextStageIndex += 1) {
+        if (state.roadmapStages[nextStageIndex]?.tasks?.length) {
+          return `task-${nextStageIndex}-0`;
+        }
+      }
+      return "";
+    }
+
+    function ensurePhaseOpenForTask(taskId) {
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      if (!match) return;
+      const stageIndex = Number(match[1]);
+      if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+      state.expandedRoadmapPhases.add(stageIndex);
+      const phase = document.querySelector(`.roadmap-phase[data-phase-index="${stageIndex}"]`);
+      if (phase) phase.classList.add("is-open", "open");
+    }
+
+    function condenseMission(taskId) {
+      setTaskExpanded(taskId, false);
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const nextId = item?.dataset.nextTaskId;
+
+      window.requestAnimationFrame(() => {
+        if (nextId) {
+          ensurePhaseOpenForTask(nextId);
+          const nextItem = document.querySelector(`.task-item[data-task-id="${nextId}"]`);
+          if (nextItem) {
+            scrollRoadmapTargetIntoView(nextItem.querySelector(".task-compressed-row") || nextItem, { extraOffset: 20 });
+            nextItem.classList.add("task-item--flow-focus");
+            window.setTimeout(() => nextItem.classList.remove("task-item--flow-focus"), 2000);
+            return;
+          }
+        }
+        scrollRoadmapTargetIntoView(item?.querySelector(".task-compressed-row") || item, { extraOffset: 16 });
+      });
+    }
+
     function syncTaskExpandUi(taskId) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       if (!item) return;
       const expanded = isTaskExpanded(taskId);
       const panel = item.querySelector(".task-expanded-panel");
       const expandBtn = item.querySelector(".task-expand-btn");
-      if (panel) panel.hidden = !expanded;
+      if (panel) {
+        panel.hidden = false;
+        panel.setAttribute("aria-hidden", expanded ? "false" : "true");
+      }
       if (expandBtn) expandBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
       item.classList.toggle("is-expanded", expanded);
     }
 
     function syncAllTaskExpandUi() {
       $$(".task-item[data-task-id]").forEach((item) => syncTaskExpandUi(item.dataset.taskId));
+    }
+
+    function syncRoadmapStickyOffset() {
+      const bar = $("#roadmap-float-progress");
+      const onRoadmap = $("#screen-roadmap")?.classList.contains("active") && !$("#screen-roadmap")?.classList.contains("is-loading");
+      const mobile = window.matchMedia("(max-width: 960px)").matches && document.documentElement.dataset.colorScheme === "adult";
+      const visible = Boolean(onRoadmap && bar && !bar.hidden && state.roadmapStages?.length);
+      document.body.classList.toggle("is-roadmap-progress-visible", visible && mobile);
+      const progressH = visible && mobile && bar ? bar.offsetHeight : 0;
+      document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
+      document.documentElement.style.setProperty(
+        "--roadmap-sticky-offset",
+        progressH ? `calc(var(--topbar-h, 64px) + ${progressH}px)` : "var(--topbar-h, 64px)"
+      );
     }
 
     function updateRoadmapFloatProgress(percent) {
@@ -14369,6 +14682,7 @@ Location: ${location}`;
         bar.hidden = !onRoadmap || !state.roadmapStages?.length;
         bar.setAttribute("aria-hidden", bar.hidden ? "true" : "false");
       }
+      syncRoadmapStickyOffset();
     }
 
     const draftProgressControllers = new Map();
@@ -14427,30 +14741,71 @@ Location: ${location}`;
     function syncDraftPanelUi(taskId) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       if (!item) return;
+      const panel = item.querySelector(".task-draft-panel");
       const expanded = item.dataset.draftExpanded === "true";
       const body = item.querySelector(".task-draft-body");
-      const expandBtn = item.querySelector("[data-draft-expand]");
+      const collapsedView = item.querySelector("[data-draft-collapsed]");
       const preview = item.querySelector("[data-draft-preview]");
       const draftEl = item.querySelector(".task-draft-textarea");
       const data = getRoadmapTaskData(taskId);
       const draftText = data.draft?.trim() || draftEl?.value.trim() || "";
       const hasDraft = Boolean(draftText);
-      const deleteBtn = item.querySelector("[data-delete-draft]");
       const isGenerating = Boolean(item.querySelector(".task-draft-generating:not([hidden])"));
 
-      if (body) body.hidden = !expanded;
-      if (expandBtn) expandBtn.hidden = expanded || !hasDraft || isGenerating;
-      if (deleteBtn) deleteBtn.hidden = !hasDraft;
+      panel?.classList.toggle("has-draft", hasDraft);
+      panel?.classList.toggle("is-generating", isGenerating);
+      panel?.classList.toggle("is-expanded", expanded);
+
+      if (body) body.hidden = !expanded || !hasDraft;
+      if (collapsedView) collapsedView.hidden = expanded || isGenerating || !hasDraft;
+
+      item.querySelectorAll("[data-draft-expand]").forEach((btn) => {
+        btn.hidden = expanded || !hasDraft || isGenerating;
+      });
+      item.querySelectorAll("[data-draft-compress]").forEach((btn) => {
+        btn.hidden = !expanded || !hasDraft;
+      });
+      item.querySelectorAll("[data-delete-draft]").forEach((btn) => {
+        btn.hidden = !hasDraft || isGenerating;
+      });
 
       if (preview) {
-        if (hasDraft && !expanded) {
-          const text = humanizeDraftFormatting(draftText);
-          preview.textContent = text.length > 120 ? `${text.slice(0, 117)}…` : text;
+        if (hasDraft && !expanded && !isGenerating) {
+          preview.textContent = humanizeDraftFormatting(draftText);
           preview.hidden = false;
+          preview.setAttribute("aria-label", "Expand draft preview");
+          preview.setAttribute("title", "Tap to expand draft");
         } else {
           preview.hidden = true;
           preview.textContent = "";
+          preview.removeAttribute("aria-label");
+          preview.removeAttribute("title");
         }
+      }
+
+      syncCompressedDraftHint(taskId);
+    }
+
+    function syncCompressedDraftHint(taskId) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (!item) return;
+      const data = getRoadmapTaskData(taskId);
+      const hasDraft = Boolean(data.draft?.trim());
+      const main = item.querySelector(".task-compressed-main");
+      if (!main) return;
+
+      let hint = main.querySelector(".task-compressed-draft-hint");
+      if (hasDraft) {
+        item.classList.add("has-draft");
+        if (!hint) {
+          hint = document.createElement("span");
+          hint.className = "task-compressed-draft-hint";
+          hint.innerHTML = '<span aria-hidden="true">▼</span> Draft';
+          main.appendChild(hint);
+        }
+      } else {
+        item.classList.remove("has-draft");
+        hint?.remove();
       }
     }
 
@@ -14461,19 +14816,38 @@ Location: ${location}`;
       syncDraftPanelUi(taskId);
     }
 
-    function deleteTaskDraft(taskId) {
-      const data = getRoadmapTaskData(taskId);
-      data.draft = "";
-      data.draftGenerated = false;
-      data.draftSource = null;
-      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const draftEl = item?.querySelector(".task-draft-textarea");
-      if (draftEl) draftEl.value = "";
-      item?.classList.remove("has-draft");
-      setDraftPanelExpanded(taskId, false);
-      updateTaskWritingAssistButtons(taskId);
-      schedulePersist();
-      trackEvent("task_draft_deleted", { task_id: taskId });
+    function deleteTaskDraft(taskId, options = {}) {
+      const runDelete = () => {
+        const data = getRoadmapTaskData(taskId);
+        data.draft = "";
+        data.draftGenerated = false;
+        data.draftSource = null;
+        data.mentorBriefGenerated = false;
+        const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+        const draftEl = item?.querySelector(".task-draft-textarea");
+        if (draftEl) draftEl.value = "";
+        item?.classList.remove("has-draft");
+        setDraftPanelExpanded(taskId, false);
+        updateTaskWritingAssistButtons(taskId);
+        schedulePersist();
+        trackEvent("task_draft_deleted", { task_id: taskId });
+      };
+
+      if (options.skipConfirm) {
+        runDelete();
+        return;
+      }
+
+      showConfirmDialog({
+        title: "Delete this draft?",
+        message: "This permanently removes the generated draft for this mission.",
+        detail: "My Notes and your mission progress stay — you can generate a fresh draft anytime.",
+        confirmLabel: "Delete draft",
+        cancelLabel: "Keep draft",
+        tone: "danger"
+      }).then((ok) => {
+        if (ok) runDelete();
+      });
     }
 
     function insertTaskDraft(taskId, draft, options = {}) {
@@ -14498,7 +14872,7 @@ Location: ${location}`;
       if (note) {
         note.textContent = "Your draft is in the prepared draft area below — My Notes stays for your own thoughts.";
       }
-      setDraftPanelExpanded(taskId, options.expand !== false);
+      setDraftPanelExpanded(taskId, options.expand === true);
       if (options.focus !== false) {
         item?.querySelector(".task-draft-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
@@ -14583,7 +14957,7 @@ Location: ${location}`;
           confirmLabel: "Replace",
           cancelLabel: "Keep current notes"
         }).then((ok) => {
-          if (ok) insertDraftIntoNotes(taskId, draft, "replace");
+          if (ok) insertDraftIntoNotes(taskId, draft, "replace", { expand: true });
         });
         return;
       }
@@ -14745,7 +15119,7 @@ Location: ${location}`;
       const letters = ["A", "B", "C"];
       return `
         <div class="task-breakdown-steps">
-          <p class="task-breakdown-lead">Tap a letter to expand each step</p>
+          <p class="task-breakdown-lead">Tap A, B, or C to expand each step</p>
           ${steps.slice(0, 3).map((step, index) => {
             const letter = letters[index] || String.fromCharCode(65 + index);
             const preview = humanizeTaskText(step);
@@ -14755,7 +15129,7 @@ Location: ${location}`;
                 <summary>
                   <span class="task-breakdown-letter">${letter}.</span>
                   <span class="task-breakdown-preview">${escapeHtml(short)}</span>
-                  <span class="task-breakdown-expand-hint" aria-hidden="true">Expand</span>
+                  <span class="task-breakdown-expand-hint" aria-hidden="true">▼</span>
                 </summary>
                 <p class="task-breakdown-body">${escapeHtml(preview)}</p>
               </details>`;
@@ -14773,7 +15147,6 @@ Location: ${location}`;
             return `
               <button type="button" class="task-breakdown-compact-btn" data-task-expand="${escapeHtml(taskId)}" data-breakdown-index="${index}" aria-label="Expand step ${letter}">
                 <span class="task-breakdown-letter">${letter}.</span>
-                <span class="task-breakdown-compact-hint">Tap to expand</span>
               </button>`;
           }).join("")}
         </div>`;
@@ -15476,7 +15849,7 @@ Location: ${location}`;
       const brief = buildMentorBriefForNotes(normalized);
       if (!brief || brief.length < 80) return;
 
-      insertTaskDraft(taskId, brief, { focus: false });
+      insertTaskDraft(taskId, brief, { focus: false, expand: false });
       data.mentorBriefGenerated = true;
       schedulePersist();
     }
@@ -15759,9 +16132,10 @@ Location: ${location}`;
       return `
         <div class="task-script task-script--talking-points">
           <div class="task-action-label">Talking points</div>
-          <ul class="task-talking-points">
-            ${lines.map((line) => `<li>${escapeHtml(humanizeTaskText(line.replace(/^[-•]\s*/, "")))}</li>`).join("")}
-          </ul>
+          ${renderAlphabeticStepsHtml(
+            lines.map((line) => humanizeTaskText(line.replace(/^[-•]\s*/, ""))),
+            "task-talking-points task-alphabetic-steps"
+          )}
         </div>`;
     }
 
@@ -20492,28 +20866,31 @@ Location: ${location}`;
 
     function removeRoadmapForPath(ideaTitle, options = {}) {
       const runRemoval = () => {
-        const { ideaIndex, mapId = state.activeMapId } = options;
+        const { ideaIndex, mapId = state.activeMapId, resetMapView = false } = options;
         const key = slugify(ideaTitle);
 
         const wasViewingRemoved = $("#screen-roadmap")?.classList.contains("active")
           && (state.roadmapKey === key || state.currentIdea?.title === ideaTitle);
 
         clearRoadmapSessionForPath(ideaTitle);
-        purgeRoadmapFromAllLibraryMaps(ideaTitle);
+        if (mapId) {
+          purgeRoadmapFromLibrary(mapId, ideaTitle);
+        } else {
+          purgeRoadmapFromAllLibraryMaps(ideaTitle);
+        }
         removeRoadmapSidebarItems(ideaTitle, mapId);
 
         let resolvedIndex = Number.isInteger(ideaIndex) ? ideaIndex : state.ideas.findIndex((entry) => entry.title === ideaTitle);
         if (resolvedIndex >= 0) setPathSelected(resolvedIndex, false);
 
-        if (wasViewingRemoved) {
-          state.ideas = [];
-          state.activeMapId = null;
+        if (resetMapView) {
+          resetPossibilityMapToEmpty();
+          showScreen("map");
+        } else if (wasViewingRemoved) {
           setRoadmapNavVisible(false);
           resetPossibilityMapView();
           showScreen("map");
         } else if (state.lastScreen === "map" && getRoadmapSidebarCount() === 0) {
-          state.ideas = [];
-          state.activeMapId = null;
           resetPossibilityMapView();
         }
 
@@ -20552,7 +20929,9 @@ Location: ${location}`;
       return showConfirmDialog({
         title: "Remove this roadmap?",
         messageHtml: `This deletes step-by-step progress, My Notes, and Ask history for <strong>${escapeHtml(ideaTitle)}</strong>.`,
-        detail: "The path stays on your map — you can open a fresh roadmap anytime.",
+        detail: options.resetMapView
+          ? "The Possibility Maps page will reset to an empty view."
+          : "The path stays on your map — you can open a fresh roadmap anytime.",
         confirmLabel: "Remove roadmap",
         cancelLabel: "Keep it",
         tone: "danger"
@@ -20565,7 +20944,8 @@ Location: ${location}`;
       if (!item) return Promise.resolve(false);
       return removeRoadmapForPath(item.ideaTitle, {
         ideaIndex: item.ideaIndex,
-        mapId: item.mapId || category.mapId || state.activeMapId
+        mapId: item.mapId || category.mapId || state.activeMapId,
+        resetMapView: true
       });
     }
 
@@ -20724,6 +21104,7 @@ Location: ${location}`;
         const items = [...(category.items || [])];
         Promise.all(items.map((item) => removeRoadmapForPath(item.ideaTitle, {
           mapId: item.mapId || category.mapId || state.activeMapId,
+          resetMapView: true,
           skipConfirm: true
         }))).then(() => {
           state.roadmapCategories = state.roadmapCategories.filter((entry) => entry.id !== categoryId);
@@ -22475,6 +22856,16 @@ Location: ${location}`;
       updateMapAuxiliaryPanels();
     }
 
+    function resetPossibilityMapToEmpty() {
+      state.ideas = [];
+      state.currentIdea = null;
+      state.activeMapId = null;
+      state.selectedPathIndexes = [];
+      selectedMapPathIndex = null;
+      setRoadmapNavVisible(false);
+      resetPossibilityMapView();
+    }
+
     function prepareLeaveMapForConvo() {
       const trimmedIntro = trimDanglingMapChatIntro();
       state.mapChat = null;
@@ -22568,7 +22959,10 @@ Location: ${location}`;
       }
       renderSidebarRoadmaps();
       updateScreenNavButtons();
-      requestAnimationFrame(updateScrollProgress);
+      requestAnimationFrame(() => {
+        updateScrollProgress();
+        syncRoadmapStickyOffset();
+      });
     }
 
     function scrollToSiteSuggestions(source = "nav_drawer") {
@@ -24711,16 +25105,7 @@ Location: ${location}`;
 
       item.querySelector("[data-task-collapse]")?.addEventListener("click", (event) => {
         event.stopPropagation();
-        setTaskExpanded(taskId, false);
-      });
-
-      item.querySelector("[data-open-next]")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const nextId = event.currentTarget.dataset.openNext;
-        if (!nextId) return;
-        setTaskExpanded(nextId, true);
-        const nextItem = document.querySelector(`.task-item[data-task-id="${nextId}"]`);
-        scrollRoadmapTargetIntoView(nextItem, { extraOffset: 16 });
+        condenseMission(taskId);
       });
 
       item.querySelector("[data-copy-draft]")?.addEventListener("click", async (event) => {
@@ -24741,19 +25126,39 @@ Location: ${location}`;
         }
       });
 
-      item.querySelector("[data-draft-expand]")?.addEventListener("click", (event) => {
+      item.querySelectorAll("[data-draft-expand]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          setDraftPanelExpanded(taskId, true);
+        });
+      });
+
+      item.querySelectorAll("[data-draft-compress]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          setDraftPanelExpanded(taskId, false);
+        });
+      });
+
+      item.querySelectorAll("[data-delete-draft]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          deleteTaskDraft(taskId);
+        });
+      });
+
+      const preview = item.querySelector("[data-draft-preview]");
+      preview?.addEventListener("click", (event) => {
+        if (preview.hidden) return;
         event.stopPropagation();
         setDraftPanelExpanded(taskId, true);
       });
-
-      item.querySelector("[data-draft-compress]")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        setDraftPanelExpanded(taskId, false);
-      });
-
-      item.querySelector("[data-delete-draft]")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        deleteTaskDraft(taskId);
+      preview?.addEventListener("keydown", (event) => {
+        if (preview.hidden) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          setDraftPanelExpanded(taskId, true);
+        }
       });
 
       item.querySelector(".task-draft-textarea")?.addEventListener("input", () => {
@@ -24782,7 +25187,8 @@ Location: ${location}`;
         if (data.draft?.trim()) {
           setDraftPanelExpanded(taskId, item.dataset.draftExpanded === "true");
         } else {
-          setDraftPanelExpanded(taskId, false);
+          item.dataset.draftExpanded = "false";
+          syncDraftPanelUi(taskId);
         }
         updateTaskWritingAssistButtons(taskId);
         updateTaskNotesWordCount(taskId);
@@ -24938,7 +25344,11 @@ Location: ${location}`;
         || parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10)
         || 64;
       const extraOffset = options.extraOffset ?? 12;
-      const offset = topbarH + extraOffset;
+      const progressBar = $("#roadmap-float-progress");
+      const progressDocked = window.matchMedia("(max-width: 960px)").matches
+        && document.documentElement.dataset.colorScheme === "adult";
+      const progressH = progressDocked && progressBar && !progressBar.hidden ? progressBar.offsetHeight : 0;
+      const offset = topbarH + progressH + extraOffset;
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -25435,9 +25845,7 @@ Location: ${location}`;
         parts.push(`
           <div class="overview-task-detail-block">
             <span class="overview-task-detail-label">Steps</span>
-            <ol class="overview-task-steps">
-              ${steps.map((step) => `<li>${escapeHtml(humanizeTaskText(step))}</li>`).join("")}
-            </ol>
+            ${renderAlphabeticStepsHtml(steps, "overview-task-steps task-alphabetic-steps")}
           </div>`);
       }
 
@@ -25500,8 +25908,7 @@ Location: ${location}`;
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const aiAssist = renderTaskAiAssistHtml(id, normalized);
-      const stageTaskCount = (stage.tasks || []).length;
-      const nextTaskId = taskIndex + 1 < stageTaskCount ? `task-${stageIndex}-${taskIndex + 1}` : "";
+      const nextTaskId = getNextTaskId(stageIndex, taskIndex);
 
       const detailSections = simplified ? "" : `
                 <section class="task-mentor-section task-mentor-section--task">
@@ -25525,19 +25932,20 @@ Location: ${location}`;
                 </section>`;
 
       return `
-        <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}">
+        <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
           <div class="task-compressed-row">
             <button type="button" class="task-expand-btn" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand mission ${taskIndex + 1}"${canExpand ? "" : " disabled"}>${taskIndex + 1}</button>
             <div class="task-compressed-main-wrap">
               <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}"${canExpand ? "" : " disabled"}>
                 <span class="task-compressed-mission">${escapeHtml(mission)}</span>
+                ${taskData.draft?.trim() ? `<span class="task-compressed-draft-hint"><span aria-hidden="true">▼</span> Draft</span>` : ""}
                 ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
               </button>
               ${compressedBreakdown}
             </div>
             <input class="task-check task-check--compressed" type="checkbox" id="${id}" aria-labelledby="${id}-label">
           </div>
-          <div class="task-expanded-panel" hidden>
+          <div class="task-expanded-panel" aria-hidden="true">
             <p class="task-progress-reminder">When you finish this mission, check the box above so your progress bar updates.</p>
             <div class="overview-task-main">
               <div class="overview-task-content">
@@ -25559,25 +25967,37 @@ Location: ${location}`;
                 <h4 class="task-mentor-label">Prepared draft</h4>
                 <p class="task-draft-hint">We fill this in for you — edit or copy it here. My Notes below is only for your own thoughts.</p>
                 <div class="task-draft-panel" data-draft-panel>
-                  <p class="task-draft-expand-hint">This system-generated box can be expanded to read and edit the full draft.</p>
+                  <p class="task-draft-expand-hint">We generate a draft for you here — expand it to read and edit the full text.</p>
                   <div class="task-draft-generating" hidden aria-live="polite">
+                    <span class="task-draft-progress-status">Generating draft…</span>
                     <div class="task-draft-progress">
-                      <div class="task-draft-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                      <div class="task-draft-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Draft generation progress">
                         <span class="task-draft-progress-fill"></span>
                       </div>
                       <span class="task-draft-progress-label">0%</span>
                     </div>
                   </div>
-                  <p class="task-draft-collapsed-preview" data-draft-preview hidden></p>
+                  <div class="task-draft-collapsed-view" data-draft-collapsed hidden>
+                    <p class="task-draft-collapsed-preview" data-draft-preview hidden role="button" tabindex="0"></p>
+                    <div class="task-draft-actions">
+                      <button type="button" class="task-draft-toggle-btn task-draft-expand-btn" data-draft-expand="${escapeHtml(id)}">
+                        <span class="task-draft-chevron" aria-hidden="true">▼</span>
+                        <span>Expand Draft</span>
+                      </button>
+                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(id)}" hidden>Delete draft</button>
+                    </div>
+                  </div>
                   <div class="task-draft-body" hidden>
                     <textarea class="task-draft-textarea" placeholder="Your prepared draft will appear here…"></textarea>
                     <div class="task-draft-toolbar">
                       <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(id)}">Copy draft</button>
+                      <button type="button" class="task-draft-toggle-btn task-draft-compress-btn" data-draft-compress="${escapeHtml(id)}">
+                        <span class="task-draft-chevron" aria-hidden="true">▲</span>
+                        <span>Collapse Draft</span>
+                      </button>
                       <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(id)}">Delete draft</button>
-                      <button type="button" class="task-draft-compress-btn" data-draft-compress="${escapeHtml(id)}">Compress draft</button>
                     </div>
                   </div>
-                  <button type="button" class="task-draft-expand-btn" data-draft-expand="${escapeHtml(id)}">Expand draft</button>
                 </div>
               </section>` : ""}
               <section class="task-mentor-section task-mentor-section--notes">
@@ -25594,8 +26014,7 @@ Location: ${location}`;
               </div>
             </div>
             <div class="task-mission-actions">
-              ${nextTaskId ? `<button type="button" class="task-see-next-btn" data-open-next="${escapeHtml(nextTaskId)}">See mission ${taskIndex + 2}</button>` : ""}
-              <button type="button" class="task-condense-btn" data-task-collapse="${escapeHtml(id)}">Condense mission</button>
+              <button type="button" class="task-condense-btn" data-task-collapse="${escapeHtml(id)}">Condense Mission</button>
             </div>
           </div>
         </div>`;
@@ -27134,8 +27553,14 @@ Location: ${location}`;
       }
 
       window.addEventListener("scroll", onScroll, { passive: true });
-      window.addEventListener("resize", updateScrollProgress);
-      window.visualViewport?.addEventListener("resize", updateScrollProgress);
+      window.addEventListener("resize", () => {
+        updateScrollProgress();
+        syncRoadmapStickyOffset();
+      });
+      window.visualViewport?.addEventListener("resize", () => {
+        updateScrollProgress();
+        syncRoadmapStickyOffset();
+      });
       updateScrollProgress();
     }
 
