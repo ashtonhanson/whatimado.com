@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-ui-polish-2 -->
+<!-- whatimado build: 2026-06-30-ui-polish-3 -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-ui-polish-2">
+  <meta name="whatimado-build" content="2026-06-30-ui-polish-3">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -96,9 +96,8 @@
           inset: 0;
           z-index: 2147483647;
           display: grid;
-          align-items: start;
-          justify-items: start;
-          padding: 2.75rem 2rem 1.5rem 2.85rem;
+          place-items: center;
+          padding: 2rem;
           background: ${shell.loader};
         }
       `;
@@ -9215,9 +9214,8 @@
       inset: 0;
       z-index: 100;
       display: grid;
-      align-items: start;
-      justify-items: start;
-      padding: 2.75rem 2rem 1.5rem 2.85rem;
+      place-items: center;
+      padding: 2rem;
       background: var(--bg-gradient);
       transition: opacity .55s ease;
     }
@@ -9240,8 +9238,8 @@
     .loader-inner {
       display: grid;
       gap: 1rem;
-      justify-items: start;
-      text-align: left;
+      justify-items: center;
+      text-align: center;
       width: min(100%, 28rem);
       padding: 0;
       box-sizing: border-box;
@@ -13948,8 +13946,9 @@ Location: ${location}`;
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "");
       const entryHost = resourceHostBase(resource.url);
-      return (org && (org.includes(hostBase) || hostBase.includes(org.slice(0, Math.max(4, hostBase.length))))
-        || (entryHost && entryHost === hostBase);
+      const orgMatch = org && (org.includes(hostBase) || hostBase.includes(org.slice(0, Math.max(4, hostBase.length))));
+      const hostMatch = entryHost && entryHost === hostBase;
+      return orgMatch || hostMatch;
     }
 
     function normalizeResourceDedupeKey(resource) {
