@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-gen-pipeline -->
+<!-- whatimado build: 2026-07-01-fast-roadmap -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-gen-pipeline">
+  <meta name="whatimado-build" content="2026-07-01-fast-roadmap">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -8857,6 +8857,101 @@
       display: none !important;
     }
 
+    #screen-roadmap.is-loading.is-loading-shell .roadmap-page {
+      display: block !important;
+    }
+
+    #screen-roadmap.is-loading.is-loading-shell .roadmap-loading {
+      display: none !important;
+    }
+
+    #screen-roadmap.is-loading.is-loading-shell .roadmap-page[hidden] {
+      display: block !important;
+    }
+
+    body.roadmap-loading-active.roadmap-loading-shell-active {
+      overflow: auto;
+    }
+
+    .roadmap-refining-banner {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      margin: 0 0 1rem;
+      padding: .65rem .85rem;
+      border-radius: .65rem;
+      background: rgba(78, 205, 196, .12);
+      border: 1px solid rgba(78, 205, 196, .28);
+      color: var(--ink, #f0f2ff);
+      font-size: .82rem;
+      line-height: 1.45;
+    }
+
+    .roadmap-refining-banner[hidden] {
+      display: none !important;
+    }
+
+    .roadmap-refining-spinner {
+      flex: 0 0 auto;
+      width: .95rem;
+      height: .95rem;
+      border: 2px solid rgba(78, 205, 196, .35);
+      border-top-color: var(--teal, #4ecdc4);
+      border-radius: 50%;
+      animation: roadmap-refining-spin .75s linear infinite;
+    }
+
+    @keyframes roadmap-refining-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    html[data-color-scheme="adult"] .roadmap-refining-banner {
+      background: rgba(37, 99, 235, .08);
+      border-color: rgba(37, 99, 235, .18);
+      color: var(--text, #241235);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-refining-spinner {
+      border-color: rgba(37, 99, 235, .22);
+      border-top-color: #2563eb;
+    }
+
+    .roadmap-phase--skeleton .roadmap-phase-head {
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .roadmap-skeleton-line {
+      display: block;
+      height: .72rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(120, 130, 200, .12) 0%, rgba(120, 130, 200, .24) 50%, rgba(120, 130, 200, .12) 100%);
+      background-size: 200% 100%;
+      animation: roadmap-skeleton-shimmer 1.35s ease-in-out infinite;
+    }
+
+    .roadmap-skeleton-line--title {
+      width: min(100%, 14rem);
+      height: .85rem;
+      margin-bottom: .45rem;
+    }
+
+    .roadmap-skeleton-line--meta {
+      width: min(100%, 6.5rem);
+      height: .62rem;
+      opacity: .75;
+    }
+
+    @keyframes roadmap-skeleton-shimmer {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    html[data-color-scheme="adult"] .roadmap-skeleton-line {
+      background: linear-gradient(90deg, rgba(15, 23, 42, .06) 0%, rgba(15, 23, 42, .12) 50%, rgba(15, 23, 42, .06) 100%);
+      background-size: 200% 100%;
+    }
+
     .roadmap-loading {
       position: absolute;
       inset: 0;
@@ -12236,6 +12331,11 @@
               <span id="stat-done">0</span>
               <span id="stat-total">0</span>
               <span id="momentum-status"></span>
+            </div>
+
+            <div class="roadmap-refining-banner" id="roadmap-refining-banner" hidden>
+              <span class="roadmap-refining-spinner" aria-hidden="true"></span>
+              <span>Polishing missions and local resources…</span>
             </div>
 
             <div class="roadmap-phases" id="stage-list"></div>
@@ -25813,26 +25913,55 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!options.skipPersist) schedulePersist();
     }
 
-    function setRoadmapLoading(loading) {
+    function setRoadmapLoading(loading, options = {}) {
+      const shell = Boolean(options.shell);
       const screen = $("#screen-roadmap");
       const overlay = $("#roadmap-loading");
       const page = $("#roadmap-page");
-      if (screen) screen.classList.toggle("is-loading", loading);
-      if (overlay) overlay.hidden = !loading;
+      if (screen) {
+        screen.classList.toggle("is-loading", loading);
+        screen.classList.toggle("is-loading-shell", loading && shell);
+      }
+      if (overlay) overlay.hidden = !loading || shell;
       if (page) {
-        page.hidden = loading;
-        page.setAttribute("aria-hidden", loading ? "true" : "false");
+        page.hidden = loading && !shell;
+        page.setAttribute("aria-hidden", loading && !shell ? "true" : "false");
       }
       document.body.classList.toggle("roadmap-loading-active", loading);
+      document.body.classList.toggle("roadmap-loading-shell-active", loading && shell);
       if (loading) {
-        startLoadingQuips("#roadmap-loading .loader-tagline");
-        startSiteLoadingProgress($("#roadmap-loader-progress"), { durationMs: 34000, cap: 92 });
+        if (shell) {
+          stopLoadingQuips();
+          stopSiteLoadingProgress($("#roadmap-loader-progress"));
+        } else {
+          startLoadingQuips("#roadmap-loading .loader-tagline");
+          startSiteLoadingProgress($("#roadmap-loader-progress"), { durationMs: 28000, cap: 92 });
+        }
         syncRoadmapStickyOffset();
       } else {
         stopLoadingQuips();
         completeSiteLoadingProgress($("#roadmap-loader-progress"));
         updateRoadmapOverviewChrome();
       }
+    }
+
+    function setRoadmapRefining(refining) {
+      const banner = $("#roadmap-refining-banner");
+      if (banner) banner.hidden = !refining;
+    }
+
+    function renderRoadmapSkeleton(phaseCount = 3) {
+      const list = $("#stage-list");
+      if (!list) return;
+      list.innerHTML = Array.from({ length: phaseCount }, (_, index) => (
+        `<article class="roadmap-phase stage-card roadmap-phase--skeleton" aria-hidden="true">` +
+        `<div class="roadmap-phase-head stage-head">` +
+        `<span class="roadmap-phase-num stage-num">${index + 1}</span>` +
+        `<span class="roadmap-phase-info">` +
+        `<span class="roadmap-skeleton-line roadmap-skeleton-line--title"></span>` +
+        `<span class="roadmap-skeleton-line roadmap-skeleton-line--meta"></span>` +
+        `</span></div></article>`
+      )).join("");
     }
 
     function clearProgressMap() {
@@ -25848,6 +25977,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!Array.isArray(parsed) || parsed.length < 1) return null;
       const stages = parsed.filter((stage) => stage?.label && Array.isArray(stage.tasks) && stage.tasks.length > 0);
       return stages.length ? stages : null;
+    }
+
+    function parseRoadmapPreviewResponse(response, idea) {
+      const raw = tryParseRoadmapJson(response);
+      if (!raw) return null;
+      if (raw.some((stage) => isGenericStageLabel(stage.label))) return null;
+      if (isGenericFallbackRoadmap(raw)) return null;
+      const normalized = normalizeRoadmapStages(raw);
+      return stagesAreMeaningful(normalized) ? normalized : null;
     }
 
     function collectRoadmapParseFailureIssues(response, idea) {
@@ -25997,6 +26135,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       renderSidebarRoadmaps();
       schedulePersist();
       if (isFinal) {
+        setRoadmapRefining(false);
         trackEvent("roadmap_generated", {
           idea_index: ideaIndex,
           stages_count: state.roadmapStages.length,
@@ -26026,6 +26165,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       let roadmapSource = "ai";
 
       let response = await callAdvisor(basePrompt, tokenLimit);
+      const preview = parseRoadmapPreviewResponse(response, idea);
+      if (preview) {
+        callbacks.onPreviewStages?.(preview);
+      }
+
       let stages = parseRoadmapResponse(response, idea);
 
       if (stages && stagesAreMeaningful(stages)) {
@@ -26049,28 +26193,33 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (issues.length) {
+        callbacks.onRefining?.(true);
         const needsDedupe = issues.some((issue) => issue.code === "overlap" || issue.code === "refresh_stale");
         if (needsDedupe && !promptOptions.dedupe) {
           promptOptions.dedupe = true;
           basePrompt = getCachedRoadmapPrompt(idea, context, promptOptions);
         }
         const correctionBlock = buildCombinedRoadmapCorrectionBlock(issues, idea, { founderMode });
-        response = await callAdvisor(`${basePrompt}\n\n${correctionBlock}`, tokenLimit);
-        const corrected = parseRoadmapResponse(response, idea);
-        if (corrected) {
-          stages = applyLocalResourceFixesIfPossible(corrected, idea);
-          if (issues.some((issue) => issue.code === "homework" || issue.code === "parse_failed")) {
-            trackEvent("roadmap_mentor_work_corrected", { idea_index: ideaIndex });
+        try {
+          response = await callAdvisor(`${basePrompt}\n\n${correctionBlock}`, tokenLimit);
+          const corrected = parseRoadmapResponse(response, idea);
+          if (corrected) {
+            stages = applyLocalResourceFixesIfPossible(corrected, idea);
+            if (issues.some((issue) => issue.code === "homework" || issue.code === "parse_failed")) {
+              trackEvent("roadmap_mentor_work_corrected", { idea_index: ideaIndex });
+            }
+            if (issues.some((issue) => issue.code === "generic_stages")) {
+              trackEvent("roadmap_generic_stages_corrected", { idea_index: ideaIndex });
+            }
+            if (issues.some((issue) => issue.code === "reentry")) {
+              trackEvent("roadmap_reentry_corrected", {
+                idea_index: ideaIndex,
+                still_training_first: roadmapSkipsReentryStability(corrected)
+              });
+            }
           }
-          if (issues.some((issue) => issue.code === "generic_stages")) {
-            trackEvent("roadmap_generic_stages_corrected", { idea_index: ideaIndex });
-          }
-          if (issues.some((issue) => issue.code === "reentry")) {
-            trackEvent("roadmap_reentry_corrected", {
-              idea_index: ideaIndex,
-              still_training_first: roadmapSkipsReentryStability(corrected)
-            });
-          }
+        } finally {
+          callbacks.onRefining?.(false);
         }
       }
 
@@ -26107,8 +26256,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         : null;
       const cachedIsUsable = Boolean(cached?.stages?.length) && !isGenericFallbackRoadmap(cached.stages) && !roadmapHasGenericStages(cached.stages, idea);
       if (cachedIsUsable) {
-        setRoadmapLoading(false);
         showScreen("roadmap");
+        setRoadmapLoading(false);
+        setRoadmapRefining(false);
         const normalizedStages = normalizeRoadmapStages(cached.stages);
         const enrichedStages = ensureRoadmapLocalContacts(normalizedStages, idea);
         let stagesToRender = enrichedStages;
@@ -26149,19 +26299,34 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       clearProgressMap();
+      setRoadmapRefining(false);
       $("#roadmap-sub").textContent = founderMode
         ? "Building your whatimado.com launch roadmap..."
         : "Building your personalised roadmap...";
-      $("#stage-list").innerHTML = "";
       const completeCard = $("#roadmap-complete-card");
       if (completeCard) {
         completeCard.hidden = true;
         completeCard.classList.remove("visible");
       }
-      setRoadmapLoading(true);
       showScreen("roadmap");
+      setRoadmapLoading(true, { shell: true });
+      renderRoadmapSkeleton();
 
-      let earlyPublished = false;
+      let previewPublished = false;
+      const publishPreviewOnce = (stages, founderModeForGen) => {
+        if (previewPublished) return;
+        previewPublished = true;
+        publishRoadmapToUi(
+          idea,
+          ideaIndex,
+          ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
+          "ai",
+          founderModeForGen,
+          { isFinal: false }
+        );
+        setRoadmapLoading(false);
+      };
+
       try {
         const founderModeForGen = isFounderRoadmapForIdea(idea);
         const result = await generateRoadmapStagesFromAi(
@@ -26173,32 +26338,30 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             extraRefreshBlock: options.extraRefreshBlock
           },
           {
+            onPreviewStages(stages) {
+              publishPreviewOnce(stages, founderModeForGen);
+            },
             onEarlyStages(stages) {
-              if (earlyPublished) return;
-              earlyPublished = true;
-              publishRoadmapToUi(
-                idea,
-                ideaIndex,
-                ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
-                "ai",
-                founderModeForGen,
-                { isFinal: false }
-              );
-              setRoadmapLoading(false);
+              publishPreviewOnce(stages, founderModeForGen);
+            },
+            onRefining(active) {
+              if (active && previewPublished) setRoadmapRefining(true);
+              else if (!active) setRoadmapRefining(false);
             }
           }
         );
         publishRoadmapToUi(idea, ideaIndex, result.stages, result.roadmapSource, founderModeForGen, { isFinal: true });
-        earlyPublished = true;
+        previewPublished = true;
       } catch (error) {
         console.error(error);
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
         const founderModeForGen = isFounderRoadmapForIdea(idea);
         const fallbackStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
         publishRoadmapToUi(idea, ideaIndex, fallbackStages, "fallback", founderModeForGen, { isFinal: true });
-        earlyPublished = true;
+        previewPublished = true;
       } finally {
-        if (!earlyPublished) setRoadmapLoading(false);
+        if (!previewPublished) setRoadmapLoading(false);
+        setRoadmapRefining(false);
       }
     }
 
