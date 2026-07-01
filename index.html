@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-task-drafts -->
+<!-- whatimado build: 2026-07-01-draft-suggestions -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-task-drafts">
+  <meta name="whatimado-build" content="2026-07-01-draft-suggestions">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -8214,6 +8214,62 @@
       border: 1px solid rgba(37, 99, 235, .24);
     }
 
+    html[data-color-scheme="adult"] .task-draft-suggestions {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+      gap: .45rem;
+      margin: .55rem 0 .65rem;
+    }
+
+    html[data-color-scheme="adult"] .task-draft-suggestion-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .2rem;
+      padding: .55rem .65rem;
+      border: 1px solid rgba(37, 99, 235, .18);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: .72rem;
+      font-weight: 700;
+      line-height: 1.35;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+
+    html[data-color-scheme="adult"] .task-draft-suggestion-btn:hover:not(:disabled) {
+      border-color: rgba(37, 99, 235, .42);
+      background: rgba(37, 99, 235, .04);
+      box-shadow: 0 1px 0 rgba(37, 99, 235, .08);
+    }
+
+    html[data-color-scheme="adult"] .task-draft-suggestion-btn.is-generating {
+      opacity: .72;
+      cursor: wait;
+    }
+
+    html[data-color-scheme="adult"] .task-draft-suggestion-btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    html[data-color-scheme="adult"] .task-draft-suggestion-desc {
+      color: var(--ink-muted);
+      font-size: .64rem;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+
+    html[data-color-scheme="adult"] .task-draft-suggestions-note {
+      margin: 0 0 .45rem;
+      color: var(--ink-muted);
+      font-size: .68rem;
+      line-height: 1.45;
+    }
+
     html[data-color-scheme="adult"] .task-writing-assist-note {
       margin: .55rem 0 0;
       color: #166534;
@@ -14858,6 +14914,444 @@
       mission_statement: "One-page mission"
     };
 
+    const TASK_DRAFT_SUGGESTION_DEFS = {
+      outreach_email: { id: "outreach_email", draftType: "email", label: "Outreach Email", desc: "First contact message" },
+      follow_up_email: { id: "follow_up_email", draftType: "email", label: "Follow-Up Email", desc: "If they don't reply", variant: "follow_up" },
+      phone_script: { id: "phone_script", draftType: "phone_script", label: "Phone Script", desc: "What to say on the call" },
+      contact_tracker: { id: "contact_tracker", draftType: "spreadsheet", label: "Contact Tracking Spreadsheet", desc: "Track who you reached", variant: "contact_tracker" },
+      resume: { id: "resume", draftType: "resume", label: "Resume", desc: "Tailored to this step" },
+      cover_letter: { id: "cover_letter", draftType: "letter", label: "Cover Letter", desc: "Ready to send" },
+      job_follow_up: { id: "job_follow_up", draftType: "email", label: "Follow-Up Email", desc: "After applying", variant: "job_follow_up" },
+      business_plan: { id: "business_plan", draftType: "business_plan", label: "Business Plan", desc: "One-page starter" },
+      elevator_pitch: { id: "elevator_pitch", draftType: "proposal", label: "Elevator Pitch", desc: "30-second intro", variant: "elevator_pitch" },
+      marketing_plan: { id: "marketing_plan", draftType: "proposal", label: "Marketing Plan", desc: "How you'll reach people", variant: "marketing_plan" },
+      social_post: { id: "social_post", draftType: "social_post", label: "Social Media Post", desc: "Share your progress" },
+      research_checklist: { id: "research_checklist", draftType: "checklist", label: "Research Checklist", desc: "What to look up", variant: "research_checklist" },
+      interview_questions: { id: "interview_questions", draftType: "survey", label: "Questions to Ask", desc: "For interviews or calls", variant: "interview_questions" },
+      comparison_sheet: { id: "comparison_sheet", draftType: "spreadsheet", label: "Comparison Spreadsheet", desc: "Compare options side by side", variant: "comparison" },
+      grant_proposal: { id: "grant_proposal", draftType: "grant_application", label: "Grant Proposal", desc: "Funding application draft" },
+      meeting_agenda: { id: "meeting_agenda", draftType: "meeting_agenda", label: "Meeting Agenda", desc: "Run the conversation" },
+      flyer: { id: "flyer", draftType: "flyer", label: "Flyer", desc: "Print or share locally" },
+      presentation: { id: "presentation", draftType: "presentation", label: "Presentation Outline", desc: "Slides structure" },
+      founder_story: { id: "founder_story", draftType: "founder_story", label: "Founder Story", desc: "~120 words" },
+      cold_message: { id: "cold_message", draftType: "cold_message", label: "Cold Message", desc: "Short DM or text" },
+      checklist: { id: "checklist", draftType: "checklist", label: "Step Checklist", desc: "Break it into steps" }
+    };
+
+    const PROFILE_DRAFT_SUGGESTION_IDS = {
+      contact_orgs: ["outreach_email", "follow_up_email", "phone_script", "contact_tracker"],
+      job_apply: ["resume", "cover_letter", "job_follow_up"],
+      create_business: ["business_plan", "elevator_pitch", "marketing_plan", "social_post"],
+      research: ["research_checklist", "interview_questions", "comparison_sheet"]
+    };
+
+    const PRIMARY_DRAFT_TYPE_TO_SUGGESTION = {
+      email: "outreach_email",
+      cold_message: "cold_message",
+      letter: "cover_letter",
+      grant_application: "grant_proposal",
+      proposal: "elevator_pitch",
+      resume: "resume",
+      business_plan: "business_plan",
+      flyer: "flyer",
+      spreadsheet: "comparison_sheet",
+      survey: "interview_questions",
+      interview_kit: "interview_questions",
+      linkedin_post: "social_post",
+      facebook_post: "social_post",
+      reddit_post: "social_post",
+      social_post: "social_post",
+      founder_story: "founder_story",
+      checklist: "research_checklist",
+      calendar: "checklist",
+      phone_script: "phone_script",
+      meeting_agenda: "meeting_agenda",
+      presentation: "presentation",
+      logo_brief: "marketing_plan",
+      mission_statement: "elevator_pitch"
+    };
+
+    function getTaskAssistanceThemes(normalized) {
+      const blob = `${normalized.text} ${normalized.mission || ""} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.howTo || ""}`.toLowerCase();
+      const scoreTheme = (theme, score) => score > 0 ? { theme, score } : null;
+
+      const contactScore = (isOrgListTask(normalized) ? 3 : 0)
+        + (/\b(contact|outreach|reach out|nonprofit|organization|partner|director|211|call |email |voicemail)\b/.test(blob) ? 2 : 0)
+        + (getFlatTaskResources(normalized).length ? 1 : 0);
+      const jobScore = (/\b(apply for|job application|get hired|resume|cover letter|interview|career|employer|recruit|job search|work at)\b/.test(blob) ? 3 : 0)
+        + (/\b(hire|hiring|position at|submit application)\b/.test(blob) ? 1 : 0);
+      const businessScore = (/\b(business plan|startup|launch|side hustle|llc|customers|revenue|marketing|elevator pitch|founder|whatimado)\b/.test(blob) ? 2 : 0)
+        + (isFounderRoadmapForIdea(state.currentIdea) ? 3 : 0)
+        + (/\b(pilot|beta|users from|invite|partner)\b/.test(blob) && isFounderRoadmapForIdea(state.currentIdea) ? 1 : 0);
+      const researchScore = (/\b(research|compare|investigate|learn about|find out|survey|list \d|talk to \d|interview \d|who else|gaps you)\b/.test(blob) ? 2 : 0)
+        + (isPeopleInterviewTask(normalized) ? 2 : 0)
+        + (isOrgListTask(normalized) ? 1 : 0);
+
+      const ranked = [
+        scoreTheme("contact_orgs", contactScore),
+        scoreTheme("job_apply", jobScore),
+        scoreTheme("create_business", businessScore),
+        scoreTheme("research", researchScore)
+      ].filter(Boolean).sort((a, b) => b.score - a.score);
+
+      if (!ranked.length) return ["general"];
+      const themes = ranked.map((entry) => entry.theme);
+      if (themes.includes("contact_orgs") && themes.includes("research") && isOrgListTask(normalized)) {
+        return ["research", "contact_orgs"];
+      }
+      return themes.slice(0, 2);
+    }
+
+    function getGeneralDraftSuggestionIds(normalized) {
+      const ids = [];
+      const primary = getWritingDeliverableType(normalized);
+      if (primary && PRIMARY_DRAFT_TYPE_TO_SUGGESTION[primary]) {
+        ids.push(PRIMARY_DRAFT_TYPE_TO_SUGGESTION[primary]);
+      }
+      const blob = `${normalized.text} ${normalized.mission || ""}`.toLowerCase();
+      if (/\bgrant|funding|scholarship\b/.test(blob)) ids.push("grant_proposal");
+      if (/\bmeeting agenda|run the meeting\b/.test(blob)) ids.push("meeting_agenda");
+      if (/\bflyer|poster|handout\b/.test(blob)) ids.push("flyer");
+      if (/\bpresentation|slide deck|google slides\b/.test(blob)) ids.push("presentation");
+      if (isFounderStoryTask(normalized)) ids.push("founder_story");
+      if (getFlatTaskResources(normalized).length && !ids.includes("outreach_email")) {
+        ids.push("outreach_email", "phone_script");
+      }
+      if (isOrgListTask(normalized) && !ids.includes("comparison_sheet")) {
+        ids.unshift("comparison_sheet");
+      }
+      if (!ids.length && /\b(write|draft|create|prepare|send|message)\b/.test(blob)) {
+        ids.push("checklist", "outreach_email");
+      }
+      return ids;
+    }
+
+    function draftSuggestionIsCovered(normalized, suggestion) {
+      const script = String(normalized.script || "").trim();
+      const followUp = String(normalized.followUp || "").trim();
+      const scriptType = script ? inferDraftTypeFromContent(script) : null;
+
+      if (suggestion.id === "follow_up_email" || suggestion.id === "job_follow_up") {
+        if (followUp.length > 40) return true;
+        if (script && /\bfollow[- ]?up\b/i.test(script) && script.length > 60) return true;
+        return false;
+      }
+      if (suggestion.id === "outreach_email") {
+        return scriptType === "email" && script.length > 80 && !/\bfollow[- ]?up only\b/i.test(script);
+      }
+      if (suggestion.id === "phone_script") {
+        return scriptType === "phone_script"
+          || (/\bphone script|when they answer|voicemail:/i.test(script) && script.length > 60);
+      }
+      if (suggestion.id === "contact_tracker") {
+        return scriptType === "spreadsheet"
+          && /\btracking sheet|date \| action|contact \/ place/i.test(script)
+          && !/org comparison|gap you could fill/i.test(script);
+      }
+      if (suggestion.id === "comparison_sheet") {
+        return isOrgListTask(normalized)
+          && (scriptType === "spreadsheet" || /org comparison|gap you could fill|\| # \| organization/i.test(script));
+      }
+      if (suggestion.id === "resume") {
+        return scriptType === "resume";
+      }
+      if (suggestion.id === "cover_letter") {
+        return scriptType === "letter";
+      }
+      if (suggestion.id === "interview_questions") {
+        return scriptType === "survey" || /\binterview questions|google form fields/i.test(script);
+      }
+      if (suggestion.id === "research_checklist") {
+        return scriptType === "checklist" && /\bresearch|look up|sources to check/i.test(script);
+      }
+      if (suggestion.variant) return false;
+      if (scriptType === suggestion.draftType && script.length > 80 && !isExplanatoryTaskCopy(script)) {
+        return true;
+      }
+      return false;
+    }
+
+    function getTaskDraftSuggestions(normalized) {
+      const themes = getTaskAssistanceThemes(normalized);
+      const idOrder = [];
+      themes.forEach((theme) => {
+        if (theme === "general") {
+          getGeneralDraftSuggestionIds(normalized).forEach((id) => idOrder.push(id));
+          return;
+        }
+        (PROFILE_DRAFT_SUGGESTION_IDS[theme] || []).forEach((id) => idOrder.push(id));
+      });
+      if (!idOrder.length) {
+        getGeneralDraftSuggestionIds(normalized).forEach((id) => idOrder.push(id));
+      }
+
+      const seen = new Set();
+      const suggestions = [];
+      idOrder.forEach((id) => {
+        if (seen.has(id)) return;
+        const def = TASK_DRAFT_SUGGESTION_DEFS[id];
+        if (!def) return;
+        seen.add(id);
+        suggestions.push({
+          ...def,
+          covered: draftSuggestionIsCovered(normalized, def)
+        });
+      });
+
+      return suggestions.filter((entry) => !entry.covered).slice(0, 6);
+    }
+
+    function extractDraftContentForSuggestion(normalized, suggestion) {
+      const script = String(normalized.script || "").trim();
+      const followUp = String(normalized.followUp || "").trim();
+      if ((suggestion.id === "follow_up_email" || suggestion.id === "job_follow_up") && followUp.length > 40) {
+        return humanizeDraftFormatting(followUp);
+      }
+      if (script && draftSuggestionIsCovered(normalized, suggestion) && isUsableDraftContent(script, normalized)) {
+        return humanizeDraftFormatting(script);
+      }
+      return null;
+    }
+
+    function draftDuplicatesPreparedContent(draft, normalized) {
+      const copy = String(draft || "").trim();
+      if (!copy) return true;
+      const script = String(normalized.script || "").trim();
+      if (script && textSimilarity(copy, script) >= 0.72) return true;
+      const followUp = String(normalized.followUp || "").trim();
+      if (followUp && textSimilarity(copy, followUp) >= 0.72) return true;
+      return isTaskRestatement(copy, normalized, 0.62);
+    }
+
+    function buildLocalDraftForSuggestion(normalized, suggestion) {
+      const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
+      const taskLine = humanizeTaskText(normalized.text);
+      const whyLine = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
+      const outcomeLine = humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized));
+      const situationLine = situation ? situation.replace(/\s+/g, " ").trim() : "I'm working on my next step and could use guidance.";
+
+      switch (suggestion.variant || suggestion.id) {
+        case "follow_up":
+        case "job_follow_up":
+          return `Subject: Following up — ${pathTitle.toLowerCase()}
+
+Hi ${contactLine.split(",")[0] || "[Name]"},
+
+I'm following up on my note from [day]. I'm still working on ${pathTitle.toLowerCase()} in ${location}.
+
+${taskLine.replace(/\.$/, "")}.
+
+If you have a minute to point me in the right direction, I'd really appreciate it. If now isn't a good time, no worries at all.
+
+Thank you,
+[Your name]
+[Phone number]`;
+
+        case "contact_tracker":
+          return buildLocalDeliverableDraft("spreadsheet", normalized);
+
+        case "comparison":
+          return buildOrgComparisonSheetDraft(normalized);
+
+        case "elevator_pitch":
+          return `ELEVATOR PITCH — say this in ~30 seconds
+
+Hi, I'm [Your name] from ${location}. I'm building ${pathTitle.toLowerCase()} for people who [specific need in one phrase].
+
+${situationLine}
+
+What makes this different: [one honest sentence — not buzzwords].
+
+Right now I'm looking for [one clear ask — a conversation, first customer, partner, or feedback].
+
+If that's you — or you know someone — I'd love to connect.`;
+
+        case "marketing_plan":
+          return `MARKETING PLAN — first 30 days
+
+Goal: ${pathTitle}
+Audience: People in ${location} who [specific need]
+
+Channels to try first:
+1. Word of mouth — tell 5 people who fit and ask for an intro
+2. Local groups — [Facebook group, community board, library bulletin]
+3. One social post per week — see Social Media Post suggestion
+
+Message (keep repeating this):
+"[One sentence: who you help + what changes for them]"
+
+Week 1: ${taskLine}
+Week 2: Post once + follow up with 3 warm contacts
+Week 3: Ask one happy person for a quote or referral
+Week 4: ${outcomeLine}
+
+Track what works:
+| Channel | What I tried | Response | Next step |
+|---------|--------------|----------|-----------|
+| | | | |`;
+
+        case "research_checklist":
+          return `RESEARCH CHECKLIST — ${pathTitle}
+
+[ ] Clarify my exact question: ${taskLine}
+[ ] Search 3 local sources in ${location} (library, .gov, community org)
+[ ] Search 2 national sources for comparison
+[ ] List 5–8 names/orgs/programs doing similar work
+[ ] Note gaps — what's missing that I could fill?
+[ ] Save links in one doc or sheet
+[ ] Write 3 questions I still can't answer
+[ ] Decide my next action based on what I found
+
+Notes:
+${whyLine}`;
+
+        case "interview_questions":
+          return `QUESTIONS TO ASK — copy into notes or a form
+
+Warm-up
+1. Can you tell me about your experience with [topic] in ${location}?
+2. What have you already tried?
+
+Go deeper
+3. What's the hardest part of [problem] for you?
+4. What would actually help — even if it's not perfect?
+5. If ${pathTitle.toLowerCase()} existed tomorrow, would you use it? Why or why not?
+
+Wrap-up
+6. Who else should I talk to?
+7. Can I follow up with you in [timeframe]?
+
+If recording answers:
+| Person | Date | Key quote | Follow-up? |
+|--------|------|-----------|------------|
+| | | | |`;
+
+        default:
+          if (suggestion.draftType === "founder_story") {
+            return generateLocalTaskDraft(normalized);
+          }
+          if (suggestion.draftType === "social_post") {
+            const blob = `${normalized.text}`.toLowerCase();
+            if (/\blinkedin\b/.test(blob)) return buildLocalDeliverableDraft("linkedin_post", normalized);
+            if (/\bfacebook\b/.test(blob)) return buildLocalDeliverableDraft("facebook_post", normalized);
+            if (/\breddit\b/.test(blob)) return buildLocalDeliverableDraft("reddit_post", normalized);
+          }
+          return buildLocalDeliverableDraft(suggestion.draftType, normalized);
+      }
+    }
+
+    function renderTaskDraftSuggestionsHtml(taskId, normalized, suggestions = null) {
+      const items = suggestions || getTaskDraftSuggestions(normalized);
+      if (!items.length) {
+        if (taskHasPreparedAssets(normalized)) {
+          return `<p class="task-draft-suggestions-note">What's prepared above should be enough for this step. Use My Notes or Ask if you want a tweak.</p>`;
+        }
+        return "";
+      }
+      const buttons = items.map((entry) =>
+        `<button type="button" class="task-draft-suggestion-btn" data-task-id="${escapeHtml(taskId)}" data-suggestion-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.desc)}">
+          <span class="task-draft-suggestion-label">${escapeHtml(entry.label)}</span>
+          <span class="task-draft-suggestion-desc">${escapeHtml(entry.desc)}</span>
+        </button>`
+      ).join("");
+      return `<div class="task-draft-suggestions" data-draft-suggestions>${buttons}</div>`;
+    }
+
+    async function generateDraftFromSuggestion(taskId, suggestionId, options = {}) {
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      if (!match || !suggestionId) return;
+
+      const stageIndex = Number(match[1]);
+      const taskIndex = Number(match[2]);
+      const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
+      if (!task) return;
+
+      const normalized = normalizeRoadmapTask(task);
+      const suggestion = TASK_DRAFT_SUGGESTION_DEFS[suggestionId];
+      if (!suggestion || draftSuggestionIsCovered(normalized, suggestion)) return;
+
+      const data = getRoadmapTaskData(taskId);
+      if (taskDraftGenerationInFlight.has(taskId) && !options.force) return;
+
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const draftEl = getTaskDraftTextarea(item);
+      const suggestionBtn = item?.querySelector(`.task-draft-suggestion-btn[data-suggestion-id="${suggestionId}"]`);
+      if (!draftEl) return;
+
+      taskDraftGenerationInFlight.add(taskId);
+      suggestionBtn?.classList.add("is-generating");
+      draftEl.placeholder = `Generating ${suggestion.label.toLowerCase()}…`;
+      draftEl.classList.add("is-generating-draft");
+      const draftProgress = startDraftGeneratingProgress(taskId);
+
+      try {
+        const existing = extractDraftContentForSuggestion(normalized, suggestion);
+        if (existing && !options.force && !draftDuplicatesPreparedContent(existing, normalized)) {
+          insertTaskDraft(taskId, existing, { focus: true, expand: true });
+          data.draftGenerated = true;
+          data.draftSource = "roadmap";
+          data.draftSuggestionId = suggestionId;
+          schedulePersist();
+          trackEvent("task_draft_suggestion_generated", {
+            task_id: taskId,
+            suggestion_id: suggestionId,
+            deliverable: suggestion.draftType,
+            source: "roadmap"
+          });
+          return;
+        }
+
+        const localDraft = buildLocalDraftForSuggestion(normalized, suggestion);
+        const localIsUsable = localDraft && isUsableDraftContent(localDraft, normalized)
+          && !draftDuplicatesPreparedContent(localDraft, normalized);
+        const preferAi = Boolean(options.force) || suggestion.variant === "elevator_pitch"
+          || suggestion.variant === "marketing_plan" || suggestion.draftType === "founder_story";
+
+        if (localIsUsable && !preferAi) {
+          insertTaskDraft(taskId, localDraft, { focus: true, expand: true });
+          data.draftGenerated = true;
+          data.draftSource = "local";
+          data.draftSuggestionId = suggestionId;
+          schedulePersist();
+          trackEvent("task_draft_suggestion_generated", {
+            task_id: taskId,
+            suggestion_id: suggestionId,
+            deliverable: suggestion.draftType,
+            source: "local"
+          });
+          return;
+        }
+
+        const aiDraft = await generateAiTaskDraft(taskId, normalized, {
+          draftType: suggestion.draftType,
+          variant: suggestion.variant,
+          suggestion
+        });
+        const draft = (aiDraft?.trim() || (localIsUsable ? localDraft : "") || "").trim();
+        if (draft && isUsableDraftContent(draft, normalized) && !draftDuplicatesPreparedContent(draft, normalized)) {
+          insertTaskDraft(taskId, draft, { focus: true, expand: true });
+          data.draftGenerated = true;
+          data.draftSource = aiDraft?.trim() ? "ai" : "local";
+          data.draftSuggestionId = suggestionId;
+          schedulePersist();
+          trackEvent("task_draft_suggestion_generated", {
+            task_id: taskId,
+            suggestion_id: suggestionId,
+            deliverable: suggestion.draftType,
+            source: data.draftSource
+          });
+        }
+      } finally {
+        taskDraftGenerationInFlight.delete(taskId);
+        suggestionBtn?.classList.remove("is-generating");
+        draftProgress?.complete();
+        stopDraftGeneratingProgress(taskId);
+        draftEl.classList.remove("is-generating-draft");
+        draftEl.placeholder = "Your prepared draft will appear here…";
+        syncDraftPanelUi(taskId);
+      }
+    }
+
     function inferDraftTypeFromContent(text) {
       const copy = String(text || "").trim();
       if (!copy) return null;
@@ -15553,12 +16047,35 @@ NOTE TEMPLATE
       return null;
     }
 
-    function buildUsableDraftPrompt(normalized, draftType) {
+    function buildUsableDraftPrompt(normalized, draftType, options = {}) {
       const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
       const resources = getFlatTaskResources(normalized);
-      const label = USABLE_DRAFT_TYPE_LABELS[draftType] || String(draftType || "").replace(/_/g, " ");
+      const variant = options.variant || options.suggestion?.variant || null;
+      const variantLabels = {
+        follow_up: "Follow-up email",
+        job_follow_up: "Job application follow-up email",
+        elevator_pitch: "Elevator pitch",
+        marketing_plan: "Marketing plan",
+        research_checklist: "Research checklist",
+        interview_questions: "Interview / research questions",
+        comparison: "Comparison spreadsheet",
+        contact_tracker: "Contact tracking spreadsheet"
+      };
+      const label = variantLabels[variant] || USABLE_DRAFT_TYPE_LABELS[draftType] || String(draftType || "").replace(/_/g, " ");
       const resourceBlock = resources.length
         ? `\nContacts/orgs already on this task:\n${resources.slice(0, 6).map((e, i) => `${i + 1}. ${[e.org, e.name].filter(Boolean).join(" — ")} ${e.phone || ""} ${e.email || ""}`.trim()).join("\n")}`
+        : "";
+      const preparedParts = [];
+      const script = String(normalized.script || "").trim();
+      const followUp = String(normalized.followUp || "").trim();
+      if (script.length > 40 && !isExplanatoryTaskCopy(script)) {
+        preparedParts.push(`Prepared asset already shown in the task:\n${script.slice(0, 1400)}`);
+      }
+      if (followUp.length > 40) {
+        preparedParts.push(`Follow-up already prepared:\n${followUp.slice(0, 800)}`);
+      }
+      const preparedBlock = preparedParts.length
+        ? `\n${preparedParts.join("\n\n")}\nDo NOT repeat the prepared asset verbatim — add new value, a different angle, or missing detail the user still needs.\n`
         : "";
 
       return (
@@ -15569,6 +16086,7 @@ NOTE TEMPLATE
         `Task: ${normalized.text}\n` +
         `Document type: ${label}\n` +
         resourceBlock +
+        preparedBlock +
         `\nRules:\n` +
         `- Output ONLY the ${label.toLowerCase()} — ready to copy, paste, send, or fill in today.\n` +
         `- NEVER explain what the user should do. NEVER restate the task title.\n` +
@@ -15623,21 +16141,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return null;
     }
 
-    async function generateAiTaskDraft(taskId, normalized) {
-      const draftType = taskNeedsUsableDraft(normalized);
+    async function generateAiTaskDraft(taskId, normalized, options = {}) {
+      const draftType = options.draftType || taskNeedsUsableDraft(normalized);
       if (!draftType) return null;
 
-      const prompt = buildUsableDraftPrompt(normalized, draftType);
+      const prompt = buildUsableDraftPrompt(normalized, draftType, options);
       const raw = await callAdvisor(prompt, 1600, { timeoutMs: 55000 });
       const draft = String(raw || "").trim();
       if (!draft || /^NO_DRAFT$/i.test(draft)) return null;
       if (!isUsableDraftContent(draft, normalized)) return null;
+      if (draftDuplicatesPreparedContent(draft, normalized)) return null;
       return draft;
     }
 
     function getTaskWritingNotesPlaceholder(normalized) {
-      if (taskNeedsUsableDraft(normalized)) {
-        return "Your personal notes — the prepared draft is separate above…";
+      if (getTaskDraftSuggestions(normalized).length || taskHasPreparedAssets(normalized)) {
+        return "Your personal notes — pick a draft suggestion above when you need one…";
       }
       return "Jot down thoughts, progress, links...";
     }
@@ -15652,135 +16171,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!task) return;
 
       const normalized = normalizeRoadmapTask(task);
-      const draftType = taskNeedsUsableDraft(normalized);
       const data = getRoadmapTaskData(taskId);
-
-      if (!draftType) {
-        if (data.draft?.trim() && !isUsableDraftContent(data.draft, normalized)) {
-          data.draft = "";
-          data.draftGenerated = false;
-          data.draftSource = null;
-          data.mentorBriefGenerated = false;
-          const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-          const draftEl = getTaskDraftTextarea(item);
-          if (draftEl) draftEl.value = "";
-          item?.classList.remove("has-draft");
-          syncDraftPanelUi(taskId);
-          schedulePersist();
-        }
-        return;
-      }
+      const suggestions = getTaskDraftSuggestions(normalized);
+      const suggestionId = options.suggestionId || data.draftSuggestionId || suggestions[0]?.id;
+      if (!suggestionId) return;
 
       if (data.draft?.trim() && !options.force && isUsableDraftContent(data.draft, normalized)) return;
-      if (data.draftGenerated && !options.force && data.draft?.trim() && isUsableDraftContent(data.draft, normalized)) return;
-      if (taskDraftGenerationInFlight.has(taskId)) return;
-
-      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const draftEl = getTaskDraftTextarea(item);
-      if (!draftEl) return;
-
-      const localDraft = generateLocalTaskDraft(normalized);
-      const localIsUsable = localDraft && isUsableDraftContent(localDraft, normalized);
-
-      if (localIsUsable && !options.force) {
-        insertDraftIntoNotes(taskId, localDraft, "replace", { focus: false, expand: false });
-        data.draftGenerated = true;
-        data.draftSource = normalized.script?.length > 40 && isUsableDraftContent(normalized.script, normalized) ? "roadmap" : "local";
-        schedulePersist();
-        return;
-      }
-
-      taskDraftGenerationInFlight.add(taskId);
-      const silent = Boolean(options.silent);
-      if (!silent) {
-        draftEl.placeholder = "Generating your draft…";
-        draftEl.classList.add("is-generating-draft");
-      }
-      const draftProgress = silent ? null : startDraftGeneratingProgress(taskId);
-
-      try {
-        const aiDraft = await generateAiTaskDraft(taskId, normalized);
-        const draft = (aiDraft?.trim() || (localIsUsable ? localDraft : "") || "").trim();
-        if (draft && isUsableDraftContent(draft, normalized) && (!data.draft?.trim() || options.force)) {
-          insertTaskDraft(taskId, draft, { focus: Boolean(options.force), expand: false });
-          data.draftGenerated = true;
-          data.draftSource = aiDraft?.trim() ? "ai" : "local";
-          schedulePersist();
-          trackEvent("task_draft_auto_generated", {
-            task_id: taskId,
-            deliverable: draftType,
-            source: data.draftSource
-          });
-        }
-      } finally {
-        taskDraftGenerationInFlight.delete(taskId);
-        draftProgress?.complete();
-        stopDraftGeneratingProgress(taskId);
-        if (!silent) {
-          draftEl.classList.remove("is-generating-draft");
-          draftEl.placeholder = "Your prepared draft will appear here…";
-        }
-        syncDraftPanelUi(taskId);
-      }
+      await generateDraftFromSuggestion(taskId, suggestionId, options);
     }
 
-    function queueWritingDraftsForVisibleTasks(options = {}) {
-      const excludeStages = new Set(options.excludeStageIndexes || []);
-      const onlyStages = Array.isArray(options.stageIndexesOnly) ? new Set(options.stageIndexesOnly) : null;
-      $$(".task-item").forEach((item) => {
-        const taskId = item.dataset.taskId;
-        const match = taskId?.match(/^task-(\d+)-/);
-        const stageIndex = match ? Number(match[1]) : -1;
-        if (excludeStages.has(stageIndex)) return;
-        if (onlyStages && !onlyStages.has(stageIndex)) return;
-        const phase = item.closest(".roadmap-phase, .stage-card");
-        if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
-        void ensureTaskDraftInNotes(taskId, { silent: Boolean(options.silent) });
-      });
+    function queueWritingDraftsForVisibleTasks() {
+      /* Drafts generate on demand via suggestion buttons — no automatic queue. */
     }
 
     let deferredDraftGenerationTimer = null;
 
-    function deferTaskDraftGeneration(options = {}) {
-      if (deferredDraftGenerationTimer) return;
-      const run = () => {
-        deferredDraftGenerationTimer = null;
-        queueWritingDraftsForVisibleTasks(options);
-      };
-      if (typeof requestIdleCallback === "function") {
-        deferredDraftGenerationTimer = requestIdleCallback(run, { timeout: 3000 });
-      } else {
-        deferredDraftGenerationTimer = setTimeout(run, 180);
-      }
+    function deferTaskDraftGeneration() {
+      /* No-op — replaced by on-demand draft suggestions. */
     }
 
     function queueDeferredFirstMissionDrafts() {
-      setTimeout(() => {
-        queueWritingDraftsForVisibleTasks({ excludeStageIndexes: [], silent: true, stageIndexesOnly: [0] });
-      }, 4500);
+      /* No-op — replaced by on-demand draft suggestions. */
     }
 
-    function renderTaskWritingAssistHtml(taskId, normalized) {
-      const draftType = taskNeedsUsableDraft(normalized);
-      if (!draftType) return "";
-
-      const isFounder = isFounderStoryTask(normalized);
-      const label = USABLE_DRAFT_TYPE_LABELS[draftType] || "Draft";
-      const headline = isFounder ? "Your story draft is ready" : `${label} ready`;
-      const copy = isFounder
-        ? "We added a founder story starter in the draft area below — change anything until it sounds like you."
-        : `Your ${label.toLowerCase()} is below — edit it, then copy or send when you're ready.`;
-
-      return `
-        <div class="task-writing-assist" data-task-id="${escapeHtml(taskId)}">
-          <span class="overview-task-detail-label">${escapeHtml(headline)}</span>
-          <p class="task-writing-assist-copy">${escapeHtml(copy)}</p>
-          <div class="task-writing-assist-actions">
-            <button type="button" class="task-writing-assist-btn" data-action="regenerate-draft" data-task-id="${escapeHtml(taskId)}">Regenerate draft</button>
-            <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="replace-draft" data-task-id="${escapeHtml(taskId)}" hidden>Replace draft</button>
-            <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="rewrite-draft" data-task-id="${escapeHtml(taskId)}">Rewrite in my voice</button>
-          </div>
-        </div>`;
+    function renderTaskWritingAssistHtml() {
+      return "";
     }
 
     function humanizeDraftFormatting(text) {
@@ -16473,7 +16888,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         "Let's practice — you play the person I'd contact and I'll practice what to say. Start with their first likely question.",
         { when: /\b(call|meet|demo|interview|outreach|partner|director|workshop)\b/.test(blob) }
       );
-      if (taskNeedsUsableDraft(normalized)) {
+      if (taskNeedsUsableDraft(normalized) || getTaskDraftSuggestions(normalized).length) {
         add("draft", "Regenerate draft", "", { local: "draft" });
       }
 
@@ -17486,26 +17901,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function renderTaskDraftSectionHtml(taskId, normalized) {
-      const draftType = taskNeedsUsableDraft(normalized);
-      const draftLabel = draftType ? (USABLE_DRAFT_TYPE_LABELS[draftType] || "Draft") : "";
+      const suggestions = getTaskDraftSuggestions(normalized);
+      const suggestionsHtml = renderTaskDraftSuggestionsHtml(taskId, normalized, suggestions);
+      const hasPreparedAssets = taskHasPreparedAssets(normalized) || getFlatTaskResources(normalized).length > 0;
 
-      if (!draftType) {
-        if (taskHasPreparedAssets(normalized) || getFlatTaskResources(normalized).length) {
-          return "";
-        }
-        return `
-              <section class="task-mentor-section task-mentor-section--draft task-mentor-section--no-draft">
-                <h4 class="task-mentor-label">Prepared draft</h4>
-                <p class="task-draft-none">No written draft for this step — use the contacts and links above.</p>
-              </section>`;
+      if (!suggestionsHtml && !hasPreparedAssets && !taskNeedsUsableDraft(normalized)) {
+        return "";
       }
 
       return `
               <section class="task-mentor-section task-mentor-section--draft">
-                <h4 class="task-mentor-label">Prepared ${escapeHtml(draftLabel.toLowerCase())}</h4>
-                <p class="task-draft-hint">Copy, edit, and use this ${escapeHtml(draftLabel.toLowerCase())} — it's ready to go.</p>
+                <h4 class="task-mentor-label">Quick help for this step</h4>
+                <p class="task-draft-hint">Pick what you need — we'll generate it when you click.</p>
+                ${suggestionsHtml}
                 <div class="task-draft-panel" data-draft-panel>
-                  <p class="task-draft-expand-hint">Your ${escapeHtml(draftLabel.toLowerCase())} appears here — expand to read and edit.</p>
+                  <p class="task-draft-expand-hint">Your draft appears here after you pick a suggestion above.</p>
                   <div class="task-draft-generating" hidden aria-live="polite">
                     <span class="task-draft-progress-status">Generating draft…</span>
                     <div class="task-draft-progress">
@@ -24121,6 +24531,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function handleTaskThreadClick(event) {
+      const suggestionBtn = event.target.closest(".task-draft-suggestion-btn");
+      if (suggestionBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (suggestionBtn.disabled || suggestionBtn.classList.contains("is-generating")) return;
+        void generateDraftFromSuggestion(suggestionBtn.dataset.taskId, suggestionBtn.dataset.suggestionId);
+        return;
+      }
       const pathActionBtn = event.target.closest(".task-adjust-btn[data-path-action]");
       if (pathActionBtn) {
         event.preventDefault();
@@ -26409,24 +26827,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         tasks: (firstStage.tasks || []).map((task) => normalizeRoadmapTask(task))
       };
 
-      (state.roadmapStages[0].tasks || []).forEach((task, taskIndex) => {
-        const taskId = `task-0-${taskIndex}`;
-        const normalized = normalizeRoadmapTask(task);
-        const data = getRoadmapTaskData(taskId);
-        if (normalized.script?.trim() && isUsableDraftContent(normalized.script, normalized)) {
-          data.draft = normalized.script.trim();
-          data.draftGenerated = true;
-          data.draftSource = "roadmap";
-          return;
-        }
-        const draftType = taskNeedsUsableDraft(normalized);
-        if (!draftType) return;
-        const localDraft = generateLocalTaskDraft(normalized);
-        if (localDraft && isUsableDraftContent(localDraft, normalized)) {
-          data.draft = localDraft;
-          data.draftGenerated = true;
-          data.draftSource = "local";
-        }
+      (state.roadmapStages[0].tasks || []).forEach((task) => {
+        normalizeRoadmapTask(task);
       });
 
       state.expandedRoadmapPhases = new Set([0]);
@@ -26472,12 +26874,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         });
         if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
           void maybeEnrichRoadmapLocalContacts({ silent: true });
-        }
-        if (initialReveal && !refineUpdate) {
-          deferTaskDraftGeneration({ excludeStageIndexes: [0] });
-          queueDeferredFirstMissionDrafts();
-        } else if (!refineUpdate) {
-          deferTaskDraftGeneration();
         }
       }
     }
@@ -26631,8 +27027,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
           void maybeEnrichRoadmapLocalContacts({ silent: true });
         }
-        deferTaskDraftGeneration({ excludeStageIndexes: [0] });
-        queueDeferredFirstMissionDrafts();
         return;
       }
 
@@ -26949,7 +27343,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         renderTaskThreads(taskId);
       });
       syncAllTaskExpandUi();
-      deferTaskDraftGeneration();
     }
 
     function getStageProgressFromIndices(stageIndex) {
