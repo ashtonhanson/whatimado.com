@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-draft-ux -->
+<!-- whatimado build: 2026-07-01-outcome-labels -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-draft-ux">
+  <meta name="whatimado-build" content="2026-07-01-outcome-labels">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -8957,6 +8957,82 @@
       letter-spacing: -.02em;
     }
 
+    .roadmap-potential-outcome {
+      margin: .55rem 0 .75rem;
+      padding: .75rem .85rem;
+      border: 1px solid rgba(78, 205, 196, .22);
+      border-radius: .65rem;
+      background: rgba(78, 205, 196, .08);
+    }
+
+    .roadmap-potential-outcome-kicker {
+      display: block;
+      margin-bottom: .35rem;
+      color: rgba(232, 242, 255, .72);
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .roadmap-potential-outcome-metric {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: .35rem .55rem;
+      margin-bottom: .25rem;
+    }
+
+    .roadmap-potential-outcome-metric-label {
+      color: rgba(232, 242, 255, .82);
+      font-size: .78rem;
+      font-weight: 700;
+    }
+
+    .roadmap-potential-outcome-metric-value {
+      color: #e8f2ff;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -.01em;
+    }
+
+    .roadmap-potential-outcome-downstream {
+      margin: 0 0 .25rem;
+      color: #e8f2ff;
+      font-size: .88rem;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .roadmap-potential-outcome-note {
+      margin: .2rem 0 0;
+      color: rgba(232, 242, 255, .62);
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-potential-outcome {
+      border-color: rgba(37, 99, 235, .18);
+      background: rgba(37, 99, 235, .05);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-potential-outcome-kicker {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-potential-outcome-metric-label {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-potential-outcome-metric-value,
+    html[data-color-scheme="adult"] .roadmap-potential-outcome-downstream {
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-potential-outcome-note {
+      color: var(--ink-muted);
+    }
+
     .roadmap-sub {
       margin: 0 0 1.25rem;
       color: #a8c4e8;
@@ -12120,6 +12196,15 @@
             <span class="roadmap-status-badge" id="roadmap-status-badge">Active missions</span>
             <p class="roadmap-parent-context" id="roadmap-parent-context" hidden></p>
             <h2 class="roadmap-title" id="roadmap-title"></h2>
+            <div class="roadmap-potential-outcome" id="roadmap-potential-outcome" hidden>
+              <span class="roadmap-potential-outcome-kicker">Potential Outcome</span>
+              <div class="roadmap-potential-outcome-metric" id="roadmap-potential-outcome-metric" hidden>
+                <span class="roadmap-potential-outcome-metric-label" id="roadmap-potential-outcome-metric-label"></span>
+                <span class="roadmap-potential-outcome-metric-value" id="roadmap-potential-outcome-metric-value"></span>
+              </div>
+              <p class="roadmap-potential-outcome-downstream" id="roadmap-potential-outcome-downstream" hidden></p>
+              <p class="roadmap-potential-outcome-note" id="roadmap-potential-outcome-note"></p>
+            </div>
             <p class="roadmap-overview-desc" id="roadmap-overview-desc"></p>
             <div class="roadmap-overview-meta" id="roadmap-overview-meta">
               <span class="roadmap-meta-chip" id="roadmap-meta-location" hidden></span>
@@ -12614,7 +12699,7 @@
       '- resources.local = 3-8 real named orgs with phones/emails/URLs. First contact in list = suggested first contact.\n' +
       '- Every mission must move the user measurably closer to their goal — they should never wonder what to do now.\n' +
       'Write like a helpful mentor — plain English, middle-school reading level. No business jargon, no startup language.\n' +
-      'Stage labels must be specific to THIS path — never generic test → feedback → repeat.';
+      'Stage labels must be short steps a friend would say (under ~10 words) — e.g. "Find five people to try your site". NEVER quote the path title verbatim or write "Define \\"{title}\\" mission + who it serves".\n';
 
     const RESOURCE_CATEGORY_HINTS =
       'employment_agency, career_center, apprenticeship, small_business_advisor, business_incubator, startup_grants, government_grants, nonprofit, scholarship, community_college, certification_program, library, coworking, food_assistance, transportation_assistance, housing_assistance, childcare_assistance, veteran_resources, disability_services, legal_aid, financial_literacy, business_networking, makerspace, industry_association, id_documents, municipal_services, reentry_support';
@@ -12798,6 +12883,8 @@
       if (BANNED_GENERIC_STAGE_LABELS.has(norm)) return true;
       if (GENERIC_STAGE_LABEL_PATTERNS.some((pattern) => pattern.test(norm))) return true;
       if (/^(test|launch|feedback|repeat|iterate|validate|grow|improve|scale|pilot|execute|framework|initiative)$/.test(norm)) return true;
+      if (/^define\s/.test(norm)) return true;
+      if (/mission\s*\+\s*who it serves/.test(norm)) return true;
       return false;
     }
 
@@ -13189,7 +13276,8 @@
       '- BAD: "Identify organizations aligned with your mission."\n' +
       '- GOOD: "Find local organizations that already help people like the ones you\'re trying to reach."\n' +
       '- BAD: "Run a validation sprint." / "Engage stakeholders." / "Execute the outreach framework."\n' +
-      '- GOOD: "Spend two weeks sharing it with real people and listen to what they say." / "Talk to the people who make decisions at each org." / "Send the emails below — one org at a time."\n';
+      '- GOOD: "Spend two weeks sharing it with real people and listen to what they say." / "Talk to the people who make decisions at each org." / "Send the emails below — one org at a time."\n' +
+      '- Stage labels must sound like a step a friend would say — e.g. "Find five people to try your site" or "Decide who you\'re helping". NEVER paste the path title in quotes, NEVER "Define \\"{title}\\" mission + who it serves".\n';
 
     function getActionableTaskRules(idea = state.currentIdea) {
       const base = isGroundedPractitioner(idea)
@@ -14022,12 +14110,295 @@
       return copy;
     }
 
+    function isMetaStageLabel(text) {
+      const norm = normalizeRoadmapText(text);
+      if (!norm) return false;
+      if (/^define\s/.test(norm)) return true;
+      if (/mission\s*\+\s*who it serves/.test(norm)) return true;
+      if (/\+\s*who it serves/.test(norm)) return true;
+      return false;
+    }
+
+    function simplifyEmbeddedPathTitle(text, idea = null) {
+      const raw = String(text || "").trim();
+      const blob = raw.toLowerCase();
+      if (!blob) return "";
+
+      if (/\bclosed test\b|\bbeta test\b|\bsmall test\b/.test(blob)) {
+        const count = blob.match(/\b(\d+)\s+people\b/);
+        if (count) return `Find ${count[1]} people to try your site`;
+        if (/\bfive\b|\b5\b/.test(blob)) return "Find five people to try your site";
+        return "Test with a small group first";
+      }
+      if (/\bwatch\b/.test(blob) && /\b(use|try|site|app)\b/.test(blob)) {
+        return "Watch people use your site and note where they get stuck";
+      }
+      if (/\bwho it serves\b|\bmission\b/.test(blob)) return "Decide who you're helping";
+      if (/\blegal structure\b/.test(blob)) return "Plan your legal setup";
+      if (/\bpilot\b/.test(blob)) return "Run a small test first";
+      if (/\boutreach\b|\bpartnership\b/.test(blob)) return "Reach out to your first partners";
+      if (/\bdonation\b|\bstripe\b|\bsupporter\b/.test(blob)) return "Set up optional donations";
+      if (/\bgrant\b|\bfunding\b|\bsponsor/.test(blob)) return "Explore funding options";
+      if (/\bseo\b|\bpost\b|\blaunch\b/.test(blob) && /\bonline\b|\bshare\b/.test(blob)) {
+        return "Share your work where people can find it";
+      }
+
+      const firstClause = raw.split(/[—–-]/)[0].replace(/^launch\s+/i, "").trim();
+      if (firstClause.length >= 8 && firstClause.length <= 56 && !/["']/.test(firstClause)) {
+        const cleaned = humanizeTaskText(firstClause);
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      }
+
+      const title = String(idea?.title || "").trim();
+      const tagline = String(idea?.tagline || "").trim();
+      if (title && normalizeRoadmapText(raw) === normalizeRoadmapText(title)) return "Take the next step on this path";
+      if (tagline && normalizeRoadmapText(raw) === normalizeRoadmapText(tagline)) {
+        return simplifyEmbeddedPathTitle(tagline, idea) || "Take the next step on this path";
+      }
+      return "";
+    }
+
+    function simplifyStageLabel(label, idea = null) {
+      let copy = humanizeTaskText(String(label || "").trim());
+      if (!copy) return copy;
+
+      const title = String(idea?.title || "").trim();
+      const tagline = String(idea?.tagline || "").trim();
+
+      let match = copy.match(/^Define\s+["'](.+?)["']\s+mission\s*\+\s*who it serves/i);
+      if (match) return simplifyEmbeddedPathTitle(match[1], idea) || "Decide who you're helping";
+
+      match = copy.match(/^Define\s+mission\s*\+\s*who\s+["'](.+?)["']\s+serves/i);
+      if (match) return simplifyEmbeddedPathTitle(match[1], idea) || "Decide who you're helping";
+
+      const templateRewrites = [
+        [/^Plan legal structure for\s+["'].+["']/i, "Plan your legal setup"],
+        [/^Recruit allies in\s+/i, "Recruit allies nearby"],
+        [/^Run first small program for\s+["'].+["']/i, "Run a small test program"],
+        [/^Grow toward\s+["'].+["']/i, "Take the next step on your goal"],
+        [/^Map what transfers to\s+["'].+["']/i, "Map skills you already have"],
+        [/^Close gaps for\s+["'].+["']/i, "Close the skill gaps"],
+        [/^Get in the room in\s+(.+)/i, "Meet people hiring in $1"],
+        [/^Scan .+ hiring lanes/i, "Find who's hiring near you"],
+        [/^Package your proof/i, "Polish your resume and proof"],
+        [/^Push hard for two weeks/i, "Apply and follow up for two weeks"],
+        [/^Choose your next move/i, "Decide your next move"],
+        [/^First step toward\s+["'].+["']/i, "Take your first step on the longer path"]
+      ];
+      for (const [pattern, replacement] of templateRewrites) {
+        if (pattern.test(copy)) {
+          copy = copy.replace(pattern, replacement);
+          break;
+        }
+      }
+
+      for (const ref of [title, tagline].filter(Boolean)) {
+        const escaped = ref.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        copy = copy.replace(new RegExp(`["']${escaped}["']`, "gi"), "").replace(/\s+/g, " ").trim();
+        if (normalizeRoadmapText(copy) === normalizeRoadmapText(ref)) {
+          return simplifyEmbeddedPathTitle(ref, idea) || "Take the next step on this path";
+        }
+      }
+
+      copy = copy.replace(/\s+for\s+["'][^"']+["']\s*$/i, "").trim();
+      copy = copy.replace(/\s*\+\s*who it serves\s*$/i, "").trim();
+
+      if (isMetaStageLabel(copy)) {
+        return simplifyEmbeddedPathTitle(copy, idea) || "Take the next step on this path";
+      }
+
+      if (copy.length > 72) {
+        const shortened = simplifyEmbeddedPathTitle(copy, idea);
+        if (shortened) return shortened;
+        const first = copy.split(/[—–-]/)[0].trim();
+        if (first.length >= 10 && first.length <= 72) copy = first;
+      }
+
+      return copy || humanizeTaskText(String(label || "").trim());
+    }
+
+    function formatPotentialMetricValue(raw) {
+      let copy = String(raw || "").trim();
+      if (!copy) return "";
+      copy = copy.replace(/\$(\d[\d,]*(?:\.\d+)?)\s*[-–]\s*\$?(\d[\d,]*(?:\.\d+)?)/g, (_, low, high) => `$${low}–$${high}`);
+      copy = copy.replace(/\$(\d[\d,]*(?:\.\d+)?)\s*[-–]\s*(\d[\d,]*(?:\.\d+)?)/g, (_, low, high) => `$${low}–$${high}`);
+      copy = copy.replace(/\/mo\b/gi, "/month");
+      copy = copy.replace(/\bmo\b/gi, "month");
+      copy = copy.replace(/\byr\b/gi, "year");
+      return copy;
+    }
+
+    function incomeTextLooksFinancial(income) {
+      return /\$\s?\d/.test(String(income || ""));
+    }
+
+    function incomeTextIsNonFinancial(income) {
+      const norm = normalizeRoadmapText(income);
+      if (!norm) return true;
+      if (incomeTextLooksFinancial(income)) return false;
+      return /learning|impact|donation|grant|sponsor|signups|feedback|bug|partnership|exposure|network|experience|credential|certification|long-term|varies|hourly|project|tip|pay-what|free|donations \+/.test(norm);
+    }
+
+    function inferPotentialOutcomeMetricLabel(blob, situation) {
+      if (/salary|wage|employ|job|hire|career change|pay raise/.test(blob)) return "Potential Salary Increase";
+      if (/grant|funding|sponsor/.test(blob)) return "Possible Grant or Sponsorship";
+      if (/revenue|business|client|sales|freelance|gig|contractor/.test(blob)) return "Possible Business Revenue";
+      if (/time save|hours\/week|hours per week|automate|efficiency/.test(blob)) return "Potential Time Savings";
+      if (/cost save|save \$\d|reduce cost|cut cost|lower bill/.test(blob)) return "Potential Cost Savings";
+      if (situation === "employment" || situation === "career_change") return "Potential Salary Increase";
+      if (situation === "business" || situation === "online_business" || situation === "grounded" || situation === "creative") {
+        return "Income Potential";
+      }
+      return "Income Potential";
+    }
+
+    function inferPotentialOutcomeDownstream(idea, situation, blob) {
+      if (isFounderRoadmapForIdea(idea)) {
+        if (/grant|funding|sponsor/.test(blob)) return "This step unlocks funding opportunities.";
+        if (/donation|revenue|supporter|stripe/.test(blob)) return "This step could lead to early supporter income once people trust the tool.";
+        if (/beta|test|watch|user|feedback/.test(blob)) return "This step helps you learn what real people need before you invest more time or money.";
+        if (/partner|library|workforce|nonprofit|org/.test(blob)) return "This step increases your chances of reaching people through trusted local partners.";
+        return "This step helps you learn what works before you scale.";
+      }
+
+      switch (situation) {
+        case "employment":
+        case "career_change":
+          return "This step builds evidence employers look for.";
+        case "business":
+        case "online_business":
+        case "grounded":
+        case "creative":
+          return "This step increases your chances of landing your first client.";
+        case "skilled_trade":
+          return "This step prepares you for paid work in this trade.";
+        case "learning":
+          return "This step prepares you for paid work.";
+        case "nonprofit":
+          if (/grant|fund|sponsor/.test(blob)) return "This step unlocks funding opportunities.";
+          return "This step builds evidence funders and partners look for.";
+        case "reentry":
+        case "housing":
+          return "This step builds stability so bigger career moves become realistic.";
+        default:
+          return "Completing this path could open doors you do not have yet — results depend on your situation and follow-through.";
+      }
+    }
+
+    function inferPotentialOutcomeRange(idea, situation, blob) {
+      if (situation === "employment" || situation === "career_change") {
+        return {
+          metricLabel: "Potential Salary Increase",
+          metricValue: "$10k–$25k/year",
+          note: "Possible bump if you land a role aligned with this path — not a guarantee."
+        };
+      }
+      if (situation === "business" || situation === "online_business" || situation === "grounded" || situation === "creative") {
+        return {
+          metricLabel: "Income Potential",
+          metricValue: "$500–$2,000/month",
+          note: "Typical early range for this kind of work — varies by market, pricing, and effort."
+        };
+      }
+      if (situation === "skilled_trade") {
+        return {
+          metricLabel: "Income Potential",
+          metricValue: "$500–$2,000/month",
+          note: "Early side-work or part-time range — full-time trade income can be higher with licensing and experience."
+        };
+      }
+      if (isFounderRoadmapForIdea(idea)) {
+        if (/grant|funding|\$2k|sponsor/.test(blob)) {
+          return {
+            metricLabel: "Possible Grant or Sponsorship",
+            metricValue: "$2k–$25k (one-time)",
+            note: "Some small tech-for-good or workforce grants land in this range — many applications do not."
+          };
+        }
+        if (/donation|revenue|supporter|\$\d+/.test(blob)) {
+          return {
+            metricLabel: "Income Potential",
+            metricValue: "$50–$500/month",
+            note: "Early supporter or donation range for a free tool — modest and uncertain at first."
+          };
+        }
+      }
+      if (/grant|funding|sponsor/.test(blob)) {
+        return {
+          metricLabel: "Possible Grant or Sponsorship",
+          metricValue: "$2k–$25k (one-time)",
+          note: "Possible for some small grants or pilots — many paths never receive funding."
+        };
+      }
+      return null;
+    }
+
+    function deriveRoadmapPotentialOutcome(idea = state.currentIdea) {
+      if (!idea) return null;
+
+      const incomeRaw = String(idea.income || "").trim();
+      const situation = getPathSituationType(idea);
+      const blob = `${idea.title || ""} ${idea.type || ""} ${idea.tagline || ""} ${idea.why || ""} ${incomeRaw}`.toLowerCase();
+
+      if (incomeTextLooksFinancial(incomeRaw)) {
+        return {
+          metricLabel: inferPotentialOutcomeMetricLabel(blob, situation),
+          metricValue: formatPotentialMetricValue(incomeRaw),
+          downstream: "",
+          note: "Realistic possibility if this path works out — not a guarantee."
+        };
+      }
+
+      const inferred = inferPotentialOutcomeRange(idea, situation, blob);
+      if (inferred) return { ...inferred, downstream: "" };
+
+      return {
+        metricLabel: "",
+        metricValue: "",
+        downstream: inferPotentialOutcomeDownstream(idea, situation, blob),
+        note: "Based on what usually happens when someone completes steps like these — your results may differ."
+      };
+    }
+
+    function renderRoadmapPotentialOutcome(idea = state.currentIdea) {
+      const root = $("#roadmap-potential-outcome");
+      if (!root) return;
+
+      const outcome = deriveRoadmapPotentialOutcome(idea);
+      if (!outcome) {
+        root.hidden = true;
+        return;
+      }
+
+      const metricWrap = $("#roadmap-potential-outcome-metric");
+      const metricLabel = $("#roadmap-potential-outcome-metric-label");
+      const metricValue = $("#roadmap-potential-outcome-metric-value");
+      const downstream = $("#roadmap-potential-outcome-downstream");
+      const note = $("#roadmap-potential-outcome-note");
+
+      const hasMetric = Boolean(outcome.metricLabel && outcome.metricValue);
+      if (metricWrap) metricWrap.hidden = !hasMetric;
+      if (metricLabel) metricLabel.textContent = hasMetric ? `${outcome.metricLabel}:` : "";
+      if (metricValue) metricValue.textContent = outcome.metricValue || "";
+
+      if (downstream) {
+        downstream.textContent = outcome.downstream || "";
+        downstream.hidden = !outcome.downstream;
+      }
+      if (note) note.textContent = outcome.note || "";
+
+      root.hidden = !(hasMetric || outcome.downstream);
+    }
+
     function applyPlainLanguageToTask(normalized) {
       normalized.text = humanizeTaskText(normalized.text);
       normalized.why = humanizeTaskText(normalized.why);
       normalized.outcome = humanizeTaskText(normalized.outcome);
       normalized.alternatives = humanizeTaskText(normalized.alternatives);
       normalized.mission = humanizeTaskText(normalized.mission || "");
+      if (isMetaStageLabel(normalized.mission)) {
+        normalized.mission = simplifyStageLabel(normalized.mission, state.currentIdea);
+      }
       normalized.howTo = humanizeTaskText(normalized.howTo || "");
       normalized.mentorHelp = humanizeTaskText(normalized.mentorHelp || "");
       normalized.mentorFindings = humanizeTaskText(normalized.mentorFindings || "");
@@ -15868,7 +16239,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const prefix = taskIndex <= 0 ? "First" : taskIndex === 1 ? "Next" : "Then";
         return `${prefix}: ${action}`;
       }
-      const stageBit = summarizeMissionTitle(stageLabel);
+      const stageBit = summarizeMissionTitle(simplifyStageLabel(stageLabel, state.currentIdea));
       return stageBit
         ? `Step ${taskIndex + 1} — ${stageBit}`
         : `Step ${taskIndex + 1} toward your goal`;
@@ -16692,9 +17063,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function normalizeRoadmapStages(stages) {
+      const idea = state.currentIdea;
       return mentorizeRoadmapStages((stages || []).map((stage) => ({
         ...stage,
-        label: humanizeTaskText(stage.label || ""),
+        label: simplifyStageLabel(stage.label || "", idea),
         desc: humanizeTaskText(stage.desc || ""),
         tasks: (stage.tasks || []).map((task) => normalizeRoadmapTask(task))
       })));
@@ -17295,7 +17667,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         },
         nonprofit: {
           good: [
-            `"Define mission + who \\"${title}\\" serves"`,
+            `"Decide who you're helping"`,
             `"File or plan legal structure for \\"${title}\\""`,
             `"Recruit 2 board or advisor allies in ${locRaw}"`,
             `"Run first small program or pilot for \\"${title}\\""`
@@ -18728,7 +19100,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ],
         nonprofit: [
           {
-            label: "Define \"{title}\" mission + who it serves",
+            label: "Decide who you're helping",
             desc: "Get crystal clear on the problem, audience, and outcome before paperwork.",
             tasks: [
               "Write a one-page mission for \"{title}\": who you help, what changes for them, and how you will know it worked",
@@ -25230,6 +25602,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       updateRoadmapOverviewHeader(idea);
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = humanizeTaskText(idea.title);
+      renderRoadmapPotentialOutcome(idea);
 
       const cached = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
         ? state.allRoadmaps[state.roadmapKey]
@@ -26007,6 +26380,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           : "Each task includes “What this step means” when wording might be unclear, plus time, cost, and local help when relevant.";
       }
       updateMapContextDisplays();
+      renderRoadmapPotentialOutcome(idea);
     }
 
     function updateRoadmapLocalResourcesList() {
@@ -26677,7 +27051,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           <button type="button" class="roadmap-phase-head stage-head">
             <span class="roadmap-phase-num stage-num">${stageIndex + 1}</span>
             <span class="roadmap-phase-info">
-              <span class="roadmap-phase-label stage-label">${escapeHtml(humanizeTaskText(stage.label))}</span>
+              <span class="roadmap-phase-label stage-label">${escapeHtml(simplifyStageLabel(stage.label, state.currentIdea))}</span>
               <span class="roadmap-phase-count">${progress.done} / ${progress.total} tasks</span>
             </span>
             <svg class="roadmap-phase-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
