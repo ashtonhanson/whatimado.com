@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-roadmap-speed -->
+<!-- whatimado build: 2026-07-01-gen-pipeline -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-roadmap-speed">
+  <meta name="whatimado-build" content="2026-07-01-gen-pipeline">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -13281,17 +13281,11 @@
       '- GOOD: "Spend two weeks sharing it with real people and listen to what they say." / "Talk to the people who make decisions at each org." / "Send the emails below — one org at a time."\n' +
       '- Stage labels must sound like a step a friend would say — e.g. "Find five people to try your site" or "Decide who you\'re helping". NEVER paste the path title in quotes, NEVER "Define \\"{title}\\" mission + who it serves".\n';
 
-    const actionableTaskRulesCache = new Map();
-
     function getActionableTaskRules(idea = state.currentIdea) {
-      const cacheKey = isGroundedPractitioner(idea) ? "grounded" : "default";
-      if (actionableTaskRulesCache.has(cacheKey)) return actionableTaskRulesCache.get(cacheKey);
-      const base = cacheKey === "grounded"
+      const base = isGroundedPractitioner(idea)
         ? `${ACTIONABLE_TASK_RULES}\n${GROUNDED_UNIVERSAL_RULES}`
         : ACTIONABLE_TASK_RULES;
-      const rules = `${base}\n${PLAIN_LANGUAGE_AI_RULES}`;
-      actionableTaskRulesCache.set(cacheKey, rules);
-      return rules;
+      return `${base}\n${PLAIN_LANGUAGE_AI_RULES}`;
     }
 
     function applyPlaybookTokens(text, idea, parsed, locRaw) {
@@ -15530,43 +15524,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
-    const deferredDraftTaskIds = new Set();
-    let deferredDraftFlushTimer = null;
-
-    function scheduleDeferredTaskDraft(taskId) {
-      if (!taskId || deferredDraftTaskIds.has(taskId)) return;
-      deferredDraftTaskIds.add(taskId);
-      clearTimeout(deferredDraftFlushTimer);
-      deferredDraftFlushTimer = setTimeout(flushDeferredTaskDrafts, 900);
-    }
-
-    function flushDeferredTaskDrafts() {
-      const taskIds = [...deferredDraftTaskIds];
-      deferredDraftTaskIds.clear();
-      deferredDraftFlushTimer = null;
-      taskIds.forEach((taskId, index) => {
-        const run = () => void ensureTaskDraftInNotes(taskId);
-        if (typeof requestIdleCallback === "function") {
-          requestIdleCallback(run, { timeout: 5000 + index * 350 });
-        } else {
-          setTimeout(run, 1200 + index * 400);
-        }
+    function queueWritingDraftsForVisibleTasks() {
+      $$(".task-item").forEach((item) => {
+        const taskId = item.dataset.taskId;
+        const phase = item.closest(".roadmap-phase, .stage-card");
+        if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
+        void ensureTaskDraftInNotes(taskId);
       });
     }
 
-    function queueWritingDraftsForVisibleTasks() {
+    let deferredDraftGenerationTimer = null;
+
+    function deferTaskDraftGeneration() {
+      if (deferredDraftGenerationTimer) return;
       const run = () => {
-        $$(".task-item").forEach((item) => {
-          const taskId = item.dataset.taskId;
-          const phase = item.closest(".roadmap-phase, .stage-card");
-          if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
-          scheduleDeferredTaskDraft(taskId);
-        });
+        deferredDraftGenerationTimer = null;
+        queueWritingDraftsForVisibleTasks();
       };
       if (typeof requestIdleCallback === "function") {
-        requestIdleCallback(run, { timeout: 3500 });
+        deferredDraftGenerationTimer = requestIdleCallback(run, { timeout: 3000 });
       } else {
-        setTimeout(run, 1400);
+        deferredDraftGenerationTimer = setTimeout(run, 180);
       }
     }
 
@@ -19796,6 +19774,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    const roadmapPromptCache = new Map();
+
+    function hashRoadmapPromptContext(str) {
+      let hash = 0;
+      const text = String(str || "");
+      for (let i = 0; i < text.length; i += 1) {
+        hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+      }
+      return String(hash);
+    }
+
+    function getRoadmapPromptCacheKey(idea, context, options = {}) {
+      const titleKey = slugify(idea?.title || "");
+      const contextTail = String(context || "").slice(-512);
+      return `${titleKey}|${options.founderMode}|${options.dedupe}|${options.phase || "initial"}|${options.refreshBlock?.length || 0}|${hashRoadmapPromptContext(contextTail)}`;
+    }
+
+    function getCachedRoadmapPrompt(idea, context, options = {}) {
+      const key = getRoadmapPromptCacheKey(idea, context, options);
+      if (roadmapPromptCache.has(key)) return roadmapPromptCache.get(key);
+      const prompt = buildRoadmapPrompt(idea, context, options);
+      roadmapPromptCache.set(key, prompt);
+      return prompt;
+    }
+
     function parseRoadmapResponse(response, idea) {
       if (!response?.trim()) return null;
       const parsed = extractJsonArray(response, null);
@@ -19806,15 +19809,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (roadmapHasGenericStages(stages, idea)) return null;
       if (isGenericFallbackRoadmap(stages)) return null;
       if (roadmapHasTooMuchHomework(stages) || roadmapLacksMentorWork(stages)) return null;
-      return normalizeRoadmapStages(stages);
-    }
-
-    function parseRoadmapStructureOnly(response) {
-      if (!response?.trim()) return null;
-      const parsed = extractJsonArray(response, null);
-      if (!Array.isArray(parsed) || parsed.length < 1) return null;
-      const stages = parsed.filter((stage) => stage?.label && Array.isArray(stage.tasks) && stage.tasks.length > 0);
-      if (!stages.length) return null;
       return normalizeRoadmapStages(stages);
     }
 
@@ -25832,7 +25826,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       document.body.classList.toggle("roadmap-loading-active", loading);
       if (loading) {
         startLoadingQuips("#roadmap-loading .loader-tagline");
-        startSiteLoadingProgress($("#roadmap-loader-progress"), { durationMs: 32000, cap: 88 });
+        startSiteLoadingProgress($("#roadmap-loader-progress"), { durationMs: 34000, cap: 92 });
         syncRoadmapStickyOffset();
       } else {
         stopLoadingQuips();
@@ -25848,110 +25842,122 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (pct) pct.textContent = "0%";
     }
 
-    function bumpRoadmapLoaderProgress(nextCap) {
-      const root = $("#roadmap-loader-progress");
-      const controller = siteLoadingProgressControllers.get(root);
-      if (controller) controller.bump(nextCap);
+    function tryParseRoadmapJson(response) {
+      if (!response?.trim()) return null;
+      const parsed = extractJsonArray(response, null);
+      if (!Array.isArray(parsed) || parsed.length < 1) return null;
+      const stages = parsed.filter((stage) => stage?.label && Array.isArray(stage.tasks) && stage.tasks.length > 0);
+      return stages.length ? stages : null;
     }
 
-    function collectRoadmapAiCorrectionIssues(stages, idea, { founderMode, refreshBlock, previousStages } = {}) {
+    function collectRoadmapParseFailureIssues(response, idea) {
+      const raw = tryParseRoadmapJson(response);
+      if (!raw) return [{ code: "parse_failed" }];
       const issues = [];
-      if (!stages?.length) {
-        issues.push({
-          id: "parse_failed",
-          trackEvent: "roadmap_mentor_work_corrected",
-          instruction:
-            `Your last draft assigned homework (research, find, write from scratch) instead of doing the work.\n` +
-            `${getActionableTaskRules(idea)}\n` +
-            `Regenerate all stages. Every relevant task needs mentorFindings (what you found), resources.* (real orgs/grants), and script (full drafts). Task text = only the smallest user step.\n`
-        });
-        return issues;
+      if (raw.some((stage) => isGenericStageLabel(stage.label)) || roadmapHasGenericStages(raw, idea)) {
+        issues.push({ code: "generic_stages" });
       }
-      if (roadmapOverlapsSibling(stages, idea)) {
-        issues.push({
-          id: "overlap",
-          instruction:
-            "Your draft repeats stages or tasks from another path on this map. Rewrite with completely different stage names, a different first move, and different task wording.\n"
-        });
+      if (roadmapHasTooMuchHomework(raw) || roadmapLacksMentorWork(raw)) {
+        issues.push({ code: "homework" });
       }
-      if (roadmapHasGenericStages(stages, idea)) {
-        issues.push({
-          id: "generic_stages",
-          trackEvent: "roadmap_generic_stages_corrected",
-          instruction:
-            `${getPathSpecificMilestoneBlock(idea)}\n` +
-            `Your last draft used generic reusable stage names (like "Launch first test", "Gather feedback", "Repeat") instead of milestones specific to "${idea.title}" and this person's situation.\n` +
-            `Regenerate all stages. Each stage label must name something concrete about THIS path — the job, trade, nonprofit mission, business type, or life situation. Do NOT reuse a 3-step test/feedback/repeat template.\n`
-        });
+      if (isGenericFallbackRoadmap(raw) && !issues.length) {
+        issues.push({ code: "parse_failed" });
       }
-      if (refreshBlock && previousStages?.length && roadmapStagesMatchPrevious(stages, previousStages)) {
-        issues.push({
-          id: "refresh_mirror",
-          instruction:
-            "Your rewrite still mirrors the previous roadmap too closely. Use different stage names, a different first move, and different task wording.\n"
-        });
+      return issues.length ? issues : [{ code: "parse_failed" }];
+    }
+
+    function collectRoadmapGenerationIssues(stages, idea, { refreshBlock, previousStages } = {}) {
+      const issues = [];
+      if (roadmapOverlapsSibling(stages, idea)) issues.push({ code: "overlap" });
+      if (refreshBlock && roadmapStagesMatchPrevious(stages, previousStages)) {
+        issues.push({ code: "refresh_stale" });
       }
-      if (roadmapHasGenericMismatch(stages, idea)) {
-        issues.push({
-          id: "grounded_mismatch",
-          instruction:
-            `${getGroundedBusinessBlock(idea)}\n` +
-            `Your last draft wrongly pushed cheap freelance platforms, workforce programs, or beginner training. Regenerate with grounded practitioner tasks: positioning, packages with prices, niche proof, weekly posts, 20-business outreach with value-first script, Google local SEO — for their stated craft in their city.\n`
-        });
+      if (hasSavedUserLocation() && pathNeedsLocalResources(idea) && !roadmapHasRichLocalData(stages, idea)) {
+        issues.push({ code: "local_resources" });
       }
-      if (roadmapHasTooMuchHomework(stages) || roadmapLacksMentorWork(stages)) {
-        issues.push({
-          id: "homework",
-          trackEvent: "roadmap_mentor_work_corrected",
-          instruction:
-            `Too many tasks still look like homework. Do the legwork yourself:\n` +
-            `- mentorFindings: "I found 8 orgs… contact these 3 first because…"\n` +
-            `- resources.*: real names + URLs\n` +
-            `- script: full email/grant/post drafts\n` +
-            `- text: "Review the list and call [first org] today" — never "research" or "write a draft"\n`
-        });
-      }
-      if (!founderMode && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
-        issues.push({
-          id: "reentry",
-          trackEvent: "roadmap_reentry_corrected",
-          instruction: `${getReentryRoadmapCorrectionBlock(idea)}\n${getActionableTaskRules(idea)}\n`
-        });
+      if (roadmapHasGenericMismatch(stages, idea)) issues.push({ code: "generic_mismatch" });
+      if (!isFounderRoadmapForIdea(idea) && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
+        issues.push({ code: "reentry" });
       }
       return issues;
     }
 
-    function buildCombinedRoadmapCorrectionPrompt(idea, context, promptOptions, issues) {
-      const addendum = issues.map((issue) => issue.instruction).filter(Boolean).join("\n");
-      return (
-        `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n\n` +
-        `QUALITY CORRECTIONS — fix every issue below in one complete regenerated roadmap:\n\n${addendum}`
-      );
-    }
+    function buildCombinedRoadmapCorrectionBlock(issues, idea, { founderMode = false } = {}) {
+      const codes = new Set((issues || []).map((issue) => issue.code));
+      const parts = [];
 
-    function applyLocalRoadmapFixes(stages, idea, founderMode) {
-      let source = "ai";
-      const events = [];
-      if (!stages?.length) return { stages, source, events };
-      if (founderMode && roadmapLooksLikeEndUserReentry(stages)) {
-        stages = normalizeRoadmapStages(getFounderFallbackStages(idea));
-        source = "fallback";
-        events.push({ name: "roadmap_founder_reentry_mismatch_fallback", payload: {} });
-      } else if (roadmapHasFounderMismatch(stages, idea)) {
-        stages = normalizeRoadmapStages(getFallbackStages(idea));
-        source = "fallback";
-        events.push({ name: "roadmap_founder_mismatch_fallback", payload: {} });
+      if (codes.has("overlap")) {
+        parts.push(
+          `Your roadmap duplicated stages or tasks from another path on this map. Regenerate with wholly unique stage names and tasks for "${idea.title}".`
+        );
       }
-      return { stages, source, events };
+      if (codes.has("refresh_stale")) {
+        parts.push(
+          "Your rewrite still mirrors the previous roadmap too closely. Use different stage names, a different first move, and different task wording."
+        );
+      }
+      if (codes.has("generic_stages")) {
+        parts.push(
+          `${getPathSpecificMilestoneBlock(idea)}\n` +
+          `Your last draft used generic reusable stage names (like "Launch first test", "Gather feedback", "Repeat") instead of milestones specific to "${idea.title}" and this person's situation.\n` +
+          `Regenerate all stages. Each stage label must name something concrete about THIS path — the job, trade, nonprofit mission, business type, or life situation. Do NOT reuse a 3-step test/feedback/repeat template.\n`
+        );
+      }
+      if (codes.has("local_resources")) {
+        parts.push(
+          `PREVIOUS ROADMAP WAS TOO GENERIC FOR ${getUserLocation()}.\n` +
+          `${getActionableTaskRules()}\n` +
+          "Regenerate all 4 stages. Every task MUST include resources.local / resources.national / resources.global with real named organizations, official URLs, and copy-paste outreach where relevant.\n"
+        );
+      }
+      if (codes.has("generic_mismatch")) {
+        parts.push(
+          `${getGroundedBusinessBlock(idea)}\n` +
+          "Your last draft wrongly pushed cheap freelance platforms, workforce programs, or beginner training. Regenerate with grounded practitioner tasks: positioning, packages with prices, niche proof, weekly posts, 20-business outreach with value-first script, Google local SEO — for their stated craft in their city.\n"
+        );
+      }
+      if (codes.has("homework") || codes.has("parse_failed")) {
+        parts.push(
+          "Your last draft assigned homework (research, find, write from scratch) instead of doing the work.\n" +
+          `${getActionableTaskRules()}\n` +
+          "Regenerate all stages. Every relevant task needs mentorFindings (what you found), resources.* (real orgs/grants), and script (full drafts). Task text = only the smallest user step.\n"
+        );
+      }
+      if (codes.has("reentry")) {
+        parts.push(getReentryRoadmapCorrectionBlock(idea));
+        parts.push(getActionableTaskRules());
+      }
+
+      if (!parts.length) {
+        parts.push(
+          "Your last draft did not meet roadmap quality rules. Regenerate all stages with concrete missions, mentorFindings, resources, and scripts — no homework.\n" +
+          `${getActionableTaskRules()}\n`
+        );
+      }
+
+      return parts.join("\n\n");
     }
 
-    function finalizeRoadmapQuality(stages, idea, founderMode, ideaIndex) {
-      let source = "ai";
-      if (!founderMode && isReentrySituation(idea) && stages?.length && roadmapSkipsReentryStability(stages)) {
+    function applyLocalResourceFixesIfPossible(stages, idea) {
+      if (!stages?.length || !hasSavedUserLocation() || !pathNeedsLocalResources(idea)) return stages;
+      if (roadmapHasRichLocalData(stages, idea)) return stages;
+      const fallback = applyLocalResourceFallback(stages, getUserLocation());
+      return roadmapHasRichLocalData(fallback, idea) ? fallback : stages;
+    }
+
+    function finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource = "ai" } = {}) {
+      let source = roadmapSource;
+
+      if (stages && founderMode && roadmapLooksLikeEndUserReentry(stages)) {
+        stages = getFounderFallbackStages(idea);
+        source = "fallback";
+        trackEvent("roadmap_founder_reentry_mismatch_fallback", { idea_index: ideaIndex });
+      } else if (stages && roadmapHasFounderMismatch(stages, idea)) {
         stages = getFallbackStages(idea);
         source = "fallback";
-        trackEvent("roadmap_reentry_fallback", { idea_index: ideaIndex });
+        trackEvent("roadmap_founder_mismatch_fallback", { idea_index: ideaIndex });
       }
+
       if (
         !stages ||
         roadmapHasGenericStages(stages, idea) ||
@@ -25968,17 +25974,29 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           reason: stages ? "deduped" : "empty_or_generic"
         });
       }
-      return { stages, source };
+
+      if (stages && !founderMode && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
+        stages = getFallbackStages(idea);
+        source = "fallback";
+        trackEvent("roadmap_reentry_fallback", { idea_index: ideaIndex });
+      }
+
+      return {
+        stages: ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
+        roadmapSource: source
+      };
     }
 
-    function commitGeneratedRoadmap(stages, idea, ideaIndex, roadmapSource, { track = true } = {}) {
-      state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea);
+    function publishRoadmapToUi(idea, ideaIndex, stages, roadmapSource, founderMode, { isFinal = true } = {}) {
+      state.roadmapStages = stages;
       state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
       clearRemovedRoadmapKey(idea.title);
-      const founderMode = isFounderRoadmapForIdea(idea);
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
       renderStages(state.roadmapStages);
-      if (track) {
+      registerRoadmapInSidebar(idea, ideaIndex);
+      renderSidebarRoadmaps();
+      schedulePersist();
+      if (isFinal) {
         trackEvent("roadmap_generated", {
           idea_index: ideaIndex,
           stages_count: state.roadmapStages.length,
@@ -25986,10 +26004,77 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           founder_mode: founderMode,
           source: roadmapSource
         });
+        void maybeEnrichRoadmapLocalContacts();
+        deferTaskDraftGeneration();
       }
-      registerRoadmapInSidebar(idea, ideaIndex);
-      renderSidebarRoadmaps();
-      schedulePersist();
+    }
+
+    async function generateRoadmapStagesFromAi(idea, ideaIndex, options = {}, callbacks = {}) {
+      const founderMode = isFounderRoadmapForIdea(idea);
+      const context = getAdvisorContext();
+      const refreshBlock = [
+        options.previousStages?.length ? buildRoadmapRefreshBlock(options.previousStages) : "",
+        options.extraRefreshBlock || ""
+      ].filter(Boolean).join("\n");
+      const promptOptions = {
+        founderMode,
+        dedupe: Boolean(options.force || refreshBlock),
+        refreshBlock
+      };
+      const tokenLimit = getRoadmapAdvisorTokenLimit(founderMode);
+      let basePrompt = getCachedRoadmapPrompt(idea, context, promptOptions);
+      let roadmapSource = "ai";
+
+      let response = await callAdvisor(basePrompt, tokenLimit);
+      let stages = parseRoadmapResponse(response, idea);
+
+      if (stages && stagesAreMeaningful(stages)) {
+        callbacks.onEarlyStages?.(stages);
+      }
+
+      let issues = stages
+        ? collectRoadmapGenerationIssues(stages, idea, {
+          refreshBlock,
+          previousStages: options.previousStages
+        })
+        : collectRoadmapParseFailureIssues(response, idea);
+
+      if (stages) {
+        const withLocal = applyLocalResourceFixesIfPossible(stages, idea);
+        if (withLocal !== stages && roadmapHasRichLocalData(withLocal, idea)) {
+          stages = withLocal;
+          issues = issues.filter((issue) => issue.code !== "local_resources");
+          trackEvent("roadmap_local_fallback_applied", { idea_index: ideaIndex });
+        }
+      }
+
+      if (issues.length) {
+        const needsDedupe = issues.some((issue) => issue.code === "overlap" || issue.code === "refresh_stale");
+        if (needsDedupe && !promptOptions.dedupe) {
+          promptOptions.dedupe = true;
+          basePrompt = getCachedRoadmapPrompt(idea, context, promptOptions);
+        }
+        const correctionBlock = buildCombinedRoadmapCorrectionBlock(issues, idea, { founderMode });
+        response = await callAdvisor(`${basePrompt}\n\n${correctionBlock}`, tokenLimit);
+        const corrected = parseRoadmapResponse(response, idea);
+        if (corrected) {
+          stages = applyLocalResourceFixesIfPossible(corrected, idea);
+          if (issues.some((issue) => issue.code === "homework" || issue.code === "parse_failed")) {
+            trackEvent("roadmap_mentor_work_corrected", { idea_index: ideaIndex });
+          }
+          if (issues.some((issue) => issue.code === "generic_stages")) {
+            trackEvent("roadmap_generic_stages_corrected", { idea_index: ideaIndex });
+          }
+          if (issues.some((issue) => issue.code === "reentry")) {
+            trackEvent("roadmap_reentry_corrected", {
+              idea_index: ideaIndex,
+              still_training_first: roadmapSkipsReentryStability(corrected)
+            });
+          }
+        }
+      }
+
+      return finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource });
     }
 
     async function viewRoadmap(idea, ideaIndex, options = {}) {
@@ -26059,6 +26144,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         renderSidebarRoadmaps();
         schedulePersist();
         void maybeEnrichRoadmapLocalContacts();
+        deferTaskDraftGeneration();
         return;
       }
 
@@ -26075,108 +26161,44 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setRoadmapLoading(true);
       showScreen("roadmap");
 
-      let roadmapSource = "ai";
+      let earlyPublished = false;
       try {
-        const context = getAdvisorContext();
-        const refreshBlock = [
-          options.previousStages?.length ? buildRoadmapRefreshBlock(options.previousStages) : "",
-          options.extraRefreshBlock || ""
-        ].filter(Boolean).join("\n");
-        const promptOptions = {
-          founderMode,
-          dedupe: Boolean(options.force || refreshBlock),
-          refreshBlock
-        };
-        const tokenLimit = getRoadmapAdvisorTokenLimit(founderMode);
-        const generationOptions = {
-          founderMode,
-          refreshBlock,
-          previousStages: options.previousStages
-        };
-
-        let response = await callAdvisor(
-          buildRoadmapPrompt(idea, context, promptOptions),
-          tokenLimit
-        );
-        bumpRoadmapLoaderProgress(72);
-
-        let stages = parseRoadmapResponse(response, idea);
-        if (!stages) stages = parseRoadmapStructureOnly(response);
-
-        let localFix = applyLocalRoadmapFixes(stages, idea, founderMode);
-        stages = localFix.stages;
-        if (localFix.source === "fallback") roadmapSource = "fallback";
-        localFix.events.forEach((event) => trackEvent(event.name, { idea_index: ideaIndex, ...event.payload }));
-
-        let publishedEarly = false;
-        if (stages?.length) {
-          commitGeneratedRoadmap(stages, idea, ideaIndex, roadmapSource, { track: false });
-          setRoadmapLoading(false);
-          publishedEarly = true;
-          bumpRoadmapLoaderProgress(100);
-        }
-
-        const issues = collectRoadmapAiCorrectionIssues(stages, idea, generationOptions);
-        if (issues.length) {
-          response = await callAdvisor(
-            buildCombinedRoadmapCorrectionPrompt(idea, context, promptOptions, issues),
-            tokenLimit
-          );
-          const corrected = parseRoadmapResponse(response, idea) || parseRoadmapStructureOnly(response);
-          if (corrected) {
-            stages = corrected;
-            issues.forEach((issue) => {
-              if (issue.trackEvent) {
-                trackEvent(issue.trackEvent, {
-                  idea_index: ideaIndex,
-                  still_training_first: issue.id === "reentry" ? roadmapSkipsReentryStability(corrected) : undefined
-                });
-              }
-            });
+        const founderModeForGen = isFounderRoadmapForIdea(idea);
+        const result = await generateRoadmapStagesFromAi(
+          idea,
+          ideaIndex,
+          {
+            force: options.force,
+            previousStages: options.previousStages,
+            extraRefreshBlock: options.extraRefreshBlock
+          },
+          {
+            onEarlyStages(stages) {
+              if (earlyPublished) return;
+              earlyPublished = true;
+              publishRoadmapToUi(
+                idea,
+                ideaIndex,
+                ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
+                "ai",
+                founderModeForGen,
+                { isFinal: false }
+              );
+              setRoadmapLoading(false);
+            }
           }
-        }
-
-        localFix = applyLocalRoadmapFixes(stages, idea, founderMode);
-        stages = localFix.stages;
-        if (localFix.source === "fallback") roadmapSource = "fallback";
-        localFix.events.forEach((event) => trackEvent(event.name, { idea_index: ideaIndex, ...event.payload }));
-
-        const finalized = finalizeRoadmapQuality(stages, idea, founderMode, ideaIndex);
-        stages = finalized.stages;
-        roadmapSource = finalized.source;
-
-        if (publishedEarly) {
-          state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea);
-          state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
-          $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
-          renderStages(state.roadmapStages);
-          trackEvent("roadmap_generated", {
-            idea_index: ideaIndex,
-            stages_count: state.roadmapStages.length,
-            task_count: state.roadmapStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0),
-            founder_mode: founderMode,
-            source: roadmapSource,
-            early_shell: true
-          });
-          schedulePersist();
-        } else {
-          commitGeneratedRoadmap(stages, idea, ideaIndex, roadmapSource);
-        }
-
-        void maybeEnrichRoadmapLocalContacts();
+        );
+        publishRoadmapToUi(idea, ideaIndex, result.stages, result.roadmapSource, founderModeForGen, { isFinal: true });
+        earlyPublished = true;
       } catch (error) {
         console.error(error);
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex });
-        state.roadmapStages = normalizeRoadmapStages(getFallbackStages(idea));
-        state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: "fallback" };
-        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, "fallback");
-        renderStages(state.roadmapStages);
-        registerRoadmapInSidebar(idea, ideaIndex);
-        renderSidebarRoadmaps();
-        schedulePersist();
-        void maybeEnrichRoadmapLocalContacts();
+        const founderModeForGen = isFounderRoadmapForIdea(idea);
+        const fallbackStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
+        publishRoadmapToUi(idea, ideaIndex, fallbackStages, "fallback", founderModeForGen, { isFinal: true });
+        earlyPublished = true;
       } finally {
-        setRoadmapLoading(false);
+        if (!earlyPublished) setRoadmapLoading(false);
       }
     }
 
@@ -26420,16 +26442,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           }, 4500);
         });
         renderTaskThreads(taskId);
-        const match = taskId?.match(/^task-(\d+)-(\d+)$/);
-        if (match) {
-          const normalized = normalizeRoadmapTask(state.roadmapStages?.[Number(match[1])]?.tasks?.[Number(match[2])]);
-          if (normalized && isWritingTask(normalized)) {
-            scheduleDeferredTaskDraft(taskId);
-          }
-        }
       });
       syncAllTaskExpandUi();
-      queueWritingDraftsForVisibleTasks();
+      deferTaskDraftGeneration();
     }
 
     function getStageProgressFromIndices(stageIndex) {
@@ -26811,41 +26826,40 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         location: loc
       });
 
+      if (loc && pathNeedsLocalResources(idea) && state.roadmapStages?.length) {
+        setLocalEnrichProgress(0, 78, "Applying local org list");
+        const fastFallbackStages = applyLocalResourceFallback(state.roadmapStages, loc);
+        if (roadmapHasRichLocalData(fastFallbackStages, idea)) {
+          const founderMode = isFounderRoadmapForIdea(idea);
+          state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(fastFallbackStages), idea);
+          state.allRoadmaps[key] = {
+            ...(state.allRoadmaps[key] || {}),
+            idea,
+            stages: state.roadmapStages,
+            source: state.allRoadmaps[key]?.source || "ai",
+            localEnriched: true,
+            localEnrichFailed: false
+          };
+          renderStages(state.roadmapStages);
+          schedulePersist();
+          finishLocalEnrichProgress(true);
+          trackEvent("roadmap_local_enrich_succeeded", { roadmap_key: key, source: "fallback_fast" });
+          roadmapLocalEnrichInFlight = false;
+          return true;
+        }
+      }
+
       let enrichSource = "ai";
 
       try {
         const founderMode = isFounderRoadmapForIdea(idea);
-
-        setLocalEnrichProgress(0, 18);
-        if (!force) {
-          const quickFallback = applyLocalResourceFallback(state.roadmapStages, loc);
-          if (roadmapHasRichLocalData(quickFallback, idea)) {
-            setLocalEnrichProgress(3, 96, "Using verified local org list");
-            state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(quickFallback), idea);
-            state.allRoadmaps[key] = {
-              ...(state.allRoadmaps[key] || {}),
-              idea,
-              stages: state.roadmapStages,
-              source: "fallback",
-              localEnriched: true,
-              localEnrichFailed: false
-            };
-            $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, "fallback");
-            renderStages(state.roadmapStages);
-            schedulePersist();
-            finishLocalEnrichProgress(true);
-            trackEvent("roadmap_local_enrich_succeeded", { roadmap_key: key, source: "fallback_fast" });
-            return true;
-          }
-        }
-
         const advisorTimeoutMs = 90000;
         const tokenLimit = capAdvisorTokens(getRoadmapAdvisorTokenLimit(founderMode));
 
-        setLocalEnrichProgress(1, 42);
+        setLocalEnrichProgress(0, 14);
         await new Promise((resolve) => setTimeout(resolve, 80));
 
-        setLocalEnrichProgress(2, 55);
+        setLocalEnrichProgress(1, 55);
         let response = await callAdvisor(
           buildCompactLocalEnrichPrompt(idea, loc, founderMode),
           tokenLimit,
