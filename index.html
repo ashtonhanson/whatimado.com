@@ -20661,6 +20661,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       roadmapCategories: [],
       activeRoadmapCategoryId: null,
       dismissedRoadmapSidebarMapIds: [],
+      deletedMapIds: [],
       selectedPathIndexes: [],
       ideaBatches: [],
       sidebarRoadmapsExpanded: false,
@@ -21310,25 +21311,115 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function applyActiveMapToSessionPayload(payload, activeEntry) {
       if (!payload || !activeEntry) return payload;
-      payload.activeMapId = activeEntry.id;
-      payload.step = activeEntry.step;
-      payload.history = Array.isArray(activeEntry.history) ? activeEntry.history : [];
-      payload.ideas = Array.isArray(activeEntry.ideas) ? activeEntry.ideas : [];
-      payload.roadmapStages = Array.isArray(activeEntry.roadmapStages) ? activeEntry.roadmapStages : [];
-      payload.currentIdea = activeEntry.currentIdea ?? null;
-      payload.roadmapKey = activeEntry.roadmapKey ?? null;
-      payload.allTaskChats = activeEntry.allTaskChats && typeof activeEntry.allTaskChats === "object" ? activeEntry.allTaskChats : {};
-      payload.allRoadmaps = activeEntry.allRoadmaps && typeof activeEntry.allRoadmaps === "object" ? activeEntry.allRoadmaps : {};
-      payload.expandedThreadId = activeEntry.expandedThreadId ?? null;
-      payload.activeTaskId = activeEntry.activeTaskId ?? null;
-      payload.lastScreen = activeEntry.lastScreen ?? payload.lastScreen ?? "main";
-      payload.mapFeedbackGiven = Boolean(activeEntry.mapFeedbackGiven);
-      payload.mapFeedbackSentiment = activeEntry.mapFeedbackSentiment ?? null;
-      payload.intakeMode = activeEntry.intakeMode || payload.intakeMode || "standard";
-      payload.userLocation = normalizeUserLocation(activeEntry.userLocation || payload.userLocation);
-      payload.userProfile = normalizeUserProfile(activeEntry.userProfile || payload.userProfile);
-      payload.profileIntakeStep = activeEntry.profileIntakeStep || payload.profileIntakeStep || null;
+      const scrubbed = scrubMapRemovedRoadmaps({ ...activeEntry });
+      payload.activeMapId = scrubbed.id;
+      payload.step = scrubbed.step;
+      payload.history = Array.isArray(scrubbed.history) ? scrubbed.history : [];
+      payload.ideas = Array.isArray(scrubbed.ideas) ? scrubbed.ideas : [];
+      payload.roadmapStages = Array.isArray(scrubbed.roadmapStages) ? scrubbed.roadmapStages : [];
+      payload.currentIdea = scrubbed.currentIdea ?? null;
+      payload.roadmapKey = scrubbed.roadmapKey ?? null;
+      payload.allTaskChats = scrubbed.allTaskChats && typeof scrubbed.allTaskChats === "object" ? scrubbed.allTaskChats : {};
+      payload.allRoadmaps = scrubbed.allRoadmaps && typeof scrubbed.allRoadmaps === "object" ? scrubbed.allRoadmaps : {};
+      payload.expandedThreadId = scrubbed.expandedThreadId ?? null;
+      payload.activeTaskId = scrubbed.activeTaskId ?? null;
+      payload.lastScreen = scrubbed.lastScreen ?? payload.lastScreen ?? "main";
+      payload.mapFeedbackGiven = Boolean(scrubbed.mapFeedbackGiven);
+      payload.mapFeedbackSentiment = scrubbed.mapFeedbackSentiment ?? null;
+      payload.intakeMode = scrubbed.intakeMode || payload.intakeMode || "standard";
+      payload.userLocation = normalizeUserLocation(scrubbed.userLocation || payload.userLocation);
+      payload.userProfile = normalizeUserProfile(scrubbed.userProfile || payload.userProfile);
+      payload.profileIntakeStep = scrubbed.profileIntakeStep || payload.profileIntakeStep || null;
       return payload;
+    }
+
+    function getDeletedMapIds() {
+      return new Set(Array.isArray(state.deletedMapIds) ? state.deletedMapIds : []);
+    }
+
+    function addDeletedMapId(mapId) {
+      if (!mapId) return;
+      if (!Array.isArray(state.deletedMapIds)) state.deletedMapIds = [];
+      if (!state.deletedMapIds.includes(mapId)) {
+        state.deletedMapIds.push(mapId);
+      }
+    }
+
+    function filterDeletedMaps(maps = []) {
+      const deleted = getDeletedMapIds();
+      if (!deleted.size) return maps;
+      return maps.filter((map) => map?.id && !deleted.has(map.id));
+    }
+
+    function filterSnapshotRemovedRoadmaps(snapshot, removedKeys = []) {
+      if (!snapshot || !removedKeys?.length) return snapshot;
+      const removed = new Set(removedKeys);
+      const next = { ...snapshot };
+      if (next.allRoadmaps && typeof next.allRoadmaps === "object") {
+        next.allRoadmaps = Object.fromEntries(
+          Object.entries(next.allRoadmaps).filter(([key]) => !removed.has(key))
+        );
+      }
+      if (next.allTaskChats && typeof next.allTaskChats === "object") {
+        next.allTaskChats = Object.fromEntries(
+          Object.entries(next.allTaskChats).filter(([key]) => !removed.has(key))
+        );
+      }
+      const activeKey = next.roadmapKey || (next.currentIdea?.title ? slugify(next.currentIdea.title) : "");
+      if (activeKey && removed.has(activeKey)) {
+        next.roadmapKey = null;
+        next.currentIdea = null;
+        next.roadmapStages = [];
+      }
+      return next;
+    }
+
+    function filterRoadmapCategoriesAgainstLibrary(categories = [], savedMaps = [], deletedMapIds = []) {
+      const deleted = new Set(deletedMapIds);
+      const savedIds = new Set(savedMaps.map((map) => map.id));
+      const mapById = new Map(savedMaps.map((map) => [map.id, map]));
+      const mapEntryHasRoadmapData = (ideaTitle, mapId) => {
+        if (!ideaTitle || !mapId) return false;
+        const key = slugify(ideaTitle);
+        const map = mapById.get(mapId);
+        const removed = new Set(Array.isArray(map?.removedRoadmapKeys) ? map.removedRoadmapKeys : []);
+        if (removed.has(key)) return false;
+        if (mapId === state.activeMapId) {
+          if (state.allRoadmaps?.[key]?.stages?.length) return true;
+          if (state.allTaskChats?.[key] && Object.keys(state.allTaskChats[key]).length) return true;
+        }
+        if (map?.allRoadmaps?.[key]?.stages?.length) return true;
+        if (map?.allTaskChats?.[key] && Object.keys(map.allTaskChats[key]).length) return true;
+        return false;
+      };
+      return categories
+        .filter((category) => !category?.mapId || (savedIds.has(category.mapId) && !deleted.has(category.mapId)))
+        .map((category) => ({
+          ...category,
+          items: (category.items || []).filter((item) => {
+            const mapId = item.mapId || category.mapId;
+            if (mapId && (deleted.has(mapId) || !savedIds.has(mapId))) return false;
+            return mapEntryHasRoadmapData(item.ideaTitle, mapId);
+          })
+        }))
+        .filter((category) =>
+          (category.items || []).length > 0
+          || (category.mapId && savedIds.has(category.mapId) && !deleted.has(category.mapId))
+          || isManualRoadmapCategory(category)
+        );
+    }
+
+    function refreshRoadmapsUi(options = {}) {
+      applyRemovedRoadmapGuards();
+      syncRoadmapCategoriesWithLibrary();
+      pruneRoadmapSidebarAgainstData();
+      renderSidebarRoadmaps();
+      renderMapsLibrary();
+      renderSavedMapsHome();
+      updateMapsNav();
+      if (options.rebuildMap && state.ideas.length) {
+        buildOpportunityMap(state.ideas, { skipPersist: true });
+      }
     }
 
     function mergeSessionPayloads(local, cloud) {
@@ -21337,6 +21428,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!localPayload && !cloudPayload) return null;
       if (!localPayload) return cloudPayload;
       if (!cloudPayload) return localPayload;
+
+      const deletedMapIds = [...new Set([
+        ...(localPayload.deletedMapIds || []),
+        ...(cloudPayload.deletedMapIds || [])
+      ])];
 
       const mapById = new Map();
       for (const payload of [localPayload, cloudPayload]) {
@@ -21356,6 +21452,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           mapById.set(map.id, scrubMapRemovedRoadmaps(winner));
         }
       }
+
+      deletedMapIds.forEach((mapId) => mapById.delete(mapId));
 
       const savedMaps = [...mapById.values()].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
       const localTime = localPayload.savedAt ?? 0;
@@ -21388,8 +21486,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ...(localPayload?.dismissedRoadmapSidebarMapIds || []),
           ...(cloudPayload?.dismissedRoadmapSidebarMapIds || [])
         ])],
+        deletedMapIds,
         savedAt: Math.max(localTime, cloudTime)
       };
+
+      merged.roadmapCategories = filterRoadmapCategoriesAgainstLibrary(
+        merged.roadmapCategories,
+        savedMaps,
+        deletedMapIds
+      );
 
       return applyActiveMapToSessionPayload(merged, activeMapId ? mapById.get(activeMapId) : null);
     }
@@ -21398,7 +21503,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       applyRemovedRoadmapGuards();
       syncActiveMapIntoLibrary();
       const seen = new Set();
-      state.savedMaps = state.savedMaps.filter((map) => {
+      state.savedMaps = filterDeletedMaps(state.savedMaps).filter((map) => {
         if (!map?.id || seen.has(map.id)) return false;
         seen.add(map.id);
         return Boolean(map.history?.length || map.ideas?.length);
@@ -21467,6 +21572,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         roadmapCategories: state.roadmapCategories,
         activeRoadmapCategoryId: state.activeRoadmapCategoryId,
         dismissedRoadmapSidebarMapIds: state.dismissedRoadmapSidebarMapIds,
+        deletedMapIds: state.deletedMapIds,
         selectedPathIndexes: state.selectedPathIndexes,
         savedAt: Date.now()
       };
@@ -22261,9 +22367,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
         syncActiveMapIntoLibrary();
         applyRemovedRoadmapGuards(mapId);
-        renderSidebarRoadmaps();
-        updateMapsNav();
-        if (state.ideas.length) buildOpportunityMap(state.ideas, { skipPersist: true });
+        refreshRoadmapsUi({ rebuildMap: true });
         schedulePersist();
         void flushPersist();
         trackEvent("roadmap_removed", {
@@ -22309,8 +22413,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!item) return Promise.resolve(false);
       return removeRoadmapForPath(item.ideaTitle, {
         ideaIndex: item.ideaIndex,
-        mapId: item.mapId || category.mapId || state.activeMapId,
-        resetMapView: true
+        mapId: item.mapId || category.mapId || state.activeMapId
       });
     }
 
@@ -22469,7 +22572,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const items = [...(category.items || [])];
         Promise.all(items.map((item) => removeRoadmapForPath(item.ideaTitle, {
           mapId: item.mapId || category.mapId || state.activeMapId,
-          resetMapView: true,
           skipConfirm: true
         }))).then(() => {
           state.roadmapCategories = state.roadmapCategories.filter((entry) => entry.id !== categoryId);
@@ -22477,11 +22579,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             state.activeRoadmapCategoryId = null;
           }
           if (getRoadmapSidebarCount() === 0 && state.lastScreen === "map") {
-            state.ideas = [];
-            state.activeMapId = null;
             resetPossibilityMapView();
           }
-          renderSidebarRoadmaps();
+          refreshRoadmapsUi({ rebuildMap: true });
           void flushPersist();
           trackEvent("roadmap_category_deleted", { had_map: false });
         });
@@ -22550,19 +22650,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         state.activeMapId = createMapId();
       }
 
-      const snapshot = buildMapSnapshot();
       const id = state.activeMapId || createMapId();
       state.activeMapId = id;
 
       const existingIndex = state.savedMaps.findIndex((map) => map.id === id);
       const prior = existingIndex >= 0 ? state.savedMaps[existingIndex] : null;
+      const removedKeys = prior?.removedRoadmapKeys || [];
+      const snapshot = filterSnapshotRemovedRoadmaps(buildMapSnapshot(), removedKeys);
+
       const entry = {
         id,
         title: deriveMapTitle(snapshot.history),
         summary: deriveMapSummary(snapshot.history),
         updatedAt: Date.now(),
         ...snapshot,
-        removedRoadmapKeys: prior?.removedRoadmapKeys || snapshot.removedRoadmapKeys || []
+        removedRoadmapKeys: removedKeys
       };
 
       if (existingIndex >= 0) {
@@ -22610,18 +22712,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function applySession(data) {
       if (!data) return;
       applyMapSnapshot(data);
+      state.deletedMapIds = Array.isArray(data.deletedMapIds) ? data.deletedMapIds : [];
       if (Array.isArray(data.savedMaps)) {
-        state.savedMaps = data.savedMaps;
+        state.savedMaps = filterDeletedMaps(
+          data.savedMaps.map((map) => scrubMapRemovedRoadmaps({ ...map }))
+        );
         state.activeMapId = data.activeMapId ?? null;
+        if (state.activeMapId && getDeletedMapIds().has(state.activeMapId)) {
+          state.activeMapId = state.savedMaps[0]?.id ?? null;
+        }
       } else {
         migrateLegacySessionPayload(data);
       }
       state.dismissedRoadmapSidebarMapIds = Array.isArray(data.dismissedRoadmapSidebarMapIds)
         ? data.dismissedRoadmapSidebarMapIds
         : [];
-      state.roadmapCategories = Array.isArray(data.roadmapCategories)
-        ? data.roadmapCategories.filter((category) => !category?.mapId || !isDismissedSidebarMap(category.mapId))
-        : [];
+      state.roadmapCategories = filterRoadmapCategoriesAgainstLibrary(
+        Array.isArray(data.roadmapCategories)
+          ? data.roadmapCategories.filter((category) => !category?.mapId || !isDismissedSidebarMap(category.mapId))
+          : [],
+        state.savedMaps,
+        state.deletedMapIds
+      );
       state.activeRoadmapCategoryId = data.activeRoadmapCategoryId ?? null;
       state.selectedPathIndexes = Array.isArray(data.selectedPathIndexes) ? data.selectedPathIndexes : [];
       migrateRoadmapCategoriesFromLibrary();
@@ -22674,6 +22786,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!entry) return;
 
       const runDelete = () => {
+        addDeletedMapId(mapId);
         addDismissedSidebarMapId(mapId);
         if (state.activeMapId === mapId) {
           state.activeMapId = null;
@@ -22688,10 +22801,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
 
         trackEvent("saved_map_deleted", { saved_maps_count: state.savedMaps.length });
-        renderMapsLibrary();
-        renderSavedMapsHome();
-        updateMapsNav();
-        renderSidebarRoadmaps();
+        refreshRoadmapsUi();
         schedulePersist();
         void flushPersist();
       };
@@ -23135,8 +23245,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       updateSaveButtonVisibility();
-      updateMapsNav();
-      renderSavedMapsHome();
+      refreshRoadmapsUi();
       updateNavSyncStatus();
     }
 
@@ -24321,7 +24430,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         renderSavedMapsHome();
         startRotatingPromptPlaceholder();
       }
-      if (name === "maps") renderMapsLibrary();
+      if (name === "maps") refreshRoadmapsUi({ rebuildMap: state.lastScreen === "map" });
       if (name === "stats") {
         updateStatsContinueButton();
         refreshLaunchStats();
@@ -28365,6 +28474,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.roadmapCategories = [];
       state.activeRoadmapCategoryId = null;
       state.dismissedRoadmapSidebarMapIds = [];
+      state.deletedMapIds = [];
       state.selectedPathIndexes = [];
       resetScreenNavHistory();
       clearIntakeSession({ clearMainInput: true });
@@ -28389,6 +28499,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.roadmapCategories = [];
       state.activeRoadmapCategoryId = null;
       state.dismissedRoadmapSidebarMapIds = [];
+      state.deletedMapIds = [];
       state.selectedPathIndexes = [];
       state.journeyId = null;
       state.syncedLibraryStats = null;
