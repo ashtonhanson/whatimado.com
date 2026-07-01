@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-first-mission-ready -->
+<!-- whatimado build: 2026-07-01-task-drafts -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-first-mission-ready">
+  <meta name="whatimado-build" content="2026-07-01-task-drafts">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -8891,6 +8891,18 @@
       display: none !important;
     }
 
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .roadmap-refining-spinner {
       flex: 0 0 auto;
       width: .95rem;
@@ -13914,6 +13926,71 @@
       return [...refs];
     }
 
+    function isOrgListTask(normalized) {
+      const blob = `${normalized.text} ${normalized.mission || ""}`.toLowerCase();
+      return /\blist \d+ (?:existing )?(?:orgs?|organizations?|nonprofits?|programs?|groups?|services?)\b/.test(blob)
+        || (/\blist \d+\b/.test(blob) && /\b(organi|nonprofit|similar work|gaps you|gap you'd|who else|competitor|already doing)\b/.test(blob));
+    }
+
+    function isPeopleInterviewTask(normalized) {
+      const blob = `${normalized.text} ${normalized.mission || ""}`.toLowerCase();
+      return /\b(interview \d|talk to \d|speak with \d|ask \d people|survey \d people|people affected by)\b/.test(blob);
+    }
+
+    function isGenericPreparedBelowText(text) {
+      return /^Review what I prepared below/i.test(String(text || "").trim());
+    }
+
+    function missionTitleLooksLikeHomework(mission, normalized) {
+      const copy = String(mission || "").trim();
+      if (!copy) return false;
+      if (isHomeworkTaskText(copy)) return true;
+      if (normalized?.text && textSimilarity(copy, normalized.text) >= 0.72) return true;
+      return copy.length > 88 && /\b(list|interview|research|find|note|identify|compile)\b/i.test(copy);
+    }
+
+    function taskHasPreparedAssets(normalized) {
+      return Boolean(
+        getUsableDraftType(normalized) ||
+        taskHasMentorDeliverable(normalized) ||
+        (String(normalized.script || "").trim().length > 80 && !isExplanatoryTaskCopy(normalized.script))
+      );
+    }
+
+    function ensureDraftResources(normalized) {
+      if (getFlatTaskResources(normalized).length >= 2 || !isOrgListTask(normalized)) return normalized;
+      const known = getKnownLocalResourcesForPath(state.currentIdea, getUserLocation());
+      if (!known.length) return normalized;
+      normalized.resourceLayers = normalized.resourceLayers || { local: [], national: [], global: [] };
+      const existing = new Set(getFlatTaskResources(normalized).map((entry) => `${entry.org}|${entry.url}`.toLowerCase()));
+      known.forEach((entry) => {
+        const key = `${entry.org}|${entry.url}`.toLowerCase();
+        if (!existing.has(key)) normalized.resourceLayers.local.push({ ...entry });
+      });
+      return normalized;
+    }
+
+    function buildOrgComparisonSheetDraft(normalized) {
+      const { location, pathTitle } = getTaskDraftContext(normalized);
+      const resources = getFlatTaskResources(normalized);
+      const goal = getShortPathLabel(state.currentIdea) || pathTitle;
+      const header =
+        `ORG COMPARISON SHEET — ${location}\n` +
+        `Goal: ${goal}\n\n` +
+        `| # | Organization | What they do | Website / contact | Gap you could fill |\n` +
+        `|---|--------------|--------------|-------------------|--------------------|`;
+      if (resources.length >= 1) {
+        const rows = resources.slice(0, 8).map((entry, index) => {
+          const org = [entry.org, entry.name].filter(Boolean).join(" — ") || `Organization ${index + 1}`;
+          const contact = [entry.phone, entry.email, entry.url].filter(Boolean).join(" · ") || "[Look up]";
+          return `| ${index + 1} | ${org} | [What they offer] | ${contact} | [Your edge vs them] |`;
+        });
+        const top = resources[0].org || resources[0].name || "Top org";
+        return `${header}\n${rows.join("\n")}\n\nSTART HERE\n1. ${top} — closest match to what you're building\n\nNOTES\nWhat gap keeps showing up? That's often your niche.`;
+      }
+      return `${header}\n| 1 | | | | |\n| 2 | | | | |\n| 3 | | | | |\n| 4 | | | | |\n| 5 | | | | |\n\nFill in each row with orgs doing similar work in ${location}.`;
+    }
+
     function isTaskRestatement(text, normalized, threshold = 0.68) {
       const copy = String(text || "").trim();
       if (!copy || !normalized) return false;
@@ -14415,6 +14492,17 @@
       let copy = humanizeTaskText(String(mission || "").trim());
       if (!copy) return copy;
 
+      if (missionTitleLooksLikeHomework(copy, normalized)) {
+        if (isOrgListTask(normalized)) return "See who already does this work near you";
+        if (isPeopleInterviewTask(normalized)) {
+          const count = `${normalized.text} ${normalized.mission}`.match(/\b(\d+)\b/);
+          return `Talk to ${count?.[1] || "3"} people who've lived this problem`;
+        }
+        if (/\b(organi|nonprofit|partner|pilot|say yes)\b/i.test(`${normalized.text} ${normalized.mission}`)) {
+          return "Get one local org to say yes to trying your idea";
+        }
+      }
+
       copy = specifyVagueTaskReferences(stripRepeatedPathReferences(copy, { idea }), idea);
       const title = String(idea?.title || "").trim();
 
@@ -14807,6 +14895,8 @@
 
     function getUsableDraftType(normalized) {
       const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""} ${normalized.mission || ""}`.toLowerCase();
+      if (isOrgListTask(normalized)) return "spreadsheet";
+      if (/\b(get one local org|say yes to trying|pilot with|nonprofit partner|local org to say yes)\b/.test(blob)) return "email";
       const raw = getWritingDeliverableType(normalized);
       if (raw && USABLE_DRAFT_TYPE_LABELS[raw]) return raw;
 
@@ -14849,8 +14939,10 @@
     }
 
     function getWritingDeliverableType(normalized) {
-      const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""}`.toLowerCase();
+      const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""} ${normalized.mission || ""}`.toLowerCase();
 
+      if (isOrgListTask(normalized)) return "spreadsheet";
+      if (/\b(get one local org|say yes to trying|pilot with|nonprofit partner|local org to say yes)\b/.test(blob)) return "email";
       if (/\b(one-page mission|mission statement|write (?:a |your )?mission)\b/.test(blob)) return "mission_statement";
       if (/\blist \d+ people\b/.test(blob) && /\b(rank|board|advise|refer|ally|allies)\b/.test(blob)) return "spreadsheet";
       if (/\b(phone script|call script|voicemail script|script to (?:read|say))\b/.test(blob)) return "phone_script";
@@ -15114,6 +15206,9 @@ After the call — write down:
 
         case "spreadsheet": {
           const sheetBlob = `${normalized.text} ${normalized.mission || ""}`.toLowerCase();
+          if (isOrgListTask(normalized)) {
+            return buildOrgComparisonSheetDraft(normalized);
+          }
           if (/\blist \d+ people\b/.test(sheetBlob) && /\b(rank|board|advise|refer|ally|allies)\b/.test(sheetBlob)) {
             const goal = getShortPathLabel(state.currentIdea);
             return `ALLY RANKING SHEET — paste into Google Sheets or Excel
@@ -16605,18 +16700,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function inferMissionTitle(normalized, context = {}) {
       const existing = String(normalized.mission || "").trim();
-      if (existing && !isGenericOutcomeText(existing)) {
+      if (existing && !isGenericOutcomeText(existing) && !missionTitleLooksLikeHomework(existing, normalized)) {
         return cleanMissionTitle(existing, normalized, state.currentIdea);
       }
       const taskIndex = Number.isInteger(context.taskIndex) ? context.taskIndex : 0;
-      const blob = `${normalized.text} ${normalized.why || ""}`.toLowerCase();
+      const blob = `${normalized.text} ${normalized.why || ""} ${normalized.mission || ""}`.toLowerCase();
       const shortGoal = getShortPathLabel(state.currentIdea);
 
-      if (/\b(interview \d|talk to \d|speak with \d|survey \d|ask \d)\b/.test(blob)) {
-        const fromText = summarizeMissionTitle(normalized.text);
+      if (isPeopleInterviewTask(normalized)) {
+        const count = blob.match(/\b(\d+)\b/);
         return taskIndex > 0
           ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
-          : (fromText || "Talk to people who've lived this problem");
+          : `Talk to ${count?.[1] || "3"} people who've lived this problem`;
+      }
+      if (isOrgListTask(normalized)) {
+        return taskIndex > 0
+          ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
+          : "See who already does this work near you";
       }
       if (/\blist \d+ people\b/.test(blob)) {
         return taskIndex > 0
@@ -16660,7 +16760,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const first = resources[0].org || resources[0].name || "contact #1";
         parts.push(`Send the draft below to ${first} (details in the contact list).`);
       }
-      if (String(normalized.script || "").length > 60) {
+      if (String(normalized.script || "").length > 60 && taskHasPreparedAssets(normalized)) {
         parts.push("Edit the prepared draft below — swap anything in [brackets], then use it.");
       }
       if (normalized.talkingPoints) {
@@ -16684,6 +16784,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function enrichTaskMentorFields(normalized, context = {}) {
+      ensureDraftResources(normalized);
       sanitizeTaskMentorFields(normalized);
       normalized.mission = inferMissionTitle(normalized, context);
       normalized.howTo = inferHowTo(normalized);
@@ -16796,11 +16897,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         else if (/\bsubject:/i.test(script)) assets.push("draft email");
         else if (/\b(grant|funding)\b/i.test(script.slice(0, 120))) assets.push("grant draft");
         else assets.push("ready-to-edit draft");
+      } else if (getUsableDraftType(normalized)) {
+        const label = USABLE_DRAFT_TYPE_LABELS[getUsableDraftType(normalized)] || "draft";
+        assets.push(label.toLowerCase());
       }
       if (normalized.talkingPoints) assets.push("talking points");
       if (normalized.followUp) assets.push("follow-up message");
 
-      if (assets.length) return `Prepared: ${assets.join("; ")}.`;
+      const draftType = getUsableDraftType(normalized);
+      if (assets.length && (resources.length || draftType || (script.length > 80 && !isExplanatoryTaskCopy(script)))) {
+        return `Prepared: ${assets.join("; ")}.`;
+      }
       return "";
     }
 
@@ -16854,8 +16961,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return `Review the ${resources.length} options below and reach out to ${first} today.`;
       }
 
-      if (isHomeworkTaskText(text)) {
+      if (isOrgListTask(normalized)) {
+        return "Fill in the org comparison sheet below — note what each does and where you could fit in.";
+      }
+      if (isPeopleInterviewTask(normalized)) {
+        return "Use the interview guide below — capture exact quotes about what they need now.";
+      }
+      if (/\b(organi|nonprofit|partner|pilot|say yes)\b/.test(blob)) {
+        return "Review the outreach email below, personalize anything in [brackets], and send it to your best-fit org.";
+      }
+
+      if (isHomeworkTaskText(text) && taskHasPreparedAssets(normalized)) {
         return "Review what I prepared below and take the one small step that moves you forward.";
+      }
+      if (isHomeworkTaskText(text)) {
+        const short = summarizeMissionTitle(text);
+        if (short && textSimilarity(short, String(normalized.mission || "")) < 0.72) {
+          return `Your one step: ${short.replace(/\.$/, "")}.`;
+        }
       }
       return text;
     }
@@ -17367,11 +17490,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const draftLabel = draftType ? (USABLE_DRAFT_TYPE_LABELS[draftType] || "Draft") : "";
 
       if (!draftType) {
+        if (taskHasPreparedAssets(normalized) || getFlatTaskResources(normalized).length) {
+          return "";
+        }
         return `
               <section class="task-mentor-section task-mentor-section--draft task-mentor-section--no-draft">
                 <h4 class="task-mentor-label">Prepared draft</h4>
-                <p class="task-draft-none">No draft needed for this task.</p>
-                <p class="task-draft-none-hint">Use the contacts, links, and tools above to finish this step.</p>
+                <p class="task-draft-none">No written draft for this step — use the contacts and links above.</p>
               </section>`;
       }
 
@@ -26200,9 +26325,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return true;
     }
 
-    function publishRoadmapToUi(idea, ideaIndex, stages, roadmapSource, founderMode, { isFinal = true, initialReveal = false } = {}) {
+    function getRevealCandidateStages(response, stages, idea) {
+      if (stages && firstMissionIsReady(stages)) return stages;
+      const preview = parseRoadmapPreviewResponse(response, idea);
+      if (preview && firstMissionIsReady(preview)) return preview;
+      return null;
+    }
+
+    function publishRoadmapToUi(idea, ideaIndex, stages, roadmapSource, founderMode, { isFinal = true, initialReveal = false, refineUpdate = false } = {}) {
+      const expandedBefore = refineUpdate && state.expandedRoadmapPhases
+        ? new Set(state.expandedRoadmapPhases)
+        : null;
+      const expandedTasksBefore = refineUpdate && state.expandedRoadmapTasks
+        ? new Set(state.expandedRoadmapTasks)
+        : null;
+
       state.roadmapStages = stages;
-      if (initialReveal) prepareFirstMissionForReveal(idea);
+      if (initialReveal && !refineUpdate) prepareFirstMissionForReveal(idea);
+      if (refineUpdate && expandedBefore) state.expandedRoadmapPhases = expandedBefore;
+      if (refineUpdate && expandedTasksBefore) state.expandedRoadmapTasks = expandedTasksBefore;
+
       state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
       clearRemovedRoadmapKey(idea.title);
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
@@ -26222,10 +26364,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
           void maybeEnrichRoadmapLocalContacts({ silent: true });
         }
-        if (initialReveal) {
+        if (initialReveal && !refineUpdate) {
           deferTaskDraftGeneration({ excludeStageIndexes: [0] });
           queueDeferredFirstMissionDrafts();
-        } else {
+        } else if (!refineUpdate) {
           deferTaskDraftGeneration();
         }
       }
@@ -26249,6 +26391,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       let response = await callAdvisor(basePrompt, tokenLimit);
       let stages = parseRoadmapResponse(response, idea);
+
+      const revealCandidate = getRevealCandidateStages(response, stages, idea);
+      if (revealCandidate) {
+        let readyStages = applyLocalResourceFixesIfPossible(revealCandidate, idea);
+        if (!firstMissionIsReady(readyStages)) readyStages = revealCandidate;
+        if (firstMissionIsReady(readyStages)) {
+          callbacks.onFirstMissionReady?.(normalizeRoadmapStages(readyStages));
+        }
+      }
 
       let issues = stages
         ? collectRoadmapGenerationIssues(stages, idea, {
@@ -26387,7 +26538,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         completeCard.classList.remove("visible");
       }
       showScreen("roadmap");
-      setRoadmapLoading(true);
+      setRoadmapLoading(true, { shell: true });
+      renderRoadmapSkeleton();
 
       let revealed = false;
       try {
@@ -26399,6 +26551,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             force: options.force,
             previousStages: options.previousStages,
             extraRefreshBlock: options.extraRefreshBlock
+          },
+          {
+            onFirstMissionReady(stages) {
+              if (revealed || !firstMissionIsReady(stages)) return;
+              revealed = true;
+              publishRoadmapToUi(
+                idea,
+                ideaIndex,
+                ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
+                "ai",
+                founderModeForGen,
+                { isFinal: false, initialReveal: true }
+              );
+              setRoadmapLoading(false);
+              setRoadmapRefining(true);
+            },
+            onRefining(active) {
+              if (revealed) setRoadmapRefining(active);
+            }
           }
         );
         if (!firstMissionIsReady(result.stages)) {
@@ -26406,7 +26577,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
         publishRoadmapToUi(idea, ideaIndex, result.stages, result.roadmapSource, founderModeForGen, {
           isFinal: true,
-          initialReveal: true
+          initialReveal: true,
+          refineUpdate: revealed
         });
         revealed = true;
       } catch (error) {
@@ -26416,11 +26588,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const fallbackStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
         publishRoadmapToUi(idea, ideaIndex, fallbackStages, "fallback", founderModeForGen, {
           isFinal: true,
-          initialReveal: true
+          initialReveal: true,
+          refineUpdate: revealed
         });
         revealed = true;
       } finally {
-        if (revealed) setRoadmapLoading(false);
+        setRoadmapRefining(false);
+        if (!revealed) setRoadmapLoading(false);
       }
     }
 
@@ -27340,6 +27514,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const text = simplified
         ? buildMentorUserActionText(normalized)
         : humanizeTaskText(normalized.text);
+      const actionRestatesMission = textSimilarity(text, mission) >= 0.62;
+      const showWhatToDo = Boolean(text)
+        && !actionRestatesMission
+        && !(isGenericPreparedBelowText(text) && !taskHasPreparedAssets(normalized));
       const howTo = humanizeTaskText(normalized.howTo || inferHowTo(normalized));
       const why = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
       const outcome = humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized));
@@ -27390,6 +27568,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   ${outcomeChecklist}
                 </section>` : ""}`;
 
+      const simplifiedMissionMarkup = simplified
+        ? `<span class="visually-hidden" id="${id}-label">${escapeHtml(mission)}</span>`
+        : `<div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>`;
+
+      const simplifiedWhatToDo = showWhatToDo ? `
+                <section class="task-mentor-section task-mentor-section--task">
+                  <h4 class="task-mentor-label">What to do</h4>
+                  <div class="task-text">${linkifyTaskTextHtml(text)}</div>
+                </section>
+                ${mentorHelp}` : mentorHelp;
+
       return `
         <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
           <div class="task-compressed-row">
@@ -27408,18 +27597,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             <p class="task-progress-reminder">When you finish this mission, check the box above so your progress bar updates.</p>
             <div class="overview-task-main">
               <div class="overview-task-content">
-                <section class="task-mentor-section task-mentor-section--mission">
-                  <h4 class="task-mentor-label">Your mission</h4>
-                  <div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>
+                <section class="task-mentor-section task-mentor-section--mission${simplified ? " task-mentor-section--mission-compact" : ""}">
+                  ${simplified ? "" : `<h4 class="task-mentor-label">Your mission</h4>`}
+                  ${simplifiedMissionMarkup}
                   ${meta}
                   ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
                   ${simplified && !isGenericMentorCopy(why, normalized) && why ? `<p class="task-mentor-copy task-mentor-copy--inline">${escapeHtml(why)}</p>` : ""}
-                  ${simplified ? `
-                <section class="task-mentor-section task-mentor-section--task">
-                  <h4 class="task-mentor-label">What to do</h4>
-                  <div class="task-text">${linkifyTaskTextHtml(text)}</div>
-                </section>
-                ${mentorHelp}` : ""}
+                  ${simplified ? simplifiedWhatToDo : ""}
                   ${simplified && displaySteps.length >= 2 ? renderTaskBreakdownHtml(normalized, id) : ""}
                 </section>
                 ${detailSections}
