@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-unified-maps -->
+<!-- whatimado build: 2026-06-30-living-roadmap -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-unified-maps">
+  <meta name="whatimado-build" content="2026-06-30-living-roadmap">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -468,6 +468,31 @@
       text-overflow: unset;
       overflow-wrap: anywhere;
       word-break: break-word;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-summary {
+      display: block;
+      margin-top: .2rem;
+      color: var(--ink-muted);
+      font-size: .62rem;
+      font-weight: 500;
+      line-height: 1.4;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    html[data-color-scheme="adult"] .map-parent-context,
+    html[data-color-scheme="adult"] .roadmap-parent-context {
+      margin: .35rem 0 0;
+      color: var(--ink-muted);
+      font-size: .92rem;
+      line-height: 1.5;
+      max-width: 42rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-parent-context {
+      margin-top: .5rem;
+      font-size: .84rem;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle,
@@ -5521,6 +5546,13 @@
       line-height: 1.35;
     }
 
+    .map-library-card-summary {
+      margin: .4rem 0 0;
+      color: var(--ink-muted);
+      font-size: .82rem;
+      line-height: 1.45;
+    }
+
     .map-library-card-meta {
       margin: .35rem 0 0;
       color: var(--muted);
@@ -6443,6 +6475,17 @@
       text-transform: uppercase;
     }
 
+    html[data-color-scheme="adult"] .roadmap-status-badge.is-adapting {
+      background: rgba(37, 99, 235, .14);
+      color: #1d4ed8;
+      animation: roadmap-adapt-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes roadmap-adapt-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .72; }
+    }
+
     html[data-color-scheme="adult"] .roadmap-status-badge.is-complete {
       background: rgba(37, 99, 235, .1);
       color: #1d4ed8;
@@ -7248,6 +7291,11 @@
       color: #166534;
       font-size: .7rem;
       line-height: 1.4;
+    }
+
+    html[data-color-scheme="adult"] .task-textarea.is-generating-draft {
+      opacity: .72;
+      cursor: wait;
     }
 
     html[data-color-scheme="adult"] .overview-task-tools .task-writing-assist {
@@ -10641,7 +10689,7 @@
                 <p class="nav-drawer-label">Navigate</p>
                 <div class="nav-group nav-group--scroll">
       <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
-      <button class="nav-btn" type="button" id="nav-maps-btn" hidden>My Maps</button>
+      <button class="nav-btn" type="button" id="nav-maps-btn" hidden aria-hidden="true"></button>
       <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
       <button class="nav-btn" data-screen-link="stats" id="nav-stats-btn" hidden>Launch stats</button>
                 </div>
@@ -10740,10 +10788,18 @@
           <svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
           Home
         </button>
-        <button type="button" class="dashboard-nav-btn" data-screen-link="map" id="sidebar-map-btn" hidden>
-          <svg viewBox="0 0 24 24"><path d="M3 6.5 9 4.5l6 2 6-2v13l-6 2-6-2-6 2V6.5z"></path><path d="M9 4.5v13M15 6.5v13"></path></svg>
-          Map
-        </button>
+        <div class="dashboard-nav-group" id="dashboard-roadmaps-group">
+          <button type="button" class="dashboard-nav-btn dashboard-nav-btn--expand" id="sidebar-roadmaps-btn" aria-expanded="false" aria-controls="dashboard-roadmaps-sub">
+            <span class="dashboard-nav-btn-main">
+              <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+              Roadmaps
+            </span>
+            <svg class="dashboard-nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+          </button>
+          <div class="dashboard-roadmaps-sub" id="dashboard-roadmaps-sub" hidden>
+            <div id="dashboard-roadmap-categories"></div>
+          </div>
+        </div>
         <button type="button" class="dashboard-nav-btn" id="sidebar-discover-btn">
           <svg viewBox="0 0 24 24"><path d="M12 3l2.4 7.4H22l-6 4.6 2.3 7L12 17.8 5.7 22l2.3-7-6-4.6h7.6L12 3z"></path></svg>
           Discoveries
@@ -10751,10 +10807,6 @@
         <button type="button" class="dashboard-nav-btn" data-screen-link="roadmap" id="sidebar-progress-btn" hidden>
           <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 17V9M12 17V7M16 17v-5"></path></svg>
           Progress
-        </button>
-        <button type="button" class="dashboard-nav-btn" id="sidebar-saved-btn">
-          <svg viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5z"></path></svg>
-          My maps
         </button>
         <button type="button" class="dashboard-nav-btn" data-screen-link="stats" id="sidebar-stats-btn" hidden>
           <svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-6"></path></svg>
@@ -10833,7 +10885,7 @@
             <h2 class="saved-maps-home-title">Your maps</h2>
             <button type="button" class="dashboard-link-btn" data-screen-link="maps" id="saved-maps-view-all">View all</button>
           </div>
-          <p class="saved-maps-home-copy">Open a map to see your paths and continue any roadmaps you started.</p>
+          <p class="saved-maps-home-copy">Your explorations and roadmaps live in the sidebar. Tap a roadmap to continue, or its title to see all paths.</p>
           <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
         </section>
 
@@ -10975,6 +11027,7 @@
           </button>
           <div class="map-heading">
             <h2 class="page-title">Your <em>Possibility Maps</em></h2>
+            <p class="map-parent-context" id="map-page-context" hidden></p>
             <p class="page-subtitle">Review each path below, then open a step-by-step roadmap for the one that fits you best.</p>
           </div>
           <button type="button" class="screen-nav-btn page-screen-nav-forward" id="map-page-nav-forward" aria-label="Go forward" hidden>
@@ -11050,11 +11103,12 @@
             </button>
             <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
             <button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button>
-            <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Rebuild remaining steps</button>
+            <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Refresh next steps</button>
           </div>
 
           <header class="roadmap-overview-header" id="roadmap-overview-header">
-            <span class="roadmap-status-badge" id="roadmap-status-badge">Active roadmap</span>
+            <span class="roadmap-status-badge" id="roadmap-status-badge">Living roadmap</span>
+            <p class="roadmap-parent-context" id="roadmap-parent-context" hidden></p>
             <h2 class="roadmap-title" id="roadmap-title"></h2>
             <p class="roadmap-overview-desc" id="roadmap-overview-desc"></p>
             <div class="roadmap-overview-meta" id="roadmap-overview-meta">
@@ -11096,7 +11150,7 @@
             <div class="roadmap-complete-card roadmap-complete-card--footer" id="roadmap-complete-card" hidden>
               <p class="roadmap-complete-kicker">Path complete</p>
               <h3 class="roadmap-complete-title">Nice work — this roadmap is finished.</h3>
-              <p class="roadmap-complete-copy" id="roadmap-complete-copy">Nice work — this phase is complete. The next phase will load automatically when you're ready.</p>
+              <p class="roadmap-complete-copy" id="roadmap-complete-copy">Nice work — this phase is complete. The next phase loads automatically, and your remaining steps keep adapting as you go.</p>
               <p class="roadmap-continuing-note" id="roadmap-continuing-note" hidden>Building your next phase…</p>
               <div class="roadmap-complete-actions">
                 <button class="back-btn complete-action-btn primary" id="continue-plan-btn" type="button">Continue this plan</button>
@@ -11537,7 +11591,8 @@
       'For tasks involving local programs, applications, licensing, or outreach: fill resourceCategories[], resources.local (1-3 real orgs for their city/region), resources.national when a country-wide portal applies, and resources.global for online options that work anywhere.\n' +
       'Task text = the action. resources.* = the discovered organizations. Never put only a category in resources — always resolve to real names + official URLs for THIS user\'s location.\n' +
       'Write like a patient mentor for someone with NO business background — middle-school reading level. Never use startup or consultant jargon in task text, stage labels, why, or outcome.\n' +
-      'For writing or outreach tasks, include a ready-to-copy sample in script when helpful.\n' +
+      'For ANY task that asks the user to write, draft, compose, fill out, or prepare text (email, letter, grant, resume, business plan, flyer, social post, phone script, spreadsheet, checklist, agenda, proposal, etc.): script MUST contain a complete ready-to-edit draft — not instructions, not placeholders-only. Use [brackets] only for facts you cannot infer from their situation.\n' +
+      'If the task is not a writing task, script may be an empty string.\n' +
       'Do not reuse stage titles across different paths on the same map.\n' +
       'Each stage label MUST name something specific to THIS path (job title, trade, nonprofit mission, business type, or life situation) — never a reusable 3-step template like test → feedback → repeat.';
 
@@ -11659,6 +11714,10 @@
       '- Never invent fake grants or personal @gmail addresses. Use official sites; leave phone/email "" if not published.\n' +
       '- links[] = exact pages they need open. Prefer resources.* over bare links when both apply.\n';
     let roadmapAutoContinueTimer = null;
+    let roadmapAdaptTimer = null;
+    let roadmapAdaptInFlight = false;
+    const ROADMAP_ADAPT_DEBOUNCE_MS = 3200;
+    const ROADMAP_ADAPT_COOLDOWN_MS = 50000;
 
     function getFounderPathTemplate(idea) {
       const title = String(idea?.title || "").toLowerCase();
@@ -12683,14 +12742,14 @@
       }
       if (/\b120-word\b|\bfounder story\b/.test(text)) {
         return [
-          "Tap Write a draft for me below (or start typing in My Notes).",
+          "A starter draft should already be in My Notes — edit it until it sounds like you.",
           "Say who whatimado.com is for, why it stays free, and what makes the map different from ChatGPT.",
           "Edit until it sounds like you and is close to 120 words."
         ];
       }
       if (/\bsave two post drafts\b|\bpost drafts\b/.test(text)) {
         return [
-          "Use Write a draft for me to get Reddit and Facebook starters in My Notes.",
+          "Check My Notes for Reddit and Facebook starters — edit each for the platform.",
           "Edit Draft A for a help-first Reddit intro; edit Draft B for a personal Facebook story.",
           "Keep both drafts in Notes so you can reuse them across posts."
         ];
@@ -12698,7 +12757,7 @@
       if (/\breddit\b|r\//.test(text) && !/\bfacebook\b/.test(text)) {
         return [
           "Read 3–5 recent posts in the forum to match tone.",
-          "Paste your draft from My Notes (or tap Write a draft for me).",
+          "Copy your draft from My Notes (or tap Regenerate draft if you need a fresh start).",
           "Post with a help-first title; put https://whatimado.com in the body or first comment per forum rules."
         ];
       }
@@ -12926,17 +12985,360 @@
         </details>`;
     }
 
+    const taskDraftGenerationInFlight = new Set();
+
+    function getWritingDeliverableType(normalized) {
+      const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""}`.toLowerCase();
+
+      if (/\b(phone script|call script|voicemail script|script to (?:read|say))\b/.test(blob)) return "phone_script";
+      if (/\b(call|phone|dial|voicemail|211)\b/.test(blob) && /\b(script|say|read|word.for.word)\b/.test(blob)) return "phone_script";
+      if (/\b(grant application|grant proposal|funding application|grant request|fill out.*grant)\b/.test(blob)) return "grant_application";
+      if (/\b(resume|curriculum vitae|\bcv\b)\b/.test(blob)) return "resume";
+      if (/\b(business plan)\b/.test(blob)) return "business_plan";
+      if (/\b(flyer|handout|poster|leaflet)\b/.test(blob)) return "flyer";
+      if (/\b(linkedin)\b/.test(blob)) return "linkedin_post";
+      if (/\b(facebook|fb post)\b/.test(blob)) return "facebook_post";
+      if (/\b(reddit|subreddit|r\/)\b/.test(blob)) return "reddit_post";
+      if (/\b(spreadsheet|budget sheet|tracking sheet|excel|google sheet)\b/.test(blob)) return "spreadsheet";
+      if (/\b(meeting agenda|run the meeting|agenda for)\b/.test(blob)) return "meeting_agenda";
+      if (/\b(proposal template|proposal|pitch deck|sponsor deck|one.pager)\b/.test(blob)) return "proposal";
+      if (/\b(checklist|to-do list|task list)\b/.test(blob) && /\b(create|write|make|draft|build)\b/.test(blob)) return "checklist";
+      if (/\b(e-?mail|subject line|outreach message)\b/.test(blob)) return "email";
+      if (/\b(cover letter|formal letter|letter to)\b/.test(blob)) return "letter";
+      if (/\b(120-word|founder story)\b/.test(blob)) return "founder_story";
+      if (/\b(post draft|caption|social post|write a post)\b/.test(blob)) return "social_post";
+      if (/\b(draft|write|compose|prepare a|fill out|type up)\b/.test(blob)) return "general_writing";
+      return null;
+    }
+
     function isWritingTask(normalized) {
+      if (getWritingDeliverableType(normalized)) return true;
       const blob = `${normalized.text} ${normalized.script}`.toLowerCase();
-      return /\b(write|draft|120-word|founder story|post draft|caption|intro|save two post|notes doc)\b/.test(blob);
+      return /\b(write|draft|120-word|founder story|post draft|caption|intro|save two post|notes doc|compose|prepare a|fill out)\b/.test(blob);
+    }
+
+    function getTaskDraftContext(normalized) {
+      const location = getUserLocation() || "[Your city/area]";
+      const situation = getActiveMapSummary() || getFirstUserMessage() || "";
+      const pathTitle = state.currentIdea?.title || "this path";
+      const contact = normalized.contacts?.[0];
+      const contactLine = contact
+        ? [contact.name, contact.org].filter(Boolean).join(", ") || contact.org || contact.name
+        : "[Contact or organization name]";
+      return { location, situation, pathTitle, contactLine, contact };
+    }
+
+    function buildLocalDeliverableDraft(type, normalized) {
+      const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
+      const taskLine = humanizeTaskText(normalized.text);
+      const whyLine = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
+      const outcomeLine = humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized));
+      const situationLine = situation ? situation.replace(/\s+/g, " ").trim() : "I'm working on my next step and could use guidance.";
+
+      switch (type) {
+        case "email":
+          return `Subject: Quick question about ${pathTitle.toLowerCase()} — [Your name]
+
+Hi ${contactLine.split(",")[0] || "[Name]"},
+
+My name is [Your name]. I'm in ${location} and working on ${pathTitle.toLowerCase()}.
+
+${situationLine}
+
+I'm reaching out because: ${taskLine}
+
+Would you have 10–15 minutes this week for a quick call or email back? Even one sentence pointing me in the right direction would help a lot.
+
+Thank you,
+[Your name]
+[Phone number]`;
+
+        case "letter":
+          return `[Your name]
+[Street address]
+${location}
+[Date]
+
+${contactLine}
+[Organization address]
+
+Dear ${contactLine.split(",")[0] || "[Name]"},
+
+I'm writing about ${pathTitle.toLowerCase()}. ${situationLine}
+
+${taskLine}
+
+${whyLine}
+
+I would appreciate any guidance or next steps you can share. You can reach me at [phone] or [email].
+
+Sincerely,
+[Your name]`;
+
+        case "grant_application":
+          return `GRANT APPLICATION DRAFT — edit for the specific form
+
+Organization / applicant: [Your name or org name]
+Location: ${location}
+Project focus: ${pathTitle}
+
+1. Summary (2–3 sentences)
+${situationLine} This project will [what you'll do in plain language].
+
+2. Problem / need
+People in my situation often struggle with [specific barrier]. ${whyLine}
+
+3. What you'll do
+${taskLine}
+- Step 1: [First concrete action]
+- Step 2: [Second action]
+- Step 3: [How you'll measure progress]
+
+4. Budget (estimate)
+| Item | Cost |
+|------|------|
+| [Supplies / fees] | $[amount] |
+| [Transportation] | $[amount] |
+| Total | $[amount] |
+
+5. Timeline
+Week 1–2: [Milestone]
+Week 3–4: [Milestone]
+
+6. Success looks like
+${outcomeLine}`;
+
+        case "resume":
+          return `[YOUR NAME]
+${location} · [Phone] · [Email] · [LinkedIn optional]
+
+SUMMARY
+${situationLine} I'm pursuing ${pathTitle.toLowerCase()} and bring [2–3 strengths, e.g. reliable, good with people, hands-on skills].
+
+EXPERIENCE
+[Job title] — [Employer], [City] · [Month Year] – [Month Year or Present]
+• [Achievement with a number if possible, e.g. "Handled 30+ customers per shift"]
+• [Skill that matches ${pathTitle}]
+
+[Previous job] — [Employer] · [Dates]
+• [One bullet about responsibility or skill]
+
+SKILLS
+• [Skill 1] · [Skill 2] · [Skill 3] · [Tool or certification]
+
+EDUCATION / TRAINING
+[Degree, certificate, or program] — [School], [Year]
+
+REFERENCES
+Available on request`;
+
+        case "business_plan":
+          return `ONE-PAGE BUSINESS PLAN — ${pathTitle}
+
+1. What I'm offering
+[One sentence: who you help and what you do]
+
+2. Who it's for
+People in ${location} who [specific need from your situation].
+
+3. Why now
+${situationLine}
+
+4. How I'll make money
+• [Service/product 1]: $[price] — [how often]
+• [Service/product 2]: $[price]
+
+5. Costs to start
+| Expense | Estimate |
+|---------|----------|
+| [License / supplies] | $[amount] |
+| [Marketing] | $[amount] |
+| Total to launch | $[amount] |
+
+6. First 30 days
+Week 1: ${taskLine}
+Week 2: [Next step]
+Week 3: [Next step]
+Week 4: ${outcomeLine}
+
+7. What success looks like
+[One measurable goal, e.g. "3 paying clients" or "steady part-time income"]`;
+
+        case "flyer":
+          return `FLYER DRAFT — keep it short; edit the headline
+
+━━━━━━━━━━━━━━━━━━━━
+[BIG HEADLINE — what you offer]
+━━━━━━━━━━━━━━━━━━━━
+
+[One sentence: who this helps in ${location}]
+
+✓ [Benefit 1]
+✓ [Benefit 2]
+✓ [Benefit 3]
+
+${pathTitle}
+
+HOW TO REACH ME
+[Phone] · [Email] · [Social handle optional]
+
+[Optional: date/time/location if event]`;
+
+        case "linkedin_post":
+          return `LinkedIn post draft — edit to sound like you
+
+I've been working on ${pathTitle.toLowerCase()}.
+
+${situationLine}
+
+Here's what I'm learning:
+• [Lesson or small win]
+• [What I'm looking for — advice, connections, clients]
+
+If you've been through something similar in ${location}, I'd love to hear what worked for you.
+
+#career #${location.split(",")[0]?.trim().replace(/\s+/g, "") || "community"}`;
+
+        case "facebook_post":
+          return `Facebook post draft — edit to sound like you
+
+Hey everyone — I'm working on ${pathTitle.toLowerCase()}.
+
+${situationLine}
+
+${taskLine}
+
+If you know someone in ${location} who could point me in the right direction (or if you've done this yourself), I'd really appreciate a comment or DM.
+
+Thanks! — [Your name]`;
+
+        case "reddit_post":
+          return `Title: [Short, honest question about ${pathTitle.toLowerCase()}]
+
+Body:
+I'm in ${location} and ${situationLine.toLowerCase()}
+
+I'm trying to: ${taskLine}
+
+What's worked for you? Any programs, people, or first steps I should know about?
+
+(I'll put links in a comment if needed.)`;
+
+        case "phone_script":
+          return `PHONE SCRIPT — read this word for word, then make it yours
+
+When they answer:
+"Hi, my name is [Your name]. I'm calling about ${pathTitle.toLowerCase()}. Do you have a minute, or is there a better time to call back?"
+
+If yes:
+"I'm in ${location}. ${situationLine} I'm hoping to [one sentence goal]. ${taskLine.replace(/\.$/, "")}."
+
+"What would you recommend as a first step for someone in my situation?"
+
+If put on hold:
+"Thank you — I'll wait."
+
+If voicemail:
+"Hi, this is [Your name] at [phone]. I'm calling about ${pathTitle.toLowerCase()} in ${location}. Please call me back when you can. Thank you."
+
+After the call — write down:
+• Who you spoke with: ___________
+• What they said: ___________
+• Next step: ___________`;
+
+        case "spreadsheet":
+          return `TRACKING SHEET — paste into Google Sheets or Excel
+
+| Date | Action | Contact / place | Result | Follow-up date | Notes |
+|------|--------|-----------------|--------|----------------|-------|
+| [Today] | ${taskLine} | ${contactLine} | | | |
+| | | | | | |
+| | | | | | |
+
+WEEKLY GOAL
+${outcomeLine}
+
+NOTES
+${whyLine}`;
+
+        case "checklist":
+          return `[ ] ${taskLine}
+[ ] Gather what I need (ID, resume, phone numbers, etc.)
+[ ] ${outcomeLine.replace(/\.$/, "")}
+[ ] Write down what happened and the next step
+[ ] Schedule follow-up if needed
+
+Notes:
+${whyLine}`;
+
+        case "meeting_agenda":
+          return `MEETING AGENDA — ${pathTitle}
+
+Date: [Date] · Time: [Time] · Location: [Place or video link]
+Attendees: [Names]
+
+1. Welcome & purpose (5 min)
+   ${taskLine}
+
+2. My situation (5 min)
+   ${situationLine}
+
+3. Questions I need answered (10 min)
+   • [Question 1]
+   • [Question 2]
+
+4. Next steps (5 min)
+   ${outcomeLine}
+
+5. Follow-up
+   Who will do what by when?`;
+
+        case "proposal":
+          return `PROPOSAL DRAFT — ${pathTitle}
+
+To: [Client / partner / sponsor name]
+From: [Your name] · ${location}
+Date: [Date]
+
+1. What I'm proposing
+[2–3 sentences: what you'll deliver and for whom]
+
+2. Why this matters
+${situationLine}
+${whyLine}
+
+3. What you'll get
+• [Deliverable 1]
+• [Deliverable 2]
+• [Timeline]
+
+4. Investment / ask
+$[amount] or [what you're asking for]
+
+5. Next step
+${outcomeLine}
+
+[Your name] · [Phone] · [Email]`;
+
+        case "founder_story":
+        case "social_post":
+        case "general_writing":
+        default:
+          return null;
+      }
     }
 
     function generateLocalTaskDraft(normalized) {
       const text = normalized.text.toLowerCase();
-      const site = "https://whatimado.com";
 
       if (normalized.script && normalized.script.length > 40) {
         return normalized.script;
+      }
+
+      const deliverable = getWritingDeliverableType(normalized);
+      if (deliverable) {
+        const typed = buildLocalDeliverableDraft(deliverable, normalized);
+        if (typed) return typed;
       }
 
       if (/\b120-word\b|\bfounder story\b/.test(text)) {
@@ -12948,7 +13350,7 @@ A lot of tools either talk at you in a chat window or charge before you've explo
 
 What's different: you see a visual map of paths that might fit you, then open step-by-step roadmaps with tasks — not just another ChatGPT thread.
 
-If you're curious, try ${site} and tell me what would make it more useful for someone in your situation.`;
+If you're curious, try https://whatimado.com and tell me what would make it more useful for someone in your situation.`;
       }
 
       if (/\bsave two post drafts\b|\bpost drafts\b/.test(text)) {
@@ -12961,7 +13363,7 @@ I've been working on something small for people who freeze when they need a dire
 
 whatimado.com maps real paths visually, then breaks each path into small tasks you can actually do. It's free.
 
-If you're exploring what's next, I'd love honest feedback: ${site}
+If you're exploring what's next, I'd love honest feedback: https://whatimado.com
 (If the forum doesn't allow links in posts, I'll put the link in my first comment.)
 
 ---
@@ -12972,63 +13374,159 @@ I've been chipping away at something for people who feel stuck on "what am I gon
 
 whatimado.com is free. It shows you a map of paths that might fit, then gives you step-by-step tasks for each one — not just another AI chat.
 
-I'd really value your take if you try it: ${site}
+I'd really value your take if you try it: https://whatimado.com
 What would make this more useful for someone in your situation?`;
       }
 
-      if (/\breddit\b|r\//.test(text) && !/\bfacebook\b/.test(text)) {
-        return `[Reddit post draft — edit before posting]
-
-Title: I built a free tool for people stuck on "what's next"
-
-Body:
-I've been working on something small for people who freeze when they need a direction — not because they're lazy, but because every option feels vague or expensive.
-
-whatimado.com maps real paths visually, then breaks each path into small tasks you can actually do. It's free.
-
-If you're exploring what's next, I'd love honest feedback: ${site}
-(If this forum doesn't allow links in posts, I'll put the link in my first comment.)`;
+      if (deliverable === "reddit_post" || (/\breddit\b|r\//.test(text) && !/\bfacebook\b/.test(text))) {
+        return buildLocalDeliverableDraft("reddit_post", normalized);
       }
 
-      if (/\bfacebook\b/.test(text)) {
-        return `[Facebook post draft — edit to sound like you]
+      if (deliverable === "facebook_post" || /\bfacebook\b/.test(text)) {
+        return buildLocalDeliverableDraft("facebook_post", normalized);
+      }
 
-I've been chipping away at something for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding or don't have money for another paid course.
+      if (isWritingTask(normalized)) {
+        const { situation, pathTitle, location } = getTaskDraftContext(normalized);
+        return `[Starter draft — edit everything below]
 
-whatimado.com is free. It shows you a map of paths that might fit, then gives you step-by-step tasks for each one — not just another AI chat.
+${situation ? `Context: ${situation}\n\n` : ""}Task: ${humanizeTaskText(normalized.text)}
 
-I'd really value your take if you try it: ${site}
-What would make this more useful for someone in your situation?`;
+---
+
+[Write your draft here — replace this section]
+
+${humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized))}
+
+---
+Path: ${pathTitle}
+Location: ${location}`;
       }
 
       return null;
     }
 
+    async function generateAiTaskDraft(taskId, normalized) {
+      const deliverable = getWritingDeliverableType(normalized) || "document";
+      const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
+      const deliverableLabel = deliverable.replace(/_/g, " ");
+
+      const prompt =
+        `Write a complete, ready-to-edit ${deliverableLabel} for this person. Output ONLY the draft text — no preamble.\n\n` +
+        `Situation: ${situation || "Not specified"}\n` +
+        `Location: ${location}\n` +
+        `Path: ${pathTitle}\n` +
+        `Task: ${normalized.text}\n` +
+        `Why: ${normalized.why || inferTaskWhy(normalized)}\n` +
+        `Success looks like: ${normalized.outcome || inferTaskOutcome(normalized)}\n` +
+        (contactLine ? `Contact/org context: ${contactLine}\n` : "") +
+        `\nRules:\n` +
+        `- Plain English, middle-school reading level.\n` +
+        `- Use [brackets] only for personal facts you cannot infer.\n` +
+        `- Format correctly for a ${deliverableLabel} (Subject: for email, sections for grants/resumes, etc.).\n` +
+        `- They should be able to paste this into My Notes and start editing immediately.`;
+
+      return callAdvisor(prompt, 1400, { timeoutMs: 50000 });
+    }
+
+    function getTaskWritingNotesPlaceholder(normalized) {
+      if (generateLocalTaskDraft(normalized) || isWritingTask(normalized)) {
+        return "Your starter draft appears here — edit anything to match your voice…";
+      }
+      return "Jot down thoughts, progress, links...";
+    }
+
+    async function ensureTaskDraftInNotes(taskId, options = {}) {
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      if (!match) return;
+
+      const stageIndex = Number(match[1]);
+      const taskIndex = Number(match[2]);
+      const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
+      if (!task) return;
+
+      const normalized = normalizeRoadmapTask(task);
+      if (!isWritingTask(normalized)) return;
+
+      const data = getRoadmapTaskData(taskId);
+      if (data.notes?.trim() && !options.force) return;
+      if (data.draftGenerated && !options.force) return;
+      if (taskDraftGenerationInFlight.has(taskId)) return;
+
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const notes = item?.querySelector(".task-textarea");
+      if (!notes) return;
+
+      const localDraft = generateLocalTaskDraft(normalized);
+      const localIsSubstantial = localDraft && localDraft.length > 180 && !/^\[Starter draft/.test(localDraft);
+
+      if (localIsSubstantial && !options.force) {
+        insertDraftIntoNotes(taskId, localDraft, "replace", { focus: false });
+        data.draftGenerated = true;
+        data.draftSource = normalized.script?.length > 40 ? "roadmap" : "local";
+        schedulePersist();
+        return;
+      }
+
+      taskDraftGenerationInFlight.add(taskId);
+      notes.placeholder = "Generating a starter draft for you…";
+      notes.classList.add("is-generating-draft");
+
+      try {
+        const aiDraft = await generateAiTaskDraft(taskId, normalized);
+        const draft = (aiDraft?.trim() || localDraft || "").trim();
+        if (draft && (!data.notes?.trim() || options.force)) {
+          insertDraftIntoNotes(taskId, draft, "replace", { focus: Boolean(options.force) });
+          data.draftGenerated = true;
+          data.draftSource = aiDraft?.trim() ? "ai" : "local";
+          schedulePersist();
+          trackEvent("task_draft_auto_generated", {
+            task_id: taskId,
+            deliverable: getWritingDeliverableType(normalized) || "general",
+            source: data.draftSource
+          });
+        }
+      } finally {
+        taskDraftGenerationInFlight.delete(taskId);
+        notes.classList.remove("is-generating-draft");
+        notes.placeholder = getTaskWritingNotesPlaceholder(normalized);
+      }
+    }
+
+    function queueWritingDraftsForVisibleTasks() {
+      $$(".task-item").forEach((item) => {
+        const taskId = item.dataset.taskId;
+        const phase = item.closest(".roadmap-phase, .stage-card");
+        if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
+        void ensureTaskDraftInNotes(taskId);
+      });
+    }
+
     function renderTaskWritingAssistHtml(taskId, normalized) {
       if (!isWritingTask(normalized)) return "";
-      const draft = generateLocalTaskDraft(normalized);
-      if (!draft) return "";
 
       const isFounder = isFounderStoryTask(normalized);
-      const headline = isFounder ? "Want help getting started?" : "Need a starting draft?";
+      const deliverable = getWritingDeliverableType(normalized);
+      const headline = isFounder ? "Your draft is ready to edit" : "Starter draft in My Notes";
       const copy = isFounder
-        ? "Tap below to add a starter founder story to My Notes — edit until it sounds like you. If you already wrote something, we'll add below it instead of replacing."
-        : "We can add a ready-to-edit draft to My Notes so you're not staring at a blank box.";
+        ? "We added a founder story starter below — change anything until it sounds like you."
+        : deliverable
+          ? `A ${deliverable.replace(/_/g, " ")} draft is filled in below. Edit it, then copy or send when you're ready.`
+          : "A ready-to-edit draft is filled in below — you're not starting from a blank page.";
 
       return `
         <div class="task-writing-assist" data-task-id="${escapeHtml(taskId)}">
           <span class="overview-task-detail-label">${escapeHtml(headline)}</span>
           <p class="task-writing-assist-copy">${escapeHtml(copy)}</p>
           <div class="task-writing-assist-actions">
-            <button type="button" class="task-writing-assist-btn" data-action="insert-draft" data-task-id="${escapeHtml(taskId)}">Write a draft for me</button>
+            <button type="button" class="task-writing-assist-btn" data-action="regenerate-draft" data-task-id="${escapeHtml(taskId)}">Regenerate draft</button>
             <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="replace-draft" data-task-id="${escapeHtml(taskId)}" hidden>Replace my notes</button>
-            <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="view-sample" data-task-id="${escapeHtml(taskId)}">Show sample text</button>
             <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="rewrite-draft" data-task-id="${escapeHtml(taskId)}">Rewrite in my voice</button>
           </div>
         </div>`;
     }
 
-    function insertDraftIntoNotes(taskId, draft, mode = "append") {
+    function insertDraftIntoNotes(taskId, draft, mode = "append", options = {}) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       const notes = item?.querySelector(".task-textarea");
       const data = getRoadmapTaskData(taskId);
@@ -13054,10 +13552,10 @@ What would make this more useful for someone in your situation?`;
       }
       if (note) {
         note.textContent = mode === "replace" || !existing
-          ? "Draft added to My Notes — edit until it sounds like you."
+          ? "Draft ready in My Notes — edit until it sounds like you."
           : "Draft added below your notes — scroll to see it.";
       }
-      notes.focus();
+      if (options.focus !== false) notes.focus();
       trackEvent("task_draft_inserted", { task_id: taskId, mode: existing && mode !== "replace" ? "append" : "replace" });
       return true;
     }
@@ -13115,15 +13613,28 @@ What would make this more useful for someone in your situation?`;
       const box = btn.closest(".task-writing-assist");
       const notes = item.querySelector(".task-textarea");
 
-      if (action === "insert-draft") {
-        if (draft) insertDraftIntoNotes(taskId, draft, notes?.value.trim() ? "append" : "replace");
+      if (action === "insert-draft" || action === "regenerate-draft") {
+        const data = getRoadmapTaskData(taskId);
+        if (action === "regenerate-draft") {
+          data.draftGenerated = false;
+        }
+        void ensureTaskDraftInNotes(taskId, { force: true });
         return;
       }
 
       if (action === "replace-draft") {
-        if (draft && confirm("Replace everything in My Notes with a fresh draft?")) {
-          insertDraftIntoNotes(taskId, draft, "replace");
+        if (!draft) {
+          void ensureTaskDraftInNotes(taskId, { force: true });
+          return;
         }
+        showConfirmDialog({
+          title: "Replace your notes?",
+          message: "Replace everything in My Notes with a fresh draft?",
+          confirmLabel: "Replace",
+          cancelLabel: "Keep current notes"
+        }).then((ok) => {
+          if (ok) insertDraftIntoNotes(taskId, draft, "replace");
+        });
         return;
       }
 
@@ -13339,8 +13850,8 @@ What would make this more useful for someone in your situation?`;
         "Let's practice — you play the person I'd contact and I'll practice what to say. Start with their first likely question.",
         { when: /\b(call|meet|demo|interview|outreach|partner|director|workshop)\b/.test(blob) }
       );
-      if (isWritingTask(normalized) && generateLocalTaskDraft(normalized)) {
-        add("draft", "Write a draft for me", "", { local: "draft" });
+      if (isWritingTask(normalized)) {
+        add("draft", "Regenerate draft", "", { local: "draft" });
       }
 
       return actions.slice(0, 7);
@@ -13386,12 +13897,9 @@ What would make this more useful for someone in your situation?`;
       }
 
       if (action.local === "draft") {
-        const draft = generateLocalTaskDraft(normalized);
-        if (draft) {
-          const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-          const notes = item?.querySelector(".task-textarea");
-          insertDraftIntoNotes(taskId, draft, notes?.value.trim() ? "append" : "replace");
-        }
+        const data = getRoadmapTaskData(taskId);
+        data.draftGenerated = false;
+        await ensureTaskDraftInNotes(taskId, { force: true });
         return;
       }
 
@@ -14578,6 +15086,264 @@ What would make this more useful for someone in your situation?`;
         const tasks = (stage.tasks || []).map((task) => `- ${getTaskText(task)}`).join("\n");
         return `Stage ${index + 1}: ${stage.label}\n${stage.desc || ""}\n${tasks}`;
       }).join("\n\n");
+    }
+
+    function detectAdaptSignalsFromText(text) {
+      const blob = String(text || "").trim();
+      if (!blob || blob.length < 12) return null;
+      const lower = blob.toLowerCase();
+
+      if (/\b(stuck|blocked|can't|cannot|won't work|doesn't work|dead end|impossible|no luck|rejected|denied|fired|laid off|lost (?:my )?job|evicted|homeless|no money|can't afford|background check failed)\b/.test(lower)) {
+        return { type: "obstacle", detail: blob.slice(0, 320) };
+      }
+      if (/\b(offer|hired|interview|callback|accepted|scholarship|grant approved|found a (?:job|client|mentor)|someone offered|lead|referral|opportunity|shortcut|faster way)\b/.test(lower)) {
+        return { type: "opportunity", detail: blob.slice(0, 320) };
+      }
+      if (/\b(changed my mind|instead i want|rather do|new goal|different direction|pivot|switch to|focus on|no longer want|goal is now)\b/.test(lower)) {
+        return { type: "goal_change", detail: blob.slice(0, 320) };
+      }
+      return null;
+    }
+
+    function buildRoadmapAdaptContext(options = {}) {
+      const pos = getFirstIncompleteTaskPosition();
+      const lines = [];
+
+      state.roadmapStages.forEach((stage, stageIndex) => {
+        (stage.tasks || []).forEach((task, taskIndex) => {
+          const taskId = `task-${stageIndex}-${taskIndex}`;
+          const data = getRoadmapTaskData(taskId);
+          const label = getTaskText(task);
+          const note = data.notes?.trim();
+          const noteBit = note ? ` Notes: "${note.slice(0, 160)}${note.length > 160 ? "…" : ""}"` : "";
+
+          if (data.checked) {
+            lines.push(`✓ COMPLETED: ${label}.${noteBit}`);
+            return;
+          }
+
+          const isBeforeCursor = pos && (stageIndex < pos.stageIndex || (stageIndex === pos.stageIndex && taskIndex < pos.taskIndex));
+          if (isBeforeCursor) {
+            lines.push(`○ SKIPPED (left unchecked): ${label}.${noteBit}`);
+          }
+        });
+      });
+
+      if (pos) {
+        const currentTask = state.roadmapStages[pos.stageIndex]?.tasks?.[pos.taskIndex];
+        if (currentTask) {
+          lines.push(`→ CURRENT TASK: ${getTaskText(currentTask)}`);
+        }
+      }
+
+      const recentChat = [];
+      if (state.roadmapKey && state.allTaskChats[state.roadmapKey]) {
+        Object.entries(state.allTaskChats[state.roadmapKey]).forEach(([taskId, data]) => {
+          (data.threads || []).forEach((thread) => {
+            (thread.messages || []).slice(-2).forEach((message) => {
+              if (message.role === "user" && message.content?.trim()) {
+                recentChat.push(`[${taskId}] User: ${message.content.trim().slice(0, 140)}`);
+              }
+            });
+          });
+        });
+      }
+      if (recentChat.length) {
+        lines.push("\nRecent questions / blockers from task chat:");
+        lines.push(...recentChat.slice(-4));
+      }
+
+      const reasonLabels = {
+        task_completed: "User completed one or more tasks — tighten the remaining path toward the fastest win.",
+        task_skipped: "User unchecked or skipped a task — route around it; do not assign the same step again.",
+        obstacle: "User hit an obstacle — replace unreachable steps with practical alternatives.",
+        opportunity: "User found a new opportunity or shortcut — accelerate the path honestly.",
+        goal_change: "User's goal or direction shifted — align remaining steps with their new aim.",
+        notes_signal: "User's notes suggest a change in situation — adapt remaining steps.",
+        manual: "User requested a refresh of remaining steps."
+      };
+
+      if (options.reason) {
+        lines.push(`\nAdaptation reason: ${reasonLabels[options.reason] || options.reason}`);
+      }
+      if (options.detail) {
+        lines.push(`User context: "${String(options.detail).slice(0, 400)}"`);
+      }
+
+      return lines.join("\n");
+    }
+
+    function canAutoAdaptRoadmap(reason, urgent = false) {
+      if (!$("#screen-roadmap")?.classList.contains("active")) return false;
+      if (!state.currentIdea || !state.roadmapStages.length) return false;
+      if (roadmapAdaptInFlight || state.roadmapAutoContinuePending) return false;
+      if (urgent) return true;
+      if (!state.roadmapLastAdaptAt) return true;
+      return Date.now() - state.roadmapLastAdaptAt >= ROADMAP_ADAPT_COOLDOWN_MS;
+    }
+
+    function setRoadmapAdaptingUi(active, message = "Updating your next steps…") {
+      const badge = $("#roadmap-status-badge");
+      const status = $("#momentum-status");
+      if (badge) {
+        badge.classList.toggle("is-adapting", active);
+        if (active) badge.textContent = "Updating your path…";
+        else badge.classList.remove("is-complete");
+      }
+      if (status && active) status.textContent = message;
+      updateRoadmapOverviewChrome();
+    }
+
+    function scheduleRoadmapAdaptation(reason, options = {}) {
+      if (!state.roadmapStages.length || !state.currentIdea) return;
+      const pos = getFirstIncompleteTaskPosition();
+      const hasRemaining = Boolean(
+        pos && (
+          pos.taskIndex < (state.roadmapStages[pos.stageIndex]?.tasks?.length || 0) ||
+          pos.stageIndex < state.roadmapStages.length - 1
+        )
+      );
+      if (!hasRemaining) return;
+
+      clearTimeout(roadmapAdaptTimer);
+      roadmapAdaptTimer = setTimeout(() => {
+        roadmapAdaptTimer = null;
+        if (!canAutoAdaptRoadmap(reason, options.urgent)) return;
+        void adaptRemainingRoadmap({
+          auto: true,
+          reason,
+          detail: options.detail || "",
+          skipConfirm: true
+        });
+      }, options.urgent ? 600 : ROADMAP_ADAPT_DEBOUNCE_MS);
+    }
+
+    async function adaptRemainingRoadmap(options = {}) {
+      const { kept, pos } = sliceRoadmapBeforeFirstIncomplete();
+      if (!pos || !state.currentIdea) return false;
+
+      const hasRemaining = Boolean(
+        pos.taskIndex < (state.roadmapStages[pos.stageIndex]?.tasks?.length || 0) ||
+        pos.stageIndex < state.roadmapStages.length - 1
+      );
+      if (!hasRemaining) return false;
+
+      if (!options.skipConfirm && !options.auto) {
+        const ok = await showConfirmDialog({
+          title: "Rebuild remaining steps?",
+          message: "Rebuild the remaining steps from where you are now?",
+          detail: "Completed tasks stay checked. Your roadmap will adapt to your latest progress.",
+          confirmLabel: "Rebuild",
+          cancelLabel: "Cancel"
+        });
+        if (!ok) return false;
+      }
+
+      if (roadmapAdaptInFlight) return false;
+      roadmapAdaptInFlight = true;
+
+      const rebuildBtn = $("#roadmap-rebuild-remaining-btn");
+      const originalLabel = rebuildBtn?.textContent || "Rebuild remaining steps";
+      if (rebuildBtn) {
+        rebuildBtn.disabled = true;
+        rebuildBtn.textContent = "Updating…";
+      }
+      if (options.auto) setRoadmapAdaptingUi(true);
+
+      trackEvent("roadmap_adapt_requested", {
+        roadmap_key: state.roadmapKey,
+        kept_stages_count: kept.length,
+        reason: options.reason || "manual",
+        auto: Boolean(options.auto),
+        reason_length: options.detail?.length || 0
+      });
+
+      const context = getAdvisorContext();
+      const founderMode = isFounderRoadmapForIdea(state.currentIdea);
+      const adaptPhase = options.auto || options.reason ? "adapt" : "continue";
+      const progressBlock = buildRoadmapAdaptContext(options);
+      const completedSummary = buildCompletedRoadmapSummary(kept);
+
+      try {
+        const response = await callAdvisor(
+          `${buildRoadmapPrompt(state.currentIdea, context, { phase: adaptPhase, founderMode })}\n\n` +
+          `LIVING ROADMAP — progress snapshot:\n${progressBlock}\n\n` +
+          `Completed work (keep checked — build ONLY what comes after):\n${completedSummary}\n\n` +
+          `Replace all remaining future stages. Shorten the path when possible. Never repeat completed or skipped tasks verbatim.`,
+          getRoadmapAdvisorTokenLimit(founderMode)
+        );
+        const nextStages = parseRoadmapResponse(response, state.currentIdea);
+        if (!nextStages || !stagesAreMeaningful(nextStages)) throw new Error("Adapt response was empty or too generic");
+
+        state.roadmapStages = [...kept, ...nextStages];
+        state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, state.currentIdea, { force: true });
+        state.roadmapExhausted = false;
+        state.roadmapLastAdaptAt = Date.now();
+        if (state.roadmapKey) {
+          state.allRoadmaps[state.roadmapKey] = {
+            ...state.allRoadmaps[state.roadmapKey],
+            idea: state.currentIdea,
+            stages: state.roadmapStages
+          };
+        }
+
+        const completeCard = $("#roadmap-complete-card");
+        if (completeCard) {
+          completeCard.hidden = true;
+          completeCard.classList.remove("visible");
+        }
+
+        renderStages(state.roadmapStages);
+        schedulePersist();
+        trackEvent("roadmap_adapt_applied", {
+          added_stages_count: nextStages.length,
+          total_stages_count: state.roadmapStages.length,
+          reason: options.reason || "manual"
+        });
+
+        if (options.auto) {
+          const status = $("#momentum-status");
+          if (status) status.textContent = "Path updated — your next steps match where you are now.";
+        }
+
+        setTimeout(() => {
+          const posAfter = getFirstIncompleteTaskPosition();
+          if (posAfter) {
+            if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+            state.expandedRoadmapPhases.add(posAfter.stageIndex);
+            document.querySelector(`.roadmap-phase[data-phase-index="${posAfter.stageIndex}"]`)?.classList.add("is-open", "open");
+            document.querySelector(`.task-item[data-task-id="task-${posAfter.stageIndex}-${posAfter.taskIndex}"]`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+          queueWritingDraftsForVisibleTasks();
+        }, 120);
+        return true;
+      } catch {
+        trackEvent("roadmap_adapt_failed", { roadmap_key: state.roadmapKey, reason: options.reason || "manual" });
+        return false;
+      } finally {
+        roadmapAdaptInFlight = false;
+        setRoadmapAdaptingUi(false);
+        if (rebuildBtn) {
+          rebuildBtn.disabled = false;
+          rebuildBtn.textContent = originalLabel;
+        }
+        updateRoadmapOverviewChrome();
+        updateMomentum();
+      }
+    }
+
+    async function regenerateRemainingRoadmap(options = {}) {
+      if (options.skipConfirm && options.reason) {
+        return adaptRemainingRoadmap({
+          ...options,
+          auto: true,
+          reason: "obstacle",
+          detail: options.reason,
+          skipConfirm: true
+        });
+      }
+      return adaptRemainingRoadmap({ ...options, auto: false });
     }
 
     function stagesAreMeaningful(stages) {
@@ -15857,6 +16623,8 @@ What would make this more useful for someone in your situation?`;
         const productStage = inferFounderProductStage(context);
         if (phase === "continue") {
           header = "Return exactly 2 stages with 2 tasks each.";
+        } else if (phase === "adapt") {
+          header = "Return exactly 2 stages with 2 tasks each.";
         } else if (productStage === "beta" || productStage === "unknown") {
           header =
             "Return exactly 2 stages with 2 tasks each. Cover only the next 2-3 weeks — closed beta or first functionality test. Do NOT include formal pilots, grant research, sponsor decks, or 15-30 user cohorts in this roadmap.";
@@ -15866,6 +16634,8 @@ What would make this more useful for someone in your situation?`;
         }
       } else if (phase === "continue") {
         header = "Return exactly 4 stages with 3 tasks each.";
+      } else if (phase === "adapt") {
+        header = "Return exactly 2 stages with 3 tasks each.";
       } else {
         header = "Return exactly 3 stages with 2 tasks each.";
       }
@@ -15883,7 +16653,9 @@ What would make this more useful for someone in your situation?`;
         idea.income ? `Funding model: ${idea.income}` : ""
       ].filter(Boolean).join("\n");
 
-      const phaseNote = phase === "continue"
+      const phaseNote = phase === "adapt"
+        ? "The user is IN PROGRESS. REPLACE only what comes AFTER their current position with the fastest realistic route to success. Do not repeat completed work. If they skipped a step, route around it. If they hit an obstacle, swap in alternatives. If they found an opportunity or shortcut, accelerate."
+        : phase === "continue"
         ? "Generate the NEXT 2 stages after their completed roadmap for growing whatimado.com. Do not repeat completed tasks."
         : "Generate the FIRST 2 stages only — the immediate next 2-4 weeks for this founder path. Do not pack the entire 30-90 day journey into one roadmap.";
 
@@ -15985,7 +16757,9 @@ What would make this more useful for someone in your situation?`;
         idea.income ? `Income goal: ${idea.income}` : ""
       ].filter(Boolean).join("\n");
 
-      const phaseNote = phase === "continue"
+      const phaseNote = phase === "adapt"
+        ? "The user is IN PROGRESS on this path. REPLACE only the remaining future stages with the fastest realistic route to their goal from where they are NOW. Completed tasks are sacred. Skipped tasks should be worked around, not repeated. Obstacles mean alternative steps. New opportunities mean a shorter path if honest."
+        : phase === "continue"
         ? "Generate the NEXT 4 stages after their completed roadmap. Do not repeat completed tasks. Logical progression: try with real people → first income → improve → grow. Only stop when there is no meaningful next phase."
         : "Generate the FIRST 3 stages only — the immediate next steps for this path. Later phases unlock via Continue this plan.";
 
@@ -16419,7 +17193,7 @@ What would make this more useful for someone in your situation?`;
 
       if (/\b120-word\b/.test(task) || /\bfounder story\b/.test(task) || /\bfounder story\b/.test(q)) {
         return (
-          "Tap Write a draft for me above My Notes for a starter founder story you can edit. Structure: Line 1 — who it's for (stuck, rebuilding, under-resourced). Lines 2–3 — why you built it and why it stays free. " +
+          "A starter founder story should already be in My Notes — edit it until it sounds like you. Structure: Line 1 — who it's for (stuck, rebuilding, under-resourced). Lines 2–3 — why you built it and why it stays free. " +
           "Line 4 — what's different (visual map + roadmaps with tasks). Last line — invite people to try https://whatimado.com. Trim until you're close to 120 words."
         );
       }
@@ -16650,6 +17424,7 @@ What would make this more useful for someone in your situation?`;
       locationDraft: { country: "", region: "", city: "", postal: "" },
       awaitingLocationCountry: "",
       roadmapExhausted: false,
+      roadmapLastAdaptAt: 0,
       roadmapAutoContinuePending: false,
       expandedRoadmapPhases: null,
       activeMapId: null,
@@ -17557,6 +18332,78 @@ What would make this more useful for someone in your situation?`;
       return mapTitle.length > 56 ? `${mapTitle.slice(0, 55)}…` : mapTitle;
     }
 
+    function deriveMapSummary(history = state.history) {
+      const users = history
+        .filter((entry) => entry.role === "user")
+        .map((entry) => entry.content?.trim())
+        .filter(Boolean);
+      if (!users.length) return "";
+
+      let text = users[0];
+      if (text.length < 48 && users[1]) text = `${text} ${users[1]}`;
+      text = text.replace(/\s+/g, " ").trim();
+
+      const sentenceMatch = text.match(/^(.+?[.!?])(?:\s|$)/);
+      if (sentenceMatch && sentenceMatch[1].length >= 24 && sentenceMatch[1].length <= 180) {
+        return sentenceMatch[1];
+      }
+
+      if (text.length <= 180) return text;
+      const cut = text.slice(0, 177);
+      const lastSpace = cut.lastIndexOf(" ");
+      return `${(lastSpace > 90 ? cut.slice(0, lastSpace) : cut).trim()}…`;
+    }
+
+    function getSavedMapById(mapId) {
+      return state.savedMaps.find((map) => map.id === mapId) || null;
+    }
+
+    function getMapSummaryForMap(map) {
+      if (!map) return "";
+      if (map.summary) return map.summary;
+      if (Array.isArray(map.history) && map.history.length) return deriveMapSummary(map.history);
+      return "";
+    }
+
+    function getActiveMapSummary() {
+      syncActiveMapIntoLibrary();
+      const map = getSavedMapById(state.activeMapId);
+      if (map) return getMapSummaryForMap(map);
+      if (state.history?.length) return deriveMapSummary(state.history);
+      return "";
+    }
+
+    function getCategorySummary(category) {
+      if (!category) return "";
+      if (category.summary) return category.summary;
+      if (category.mapId) return getMapSummaryForMap(getSavedMapById(category.mapId));
+      return "";
+    }
+
+    function syncCategoryFromMap(category) {
+      if (!category?.mapId) return category;
+      const map = getSavedMapById(category.mapId);
+      if (!map) return category;
+      category.title = map.title || deriveCategoryTitle(map.history);
+      category.summary = getMapSummaryForMap(map);
+      return category;
+    }
+
+    function updateMapContextDisplays() {
+      const summary = getActiveMapSummary();
+      const mapCtx = $("#map-page-context");
+      if (mapCtx) {
+        mapCtx.textContent = summary;
+        mapCtx.hidden = !summary;
+      }
+      const roadmapCtx = $("#roadmap-parent-context");
+      if (roadmapCtx) {
+        const label = summary ? `From your situation: ${summary}` : "";
+        roadmapCtx.textContent = label;
+        roadmapCtx.hidden = !label;
+      }
+    }
+
     function createRoadmapCategoryId() {
       return window.crypto?.randomUUID?.()
         ? window.crypto.randomUUID()
@@ -17850,6 +18697,7 @@ What would make this more useful for someone in your situation?`;
         state.roadmapCategories.push({
           id: createRoadmapCategoryId(),
           title: map.title || deriveCategoryTitle(map.history),
+          summary: getMapSummaryForMap(map),
           mapId: map.id,
           createdAt: map.updatedAt || Date.now(),
           items
@@ -17865,6 +18713,7 @@ What would make this more useful for someone in your situation?`;
       category = {
         id: createRoadmapCategoryId(),
         title: deriveCategoryTitle(),
+        summary: deriveMapSummary(),
         mapId: state.activeMapId,
         createdAt: Date.now(),
         items: []
@@ -17939,6 +18788,30 @@ What would make this more useful for someone in your situation?`;
       if (!idea?.title) return;
       if (state.activeMapId) removeDismissedSidebarMapId(state.activeMapId);
       clearRemovedRoadmapKey(idea.title);
+      const category = getTargetCategoryForNewRoadmap();
+      if (!category) return;
+      syncCategoryFromMap(category);
+
+      const exists = category.items.some(
+        (item) => item.mapId === state.activeMapId && item.ideaTitle === idea.title
+      );
+      if (exists) {
+        state.activeRoadmapCategoryId = category.id;
+        state.sidebarRoadmapsExpanded = true;
+        renderSidebarRoadmaps();
+        return;
+      }
+
+      category.items.push({
+        id: createRoadmapItemId(),
+        mapId: state.activeMapId,
+        ideaTitle: idea.title,
+        ideaIndex,
+        addedAt: Date.now()
+      });
+      state.activeRoadmapCategoryId = category.id;
+      state.sidebarRoadmapsExpanded = true;
+      renderSidebarRoadmaps();
     }
 
     function getSelectedPathIndexes() {
@@ -17968,7 +18841,7 @@ What would make this more useful for someone in your situation?`;
       renderSidebarRoadmaps();
       if (options.manual) {
         await persistSession({ manual: true });
-        flashSaveToast("Saved to My maps");
+        flashSaveToast("Progress saved");
       } else {
         schedulePersist();
       }
@@ -18138,8 +19011,112 @@ What would make this more useful for someone in your situation?`;
       return removeRoadmapForPath(state.currentIdea.title, { ideaIndex: getCurrentIdeaIndex() });
     }
 
+    function ensureAllMapsInSidebar() {
+      syncActiveMapIntoLibrary();
+      state.savedMaps.forEach((map) => {
+        if (isDismissedSidebarMap(map.id)) return;
+        let category = state.roadmapCategories.find((entry) => entry.mapId === map.id);
+        if (!category) {
+          category = {
+            id: createRoadmapCategoryId(),
+            title: map.title || deriveCategoryTitle(map.history),
+            summary: getMapSummaryForMap(map),
+            mapId: map.id,
+            createdAt: map.updatedAt || Date.now(),
+            items: []
+          };
+          state.roadmapCategories.unshift(category);
+        }
+        syncCategoryFromMap(category);
+        const removed = new Set(Array.isArray(map.removedRoadmapKeys) ? map.removedRoadmapKeys : []);
+        const roadmaps = map.allRoadmaps && typeof map.allRoadmaps === "object" ? map.allRoadmaps : {};
+        Object.entries(roadmaps).forEach(([key, entry]) => {
+          if (!entry?.stages?.length || removed.has(key)) return;
+          const ideaTitle = entry.idea?.title || map.ideas?.find((idea) => slugify(idea.title) === key)?.title || key;
+          const exists = category.items.some((item) => item.mapId === map.id && item.ideaTitle === ideaTitle);
+          if (exists) return;
+          const ideaIndex = Array.isArray(map.ideas)
+            ? map.ideas.findIndex((idea) => slugify(idea.title) === key || idea.title === ideaTitle)
+            : -1;
+          category.items.push({
+            id: createRoadmapItemId(),
+            mapId: map.id,
+            ideaTitle,
+            ideaIndex: ideaIndex >= 0 ? ideaIndex : 0,
+            addedAt: map.updatedAt || Date.now()
+          });
+        });
+      });
+    }
+
     function renderSidebarRoadmaps() {
+      const group = $("#dashboard-roadmaps-group");
+      const sub = $("#dashboard-roadmaps-sub");
+      const container = $("#dashboard-roadmap-categories");
+      const toggle = $("#sidebar-roadmaps-btn");
+      if (!sub || !container) return;
+
       pruneRoadmapSidebarAgainstData();
+      ensureAllMapsInSidebar();
+      state.roadmapCategories = state.roadmapCategories.filter(
+        (category) => !category.mapId || !isDismissedSidebarMap(category.mapId)
+      );
+      syncRoadmapSidebarWithCurrentMap();
+      syncRoadmapCategoriesWithLibrary();
+      state.roadmapCategories.forEach((category) => syncCategoryFromMap(category));
+
+      const hasCategories = state.roadmapCategories.length > 0;
+      if (hasCategories) state.sidebarRoadmapsExpanded = true;
+
+      if (group) {
+        group.classList.toggle("is-open", state.sidebarRoadmapsExpanded);
+      }
+      sub.hidden = !state.sidebarRoadmapsExpanded;
+      if (toggle) toggle.setAttribute("aria-expanded", state.sidebarRoadmapsExpanded ? "true" : "false");
+
+      if (!hasCategories) {
+        container.innerHTML = '<p class="dashboard-roadmaps-empty">Start on Home — your explorations and roadmaps appear here as you go.</p>';
+        return;
+      }
+
+      container.innerHTML = state.roadmapCategories.map((category) => {
+        const isExpanded = category.id === state.activeRoadmapCategoryId;
+        const isCurrentSection = isCurrentRoadmapCategory(category);
+        const deleteLabel = category.mapId ? "Delete map" : "Remove group";
+        const shortTitle = abbreviateSidebarCategoryTitle(category.title);
+        const summary = getCategorySummary(category);
+        const categoryClasses = [
+          "dashboard-roadmap-category",
+          isExpanded ? "is-expanded" : "",
+          isExpanded || isCurrentSection ? "is-active" : "",
+          isCurrentSection ? "is-current-section" : ""
+        ].filter(Boolean).join(" ");
+        return `
+        <div class="${categoryClasses}">
+          <div class="dashboard-roadmap-category-head">
+            <button type="button" class="dashboard-roadmap-category-title" data-open-map-category="${escapeHtml(category.id)}" title="${escapeHtml(category.title)}" aria-label="${escapeHtml(category.title)}">
+              <span class="dashboard-roadmap-category-label">${escapeHtml(shortTitle)}</span>
+              ${summary ? `<span class="dashboard-roadmap-category-summary">${escapeHtml(summary)}</span>` : ""}
+            </button>
+            <button type="button" class="dashboard-roadmap-category-toggle" data-roadmap-category="${escapeHtml(category.id)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="Show roadmaps for this map" title="Show roadmaps">
+              <svg class="dashboard-roadmap-category-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+            </button>
+            <button type="button" class="dashboard-roadmap-category-delete" data-delete-roadmap-category="${escapeHtml(category.id)}" aria-label="${deleteLabel}" title="${deleteLabel}">×</button>
+          </div>
+          <ul class="dashboard-roadmap-items">
+            ${(category.items || []).map((item) => `
+              <li class="dashboard-roadmap-item-row">
+                <button type="button" class="dashboard-roadmap-item ${isActiveRoadmapSidebarItem(item) ? "is-active" : ""}" data-open-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}">
+                  ${escapeHtml(item.ideaTitle)}
+                </button>
+                <button type="button" class="dashboard-roadmap-item-delete" data-delete-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}" aria-label="Remove roadmap for ${escapeHtml(item.ideaTitle)}" title="Remove roadmap">Remove</button>
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+      `;
+      }).join("");
+      updateMapContextDisplays();
     }
 
     function openMapFromSidebarCategory(categoryId) {
@@ -18164,28 +19141,38 @@ What would make this more useful for someone in your situation?`;
 
       const itemCount = (category.items || []).length;
       const title = category.title || "this group";
-      const message = category.mapId
-        ? `Remove ${itemCount ? `${itemCount} roadmap${itemCount === 1 ? "" : "s"}` : "this map's roadmaps"} from the sidebar?\n\nYour possibility map stays in My maps — only the Roadmaps shortcuts are removed.`
-        : `Remove "${title}" from Roadmaps?\n\nRoadmap shortcuts in this group will disappear from the sidebar.`;
-      if (!confirm(message)) return;
+      showConfirmDialog({
+        title: category.mapId ? "Delete this map?" : "Remove group?",
+        message: category.mapId
+          ? `Delete "${title}" and all ${itemCount ? `${itemCount} roadmap${itemCount === 1 ? "" : "s"}` : "roadmaps"}?`
+          : `Remove "${title}" from Roadmaps?`,
+        detail: category.mapId
+          ? "This removes the exploration, paths, and roadmap progress for this situation."
+          : "Roadmap shortcuts in this group will disappear from the sidebar.",
+        confirmLabel: category.mapId ? "Delete map" : "Remove",
+        cancelLabel: "Keep",
+        tone: "danger"
+      }).then((ok) => {
+        if (!ok) return;
 
-      if (category.mapId) {
-        dismissRoadmapCategoryFromSidebar(categoryId);
-        return;
-      }
-
-      const items = [...(category.items || [])];
-      Promise.all(items.map((item) => removeRoadmapForPath(item.ideaTitle, {
-        mapId: item.mapId || category.mapId || state.activeMapId,
-        skipConfirm: true
-      }))).then(() => {
-        state.roadmapCategories = state.roadmapCategories.filter((entry) => entry.id !== categoryId);
-        if (state.activeRoadmapCategoryId === categoryId) {
-          state.activeRoadmapCategoryId = null;
+        if (category.mapId) {
+          deleteSavedMap(category.mapId, { skipConfirm: true });
+          return;
         }
-        renderSidebarRoadmaps();
-        void flushPersist();
-        trackEvent("roadmap_category_deleted", { had_map: false });
+
+        const items = [...(category.items || [])];
+        Promise.all(items.map((item) => removeRoadmapForPath(item.ideaTitle, {
+          mapId: item.mapId || category.mapId || state.activeMapId,
+          skipConfirm: true
+        }))).then(() => {
+          state.roadmapCategories = state.roadmapCategories.filter((entry) => entry.id !== categoryId);
+          if (state.activeRoadmapCategoryId === categoryId) {
+            state.activeRoadmapCategoryId = null;
+          }
+          renderSidebarRoadmaps();
+          void flushPersist();
+          trackEvent("roadmap_category_deleted", { had_map: false });
+        });
       });
     }
 
@@ -18260,6 +19247,7 @@ What would make this more useful for someone in your situation?`;
       const entry = {
         id,
         title: deriveMapTitle(snapshot.history),
+        summary: deriveMapSummary(snapshot.history),
         updatedAt: Date.now(),
         ...snapshot,
         removedRoadmapKeys: prior?.removedRoadmapKeys || snapshot.removedRoadmapKeys || []
@@ -18291,6 +19279,7 @@ What would make this more useful for someone in your situation?`;
       state.savedMaps = [{
         id,
         title: deriveMapTitle(state.history),
+        summary: deriveMapSummary(state.history),
         updatedAt: data.savedAt || Date.now(),
         ...buildMapSnapshot()
       }];
@@ -18368,30 +19357,47 @@ What would make this more useful for someone in your situation?`;
       schedulePersist();
     }
 
-    function deleteSavedMap(mapId) {
+    function deleteSavedMap(mapId, options = {}) {
       const entry = state.savedMaps.find((map) => map.id === mapId);
       if (!entry) return;
-      if (!confirm(`Delete this map?\n\n"${entry.title}"\n\nThis removes the map, all paths, and any roadmaps you started on it.`)) return;
 
-      addDismissedSidebarMapId(mapId);
-      if (state.activeMapId === mapId) {
-        state.activeMapId = null;
-        clearIntakeSession({ preserveLibrary: true });
-      }
-      markAllRoadmapsRemovedOnMap(mapId);
-      state.savedMaps = state.savedMaps.filter((map) => map.id !== mapId);
-      cleanupRoadmapCategoriesForMap(mapId);
-      if (!state.activeMapId && !state.ideas.length) {
-        showScreen("main");
+      const runDelete = () => {
+        addDismissedSidebarMapId(mapId);
+        if (state.activeMapId === mapId) {
+          state.activeMapId = null;
+          clearIntakeSession({ preserveLibrary: true });
+        }
+        markAllRoadmapsRemovedOnMap(mapId);
+        state.savedMaps = state.savedMaps.filter((map) => map.id !== mapId);
+        cleanupRoadmapCategoriesForMap(mapId);
+        if (!state.activeMapId && !state.ideas.length) {
+          showScreen("main");
+        }
+
+        trackEvent("saved_map_deleted", { saved_maps_count: state.savedMaps.length });
+        renderMapsLibrary();
+        renderSavedMapsHome();
+        updateMapsNav();
+        renderSidebarRoadmaps();
+        schedulePersist();
+        void flushPersist();
+      };
+
+      if (options.skipConfirm) {
+        runDelete();
+        return;
       }
 
-      trackEvent("saved_map_deleted", { saved_maps_count: state.savedMaps.length });
-      renderMapsLibrary();
-      renderSavedMapsHome();
-      updateMapsNav();
-      renderSidebarRoadmaps();
-      schedulePersist();
-      void flushPersist();
+      showConfirmDialog({
+        title: "Delete this map?",
+        messageHtml: `<strong>${escapeHtml(entry.title)}</strong>`,
+        detail: getMapSummaryForMap(entry) || "This removes the map, all paths, and any roadmaps you started on it.",
+        confirmLabel: "Delete map",
+        cancelLabel: "Keep it",
+        tone: "danger"
+      }).then((ok) => {
+        if (ok) runDelete();
+      });
     }
 
     function setRoadmapNavVisible(visible) {
@@ -18400,12 +19406,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     function updateMapsNav() {
-      const mapsBtn = $("#nav-maps-btn");
-      const sidebarMapBtn = $("#sidebar-map-btn");
       syncActiveMapIntoLibrary();
-      const visible = state.savedMaps.length > 0 || state.ideas.length > 0;
-      if (mapsBtn) mapsBtn.hidden = !visible;
-      if (sidebarMapBtn) sidebarMapBtn.hidden = !state.ideas.length;
     }
 
     function openMapsFromNav() {
@@ -18468,10 +19469,13 @@ What would make this more useful for someone in your situation?`;
         return;
       }
 
-      list.innerHTML = state.savedMaps.map((map) => `
+      list.innerHTML = state.savedMaps.map((map) => {
+        const summary = getMapSummaryForMap(map);
+        return `
         <article class="map-library-card ${map.id === state.activeMapId ? "is-active" : ""}">
           <div>
             <h3 class="map-library-card-title">${escapeHtml(map.title)}</h3>
+            ${summary ? `<p class="map-library-card-summary">${escapeHtml(summary)}</p>` : ""}
             <p class="map-library-card-meta">${escapeHtml(formatMapMetaLine(map))}</p>
           </div>
           <div class="map-library-actions">
@@ -18479,7 +19483,8 @@ What would make this more useful for someone in your situation?`;
             <button type="button" class="back-btn" data-delete-map="${escapeHtml(map.id)}">Delete</button>
           </div>
         </article>
-      `).join("");
+      `;
+      }).join("");
       updateMapsNav();
     }
 
@@ -19101,25 +20106,34 @@ What would make this more useful for someone in your situation?`;
 
     function startAlterPathChat() {
       if (!state.ideas.length) return;
+      const runAlter = () => {
+        state.mapChat = { type: "alter" };
+        state.alterPathMode = false;
+        trackEvent("alter_path_started", { ideas_count: state.ideas.length });
+        showScreen("convo");
+        const prompt = "Want to tweak these paths or add new ones? Tell me what's not fitting, what direction you'd rather explore, or what to add. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back to your map anytime.";
+        addTypingBubble();
+        resolveTyping(prompt);
+        state.history.push({ role: "assistant", content: prompt });
+        const reply = $("#reply-textarea");
+        if (reply) reply.placeholder = "e.g. These feel too online — I want something local and hands-on...";
+        showReplyBox(true);
+        updateReplyMapActions();
+        schedulePersist();
+      };
       if (hasAnyGeneratedRoadmaps()) {
-        const ok = confirm(
-          "You've already opened step-by-step roadmaps for some paths. Refining your map may change those roadmaps and reset progress that isn't saved to your account.\n\nContinue refining or adding paths?"
-        );
-        if (!ok) return;
+        showConfirmDialog({
+          title: "Refine your map?",
+          message: "You've already opened step-by-step roadmaps for some paths.",
+          detail: "Refining your map may change those roadmaps and reset progress that isn't saved to your account.",
+          confirmLabel: "Continue refining",
+          cancelLabel: "Stay on map"
+        }).then((ok) => {
+          if (ok) runAlter();
+        });
+        return;
       }
-      state.mapChat = { type: "alter" };
-      state.alterPathMode = false;
-      trackEvent("alter_path_started", { ideas_count: state.ideas.length });
-      showScreen("convo");
-      const prompt = "Want to tweak these paths or add new ones? Tell me what's not fitting, what direction you'd rather explore, or what to add. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back to your map anytime.";
-      addTypingBubble();
-      resolveTyping(prompt);
-      state.history.push({ role: "assistant", content: prompt });
-      const reply = $("#reply-textarea");
-      if (reply) reply.placeholder = "e.g. These feel too online — I want something local and hands-on...";
-      showReplyBox(true);
-      updateReplyMapActions();
-      schedulePersist();
+      runAlter();
     }
 
     function startIdeaDiscussChat(index, options = {}) {
@@ -19942,16 +20956,11 @@ What would make this more useful for someone in your situation?`;
       $$(".dashboard-nav-btn").forEach((button) => button.classList.remove("active"));
       if (name === "main") {
         $("#dashboard-sidebar")?.querySelector('[data-screen-link="main"]')?.classList.add("active");
-      } else if (name === "map") {
-        $("#sidebar-map-btn")?.classList.add("active");
-      } else if (name === "maps") {
-        $("#sidebar-saved-btn")?.classList.add("active");
       } else if (name === "roadmap") {
         $("#sidebar-progress-btn")?.classList.add("active");
       } else if (name === "stats") {
         $("#sidebar-stats-btn")?.classList.add("active");
       }
-      $("#nav-maps-btn")?.classList.toggle("active", name === "map" || name === "maps");
       if (name === "convo") {
         scrollConversation();
       } else if (!options.skipScrollTop) {
@@ -21026,7 +22035,10 @@ What would make this more useful for someone in your situation?`;
         buildOpportunityMap(state.ideas);
         updateMapsNav();
         syncActiveMapIntoLibrary();
+        ensureCategoryForCurrentMap();
         renderSavedMapsHome();
+        renderSidebarRoadmaps();
+        updateMapContextDisplays();
         trackEvent("map_generated", {
           ideas_count: state.ideas.length,
           founder_mode: founderMode,
@@ -21691,6 +22703,7 @@ What would make this more useful for someone in your situation?`;
       });
 
       syncPathSelectionUi();
+      updateMapContextDisplays();
       if (!options.skipPersist) schedulePersist();
     }
 
@@ -21999,7 +23012,15 @@ What would make this more useful for someone in your situation?`;
     async function regenerateCurrentRoadmap() {
       const index = getCurrentIdeaIndex();
       if (index < 0 || !state.currentIdea) return;
-      if (!confirm("Generate a new version of this roadmap with different steps? Notes and checkboxes for this path will reset.")) return;
+      const ok = await showConfirmDialog({
+        title: "Generate a new roadmap?",
+        message: "Generate a new version of this roadmap with different steps?",
+        detail: "Notes and checkboxes for this path will reset.",
+        confirmLabel: "Generate new version",
+        cancelLabel: "Keep current",
+        tone: "danger"
+      });
+      if (!ok) return;
 
       const key = state.roadmapKey;
       const previousStages = key && state.allRoadmaps[key]?.stages?.length
@@ -22036,7 +23057,13 @@ What would make this more useful for someone in your situation?`;
           });
           schedulePersist();
           updateMomentum();
+          if (check.checked) {
+            scheduleRoadmapAdaptation("task_completed", { taskId });
+          } else {
+            scheduleRoadmapAdaptation("task_skipped", { taskId, urgent: true, detail: getTaskTextById(taskId) });
+          }
         });
+        let notesAdaptTimer = null;
         notes?.addEventListener("input", () => {
           if (!data.notes && notes.value.trim()) {
             trackEvent("task_notes_started", { task_id: taskId });
@@ -22045,9 +23072,27 @@ What would make this more useful for someone in your situation?`;
           updateTaskWritingAssistButtons(taskId);
           updateTaskNotesWordCount(taskId);
           schedulePersist();
+          clearTimeout(notesAdaptTimer);
+          notesAdaptTimer = setTimeout(() => {
+            const signals = detectAdaptSignalsFromText(notes.value);
+            if (signals) {
+              scheduleRoadmapAdaptation(signals.type === "goal_change" ? "goal_change" : signals.type === "opportunity" ? "opportunity" : "notes_signal", {
+                detail: signals.detail,
+                urgent: true
+              });
+            }
+          }, 4500);
         });
         renderTaskThreads(taskId);
+        const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+        if (match) {
+          const normalized = normalizeRoadmapTask(state.roadmapStages?.[Number(match[1])]?.tasks?.[Number(match[2])]);
+          if (normalized && isWritingTask(normalized)) {
+            void ensureTaskDraftInNotes(taskId);
+          }
+        }
       });
+      queueWritingDraftsForVisibleTasks();
     }
 
     function getStageProgressFromIndices(stageIndex) {
@@ -22378,6 +23423,7 @@ What would make this more useful for someone in your situation?`;
           ? `${idea.why} Each task includes “What this step means” when wording might be unclear, plus time, cost, and local help when relevant.`
           : "Each task includes “What this step means” when wording might be unclear, plus time, cost, and local help when relevant.";
       }
+      updateMapContextDisplays();
     }
 
     function updateRoadmapLocalResourcesList() {
@@ -22613,12 +23659,12 @@ What would make this more useful for someone in your situation?`;
       if (summaryEl) summaryEl.textContent = `${done} of ${total} tasks completed`;
 
       const badge = $("#roadmap-status-badge");
-      if (badge) {
+      if (badge && !badge.classList.contains("is-adapting")) {
         if (percent === 100 && !state.roadmapAutoContinuePending) {
           badge.textContent = state.roadmapExhausted ? "Roadmap complete" : "Phase complete";
           badge.classList.add("is-complete");
         } else {
-          badge.textContent = "Active roadmap";
+          badge.textContent = roadmapAdaptInFlight ? "Updating your path…" : "Living roadmap";
           badge.classList.remove("is-complete");
         }
       }
@@ -22784,7 +23830,8 @@ What would make this more useful for someone in your situation?`;
           <div class="overview-task-tools">
             <section class="task-mentor-section task-mentor-section--notes">
               <h4 class="task-mentor-label">My Notes</h4>
-              <textarea class="task-textarea" placeholder="Jot down thoughts, progress, links..."></textarea>
+              <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>
+              ${isWritingTask(normalized) ? renderTaskWritingAssistHtml(id, normalized) : ""}
               ${notesExtras}
             </section>
             ${aiAssist}
@@ -23002,6 +24049,7 @@ What would make this more useful for someone in your situation?`;
           togglePhaseExpanded(stageIndex);
           card.classList.toggle("is-open");
           card.classList.toggle("open");
+          queueWritingDraftsForVisibleTasks();
         });
 
         list.append(card);
@@ -23079,9 +24127,9 @@ What would make this more useful for someone in your situation?`;
       $("#progress-pct").textContent = `${percent}%`;
 
       const status = $("#momentum-status");
-      if (percent === 0) status.textContent = "Check off tasks to build momentum";
-      else if (percent < 50) status.textContent = "Good start. Keep the rhythm going.";
-      else if (percent < 100) status.textContent = "You're building real momentum now.";
+      if (percent === 0) status.textContent = "Check off tasks — your roadmap adapts as you go";
+      else if (percent < 50) status.textContent = "Good start. Next steps update to match your progress.";
+      else if (percent < 100) status.textContent = "You're building momentum — the path ahead stays in sync.";
       else if (state.roadmapAutoContinuePending) status.textContent = "Phase complete — loading next steps…";
       else status.textContent = "Path complete!";
 
@@ -23103,7 +24151,7 @@ What would make this more useful for someone in your situation?`;
       if (completeCopy && complete && !state.roadmapAutoContinuePending) {
         completeCopy.textContent = state.roadmapExhausted
           ? "You've finished every meaningful phase on this path. Pick another path on your map, or start fresh with a new exploration."
-          : "Nice work — this phase is complete. The next phase will load automatically in a moment, or tap Continue below.";
+          : "Nice work — this phase is complete. The next phase loads automatically, and your remaining steps keep adapting as you go.";
       }
 
       updateRebuildRemainingButton();
@@ -23127,83 +24175,6 @@ What would make this more useful for someone in your situation?`;
           const allDone = $$(".task-check").length > 0 && $$(".task-check").every((check) => check.checked);
           if (allDone) continueCompletedPlan({ auto: true });
         }, 1400);
-      }
-    }
-
-    async function regenerateRemainingRoadmap(options = {}) {
-      const { kept, pos } = sliceRoadmapBeforeFirstIncomplete();
-      if (!pos || !state.currentIdea) return false;
-      if (!options.skipConfirm && !confirm("Rebuild the remaining steps from where you are now? Completed tasks stay checked.")) {
-        return false;
-      }
-
-      const rebuildBtn = $("#roadmap-rebuild-remaining-btn");
-      const originalLabel = rebuildBtn?.textContent || "Rebuild remaining steps";
-      if (rebuildBtn) {
-        rebuildBtn.disabled = true;
-        rebuildBtn.textContent = "Rebuilding…";
-      }
-
-      trackEvent("roadmap_rebuild_remaining_requested", {
-        roadmap_key: state.roadmapKey,
-        kept_stages_count: kept.length,
-        reason_length: options.reason?.length || 0
-      });
-
-      const context = getAdvisorContext();
-      const founderMode = isFounderRoadmapForIdea(state.currentIdea);
-      const stuckNote = options.reason
-        ? `\nUser is stuck or blocked: "${options.reason}"\nReplace unreachable steps with practical alternatives — do not repeat the same impossible step.\n`
-        : "";
-      const completedSummary = buildCompletedRoadmapSummary(kept);
-
-      try {
-        const response = await callAdvisor(
-          `${buildRoadmapPrompt(state.currentIdea, context, { phase: "continue", founderMode })}\n\n${stuckNote}Completed work (build the next steps from here — do not repeat these):\n${completedSummary}`,
-          getRoadmapAdvisorTokenLimit(founderMode)
-        );
-        const nextStages = parseRoadmapResponse(response, state.currentIdea);
-        if (!nextStages || !stagesAreMeaningful(nextStages)) throw new Error("Rebuild response was empty or too generic");
-
-        state.roadmapStages = [...kept, ...nextStages];
-        state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, state.currentIdea, { force: true });
-        state.roadmapExhausted = false;
-        if (state.roadmapKey) {
-          state.allRoadmaps[state.roadmapKey] = {
-            ...state.allRoadmaps[state.roadmapKey],
-            idea: state.currentIdea,
-            stages: state.roadmapStages
-          };
-        }
-
-        const completeCard = $("#roadmap-complete-card");
-        if (completeCard) {
-          completeCard.hidden = true;
-          completeCard.classList.remove("visible");
-        }
-
-        renderStages(state.roadmapStages);
-        schedulePersist();
-        trackEvent("roadmap_rebuild_remaining_added", {
-          added_stages_count: nextStages.length,
-          total_stages_count: state.roadmapStages.length
-        });
-        setTimeout(() => {
-          const posAfter = getFirstIncompleteTaskPosition();
-          if (posAfter) {
-            document.querySelector(`.task-item[data-task-id="task-${posAfter.stageIndex}-${posAfter.taskIndex}"]`)
-              ?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        }, 120);
-        return true;
-      } catch {
-        trackEvent("roadmap_rebuild_remaining_failed", { roadmap_key: state.roadmapKey });
-        return false;
-      } finally {
-        if (rebuildBtn) {
-          rebuildBtn.disabled = false;
-          rebuildBtn.textContent = originalLabel;
-        }
       }
     }
 
@@ -23353,6 +24324,11 @@ What would make this more useful for someone in your situation?`;
         task_id: taskId,
         question_length: question.length
       });
+
+      const adaptSignals = detectAdaptSignalsFromText(question);
+      if (adaptSignals) {
+        scheduleRoadmapAdaptation(adaptSignals.type, { detail: adaptSignals.detail, urgent: true });
+      }
 
       if (state.activeTaskId && state.activeTaskId !== taskId) {
         collapseAllThreads(null);
@@ -23544,34 +24520,49 @@ What would make this more useful for someone in your situation?`;
       syncActiveMapIntoLibrary();
       const mapCount = state.savedMaps.length;
       const roadmapCount = getRoadmapSidebarCount();
-      let detail = "";
+      let detail = "You'll answer fresh questions on Home.";
       if (mapCount > 0 || roadmapCount > 0) {
         const parts = [];
         if (mapCount > 0) parts.push(`${mapCount} map${mapCount === 1 ? "" : "s"} in My maps`);
         if (roadmapCount > 0) parts.push(`${roadmapCount} roadmap shortcut${roadmapCount === 1 ? "" : "s"}`);
-        detail = `\n\n${parts.join(" and ")} stay saved.`;
+        detail += ` ${parts.join(" and ")} stay saved.`;
       }
-      if (!confirm(`Start a new map? You'll answer fresh questions on Home.${detail}`)) return;
-      beginNewIntake();
-      resetScreenNavHistory();
-      state.lastScreen = "main";
-      setSaveStatus("idle");
-      updateMapsNav();
-      renderSavedMapsHome();
-      renderSidebarRoadmaps();
-      renderMapsLibrary();
-      showScreen("main");
-      schedulePersist();
+      showConfirmDialog({
+        title: "Start a new map?",
+        message: "Start a new map?",
+        detail,
+        confirmLabel: "Start new map",
+        cancelLabel: "Keep current map"
+      }).then((ok) => {
+        if (!ok) return;
+        beginNewIntake();
+        resetScreenNavHistory();
+        state.lastScreen = "main";
+        setSaveStatus("idle");
+        updateMapsNav();
+        renderSavedMapsHome();
+        renderSidebarRoadmaps();
+        renderMapsLibrary();
+        showScreen("main");
+        schedulePersist();
+      });
     }
 
     function confirmResetEverything() {
       syncActiveMapIntoLibrary();
       const mapCount = state.savedMaps.length;
       const roadmapCount = getRoadmapSidebarCount();
-      if (!confirm(
-        `Delete ALL maps, roadmaps, and conversation history on this device${state.currentUser ? " and in your account" : ""}?\n\nThis cannot be undone.${mapCount ? `\n\nIncludes ${mapCount} map${mapCount === 1 ? "" : "s"}` : ""}${roadmapCount ? ` and ${roadmapCount} roadmap shortcut${roadmapCount === 1 ? "" : "s"}` : ""}.`
-      )) return;
-      resetAll();
+      let detail = `This cannot be undone.${mapCount ? ` Includes ${mapCount} map${mapCount === 1 ? "" : "s"}` : ""}${roadmapCount ? ` and ${roadmapCount} roadmap shortcut${roadmapCount === 1 ? "" : "s"}` : ""}.`;
+      showConfirmDialog({
+        title: "Delete everything?",
+        message: `Delete ALL maps, roadmaps, and conversation history on this device${state.currentUser ? " and in your account" : ""}?`,
+        detail,
+        confirmLabel: "Delete everything",
+        cancelLabel: "Cancel",
+        tone: "danger"
+      }).then((ok) => {
+        if (ok) resetAll();
+      });
     }
 
     function resetAll() {
@@ -24180,7 +25171,14 @@ What would make this more useful for someone in your situation?`;
         if (!result?.cloudOk) {
           updateNavSyncStatus();
           flashSaveToast("Cloud sync did not complete.");
-          if (!confirm("Your maps may not appear on other devices. Sign out anyway?")) {
+          if (!await showConfirmDialog({
+            title: "Sign out without syncing?",
+            message: "Your maps may not appear on other devices.",
+            detail: "Sign out anyway?",
+            confirmLabel: "Sign out",
+            cancelLabel: "Stay signed in",
+            tone: "danger"
+          })) {
             return;
           }
         }
@@ -24955,10 +25953,16 @@ What would make this more useful for someone in your situation?`;
 
     function handleDashboardProfileClick() {
       if (state.currentUser) {
-        if (confirm(`Signed in as ${state.currentUser.email}. Sign out?`)) {
+        showConfirmDialog({
+          title: "Sign out?",
+          message: `Signed in as ${state.currentUser.email}.`,
+          confirmLabel: "Sign out",
+          cancelLabel: "Stay signed in"
+        }).then((ok) => {
+          if (!ok) return;
           closeDashboardMobileNav();
           signOut();
-        }
+        });
         return;
       }
       closeDashboardMobileNav();
@@ -24969,12 +25973,12 @@ What would make this more useful for someone in your situation?`;
       syncActiveMapIntoLibrary();
       const roadmapCount = state.savedMaps.reduce((total, map) => total + getMapRoadmapCount(map), 0);
       if (roadmapCount > 0) {
-        showDashboardToast(`You have ${roadmapCount} roadmap${roadmapCount === 1 ? "" : "s"} in progress. Open a map to continue.`);
+        showDashboardToast(`You have ${roadmapCount} roadmap${roadmapCount === 1 ? "" : "s"} in progress. Open one from Roadmaps in the sidebar.`);
         return;
       }
       if (state.savedMaps?.length) {
         const savedCount = state.savedMaps.length;
-        showDashboardToast(`You have ${savedCount} saved map${savedCount === 1 ? "" : "s"}. Open My maps to pick one up.`);
+        showDashboardToast(`You have ${savedCount} saved exploration${savedCount === 1 ? "" : "s"}. Check Roadmaps in the sidebar.`);
         return;
       }
       showDashboardToast("You're all caught up — no new notifications.");
@@ -24988,9 +25992,43 @@ What would make this more useful for someone in your situation?`;
       $("#dashboard-profile-btn")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-top-avatar")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-notify-btn")?.addEventListener("click", handleDashboardNotifyClick);
-      $("#sidebar-saved-btn")?.addEventListener("click", () => {
-        closeDashboardMobileNav();
-        showScreen("maps");
+      $("#sidebar-roadmaps-btn")?.addEventListener("click", toggleSidebarRoadmapsPanel);
+      $("#dashboard-roadmap-categories")?.addEventListener("click", (event) => {
+        const deleteItemBtn = event.target.closest("[data-delete-roadmap-item]");
+        if (deleteItemBtn) {
+          event.preventDefault();
+          event.stopPropagation();
+          closeDashboardMobileNav();
+          removeRoadmapFromSidebar(deleteItemBtn.dataset.roadmapCategory, deleteItemBtn.dataset.deleteRoadmapItem);
+          return;
+        }
+        const deleteBtn = event.target.closest("[data-delete-roadmap-category]");
+        if (deleteBtn) {
+          event.preventDefault();
+          closeDashboardMobileNav();
+          deleteRoadmapCategoryFromSidebar(deleteBtn.dataset.deleteRoadmapCategory);
+          return;
+        }
+        const itemBtn = event.target.closest("[data-open-roadmap-item]");
+        if (itemBtn) {
+          closeDashboardMobileNav();
+          openRoadmapFromSidebar(itemBtn.dataset.roadmapCategory, itemBtn.dataset.openRoadmapItem);
+          return;
+        }
+        const openMapBtn = event.target.closest("[data-open-map-category]");
+        if (openMapBtn) {
+          closeDashboardMobileNav();
+          openMapFromSidebarCategory(openMapBtn.dataset.openMapCategory);
+          return;
+        }
+        const categoryBtn = event.target.closest("[data-roadmap-category]");
+        if (categoryBtn) {
+          const categoryId = categoryBtn.dataset.roadmapCategory;
+          state.activeRoadmapCategoryId = state.activeRoadmapCategoryId === categoryId ? null : categoryId;
+          state.sidebarRoadmapsExpanded = true;
+          renderSidebarRoadmaps();
+          schedulePersist();
+        }
       });
       $("#sidebar-discover-btn")?.addEventListener("click", () => {
         closeDashboardMobileNav();
