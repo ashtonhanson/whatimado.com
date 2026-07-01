@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-ui-polish-3 -->
+<!-- whatimado build: 2026-06-30-missions-draft-ux -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-ui-polish-3">
+  <meta name="whatimado-build" content="2026-06-30-missions-draft-ux">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7369,9 +7369,181 @@
     .task-compressed-row {
       display: grid;
       grid-template-columns: auto 1fr auto;
-      align-items: center;
+      align-items: start;
       gap: .65rem;
       width: 100%;
+    }
+
+    .task-compressed-main-wrap {
+      display: grid;
+      gap: .45rem;
+      min-width: 0;
+    }
+
+    .task-breakdown-compact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+    }
+
+    .task-breakdown-compact-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .22rem .55rem;
+      border: 1px solid rgba(37, 99, 235, .28);
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .05);
+      color: #2563eb;
+      font-size: .68rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .task-breakdown-compact-hint {
+      color: rgba(37, 99, 235, .72);
+      font-weight: 600;
+    }
+
+    .task-breakdown-steps {
+      margin-top: .65rem;
+      display: grid;
+      gap: .45rem;
+    }
+
+    .task-breakdown-lead {
+      margin: 0;
+      color: var(--ink-muted, #6b7280);
+      font-size: .72rem;
+      font-weight: 600;
+    }
+
+    .task-breakdown-step {
+      border: 1px solid rgba(37, 99, 235, .16);
+      border-radius: .55rem;
+      background: rgba(37, 99, 235, .03);
+      overflow: hidden;
+    }
+
+    .task-breakdown-step summary {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .5rem .65rem;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .task-breakdown-step summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .task-breakdown-letter {
+      display: inline-grid;
+      place-items: center;
+      min-width: 1.35rem;
+      color: #2563eb;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .task-breakdown-preview {
+      flex: 1;
+      min-width: 0;
+      color: var(--ink, #111827);
+      font-size: .74rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .task-breakdown-expand-hint {
+      color: #2563eb;
+      font-size: .64rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .task-breakdown-body {
+      margin: 0;
+      padding: 0 .65rem .6rem 2.15rem;
+      color: var(--ink-muted, #6b7280);
+      font-size: .74rem;
+      line-height: 1.45;
+    }
+
+    .task-progress-reminder {
+      margin: 0 0 .75rem;
+      padding: .45rem .65rem;
+      border-radius: .55rem;
+      background: rgba(37, 99, 235, .06);
+      color: #1d4ed8;
+      font-size: .72rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .task-mission-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      margin-top: .85rem;
+    }
+
+    .task-open-next-btn {
+      padding: .42rem .85rem;
+      border: 1px solid rgba(37, 99, 235, .28);
+      border-radius: 999px;
+      background: #fff;
+      color: #2563eb;
+      font-size: .72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .task-draft-hint {
+      margin: 0 0 .5rem;
+      color: var(--ink-muted, #6b7280);
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    .task-draft-panel {
+      margin-bottom: .55rem;
+      padding: .55rem .65rem;
+      border: 1px solid rgba(37, 99, 235, .18);
+      border-radius: .55rem;
+      background: rgba(37, 99, 235, .04);
+    }
+
+    .task-draft-panel summary {
+      cursor: pointer;
+      color: #2563eb;
+      font-size: .74rem;
+      font-weight: 700;
+      list-style: none;
+    }
+
+    .task-draft-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .task-draft-textarea {
+      width: 100%;
+      margin-top: .45rem;
+      min-height: 7rem;
+      padding: .65rem .75rem;
+      border: 1px solid rgba(37, 99, 235, .16);
+      border-radius: .55rem;
+      background: #fff;
+      font: inherit;
+      font-size: .82rem;
+      line-height: 1.5;
+      resize: vertical;
+    }
+
+    html[data-color-scheme="adult"] .task-draft-textarea.is-generating-draft {
+      opacity: .72;
     }
 
     .task-expand-btn {
@@ -8250,11 +8422,10 @@
       inset: 0;
       z-index: 20;
       display: grid;
-      align-items: start;
-      justify-items: start;
+      place-items: center;
       min-height: calc(100dvh - var(--header-h));
-      padding: 2.25rem 1.75rem 1.5rem 2.25rem;
-      text-align: left;
+      padding: 2rem;
+      text-align: center;
       background: var(--bg-gradient);
     }
 
@@ -8268,9 +8439,10 @@
 
     .roadmap-loading .loader-inner {
       gap: 1rem;
-      justify-items: start;
-      text-align: left;
+      justify-items: center;
+      text-align: center;
       width: min(100%, 28rem);
+      margin: -1.75rem 0 0 -2rem;
     }
 
     .site-loading-progress {
@@ -13836,13 +14008,13 @@ Location: ${location}`;
       if (!isWritingTask(normalized)) return;
 
       const data = getRoadmapTaskData(taskId);
-      if (data.notes?.trim() && !options.force) return;
+      if (data.draft?.trim() && !options.force) return;
       if (data.draftGenerated && !options.force) return;
       if (taskDraftGenerationInFlight.has(taskId)) return;
 
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const notes = item?.querySelector(".task-textarea");
-      if (!notes) return;
+      const draftEl = item?.querySelector(".task-draft-textarea");
+      if (!draftEl) return;
 
       const localDraft = generateLocalTaskDraft(normalized);
       const localIsSubstantial = localDraft && localDraft.length > 180 && !/^\[Starter draft/.test(localDraft);
@@ -13856,14 +14028,14 @@ Location: ${location}`;
       }
 
       taskDraftGenerationInFlight.add(taskId);
-      notes.placeholder = "Generating a starter draft for you…";
-      notes.classList.add("is-generating-draft");
+      draftEl.placeholder = "Generating a starter draft for you…";
+      draftEl.classList.add("is-generating-draft");
 
       try {
         const aiDraft = await generateAiTaskDraft(taskId, normalized);
         const draft = (aiDraft?.trim() || localDraft || "").trim();
-        if (draft && (!data.notes?.trim() || options.force)) {
-          insertDraftIntoNotes(taskId, draft, "replace", { focus: Boolean(options.force) });
+        if (draft && (!data.draft?.trim() || options.force)) {
+          insertTaskDraft(taskId, draft, { focus: Boolean(options.force) });
           data.draftGenerated = true;
           data.draftSource = aiDraft?.trim() ? "ai" : "local";
           schedulePersist();
@@ -13875,8 +14047,8 @@ Location: ${location}`;
         }
       } finally {
         taskDraftGenerationInFlight.delete(taskId);
-        notes.classList.remove("is-generating-draft");
-        notes.placeholder = getTaskWritingNotesPlaceholder(normalized);
+        draftEl.classList.remove("is-generating-draft");
+        draftEl.placeholder = "Your prepared draft will appear here…";
       }
     }
 
@@ -13895,12 +14067,12 @@ Location: ${location}`;
 
       const isFounder = isFounderStoryTask(normalized);
       const deliverable = getWritingDeliverableType(normalized);
-      const headline = isFounder ? "Your draft is ready to edit" : "Starter draft in My Notes";
+      const headline = isFounder ? "Your draft is ready to edit" : "Starter draft ready";
       const copy = isFounder
-        ? "We added a founder story starter below — change anything until it sounds like you."
+        ? "We added a founder story starter in the draft area below — change anything until it sounds like you."
         : deliverable
-          ? `A ${deliverable.replace(/_/g, " ")} draft is filled in below. Edit it, then copy or send when you're ready.`
-          : "A ready-to-edit draft is filled in below — you're not starting from a blank page.";
+          ? `A ${deliverable.replace(/_/g, " ")} draft is in the prepared draft area. Edit it, then copy or send when you're ready.`
+          : "A ready-to-edit draft is in the prepared draft area — you're not starting from a blank page.";
 
       return `
         <div class="task-writing-assist" data-task-id="${escapeHtml(taskId)}">
@@ -13916,6 +14088,7 @@ Location: ${location}`;
 
     function humanizeDraftFormatting(text) {
       return String(text || "")
+        .replace(/^\[([^\]\n]+)\]\s*$/gm, "$1:")
         .replace(/^#{1,6}\s+/gm, "")
         .replace(/^\*\*([^*\n]+)\*\*\s*$/gm, "$1:")
         .replace(/^\*\s+/gm, "• ")
@@ -13977,15 +14150,12 @@ Location: ${location}`;
     }
 
     function canExpandTask(stageIndex, taskIndex) {
-      if (taskIndex <= 0) return true;
-      const prevId = `task-${stageIndex}-${taskIndex - 1}`;
-      return Boolean(getRoadmapTaskData(prevId).checked);
+      return true;
     }
 
     function setTaskExpanded(taskId, expanded) {
       if (!state.expandedRoadmapTasks) resetRoadmapExpandedTasks();
       if (expanded) {
-        state.expandedRoadmapTasks.clear();
         state.expandedRoadmapTasks.add(taskId);
       } else {
         state.expandedRoadmapTasks.delete(taskId);
@@ -14025,29 +14195,21 @@ Location: ${location}`;
       }
     }
 
-    function insertDraftIntoNotes(taskId, draft, mode = "append", options = {}) {
+    function insertTaskDraft(taskId, draft, options = {}) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const notes = item?.querySelector(".task-textarea");
+      const draftEl = item?.querySelector(".task-draft-textarea");
       const data = getRoadmapTaskData(taskId);
       const box = item?.querySelector(".task-writing-assist");
       const cleanedDraft = humanizeDraftFormatting(draft);
-      if (!notes || !cleanedDraft) return false;
+      if (!draftEl || !cleanedDraft) return false;
 
-      const existing = notes.value.trim();
-      if (mode === "replace" || !existing) {
-        notes.value = cleanedDraft;
-      } else {
-        notes.value = `${existing}\n\n---\n\n${cleanedDraft}`;
-      }
-      data.notes = notes.value;
+      draftEl.value = cleanedDraft;
+      data.draft = cleanedDraft;
       schedulePersist();
-      updateTaskNotesWordCount(taskId);
-      updateTaskWritingAssistButtons(taskId);
+      item?.classList.toggle("has-draft", true);
 
-      const draftPanel = item?.querySelector(".task-notes-draft-panel");
-      if (draftPanel && (mode === "replace" || !existing)) {
-        draftPanel.open = true;
-      }
+      const draftPanel = item?.querySelector(".task-draft-panel");
+      if (draftPanel) draftPanel.open = true;
 
       let note = box?.querySelector(".task-writing-assist-note");
       if (!note && box) {
@@ -14056,22 +14218,24 @@ Location: ${location}`;
         box.appendChild(note);
       }
       if (note) {
-        note.textContent = mode === "replace" || !existing
-          ? "Draft is in My Notes below — expand the panel or tap Copy draft."
-          : "Draft added below your notes — expand My Notes to see it.";
+        note.textContent = "Your draft is in the prepared draft area below — My Notes stays for your own thoughts.";
       }
       if (options.focus !== false) {
         draftPanel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
-      trackEvent("task_draft_inserted", { task_id: taskId, mode: existing && mode !== "replace" ? "append" : "replace" });
+      trackEvent("task_draft_inserted", { task_id: taskId, mode: "draft_area" });
       return true;
+    }
+
+    function insertDraftIntoNotes(taskId, draft, mode = "append", options = {}) {
+      return insertTaskDraft(taskId, draft, options);
     }
 
     function updateTaskWritingAssistButtons(taskId) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const notes = item?.querySelector(".task-textarea");
+      const draftEl = item?.querySelector(".task-draft-textarea");
       const replaceBtn = item?.querySelector('[data-action="replace-draft"]');
-      if (replaceBtn) replaceBtn.hidden = !notes?.value.trim();
+      if (replaceBtn) replaceBtn.hidden = !draftEl?.value.trim();
     }
 
     function updateTaskNotesWordCount(taskId) {
@@ -14135,8 +14299,8 @@ Location: ${location}`;
           return;
         }
         showConfirmDialog({
-          title: "Replace your notes?",
-          message: "Replace everything in My Notes with a fresh draft?",
+          title: "Replace your draft?",
+          message: "Replace everything in the prepared draft area with a fresh draft? My Notes will stay untouched.",
           confirmLabel: "Replace",
           cancelLabel: "Keep current notes"
         }).then((ok) => {
@@ -14296,16 +14460,44 @@ Location: ${location}`;
         </div>`;
     }
 
-    function renderTaskBreakdownHtml(normalized) {
+    function renderTaskBreakdownHtml(normalized, taskId = "") {
       const steps = getTaskDisplaySteps(normalized);
       if (steps.length < 2) return "";
+      const letters = ["A", "B", "C"];
       return `
-        <details class="task-mentor-breakdown">
-          <summary>Break it down</summary>
-          <ol class="overview-task-steps">
-            ${steps.slice(0, 3).map((step) => `<li>${escapeHtml(humanizeTaskText(step))}</li>`).join("")}
-          </ol>
-        </details>`;
+        <div class="task-breakdown-steps">
+          <p class="task-breakdown-lead">Tap a letter to expand each step</p>
+          ${steps.slice(0, 3).map((step, index) => {
+            const letter = letters[index] || String.fromCharCode(65 + index);
+            const preview = humanizeTaskText(step);
+            const short = preview.length > 52 ? `${preview.slice(0, 49)}…` : preview;
+            return `
+              <details class="task-breakdown-step" data-breakdown-index="${index}" data-task-id="${escapeHtml(taskId)}">
+                <summary>
+                  <span class="task-breakdown-letter">${letter}.</span>
+                  <span class="task-breakdown-preview">${escapeHtml(short)}</span>
+                  <span class="task-breakdown-expand-hint" aria-hidden="true">Expand</span>
+                </summary>
+                <p class="task-breakdown-body">${escapeHtml(preview)}</p>
+              </details>`;
+          }).join("")}
+        </div>`;
+    }
+
+    function renderCompressedBreakdownHtml(steps, taskId) {
+      if (!steps || steps.length < 2) return "";
+      const letters = ["A", "B", "C"];
+      return `
+        <div class="task-breakdown-compact" aria-label="Mission steps — tap a letter to expand">
+          ${steps.slice(0, 3).map((step, index) => {
+            const letter = letters[index] || String.fromCharCode(65 + index);
+            return `
+              <button type="button" class="task-breakdown-compact-btn" data-task-expand="${escapeHtml(taskId)}" data-breakdown-index="${index}" aria-label="Expand step ${letter}">
+                <span class="task-breakdown-letter">${letter}.</span>
+                <span class="task-breakdown-compact-hint">Tap to expand</span>
+              </button>`;
+          }).join("")}
+        </div>`;
     }
 
     function getTaskAiAssistActions(normalized) {
@@ -14648,8 +14840,36 @@ Location: ${location}`;
       /\b(write (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan|message|outreach))\b/i,
       /\b(draft (?:a |an |your )(?:email|letter|post|resume|grant|proposal|script|plan|message))\b/i,
       /\b(create (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan))\b/i,
-      /\b(prepare (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan))\b/i
+      /\b(prepare (?:a |an |your )(?:email|letter|post|draft|resume|grant|proposal|script|plan))\b/i,
+      /\bSearch Indeed\b/i,
+      /\bGoogle Jobs\b/i,
+      /\bsearch (?:indeed|google jobs|jobbank)\b/i,
+      /\broles matching\b/i
     ];
+
+    function isGenericMentorCopy(text) {
+      const copy = String(text || "").trim();
+      if (!copy) return true;
+      return /small steps add up|finishing this unlocks the next one|you can point to something concrete you finished/i.test(copy);
+    }
+
+    function isJobSearchHomeworkText(text) {
+      const copy = String(text || "").trim();
+      if (!copy) return false;
+      return /\b(indeed|google jobs|jobbank|find-a-job)\b/i.test(copy)
+        && /\b(search|roles matching|\d+\s*roles?)\b/i.test(copy);
+    }
+
+    function shouldUseSimplifiedMissionLayout(normalized) {
+      const text = String(normalized.text || "").trim();
+      if (isJobSearchHomeworkText(text)) return true;
+      if (isHomeworkTaskText(text) && taskLooksLikeHomework(normalized)) return true;
+      const why = String(normalized.why || inferTaskWhy(normalized)).trim();
+      const howTo = String(normalized.howTo || inferHowTo(normalized)).trim();
+      if (text && (text === why || text === howTo || why === howTo)) return true;
+      if (isGenericMentorCopy(why) && isGenericMentorCopy(String(normalized.outcome || inferTaskOutcome(normalized)))) return true;
+      return false;
+    }
 
     function getFlatTaskResources(normalized) {
       const layers = normalized.resourceLayers || { local: [], national: [], global: [] };
@@ -14734,6 +14954,10 @@ Location: ${location}`;
       const blob = text.toLowerCase();
 
       if (!isHomeworkTaskText(text)) return text;
+
+      if (isJobSearchHomeworkText(text)) {
+        return "Use the contacts and resources we prepared below — skip generic job board searches that won't match this mission.";
+      }
 
       if (script.length > 80) {
         if (/\b(grant|funding|scholarship)\b/.test(blob) || /\bgrant\b/i.test(script.slice(0, 120))) {
@@ -14900,17 +15124,17 @@ Location: ${location}`;
       if (!taskHasMentorDeliverable(normalized)) return;
 
       const data = getRoadmapTaskData(taskId);
-      if (data.notes?.trim() && !options.force) return;
+      if (data.draft?.trim() && !options.force) return;
       if (data.mentorBriefGenerated && !options.force) return;
 
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const notes = item?.querySelector(".task-textarea");
-      if (!notes) return;
+      const draftEl = item?.querySelector(".task-draft-textarea");
+      if (!draftEl) return;
 
       const brief = buildMentorBriefForNotes(normalized);
       if (!brief || brief.length < 80) return;
 
-      insertDraftIntoNotes(taskId, brief, "replace", { focus: false });
+      insertTaskDraft(taskId, brief, { focus: false });
       data.mentorBriefGenerated = true;
       schedulePersist();
     }
@@ -15175,9 +15399,10 @@ Location: ${location}`;
       }).join("");
     }
 
-    function renderMentorFindingsHtml(normalized) {
+    function renderMentorFindingsHtml(normalized, options = {}) {
       const help = String(normalized.mentorHelp || normalized.mentorFindings || buildMentorFindingsText(normalized) || "").trim();
-      if (!help || help.length < 24) return "";
+      if (!help || help.length < 24 || isGenericMentorCopy(help)) return "";
+      if (options.simplified && isGenericMentorCopy(help)) return "";
       return `
         <section class="task-mentor-section task-mentor-section--findings">
           <h4 class="task-mentor-label">How we're helping</h4>
@@ -21447,13 +21672,16 @@ Location: ${location}`;
     }
 
     function getRoadmapTaskData(taskId) {
-      if (!state.roadmapKey) return { notes: "", checked: false, threads: [], outcomeChecks: [] };
+      if (!state.roadmapKey) return { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [] };
       if (!state.allTaskChats[state.roadmapKey]) state.allTaskChats[state.roadmapKey] = {};
       if (!state.allTaskChats[state.roadmapKey][taskId]) {
-        state.allTaskChats[state.roadmapKey][taskId] = { notes: "", checked: false, threads: [], outcomeChecks: [] };
+        state.allTaskChats[state.roadmapKey][taskId] = { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [] };
       }
       if (!Array.isArray(state.allTaskChats[state.roadmapKey][taskId].outcomeChecks)) {
         state.allTaskChats[state.roadmapKey][taskId].outcomeChecks = [];
+      }
+      if (state.allTaskChats[state.roadmapKey][taskId].draft === undefined) {
+        state.allTaskChats[state.roadmapKey][taskId].draft = "";
       }
       return state.allTaskChats[state.roadmapKey][taskId];
     }
@@ -24078,10 +24306,16 @@ Location: ${location}`;
       const nextId = `task-${stageIndex}-${taskIndex + 1}`;
       const nextItem = document.querySelector(`.task-item[data-task-id="${nextId}"]`);
       if (nextItem) {
-        const nextCanExpand = canExpandTask(stageIndex, taskIndex + 1);
-        nextItem.querySelector(".task-expand-btn")?.toggleAttribute("disabled", !nextCanExpand);
-        nextItem.querySelector(".task-compressed-main")?.toggleAttribute("disabled", !nextCanExpand);
+        nextItem.querySelector(".task-expand-btn")?.removeAttribute("disabled");
+        nextItem.querySelector(".task-compressed-main")?.removeAttribute("disabled");
       }
+    }
+
+    function openBreakdownStep(taskId, stepIndex) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (!item) return;
+      const step = item.querySelector(`.task-breakdown-step[data-breakdown-index="${stepIndex}"]`);
+      if (step) step.open = true;
     }
 
     function bindTaskExpandControls(item, taskId) {
@@ -24089,13 +24323,20 @@ Location: ${location}`;
       const stageIndex = match ? Number(match[1]) : -1;
       const taskIndex = match ? Number(match[2]) : -1;
 
+      const expandTask = (breakdownIndex = null) => {
+        setTaskExpanded(taskId, true);
+        const panel = item.querySelector(".task-expanded-panel");
+        panel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        if (breakdownIndex !== null && breakdownIndex !== undefined && breakdownIndex !== "") {
+          window.setTimeout(() => openBreakdownStep(taskId, Number(breakdownIndex)), 180);
+        }
+      };
+
       item.querySelectorAll("[data-task-expand]").forEach((button) => {
         button.addEventListener("click", (event) => {
           event.stopPropagation();
-          if (button.disabled || !canExpandTask(stageIndex, taskIndex)) return;
-          setTaskExpanded(taskId, true);
-          const panel = item.querySelector(".task-expanded-panel");
-          panel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          if (button.disabled) return;
+          expandTask(button.dataset.breakdownIndex);
         });
       });
 
@@ -24104,10 +24345,19 @@ Location: ${location}`;
         setTaskExpanded(taskId, false);
       });
 
+      item.querySelector("[data-open-next]")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const nextId = event.currentTarget.dataset.openNext;
+        if (!nextId) return;
+        setTaskExpanded(nextId, true);
+        const nextItem = document.querySelector(`.task-item[data-task-id="${nextId}"]`);
+        scrollRoadmapTargetIntoView(nextItem, { extraOffset: 16 });
+      });
+
       item.querySelector("[data-copy-draft]")?.addEventListener("click", async (event) => {
         event.stopPropagation();
-        const notes = item.querySelector(".task-textarea");
-        const text = notes?.value.trim();
+        const draftEl = item.querySelector(".task-draft-textarea");
+        const text = draftEl?.value.trim();
         if (!text) return;
         try {
           await navigator.clipboard.writeText(text);
@@ -24118,8 +24368,17 @@ Location: ${location}`;
             btn.textContent = original;
           }, 1600);
         } catch {
-          notes.select();
+          draftEl.select();
         }
+      });
+
+      item.querySelector(".task-draft-textarea")?.addEventListener("input", () => {
+        const data = getRoadmapTaskData(taskId);
+        const draftEl = item.querySelector(".task-draft-textarea");
+        data.draft = draftEl?.value || "";
+        item.classList.toggle("has-draft", Boolean(data.draft.trim()));
+        schedulePersist();
+        updateTaskWritingAssistButtons(taskId);
       });
     }
 
@@ -24132,8 +24391,11 @@ Location: ${location}`;
         if (check) check.checked = Boolean(data.checked);
         item.classList.toggle("is-done", Boolean(check?.checked));
         if (notes) notes.value = data.notes || "";
-        const draftPanel = item.querySelector(".task-notes-draft-panel");
-        if (draftPanel && notes?.value.trim()) draftPanel.open = true;
+        const draftEl = item.querySelector(".task-draft-textarea");
+        if (draftEl) draftEl.value = data.draft || "";
+        item.classList.toggle("has-draft", Boolean(data.draft?.trim()));
+        const draftPanel = item.querySelector(".task-draft-panel");
+        if (draftPanel && data.draft?.trim()) draftPanel.open = true;
         updateTaskWritingAssistButtons(taskId);
         updateTaskNotesWordCount(taskId);
         bindTaskExpandControls(item, taskId);
@@ -24168,7 +24430,6 @@ Location: ${location}`;
             trackEvent("task_notes_started", { task_id: taskId });
           }
           data.notes = notes.value;
-          updateTaskWritingAssistButtons(taskId);
           updateTaskNotesWordCount(taskId);
           schedulePersist();
           clearTimeout(notesAdaptTimer);
@@ -24828,10 +25089,13 @@ Location: ${location}`;
     function renderOverviewTaskHtml(task, stageIndex, taskIndex) {
       const id = `task-${stageIndex}-${taskIndex}`;
       const normalized = normalizeRoadmapTask(task);
-      const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "" };
+      const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "", tasks: [] };
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
+      const simplified = shouldUseSimplifiedMissionLayout(normalized);
       const mission = humanizeTaskText(normalized.mission || inferMissionTitle(normalized));
-      const text = humanizeTaskText(normalized.text);
+      const text = simplified
+        ? buildMentorUserActionText(normalized)
+        : humanizeTaskText(normalized.text);
       const howTo = humanizeTaskText(normalized.howTo || inferHowTo(normalized));
       const why = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
       const outcome = humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized));
@@ -24839,37 +25103,23 @@ Location: ${location}`;
       const isDone = Boolean(taskData.checked);
       const canExpand = canExpandTask(stageIndex, taskIndex);
       const hasDraftPanel = isWritingTask(normalized) || taskHasMentorDeliverable(normalized);
+      const displaySteps = getTaskDisplaySteps(normalized);
       const chips = [];
       if (showResources && normalized.local) {
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
       const meta = renderTaskMentorMetaHtml(normalized);
-      const breakdown = renderTaskBreakdownHtml(normalized);
-      const mentorHelp = renderMentorFindingsHtml(normalized);
-      const outcomeChecklist = renderTaskOutcomeChecklistHtml(id, normalized);
+      const breakdown = simplified ? "" : renderTaskBreakdownHtml(normalized, id);
+      const compressedBreakdown = renderCompressedBreakdownHtml(displaySteps, id);
+      const mentorHelp = renderMentorFindingsHtml(normalized, { simplified });
+      const outcomeChecklist = simplified ? "" : renderTaskOutcomeChecklistHtml(id, normalized);
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const aiAssist = renderTaskAiAssistHtml(id, normalized);
+      const stageTaskCount = (stage.tasks || []).length;
+      const nextTaskId = taskIndex + 1 < stageTaskCount ? `task-${stageIndex}-${taskIndex + 1}` : "";
 
-      return `
-        <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}">
-          <div class="task-compressed-row">
-            <button type="button" class="task-expand-btn" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand mission ${taskIndex + 1}"${canExpand ? "" : " disabled"}>${taskIndex + 1}</button>
-            <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}"${canExpand ? "" : " disabled"}>
-              <span class="task-compressed-mission">${escapeHtml(mission)}</span>
-              ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
-            </button>
-            <input class="task-check task-check--compressed" type="checkbox" id="${id}" aria-labelledby="${id}-label">
-          </div>
-          <div class="task-expanded-panel" hidden>
-            <div class="overview-task-main">
-              <div class="overview-task-content">
-                <section class="task-mentor-section task-mentor-section--mission">
-                  <h4 class="task-mentor-label">Your mission</h4>
-                  <div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>
-                  ${meta}
-                  ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
-                </section>
+      const detailSections = simplified ? "" : `
                 <section class="task-mentor-section task-mentor-section--task">
                   <h4 class="task-mentor-label">What to do</h4>
                   <div class="task-text">${linkifyTaskTextHtml(text)}</div>
@@ -24888,20 +25138,51 @@ Location: ${location}`;
                   <h4 class="task-mentor-label">Success looks like</h4>
                   <p class="task-mentor-copy">${escapeHtml(outcome)}</p>
                   ${outcomeChecklist}
+                </section>`;
+
+      return `
+        <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}">
+          <div class="task-compressed-row">
+            <button type="button" class="task-expand-btn" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand mission ${taskIndex + 1}"${canExpand ? "" : " disabled"}>${taskIndex + 1}</button>
+            <div class="task-compressed-main-wrap">
+              <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}"${canExpand ? "" : " disabled"}>
+                <span class="task-compressed-mission">${escapeHtml(mission)}</span>
+                ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
+              </button>
+              ${compressedBreakdown}
+            </div>
+            <input class="task-check task-check--compressed" type="checkbox" id="${id}" aria-labelledby="${id}-label">
+          </div>
+          <div class="task-expanded-panel" hidden>
+            <p class="task-progress-reminder">When you finish this mission, check the box above so your progress bar updates.</p>
+            <div class="overview-task-main">
+              <div class="overview-task-content">
+                <section class="task-mentor-section task-mentor-section--mission">
+                  <h4 class="task-mentor-label">Your mission</h4>
+                  <div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>
+                  ${meta}
+                  ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
+                  ${simplified && !isGenericMentorCopy(why) ? `<p class="task-mentor-copy task-mentor-copy--inline">${escapeHtml(why)}</p>` : ""}
+                  ${simplified && displaySteps.length >= 2 ? renderTaskBreakdownHtml(normalized, id) : ""}
                 </section>
+                ${detailSections}
                 ${actionPack}
               </div>
             </div>
             <div class="overview-task-tools">
+              ${hasDraftPanel ? `
+              <section class="task-mentor-section task-mentor-section--draft">
+                <h4 class="task-mentor-label">Prepared draft</h4>
+                <p class="task-draft-hint">We fill this in for you — edit or copy it here. My Notes below is only for your own thoughts.</p>
+                <details class="task-draft-panel">
+                  <summary>Expand draft — edit, then copy or send</summary>
+                  <textarea class="task-draft-textarea" placeholder="Your prepared draft will appear here…"></textarea>
+                  <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(id)}">Copy draft</button>
+                </details>
+              </section>` : ""}
               <section class="task-mentor-section task-mentor-section--notes">
                 <h4 class="task-mentor-label">My Notes</h4>
-                ${hasDraftPanel ? `
-                  <details class="task-notes-draft-panel">
-                    <summary>Your draft is here — expand to view, edit, or copy</summary>
-                    <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>
-                    <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(id)}">Copy draft</button>
-                  </details>` : `
-                  <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>`}
+                <textarea class="task-textarea" placeholder="Your personal notes only — thoughts, reminders, links you find…"></textarea>
                 ${isWritingTask(normalized) ? renderTaskWritingAssistHtml(id, normalized) : ""}
                 ${notesExtras}
               </section>
@@ -24912,7 +25193,10 @@ Location: ${location}`;
                 <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
               </div>
             </div>
-            <button type="button" class="task-collapse-btn" data-task-collapse="${escapeHtml(id)}"${isDone ? "" : " hidden"}>Collapse mission</button>
+            <div class="task-mission-actions">
+              ${nextTaskId ? `<button type="button" class="task-open-next-btn" data-open-next="${escapeHtml(nextTaskId)}">Open mission ${taskIndex + 2}</button>` : ""}
+              <button type="button" class="task-collapse-btn" data-task-collapse="${escapeHtml(id)}"${isDone ? "" : " hidden"}>Collapse mission</button>
+            </div>
           </div>
         </div>`;
     }
