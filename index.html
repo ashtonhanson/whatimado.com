@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-mentor-voice -->
+<!-- whatimado build: 2026-07-01-draft-ux -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-mentor-voice">
+  <meta name="whatimado-build" content="2026-07-01-draft-ux">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7378,62 +7378,72 @@
     }
 
     .roadmap-float-progress {
-      position: fixed;
-      top: calc(var(--header-h, 64px) + 10px);
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 45;
-      display: flex;
-      align-items: center;
-      gap: .55rem;
-      padding: .32rem .7rem .32rem .45rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, .94);
-      border: 1px solid rgba(37, 99, 235, .14);
-      box-shadow: 0 6px 24px rgba(15, 23, 42, .1);
-      backdrop-filter: blur(10px);
-      pointer-events: none;
+      display: none;
     }
 
     .roadmap-float-progress[hidden] {
       display: none !important;
     }
 
+    .roadmap-float-progress-label {
+      color: #374151;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+      white-space: nowrap;
+    }
+
+    .roadmap-float-progress-track {
+      width: 88px;
+      height: .35rem;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .12);
+      overflow: hidden;
+    }
+
+    .roadmap-float-progress-fill {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb, #22c55e);
+      transition: width .25s ease;
+    }
+
+    .roadmap-float-progress-text {
+      color: #2563eb;
+      font-size: .68rem;
+      font-weight: 800;
+      min-width: 2.25rem;
+      text-align: right;
+    }
+
     @media (min-width: 961px) {
-      html[data-color-scheme="adult"] .roadmap-float-progress {
-        position: fixed;
-        top: calc(var(--topbar-h, 64px) + 10px);
-        left: 50%;
-        right: auto;
-        width: auto;
-        transform: translateX(-50%);
-        border-radius: 999px;
-        border: 1px solid rgba(37, 99, 235, .14);
-        padding: .32rem .7rem .32rem .45rem;
-        box-shadow: 0 6px 24px rgba(15, 23, 42, .1);
-        z-index: 45;
+      .roadmap-float-progress {
+        display: none !important;
       }
     }
 
     @media (max-width: 960px) {
-      html[data-color-scheme="adult"] .roadmap-float-progress {
+      html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
+        display: flex;
         position: sticky;
         top: var(--topbar-h, 64px);
         left: 0;
         right: 0;
         width: 100%;
-        transform: none;
-        flex-shrink: 0;
-        border-radius: 0;
-        border-left: 0;
-        border-right: 0;
-        border-top: 0;
-        border-bottom: 1px solid rgba(37, 99, 235, .12);
-        padding: .45rem 1rem;
-        gap: .65rem;
-        box-shadow: 0 2px 14px rgba(15, 23, 42, .08);
         z-index: 19;
+        flex-shrink: 0;
+        align-items: center;
+        gap: .65rem;
+        padding: .5rem 1rem;
+        border-radius: 0;
+        border: 0;
+        border-bottom: 1px solid rgba(37, 99, 235, .12);
+        box-shadow: 0 2px 14px rgba(15, 23, 42, .08);
         background: rgba(255, 255, 255, .96);
+        backdrop-filter: blur(10px);
+        pointer-events: none;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-track {
@@ -7473,30 +7483,6 @@
       html[data-color-scheme="adult"] .task-mission-actions {
         margin-top: .75rem;
       }
-    }
-
-    .roadmap-float-progress-track {
-      width: 88px;
-      height: .35rem;
-      border-radius: 999px;
-      background: rgba(37, 99, 235, .12);
-      overflow: hidden;
-    }
-
-    .roadmap-float-progress-fill {
-      display: block;
-      height: 100%;
-      width: 0;
-      border-radius: inherit;
-      background: linear-gradient(90deg, #2563eb, #22c55e);
-      transition: width .25s ease;
-    }
-
-    .roadmap-float-progress-text {
-      color: #2563eb;
-      font-size: .68rem;
-      font-weight: 800;
-      min-width: 2rem;
     }
 
     .task-compressed-row {
@@ -7637,7 +7623,7 @@
     }
 
     .task-draft-body {
-      overflow: hidden;
+      overflow: visible;
       transition: opacity .2s ease;
     }
 
@@ -7670,6 +7656,32 @@
       color: var(--ink-muted, #6b7280);
       font-size: .72rem;
       line-height: 1.45;
+    }
+
+    .task-draft-none {
+      margin: 0;
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed rgba(37, 99, 235, 0.22);
+      color: var(--ink-muted, #6b7280);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .task-draft-none-hint {
+      margin: 0.45rem 0 0;
+      font-size: 0.88rem;
+      color: var(--ink-muted, #6b7280);
+      line-height: 1.4;
+    }
+
+    .task-action-pack--featured {
+      margin-top: 0.25rem;
+    }
+
+    .task-mentor-section--no-draft {
+      margin-bottom: 0.5rem;
     }
 
     .task-draft-panel {
@@ -7832,11 +7844,32 @@
       display: none !important;
     }
 
-    .task-draft-textarea {
-      width: 100%;
+    .task-draft-textarea-wrap {
+      position: relative;
       margin-top: .45rem;
+    }
+
+    .task-draft-textarea-wrap::after {
+      content: "";
+      position: absolute;
+      right: .5rem;
+      bottom: .5rem;
+      width: .72rem;
+      height: .72rem;
+      pointer-events: none;
+      opacity: .58;
+      border-right: 2px solid rgba(37, 99, 235, .5);
+      border-bottom: 2px solid rgba(37, 99, 235, .5);
+      box-shadow:
+        -.22rem -.22rem 0 -.06rem rgba(37, 99, 235, .34),
+        -.44rem -.44rem 0 -.12rem rgba(37, 99, 235, .22);
+    }
+
+    .task-draft-textarea {
+      display: block;
+      width: 100%;
       min-height: 7rem;
-      padding: .65rem .75rem;
+      padding: .65rem 1.35rem 1.15rem .75rem;
       border: 1px solid rgba(37, 99, 235, .16);
       border-radius: .55rem;
       background: #fff;
@@ -7844,6 +7877,11 @@
       font-size: .82rem;
       line-height: 1.5;
       resize: vertical;
+      overflow: auto;
+    }
+
+    .task-draft-panel.is-expanded .task-draft-textarea {
+      min-height: 22rem;
     }
 
     html[data-color-scheme="adult"] .task-draft-textarea.is-generating-draft {
@@ -9227,8 +9265,7 @@
       text-transform: uppercase;
     }
 
-    .task-textarea,
-    .task-question {
+    .task-textarea {
       min-height: 44px;
       resize: vertical;
       padding: .65rem .8rem;
@@ -9237,6 +9274,18 @@
       background: rgba(12, 15, 26, .6);
       border-color: rgba(120, 130, 200, .2);
       transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    .task-question {
+      min-height: 5.75rem;
+      resize: vertical;
+      padding: .65rem .8rem 1rem;
+      font-size: .82rem;
+      line-height: 1.5;
+      background: rgba(12, 15, 26, .6);
+      border-color: rgba(120, 130, 200, .2);
+      transition: border-color .16s ease, box-shadow .16s ease;
+      overflow: auto;
     }
 
     .task-textarea:focus,
@@ -9407,6 +9456,10 @@
       color: var(--brand-purple-dark);
       background: var(--pastel-yellow-bg);
       border-color: var(--pastel-yellow-border);
+    }
+
+    #screen-roadmap .task-question {
+      min-height: 6rem;
     }
 
     #screen-roadmap .task-textarea::placeholder,
@@ -11710,7 +11763,7 @@
           <span class="dashboard-brand-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path></svg>
           </span>
-          WhatImADo
+          WhatImaDo
         </a>
         <span class="dashboard-beta-badge" aria-hidden="true">Beta</span>
       </div>
@@ -11789,6 +11842,7 @@
       </header>
 
       <div class="roadmap-float-progress" id="roadmap-float-progress" hidden aria-hidden="true">
+        <span class="roadmap-float-progress-label">Progress</span>
         <div class="roadmap-float-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Roadmap progress">
           <span class="roadmap-float-progress-fill" id="roadmap-float-progress-fill"></span>
         </div>
@@ -12548,7 +12602,7 @@
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
-      '- NEVER write paragraphs explaining what the task means. Generate useful artifacts the user can copy, send, or fill in.\n' +
+      '- NEVER write paragraphs explaining what the task means. script = ONE immediately usable document only (email, proposal, resume, cover letter, spreadsheet, cold message, survey, business plan, marketing post, flyer, presentation, checklist, calendar, phone script, meeting agenda). If none applies, leave script empty.\n' +
       '- Contact 5 orgs → resources (names, emails, phones) + script (draft + follow-up email + phone script + spreadsheet tracker).\n' +
       '- Build a logo → script (logo brief + mood board keywords + color palette hex + typography + AI image prompts + SVG recommendations).\n' +
       '- Interview customers → script (interview questions + Google Form field list + short survey + call script + note template table).\n' +
@@ -13711,9 +13765,11 @@
         normalized[field] = sanitizeMentorFieldText(normalized[field], normalized);
       });
       const script = String(normalized.script || "").trim();
-      if (!script || script.length < 40 || isTaskRestatement(script, normalized) || isExplanatoryTaskCopy(script)) {
-        const pack = buildLocalTaskAssetPack(normalized);
-        if (pack && pack.length > (script?.length || 0)) normalized.script = pack;
+      if (!script || script.length < 40 || isTaskRestatement(script, normalized) || isExplanatoryTaskCopy(script) || !isUsableDraftContent(script, normalized)) {
+        const usable = generateLocalTaskDraft(normalized);
+        if (usable && isUsableDraftContent(usable, normalized) && usable.length > (script?.length || 0)) {
+          normalized.script = usable;
+        }
       }
       return normalized;
     }
@@ -14085,6 +14141,106 @@
 
     const taskDraftGenerationInFlight = new Set();
 
+    const USABLE_DRAFT_TYPE_LABELS = {
+      email: "Email",
+      cold_message: "Cold message",
+      letter: "Cover letter",
+      grant_application: "Proposal",
+      proposal: "Proposal",
+      resume: "Resume",
+      business_plan: "Business plan",
+      flyer: "Flyer",
+      spreadsheet: "Spreadsheet",
+      survey: "Survey",
+      interview_kit: "Survey",
+      linkedin_post: "Marketing post",
+      facebook_post: "Marketing post",
+      reddit_post: "Marketing post",
+      social_post: "Marketing post",
+      founder_story: "Marketing post",
+      checklist: "Checklist",
+      calendar: "Calendar",
+      phone_script: "Phone script",
+      meeting_agenda: "Meeting agenda",
+      presentation: "Presentation",
+      logo_brief: "Logo brief"
+    };
+
+    function inferDraftTypeFromContent(text) {
+      const copy = String(text || "").trim();
+      if (!copy) return null;
+      if (/\bsubject:/i.test(copy) && /\b(dear |hi )/i.test(copy)) return "email";
+      if (/\bsubject:/i.test(copy)) return "email";
+      if (/\bdear .+\n/i.test(copy) && /\bsincerely\b/i.test(copy)) return "letter";
+      if (/\bphone script\b/i.test(copy)) return "phone_script";
+      if (/\bmeeting agenda\b/i.test(copy)) return "meeting_agenda";
+      if (/\b(one-page business plan|business plan)\b/i.test(copy)) return "business_plan";
+      if (/\b(flyer draft|big headline)\b/i.test(copy)) return "flyer";
+      if (/\b(tracking sheet|google sheets)\b/i.test(copy) || /^\| date \|/im.test(copy)) return "spreadsheet";
+      if (/\b(interview questions|google form fields|short survey)\b/i.test(copy)) return "survey";
+      if (/\b(checklist\b|\[ \])/i.test(copy)) return "checklist";
+      if (/\b(week of|monday|tuesday|calendar)\b/i.test(copy) && /\|\s*\w+\s*\|/.test(copy)) return "calendar";
+      if (/\b(slide \d|presentation outline|google slides)\b/i.test(copy)) return "presentation";
+      if (/\b(experience|summary|skills)\b/i.test(copy) && /\bcv\b|\bresume\b/i.test(copy)) return "resume";
+      if (/\btitle:\s*.+\n\nbody:/i.test(copy) || /\breddit post draft\b/i.test(copy)) return "reddit_post";
+      if (/\bgrant application draft\b/i.test(copy)) return "grant_application";
+      return null;
+    }
+
+    function isUsableDraftContent(text, normalized = null) {
+      const copy = String(text || "").trim();
+      if (copy.length < 40) return false;
+      if (isExplanatoryTaskCopy(copy)) return false;
+      if (normalized && isTaskRestatement(copy, normalized)) return false;
+      if (/^\[(starter draft|edit this draft|write your draft here|your prepared assets|mission brief)/i.test(copy)) return false;
+      if (/^no draft needed/i.test(copy)) return false;
+      const hasUsableMarkers = /\bsubject:|dear |hi [a-z]|^to:|^\[your name\]|^\| .+\||^\[ \]|^[A-Z][A-Z0-9 /&—-]{3,}(?:DRAFT|SCRIPT|PLAN|EMAIL|SURVEY|CHECKLIST|AGENDA|FLYER|RESUME|PROPOSAL|OUTLINE)|^1\. |phone script|google form|one-page business plan|cover letter|tracking sheet|title:\s|body:\s|forms\.google|when they answer:|week of |linkedin post draft|facebook post draft|reddit post draft|hey everyone|presentation outline/im.test(copy);
+      const looksLikeInstructions = /^(what to do|how to|your mission|step \d+:|first, you should|next, you should|you should|make sure you|this step is about|organization list \(start)/im.test(copy);
+      if (/\bwhatimado\.com\b/i.test(copy) && copy.split(/\s+/).filter(Boolean).length >= 30 && !looksLikeInstructions) return true;
+      return hasUsableMarkers && !looksLikeInstructions;
+    }
+
+    function getUsableDraftType(normalized) {
+      const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""} ${normalized.mission || ""}`.toLowerCase();
+      const raw = getWritingDeliverableType(normalized);
+      if (raw && USABLE_DRAFT_TYPE_LABELS[raw]) return raw;
+
+      if (/\b(cold (?:email|message|dm|text|outreach)|unsolicited message|first-contact message)\b/.test(blob)) return "cold_message";
+      if (/\b(calendar|weekly schedule|schedule (?:your|the) week|week plan)\b/.test(blob)) return "calendar";
+      if (/\b(presentation|google slides|powerpoint|slide deck)\b/.test(blob)) return "presentation";
+      if (/\b(survey|questionnaire|google form)\b/.test(blob)) return "survey";
+      if (/\b(phone script|call script|voicemail script|script to (?:read|say))\b/.test(blob)) return "phone_script";
+      if (/\b(call|phone|dial|voicemail|211)\b/.test(blob) && /\b(script|say|read|word.for.word)\b/.test(blob)) return "phone_script";
+      if (/\b(meeting agenda|run the meeting|agenda for)\b/.test(blob)) return "meeting_agenda";
+      if (/\b(cover letter|formal letter|letter to)\b/.test(blob)) return "letter";
+      if (/\b(e-?mail|subject line|outreach message)\b/.test(blob) && /\b(send|draft|write|compose|message)\b/.test(blob)) return "email";
+      if (/\b(e-?mail|send (?:an )?email|outreach email)\b/.test(blob)) return "email";
+      if (/\b(resume section|summary section|skills section)\b/.test(blob)) return "resume";
+      if (/\b(grant application|grant proposal|funding application|proposal)\b/.test(blob)) return /\bgrant|funding|scholarship\b/.test(blob) ? "grant_application" : "proposal";
+      if (/\b(resume|curriculum vitae|\bcv\b)\b/.test(blob)) return "resume";
+      if (/\b(business plan)\b/.test(blob)) return "business_plan";
+      if (/\b(flyer|handout|poster|leaflet)\b/.test(blob)) return "flyer";
+      if (/\b(spreadsheet|budget sheet|tracking sheet|excel|google sheet|tracker)\b/.test(blob)) return "spreadsheet";
+      if (/\b(checklist|to-do list|task list)\b/.test(blob) && /\b(create|write|make|draft|build)\b/.test(blob)) return "checklist";
+      if (/\b(linkedin)\b/.test(blob) && /\b(post|draft|write)\b/.test(blob)) return "linkedin_post";
+      if (/\b(facebook|fb post)\b/.test(blob)) return "facebook_post";
+      if (/\b(reddit|subreddit|r\/)\b/.test(blob)) return "reddit_post";
+      if (/\b(post draft|caption|social post|marketing post|write a post)\b/.test(blob)) return "social_post";
+      if (/\b(120-word|founder story)\b/.test(blob)) return "founder_story";
+      if (/\b(interview|customer feedback|user research|focus group|talk to customers)\b/.test(blob)) return "interview_kit";
+      if (/\b(logo|brand mark|visual identity|wordmark)\b/.test(blob)) return "logo_brief";
+
+      const script = String(normalized.script || "").trim();
+      if (script && isUsableDraftContent(script, normalized)) {
+        return inferDraftTypeFromContent(script);
+      }
+      return null;
+    }
+
+    function taskNeedsUsableDraft(normalized) {
+      return getUsableDraftType(normalized);
+    }
+
     function getWritingDeliverableType(normalized) {
       const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""}`.toLowerCase();
 
@@ -14099,7 +14255,10 @@
       if (/\b(reddit|subreddit|r\/)\b/.test(blob)) return "reddit_post";
       if (/\b(logo|brand mark|visual identity|wordmark)\b/.test(blob)) return "logo_brief";
       if (/\b(interview|customer feedback|user research|focus group|survey people|talk to customers)\b/.test(blob)) return "interview_kit";
-      if (/\b(outreach tracker|contact \d|track outreach|spreadsheet|tracker)\b/.test(blob)) return "outreach_pack";
+      if (/\b(cold (?:email|message|dm|text)|unsolicited message)\b/.test(blob)) return "cold_message";
+      if (/\b(calendar|weekly schedule|schedule (?:your|the) week)\b/.test(blob)) return "calendar";
+      if (/\b(presentation|google slides|powerpoint|slide deck)\b/.test(blob)) return "presentation";
+      if (/\b(survey|questionnaire)\b/.test(blob)) return "survey";
       if (/\b(spreadsheet|budget sheet|tracking sheet|excel|google sheet)\b/.test(blob)) return "spreadsheet";
       if (/\b(meeting agenda|run the meeting|agenda for)\b/.test(blob)) return "meeting_agenda";
       if (/\b(proposal template|proposal|pitch deck|sponsor deck|one.pager)\b/.test(blob)) return "proposal";
@@ -14108,14 +14267,11 @@
       if (/\b(cover letter|formal letter|letter to)\b/.test(blob)) return "letter";
       if (/\b(120-word|founder story)\b/.test(blob)) return "founder_story";
       if (/\b(post draft|caption|social post|write a post)\b/.test(blob)) return "social_post";
-      if (/\b(draft|write|compose|prepare a|fill out|type up)\b/.test(blob)) return "general_writing";
       return null;
     }
 
     function isWritingTask(normalized) {
-      if (getWritingDeliverableType(normalized)) return true;
-      const blob = `${normalized.text} ${normalized.script}`.toLowerCase();
-      return /\b(write|draft|120-word|founder story|post draft|caption|intro|save two post|notes doc|compose|prepare a|fill out)\b/.test(blob);
+      return Boolean(taskNeedsUsableDraft(normalized));
     }
 
     function getTaskDraftContext(normalized) {
@@ -14421,9 +14577,97 @@ ${outcomeLine}
 
 [Your name] · [Phone] · [Email]`;
 
+        case "cold_message":
+          return `Subject: Quick intro — [Your name]
+
+Hi [Name],
+
+I'm [Your name] in ${location}. I'm reaching out because ${contactLine} came up while I was working on ${pathTitle.toLowerCase()}.
+
+[One honest sentence about why you're writing — no buzzwords]
+
+Would you have 10 minutes for a quick call or email back this week?
+
+Thank you,
+[Your name]
+[Phone]`;
+
+        case "calendar":
+          return `WEEK OF [Start date] — ${pathTitle}
+
+| Day | Main focus | Time | Who / where | Done? |
+|-----|------------|------|-------------|-------|
+| Mon | ${taskLine} | [Time] | ${contactLine} | [ ] |
+| Tue | | | | [ ] |
+| Wed | | | | [ ] |
+| Thu | | | | [ ] |
+| Fri | Follow-up / notes | [Time] | | [ ] |
+
+NOTES
+${outcomeLine}`;
+
+        case "presentation":
+          return `PRESENTATION OUTLINE — paste into Google Slides or PowerPoint
+
+Slide 1 — Title
+${pathTitle}
+[Your name] · ${location}
+
+Slide 2 — The problem
+• [Who struggles with this]
+• [Why it matters in ${location}]
+
+Slide 3 — What you're offering
+• [Plain-language solution in 2 bullets]
+
+Slide 4 — Proof or example
+• [One real story, quote, or early result]
+
+Slide 5 — What you need next
+• [Call, signup, meeting, or support you're asking for]
+
+Speaker notes (optional):
+${situationLine}`;
+
+        case "survey":
+        case "interview_kit":
+          return `SURVEY — copy into Google Forms (forms.google.com)
+
+1. How often does [problem] affect you?
+   ○ Never  ○ Sometimes  ○ Often
+
+2. What have you tried already?
+   [Paragraph — open text]
+
+3. What's the most frustrating part?
+   [Paragraph — open text]
+
+4. Would [${pathTitle}] help you if it were free?
+   ○ Yes  ○ Maybe  ○ No
+
+5. Best way to reach you (optional)
+   [Short answer]
+
+INTERVIEW SCRIPT (if talking live)
+"Hi, I'm [name] in ${location}. I'm learning about ${pathTitle.toLowerCase()} — not selling anything. Do you have 15 minutes to share what worked or didn't work for you?"
+
+NOTE TEMPLATE
+| Date | Name | Key quote | Follow-up? |
+|------|------|-----------|------------|
+|      |      |           |            |`;
+
+        case "logo_brief":
+          return `LOGO BRIEF — ${pathTitle}
+
+Audience: [Who sees this first]
+Personality: [3 adjectives]
+Must include: [Name / icon requirements]
+Colors to explore: [2–3 hex codes]
+Fonts: [Headline font] + [Body font]
+AI prompt: "Minimal flat logo for ${pathTitle.toLowerCase()}, [style keyword], simple icon + wordmark, white background"`;
+
         case "founder_story":
         case "social_post":
-        case "general_writing":
         default:
           return null;
       }
@@ -14550,125 +14794,91 @@ NOTE TEMPLATE
       return null;
     }
 
-    function buildTaskAssetGenerationPrompt(normalized, options = {}) {
+    function buildUsableDraftPrompt(normalized, draftType) {
       const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
-      const profile = options.profile || inferTaskAssetProfile(normalized);
-      const deliverable = options.deliverable || getWritingDeliverableType(normalized) || profile;
       const resources = getFlatTaskResources(normalized);
+      const label = USABLE_DRAFT_TYPE_LABELS[draftType] || String(draftType || "").replace(/_/g, " ");
       const resourceBlock = resources.length
-        ? `\nOrganizations already on this task (use these names/contacts):\n${resources.slice(0, 8).map((e, i) => `${i + 1}. ${[e.org, e.name].filter(Boolean).join(" — ")} ${e.phone || ""} ${e.email || ""}`.trim()).join("\n")}`
+        ? `\nContacts/orgs already on this task:\n${resources.slice(0, 6).map((e, i) => `${i + 1}. ${[e.org, e.name].filter(Boolean).join(" — ")} ${e.phone || ""} ${e.email || ""}`.trim()).join("\n")}`
         : "";
 
-      const assetRules = {
-        outreach: "Output ONLY copy-paste assets with section headers:\nORGANIZATION LIST\nDRAFT EMAIL\nFOLLOW-UP EMAIL\nPHONE SCRIPT\nOUTREACH TRACKER (markdown table)\nNo paragraphs explaining outreach.",
-        logo: "Output ONLY:\nLOGO BRIEF\nMOOD BOARD KEYWORDS\nCOLOR PALETTE (hex codes)\nTYPOGRAPHY\nAI IMAGE PROMPTS (2+)\nSVG RECOMMENDATIONS\nNo paragraphs explaining what a logo is.",
-        interview: "Output ONLY:\nINTERVIEW QUESTIONS (6+)\nGOOGLE FORM FIELDS\nSHORT SURVEY\nCALL SCRIPT\nNOTE TEMPLATE (markdown table)\nNo paragraphs explaining interviewing.",
-        grant: "Output a complete grant application draft with numbered sections ready to paste into a form.",
-        resume: "Output a complete resume draft with clear section headers.",
-        social: "Output ready-to-post drafts with platform-appropriate formatting.",
-        general: "Output the most useful ready-to-use artifact for this task — templates, lists, scripts, or drafts. Section headers required. Zero explanation of what the task means."
-      };
-
       return (
-        `Generate useful ASSETS for this task — not an explanation of the task.\n\n` +
+        `Write ONE immediately usable ${label.toLowerCase()} for this task.\n\n` +
         `Situation: ${situation || "Not specified"}\n` +
         `Location: ${location}\n` +
         `Path: ${pathTitle}\n` +
         `Task: ${normalized.text}\n` +
-        `Asset type: ${deliverable.replace(/_/g, " ")}\n` +
+        `Document type: ${label}\n` +
         resourceBlock +
         `\nRules:\n` +
-        `- ${assetRules[profile] || assetRules.general}\n` +
-        `- NEVER restate or paraphrase the task title or mission.\n` +
-        `- Write like a helpful mentor — plain English, no business jargon.\n` +
+        `- Output ONLY the ${label.toLowerCase()} — ready to copy, paste, send, or fill in today.\n` +
+        `- NEVER explain what the user should do. NEVER restate the task title.\n` +
+        `- No preamble, no "here's a draft", no instructions about how to use it.\n` +
         `- Use [brackets] only for facts you cannot infer.\n` +
-        `- They should paste this into My Notes and start using it immediately.\n` +
-        `- Output ONLY the asset pack — no preamble.`
+        `- Plain English, middle-school reading level.\n` +
+        `- If you cannot produce a real ${label.toLowerCase()} for this task, output exactly: NO_DRAFT`
       );
     }
 
     function generateLocalTaskDraft(normalized) {
-      const assetPack = buildLocalTaskAssetPack(normalized);
-      if (assetPack) return assetPack;
+      const draftType = taskNeedsUsableDraft(normalized);
+      if (!draftType) return null;
+
+      const script = String(normalized.script || "").trim();
+      if (script.length > 80 && isUsableDraftContent(script, normalized) && !isTaskRestatement(script, normalized)) {
+        let draft = humanizeDraftFormatting(script);
+        const followUp = String(normalized.followUp || "").trim();
+        if (followUp && !isTaskRestatement(followUp, normalized)) {
+          draft += `\n\n---\n\nFollow-up if no reply:\n${humanizeDraftFormatting(followUp)}`;
+        }
+        return draft;
+      }
+
+      const local = buildLocalDeliverableDraft(draftType, normalized);
+      if (local && isUsableDraftContent(local, normalized)) return local;
 
       const text = normalized.text.toLowerCase();
-
-      if (normalized.script && normalized.script.length > 40 && !isExplanatoryTaskCopy(normalized.script) && !isTaskRestatement(normalized.script, normalized)) {
-        return normalized.script;
-      }
-
-      const deliverable = getWritingDeliverableType(normalized);
-      if (deliverable) {
-        const typed = buildLocalDeliverableDraft(deliverable, normalized);
-        if (typed) return typed;
-      }
-
-      if (/\b120-word\b|\bfounder story\b/.test(text)) {
-        return `[Edit this draft in My Notes — aim for about 120 words]
-
-I've been building something small called whatimado.com for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding, under-resourced, or tired of advice that doesn't fit your life.
+      if (draftType === "founder_story" || /\b120-word\b|\bfounder story\b/.test(text)) {
+        const story = `I've been building something small called whatimado.com for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding, under-resourced, or tired of advice that doesn't fit your life.
 
 A lot of tools either talk at you in a chat window or charge before you've explored anything real. I'm keeping whatimado free because paths shouldn't be paywalled.
 
 What's different: you see a visual map of paths that might fit you, then open step-by-step roadmaps with tasks — not just another ChatGPT thread.
 
 If you're curious, try https://whatimado.com and tell me what would make it more useful for someone in your situation.`;
+        return story;
       }
 
       if (/\bsave two post drafts\b|\bpost drafts\b/.test(text)) {
-        return `[Draft A — Reddit help-first intro]
-
-Title: I built a free tool for people stuck on what's next
-
-Body:
-I've been working on something small for people who freeze when they need a direction — not because they're lazy, but because every option feels vague or expensive.
-
-whatimado.com maps real paths visually, then breaks each path into small tasks you can actually do. It's free.
-
-If you're exploring what's next, I'd love honest feedback: https://whatimado.com
-(If the forum doesn't allow links in posts, I'll put the link in my first comment.)
-
----
-
-[Draft B — Facebook personal post]
-
-I've been chipping away at something for people who feel stuck on "what am I gonna do?" — especially if you're rebuilding or don't have money for another paid course.
-
-whatimado.com is free. It shows you a map of paths that might fit, then gives you step-by-step tasks for each one — not just another AI chat.
-
-I'd really value your take if you try it: https://whatimado.com
-What would make this more useful for someone in your situation?`;
+        return buildLocalDeliverableDraft("reddit_post", normalized) + "\n\n---\n\n" + buildLocalDeliverableDraft("facebook_post", normalized);
       }
 
-      if (deliverable === "reddit_post" || (/\breddit\b|r\//.test(text) && !/\bfacebook\b/.test(text))) {
+      if (draftType === "reddit_post" || (/\breddit\b|r\//.test(text) && !/\bfacebook\b/.test(text))) {
         return buildLocalDeliverableDraft("reddit_post", normalized);
       }
 
-      if (deliverable === "facebook_post" || /\bfacebook\b/.test(text)) {
+      if (draftType === "facebook_post" || /\bfacebook\b/.test(text)) {
         return buildLocalDeliverableDraft("facebook_post", normalized);
-      }
-
-      if (isWritingTask(normalized)) {
-        return buildLocalTaskAssetPack(normalized) || null;
       }
 
       return null;
     }
 
     async function generateAiTaskDraft(taskId, normalized) {
-      const profile = inferTaskAssetProfile(normalized);
-      const deliverable = getWritingDeliverableType(normalized) || profile;
-      const prompt = buildTaskAssetGenerationPrompt(normalized, { profile, deliverable });
+      const draftType = taskNeedsUsableDraft(normalized);
+      if (!draftType) return null;
 
-      return callAdvisor(prompt, 1800, { timeoutMs: 55000 });
+      const prompt = buildUsableDraftPrompt(normalized, draftType);
+      const raw = await callAdvisor(prompt, 1600, { timeoutMs: 55000 });
+      const draft = String(raw || "").trim();
+      if (!draft || /^NO_DRAFT$/i.test(draft)) return null;
+      if (!isUsableDraftContent(draft, normalized)) return null;
+      return draft;
     }
 
     function getTaskWritingNotesPlaceholder(normalized) {
-      if (generateLocalTaskDraft(normalized) || isWritingTask(normalized)) {
-        return "Your prepared assets appear here — org lists, drafts, scripts, trackers…";
-      }
-      if (taskHasMentorDeliverable(normalized)) {
-        return "Your contacts, drafts, and asset pack appear here — edit anything…";
+      if (taskNeedsUsableDraft(normalized)) {
+        return "Your personal notes — the prepared draft is separate above…";
       }
       return "Jot down thoughts, progress, links...";
     }
@@ -14683,44 +14893,60 @@ What would make this more useful for someone in your situation?`;
       if (!task) return;
 
       const normalized = normalizeRoadmapTask(task);
-      if (!isWritingTask(normalized)) return;
-
+      const draftType = taskNeedsUsableDraft(normalized);
       const data = getRoadmapTaskData(taskId);
-      if (data.draft?.trim() && !options.force) return;
+
+      if (!draftType) {
+        if (data.draft?.trim() && !isUsableDraftContent(data.draft, normalized)) {
+          data.draft = "";
+          data.draftGenerated = false;
+          data.draftSource = null;
+          data.mentorBriefGenerated = false;
+          const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+          const draftEl = getTaskDraftTextarea(item);
+          if (draftEl) draftEl.value = "";
+          item?.classList.remove("has-draft");
+          syncDraftPanelUi(taskId);
+          schedulePersist();
+        }
+        return;
+      }
+
+      if (data.draft?.trim() && !options.force && isUsableDraftContent(data.draft, normalized)) return;
       if (data.draftGenerated && !options.force) return;
       if (taskDraftGenerationInFlight.has(taskId)) return;
 
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const draftEl = item?.querySelector(".task-draft-textarea");
+      const draftEl = getTaskDraftTextarea(item);
       if (!draftEl) return;
 
       const localDraft = generateLocalTaskDraft(normalized);
-      const localIsSubstantial = localDraft && localDraft.length > 180 && !/^\[Starter draft/.test(localDraft);
+      const localIsUsable = localDraft && isUsableDraftContent(localDraft, normalized);
 
-      if (localIsSubstantial && !options.force) {
+      if (localIsUsable && !options.force) {
         insertDraftIntoNotes(taskId, localDraft, "replace", { focus: false, expand: false });
         data.draftGenerated = true;
-        data.draftSource = normalized.script?.length > 40 ? "roadmap" : "local";
+        data.draftSource = normalized.script?.length > 40 && isUsableDraftContent(normalized.script, normalized) ? "roadmap" : "local";
         schedulePersist();
         return;
       }
 
       taskDraftGenerationInFlight.add(taskId);
-      draftEl.placeholder = "Generating a starter draft for you…";
+      draftEl.placeholder = "Generating your draft…";
       draftEl.classList.add("is-generating-draft");
       const draftProgress = startDraftGeneratingProgress(taskId);
 
       try {
         const aiDraft = await generateAiTaskDraft(taskId, normalized);
-        const draft = (aiDraft?.trim() || localDraft || "").trim();
-        if (draft && (!data.draft?.trim() || options.force)) {
+        const draft = (aiDraft?.trim() || (localIsUsable ? localDraft : "") || "").trim();
+        if (draft && isUsableDraftContent(draft, normalized) && (!data.draft?.trim() || options.force)) {
           insertTaskDraft(taskId, draft, { focus: Boolean(options.force), expand: false });
           data.draftGenerated = true;
           data.draftSource = aiDraft?.trim() ? "ai" : "local";
           schedulePersist();
           trackEvent("task_draft_auto_generated", {
             task_id: taskId,
-            deliverable: getWritingDeliverableType(normalized) || "general",
+            deliverable: draftType,
             source: data.draftSource
           });
         }
@@ -14740,21 +14966,19 @@ What would make this more useful for someone in your situation?`;
         const phase = item.closest(".roadmap-phase, .stage-card");
         if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
         void ensureTaskDraftInNotes(taskId);
-        void ensureMentorBriefInNotes(taskId);
       });
     }
 
     function renderTaskWritingAssistHtml(taskId, normalized) {
-      if (!isWritingTask(normalized)) return "";
+      const draftType = taskNeedsUsableDraft(normalized);
+      if (!draftType) return "";
 
       const isFounder = isFounderStoryTask(normalized);
-      const deliverable = getWritingDeliverableType(normalized);
-      const headline = isFounder ? "Your draft is ready to edit" : "Starter draft ready";
+      const label = USABLE_DRAFT_TYPE_LABELS[draftType] || "Draft";
+      const headline = isFounder ? "Your story draft is ready" : `${label} ready`;
       const copy = isFounder
         ? "We added a founder story starter in the draft area below — change anything until it sounds like you."
-        : deliverable
-          ? `A ${deliverable.replace(/_/g, " ")} draft is in the prepared draft area. Edit it, then copy or send when you're ready.`
-          : "A ready-to-edit draft is in the prepared draft area — you're not starting from a blank page.";
+        : `Your ${label.toLowerCase()} is below — edit it, then copy or send when you're ready.`;
 
       return `
         <div class="task-writing-assist" data-task-id="${escapeHtml(taskId)}">
@@ -14762,7 +14986,7 @@ What would make this more useful for someone in your situation?`;
           <p class="task-writing-assist-copy">${escapeHtml(copy)}</p>
           <div class="task-writing-assist-actions">
             <button type="button" class="task-writing-assist-btn" data-action="regenerate-draft" data-task-id="${escapeHtml(taskId)}">Regenerate draft</button>
-            <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="replace-draft" data-task-id="${escapeHtml(taskId)}" hidden>Replace my notes</button>
+            <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="replace-draft" data-task-id="${escapeHtml(taskId)}" hidden>Replace draft</button>
             <button type="button" class="task-writing-assist-btn task-writing-assist-btn--ghost" data-action="rewrite-draft" data-task-id="${escapeHtml(taskId)}">Rewrite in my voice</button>
           </div>
         </div>`;
@@ -14908,13 +15132,21 @@ What would make this more useful for someone in your situation?`;
       $$(".task-item[data-task-id]").forEach((item) => syncTaskExpandUi(item.dataset.taskId));
     }
 
+    function shouldShowMobileRoadmapProgress() {
+      const mobile = window.matchMedia("(max-width: 960px)").matches && document.documentElement.dataset.colorScheme === "adult";
+      const onRoadmap = $("#screen-roadmap")?.classList.contains("active") && !$("#screen-roadmap")?.classList.contains("is-loading");
+      return Boolean(mobile && onRoadmap && state.roadmapStages?.length);
+    }
+
     function syncRoadmapStickyOffset() {
       const bar = $("#roadmap-float-progress");
-      const onRoadmap = $("#screen-roadmap")?.classList.contains("active") && !$("#screen-roadmap")?.classList.contains("is-loading");
-      const mobile = window.matchMedia("(max-width: 960px)").matches && document.documentElement.dataset.colorScheme === "adult";
-      const visible = Boolean(onRoadmap && bar && !bar.hidden && state.roadmapStages?.length);
-      document.body.classList.toggle("is-roadmap-progress-visible", visible && mobile);
-      const progressH = visible && mobile && bar ? bar.offsetHeight : 0;
+      const show = shouldShowMobileRoadmapProgress();
+      if (bar) {
+        bar.hidden = !show;
+        bar.setAttribute("aria-hidden", show ? "false" : "true");
+      }
+      document.body.classList.toggle("is-roadmap-progress-visible", show);
+      const progressH = show && bar ? bar.offsetHeight : 0;
       document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
       document.documentElement.style.setProperty(
         "--roadmap-sticky-offset",
@@ -14931,11 +15163,6 @@ What would make this more useful for someone in your situation?`;
       if (fill) fill.style.width = `${rounded}%`;
       if (text) text.textContent = `${rounded}%`;
       if (track) track.setAttribute("aria-valuenow", String(rounded));
-      if (bar) {
-        const onRoadmap = $("#screen-roadmap")?.classList.contains("active") && !$("#screen-roadmap")?.classList.contains("is-loading");
-        bar.hidden = !onRoadmap || !state.roadmapStages?.length;
-        bar.setAttribute("aria-hidden", bar.hidden ? "true" : "false");
-      }
       syncRoadmapStickyOffset();
     }
 
@@ -14954,7 +15181,7 @@ What would make this more useful for someone in your situation?`;
 
     function startDraftGeneratingProgress(taskId) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const generating = item?.querySelector(".task-draft-generating");
+      const generating = getTaskDraftPanelRoot(item)?.querySelector(".task-draft-generating");
       if (!generating) return null;
       stopDraftGeneratingProgress(taskId);
       generating.hidden = false;
@@ -14995,16 +15222,16 @@ What would make this more useful for someone in your situation?`;
     function syncDraftPanelUi(taskId) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       if (!item) return;
-      const panel = item.querySelector(".task-draft-panel");
+      const panel = getTaskDraftPanelRoot(item);
       const expanded = item.dataset.draftExpanded === "true";
-      const body = item.querySelector(".task-draft-body");
-      const collapsedView = item.querySelector("[data-draft-collapsed]");
-      const preview = item.querySelector("[data-draft-preview]");
-      const draftEl = item.querySelector(".task-draft-textarea");
+      const body = panel?.querySelector(".task-draft-body");
+      const collapsedView = panel?.querySelector("[data-draft-collapsed]");
+      const preview = panel?.querySelector("[data-draft-preview]");
+      const draftEl = getTaskDraftTextarea(item);
       const data = getRoadmapTaskData(taskId);
       const draftText = data.draft?.trim() || draftEl?.value.trim() || "";
       const hasDraft = Boolean(draftText);
-      const isGenerating = Boolean(item.querySelector(".task-draft-generating:not([hidden])"));
+      const isGenerating = Boolean(panel?.querySelector(".task-draft-generating:not([hidden])"));
 
       panel?.classList.toggle("has-draft", hasDraft);
       panel?.classList.toggle("is-generating", isGenerating);
@@ -15078,7 +15305,7 @@ What would make this more useful for someone in your situation?`;
         data.draftSource = null;
         data.mentorBriefGenerated = false;
         const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-        const draftEl = item?.querySelector(".task-draft-textarea");
+        const draftEl = getTaskDraftTextarea(item);
         if (draftEl) draftEl.value = "";
         item?.classList.remove("has-draft");
         setDraftPanelExpanded(taskId, false);
@@ -15104,9 +15331,20 @@ What would make this more useful for someone in your situation?`;
       });
     }
 
+    function getTaskDraftPanelRoot(itemOrTaskId) {
+      const item = typeof itemOrTaskId === "string"
+        ? document.querySelector(`.task-item[data-task-id="${itemOrTaskId}"]`)
+        : itemOrTaskId;
+      return item?.querySelector("[data-draft-panel]") || null;
+    }
+
+    function getTaskDraftTextarea(itemOrTaskId) {
+      return getTaskDraftPanelRoot(itemOrTaskId)?.querySelector(".task-draft-textarea") || null;
+    }
+
     function insertTaskDraft(taskId, draft, options = {}) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const draftEl = item?.querySelector(".task-draft-textarea");
+      const draftEl = getTaskDraftTextarea(item);
       const data = getRoadmapTaskData(taskId);
       const box = item?.querySelector(".task-writing-assist");
       const cleanedDraft = humanizeDraftFormatting(draft);
@@ -15128,7 +15366,7 @@ What would make this more useful for someone in your situation?`;
       }
       setDraftPanelExpanded(taskId, options.expand === true);
       if (options.focus !== false) {
-        item?.querySelector(".task-draft-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        item?.querySelector("[data-draft-panel]")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
       trackEvent("task_draft_inserted", { task_id: taskId, mode: "draft_area" });
       return true;
@@ -15140,7 +15378,7 @@ What would make this more useful for someone in your situation?`;
 
     function updateTaskWritingAssistButtons(taskId) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const draftEl = item?.querySelector(".task-draft-textarea");
+      const draftEl = getTaskDraftTextarea(taskId);
       const replaceBtn = item?.querySelector('[data-action="replace-draft"]');
       if (replaceBtn) replaceBtn.hidden = !draftEl?.value.trim();
     }
@@ -15188,7 +15426,6 @@ What would make this more useful for someone in your situation?`;
       const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
       const normalized = normalizeRoadmapTask(task);
       const draft = generateLocalTaskDraft(normalized);
-      const box = btn.closest(".task-writing-assist");
       const notes = item.querySelector(".task-textarea");
 
       if (action === "insert-draft" || action === "regenerate-draft") {
@@ -15218,9 +15455,10 @@ What would make this more useful for someone in your situation?`;
 
       if (action === "rewrite-draft") {
         const questionEl = item.querySelector(".task-question");
+        const draftEl = getTaskDraftTextarea(item);
         if (questionEl) {
-          questionEl.value = notes?.value.trim()
-            ? "Rewrite the draft in My Notes to sound more like me — warmer, shorter, and less salesy."
+          questionEl.value = draftEl?.value.trim()
+            ? "Rewrite the prepared draft to sound more like me — warmer, shorter, and less salesy."
             : "Write a founder story draft for me in a warm, personal voice (~120 words).";
           questionEl.focus();
         }
@@ -15246,30 +15484,6 @@ What would make this more useful for someone in your situation?`;
             btn.textContent = "Copy title";
           }, 1400);
         });
-        return;
-      }
-
-      if (!draft) return;
-
-      if (action === "view-sample") {
-        let preview = box?.querySelector(".task-writing-sample");
-        if (!preview && box) {
-          preview = document.createElement("pre");
-          preview.className = "task-writing-sample overview-task-detail-copy";
-          preview.style.whiteSpace = "pre-wrap";
-          preview.style.marginTop = ".55rem";
-          preview.textContent = draft;
-          box.appendChild(preview);
-          btn.textContent = "Hide sample text";
-          btn.dataset.action = "hide-sample";
-        }
-        return;
-      }
-
-      if (action === "hide-sample") {
-        box?.querySelector(".task-writing-sample")?.remove();
-        btn.textContent = "Show sample text";
-        btn.dataset.action = "view-sample";
       }
     }
 
@@ -15468,7 +15682,7 @@ What would make this more useful for someone in your situation?`;
         "Let's practice — you play the person I'd contact and I'll practice what to say. Start with their first likely question.",
         { when: /\b(call|meet|demo|interview|outreach|partner|director|workshop)\b/.test(blob) }
       );
-      if (isWritingTask(normalized)) {
+      if (taskNeedsUsableDraft(normalized)) {
         add("draft", "Regenerate draft", "", { local: "draft" });
       }
 
@@ -15532,7 +15746,7 @@ What would make this more useful for someone in your situation?`;
       if (isFounderStoryTask(normalized)) {
         parts.push(`<div class="task-notes-wordcount" data-task-id="${escapeHtml(taskId)}">0 words</div>`);
       }
-      if (isWritingTask(normalized)) {
+      if (isFounderStoryTask(normalized) || taskNeedsUsableDraft(normalized)) {
         parts.push(`
           <div class="task-notes-actions">
             <button type="button" class="task-notes-action-btn" data-action="copy-notes" data-task-id="${escapeHtml(taskId)}">Copy all</button>
@@ -16069,33 +16283,8 @@ What would make this more useful for someone in your situation?`;
       return humanizeDraftFormatting(brief);
     }
 
-    async function ensureMentorBriefInNotes(taskId, options = {}) {
-      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
-      if (!match) return;
-
-      const stageIndex = Number(match[1]);
-      const taskIndex = Number(match[2]);
-      const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
-      if (!task) return;
-
-      const normalized = normalizeRoadmapTask(task);
-      if (isWritingTask(normalized)) return;
-      if (!taskHasMentorDeliverable(normalized)) return;
-
-      const data = getRoadmapTaskData(taskId);
-      if (data.draft?.trim() && !options.force) return;
-      if (data.mentorBriefGenerated && !options.force) return;
-
-      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const draftEl = item?.querySelector(".task-draft-textarea");
-      if (!draftEl) return;
-
-      const brief = buildMentorBriefForNotes(normalized);
-      if (!brief || brief.length < 80) return;
-
-      insertTaskDraft(taskId, brief, { focus: false, expand: false });
-      data.mentorBriefGenerated = true;
-      schedulePersist();
+    async function ensureMentorBriefInNotes() {
+      return;
     }
 
     function queueMentorBriefsForVisibleTasks() {
@@ -16434,7 +16623,8 @@ What would make this more useful for someone in your situation?`;
       const talkingPoints = renderMissionTalkingPointsHtml(normalized);
       if (talkingPoints) blocks.push(talkingPoints);
 
-      const followUp = renderMissionFollowUpHtml(normalized);
+      const needsDraftPanel = Boolean(taskNeedsUsableDraft(normalized));
+      const followUp = needsDraftPanel ? "" : renderMissionFollowUpHtml(normalized);
       if (followUp) blocks.push(followUp);
 
       if (normalized.alternatives) {
@@ -16442,8 +16632,63 @@ What would make this more useful for someone in your situation?`;
       }
 
       return blocks.length
-        ? `<section class="task-mentor-section task-mentor-section--resources"><h4 class="task-mentor-label">Prepared for you</h4><div class="task-action-pack">${blocks.join("")}</div></section>`
+        ? `<section class="task-mentor-section task-mentor-section--resources"><h4 class="task-mentor-label">${taskNeedsUsableDraft(normalized) ? "Prepared for you" : "Helpful resources"}</h4><div class="task-action-pack${taskNeedsUsableDraft(normalized) ? "" : " task-action-pack--featured"}">${blocks.join("")}</div></section>`
         : "";
+    }
+
+    function renderTaskDraftSectionHtml(taskId, normalized) {
+      const draftType = taskNeedsUsableDraft(normalized);
+      const draftLabel = draftType ? (USABLE_DRAFT_TYPE_LABELS[draftType] || "Draft") : "";
+
+      if (!draftType) {
+        return `
+              <section class="task-mentor-section task-mentor-section--draft task-mentor-section--no-draft">
+                <h4 class="task-mentor-label">Prepared draft</h4>
+                <p class="task-draft-none">No draft needed for this task.</p>
+                <p class="task-draft-none-hint">Use the contacts, links, and tools above to finish this step.</p>
+              </section>`;
+      }
+
+      return `
+              <section class="task-mentor-section task-mentor-section--draft">
+                <h4 class="task-mentor-label">Prepared ${escapeHtml(draftLabel.toLowerCase())}</h4>
+                <p class="task-draft-hint">Copy, edit, and use this ${escapeHtml(draftLabel.toLowerCase())} — it's ready to go.</p>
+                <div class="task-draft-panel" data-draft-panel>
+                  <p class="task-draft-expand-hint">Your ${escapeHtml(draftLabel.toLowerCase())} appears here — expand to read and edit.</p>
+                  <div class="task-draft-generating" hidden aria-live="polite">
+                    <span class="task-draft-progress-status">Generating draft…</span>
+                    <div class="task-draft-progress">
+                      <div class="task-draft-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Draft generation progress">
+                        <span class="task-draft-progress-fill"></span>
+                      </div>
+                      <span class="task-draft-progress-label">0%</span>
+                    </div>
+                  </div>
+                  <div class="task-draft-collapsed-view" data-draft-collapsed hidden>
+                    <p class="task-draft-collapsed-preview" data-draft-preview hidden role="button" tabindex="0"></p>
+                    <div class="task-draft-actions">
+                      <button type="button" class="task-draft-toggle-btn task-draft-expand-btn" data-draft-expand="${escapeHtml(taskId)}">
+                        <span class="task-draft-chevron" aria-hidden="true">▼</span>
+                        <span>Expand draft</span>
+                      </button>
+                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(taskId)}" hidden>Delete draft</button>
+                    </div>
+                  </div>
+                  <div class="task-draft-body" hidden>
+                    <div class="task-draft-textarea-wrap">
+                      <textarea class="task-draft-textarea" placeholder="Your prepared draft will appear here…"></textarea>
+                    </div>
+                    <div class="task-draft-toolbar">
+                      <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(taskId)}">Copy draft</button>
+                      <button type="button" class="task-draft-toggle-btn task-draft-compress-btn" data-draft-compress="${escapeHtml(taskId)}">
+                        <span class="task-draft-chevron" aria-hidden="true">▲</span>
+                        <span>Collapse draft</span>
+                      </button>
+                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(taskId)}">Delete draft</button>
+                    </div>
+                  </div>
+                </div>
+              </section>`;
     }
 
     function normalizeRoadmapStages(stages) {
@@ -16659,12 +16904,12 @@ What would make this more useful for someone in your situation?`;
 
     function shouldShowTaskScript(normalized) {
       const script = String(normalized.script || "").trim();
-      if (!script) return false;
+      if (!script || !isUsableDraftContent(script, normalized)) return false;
       if (isGenericLocalScript(script)) return false;
       if (taskTextIncludesCallScript(normalized.text)) return false;
       if (taskIsBrowseOnlyTask(normalized.text)) return false;
+      if (taskNeedsUsableDraft(normalized)) return false;
       if (/^Subject:/im.test(script)) return true;
-      if (isWritingTask(normalized) && script.length > 50) return true;
       if (isFounderOrProjectPrompt(getFirstUserMessage()) && /whatimado\.com/i.test(script)) return true;
       return false;
     }
@@ -23190,7 +23435,11 @@ What would make this more useful for someone in your situation?`;
         trackEvent("screen_view", { screen: name, from: previousScreen });
       }
       if (name === "map") updateMapAuxiliaryPanels();
-      if (name === "roadmap") updateRoadmapOverviewChrome();
+      if (name === "roadmap") {
+        updateRoadmapOverviewChrome();
+      } else {
+        syncRoadmapStickyOffset();
+      }
       if (name === "main") {
         renderSavedMapsHome();
         startRotatingPromptPlaceholder();
@@ -24943,6 +25192,7 @@ What would make this more useful for someone in your situation?`;
       if (loading) {
         startLoadingQuips("#roadmap-loading .loader-tagline");
         startSiteLoadingProgress($("#roadmap-loader-progress"), { durationMs: 65000, cap: 92 });
+        syncRoadmapStickyOffset();
       } else {
         stopLoadingQuips();
         completeSiteLoadingProgress($("#roadmap-loader-progress"));
@@ -25353,7 +25603,7 @@ What would make this more useful for someone in your situation?`;
 
       item.querySelector("[data-copy-draft]")?.addEventListener("click", async (event) => {
         event.stopPropagation();
-        const draftEl = item.querySelector(".task-draft-textarea");
+        const draftEl = getTaskDraftTextarea(item);
         const text = draftEl?.value.trim();
         if (!text) return;
         try {
@@ -25404,9 +25654,9 @@ What would make this more useful for someone in your situation?`;
         }
       });
 
-      item.querySelector(".task-draft-textarea")?.addEventListener("input", () => {
+      getTaskDraftTextarea(item)?.addEventListener("input", () => {
         const data = getRoadmapTaskData(taskId);
-        const draftEl = item.querySelector(".task-draft-textarea");
+        const draftEl = getTaskDraftTextarea(item);
         data.draft = draftEl?.value || "";
         item.classList.toggle("has-draft", Boolean(data.draft.trim()));
         syncDraftPanelUi(taskId);
@@ -25424,7 +25674,7 @@ What would make this more useful for someone in your situation?`;
         if (check) check.checked = Boolean(data.checked);
         item.classList.toggle("is-done", Boolean(check?.checked));
         if (notes) notes.value = data.notes || "";
-        const draftEl = item.querySelector(".task-draft-textarea");
+        const draftEl = getTaskDraftTextarea(item);
         if (draftEl) draftEl.value = data.draft || "";
         item.classList.toggle("has-draft", Boolean(data.draft?.trim()));
         if (data.draft?.trim()) {
@@ -25588,9 +25838,7 @@ What would make this more useful for someone in your situation?`;
         || 64;
       const extraOffset = options.extraOffset ?? 12;
       const progressBar = $("#roadmap-float-progress");
-      const progressDocked = window.matchMedia("(max-width: 960px)").matches
-        && document.documentElement.dataset.colorScheme === "adult";
-      const progressH = progressDocked && progressBar && !progressBar.hidden ? progressBar.offsetHeight : 0;
+      const progressH = shouldShowMobileRoadmapProgress() && progressBar ? progressBar.offsetHeight : 0;
       const offset = topbarH + progressH + extraOffset;
 
       requestAnimationFrame(() => {
@@ -26137,7 +26385,7 @@ What would make this more useful for someone in your situation?`;
       const taskData = state.roadmapKey ? getRoadmapTaskData(id) : { checked: false };
       const isDone = Boolean(taskData.checked);
       const canExpand = canExpandTask(stageIndex, taskIndex);
-      const hasDraftPanel = isWritingTask(normalized) || taskHasMentorDeliverable(normalized);
+      const draftSection = renderTaskDraftSectionHtml(id, normalized);
       const displaySteps = getTaskDisplaySteps(normalized);
       const chips = [];
       if (showResources && normalized.local) {
@@ -26218,54 +26466,17 @@ What would make this more useful for someone in your situation?`;
               </div>
             </div>
             <div class="overview-task-tools">
-              ${hasDraftPanel ? `
-              <section class="task-mentor-section task-mentor-section--draft">
-                <h4 class="task-mentor-label">Prepared assets</h4>
-                <p class="task-draft-hint">Copy-paste deliverables for this task — org lists, emails, scripts, trackers. Edit anything below.</p>
-                <div class="task-draft-panel" data-draft-panel>
-                  <p class="task-draft-expand-hint">Your asset pack appears here — expand to copy org lists, emails, scripts, or trackers.</p>
-                  <div class="task-draft-generating" hidden aria-live="polite">
-                    <span class="task-draft-progress-status">Generating draft…</span>
-                    <div class="task-draft-progress">
-                      <div class="task-draft-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Draft generation progress">
-                        <span class="task-draft-progress-fill"></span>
-                      </div>
-                      <span class="task-draft-progress-label">0%</span>
-                    </div>
-                  </div>
-                  <div class="task-draft-collapsed-view" data-draft-collapsed hidden>
-                    <p class="task-draft-collapsed-preview" data-draft-preview hidden role="button" tabindex="0"></p>
-                    <div class="task-draft-actions">
-                      <button type="button" class="task-draft-toggle-btn task-draft-expand-btn" data-draft-expand="${escapeHtml(id)}">
-                        <span class="task-draft-chevron" aria-hidden="true">▼</span>
-                        <span>Expand Draft</span>
-                      </button>
-                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(id)}" hidden>Delete draft</button>
-                    </div>
-                  </div>
-                  <div class="task-draft-body" hidden>
-                    <textarea class="task-draft-textarea" placeholder="Your prepared draft will appear here…"></textarea>
-                    <div class="task-draft-toolbar">
-                      <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(id)}">Copy draft</button>
-                      <button type="button" class="task-draft-toggle-btn task-draft-compress-btn" data-draft-compress="${escapeHtml(id)}">
-                        <span class="task-draft-chevron" aria-hidden="true">▲</span>
-                        <span>Collapse Draft</span>
-                      </button>
-                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(id)}">Delete draft</button>
-                    </div>
-                  </div>
-                </div>
-              </section>` : ""}
+              ${draftSection}
               <section class="task-mentor-section task-mentor-section--notes">
                 <h4 class="task-mentor-label">My Notes</h4>
-                <textarea class="task-textarea" placeholder="Your personal notes only — thoughts, reminders, links you find…"></textarea>
-                ${isWritingTask(normalized) ? renderTaskWritingAssistHtml(id, normalized) : ""}
+                <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>
+                ${renderTaskWritingAssistHtml(id, normalized)}
                 ${notesExtras}
               </section>
               ${aiAssist}
               <div class="task-threads" id="threads-${id}"></div>
               <div class="task-ask-row">
-                <textarea class="task-question" id="question-${id}" rows="1" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
+                <textarea class="task-question" id="question-${id}" rows="4" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
                 <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
               </div>
             </div>
