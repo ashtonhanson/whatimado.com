@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-convo-missions -->
+<!-- whatimado build: 2026-06-30-draft-mission-ux -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-convo-missions">
+  <meta name="whatimado-build" content="2026-06-30-draft-mission-ux">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7342,6 +7342,35 @@
       pointer-events: none;
     }
 
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] .roadmap-float-progress {
+        top: var(--topbar-h, 64px);
+        left: 0;
+        right: 0;
+        width: 100%;
+        transform: none;
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+        border-top: 0;
+        padding: .45rem 1rem;
+        gap: .65rem;
+        box-shadow: 0 2px 14px rgba(15, 23, 42, .08);
+        z-index: 19;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-progress-track {
+        flex: 1;
+        width: auto;
+        max-width: none;
+        height: .42rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap.active:not(.is-loading) .roadmap-page {
+        padding-top: .35rem;
+      }
+    }
+
     .roadmap-float-progress-track {
       width: 88px;
       height: .35rem;
@@ -7490,7 +7519,7 @@
       margin-top: .85rem;
     }
 
-    .task-open-next-btn {
+    .task-see-next-btn {
       padding: .42rem .85rem;
       border: 1px solid rgba(37, 99, 235, .28);
       border-radius: 999px;
@@ -7516,16 +7545,86 @@
       background: rgba(37, 99, 235, .04);
     }
 
-    .task-draft-panel summary {
-      cursor: pointer;
-      color: #2563eb;
-      font-size: .74rem;
-      font-weight: 700;
-      list-style: none;
+    .task-draft-expand-hint {
+      margin: 0 0 .45rem;
+      color: var(--ink-muted, #6b7280);
+      font-size: .7rem;
+      line-height: 1.45;
     }
 
-    .task-draft-panel summary::-webkit-details-marker {
-      display: none;
+    .task-draft-collapsed-preview {
+      margin: 0 0 .45rem;
+      color: var(--text, #374151);
+      font-size: .76rem;
+      line-height: 1.45;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .task-draft-generating {
+      margin-bottom: .45rem;
+    }
+
+    .task-draft-progress {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .task-draft-progress-track {
+      flex: 1;
+      height: .32rem;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .14);
+      overflow: hidden;
+    }
+
+    .task-draft-progress-fill {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2563eb, #22c55e);
+      transition: width .2s ease;
+    }
+
+    .task-draft-progress-label {
+      flex-shrink: 0;
+      color: #2563eb;
+      font-size: .64rem;
+      font-weight: 700;
+    }
+
+    .task-draft-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .45rem;
+    }
+
+    .task-draft-expand-btn,
+    .task-draft-compress-btn,
+    .task-delete-draft-btn {
+      padding: .32rem .65rem;
+      border: 1px solid rgba(37, 99, 235, .24);
+      border-radius: 999px;
+      background: #fff;
+      color: #2563eb;
+      font-size: .68rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .task-delete-draft-btn {
+      border-color: rgba(220, 38, 38, .22);
+      color: #dc2626;
+    }
+
+    .task-draft-body[hidden],
+    .task-draft-generating[hidden] {
+      display: none !important;
     }
 
     .task-draft-textarea {
@@ -7634,10 +7733,9 @@
       border-bottom: 1px solid rgba(120, 130, 200, .12);
     }
 
-    .task-collapse-btn {
+    .task-condense-btn {
       display: inline-flex;
       align-items: center;
-      margin-top: .65rem;
       padding: .35rem .7rem;
       border: 1px solid rgba(37, 99, 235, .22);
       border-radius: 999px;
@@ -7646,6 +7744,73 @@
       font-size: .72rem;
       font-weight: 700;
       cursor: pointer;
+    }
+
+    .dashboard-undo-btn {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--line, rgba(37, 99, 235, .18));
+      border-radius: 50%;
+      background: #fff;
+      color: var(--ink-muted, #6b7280);
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+
+    .dashboard-undo-btn:hover:not(:disabled):not(.is-disabled) {
+      border-color: #d1d5db;
+      color: var(--ink, #1f2937);
+      background: var(--bg-soft, #f9fafb);
+    }
+
+    .dashboard-undo-btn:disabled,
+    .dashboard-undo-btn.is-disabled {
+      opacity: .34;
+      cursor: default;
+    }
+
+    .dashboard-undo-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .dashboard-undo-sidebar {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      padding: .55rem .75rem;
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      margin-bottom: .65rem;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--ink-muted);
+    }
+
+    .dashboard-undo-sidebar span {
+      flex: 1;
+      text-align: left;
+    }
+
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] .dashboard-undo-sidebar {
+        display: none;
+      }
+    }
+
+    @media (min-width: 961px) {
+      html[data-color-scheme="adult"] .dashboard-topbar .dashboard-undo-btn:not(.dashboard-undo-sidebar) {
+        display: none;
+      }
     }
 
     .task-notes-draft-panel .task-textarea {
@@ -11312,6 +11477,10 @@
         </a>
         <span class="dashboard-beta-badge" aria-hidden="true">Beta</span>
       </div>
+      <button type="button" class="dashboard-undo-btn dashboard-undo-sidebar" id="sidebar-undo-btn" aria-label="Undo last step" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14H4V9l1.5 1.5C7.8 8.2 10.2 7 13 7c4.4 0 8 3.6 8 8s-3.6 8-8 8c-2.8 0-5.3-1.4-6.8-3.5"></path></svg>
+        <span>Undo</span>
+      </button>
       <nav class="dashboard-nav" aria-label="Primary">
         <button type="button" class="dashboard-nav-btn active" data-screen-link="main">
           <svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
@@ -11367,6 +11536,9 @@
         <div class="dashboard-topbar-start">
           <button type="button" class="dashboard-topbar-btn dashboard-mobile-menu" id="dashboard-mobile-menu" aria-label="Open menu">
             <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+          </button>
+          <button type="button" class="dashboard-undo-btn dashboard-topbar-btn" id="global-undo-btn" aria-label="Undo last step" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14H4V9l1.5 1.5C7.8 8.2 10.2 7 13 7c4.4 0 8 3.6 8 8s-3.6 8-8 8c-2.8 0-5.3-1.4-6.8-3.5"></path></svg>
           </button>
         </div>
         <div class="dashboard-topbar-end">
@@ -14030,6 +14202,7 @@ Location: ${location}`;
       taskDraftGenerationInFlight.add(taskId);
       draftEl.placeholder = "Generating a starter draft for you…";
       draftEl.classList.add("is-generating-draft");
+      const draftProgress = startDraftGeneratingProgress(taskId);
 
       try {
         const aiDraft = await generateAiTaskDraft(taskId, normalized);
@@ -14047,8 +14220,11 @@ Location: ${location}`;
         }
       } finally {
         taskDraftGenerationInFlight.delete(taskId);
+        draftProgress?.complete();
+        stopDraftGeneratingProgress(taskId);
         draftEl.classList.remove("is-generating-draft");
         draftEl.placeholder = "Your prepared draft will appear here…";
+        syncDraftPanelUi(taskId);
       }
     }
 
@@ -14195,6 +14371,111 @@ Location: ${location}`;
       }
     }
 
+    const draftProgressControllers = new Map();
+
+    function updateDraftGeneratingProgress(root, percent) {
+      if (!root) return;
+      const rounded = Math.round(percent || 0);
+      const fill = root.querySelector(".task-draft-progress-fill");
+      const label = root.querySelector(".task-draft-progress-label");
+      const track = root.querySelector(".task-draft-progress-track");
+      if (fill) fill.style.width = `${rounded}%`;
+      if (label) label.textContent = rounded >= 100 ? "Done" : `${rounded}%`;
+      if (track) track.setAttribute("aria-valuenow", String(rounded));
+    }
+
+    function startDraftGeneratingProgress(taskId) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const generating = item?.querySelector(".task-draft-generating");
+      if (!generating) return null;
+      stopDraftGeneratingProgress(taskId);
+      generating.hidden = false;
+      syncDraftPanelUi(taskId);
+      let percent = 0;
+      const startedAt = Date.now();
+      const durationMs = 45000;
+      const cap = 92;
+      const tick = () => {
+        const elapsed = Date.now() - startedAt;
+        percent = Math.min(cap, (elapsed / durationMs) * cap);
+        updateDraftGeneratingProgress(generating, percent);
+      };
+      tick();
+      const timer = window.setInterval(tick, 220);
+      const controller = {
+        timer,
+        generating,
+        complete() {
+          updateDraftGeneratingProgress(generating, 100);
+          window.clearInterval(timer);
+          generating.hidden = true;
+          draftProgressControllers.delete(taskId);
+        }
+      };
+      draftProgressControllers.set(taskId, controller);
+      return controller;
+    }
+
+    function stopDraftGeneratingProgress(taskId) {
+      const controller = draftProgressControllers.get(taskId);
+      if (!controller) return;
+      window.clearInterval(controller.timer);
+      if (controller.generating) controller.generating.hidden = true;
+      draftProgressControllers.delete(taskId);
+    }
+
+    function syncDraftPanelUi(taskId) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (!item) return;
+      const expanded = item.dataset.draftExpanded === "true";
+      const body = item.querySelector(".task-draft-body");
+      const expandBtn = item.querySelector("[data-draft-expand]");
+      const preview = item.querySelector("[data-draft-preview]");
+      const draftEl = item.querySelector(".task-draft-textarea");
+      const data = getRoadmapTaskData(taskId);
+      const draftText = data.draft?.trim() || draftEl?.value.trim() || "";
+      const hasDraft = Boolean(draftText);
+      const deleteBtn = item.querySelector("[data-delete-draft]");
+      const isGenerating = Boolean(item.querySelector(".task-draft-generating:not([hidden])"));
+
+      if (body) body.hidden = !expanded;
+      if (expandBtn) expandBtn.hidden = expanded || !hasDraft || isGenerating;
+      if (deleteBtn) deleteBtn.hidden = !hasDraft;
+
+      if (preview) {
+        if (hasDraft && !expanded) {
+          const text = humanizeDraftFormatting(draftText);
+          preview.textContent = text.length > 120 ? `${text.slice(0, 117)}…` : text;
+          preview.hidden = false;
+        } else {
+          preview.hidden = true;
+          preview.textContent = "";
+        }
+      }
+    }
+
+    function setDraftPanelExpanded(taskId, expanded) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (!item) return;
+      item.dataset.draftExpanded = expanded ? "true" : "false";
+      syncDraftPanelUi(taskId);
+    }
+
+    function deleteTaskDraft(taskId) {
+      const data = getRoadmapTaskData(taskId);
+      data.draft = "";
+      data.draftGenerated = false;
+      data.draftSource = null;
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      const draftEl = item?.querySelector(".task-draft-textarea");
+      if (draftEl) draftEl.value = "";
+      item?.classList.remove("has-draft");
+      setDraftPanelExpanded(taskId, false);
+      updateTaskWritingAssistButtons(taskId);
+      schedulePersist();
+      trackEvent("task_draft_deleted", { task_id: taskId });
+    }
+
     function insertTaskDraft(taskId, draft, options = {}) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       const draftEl = item?.querySelector(".task-draft-textarea");
@@ -14208,9 +14489,6 @@ Location: ${location}`;
       schedulePersist();
       item?.classList.toggle("has-draft", true);
 
-      const draftPanel = item?.querySelector(".task-draft-panel");
-      if (draftPanel) draftPanel.open = true;
-
       let note = box?.querySelector(".task-writing-assist-note");
       if (!note && box) {
         note = document.createElement("p");
@@ -14220,8 +14498,9 @@ Location: ${location}`;
       if (note) {
         note.textContent = "Your draft is in the prepared draft area below — My Notes stays for your own thoughts.";
       }
+      setDraftPanelExpanded(taskId, options.expand !== false);
       if (options.focus !== false) {
-        draftPanel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        item?.querySelector(".task-draft-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
       trackEvent("task_draft_inserted", { task_id: taskId, mode: "draft_area" });
       return true;
@@ -20227,8 +20506,15 @@ Location: ${location}`;
         if (resolvedIndex >= 0) setPathSelected(resolvedIndex, false);
 
         if (wasViewingRemoved) {
+          state.ideas = [];
+          state.activeMapId = null;
           setRoadmapNavVisible(false);
+          resetPossibilityMapView();
           showScreen("map");
+        } else if (state.lastScreen === "map" && getRoadmapSidebarCount() === 0) {
+          state.ideas = [];
+          state.activeMapId = null;
+          resetPossibilityMapView();
         }
 
         syncActiveMapIntoLibrary();
@@ -20444,6 +20730,11 @@ Location: ${location}`;
           if (state.activeRoadmapCategoryId === categoryId) {
             state.activeRoadmapCategoryId = null;
           }
+          if (getRoadmapSidebarCount() === 0 && state.lastScreen === "map") {
+            state.ideas = [];
+            state.activeMapId = null;
+            resetPossibilityMapView();
+          }
           renderSidebarRoadmaps();
           void flushPersist();
           trackEvent("roadmap_category_deleted", { had_map: false });
@@ -20641,6 +20932,7 @@ Location: ${location}`;
         if (state.activeMapId === mapId) {
           state.activeMapId = null;
           clearIntakeSession({ preserveLibrary: true });
+          resetPossibilityMapView();
         }
         markAllRoadmapsRemovedOnMap(mapId);
         state.savedMaps = state.savedMaps.filter((map) => map.id !== mapId);
@@ -22152,7 +22444,9 @@ Location: ${location}`;
 
       [
         $("#map-page-nav-back"),
-        $("#roadmap-page-nav-back")
+        $("#roadmap-page-nav-back"),
+        $("#global-undo-btn"),
+        $("#sidebar-undo-btn")
       ].forEach((button) => {
         if (!button) return;
         button.disabled = !canBack;
@@ -22166,6 +22460,19 @@ Location: ${location}`;
         if (!button) return;
         button.hidden = !canForward;
       });
+    }
+
+    function resetPossibilityMapView() {
+      state.currentIdea = null;
+      state.selectedPathIndexes = [];
+      selectedMapPathIndex = null;
+      const ctx = $("#map-page-context");
+      if (ctx) {
+        ctx.hidden = true;
+        ctx.textContent = "";
+      }
+      buildOpportunityMap(state.ideas || [], { skipPersist: true });
+      updateMapAuxiliaryPanels();
     }
 
     function prepareLeaveMapForConvo() {
@@ -24434,11 +24741,27 @@ Location: ${location}`;
         }
       });
 
+      item.querySelector("[data-draft-expand]")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setDraftPanelExpanded(taskId, true);
+      });
+
+      item.querySelector("[data-draft-compress]")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setDraftPanelExpanded(taskId, false);
+      });
+
+      item.querySelector("[data-delete-draft]")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        deleteTaskDraft(taskId);
+      });
+
       item.querySelector(".task-draft-textarea")?.addEventListener("input", () => {
         const data = getRoadmapTaskData(taskId);
         const draftEl = item.querySelector(".task-draft-textarea");
         data.draft = draftEl?.value || "";
         item.classList.toggle("has-draft", Boolean(data.draft.trim()));
+        syncDraftPanelUi(taskId);
         schedulePersist();
         updateTaskWritingAssistButtons(taskId);
       });
@@ -24456,14 +24779,15 @@ Location: ${location}`;
         const draftEl = item.querySelector(".task-draft-textarea");
         if (draftEl) draftEl.value = data.draft || "";
         item.classList.toggle("has-draft", Boolean(data.draft?.trim()));
-        const draftPanel = item.querySelector(".task-draft-panel");
-        if (draftPanel && data.draft?.trim()) draftPanel.open = true;
+        if (data.draft?.trim()) {
+          setDraftPanelExpanded(taskId, item.dataset.draftExpanded === "true");
+        } else {
+          setDraftPanelExpanded(taskId, false);
+        }
         updateTaskWritingAssistButtons(taskId);
         updateTaskNotesWordCount(taskId);
         bindTaskExpandControls(item, taskId);
         syncTaskExpandUi(taskId);
-        const collapseBtn = item.querySelector("[data-task-collapse]");
-        if (collapseBtn) collapseBtn.hidden = !Boolean(check?.checked);
         item.querySelectorAll(".task-extra-detail").forEach((detailsEl) => {
           if (window.matchMedia("(max-width: 960px)").matches) detailsEl.removeAttribute("open");
         });
@@ -24471,8 +24795,6 @@ Location: ${location}`;
           data.checked = check.checked;
           item.classList.toggle("is-done", check.checked);
           refreshCompressedTaskRow(taskId);
-          const collapseBtn = item.querySelector("[data-task-collapse]");
-          if (collapseBtn) collapseBtn.hidden = !check.checked;
           trackEvent("task_check_toggled", {
             task_id: taskId,
             checked: check.checked
@@ -25236,11 +25558,27 @@ Location: ${location}`;
               <section class="task-mentor-section task-mentor-section--draft">
                 <h4 class="task-mentor-label">Prepared draft</h4>
                 <p class="task-draft-hint">We fill this in for you — edit or copy it here. My Notes below is only for your own thoughts.</p>
-                <details class="task-draft-panel">
-                  <summary>Expand draft — edit, then copy or send</summary>
-                  <textarea class="task-draft-textarea" placeholder="Your prepared draft will appear here…"></textarea>
-                  <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(id)}">Copy draft</button>
-                </details>
+                <div class="task-draft-panel" data-draft-panel>
+                  <p class="task-draft-expand-hint">This system-generated box can be expanded to read and edit the full draft.</p>
+                  <div class="task-draft-generating" hidden aria-live="polite">
+                    <div class="task-draft-progress">
+                      <div class="task-draft-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <span class="task-draft-progress-fill"></span>
+                      </div>
+                      <span class="task-draft-progress-label">0%</span>
+                    </div>
+                  </div>
+                  <p class="task-draft-collapsed-preview" data-draft-preview hidden></p>
+                  <div class="task-draft-body" hidden>
+                    <textarea class="task-draft-textarea" placeholder="Your prepared draft will appear here…"></textarea>
+                    <div class="task-draft-toolbar">
+                      <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(id)}">Copy draft</button>
+                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(id)}">Delete draft</button>
+                      <button type="button" class="task-draft-compress-btn" data-draft-compress="${escapeHtml(id)}">Compress draft</button>
+                    </div>
+                  </div>
+                  <button type="button" class="task-draft-expand-btn" data-draft-expand="${escapeHtml(id)}">Expand draft</button>
+                </div>
               </section>` : ""}
               <section class="task-mentor-section task-mentor-section--notes">
                 <h4 class="task-mentor-label">My Notes</h4>
@@ -25256,8 +25594,8 @@ Location: ${location}`;
               </div>
             </div>
             <div class="task-mission-actions">
-              ${nextTaskId ? `<button type="button" class="task-open-next-btn" data-open-next="${escapeHtml(nextTaskId)}">Open mission ${taskIndex + 2}</button>` : ""}
-              <button type="button" class="task-collapse-btn" data-task-collapse="${escapeHtml(id)}"${isDone ? "" : " hidden"}>Collapse mission</button>
+              ${nextTaskId ? `<button type="button" class="task-see-next-btn" data-open-next="${escapeHtml(nextTaskId)}">See mission ${taskIndex + 2}</button>` : ""}
+              <button type="button" class="task-condense-btn" data-task-collapse="${escapeHtml(id)}">Condense mission</button>
             </div>
           </div>
         </div>`;
@@ -27558,7 +27896,9 @@ Location: ${location}`;
       });
       [
         $("#map-page-nav-back"),
-        $("#roadmap-page-nav-back")
+        $("#roadmap-page-nav-back"),
+        $("#global-undo-btn"),
+        $("#sidebar-undo-btn")
       ].forEach((button) => button?.addEventListener("click", navigateScreenBack));
       [
         $("#map-page-nav-forward"),
