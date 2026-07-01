@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-sidebar-x-dismiss -->
+<!-- whatimado build: 2026-06-30-unified-maps -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-sidebar-x-dismiss">
+  <meta name="whatimado-build" content="2026-06-30-unified-maps">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10744,19 +10744,6 @@
           <svg viewBox="0 0 24 24"><path d="M3 6.5 9 4.5l6 2 6-2v13l-6 2-6-2-6 2V6.5z"></path><path d="M9 4.5v13M15 6.5v13"></path></svg>
           Map
         </button>
-        <div class="dashboard-nav-group" id="dashboard-roadmaps-group">
-          <button type="button" class="dashboard-nav-btn dashboard-nav-btn--expand" id="sidebar-roadmaps-btn" aria-expanded="false" aria-controls="dashboard-roadmaps-sub">
-            <span class="dashboard-nav-btn-main">
-              <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
-              Roadmaps
-            </span>
-            <svg class="dashboard-nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
-          </button>
-          <div class="dashboard-roadmaps-sub" id="dashboard-roadmaps-sub" hidden>
-            <div id="dashboard-roadmap-categories"></div>
-            <button type="button" class="dashboard-roadmap-add-btn" id="dashboard-add-category-btn">+ New category</button>
-          </div>
-        </div>
         <button type="button" class="dashboard-nav-btn" id="sidebar-discover-btn">
           <svg viewBox="0 0 24 24"><path d="M12 3l2.4 7.4H22l-6 4.6 2.3 7L12 17.8 5.7 22l2.3-7-6-4.6h7.6L12 3z"></path></svg>
           Discoveries
@@ -10841,11 +10828,12 @@
           </div>
         </div>
 
-        <section class="saved-maps-home dashboard-section" id="saved-maps-home" hidden aria-label="Continue where you left off">
+        <section class="saved-maps-home dashboard-section" id="saved-maps-home" hidden aria-label="Your saved maps">
           <div class="saved-maps-home-head dashboard-section-head">
-            <h2 class="saved-maps-home-title">Continue where you left off</h2>
+            <h2 class="saved-maps-home-title">Your maps</h2>
             <button type="button" class="dashboard-link-btn" data-screen-link="maps" id="saved-maps-view-all">View all</button>
           </div>
+          <p class="saved-maps-home-copy">Open a map to see your paths and continue any roadmaps you started.</p>
           <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
         </section>
 
@@ -10949,7 +10937,7 @@
           <div>
             <p class="maps-page-kicker">Your library</p>
             <h2 class="maps-page-title">My maps</h2>
-            <p class="maps-page-sub">Each map is one exploration — your conversation, generated paths, and roadmap progress. Maps auto-save here as you work. Sync progress in the sidebar to back them up to your account.</p>
+            <p class="maps-page-sub">Each map is one exploration — your conversation, paths, and roadmaps together. Open a map to pick a path or continue a roadmap. Delete here removes the whole map.</p>
           </div>
           <button type="button" class="action-btn" id="maps-new-btn">Start new map</button>
         </div>
@@ -17757,6 +17745,36 @@ What would make this more useful for someone in your situation?`;
       state.dismissedRoadmapSidebarMapIds = state.dismissedRoadmapSidebarMapIds.filter((id) => id !== mapId);
     }
 
+    function getMapRoadmapCount(map) {
+      if (!map) return 0;
+      const removed = new Set(Array.isArray(map.removedRoadmapKeys) ? map.removedRoadmapKeys : []);
+      let count = Object.entries(map.allRoadmaps || {}).filter(
+        ([key, entry]) => entry?.stages?.length && !removed.has(key)
+      ).length;
+      if (map.id === state.activeMapId) {
+        count = Math.max(
+          count,
+          Object.entries(state.allRoadmaps || {}).filter(
+            ([key, entry]) => entry?.stages?.length && !removed.has(key)
+          ).length
+        );
+      }
+      return count;
+    }
+
+    function formatMapMetaLine(map) {
+      const pathCount = map.ideas?.length || 0;
+      const roadmapCount = getMapRoadmapCount(map);
+      const parts = [
+        formatMapDate(map.updatedAt),
+        `${pathCount} path${pathCount === 1 ? "" : "s"}`
+      ];
+      if (roadmapCount > 0) {
+        parts.push(`${roadmapCount} roadmap${roadmapCount === 1 ? "" : "s"}`);
+      }
+      return parts.join(" · ");
+    }
+
     function markAllRoadmapsRemovedOnMap(mapId) {
       const map = state.savedMaps.find((entry) => entry.id === mapId);
       if (!map) return;
@@ -17921,29 +17939,6 @@ What would make this more useful for someone in your situation?`;
       if (!idea?.title) return;
       if (state.activeMapId) removeDismissedSidebarMapId(state.activeMapId);
       clearRemovedRoadmapKey(idea.title);
-      const category = getTargetCategoryForNewRoadmap();
-      if (!category) return;
-
-      const exists = category.items.some(
-        (item) => item.mapId === state.activeMapId && item.ideaTitle === idea.title
-      );
-      if (exists) {
-        state.activeRoadmapCategoryId = category.id;
-        state.sidebarRoadmapsExpanded = true;
-        renderSidebarRoadmaps();
-        return;
-      }
-
-      category.items.push({
-        id: createRoadmapItemId(),
-        mapId: state.activeMapId,
-        ideaTitle: idea.title,
-        ideaIndex,
-        addedAt: Date.now()
-      });
-      state.activeRoadmapCategoryId = category.id;
-      state.sidebarRoadmapsExpanded = true;
-      renderSidebarRoadmaps();
     }
 
     function getSelectedPathIndexes() {
@@ -17973,7 +17968,7 @@ What would make this more useful for someone in your situation?`;
       renderSidebarRoadmaps();
       if (options.manual) {
         await persistSession({ manual: true });
-        flashSaveToast("Path saved to My maps and Roadmaps");
+        flashSaveToast("Saved to My maps");
       } else {
         schedulePersist();
       }
@@ -18144,66 +18139,7 @@ What would make this more useful for someone in your situation?`;
     }
 
     function renderSidebarRoadmaps() {
-      const group = $("#dashboard-roadmaps-group");
-      const sub = $("#dashboard-roadmaps-sub");
-      const container = $("#dashboard-roadmap-categories");
-      const toggle = $("#sidebar-roadmaps-btn");
-      if (!sub || !container) return;
-
       pruneRoadmapSidebarAgainstData();
-      state.roadmapCategories = state.roadmapCategories.filter(
-        (category) => !category.mapId || !isDismissedSidebarMap(category.mapId)
-      );
-      syncRoadmapSidebarWithCurrentMap();
-      syncRoadmapCategoriesWithLibrary();
-
-      const hasCategories = state.roadmapCategories.length > 0;
-      if (hasCategories) state.sidebarRoadmapsExpanded = true;
-
-      if (group) group.classList.toggle("is-open", state.sidebarRoadmapsExpanded);
-      sub.hidden = !state.sidebarRoadmapsExpanded;
-      if (toggle) toggle.setAttribute("aria-expanded", state.sidebarRoadmapsExpanded ? "true" : "false");
-
-      if (!hasCategories) {
-        container.innerHTML = '<p class="dashboard-roadmaps-empty">Open a path\'s roadmap from your map and it appears here for quick access. The full exploration stays in <strong>My maps</strong>.</p>';
-        return;
-      }
-
-      container.innerHTML = state.roadmapCategories.map((category) => {
-        const isExpanded = category.id === state.activeRoadmapCategoryId;
-        const isCurrentSection = isCurrentRoadmapCategory(category);
-        const deleteLabel = category.mapId ? "Remove from Roadmaps" : "Remove group";
-        const shortTitle = abbreviateSidebarCategoryTitle(category.title);
-        const categoryClasses = [
-          "dashboard-roadmap-category",
-          isExpanded ? "is-expanded" : "",
-          isExpanded || isCurrentSection ? "is-active" : "",
-          isCurrentSection ? "is-current-section" : ""
-        ].filter(Boolean).join(" ");
-        return `
-        <div class="${categoryClasses}">
-          <div class="dashboard-roadmap-category-head">
-            <button type="button" class="dashboard-roadmap-category-title" data-open-map-category="${escapeHtml(category.id)}" title="${escapeHtml(category.title)}" aria-label="${escapeHtml(category.title)}">
-              <span>${escapeHtml(shortTitle)}</span>
-            </button>
-            <button type="button" class="dashboard-roadmap-category-toggle" data-roadmap-category="${escapeHtml(category.id)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="Show roadmaps for this map" title="Show roadmaps">
-              <svg class="dashboard-roadmap-category-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
-            </button>
-            <button type="button" class="dashboard-roadmap-category-delete" data-delete-roadmap-category="${escapeHtml(category.id)}" aria-label="${deleteLabel}" title="${deleteLabel}">×</button>
-          </div>
-          <ul class="dashboard-roadmap-items">
-            ${(category.items || []).map((item) => `
-              <li class="dashboard-roadmap-item-row">
-                <button type="button" class="dashboard-roadmap-item ${isActiveRoadmapSidebarItem(item) ? "is-active" : ""}" data-open-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}">
-                  ${escapeHtml(item.ideaTitle)}
-                </button>
-                <button type="button" class="dashboard-roadmap-item-delete" data-delete-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}" aria-label="Remove roadmap for ${escapeHtml(item.ideaTitle)}" title="Remove roadmap">Remove</button>
-              </li>
-            `).join("")}
-          </ul>
-        </div>
-      `;
-      }).join("");
     }
 
     function openMapFromSidebarCategory(categoryId) {
@@ -18435,7 +18371,7 @@ What would make this more useful for someone in your situation?`;
     function deleteSavedMap(mapId) {
       const entry = state.savedMaps.find((map) => map.id === mapId);
       if (!entry) return;
-      if (!confirm(`Delete this map?\n\n"${entry.title}"`)) return;
+      if (!confirm(`Delete this map?\n\n"${entry.title}"\n\nThis removes the map, all paths, and any roadmaps you started on it.`)) return;
 
       addDismissedSidebarMapId(mapId);
       if (state.activeMapId === mapId) {
@@ -18514,7 +18450,7 @@ What would make this more useful for someone in your situation?`;
         <button type="button" class="saved-map-chip ${map.id === state.activeMapId ? "is-active" : ""}" data-open-map="${escapeHtml(map.id)}">
           <span>
             <span class="saved-map-chip-title">${escapeHtml(map.title)}</span>
-            <span class="saved-map-chip-meta">${escapeHtml(formatMapDate(map.updatedAt))} · ${pathCount} paths</span>
+            <span class="saved-map-chip-meta">${escapeHtml(formatMapMetaLine(map))}</span>
             <span class="saved-map-chip-progress" aria-hidden="true"><span style="width:${progress}%"></span></span>
           </span>
         </button>`;
@@ -18536,7 +18472,7 @@ What would make this more useful for someone in your situation?`;
         <article class="map-library-card ${map.id === state.activeMapId ? "is-active" : ""}">
           <div>
             <h3 class="map-library-card-title">${escapeHtml(map.title)}</h3>
-            <p class="map-library-card-meta">${escapeHtml(formatMapDate(map.updatedAt))} · ${map.ideas?.length || 0} paths</p>
+            <p class="map-library-card-meta">${escapeHtml(formatMapMetaLine(map))}</p>
           </div>
           <div class="map-library-actions">
             <button type="button" class="back-btn" data-open-map="${escapeHtml(map.id)}">Open</button>
@@ -21090,9 +21026,7 @@ What would make this more useful for someone in your situation?`;
         buildOpportunityMap(state.ideas);
         updateMapsNav();
         syncActiveMapIntoLibrary();
-        ensureCategoryForCurrentMap();
         renderSavedMapsHome();
-        renderSidebarRoadmaps();
         trackEvent("map_generated", {
           ideas_count: state.ideas.length,
           founder_mode: founderMode,
@@ -25032,16 +24966,15 @@ What would make this more useful for someone in your situation?`;
     }
 
     function handleDashboardNotifyClick() {
-      const roadmapCount = Object.values(state.allRoadmaps || {}).filter((entry) => Array.isArray(entry?.stages) && entry.stages.length > 0).length;
-      const sidebarCount = (state.roadmapCategories || []).reduce((total, category) => total + (category.items || []).length, 0);
-      if (roadmapCount > 0 || sidebarCount > 0) {
-        const count = Math.max(roadmapCount, sidebarCount);
-        showDashboardToast(`You have ${count} roadmap${count === 1 ? "" : "s"} in progress. Open Roadmaps in the menu.`);
+      syncActiveMapIntoLibrary();
+      const roadmapCount = state.savedMaps.reduce((total, map) => total + getMapRoadmapCount(map), 0);
+      if (roadmapCount > 0) {
+        showDashboardToast(`You have ${roadmapCount} roadmap${roadmapCount === 1 ? "" : "s"} in progress. Open a map to continue.`);
         return;
       }
       if (state.savedMaps?.length) {
         const savedCount = state.savedMaps.length;
-        showDashboardToast(`You have ${savedCount} saved map${savedCount === 1 ? "" : "s"}.`);
+        showDashboardToast(`You have ${savedCount} saved map${savedCount === 1 ? "" : "s"}. Open My maps to pick one up.`);
         return;
       }
       showDashboardToast("You're all caught up — no new notifications.");
@@ -25055,45 +24988,6 @@ What would make this more useful for someone in your situation?`;
       $("#dashboard-profile-btn")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-top-avatar")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-notify-btn")?.addEventListener("click", handleDashboardNotifyClick);
-      $("#sidebar-roadmaps-btn")?.addEventListener("click", toggleSidebarRoadmapsPanel);
-      $("#dashboard-add-category-btn")?.addEventListener("click", createManualRoadmapCategory);
-      $("#dashboard-roadmap-categories")?.addEventListener("click", (event) => {
-        const deleteItemBtn = event.target.closest("[data-delete-roadmap-item]");
-        if (deleteItemBtn) {
-          event.preventDefault();
-          event.stopPropagation();
-          closeDashboardMobileNav();
-          removeRoadmapFromSidebar(deleteItemBtn.dataset.roadmapCategory, deleteItemBtn.dataset.deleteRoadmapItem);
-          return;
-        }
-        const deleteBtn = event.target.closest("[data-delete-roadmap-category]");
-        if (deleteBtn) {
-          event.preventDefault();
-          closeDashboardMobileNav();
-          deleteRoadmapCategoryFromSidebar(deleteBtn.dataset.deleteRoadmapCategory);
-          return;
-        }
-        const itemBtn = event.target.closest("[data-open-roadmap-item]");
-        if (itemBtn) {
-          closeDashboardMobileNav();
-          openRoadmapFromSidebar(itemBtn.dataset.roadmapCategory, itemBtn.dataset.openRoadmapItem);
-          return;
-        }
-        const openMapBtn = event.target.closest("[data-open-map-category]");
-        if (openMapBtn) {
-          closeDashboardMobileNav();
-          openMapFromSidebarCategory(openMapBtn.dataset.openMapCategory);
-          return;
-        }
-        const categoryBtn = event.target.closest("[data-roadmap-category]");
-        if (categoryBtn) {
-          const categoryId = categoryBtn.dataset.roadmapCategory;
-          state.activeRoadmapCategoryId = state.activeRoadmapCategoryId === categoryId ? null : categoryId;
-          state.sidebarRoadmapsExpanded = true;
-          renderSidebarRoadmaps();
-          schedulePersist();
-        }
-      });
       $("#sidebar-saved-btn")?.addEventListener("click", () => {
         closeDashboardMobileNav();
         showScreen("maps");
