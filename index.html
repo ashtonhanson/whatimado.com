@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-01-mission-draft -->
+<!-- whatimado build: 2026-07-01-task-specificity -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-01-mission-draft">
+  <meta name="whatimado-build" content="2026-07-01-task-specificity">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -12688,6 +12688,7 @@
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
       '- Task text must NEVER quote the path title verbatim. Point users at the prepared draft below instead of "Write a one-page mission for \\"{title}\\"".\n' +
+      '- NEVER use vague "this" — name the specific goal in plain words (e.g. "people who could help with your closed beta test" not "people who care about this").\n' +
       '- NEVER write paragraphs explaining what the task means. script = ONE immediately usable document only (email, proposal, resume, cover letter, spreadsheet, cold message, survey, business plan, marketing post, flyer, presentation, checklist, calendar, phone script, meeting agenda). If none applies, leave script empty.\n' +
       '- Contact 5 orgs → resources (names, emails, phones) + script (draft + follow-up email + phone script + spreadsheet tracker).\n' +
       '- Build a logo → script (logo brief + mood board keywords + color palette hex + typography + AI image prompts + SVG recommendations).\n' +
@@ -14174,7 +14175,7 @@
 
       const templateRewrites = [
         [/^Plan legal structure for\s+["'].+["']/i, "Plan your legal setup"],
-        [/^Recruit allies in\s+/i, "Recruit allies nearby"],
+        [/^Recruit allies in\s+.*/i, "Recruit allies near you"],
         [/^Run first small program for\s+["'].+["']/i, "Run a small test program"],
         [/^Grow toward\s+["'].+["']/i, "Take the next step on your goal"],
         [/^Map what transfers to\s+["'].+["']/i, "Map skills you already have"],
@@ -14250,6 +14251,93 @@
       copy = copy.replace(/\bgaps this project would fill\b/gi, "gaps you'd fill");
       copy = copy.replace(/\s{2,}/g, " ").replace(/\s+([,.;:])/g, "$1").trim();
       return copy;
+    }
+
+    function getShortPathLabel(idea = state.currentIdea) {
+      if (!idea) return "your project";
+      const title = String(idea.title || "").trim();
+      const tagline = String(idea.tagline || "").trim();
+
+      if (tagline) {
+        const simplified = simplifyEmbeddedPathTitle(tagline, idea);
+        if (simplified && simplified.length <= 52) return simplified;
+        const firstClause = tagline.split(/[—–-]/)[0].trim();
+        if (firstClause.length >= 8 && firstClause.length <= 52) {
+          return humanizeTaskText(firstClause);
+        }
+      }
+
+      if (title.length <= 42) return humanizeTaskText(title);
+
+      const simplifiedTitle = simplifyEmbeddedPathTitle(title, idea);
+      if (simplifiedTitle) return simplifiedTitle;
+
+      if (/\breentry counselor\b/i.test(title)) return "reentry counselors trying your site";
+      if (/\bclosed beta\b/i.test(title)) return "your closed beta test";
+      if (/\blibrary\b|\bworkforce\b/i.test(title)) return "library or workforce partners";
+      if (/\bnonprofit\b/i.test(`${title} ${idea.type || ""}`)) return "your nonprofit project";
+
+      const words = title.split(/\s+/).slice(0, 5).join(" ");
+      return humanizeTaskText(words.length >= 8 ? words : "your project");
+    }
+
+    function specifyVagueTaskReferences(text, idea = state.currentIdea) {
+      let copy = String(text || "").trim();
+      if (!copy) return copy;
+
+      const goal = getShortPathLabel(idea);
+
+      if (/^List \d+ people\b/i.test(copy)) {
+        copy = copy.replace(
+          /^List (\d+) people\b[^—]*/i,
+          `List $1 people who could join a board, advise, or refer clients for ${goal}`
+        );
+      }
+
+      copy = copy.replace(/\bwho care about this\b/gi, `who could back ${goal}`);
+      copy = copy.replace(/\bwho care about "this"\b/gi, `who could back ${goal}`);
+      copy = copy.replace(/\bcare about this\b/gi, `care about ${goal}`);
+      copy = copy.replace(/\bwould buy or share "this"\b/gi, `would buy or share ${goal}`);
+      copy = copy.replace(/\bwould buy or share this\b/gi, `would buy or share ${goal}`);
+      copy = copy.replace(/\bfor "this"\b/gi, `for ${goal}`);
+      copy = copy.replace(/\bfor this\b/gi, `for ${goal}`);
+      copy = copy.replace(/\babout "this"\b/gi, `about ${goal}`);
+      copy = copy.replace(/\babout this\b/gi, `about ${goal}`);
+      copy = copy.replace(/\brelated to this\b/gi, `related to ${goal}`);
+      copy = copy.replace(/\bmatters to this\b/gi, `matters to ${goal}`);
+      copy = copy.replace(/\bgaps this would fill\b/gi, `gaps ${goal} would fill`);
+      copy = copy.replace(/\bpeople who care about "this"\b/gi, `people who could help with ${goal}`);
+
+      return copy.replace(/\s{2,}/g, " ").trim();
+    }
+
+    function cleanMissionTitle(mission, normalized, idea = state.currentIdea) {
+      let copy = humanizeTaskText(String(mission || "").trim());
+      if (!copy) return copy;
+
+      copy = specifyVagueTaskReferences(stripRepeatedPathReferences(copy, { idea }), idea);
+      const title = String(idea?.title || "").trim();
+
+      if (title.length > 24 && copy.toLowerCase().includes(title.toLowerCase().slice(0, Math.min(title.length, 32)))) {
+        const fromTask = summarizeMissionTitle(buildMentorUserActionText(normalized) || normalized.text);
+        if (fromTask && !fromTask.toLowerCase().includes(title.toLowerCase().slice(0, 20))) {
+          return fromTask;
+        }
+        copy = copy.replace(new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), getShortPathLabel(idea));
+      }
+
+      if (/^Land your first real opportunity for\b/i.test(copy)) {
+        return summarizeMissionTitle(normalized.text) || "Land your first real opportunity";
+      }
+      if (/^Secure your first grant or funding source for\b/i.test(copy)) {
+        return "Secure your first grant or funding source";
+      }
+      if (/^Step \d+ toward your goal$/i.test(copy)) {
+        const fromTask = summarizeMissionTitle(normalized.text);
+        if (fromTask) return fromTask;
+      }
+
+      return copy.trim();
     }
 
     function formatPotentialMetricValue(raw) {
@@ -14427,8 +14515,10 @@
 
     function applyPlainLanguageToTask(normalized) {
       normalized.text = stripRepeatedPathReferences(normalized.text, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
+      normalized.text = specifyVagueTaskReferences(normalized.text, state.currentIdea);
       normalized.text = humanizeTaskText(normalized.text);
       normalized.why = stripRepeatedPathReferences(normalized.why, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
+      normalized.why = specifyVagueTaskReferences(normalized.why, state.currentIdea);
       normalized.why = humanizeTaskText(normalized.why);
       normalized.outcome = humanizeTaskText(normalized.outcome);
       normalized.alternatives = humanizeTaskText(normalized.alternatives);
@@ -14436,7 +14526,11 @@
       if (isMetaStageLabel(normalized.mission)) {
         normalized.mission = simplifyStageLabel(normalized.mission, state.currentIdea);
       }
+      if (normalized.mission) {
+        normalized.mission = cleanMissionTitle(normalized.mission, normalized, state.currentIdea);
+      }
       normalized.howTo = stripRepeatedPathReferences(normalized.howTo, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
+      normalized.howTo = specifyVagueTaskReferences(normalized.howTo, state.currentIdea);
       normalized.howTo = humanizeTaskText(normalized.howTo || "");
       normalized.mentorHelp = humanizeTaskText(normalized.mentorHelp || "");
       normalized.mentorFindings = humanizeTaskText(normalized.mentorFindings || "");
@@ -14617,6 +14711,7 @@
       if (raw && USABLE_DRAFT_TYPE_LABELS[raw]) return raw;
 
       if (/\b(one-page mission|mission statement|write (?:a |your )?mission)\b/.test(blob)) return "mission_statement";
+      if (/\blist \d+ people\b/.test(blob) && /\b(rank|board|advise|refer|ally|allies)\b/.test(blob)) return "spreadsheet";
       if (/\b(cold (?:email|message|dm|text|outreach)|unsolicited message|first-contact message)\b/.test(blob)) return "cold_message";
       if (/\b(calendar|weekly schedule|schedule (?:your|the) week|week plan)\b/.test(blob)) return "calendar";
       if (/\b(presentation|google slides|powerpoint|slide deck)\b/.test(blob)) return "presentation";
@@ -14657,6 +14752,7 @@
       const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""}`.toLowerCase();
 
       if (/\b(one-page mission|mission statement|write (?:a |your )?mission)\b/.test(blob)) return "mission_statement";
+      if (/\blist \d+ people\b/.test(blob) && /\b(rank|board|advise|refer|ally|allies)\b/.test(blob)) return "spreadsheet";
       if (/\b(phone script|call script|voicemail script|script to (?:read|say))\b/.test(blob)) return "phone_script";
       if (/\b(call|phone|dial|voicemail|211)\b/.test(blob) && /\b(script|say|read|word.for.word)\b/.test(blob)) return "phone_script";
       if (/\b(grant application|grant proposal|funding application|grant request|fill out.*grant)\b/.test(blob)) return "grant_application";
@@ -14916,7 +15012,35 @@ After the call — write down:
 • What they said: ___________
 • Next step: ___________`;
 
-        case "spreadsheet":
+        case "spreadsheet": {
+          const sheetBlob = `${normalized.text} ${normalized.mission || ""}`.toLowerCase();
+          if (/\blist \d+ people\b/.test(sheetBlob) && /\b(rank|board|advise|refer|ally|allies)\b/.test(sheetBlob)) {
+            const goal = getShortPathLabel(state.currentIdea);
+            return `ALLY RANKING SHEET — paste into Google Sheets or Excel
+
+Goal: ${goal}
+
+| Rank | Name | How you know them | Board? | Advise? | Refer clients? | Likely yes (1-5) | Contact info | Next step |
+|------|------|-------------------|--------|---------|----------------|------------------|--------------|-------------|
+| 1 | | | | | | | | |
+| 2 | | | | | | | | |
+| 3 | | | | | | | | |
+| 4 | | | | | | | | |
+| 5 | | | | | | | | |
+| 6 | | | | | | | | |
+| 7 | | | | | | | | |
+| 8 | | | | | | | | |
+| 9 | | | | | | | | |
+| 10 | | | | | | | | |
+
+CONTACT FIRST
+1. [Name] — why them: [one line]
+
+INVITE TALKING POINTS
+• Role you're asking for: [board member / advisor / referral partner]
+• Time commitment: [e.g. 1 hour/month]
+• Why now: [one sentence about ${goal}]`;
+          }
           return `TRACKING SHEET — paste into Google Sheets or Excel
 
 | Date | Action | Contact / place | Result | Follow-up date | Notes |
@@ -14930,6 +15054,7 @@ ${outcomeLine}
 
 NOTES
 ${whyLine}`;
+        }
 
         case "checklist":
           return `[ ] ${taskLine}
@@ -16326,7 +16451,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Call made and notes captured in the tracker below.";
       }
       if (/\b(list|name \d|find \d|contact \d)\b/.test(text)) {
-        return "Tracker filled with at least 3 contacts and next follow-up dates.";
+        return "Ranking sheet filled with at least 10 names and notes on who to contact first.";
       }
       if (/\b(logo|brand)\b/.test(text)) {
         return "Logo brief saved and at least one AI prompt tested.";
@@ -16348,18 +16473,34 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function inferMissionTitle(normalized, context = {}) {
       const existing = String(normalized.mission || "").trim();
-      if (existing && !isGenericOutcomeText(existing)) return humanizeTaskText(existing);
+      if (existing && !isGenericOutcomeText(existing)) {
+        return cleanMissionTitle(existing, normalized, state.currentIdea);
+      }
       const taskIndex = Number.isInteger(context.taskIndex) ? context.taskIndex : 0;
       const blob = `${normalized.text} ${normalized.why || ""}`.toLowerCase();
-      const path = state.currentIdea?.title || "your goal";
+      const shortGoal = getShortPathLabel(state.currentIdea);
+
+      if (/\b(interview \d|talk to \d|speak with \d|survey \d|ask \d)\b/.test(blob)) {
+        const fromText = summarizeMissionTitle(normalized.text);
+        return taskIndex > 0
+          ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
+          : (fromText || "Talk to people who've lived this problem");
+      }
+      if (/\blist \d+ people\b/.test(blob)) {
+        return taskIndex > 0
+          ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
+          : "Build your ally list";
+      }
       if (/\b(organi[sz]|nonprofit|partner|pilot|test your idea|workshop)\b/.test(blob)) {
         return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Get one local org to say yes to trying your idea";
       }
       if (/\b(grant|funding|scholarship)\b/.test(blob)) {
-        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : `Secure your first grant or funding source for ${path}`;
+        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Secure your first grant or funding source";
       }
-      if (/\b(employ|job|hire|interview|resume|workforce|staffing|temp agency)\b/.test(blob)) {
-        return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : `Land your first real opportunity for ${path}`;
+      if (/\b(employ|job|hire|resume|workforce|staffing|temp agency|interview for a job)\b/.test(blob)) {
+        return taskIndex > 0
+          ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
+          : `Land your first foothold toward ${shortGoal}`;
       }
       if (/\b(email|outreach|call|contact|director)\b/.test(blob)) {
         return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Get a yes from the right person — starting with your best contact";
@@ -16541,6 +16682,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Review the one-page mission below — edit who you help, what changes for them, and how you'll measure success.";
       }
 
+      if (/\blist \d+ people\b/.test(blob)) {
+        return "Fill in the ally ranking sheet below — start with people who already know your work.";
+      }
+
       if (!isHomeworkTaskText(text)) return text;
 
       if (isJobSearchHomeworkText(text)) {
@@ -16619,7 +16764,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           retryKey = normalizeTextForCompare(mission);
         }
         seen.add(normalizeTextForCompare(mission));
-        normalized.mission = mission;
+        normalized.mission = cleanMissionTitle(mission, normalized, state.currentIdea);
         if (isGenericOutcomeText(normalized.outcome)) {
           normalized.outcome = inferTaskOutcome(normalized);
         }
@@ -19196,11 +19341,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             ]
           },
           {
-            label: "Recruit allies in {locRaw}",
+            label: "Recruit allies near you",
             desc: "You need board members, advisors, or partners before launch.",
             tasks: [
-              "List 10 people who care about \"{title}\" — rank by who would join a board, advise, or refer clients",
-              "Send 3 personalized invites: role, time commitment, and why \"{title}\" matters now",
+              "List 10 people who could join a board, advise, or refer clients — rank them in the sheet below",
+              "Send 3 personalized invites explaining the role, time commitment, and why it matters now",
               "Attend one community meeting or funder info session in {locRaw} related to your cause"
             ]
           },
