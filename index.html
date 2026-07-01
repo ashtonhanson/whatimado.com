@@ -21742,9 +21742,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function normalizeSessionPayload(data) {
       if (!data) return null;
       const normalized = { ...data };
-      if (!Array.isArray(normalized.savedMaps)) {
-        if (normalized.history?.length || normalized.ideas?.length) {
-          const id = normalized.activeMapId || createMapId();
+      const deleted = new Set(Array.isArray(normalized.deletedMapIds) ? normalized.deletedMapIds : []);
+      if (Array.isArray(normalized.savedMaps)) {
+        normalized.savedMaps = normalized.savedMaps.filter((map) => map?.id && !deleted.has(map.id));
+        if (normalized.activeMapId && deleted.has(normalized.activeMapId)) {
+          normalized.activeMapId = normalized.savedMaps[0]?.id ?? null;
+        }
+      } else if (normalized.history?.length || normalized.ideas?.length) {
+        const id = normalized.activeMapId || createMapId();
+        if (!deleted.has(id)) {
           normalized.savedMaps = [{
             id,
             title: deriveMapTitle(normalized.history),
@@ -21754,14 +21760,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           normalized.activeMapId = id;
         } else {
           normalized.savedMaps = [];
-          normalized.activeMapId = normalized.activeMapId ?? null;
+          normalized.activeMapId = null;
         }
+      } else {
+        normalized.savedMaps = [];
+        normalized.activeMapId = normalized.activeMapId ?? null;
       }
       return normalized;
     }
 
     function payloadHasProgress(data) {
       if (!data || typeof data !== "object") return false;
+      if (Array.isArray(data.deletedMapIds) && data.deletedMapIds.length > 0) return true;
       if (Array.isArray(data.savedMaps) && data.savedMaps.length > 0) return true;
       return Boolean(data.history?.length || data.ideas?.length);
     }
@@ -21879,21 +21889,235 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    /*
+     * CLOUD SESSION PERSIST PIPELINE — every cloud write MUST follow this chain:
+     *
+     *   buildMergedPersistPayload()
+     *         ↓
+     *   mergeSessionPayloads()   (when local + cloud both exist)
+     *         ↓
+     *   scrubPayloadTombstones()
+     *         ↓
+     *   writeCloudSession()
+     *
+     * Do NOT pass serializeSession() output to writeCloudSession().
+     * serializeSession() captures in-memory state only; tombstones and multi-device
+     * merges happen in buildMergedPersistPayload().
+     */
+    const SCRUBBED_PERSIST_PAYLOAD_SYMBOL = Symbol("whatimado.scrubbedPersistPayload");
+    const CLOUD_PERSIST_PAYLOAD_SYMBOL = Symbol("whatimado.cloudPersistPayload");
+
+    function isPersistDevMode() {
+      try {
+        const host = window.location?.hostname || "";
+        if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")) return true;
+        if (/\bpersistDev=1\b/.test(window.location?.search || "")) return true;
+        if (localStorage.getItem("whatimado_persist_dev") === "1") return true;
+      } catch {
+        /* ignore */
+      }
+      return false;
+    }
+
+    function reportPersistPipelineViolation(context, issues) {
+      const detail = Array.isArray(issues) ? issues.join("; ") : String(issues);
+      const message = `[WhatimaDo persist] ${context}: ${detail}. Cloud writes MUST use buildMergedPersistPayload() → mergeSessionPayloads() → scrubPayloadTombstones() → writeCloudSession().`;
+      if (isPersistDevMode()) {
+        throw new Error(message);
+      }
+      console.warn(message);
+    }
+
+    function markScrubbedPersistPayload(payload) {
+      if (!payload || typeof payload !== "object") return payload;
+      Object.defineProperty(payload, SCRUBBED_PERSIST_PAYLOAD_SYMBOL, {
+        value: true,
+        enumerable: false,
+        configurable: false,
+        writable: false
+      });
+      return payload;
+    }
+
+    function isScrubbedPersistPayload(payload) {
+      return Boolean(payload && payload[SCRUBBED_PERSIST_PAYLOAD_SYMBOL] === true);
+    }
+
+    function sealCloudPersistPayload(payload) {
+      if (!payload || typeof payload !== "object") return payload;
+      Object.defineProperty(payload, CLOUD_PERSIST_PAYLOAD_SYMBOL, {
+        value: true,
+        enumerable: false,
+        configurable: false,
+        writable: false
+      });
+      return payload;
+    }
+
+    function isSealedCloudPersistPayload(payload) {
+      return Boolean(payload && payload[CLOUD_PERSIST_PAYLOAD_SYMBOL] === true);
+    }
+
+    function persistedPayloadTombstoneFingerprint(payload) {
+      const deletedMapIds = [...new Set(Array.isArray(payload?.deletedMapIds) ? payload.deletedMapIds : [])].sort();
+      const savedMapIds = (payload?.savedMaps || []).map((map) => map?.id).filter(Boolean).sort();
+      return JSON.stringify({
+        deletedMapIds,
+        savedMapIds,
+        activeMapId: payload?.activeMapId ?? null
+      });
+    }
+
+    function assertScrubbedPersistPayload(payload, options = {}) {
+      const context = options.context || "assertScrubbedPersistPayload";
+      const issues = [];
+      if (!payload || typeof payload !== "object") {
+        issues.push("payload missing or not an object");
+      } else {
+        if (!isScrubbedPersistPayload(payload)) {
+          issues.push("payload was not produced by scrubPayloadTombstones()");
+        }
+        const deletedMapIds = [...new Set(Array.isArray(payload.deletedMapIds) ? payload.deletedMapIds : [])];
+        const deleted = new Set(deletedMapIds);
+        for (const map of payload.savedMaps || []) {
+          if (map?.id && deleted.has(map.id)) {
+            issues.push(`tombstoned map "${map.id}" is still in savedMaps`);
+          }
+        }
+        if (payload.activeMapId && deleted.has(payload.activeMapId)) {
+          issues.push(`activeMapId "${payload.activeMapId}" is tombstoned`);
+        }
+        if (payload.activeMapId && !(payload.savedMaps || []).some((map) => map?.id === payload.activeMapId)) {
+          issues.push(`activeMapId "${payload.activeMapId}" is not in savedMaps`);
+        }
+        const rescrubbed = scrubPayloadTombstones(payload);
+        if (persistedPayloadTombstoneFingerprint(payload) !== persistedPayloadTombstoneFingerprint(rescrubbed)) {
+          issues.push("payload is not idempotent under scrubPayloadTombstones() (incomplete tombstone scrub)");
+        }
+      }
+      if (issues.length) {
+        reportPersistPipelineViolation(context, issues);
+        return false;
+      }
+      return true;
+    }
+
+    function scrubPayloadTombstones(payload) {
+      if (!payload) return payload;
+      const normalized = normalizeSessionPayload(payload);
+      const deletedMapIds = [...new Set(Array.isArray(normalized.deletedMapIds) ? normalized.deletedMapIds : [])];
+      const deleted = new Set(deletedMapIds);
+      const savedMaps = (normalized.savedMaps || []).filter((map) => map?.id && !deleted.has(map.id));
+      let activeMapId = normalized.activeMapId ?? null;
+      if (!activeMapId || deleted.has(activeMapId) || !savedMaps.some((map) => map.id === activeMapId)) {
+        activeMapId = savedMaps[0]?.id ?? null;
+      }
+      const scrubbed = {
+        ...normalized,
+        savedMaps,
+        activeMapId,
+        deletedMapIds,
+        roadmapCategories: filterRoadmapCategoriesAgainstLibrary(
+          normalized.roadmapCategories || [],
+          savedMaps,
+          deletedMapIds
+        )
+      };
+      const activeEntry = activeMapId ? savedMaps.find((map) => map.id === activeMapId) : null;
+      if (activeEntry) {
+        return markScrubbedPersistPayload(applyActiveMapToSessionPayload(scrubbed, activeEntry));
+      }
+      scrubbed.ideas = [];
+      scrubbed.history = [];
+      scrubbed.roadmapStages = [];
+      scrubbed.currentIdea = null;
+      scrubbed.roadmapKey = null;
+      scrubbed.allRoadmaps = {};
+      scrubbed.allTaskChats = {};
+      scrubbed.activeTaskId = null;
+      scrubbed.expandedThreadId = null;
+      return markScrubbedPersistPayload(scrubbed);
+    }
+
+    function reconcileStateAfterRemoteTombstones(mergedPayload, localPayload) {
+      if (!mergedPayload) return false;
+      const mergedDeleted = new Set(mergedPayload.deletedMapIds || []);
+      const localDeleted = new Set(localPayload?.deletedMapIds || []);
+      const mergedMapIds = new Set((mergedPayload.savedMaps || []).map((map) => map.id));
+      const remoteTombstoneAdded = [...mergedDeleted].some((id) => !localDeleted.has(id));
+      const localMapResurrectBlocked = state.savedMaps.some(
+        (map) => map?.id && !mergedMapIds.has(map.id) && mergedDeleted.has(map.id)
+      );
+      if (!remoteTombstoneAdded && !localMapResurrectBlocked) return false;
+
+      state.deletedMapIds = [...mergedDeleted];
+      state.savedMaps = (mergedPayload.savedMaps || []).map((map) => scrubMapRemovedRoadmaps({ ...map }));
+      state.activeMapId = mergedPayload.activeMapId ?? state.savedMaps[0]?.id ?? null;
+      if (state.activeMapId && mergedDeleted.has(state.activeMapId)) {
+        state.activeMapId = state.savedMaps[0]?.id ?? null;
+      }
+
+      const activeEntry = state.activeMapId
+        ? state.savedMaps.find((map) => map.id === state.activeMapId)
+        : null;
+      if (activeEntry) {
+        applyMapSnapshot(activeEntry);
+      } else if (state.ideas.length || state.history.length) {
+        const preservedLocation = state.userLocation;
+        const preservedProfile = state.userProfile;
+        clearIntakeSession({ preserveLibrary: true });
+        if (preservedLocation) state.userLocation = normalizeUserLocation(preservedLocation);
+        if (preservedProfile) state.userProfile = normalizeUserProfile(preservedProfile);
+      }
+
+      state.roadmapCategories = filterRoadmapCategoriesAgainstLibrary(
+        mergedPayload.roadmapCategories || state.roadmapCategories,
+        state.savedMaps,
+        state.deletedMapIds
+      );
+      if (state.activeRoadmapCategoryId && !state.roadmapCategories.some((c) => c.id === state.activeRoadmapCategoryId)) {
+        state.activeRoadmapCategoryId = null;
+      }
+      applyRemovedRoadmapGuards();
+      refreshRoadmapsUi({ rebuildMap: Boolean(state.ideas.length) });
+      return true;
+    }
+
+    async function buildMergedPersistPayload() {
+      const localPayload = serializeSession();
+      let payload;
+      let journeyId = null;
+      if (!state.currentUser || !supabaseClient) {
+        payload = scrubPayloadTombstones(localPayload);
+      } else {
+        const cloudFetch = await fetchCloudSessionPayload();
+        journeyId = cloudFetch.journeyId;
+        payload = cloudFetch.payload
+          ? mergeSessionPayloads(localPayload, cloudFetch.payload)
+          : scrubPayloadTombstones(localPayload);
+      }
+      payload.savedAt = Date.now();
+      assertScrubbedPersistPayload(payload, { context: "buildMergedPersistPayload" });
+      return { payload: sealCloudPersistPayload(payload), localPayload, journeyId };
+    }
+
     function mergeSessionPayloads(local, cloud) {
       const localPayload = normalizeSessionPayload(local);
       const cloudPayload = normalizeSessionPayload(cloud);
       if (!localPayload && !cloudPayload) return null;
-      if (!localPayload) return cloudPayload;
-      if (!cloudPayload) return localPayload;
+      if (!localPayload) return scrubPayloadTombstones(cloudPayload);
+      if (!cloudPayload) return scrubPayloadTombstones(localPayload);
 
       const deletedMapIds = [...new Set([
         ...(localPayload.deletedMapIds || []),
         ...(cloudPayload.deletedMapIds || [])
       ])];
+      const deletedSet = new Set(deletedMapIds);
 
       const mapById = new Map();
       for (const payload of [localPayload, cloudPayload]) {
         for (const map of payload.savedMaps || []) {
+          if (!map?.id || deletedSet.has(map.id)) continue;
           const previous = mapById.get(map.id);
           if (!previous) {
             mapById.set(map.id, scrubMapRemovedRoadmaps({ ...map }));
@@ -21953,11 +22177,32 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         deletedMapIds
       );
 
-      return applyActiveMapToSessionPayload(merged, activeMapId ? mapById.get(activeMapId) : null);
+      const activeEntry = activeMapId ? mapById.get(activeMapId) : null;
+      if (activeEntry) {
+        return scrubPayloadTombstones(applyActiveMapToSessionPayload(merged, activeEntry));
+      }
+
+      merged.ideas = [];
+      merged.history = [];
+      merged.roadmapStages = [];
+      merged.currentIdea = null;
+      merged.roadmapKey = null;
+      merged.allRoadmaps = {};
+      merged.allTaskChats = {};
+      merged.activeTaskId = null;
+      merged.expandedThreadId = null;
+      return scrubPayloadTombstones(merged);
     }
 
     function prepareLibraryForPersist() {
       applyRemovedRoadmapGuards();
+      state.savedMaps = filterDeletedMaps(state.savedMaps);
+      if (state.activeMapId && getDeletedMapIds().has(state.activeMapId)) {
+        state.activeMapId = state.savedMaps[0]?.id ?? null;
+        if (!state.activeMapId && (state.ideas.length || state.history.length)) {
+          clearIntakeSession({ preserveLibrary: true });
+        }
+      }
       syncActiveMapIntoLibrary();
       const seen = new Set();
       state.savedMaps = filterDeletedMaps(state.savedMaps).filter((map) => {
@@ -22001,6 +22246,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return `${mapCount} map${mapCount === 1 ? "" : "s"} on this device — tap Sync.`;
     }
 
+    /** In-memory snapshot only — never pass this to writeCloudSession(). Use buildMergedPersistPayload(). */
     function serializeSession() {
       prepareLibraryForPersist();
       return {
@@ -22533,7 +22779,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function migrateRoadmapCategoriesFromLibrary() {
       pruneRoadmapSidebarAgainstData();
       if (state.roadmapCategories.length) return;
-      state.savedMaps.forEach((map) => {
+      filterDeletedMaps(state.savedMaps).forEach((map) => {
         if (isDismissedSidebarMap(map.id)) return;
         const removed = new Set(Array.isArray(map.removedRoadmapKeys) ? map.removedRoadmapKeys : []);
         const roadmaps = map.allRoadmaps && typeof map.allRoadmaps === "object" ? map.allRoadmaps : {};
@@ -22881,7 +23127,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function ensureAllMapsInSidebar() {
       syncActiveMapIntoLibrary();
-      state.savedMaps.forEach((map) => {
+      filterDeletedMaps(state.savedMaps).forEach((map) => {
         if (isDismissedSidebarMap(map.id)) return;
         let category = state.roadmapCategories.find((entry) => entry.mapId === map.id);
         if (!category) {
@@ -23103,11 +23349,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function syncActiveMapIntoLibrary() {
       if (!state.ideas.length && !state.history.length) return;
 
+      if (state.activeMapId && getDeletedMapIds().has(state.activeMapId)) {
+        state.activeMapId = state.savedMaps.find((map) => map?.id && !getDeletedMapIds().has(map.id))?.id ?? null;
+        if (!state.activeMapId) return;
+      }
+
       if (state.activeMapId && isDismissedSidebarMap(state.activeMapId) && !state.savedMaps.some((map) => map.id === state.activeMapId)) {
         state.activeMapId = createMapId();
       }
 
       const id = state.activeMapId || createMapId();
+      if (getDeletedMapIds().has(id)) return;
       state.activeMapId = id;
 
       const existingIndex = state.savedMaps.findIndex((map) => map.id === id);
@@ -23168,8 +23420,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function applySession(data) {
       if (!data) return;
-      applyMapSnapshot(data);
+
       state.deletedMapIds = Array.isArray(data.deletedMapIds) ? data.deletedMapIds : [];
+      state.dismissedRoadmapSidebarMapIds = Array.isArray(data.dismissedRoadmapSidebarMapIds)
+        ? data.dismissedRoadmapSidebarMapIds
+        : [];
+
       if (Array.isArray(data.savedMaps)) {
         state.savedMaps = filterDeletedMaps(
           data.savedMaps.map((map) => scrubMapRemovedRoadmaps({ ...map }))
@@ -23181,9 +23437,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } else {
         migrateLegacySessionPayload(data);
       }
-      state.dismissedRoadmapSidebarMapIds = Array.isArray(data.dismissedRoadmapSidebarMapIds)
-        ? data.dismissedRoadmapSidebarMapIds
-        : [];
+
       state.roadmapCategories = filterRoadmapCategoriesAgainstLibrary(
         Array.isArray(data.roadmapCategories)
           ? data.roadmapCategories.filter((category) => !category?.mapId || !isDismissedSidebarMap(category.mapId))
@@ -23193,11 +23447,30 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
       state.activeRoadmapCategoryId = data.activeRoadmapCategoryId ?? null;
       state.selectedPathIndexes = Array.isArray(data.selectedPathIndexes) ? data.selectedPathIndexes : [];
+
+      const staleTopLevelActive = data.activeMapId && getDeletedMapIds().has(data.activeMapId);
+      if (staleTopLevelActive) {
+        const preservedLocation = data.userLocation;
+        const preservedProfile = data.userProfile;
+        clearIntakeSession({ preserveLibrary: true });
+        if (preservedLocation) state.userLocation = normalizeUserLocation(preservedLocation);
+        if (preservedProfile) state.userProfile = normalizeUserProfile(preservedProfile);
+      } else {
+        applyMapSnapshot(data);
+      }
+
       migrateRoadmapCategoriesFromLibrary();
       applyRemovedRoadmapGuards();
       pruneRoadmapSidebarAgainstData();
       restoreActiveSavedMapSnapshot();
       applyRemovedRoadmapGuards();
+
+      if (state.activeMapId && getDeletedMapIds().has(state.activeMapId)) {
+        state.activeMapId = state.savedMaps[0]?.id ?? null;
+        if (!restoreActiveSavedMapSnapshot()) {
+          clearIntakeSession({ preserveLibrary: true });
+        }
+      }
     }
 
     function beginNewIntake() {
@@ -23260,7 +23533,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         trackEvent("saved_map_deleted", { saved_maps_count: state.savedMaps.length });
         refreshRoadmapsUi();
         schedulePersist();
-        void flushPersist();
+        void flushPersist({ force: true });
       };
 
       if (options.skipConfirm) {
@@ -23391,7 +23664,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function hasSavableProgress() {
-      return state.history.length > 0 || state.ideas.length > 0 || state.savedMaps.length > 0;
+      return state.history.length > 0
+        || state.ideas.length > 0
+        || state.savedMaps.length > 0
+        || (Array.isArray(state.deletedMapIds) && state.deletedMapIds.length > 0);
     }
 
     async function fetchCloudSessionPayload() {
@@ -23490,16 +23766,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    /** Debounced save — routes through persistSession() / buildMergedPersistPayload(). */
     function schedulePersist() {
       clearTimeout(persistTimer);
       persistTimer = setTimeout(() => persistSession({ silent: true }), 450);
     }
 
+    /** Immediate save — routes through persistSession() / buildMergedPersistPayload(). */
     async function flushPersist(options = {}) {
       clearTimeout(persistTimer);
       persistTimer = null;
-      if (!hasSavableProgress()) return { ok: false };
-      return persistSession({ silent: !options.manual, manual: Boolean(options.manual) });
+      if (!options.force && !hasSavableProgress()) return { ok: false };
+      return persistSession({ silent: !options.manual, manual: Boolean(options.manual), force: Boolean(options.force) });
     }
 
     function flashSaveToast(message) {
@@ -23521,7 +23799,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return user;
     }
 
+    /** Cloud upsert — payload MUST come from buildMergedPersistPayload() (sealed + scrubbed). */
     async function writeCloudSession(payload) {
+      if (!isSealedCloudPersistPayload(payload)) {
+        reportPersistPipelineViolation(
+          "writeCloudSession",
+          "rejected unsealed payload — call buildMergedPersistPayload() instead of serializeSession()"
+        );
+        return {
+          ok: false,
+          error: new Error("Cloud persist pipeline bypass: payload must come from buildMergedPersistPayload().")
+        };
+      }
+      if (!assertScrubbedPersistPayload(payload, { context: "writeCloudSession" })) {
+        return {
+          ok: false,
+          error: new Error("Cloud persist pipeline rejected payload: tombstone scrub checks failed.")
+        };
+      }
+
       const user = await getCloudAuthUser();
       if (!user) {
         return { ok: false, error: new Error("Not authenticated for cloud sync.") };
@@ -23570,12 +23866,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return { ok: true, error: null };
     }
 
+    /** Local + cloud save entry point — always merges before write (see CLOUD SESSION PERSIST PIPELINE). */
     async function persistSession(options = {}) {
-      const { manual = false, silent = false } = options;
-      if (!hasSavableProgress()) return { ok: false };
+      const { manual = false, silent = false, force = false } = options;
+      if (!force && !hasSavableProgress()) return { ok: false };
 
       setSaveStatus("saving");
-      const payload = serializeSession();
+      const { payload, localPayload, journeyId } = await buildMergedPersistPayload();
+      if (journeyId) state.journeyId = journeyId;
+      reconcileStateAfterRemoteTombstones(payload, localPayload);
+
       let localOk = false;
 
       try {
@@ -23673,8 +23973,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         mergedFromBothSources = Boolean(localPayload && cloudPayload);
         loadedFromCloudOnly = Boolean(cloudPayload && !payloadHasProgress(localPayload));
       } else if (cloudPayload) {
-        payload = cloudPayload;
+        payload = scrubPayloadTombstones(cloudPayload);
         loadedFromCloudOnly = true;
+      } else if (localPayload) {
+        payload = scrubPayloadTombstones(localPayload);
       }
 
       if (payload) {
@@ -23682,7 +23984,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         applyRemovedRoadmapGuards();
         restoreSessionUI();
         try {
-          const stored = serializeSession();
+          const stored = scrubPayloadTombstones(serializeSession());
           stored.savedAt = payload.savedAt ?? stored.savedAt;
           localStorage.setItem(getStorageKey(), JSON.stringify(stored));
         } catch {
@@ -29688,7 +29990,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const userKey = `whatimado_journey_${state.currentUser.id}`;
         const userRaw = localStorage.getItem(userKey);
         const userData = userRaw ? JSON.parse(userRaw) : null;
-        const merged = mergeSessionPayloads(userData, guestData) || guestData;
+        const merged = scrubPayloadTombstones(mergeSessionPayloads(userData, guestData) || guestData);
         localStorage.setItem(userKey, JSON.stringify(merged));
         localStorage.removeItem(STORAGE_GUEST);
       } catch {
