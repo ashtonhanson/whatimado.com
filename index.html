@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-06-30-plain-language -->
+<!-- whatimado build: 2026-06-30-home-hero -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-06-30-plain-language">
+  <meta name="whatimado-build" content="2026-06-30-home-hero">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, step-by-step roadmaps, and task-by-task help — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -939,12 +939,25 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-hero h1 {
-      margin: 0;
+      margin: 0 0 1rem;
       font-size: clamp(2rem, 4.5vw, 3rem);
-      line-height: 1.08;
+      line-height: 1.12;
       letter-spacing: -.03em;
       font-weight: 700;
       color: var(--ink);
+      text-wrap: balance;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-hero-sub {
+      max-width: 36rem;
+      margin: 0 auto 1.5rem;
+      color: var(--ink-muted);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+
+    .hero-no-break {
+      white-space: nowrap;
     }
 
     html[data-color-scheme="adult"] .dashboard-lead {
@@ -4440,15 +4453,16 @@
 
     .hero h1 span,
     .hero h2 span {
-      display: block;
-      color: #c8e6ff;
-      font-weight: 500;
+      display: inline;
+      color: inherit;
+      font-weight: inherit;
     }
 
     .hero h1 em,
     .hero h2 em {
-      color: #90d4ff;
+      color: inherit;
       font-style: normal;
+      font-weight: inherit;
     }
 
     .hero-sub {
@@ -8817,8 +8831,8 @@
       gap: 1.15rem;
       justify-items: center;
       text-align: center;
-      width: min(100%, 22rem);
-      padding: 0 .5rem;
+      width: min(100%, 36rem);
+      padding: 0 .75rem;
       box-sizing: border-box;
     }
 
@@ -8835,10 +8849,10 @@
     }
 
     .loader-quote {
-      max-width: 100%;
+      max-width: 34rem;
       margin: 0;
       color: var(--ink-muted);
-      font-size: .84rem;
+      font-size: .9rem;
       font-style: italic;
       line-height: 1.55;
       text-wrap: pretty;
@@ -8846,7 +8860,7 @@
     }
 
     .loader-tagline {
-      max-width: 100%;
+      max-width: 34rem;
       margin: 0;
       color: var(--ink);
       font-size: .88rem;
@@ -8863,7 +8877,7 @@
 
       .loader-inner,
       .roadmap-loading .loader-inner {
-        width: min(calc(100% - 1rem), 19rem);
+        width: min(calc(100% - 1rem), 30rem);
         gap: 1rem;
       }
 
@@ -10395,7 +10409,7 @@
     <div class="loader-inner">
       <img class="loader-logo" src="/logo.png" alt="whatimado.com" width="251" height="150">
       <p class="loader-quote">"The two most important days in your life are the day you are born and the day you find out why."</p>
-      <small class="loader-tagline">Let us help figure out what ya gonna do.</small>
+      <small class="loader-tagline">Let us help you figure out what you're gonna do.</small>
     </div>
   </div>
 
@@ -10802,10 +10816,8 @@
       <div class="main-workspace">
       <div class="dashboard-home">
         <div class="dashboard-hero">
-          <div class="dashboard-intro">
-            <p class="dashboard-lead">WhatImADo sits between brainstorming and action. Most people don't need another idea, they need to know the next step that moves them closer to their goal. We turn your story into personalized paths, then actionable roadmaps with checklists, notes, with relevant AI guidance on every task. Built for anyone rebuilding, starting over, low on budget, or tired of generic advice.</p>
-            <p class="dashboard-lead">Describe your situation, get realistic paths you can compare, choose one, and follow small steps you can actually do this week, not another chat thread you'll lose.</p>
-          </div>
+          <h1>Let us help you figure out what you're <span class="hero-no-break">gonna do.</span></h1>
+          <p class="dashboard-hero-sub">Tell me about yourself—your skills, interests, experience, challenges, and what you want next. The more you share, the better your Possibility Map will be.</p>
 
           <div class="prompt-box dashboard-search">
             <textarea class="prompt-textarea" id="main-input" rows="2" placeholder=""></textarea>
@@ -10861,8 +10873,8 @@
 
       <div class="home-legacy-extra">
       <div class="hero">
-        <h2><span>Let us help figure out,</span><em>what ya gonna do...</em></h2>
-        <p class="hero-sub">Share your situation below — skills, constraints, and what you want next. The more honest detail you give, the better your paths. Free for everyone.</p>
+        <h2>Let us help you figure out what you're <span class="hero-no-break">gonna do.</span></h2>
+        <p class="hero-sub">Tell me about yourself—your skills, interests, experience, challenges, and what you want next. The more you share, the better your Possibility Map will be.</p>
 
         <div class="prompt-box legacy-prompt-box">
           <textarea class="prompt-textarea legacy-main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
@@ -11486,10 +11498,44 @@
     const GENERIC_FALLBACK_SIGNATURE = "Write the simplest version of your offer";
     const BANNED_GENERIC_STAGE_LABELS = new Set([
       "launch the first test",
+      "launch first test",
       "turn feedback into proof",
       "build a repeatable rhythm",
-      "decide the next 30 days"
+      "decide the next 30 days",
+      "gather feedback",
+      "gather and learn",
+      "test with real people",
+      "try with real people",
+      "first real test",
+      "iterate and improve",
+      "get feedback",
+      "collect feedback",
+      "repeat",
+      "validate demand",
+      "validate your offer",
+      "build momentum",
+      "grow and scale"
     ]);
+    const GENERIC_STAGE_LABEL_PATTERNS = [
+      /\blaunch (?:the )?first (?:test|try|version|pilot)\b/i,
+      /\bgather(?:ing)? feedback\b/i,
+      /\bturn feedback into\b/i,
+      /\bbuild a repeatable\b/i,
+      /\bdecide the next 30\b/i,
+      /\b(?:test|try) with (?:real )?people\b/i,
+      /\bfirst (?:real )?(?:test|try|customers?)\b/i,
+      /\bvalidate (?:demand|idea|offer|market)\b/i,
+      /\bfeedback loop\b/i,
+      /\biterate and improve\b/i,
+      /\bget (?:early )?feedback\b/i,
+      /\bcollect feedback\b/i,
+      /\btalk to (?:five|5|three|3|ten|10) people\b/i,
+      /^repeat$/,
+      /^iterate$/,
+      /^validate$/,
+      /^launch$/,
+      /^feedback$/
+    ];
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each.\n' +
@@ -11504,7 +11550,8 @@
       'Task text = the action. resources.* = the discovered organizations. Never put only a category in resources — always resolve to real names + official URLs for THIS user\'s location.\n' +
       'Write like a patient mentor for someone with NO business background — middle-school reading level. Never use startup or consultant jargon in task text, stage labels, why, or outcome.\n' +
       'For writing or outreach tasks, include a ready-to-copy sample in script when helpful.\n' +
-      'Do not reuse stage titles across different paths on the same map.';
+      'Do not reuse stage titles across different paths on the same map.\n' +
+      'Each stage label MUST name something specific to THIS path (job title, trade, nonprofit mission, business type, or life situation) — never a reusable 3-step template like test → feedback → repeat.';
 
     const RESOURCE_CATEGORY_HINTS =
       'employment_agency, career_center, apprenticeship, small_business_advisor, business_incubator, startup_grants, government_grants, nonprofit, scholarship, community_college, certification_program, library, coworking, food_assistance, transportation_assistance, housing_assistance, childcare_assistance, veteran_resources, disability_services, legal_aid, financial_literacy, business_networking, makerspace, industry_association, id_documents, municipal_services, reentry_support';
@@ -11683,6 +11730,49 @@
 
     function normalizeRoadmapText(text) {
       return String(text || "").toLowerCase().replace(/\s+/g, " ").trim();
+    }
+
+    function isGenericStageLabel(label) {
+      const norm = normalizeRoadmapText(label);
+      if (!norm) return false;
+      if (BANNED_GENERIC_STAGE_LABELS.has(norm)) return true;
+      if (GENERIC_STAGE_LABEL_PATTERNS.some((pattern) => pattern.test(norm))) return true;
+      if (/^(test|launch|feedback|repeat|iterate|validate|grow|improve|scale|pilot)$/.test(norm)) return true;
+      return false;
+    }
+
+    function roadmapHasGenericStageStructure(stages) {
+      if (!Array.isArray(stages) || stages.length < 2) return false;
+      const labels = stages.map((stage) => normalizeRoadmapText(stage.label)).join(" ");
+      const hasLaunchPattern = /\b(launch|first test|first try|test with|try with|smallest version)\b/.test(labels);
+      const hasFeedbackPattern = /\b(feedback|gather|listen|learn from|survey|ask people|what confused)\b/.test(labels);
+      const hasRepeatPattern = /\b(repeat|iterate|improve|adjust|refine|rhythm|next 30|decide|keep or change)\b/.test(labels);
+      const genericCount = stages.filter((stage) => isGenericStageLabel(stage.label)).length;
+      return genericCount >= 1 && hasLaunchPattern && hasFeedbackPattern && hasRepeatPattern;
+    }
+
+    function stageLabelsReferencePath(stages, idea) {
+      if (!idea?.title) return true;
+      const pathBlob = stages.map((stage) => `${stage.label} ${stage.desc || ""}`).join(" ").toLowerCase();
+      const titleTokens = normalizeRoadmapText(idea.title).split(/\s+/).filter((token) => token.length > 4);
+      if (titleTokens.some((token) => pathBlob.includes(token))) return true;
+      const profile = getUserSituationProfile(idea);
+      const situationTokens = [
+        profile.craftLabel,
+        profile.situation,
+        idea.type || ""
+      ].map((entry) => normalizeRoadmapText(entry)).filter(Boolean);
+      return situationTokens.some((token) => token.length > 3 && pathBlob.includes(token));
+    }
+
+    function roadmapHasGenericStages(stages, idea = null) {
+      if (!Array.isArray(stages) || !stages.length) return false;
+      const genericCount = stages.filter((stage) => isGenericStageLabel(stage.label)).length;
+      if (genericCount >= 2) return true;
+      if (roadmapHasGenericStageStructure(stages)) return true;
+      if (genericCount >= 1 && stages.length <= 3) return true;
+      if (genericCount >= 1 && idea && !stageLabelsReferencePath(stages, idea)) return true;
+      return genericCount >= Math.ceil(stages.length / 2);
     }
 
     function normalizeCityKey(text) {
@@ -14302,16 +14392,142 @@ What would make this more useful for someone in your situation?`;
       return rows.length ? `<div class="task-meta">${rows.join("")}</div>` : "";
     }
 
+    function getPathSituationType(idea) {
+      if (isReentrySituation(idea)) return "reentry";
+      const blob = getConversationCareerBlob(idea);
+      const ideaBlob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      const combined = `${blob} ${ideaBlob}`;
+      if (/\b(nonprofit|non-profit|501\s*\(?\s*c\s*\)?\s*3|charity|foundation|mutual aid org|start a nonprofit|launch a nonprofit)\b/.test(combined)) return "nonprofit";
+      if (/\b(homeless|unhoused|housing instability|in a shelter|living in (?:a )?(?:car|motel|shelter)|rebuilding after homelessness|no permanent address)\b/.test(combined)) return "housing";
+      if (/\b(electrician|plumber|hvac|welder|apprenticeship|skilled trade|carpenter|union trade|journeyman|pipefitter|roofer|mason|mechanic trade)\b/.test(combined)) return "skilled_trade";
+      if (/\b(career change|changing careers|switch careers|new career|second career|pivot careers|different field)\b/.test(combined)) return "career_change";
+      if (/\b(online business|e-?commerce|digital product|saas|shopify|amazon fba|dropship|sell online|etsy shop|digital course)\b/.test(combined)) return "online_business";
+      if (isGroundedPractitioner(idea)) return "grounded";
+      if (isExplicitJobSeeker(blob)) return "employment";
+      return "exploring";
+    }
+
+    function getPathSpecificMilestoneBlock(idea) {
+      const title = idea?.title || "this path";
+      const locRaw = formatUserLocation(parseLocationAnswer(getUserLocation() || "")) || "your area";
+      const situation = getPathSituationType(idea);
+      const examples = {
+        employment: {
+          good: [
+            `"Scan ${locRaw} employers hiring for \\"${title}\\""`,
+            `"Polish resume + outreach for \\"${title}\\""`,
+            `"Two-week application sprint for \\"${title}\\""`,
+            `"Decide: keep \\"${title}\\" or adjust target"`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Repeat"]
+        },
+        career_change: {
+          good: [
+            `"Map skills you already have → \\"${title}\\""`,
+            `"Talk to 3 people already doing \\"${title}\\""`,
+            `"Close skill gaps for \\"${title}\\" in ${locRaw}"`,
+            `"Land first interviews or trial work in the new field"`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Build a repeatable rhythm"]
+        },
+        nonprofit: {
+          good: [
+            `"Define mission + who \\"${title}\\" serves"`,
+            `"File or plan legal structure for \\"${title}\\""`,
+            `"Recruit 2 board or advisor allies in ${locRaw}"`,
+            `"Run first small program or pilot for \\"${title}\\""`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Decide the next 30 days"]
+        },
+        housing: {
+          good: [
+            `"Secure tonight + this week in ${locRaw}"`,
+            `"Get ID, mail, and benefits basics"`,
+            `"Lock income that fits your housing timeline"`,
+            `"First step toward \\"${title}\\" once stable"`
+          ],
+          bad: ["Launch first test", "Test with real people", "Iterate and improve"]
+        },
+        skilled_trade: {
+          good: [
+            `"Verify license + insurance for \\"${title}\\" in ${locRaw}"`,
+            `"Line up apprenticeship or journeyman path"`,
+            `"First paid \\"${title}\\" jobs or service calls"`,
+            `"Build repeat customers + local reputation"`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Repeat"]
+        },
+        online_business: {
+          good: [
+            `"Pick one product/channel for \\"${title}\\""`,
+            `"Set up store + payment for \\"${title}\\""`,
+            `"First 10 sales or signups for \\"${title}\\""`,
+            `"Double what already brought buyers"`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Build momentum"]
+        },
+        reentry: {
+          good: [
+            `"ID + shelter basics in ${locRaw}"`,
+            `"First paycheck-friendly work"`,
+            `"Benefits + compliance week"`,
+            `"Grow toward \\"${title}\\""`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Repeat"]
+        },
+        business: {
+          good: [
+            `"See if ${locRaw} would pay for \\"${title}\\""`,
+            `"Shape a tiny paid offer for \\"${title}\\""`,
+            `"Deliver three paid reps of \\"${title}\\""`,
+            `"Pick a growth lane for \\"${title}\\""`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Repeat"]
+        },
+        grounded: {
+          good: [
+            `"Position as premium \\"${title}\\" in ${locRaw}"`,
+            `"Build proof that sells your craft"`,
+            `"Weekly visibility + local outreach"`,
+            `"Local search & reviews for \\"${title}\\""`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Repeat"]
+        },
+        learning: {
+          good: [
+            `"Pick the credential for \\"${title}\\" in ${locRaw}"`,
+            `"Build visible proof for \\"${title}\\""`,
+            `"Stack two more wins"`,
+            `"Convert skills to paid work"`
+          ],
+          bad: ["Launch first test", "Gather feedback", "Repeat"]
+        }
+      };
+      const block = examples[situation] || examples.business;
+      return (
+        `\nMILESTONE UNIQUENESS (required for "${title}"):\n` +
+        `- This person's situation: ${situation.replace(/_/g, " ")}. Stage labels must read like a plan for THEM — not a reusable startup template.\n` +
+        `- GOOD stage names for this path type:\n  ${block.good.join("\n  ")}\n` +
+        `- NEVER use these generic labels (or close variants): ${block.bad.join(", ")}.\n` +
+        `- Every stage label must mention something concrete: the path title, their city, their trade, their mission, or their constraint.\n`
+      );
+    }
+
     function getRoadmapArchetypeGuidance(idea) {
       const archetype = getPathArchetype(idea);
       const parsed = parseLocationAnswer(getUserLocation() || "");
       const locRaw = formatUserLocation(parsed);
       const pb = getLocationPlaybook(parsed, locRaw);
       const guides = {
-        reentry: `Reentry / recently released in ${pb.countryLabel} — Stage 1–3 MUST be stability before career building: ID and documents per local rules, housing via ${pb.region === "norway" ? "NAV/kommune" : pb.region === "us" ? "211/shelter (US only)" : "official social services"}, ${pb.employmentGuide}, background-check-aware temp income, local benefits, compliance. Stage 4 may connect to the chosen path title. NEVER open with training first.`,
-        employment: `Employment path in ${pb.countryLabel} — ${pb.employmentGuide}. Tailored CV/resume, networking, interviews, local apprenticeships. Do NOT use generic US startup language or wrong-country agencies.`,
-        business: `Local service or small business in ${pb.countryLabel} — ${pb.businessGuide}. Licensing, pricing, first customers, local marketing. Do NOT use US SBDC/SCORE outside the US.`,
-        learning: `Training path in ${pb.countryLabel} — ${pb.learningGuide}. Program enrollment, local funding, portfolio proof. Do NOT assume US community college or 211.`,
+        reentry: `Reentry / recently released in ${pb.countryLabel} — Stage 1–3 MUST be stability before career building: ID and documents per local rules, housing via ${pb.region === "norway" ? "NAV/kommune" : pb.region === "us" ? "211/shelter (US only)" : "official social services"}, ${pb.employmentGuide}, background-check-aware temp income, local benefits, compliance. Stage 4 may connect to the chosen path title. NEVER open with training first. Stage names example: "ID + shelter in ${locRaw}", "First paycheck work", "Benefits week" — NOT "Launch first test".`,
+        employment: `Employment path in ${pb.countryLabel} — ${pb.employmentGuide}. Tailored CV/resume, networking, interviews, local apprenticeships. Stage names must reference the job target and city — e.g. "Scan ${locRaw} hiring lanes", "Package proof for [role]", "Two-week application push". Do NOT use generic US startup language or wrong-country agencies.`,
+        career_change: `Career change toward "${idea?.title || "new field"}" in ${pb.countryLabel} — map transferable skills, talk to people already in the field, close specific skill gaps, then interviews/trial work. Stage names must reflect the NEW field and transition — NOT generic test/feedback/repeat.`,
+        nonprofit: `Starting or growing a nonprofit for "${idea?.title || "mission"}" in ${pb.countryLabel} — mission clarity, legal structure (501c3 or local equivalent), board/advisors, first small program or pilot. Stage names reference the cause and community — NOT startup validation language.`,
+        housing: `Rebuilding after homelessness or housing instability in ${pb.countryLabel} — Stage 1: safe place tonight + this week. Stage 2: ID, mail, benefits. Stage 3: income that fits housing timeline. Stage 4: first step on "${idea?.title || "longer path"}". NEVER open with business launches or online stores.`,
+        skilled_trade: `Skilled trade path "${idea?.title || "trade"}" in ${pb.countryLabel} — license/insurance verification, apprenticeship or journeyman route, first paid jobs/service calls, repeat customers. Reference the trade by name and local licensing rules — NOT generic freelance or gig economy stages.`,
+        online_business: `Online business "${idea?.title || "offer"}" — pick ONE product/channel, set up store + payments, first 10 sales/signups, double what worked. Stage names name the product, platform, or audience — NOT "Launch first test" / "Gather feedback".`,
+        business: `Local service or small business in ${pb.countryLabel} — ${pb.businessGuide}. Licensing, pricing, first customers, local marketing. Stage names reference the offer and city. Do NOT use US SBDC/SCORE outside the US.`,
+        learning: `Training path in ${pb.countryLabel} — ${pb.learningGuide}. Program enrollment, local funding, portfolio proof. Stage names reference the credential or skill — NOT generic validation phases.`,
         creative: `Creative / design income — for EXPERIENCED practitioners: premium positioning, 2-tier pricing, niche proof by industry, weekly content, value-first local outreach, Google local SEO. Do NOT default to Upwork/Fiverr/99designs or workforce programs as the main strategy.`,
         grounded: `Experienced practitioner in ${pb.countryLabel} — they ALREADY have years in their craft. Stage focus: positioning, 2-tier packages with prices, proof organized by niche, weekly outreach to local businesses, Google Business Profile + reviews. Do NOT assign workforce boards, 211, community college, staffing agencies, or cheap gig platforms as primary strategy. Tasks must reference their craft, city, and niches by name.`
       };
@@ -14452,7 +14668,7 @@ What would make this more useful for someone in your situation?`;
         const key = slugify(idea.title);
         const entry = state.allRoadmaps[key];
         if (!entry?.stages?.length) return;
-        if (!roadmapOverlapsSibling(entry.stages, idea)) return;
+        if (!roadmapOverlapsSibling(entry.stages, idea) && !roadmapHasGenericStages(entry.stages, idea)) return;
 
         delete state.allRoadmaps[key];
         if (state.allTaskChats[key]) delete state.allTaskChats[key];
@@ -15094,6 +15310,18 @@ What would make this more useful for someone in your situation?`;
     }
 
     function getPathArchetype(idea) {
+      const situation = getPathSituationType(idea);
+      const situationMap = {
+        reentry: "reentry",
+        nonprofit: "nonprofit",
+        housing: "housing",
+        skilled_trade: "skilled_trade",
+        career_change: "career_change",
+        online_business: "online_business",
+        grounded: "grounded",
+        employment: "employment"
+      };
+      if (situationMap[situation]) return situationMap[situation];
       if (isReentrySituation(idea)) return "reentry";
       if (isGroundedPractitioner(idea)) return "grounded";
       const blob = getConversationCareerBlob(idea);
@@ -15337,6 +15565,196 @@ What would make this more useful for someone in your situation?`;
               "Review stages 1–3: note what is still missing (housing, ID, income) and set the single next action for Monday"
             ]
           }
+        ],
+        career_change: [
+          {
+            label: "Map what transfers to \"{title}\"",
+            desc: "List skills from your old work that still matter in the new field.",
+            tasks: [
+              "Write 5 skills from your past jobs that apply to \"{title}\" — one sentence each with a real example",
+              "Find 3 job posts for \"{title}\" in {locRaw} and highlight words that repeat — add any you are missing to a gap list",
+              "Message one person on LinkedIn who already does \"{title}\" — ask one specific question about how they broke in"
+            ]
+          },
+          {
+            label: "Close gaps for \"{title}\"",
+            desc: "Pick the smallest credential or project that makes the switch believable.",
+            tasks: [
+              "{learn_training_compare}",
+              "Complete one tiny project or certification module for \"{title}\" this week and save proof (screenshot, certificate, or sample)",
+              "Update your resume headline to bridge old experience → \"{title}\" in one line"
+            ]
+          },
+          {
+            label: "Get in the room in {locRaw}",
+            desc: "Meet people and show up where hiring happens for \"{title}\".",
+            tasks: [
+              "Attend one meetup, open house, or online info session tied to \"{title}\" in {locRaw}",
+              "Apply to 5 roles, internships, or trial gigs that mention \"{title}\" or your bridge skills",
+              "Ask one practitioner for 15 minutes of feedback on your resume or portfolio for \"{title}\""
+            ]
+          },
+          {
+            label: "Land first foothold in the new field",
+            desc: "Turn conversations into interviews, trial work, or enrolled training.",
+            tasks: [
+              "Follow up on every application and conversation from the past 14 days with a short, specific note",
+              "Set one 30-day goal: first interview, enrolled program, or paid trial in \"{title}\"",
+              "Write keep / adjust target / pause — and the one action that makes the next step obvious"
+            ]
+          }
+        ],
+        nonprofit: [
+          {
+            label: "Define \"{title}\" mission + who it serves",
+            desc: "Get crystal clear on the problem, audience, and outcome before paperwork.",
+            tasks: [
+              "Write a one-page mission for \"{title}\": who you help, what changes for them, and how you will know it worked",
+              "Interview 3 people affected by the problem \"{title}\" addresses — note exact quotes about what they need now",
+              "List 5 existing orgs in {locRaw} doing similar work — note gaps \"{title}\" would fill"
+            ]
+          },
+          {
+            label: "Plan legal structure for \"{title}\"",
+            desc: "Choose the right entity and compliance path for your country.",
+            tasks: [
+              "Research nonprofit registration rules in your country/region for \"{title}\" — note fees, timeline, and required board size",
+              "{biz_license}",
+              "Draft a simple 12-month budget for \"{title}\" (programs, admin, fundraising) — keep year-one costs realistic"
+            ]
+          },
+          {
+            label: "Recruit allies in {locRaw}",
+            desc: "You need board members, advisors, or partners before launch.",
+            tasks: [
+              "List 10 people who care about \"{title}\" — rank by who would join a board, advise, or refer clients",
+              "Send 3 personalized invites: role, time commitment, and why \"{title}\" matters now",
+              "Attend one community meeting or funder info session in {locRaw} related to your cause"
+            ]
+          },
+          {
+            label: "Run first small program for \"{title}\"",
+            desc: "Prove impact with a tiny pilot before scaling.",
+            tasks: [
+              "Design a 2-week pilot for \"{title}\" serving 3-10 people — write schedule, materials, and success measure",
+              "Run the pilot and collect 3 testimonials or outcome notes (with permission)",
+              "Decide next 30 days: file paperwork, seek seed grant, or repeat pilot with one improvement"
+            ]
+          }
+        ],
+        housing: [
+          {
+            label: "Secure tonight + this week in {locRaw}",
+            desc: "Safety and a bed come before job training or business ideas.",
+            tasks: [
+              "{social_services_line}",
+              "Call or visit 2 shelter or housing programs in {locRaw} today — ask about beds, waitlists, and what ID you need",
+              "Pack one bag with ID (if you have it), phone charger, medications, and important papers — keep it with you"
+            ]
+          },
+          {
+            label: "ID, mail, and benefits basics",
+            desc: "Documents and a mailing address unlock work and housing programs.",
+            tasks: [
+              "{reentry_id}",
+              "Sign up for a free mailing address or general delivery through a shelter, library, or social service in {locRaw}",
+              "Apply for every benefit you may qualify for (food, healthcare, housing vouchers) — use official government portals for your country"
+            ]
+          },
+          {
+            label: "Income that fits your housing timeline",
+            desc: "Fast, flexible work while you stabilize.",
+            tasks: [
+              "{emp_staffing}",
+              "Apply to 3 temp, day-labor, or immediate-hire roles in {locRaw} — prioritize employers who pay weekly",
+              "Track every dollar this week: income, expenses, and what you need for deposit + first month rent"
+            ]
+          },
+          {
+            label: "First step toward \"{title}\"",
+            desc: "Only after shelter, ID, and income are moving.",
+            tasks: [
+              "Complete one small action for \"{title}\" this week (one application, one info call, or one hour of study) — log what you finished",
+              "Meet with a housing navigator or caseworker in {locRaw} — ask what \"{title}\" path fits your timeline",
+              "Review: what is still missing (housing, ID, income) and set the single next action for Monday"
+            ]
+          }
+        ],
+        skilled_trade: [
+          {
+            label: "Verify license path for \"{title}\" in {locRaw}",
+            desc: "Know the rules before you quote jobs or enroll in training.",
+            tasks: [
+              "Look up licensing and insurance requirements for \"{title}\" in your state/region — save official links",
+              "{biz_license}",
+              "Call one trade union or apprenticeship office in {locRaw} — ask hours required and next enrollment date"
+            ]
+          },
+          {
+            label: "Line up apprenticeship or journeyman route",
+            desc: "Get on the official path to full licensure.",
+            tasks: [
+              "{learn_training_compare}",
+              "Apply to 2 apprenticeship or trade school programs for \"{title}\" — note deadlines and prerequisites",
+              "Gather proof of any prior trade experience (photos, references, pay stubs) for credit or placement"
+            ]
+          },
+          {
+            label: "First paid \"{title}\" jobs",
+            desc: "Real service calls or site hours under supervision.",
+            tasks: [
+              "Complete 3 supervised jobs or service calls for \"{title}\" this month — log hours and supervisor sign-off",
+              "Ask each customer or supervisor for one sentence of feedback and permission to use work photos (no addresses visible)",
+              "Update your pricing sheet: diagnostic fee, hourly rate, or project minimum for \"{title}\""
+            ]
+          },
+          {
+            label: "Build repeat customers in {locRaw}",
+            desc: "Reputation and referrals beat cold outreach in trades.",
+            tasks: [
+              "Create or update Google Business Profile for \"{title}\" in {locRaw} — add license number if required",
+              "Ask your last 3 customers for Google reviews and referral permission",
+              "Set a weekly rhythm: 5 follow-ups + 2 new estimate visits + one post showing finished work"
+            ]
+          }
+        ],
+        online_business: [
+          {
+            label: "Pick one channel for \"{title}\"",
+            desc: "One product, one audience, one platform — not everything at once.",
+            tasks: [
+              "Write a one-sentence offer for \"{title}\": who buys, what they get, price, and delivery time",
+              "Choose ONE sales channel (Shopify, Etsy, Gumroad, or social DMs) — set up the account today",
+              "List 10 people who would buy or share \"{title}\" — message 3 with a personal note and link"
+            ]
+          },
+          {
+            label: "Set up store + payments for \"{title}\"",
+            desc: "Make it easy to pay you in under 5 minutes.",
+            tasks: [
+              "Add 1-3 products or packages for \"{title}\" with photos, price, and clear description",
+              "Connect payment (Stripe, PayPal, or platform checkout) and run a $1 test purchase yourself",
+              "Write FAQ answers: shipping time, refunds, and how customers get what they bought"
+            ]
+          },
+          {
+            label: "First 10 sales for \"{title}\"",
+            desc: "Prove strangers will pay, not just friends.",
+            tasks: [
+              "Post \"{title}\" in 3 places your buyers already hang out (Facebook group, Reddit, Instagram, local board)",
+              "Offer a limited launch discount or bonus for the first 10 buyers — track who came from where",
+              "After each sale, ask one question: what almost stopped you from buying?"
+            ]
+          },
+          {
+            label: "Double what brought buyers",
+            desc: "Scale the channel that already worked.",
+            tasks: [
+              "Identify the top traffic source from your first 10 sales — plan 14 days of content or outreach there only",
+              "Improve one thing buyers asked about (photos, description, speed, packaging)",
+              "Set a 30-day revenue target for \"{title}\" and the one weekly habit that protects your time"
+            ]
+          }
         ]
       };
     }
@@ -15369,19 +15787,23 @@ What would make this more useful for someone in your situation?`;
     function pickUniqueStandardFallbackStages(idea) {
       const templates = buildStandardFallbackTemplates();
       const order = isReentrySituation(idea)
-        ? ["reentry", "employment", "business", "learning", "creative"]
-        : isGroundedPractitioner(idea)
-          ? ["groundedPractitioner", "business", "creative", "employment", "learning"]
-          : ["employment", "business", "learning", "creative"];
+        ? ["reentry", "housing", "employment", "career_change", "business", "learning", "creative"]
+        : getPathSituationType(idea) === "housing"
+          ? ["housing", "reentry", "employment", "business", "learning"]
+          : isGroundedPractitioner(idea)
+            ? ["groundedPractitioner", "business", "skilled_trade", "creative", "employment", "learning"]
+            : ["employment", "career_change", "nonprofit", "skilled_trade", "online_business", "business", "learning", "creative", "housing"];
       const preferred = isGroundedPractitioner(idea)
         ? "groundedPractitioner"
         : getPathArchetype(idea);
       const tryOrder = [preferred, ...order.filter((entry) => entry !== preferred)];
 
       for (const key of tryOrder) {
-        const stages = personalizeFallbackStages(templates[key] || templates.employment, idea);
-        const usesBannedLabels = stages.some((stage) => BANNED_GENERIC_STAGE_LABELS.has(normalizeRoadmapText(stage.label)));
+        const templateStages = templates[key] || templates.employment;
+        const stages = personalizeFallbackStages(templateStages, idea);
+        const usesBannedLabels = stages.some((stage) => isGenericStageLabel(stage.label));
         if (usesBannedLabels) continue;
+        if (roadmapHasGenericStages(stages, idea)) continue;
         if (!roadmapOverlapsSibling(stages, idea)) return stages;
       }
 
@@ -15594,10 +16016,11 @@ What would make this more useful for someone in your situation?`;
         getLocationContextBlock() +
         getUserStatedCraftBlock(idea) +
         getReentryPromptBlock(idea) +
+        getPathSpecificMilestoneBlock(idea) +
         `\nPath type guidance: ${getRoadmapArchetypeGuidance(idea)}\n` +
         `\n${getActionableTaskRules()}\n` +
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
-        `NEVER use generic stage titles like "Launch the first test", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path.\n\n` +
+        `NEVER use generic stage titles like "Launch the first test", "Launch first test", "Gather feedback", "Repeat", "Turn feedback into proof", "Build a repeatable rhythm", or "Decide the next 30 days". Invent fresh stage names tied to this path and this person's situation.\n\n` +
         `CRITICAL RULES FOR TASKS:\n` +
         `- Mentor format per task: text = ONE clear action; why = why this matters; outcome = success looks like; duration; difficulty (Easy|Medium|Advanced).\n` +
         `- Optional steps[] only when helpful (max 3 short items) — the main action lives in text.\n` +
@@ -15635,7 +16058,8 @@ What would make this more useful for someone in your situation?`;
       if (!Array.isArray(parsed) || parsed.length < 1) return null;
       const stages = parsed.filter((stage) => stage?.label && Array.isArray(stage.tasks) && stage.tasks.length > 0);
       if (!stages.length) return null;
-      if (stages.some((stage) => BANNED_GENERIC_STAGE_LABELS.has(normalizeRoadmapText(stage.label)))) return null;
+      if (stages.some((stage) => isGenericStageLabel(stage.label))) return null;
+      if (roadmapHasGenericStages(stages, idea)) return null;
       if (isGenericFallbackRoadmap(stages)) return null;
       return normalizeRoadmapStages(stages);
     }
@@ -21131,7 +21555,7 @@ What would make this more useful for someone in your situation?`;
       $("#roadmap-title").textContent = humanizeTaskText(idea.title);
 
       const cached = !options.force ? state.allRoadmaps[state.roadmapKey] : null;
-      const cachedIsUsable = Boolean(cached?.stages?.length) && !isGenericFallbackRoadmap(cached.stages);
+      const cachedIsUsable = Boolean(cached?.stages?.length) && !isGenericFallbackRoadmap(cached.stages) && !roadmapHasGenericStages(cached.stages, idea);
       if (cachedIsUsable) {
         setRoadmapLoading(false);
         showScreen("roadmap");
@@ -21207,6 +21631,21 @@ What would make this more useful for someone in your situation?`;
       if (stages && roadmapOverlapsSibling(stages, idea)) {
         response = await callAdvisor(buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true }), getRoadmapAdvisorTokenLimit(founderMode));
         stages = parseRoadmapResponse(response, idea);
+      }
+
+      if (stages && roadmapHasGenericStages(stages, idea)) {
+        response = await callAdvisor(
+          `${buildRoadmapPrompt(idea, context, { ...promptOptions, dedupe: true })}\n\n` +
+          `${getPathSpecificMilestoneBlock(idea)}\n` +
+          `Your last draft used generic reusable stage names (like "Launch first test", "Gather feedback", "Repeat") instead of milestones specific to "${idea.title}" and this person's situation.\n` +
+          `Regenerate all stages. Each stage label must name something concrete about THIS path — the job, trade, nonprofit mission, business type, or life situation. Do NOT reuse a 3-step test/feedback/repeat template.\n`,
+          getRoadmapAdvisorTokenLimit(founderMode)
+        );
+        const pathSpecific = parseRoadmapResponse(response, idea);
+        if (pathSpecific) {
+          stages = pathSpecific;
+          trackEvent("roadmap_generic_stages_corrected", { idea_index: ideaIndex });
+        }
       }
 
       if (
@@ -21292,6 +21731,7 @@ What would make this more useful for someone in your situation?`;
 
       if (
         !stages ||
+        roadmapHasGenericStages(stages, idea) ||
         (
           roadmapOverlapsSibling(stages, idea) &&
           !(isReentrySituation(idea) && !roadmapSkipsReentryStability(stages))
