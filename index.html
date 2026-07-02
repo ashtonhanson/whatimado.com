@@ -13090,6 +13090,7 @@
     let roadmapAutoContinueTimer = null;
     let roadmapShellWaitTimer = null;
     const ROADMAP_ADVISOR_TIMEOUT_MS = 90000;
+    const ROADMAP_FIRST_MISSION_PROGRESS_MS = 48000;
     let roadmapBackgroundRefinementInFlight = false;
     let roadmapAdaptTimer = null;
     let roadmapAdaptInFlight = false;
@@ -21290,7 +21291,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return `About ${min} min left`;
     }
 
-    function updateSiteLoadingProgressUi(root, percent, remainingMs) {
+    function formatRoadmapFirstMissionEta(remainingMs) {
+      const sec = Math.ceil(remainingMs / 1000);
+      if (sec <= 5) return "Almost there…";
+      if (sec <= 55) return `About ${sec}s for your first mission`;
+      return "Usually under a minute for your first mission";
+    }
+
+    function updateSiteLoadingProgressUi(root, percent, remainingMs, formatRemaining = formatLoadingEta) {
       if (!root) return;
       const rounded = Math.round(percent);
       const fill = root.querySelector(".site-loading-progress-fill");
@@ -21299,7 +21307,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const track = root.querySelector(".site-loading-progress-track");
       if (fill) fill.style.width = `${rounded}%`;
       if (pctEl) pctEl.textContent = `${rounded}%`;
-      if (etaEl) etaEl.textContent = formatLoadingEta(remainingMs);
+      if (etaEl) etaEl.textContent = formatRemaining(remainingMs);
       if (track) track.setAttribute("aria-valuenow", String(rounded));
     }
 
@@ -21308,13 +21316,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       stopSiteLoadingProgress(root);
       const durationMs = options.durationMs || 50000;
       let cap = options.cap ?? 94;
+      const formatRemaining = options.formatRemaining || formatLoadingEta;
       const startedAt = Date.now();
       let percent = 0;
       const tick = () => {
         const elapsed = Date.now() - startedAt;
         const target = Math.min(cap, (elapsed / durationMs) * cap);
         percent = Math.max(percent, target);
-        updateSiteLoadingProgressUi(root, percent, Math.max(0, durationMs - elapsed));
+        updateSiteLoadingProgressUi(root, percent, Math.max(0, durationMs - elapsed), formatRemaining);
       };
       tick();
       const timer = setInterval(tick, 220);
@@ -27308,8 +27317,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           if (tagline) tagline.textContent = "Building your first mission…";
           startLoadingQuips("#roadmap-loading .loader-tagline");
           startSiteLoadingProgress($("#roadmap-loader-progress"), {
-            durationMs: options.progressDurationMs || 90000,
-            cap: options.progressCap || 96
+            durationMs: options.progressDurationMs || ROADMAP_FIRST_MISSION_PROGRESS_MS,
+            cap: options.progressCap || 94,
+            formatRemaining: formatRoadmapFirstMissionEta
           });
         }
         syncRoadmapStickyOffset();
@@ -27356,11 +27366,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || (stage.tasks || []).some((task) => isPendingRoadmapTask(task)));
     }
 
+    function getProgressiveRoadmapSlotCount(founderMode = false) {
+      return Math.max(getExpectedRoadmapStageCount(founderMode), 3);
+    }
+
     function expandStagesForProgressiveReveal(stages, founderMode, { isFinal = false } = {}) {
-      const expectedStages = getExpectedRoadmapStageCount(founderMode);
+      const slotCount = getProgressiveRoadmapSlotCount(founderMode);
       const expectedTasks = getExpectedRoadmapTasksPerStage(founderMode);
       let ready = normalizeRoadmapStages(stages || []).filter((stage) => !isPendingRoadmapStage(stage));
       if (!ready.length) return ready;
+
+      if (!isFinal) {
+        ready = ready.slice(0, 1);
+      }
 
       if (!isFinal && ready[0]) {
         const tasks = (ready[0].tasks || []).filter((task) => !isPendingRoadmapTask(task));
@@ -27374,13 +27392,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (isFinal) {
-        return ready.slice(0, expectedStages).map((stage) => ({
+        return ready.map((stage) => ({
           ...stage,
           tasks: (stage.tasks || []).filter((task) => !isPendingRoadmapTask(task))
         }));
       }
 
-      while (ready.length < expectedStages) {
+      while (ready.length < slotCount) {
         ready.push({
           label: "",
           desc: "",
@@ -27389,6 +27407,59 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         });
       }
       return ready;
+    }
+
+    function delayMs(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function staggerFillRemainingRoadmapPhases(fullStages, idea, ideaIndex, source, founderMode) {
+      const normalized = normalizeRoadmapStages(fullStages);
+      if (!normalized.length || !state.roadmapKey) return;
+
+      while (state.roadmapStages.length < normalized.length) {
+        state.roadmapStages.push({
+          label: "",
+          desc: "",
+          tasks: [],
+          _pendingStage: true
+        });
+      }
+
+      if (normalized[0]) {
+        state.roadmapStages[0] = { ...normalized[0] };
+        state.allRoadmaps[state.roadmapKey] = {
+          ...(state.allRoadmaps[state.roadmapKey] || {}),
+          idea,
+          stages: state.roadmapStages,
+          source
+        };
+        renderStages(state.roadmapStages);
+        if (hasPendingRoadmapContent(state.roadmapStages)) {
+          requestAnimationFrame(() => startPendingRoadmapProgressBars());
+        }
+        await delayMs(400);
+      }
+
+      for (let phaseIndex = 1; phaseIndex < normalized.length; phaseIndex += 1) {
+        state.roadmapStages[phaseIndex] = normalized[phaseIndex];
+        state.allRoadmaps[state.roadmapKey] = {
+          ...(state.allRoadmaps[state.roadmapKey] || {}),
+          idea,
+          stages: state.roadmapStages,
+          source
+        };
+        renderStages(state.roadmapStages);
+        if (phaseIndex < normalized.length - 1 && hasPendingRoadmapContent(state.roadmapStages)) {
+          requestAnimationFrame(() => startPendingRoadmapProgressBars());
+          await delayMs(450);
+        }
+      }
+
+      state.roadmapStages = state.roadmapStages.slice(0, normalized.length);
+      stopPendingRoadmapProgressBars();
+      registerRoadmapInSidebar(idea, ideaIndex);
+      renderSidebarRoadmaps();
     }
 
     function renderPendingStageHtml(stageIndex) {
@@ -28029,7 +28100,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const tryClaimFirstMissionReveal = (stages, source = "full") => {
         if (revealClaimed || !stages?.length || !stageOneHasRevealableMission(stages)) return false;
         revealClaimed = true;
-        const readyStages = prepareStagesForInitialReveal(stages, idea);
+        const firstStageOnly = normalizeRoadmapStages(stages).slice(0, 1);
+        const readyStages = prepareStagesForInitialReveal(firstStageOnly, idea);
         callbacks.onFirstMissionReady?.(readyStages);
         trackEvent(source === "quick" ? "roadmap_quick_first_mission" : "roadmap_early_reveal", {
           idea_index: ideaIndex,
@@ -28112,6 +28184,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         previousStages: options.previousStages,
         callbacks
       });
+
+      if (revealClaimed && initialReturn.stages?.length) {
+        callbacks.onFullStagesReady?.(initialReturn.stages, {
+          roadmapSource: initialReturn.roadmapSource,
+          issues
+        });
+      }
 
       return initialReturn;
     }
@@ -28240,9 +28319,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             onFirstMissionReady(stages) {
               if (revealed) return;
               revealRoadmapProgressively(
-                prepareStagesForInitialReveal(stages, idea),
+                prepareStagesForInitialReveal(normalizeRoadmapStages(stages).slice(0, 1), idea),
                 "ai",
                 { isFinal: false }
+              );
+            },
+            onFullStagesReady(fullStages, meta = {}) {
+              if (!revealed || !fullStages?.length) return;
+              void staggerFillRemainingRoadmapPhases(
+                fullStages,
+                idea,
+                ideaIndex,
+                meta.roadmapSource || "ai",
+                founderModeForGen
               );
             },
             onRefining(active) {
@@ -28250,27 +28339,49 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             },
             onRefinementComplete(stages, meta = {}) {
               if (!revealed || !stages?.length) return;
-              revealRoadmapProgressively(
-                stages,
-                meta.roadmapSource || "ai",
-                { isFinal: true, refineUpdate: true }
-              );
-              setRoadmapRefining(false);
-              trackEvent("roadmap_refinement_applied", {
-                idea_index: ideaIndex,
-                issues: meta.issues || []
-              });
+              void (async () => {
+                if (hasPendingRoadmapContent(state.roadmapStages)) {
+                  await staggerFillRemainingRoadmapPhases(
+                    stages,
+                    idea,
+                    ideaIndex,
+                    meta.roadmapSource || "ai",
+                    founderModeForGen
+                  );
+                }
+                publishRoadmapToUi(
+                  idea,
+                  ideaIndex,
+                  stages,
+                  meta.roadmapSource || "ai",
+                  founderModeForGen,
+                  { isFinal: true, refineUpdate: true }
+                );
+                setRoadmapRefining(false);
+                trackEvent("roadmap_refinement_applied", {
+                  idea_index: ideaIndex,
+                  issues: meta.issues || []
+                });
+              })();
             }
           }
         );
 
         if (!revealed) {
           if (revealRoadmapProgressively(
-            prepareStagesForInitialReveal(result.stages, idea),
+            prepareStagesForInitialReveal(normalizeRoadmapStages(result.stages).slice(0, 1), idea),
             result.roadmapSource || "ai",
             { isFinal: false }
           )) {
-            /* revealed */
+            if (result.stages?.length > 1) {
+              await staggerFillRemainingRoadmapPhases(
+                result.stages,
+                idea,
+                ideaIndex,
+                result.roadmapSource || "ai",
+                founderModeForGen
+              );
+            }
           } else {
             throw new Error("Stage 1 had no revealable mission");
           }
