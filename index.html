@@ -5947,6 +5947,18 @@
       box-shadow: 0 0 0 3px rgba(124, 111, 205, .12);
     }
 
+    .account-pref-location-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .account-pref-location-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .site-suggestions-footer {
       display: flex;
       align-items: center;
@@ -12136,6 +12148,38 @@
           <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
         </section>
 
+        <section class="site-suggestions dashboard-settings-panel" id="account-preferences" aria-label="Your profile settings">
+          <h3 class="site-suggestions-title">Your profile</h3>
+          <p class="site-suggestions-copy">Saved here so new maps skip the location and name questions. Syncs with your account when signed in.</p>
+          <label class="site-suggestions-field" for="account-pref-name">
+            <span class="site-suggestions-field-label">Your name</span>
+            <input class="site-suggestions-input site-suggestions-name" id="account-pref-name" type="text" maxlength="80" autocomplete="name" placeholder="First name or what you'd like to be called">
+          </label>
+          <div class="account-pref-location-grid">
+            <label class="site-suggestions-field" for="account-pref-country">
+              <span class="site-suggestions-field-label">Country</span>
+              <input class="site-suggestions-input" id="account-pref-country" type="text" maxlength="80" autocomplete="country-name" placeholder="United States">
+            </label>
+            <label class="site-suggestions-field" for="account-pref-region">
+              <span class="site-suggestions-field-label">State / province / region</span>
+              <input class="site-suggestions-input" id="account-pref-region" type="text" maxlength="80" autocomplete="address-level1" placeholder="Texas">
+            </label>
+            <label class="site-suggestions-field" for="account-pref-city">
+              <span class="site-suggestions-field-label">City or town</span>
+              <input class="site-suggestions-input" id="account-pref-city" type="text" maxlength="80" autocomplete="address-level2" placeholder="Austin">
+            </label>
+            <label class="site-suggestions-field" for="account-pref-postal">
+              <span class="site-suggestions-field-label">ZIP / postal (optional)</span>
+              <input class="site-suggestions-input" id="account-pref-postal" type="text" maxlength="20" autocomplete="postal-code" placeholder="78701">
+            </label>
+          </div>
+          <div class="site-suggestions-footer">
+            <span class="site-suggestions-hint" id="account-pref-hint">Used for local resources and personalized roadmaps.</span>
+            <button class="back-btn" id="account-pref-save" type="button">Save profile</button>
+          </div>
+          <p class="site-suggestions-msg" id="account-pref-msg" hidden aria-live="polite"></p>
+        </section>
+
         <section class="site-suggestions dashboard-settings-panel" id="site-suggestions" aria-label="Suggest a site improvement">
           <h3 class="site-suggestions-title">Suggest an improvement</h3>
           <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion. Add your name below so we can credit you if we ship your idea.</p>
@@ -13681,7 +13725,7 @@
       state.locationConfirmed = true;
       updateRoadmapOverviewHeader();
       updateRoadmapLocalResourcesList();
-      schedulePersist();
+      persistAccountPrefs();
     }
 
     async function continueIntakeAfterLocation() {
@@ -13717,7 +13761,11 @@
         return;
       }
       addTypingBubble();
-      askNameStep();
+      if (shouldAskName()) {
+        askNameStep();
+        return;
+      }
+      await startPathGenerationAfterIntake();
     }
 
     function askLocationIntakeStep(step) {
@@ -13909,7 +13957,7 @@
         }
         renderStages(state.roadmapStages);
       }
-      schedulePersist();
+      persistAccountPrefs();
     }
 
     function getTaskText(task) {
@@ -20294,6 +20342,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     const ROADMAP_JSON_SCHEMA_TAIL = ROADMAP_JSON_INSTRUCTION.replace(/^Return exactly \d+ stages with \d+ missions each[^\n]*\n/, "");
 
+    function buildFirstMissionQuickPrompt(idea, context, { founderMode = false } = {}) {
+      const ideaBlock = [
+        `Title: ${idea.title}`,
+        idea.type ? `Type: ${idea.type}` : "",
+        idea.tagline ? `Tagline: ${idea.tagline}` : "",
+        idea.why ? `Why it fits: ${idea.why}` : ""
+      ].filter(Boolean).join("\n");
+      const contextTail = String(context || "").slice(-1800);
+      return (
+        `You are whatimado — a practical mentor. Return ONLY the first roadmap stage as JSON (one stage, 2 missions). The user sees this immediately while the full roadmap loads.\n\n` +
+        `Path:\n${ideaBlock}\n\n` +
+        `Conversation (recent):\n${contextTail}\n` +
+        getLocationContextBlock() +
+        `\n${getActionableTaskRules()}\n` +
+        `Return exactly 1 stage with 2 missions (JSON key: tasks). Include mission, text, mentorHelp, howTo, outcome, and resources when relevant.\n` +
+        ROADMAP_JSON_SCHEMA_TAIL
+      );
+    }
+
     function getRoadmapJsonInstruction({ founderMode = false, context = "", phase = "initial" } = {}) {
       let header;
       if (founderMode) {
@@ -21127,7 +21194,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       lastCloudSyncError: "",
       syncedLibraryStats: null,
       userProfile: emptyUserProfile(),
-      profileIntakeStep: null
+      profileIntakeStep: null,
+      accountPrefs: null
     };
 
     const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
@@ -21412,13 +21480,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         navUser.classList.toggle("is-visible", signedIn);
       }
       if (signedIn) {
-        const displayName = user.user_metadata?.full_name || user.email.split("@")[0];
+        const prefsName = normalizeUserProfile(state.userProfile).name;
+        const displayName = prefsName || user.user_metadata?.full_name || user.email.split("@")[0];
         $("#nav-username").textContent = displayName;
         const profileName = $("#dashboard-profile-name");
         if (profileName) profileName.textContent = displayName;
       } else {
+        const prefsName = normalizeUserProfile(state.userProfile).name;
         const profileName = $("#dashboard-profile-name");
-        if (profileName) profileName.textContent = "Guest";
+        if (profileName) profileName.textContent = prefsName || "Guest";
       }
       updateNavSyncStatus();
     }
@@ -22168,7 +22238,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ...(cloudPayload?.dismissedRoadmapSidebarMapIds || [])
         ])],
         deletedMapIds,
-        savedAt: Math.max(localTime, cloudTime)
+        savedAt: Math.max(localTime, cloudTime),
+        accountPrefs: mergeAccountPrefs(localPayload?.accountPrefs, cloudPayload?.accountPrefs)
       };
 
       merged.roadmapCategories = filterRoadmapCategoriesAgainstLibrary(
@@ -22277,6 +22348,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         dismissedRoadmapSidebarMapIds: state.dismissedRoadmapSidebarMapIds,
         deletedMapIds: state.deletedMapIds,
         selectedPathIndexes: state.selectedPathIndexes,
+        accountPrefs: syncAccountPrefsFromState(),
         savedAt: Date.now()
       };
     }
@@ -23447,6 +23519,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
       state.activeRoadmapCategoryId = data.activeRoadmapCategoryId ?? null;
       state.selectedPathIndexes = Array.isArray(data.selectedPathIndexes) ? data.selectedPathIndexes : [];
+      state.accountPrefs = hydrateAccountPrefsFromPayload(data);
 
       const staleTopLevelActive = data.activeMapId && getDeletedMapIds().has(data.activeMapId);
       if (staleTopLevelActive) {
@@ -23471,12 +23544,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           clearIntakeSession({ preserveLibrary: true });
         }
       }
+
+      applyAccountPrefs(state.accountPrefs, {
+        forceLocation: !state.activeMapId || !formatUserLocation(state.userLocation)
+      });
     }
 
     function beginNewIntake() {
       syncActiveMapIntoLibrary();
       state.activeMapId = null;
+      const savedPrefs = accountPrefsHasIdentity(state.accountPrefs)
+        ? normalizeAccountPrefs(state.accountPrefs)
+        : snapshotAccountPrefsFromState();
       clearIntakeSession({ preserveLibrary: true });
+      applyAccountPrefs(savedPrefs, { forceLocation: true });
     }
 
     function loadSavedMap(mapId, options = {}) {
@@ -23667,7 +23748,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return state.history.length > 0
         || state.ideas.length > 0
         || state.savedMaps.length > 0
-        || (Array.isArray(state.deletedMapIds) && state.deletedMapIds.length > 0);
+        || (Array.isArray(state.deletedMapIds) && state.deletedMapIds.length > 0)
+        || accountPrefsHasIdentity(state.accountPrefs);
     }
 
     async function fetchCloudSessionPayload() {
@@ -24006,6 +24088,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       updateSaveButtonVisibility();
       refreshRoadmapsUi();
       updateNavSyncStatus();
+      populateAccountPrefsForm();
     }
 
     async function syncSessionFromCloud() {
@@ -25491,6 +25574,184 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
     }
 
+    function emptyAccountPrefs() {
+      return {
+        userLocation: emptyUserLocation(),
+        locationConfirmed: false,
+        userProfile: emptyUserProfile(),
+        savedAt: 0
+      };
+    }
+
+    function accountPrefsHasIdentity(prefs) {
+      const normalized = normalizeAccountPrefs(prefs);
+      const hasName = Boolean(normalized.userProfile?.name);
+      const hasLocation = Boolean(
+        normalized.locationConfirmed && formatUserLocation(normalized.userLocation)
+      );
+      return hasName || hasLocation;
+    }
+
+    function normalizeAccountPrefs(prefs) {
+      if (!prefs || typeof prefs !== "object") return emptyAccountPrefs();
+      return {
+        userLocation: normalizeUserLocation(prefs.userLocation),
+        locationConfirmed: Boolean(prefs.locationConfirmed),
+        userProfile: normalizeUserProfile(prefs.userProfile),
+        savedAt: Number(prefs.savedAt) || 0
+      };
+    }
+
+    function mergeAccountPrefs(local, cloud) {
+      const a = normalizeAccountPrefs(local);
+      const b = normalizeAccountPrefs(cloud);
+      const pickProfileField = (field) => {
+        if (b.savedAt > a.savedAt && b.userProfile[field]) return b.userProfile[field];
+        if (a.savedAt > b.savedAt && a.userProfile[field]) return a.userProfile[field];
+        return b.userProfile[field] || a.userProfile[field] || "";
+      };
+      const locationFrom = (() => {
+        if (b.locationConfirmed && formatUserLocation(b.userLocation)) {
+          if (!a.locationConfirmed || b.savedAt >= a.savedAt) return b;
+        }
+        if (a.locationConfirmed && formatUserLocation(a.userLocation)) return a;
+        return formatUserLocation(b.userLocation) ? b : a;
+      })();
+      return normalizeAccountPrefs({
+        savedAt: Math.max(a.savedAt || 0, b.savedAt || 0),
+        locationConfirmed: Boolean(a.locationConfirmed || b.locationConfirmed),
+        userLocation: locationFrom.userLocation,
+        userProfile: {
+          name: pickProfileField("name"),
+          incomeUrgency: pickProfileField("incomeUrgency"),
+          pathPreference: pickProfileField("pathPreference"),
+          workMode: pickProfileField("workMode"),
+          willingToRelocate: pickProfileField("willingToRelocate"),
+          founderStage: pickProfileField("founderStage"),
+          skills: pickProfileField("skills"),
+          constraints: pickProfileField("constraints"),
+          goals: pickProfileField("goals"),
+          summary: pickProfileField("summary"),
+          updatedAt: Math.max(a.userProfile.updatedAt || 0, b.userProfile.updatedAt || 0)
+        }
+      });
+    }
+
+    function hydrateAccountPrefsFromPayload(data) {
+      if (data?.accountPrefs && accountPrefsHasIdentity(data.accountPrefs)) {
+        return normalizeAccountPrefs(data.accountPrefs);
+      }
+      const legacyProfile = normalizeUserProfile(data?.userProfile);
+      const legacyLocation = normalizeUserLocation(data?.userLocation);
+      const hasLegacyLocation = Boolean(data?.locationConfirmed && formatUserLocation(legacyLocation));
+      if (!legacyProfile.name && !hasLegacyLocation) return emptyAccountPrefs();
+      return normalizeAccountPrefs({
+        userLocation: legacyLocation,
+        locationConfirmed: Boolean(data?.locationConfirmed),
+        userProfile: legacyProfile,
+        savedAt: Number(data?.savedAt) || Date.now()
+      });
+    }
+
+    function snapshotAccountPrefsFromState() {
+      return normalizeAccountPrefs({
+        userLocation: state.userLocation,
+        locationConfirmed: state.locationConfirmed,
+        userProfile: normalizeUserProfile(state.userProfile),
+        savedAt: Date.now()
+      });
+    }
+
+    function applyAccountPrefs(prefs, options = {}) {
+      const normalized = normalizeAccountPrefs(prefs);
+      state.accountPrefs = normalized;
+      const restoreLocation = options.forceLocation || !hasSavedUserLocation();
+      if (restoreLocation && normalized.locationConfirmed && formatUserLocation(normalized.userLocation)) {
+        state.userLocation = normalizeUserLocation(normalized.userLocation);
+        state.locationConfirmed = true;
+      }
+      const profile = normalizeUserProfile(state.userProfile);
+      const incoming = normalized.userProfile;
+      state.userProfile = normalizeUserProfile({
+        ...profile,
+        name: incoming.name || profile.name,
+        incomeUrgency: incoming.incomeUrgency || profile.incomeUrgency,
+        pathPreference: incoming.pathPreference || profile.pathPreference,
+        workMode: incoming.workMode || profile.workMode,
+        willingToRelocate: incoming.willingToRelocate || profile.willingToRelocate,
+        founderStage: incoming.founderStage || profile.founderStage,
+        skills: incoming.skills || profile.skills,
+        constraints: incoming.constraints || profile.constraints,
+        goals: incoming.goals || profile.goals,
+        summary: incoming.summary || profile.summary,
+        updatedAt: Math.max(profile.updatedAt || 0, incoming.updatedAt || 0)
+      });
+      distillUserProfileSummary();
+      updateRoadmapOverviewHeader();
+      updateRoadmapLocalResourcesList();
+    }
+
+    function syncAccountPrefsFromState() {
+      state.accountPrefs = snapshotAccountPrefsFromState();
+      return state.accountPrefs;
+    }
+
+    function persistAccountPrefs(options = {}) {
+      syncAccountPrefsFromState();
+      populateAccountPrefsForm();
+      if (options.schedule !== false) schedulePersist();
+    }
+
+    function populateAccountPrefsForm() {
+      const prefs = normalizeAccountPrefs(state.accountPrefs || snapshotAccountPrefsFromState());
+      const nameEl = $("#account-pref-name");
+      const countryEl = $("#account-pref-country");
+      const regionEl = $("#account-pref-region");
+      const cityEl = $("#account-pref-city");
+      const postalEl = $("#account-pref-postal");
+      if (nameEl) nameEl.value = prefs.userProfile.name || "";
+      if (countryEl) countryEl.value = prefs.userLocation.country || "";
+      if (regionEl) regionEl.value = prefs.userLocation.region || "";
+      if (cityEl) cityEl.value = prefs.userLocation.city || "";
+      if (postalEl) postalEl.value = prefs.userLocation.postal || "";
+    }
+
+    function saveAccountPrefsFromForm() {
+      const name = $("#account-pref-name")?.value?.trim() || "";
+      const country = $("#account-pref-country")?.value?.trim() || "";
+      const region = $("#account-pref-region")?.value?.trim() || "";
+      const city = $("#account-pref-city")?.value?.trim() || "";
+      const postal = $("#account-pref-postal")?.value?.trim() || "";
+      const parts = [city, region, country].filter(Boolean);
+      const raw = postal ? `${parts.join(", ")} ${postal}`.trim() : parts.join(", ");
+      const parsed = enrichLocationFromKnownCities(parseLocationAnswer(raw || country));
+      state.userLocation = {
+        ...parsed,
+        country: country || parsed.country,
+        region: region || parsed.region,
+        city: city || parsed.city,
+        postal,
+        raw: raw || parsed.raw
+      };
+      state.locationConfirmed = Boolean(formatUserLocation(state.userLocation));
+      if (name) setUserProfileField("name", name.split(/\s+/).slice(0, 3).join(" "));
+      syncAccountPrefsFromState();
+      schedulePersist();
+      const msg = $("#account-pref-msg");
+      if (msg) {
+        msg.hidden = false;
+        msg.className = "site-suggestions-msg success";
+        msg.textContent = state.currentUser
+          ? "Profile saved — new maps will use this info."
+          : "Profile saved on this device — sign in to sync across devices.";
+      }
+      trackEvent("account_prefs_saved", {
+        has_name: Boolean(name),
+        has_location: Boolean(state.locationConfirmed)
+      });
+      updateAuthNavUI();
+    }
+
     function normalizeUserProfile(profile = emptyUserProfile()) {
       const source = profile && typeof profile === "object" ? profile : {};
       return {
@@ -25744,6 +26005,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.profileIntakeStep = null;
       hideProfileIntakeChips();
       distillUserProfileSummary();
+      persistAccountPrefs();
       trackEvent("profile_intake_completed", {
         founder_mode: isFounderOrProjectPrompt(getFirstUserMessage()),
         income_urgency: state.userProfile.incomeUrgency || "",
@@ -25768,8 +26030,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       addTypingBubble();
-      if (shouldAskLocation()) askLocationStep();
-      else askNameStep();
+      if (shouldAskLocation()) {
+        askLocationStep();
+      } else if (shouldAskName()) {
+        askNameStep();
+      } else {
+        void startPathGenerationAfterIntake();
+      }
     }
 
     function advanceProfileIntake() {
@@ -25931,8 +26198,32 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    function hasSavedUserName() {
+      return Boolean(normalizeUserProfile(state.userProfile).name);
+    }
+
+    function shouldAskName() {
+      return !hasSavedUserName();
+    }
+
     function shouldAskLocation() {
       return !hasSavedUserLocation();
+    }
+
+    async function startPathGenerationAfterIntake() {
+      showReplyBox(false);
+      addTypingBubble(PATH_BUILDING_MSG);
+      const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+      trackEvent("path_generation_started", {
+        history_count: state.history.length,
+        intake_mode: state.intakeMode || "standard",
+        has_location: Boolean(getUserLocation()),
+        skipped_identity_prompts: !shouldAskLocation() && !shouldAskName()
+      });
+      await generateAndShowMap({
+        founderMode: founder,
+        intakeMode: state.intakeMode || "standard"
+      });
     }
 
     function normalizeIdeaText(text) {
@@ -26642,7 +26933,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           await generateAndShowMap({ founderMode: founder, intakeMode: "quick" });
           return;
         }
-        askNameStep();
+        if (shouldAskName()) {
+          askNameStep();
+          return;
+        }
+        await startPathGenerationAfterIntake();
         return;
       }
 
@@ -26650,20 +26945,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (text) {
           setUserProfileField("name", text.split(/\s+/).slice(0, 3).join(" "));
         }
+        persistAccountPrefs();
         trackEvent("name_answer_submitted", {
           reply_length: text.length,
           intake_mode: state.intakeMode || "standard",
           has_location: Boolean(getUserLocation())
         });
-        showReplyBox(false);
-        addTypingBubble(PATH_BUILDING_MSG);
-        trackEvent("path_generation_started", {
-          reply_length: text.length,
-          history_count: state.history.length,
-          intake_mode: state.intakeMode || "standard",
-          has_location: Boolean(getUserLocation())
-        });
-        await generateAndShowMap({ founderMode: isFounderOrProjectPrompt(getFirstUserMessage()) });
+        await startPathGenerationAfterIntake();
         return;
       }
 
@@ -27549,17 +27837,46 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       let basePrompt = getCachedRoadmapPrompt(idea, context, promptOptions);
       let roadmapSource = "ai";
 
+      let revealClaimed = false;
+      const tryClaimFirstMissionReveal = (stages, source = "full") => {
+        if (revealClaimed || !stages?.length || !stageOneHasRevealableMission(stages)) return false;
+        revealClaimed = true;
+        const readyStages = prepareStagesForInitialReveal(stages, idea);
+        callbacks.onFirstMissionReady?.(readyStages);
+        trackEvent(source === "quick" ? "roadmap_quick_first_mission" : "roadmap_early_reveal", {
+          idea_index: ideaIndex,
+          stage_count: readyStages.length,
+          task_count: readyStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0),
+          source
+        });
+        return true;
+      };
+
+      void (async () => {
+        try {
+          const quickPrompt = buildFirstMissionQuickPrompt(idea, context, { founderMode });
+          const quickResponse = await callAdvisor(
+            quickPrompt,
+            founderMode ? 1400 : 1200,
+            { timeoutMs: 60000 }
+          );
+          const quickResolved = resolveEarlyRevealStages(quickResponse, idea);
+          if (quickResolved.stages) {
+            tryClaimFirstMissionReveal(
+              applyLocalResourceFixesIfPossible(quickResolved.stages, idea),
+              "quick"
+            );
+          }
+        } catch (error) {
+          console.warn("[whatimado] quick first mission failed:", error?.message || error);
+        }
+      })();
+
       let response = await callAdvisor(basePrompt, tokenLimit, { timeoutMs: ROADMAP_ADVISOR_TIMEOUT_MS });
 
       const earlyReveal = resolveEarlyRevealStages(response, idea);
       if (earlyReveal.stages) {
-        const readyStages = applyLocalResourceFixesIfPossible(earlyReveal.stages, idea);
-        callbacks.onFirstMissionReady?.(readyStages);
-        trackEvent("roadmap_early_reveal", {
-          idea_index: ideaIndex,
-          stage_count: readyStages.length,
-          task_count: readyStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0)
-        });
+        tryClaimFirstMissionReveal(applyLocalResourceFixesIfPossible(earlyReveal.stages, idea), "full");
       } else {
         logEarlyRevealSkipped(earlyReveal, idea, ideaIndex, response);
       }
@@ -29441,6 +29758,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function clearIntakeSession(options = {}) {
+      const preservedPrefs = options.preserveAccountPrefs === false
+        ? emptyAccountPrefs()
+        : (accountPrefsHasIdentity(state.accountPrefs)
+          ? normalizeAccountPrefs(state.accountPrefs)
+          : snapshotAccountPrefsFromState());
       state.step = 1;
       state.history = [];
       state.ideas = [];
@@ -29482,6 +29804,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       updateMapAuxiliaryPanels();
       updateSaveButtonVisibility();
+      if (options.preserveAccountPrefs !== false && accountPrefsHasIdentity(preservedPrefs)) {
+        applyAccountPrefs(preservedPrefs, { forceLocation: true });
+      }
     }
 
     function getRoadmapSidebarCount() {
@@ -29556,7 +29881,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.deletedMapIds = [];
       state.selectedPathIndexes = [];
       resetScreenNavHistory();
-      clearIntakeSession({ clearMainInput: true });
+      clearIntakeSession({ clearMainInput: true, preserveAccountPrefs: false });
+      state.accountPrefs = emptyAccountPrefs();
       state.lastScreen = "main";
       setSaveStatus("idle");
       $("#save-status-bar")?.classList.remove("visible");
@@ -31023,11 +31349,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       $("#sidebar-settings-btn")?.addEventListener("click", () => {
         closeDashboardMobileNav();
+        populateAccountPrefsForm();
         showScreen("main", { skipScrollTop: true });
         requestAnimationFrame(() => {
-          $("#site-suggestions")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          $("#account-preferences")?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
+      $("#account-pref-save")?.addEventListener("click", () => saveAccountPrefsFromForm());
       $$(".dashboard-quick-btn").forEach((button) => {
         button.addEventListener("click", () => {
           applyDashboardPrompt(button.dataset.prompt);
