@@ -7259,6 +7259,15 @@
       text-transform: uppercase;
     }
 
+    .task-mentor-label--inline {
+      display: inline;
+      margin: 0 .35rem 0 0;
+    }
+
+    .task-mentor-copy--outcome {
+      margin-top: .65rem;
+    }
+
     .task-mentor-copy {
       margin: 0;
       color: var(--ink-muted, rgba(232, 236, 255, .78));
@@ -9022,6 +9031,28 @@
       border-radius: .75rem;
       background: rgba(120, 130, 200, .06);
       border: 1px dashed rgba(120, 130, 200, .18);
+      animation: roadmap-pending-card-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes roadmap-pending-card-pulse {
+      0%, 100% { border-color: rgba(120, 130, 200, .18); }
+      50% { border-color: rgba(120, 130, 200, .42); }
+    }
+
+    .roadmap-task--pending .site-loading-progress-fill,
+    .roadmap-phase--pending .site-loading-progress-fill {
+      width: 42% !important;
+      animation: roadmap-pending-progress-slide 1.35s ease-in-out infinite;
+    }
+
+    @keyframes roadmap-pending-progress-slide {
+      0% { transform: translateX(-10%); opacity: .55; }
+      50% { transform: translateX(120%); opacity: 1; }
+      100% { transform: translateX(-10%); opacity: .55; }
+    }
+
+    .roadmap-phase--pending {
+      animation: roadmap-pending-card-pulse 2s ease-in-out infinite;
     }
 
     html[data-color-scheme="adult"] .roadmap-task--pending {
@@ -15090,12 +15121,24 @@
 
     function getTaskAssistanceThemes(normalized) {
       const blob = `${normalized.text} ${normalized.mission || ""} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.howTo || ""}`.toLowerCase();
+
+      if (isPeopleInterviewTask(normalized)) {
+        const themes = ["research"];
+        if (isOrgListTask(normalized) || getFlatTaskResources(normalized).length) {
+          themes.push("contact_orgs");
+        } else if (/\b(find|reach|recruit|invite|locate)\b/.test(blob)) {
+          themes.push("contact_orgs");
+        }
+        return themes;
+      }
+
       const scoreTheme = (theme, score) => score > 0 ? { theme, score } : null;
 
       const contactScore = (isOrgListTask(normalized) ? 3 : 0)
         + (/\b(contact|outreach|reach out|nonprofit|organization|partner|director|211|call |email |voicemail)\b/.test(blob) ? 2 : 0)
         + (getFlatTaskResources(normalized).length ? 1 : 0);
-      const jobScore = (/\b(apply for|job application|get hired|resume|cover letter|interview|career|employer|recruit|job search|work at)\b/.test(blob) ? 3 : 0)
+      const jobScore = (/\b(apply for|job application|get hired|resume|cover letter|career|employer|recruit|job search|work at)\b/.test(blob) ? 3 : 0)
+        + (/\b(interview for|job interview|hiring interview)\b/.test(blob) ? 2 : 0)
         + (/\b(hire|hiring|position at|submit application)\b/.test(blob) ? 1 : 0);
       const businessScore = (/\b(business plan|startup|launch|side hustle|llc|customers|revenue|marketing|elevator pitch|founder|whatimado)\b/.test(blob) ? 2 : 0)
         + (isFounderRoadmapForIdea(state.currentIdea) ? 3 : 0)
@@ -15120,6 +15163,10 @@
     }
 
     function getGeneralDraftSuggestionIds(normalized) {
+      if (isPeopleInterviewTask(normalized)) {
+        return ["interview_questions", "research_checklist"];
+      }
+
       const ids = [];
       const primary = getWritingDeliverableType(normalized);
       if (primary && PRIMARY_DRAFT_TYPE_TO_SUGGESTION[primary]) {
@@ -15188,18 +15235,31 @@
       return false;
     }
 
+    function getPeopleInterviewDraftSuggestionIds(normalized) {
+      const ids = ["interview_questions", "research_checklist"];
+      const blob = `${normalized.text} ${normalized.mission || ""}`.toLowerCase();
+      if (/\b(find|reach|recruit|invite|locate|who|list)\b/.test(blob) || getFlatTaskResources(normalized).length) {
+        ids.push("outreach_email");
+      }
+      return ids;
+    }
+
     function getTaskDraftSuggestions(normalized) {
-      const themes = getTaskAssistanceThemes(normalized);
       const idOrder = [];
-      themes.forEach((theme) => {
-        if (theme === "general") {
+      if (isPeopleInterviewTask(normalized)) {
+        getPeopleInterviewDraftSuggestionIds(normalized).forEach((id) => idOrder.push(id));
+      } else {
+        const themes = getTaskAssistanceThemes(normalized);
+        themes.forEach((theme) => {
+          if (theme === "general") {
+            getGeneralDraftSuggestionIds(normalized).forEach((id) => idOrder.push(id));
+            return;
+          }
+          (PROFILE_DRAFT_SUGGESTION_IDS[theme] || []).forEach((id) => idOrder.push(id));
+        });
+        if (!idOrder.length) {
           getGeneralDraftSuggestionIds(normalized).forEach((id) => idOrder.push(id));
-          return;
         }
-        (PROFILE_DRAFT_SUGGESTION_IDS[theme] || []).forEach((id) => idOrder.push(id));
-      });
-      if (!idOrder.length) {
-        getGeneralDraftSuggestionIds(normalized).forEach((id) => idOrder.push(id));
       }
 
       const seen = new Set();
@@ -17250,6 +17310,29 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
+    function inferInterviewAudience(normalized, idea = state.currentIdea) {
+      const situation = `${getFirstUserMessage()} ${idea?.why || ""} ${idea?.title || ""} ${idea?.tagline || ""}`.toLowerCase();
+      const shortGoal = getShortPathLabel(idea);
+
+      if (/\bwhatimado|possibility map|what am i gonna do|stuck (on|choosing)|next step\b/.test(situation)) {
+        return "people who've felt stuck choosing their next step";
+      }
+      if (/\breentry|incarcerat|released from|coming home\b/.test(situation)) {
+        return "people rebuilding after incarceration";
+      }
+      if (/\bfounder|startup|launching\b/.test(situation) && isFounderRoadmapForIdea(idea)) {
+        return `people who might use ${shortGoal.toLowerCase()}`;
+      }
+      if (shortGoal && shortGoal !== "your project") {
+        return `people working toward ${shortGoal.toLowerCase()}`;
+      }
+      const problem = summarizeMissionTitle(normalized.why || normalized.text);
+      if (problem && problem.length <= 72) {
+        return `people affected by ${problem.charAt(0).toLowerCase()}${problem.slice(1)}`;
+      }
+      return "people who've lived this problem";
+    }
+
     function inferMissionTitle(normalized, context = {}) {
       const existing = String(normalized.mission || "").trim();
       if (existing && !isGenericOutcomeText(existing) && !missionTitleLooksLikeHomework(existing, normalized)) {
@@ -17261,9 +17344,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (isPeopleInterviewTask(normalized)) {
         const count = blob.match(/\b(\d+)\b/);
+        const n = count?.[1] || "3";
+        const audience = inferInterviewAudience(normalized, state.currentIdea);
         return taskIndex > 0
           ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
-          : `Talk to ${count?.[1] || "3"} people who've lived this problem`;
+          : `Ask ${n} ${audience} what they need right now`;
       }
       if (isOrgListTask(normalized)) {
         return taskIndex > 0
@@ -27401,7 +27486,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       stopPendingRoadmapProgressBars();
       $$(".roadmap-phase-loading-progress, .roadmap-task-loading-progress").forEach((root) => {
         pendingRoadmapProgressRoots.add(root);
-        startSiteLoadingProgress(root, { durationMs: 75000, cap: 90 });
+        startSiteLoadingProgress(root, {
+          durationMs: 28000,
+          cap: 88,
+          formatRemaining: (ms) => {
+            if (ms <= 0) return "Almost ready…";
+            const sec = Math.ceil(ms / 1000);
+            return sec > 45 ? "Usually under a minute…" : `About ${sec}s left…`;
+          }
+        });
       });
     }
 
@@ -27480,14 +27573,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
 
-      while (ready.length < slotCount) {
-        ready.push({
-          label: "",
-          desc: "",
-          tasks: [],
-          _pendingStage: true
-        });
-      }
       return ready;
     }
 
@@ -27619,29 +27704,29 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `</span></div>` +
         `<div class="roadmap-phase-body stage-body">` +
         `<div class="roadmap-phase-loading-progress site-loading-progress" aria-live="polite">` +
-        `<div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">` +
-        `<span class="site-loading-progress-fill"></span></div>` +
+        `<div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="12">` +
+        `<span class="site-loading-progress-fill" style="width:12%"></span></div>` +
         `<p class="site-loading-progress-meta">` +
-        `<span class="site-loading-progress-pct">0%</span>` +
-        `<span class="site-loading-progress-eta">Preparing missions…</span>` +
+        `<span class="site-loading-progress-pct">…</span>` +
+        `<span class="site-loading-progress-eta">Preparing missions — usually under a minute</span>` +
         `</p></div></div></article>`
       );
     }
 
     function renderPendingTaskHtml(id, taskIndex) {
-      const label = formatMissionTaskLabel(taskIndex);
+      const missionNum = taskIndex + 1;
       return (
         `<div class="task-item task-item--pending roadmap-task--pending" data-task-id="${id}" aria-busy="true">` +
         `<div class="task-item-head">` +
-        `<span class="task-num">${taskIndex + 1}</span>` +
-        `<span class="task-pending-label">Building ${escapeHtml(label)}…</span>` +
+        `<span class="task-num">${missionNum}</span>` +
+        `<span class="task-pending-label">Loading mission ${missionNum}…</span>` +
         `</div>` +
         `<div class="roadmap-task-loading-progress site-loading-progress" aria-live="polite">` +
-        `<div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">` +
-        `<span class="site-loading-progress-fill"></span></div>` +
+        `<div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="12">` +
+        `<span class="site-loading-progress-fill" style="width:12%"></span></div>` +
         `<p class="site-loading-progress-meta">` +
-        `<span class="site-loading-progress-pct">0%</span>` +
-        `<span class="site-loading-progress-eta">Writing your next step…</span>` +
+        `<span class="site-loading-progress-pct">…</span>` +
+        `<span class="site-loading-progress-eta">Writing your next step — usually under a minute</span>` +
         `</p></div></div>`
       );
     }
@@ -29504,8 +29589,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const normalized = normalizeRoadmapTask(task);
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "", tasks: [] };
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
-      const simplified = shouldUseSimplifiedMissionLayout(normalized);
-      const mission = humanizeTaskText(normalized.mission || inferMissionTitle(normalized));
+      const simplified = true;
+      const mission = humanizeTaskText(normalized.mission || inferMissionTitle(normalized, { taskIndex, stageLabel: stage.label }));
       const text = simplified
         ? buildMentorUserActionText(normalized)
         : humanizeTaskText(normalized.text);
@@ -29572,7 +29657,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   <h4 class="task-mentor-label">What to do</h4>
                   <div class="task-text">${linkifyTaskTextHtml(text)}</div>
                 </section>
-                ${mentorHelp}` : mentorHelp;
+                ${mentorHelp}
+                ${outcome && !isTaskRestatement(outcome, normalized) ? `
+                <p class="task-mentor-copy task-mentor-copy--outcome"><span class="task-mentor-label task-mentor-label--inline">Done when:</span> ${escapeHtml(outcome)}</p>
+                ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}` : `${mentorHelp}
+                ${outcome && !isTaskRestatement(outcome, normalized) ? `
+                <p class="task-mentor-copy task-mentor-copy--outcome"><span class="task-mentor-label task-mentor-label--inline">Done when:</span> ${escapeHtml(outcome)}</p>
+                ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}`;
 
       return `
         <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
