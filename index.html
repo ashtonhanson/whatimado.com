@@ -9108,7 +9108,7 @@
       justify-items: center;
       text-align: center;
       width: min(100%, 28rem);
-      margin: -1.75rem 0 0 -2rem;
+      margin: 0 auto;
     }
 
     .site-loading-progress {
@@ -17528,6 +17528,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function dedupeMissionsInStage(tasks, stageLabel = "", stageIndex = 0) {
       const seen = new Set();
       return (tasks || []).map((task, taskIndex) => {
+        if (isPendingRoadmapTask(task)) return { _pendingTask: true };
         const normalized = typeof task === "object" && task?.text !== undefined ? { ...task } : normalizeRoadmapTask(task);
         let mission = String(normalized.mission || "").trim();
         if (!mission || isGenericOutcomeText(mission) || textSimilarity(mission, normalized.outcome || "") > 0.82) {
@@ -17555,7 +17556,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function mentorizeRoadmapStages(stages) {
       return (stages || []).map((stage, stageIndex) => {
-        const tasks = (stage.tasks || []).map((task) => mentorizeTask(task));
+        const tasks = (stage.tasks || []).map((task) => (
+          isPendingRoadmapTask(task) ? { _pendingTask: true } : mentorizeTask(task)
+        ));
         return {
           ...stage,
           tasks: dedupeMissionsInStage(tasks, stage.label, stageIndex)
@@ -17672,6 +17675,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function normalizeRoadmapTask(task, fallback = {}) {
+      if (task && typeof task === "object" && task._pendingTask) {
+        return { _pendingTask: true };
+      }
       let normalized;
       if (typeof task === "string") {
         normalized = {
@@ -18100,12 +18106,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function normalizeRoadmapStages(stages) {
       const idea = state.currentIdea;
-      return mentorizeRoadmapStages((stages || []).map((stage) => ({
-        ...stage,
-        label: simplifyStageLabel(stage.label || "", idea),
-        desc: humanizeTaskText(stage.desc || ""),
-        tasks: (stage.tasks || []).map((task) => normalizeRoadmapTask(task))
-      })));
+      return (stages || []).map((stage) => {
+        if (isPendingRoadmapStage(stage)) {
+          return {
+            label: stage.label || "",
+            desc: stage.desc || "",
+            tasks: stage.tasks || [],
+            _pendingStage: true
+          };
+        }
+        return mentorizeRoadmapStages([{
+          ...stage,
+          label: simplifyStageLabel(stage.label || "", idea),
+          desc: humanizeTaskText(stage.desc || ""),
+          tasks: (stage.tasks || []).map((task) => (
+            isPendingRoadmapTask(task) ? { _pendingTask: true } : normalizeRoadmapTask(task)
+          ))
+        }])[0];
+      });
     }
 
     function roadmapHasRichLocalData(stages = state.roadmapStages, idea = state.currentIdea) {
@@ -27370,14 +27388,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function expandStagesForProgressiveReveal(stages, founderMode, { isFinal = false } = {}) {
       const slotCount = getProgressiveRoadmapSlotCount(founderMode);
       const expectedTasks = getExpectedRoadmapTasksPerStage(founderMode);
-      let ready = normalizeRoadmapStages(stages || []).filter((stage) => !isPendingRoadmapStage(stage));
+      let ready = normalizeRoadmapStages(
+        (stages || []).filter((stage) => !isPendingRoadmapStage(stage))
+      );
       if (!ready.length) return ready;
 
-      if (!isFinal) {
-        ready = ready.slice(0, 1);
+      if (isFinal) {
+        return ready;
       }
 
-      if (!isFinal && ready[0]) {
+      ready = ready.slice(0, 1);
+
+      if (ready[0]) {
         const tasks = (ready[0].tasks || []).filter((task) => !isPendingRoadmapTask(task));
         if (tasks.length) {
           const pendingTaskSlots = Math.max(expectedTasks - 1, tasks.length - 1, 1);
@@ -27391,13 +27413,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
 
-      if (isFinal) {
-        return ready.map((stage) => ({
-          ...stage,
-          tasks: (stage.tasks || []).filter((task) => !isPendingRoadmapTask(task))
-        }));
-      }
-
       while (ready.length < slotCount) {
         ready.push({
           label: "",
@@ -27407,6 +27422,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         });
       }
       return ready;
+    }
+
+    function roadmapNeedsDeferredReveal(fullStages, currentStages = state.roadmapStages) {
+      if (hasPendingRoadmapContent(currentStages)) return true;
+      const current = currentStages || [];
+      const full = normalizeRoadmapStages(
+        (fullStages || []).filter((stage) => !isPendingRoadmapStage(stage))
+      );
+      if (!full.length) return false;
+      if (current.length < full.length) return true;
+      const currentRealTasks = (current[0]?.tasks || []).filter((task) => !isPendingRoadmapTask(task)).length;
+      const fullTasks = (full[0]?.tasks || []).length;
+      return currentRealTasks < fullTasks;
     }
 
     let roadmapDeferredRevealHandle = null;
@@ -27752,10 +27780,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function stageOneHasRevealableMission(stages = state.roadmapStages) {
       const first = stages?.[0];
-      if (!first?.label?.trim()) return false;
+      if (!first || isPendingRoadmapStage(first)) return false;
+      if (!first.label?.trim()) return false;
       const tasks = Array.isArray(first.tasks) ? first.tasks : [];
       if (!tasks.length) return false;
-      return tasks.some((task) => Boolean(getTaskText(task)?.trim()));
+      return tasks.some((task) => {
+        if (isPendingRoadmapTask(task)) return false;
+        return Boolean(getTaskText(task)?.trim()) || Boolean(getMissionTitle(task)?.trim());
+      });
     }
 
     function logEarlyRevealSkipped(result, idea, ideaIndex, response) {
@@ -27937,6 +27969,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
         return {
           ...stage,
+          _pendingStage: undefined,
           label: stageLabelIssues && refStage.label ? refStage.label : stage.label,
           desc: refStage.desc || stage.desc,
           tasks
@@ -28094,11 +28127,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? new Set(state.expandedRoadmapTasks)
         : null;
 
-      const renderStagesPayload = progressive || (!isFinal && !refineUpdate)
-        ? expandStagesForProgressiveReveal(stages, founderMode, { isFinal })
-        : (isFinal
-          ? expandStagesForProgressiveReveal(stages, founderMode, { isFinal: true })
-          : normalizeRoadmapStages(stages));
+      const renderStagesPayload = (!isFinal && (progressive || !refineUpdate))
+        ? expandStagesForProgressiveReveal(stages, founderMode, { isFinal: false })
+        : expandStagesForProgressiveReveal(stages, founderMode, { isFinal: true });
 
       state.roadmapStages = renderStagesPayload;
       if (initialReveal && !refineUpdate) prepareFirstMissionForReveal(idea);
@@ -28276,7 +28307,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const cached = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
         ? state.allRoadmaps[state.roadmapKey]
         : null;
-      const cachedIsUsable = Boolean(cached?.stages?.length) && !isGenericFallbackRoadmap(cached.stages) && !roadmapHasGenericStages(cached.stages, idea);
+      const cachedIsUsable = Boolean(cached?.stages?.length)
+        && stageOneHasRevealableMission(cached.stages)
+        && !isGenericFallbackRoadmap(cached.stages)
+        && !roadmapHasGenericStages(cached.stages, idea);
       if (cachedIsUsable) {
         showScreen("roadmap");
         setRoadmapLoading(false);
@@ -28379,7 +28413,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               );
             },
             onFullStagesReady(fullStages, meta = {}) {
-              if (!revealed || !fullStages?.length || !hasPendingRoadmapContent(state.roadmapStages)) return;
+              if (!revealed || !fullStages?.length || !roadmapNeedsDeferredReveal(fullStages)) return;
               queueDeferredRoadmapPhaseReveal(
                 fullStages,
                 idea,
@@ -28393,7 +28427,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             },
             onRefinementComplete(stages, meta = {}) {
               if (!revealed || !stages?.length) return;
-              if (hasPendingRoadmapContent(state.roadmapStages)) {
+              if (roadmapNeedsDeferredReveal(stages)) {
                 queueDeferredRoadmapPhaseReveal(
                   stages,
                   idea,
@@ -29687,9 +29721,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!list) return;
       list.innerHTML = "";
 
+      let payload = stages;
+      if (payload?.length && !stageOneHasRevealableMission(payload) && state.roadmapKey) {
+        const cachedStages = state.allRoadmaps[state.roadmapKey]?.stages;
+        if (cachedStages?.length && stageOneHasRevealableMission(cachedStages)) {
+          payload = normalizeRoadmapStages(cachedStages);
+          state.roadmapStages = payload;
+        }
+      }
+
       if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
 
-      stages.forEach((stage, stageIndex) => {
+      payload.forEach((stage, stageIndex) => {
         if (isPendingRoadmapStage(stage)) {
           list.insertAdjacentHTML("beforeend", renderPendingStageHtml(stageIndex));
           return;
