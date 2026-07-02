@@ -13091,6 +13091,9 @@
     let roadmapShellWaitTimer = null;
     const ROADMAP_ADVISOR_TIMEOUT_MS = 90000;
     const ROADMAP_FIRST_MISSION_PROGRESS_MS = 48000;
+    const ROADMAP_TASK_REVEAL_DELAY_MS = 3200;
+    const ROADMAP_PHASE_REVEAL_DELAY_MS = 4800;
+    const ROADMAP_REVEAL_INITIAL_HOLD_MS = 2000;
     let roadmapBackgroundRefinementInFlight = false;
     let roadmapAdaptTimer = null;
     let roadmapAdaptInFlight = false;
@@ -15398,63 +15401,54 @@ If recording answers:
       draftEl.classList.add("is-generating-draft");
       const draftProgress = startDraftGeneratingProgress(taskId);
 
+      const tryInsertDraft = (draft, source) => {
+        const cleaned = humanizeDraftFormatting(String(draft || "").trim());
+        if (!cleaned || cleaned.length < 40) return false;
+        if (draftDuplicatesPreparedContent(cleaned, normalized)) return false;
+        if (!isUsableDraftContent(cleaned, normalized) && !suggestion.variant) return false;
+        insertTaskDraft(taskId, cleaned, { focus: true, expand: true });
+        data.draftGenerated = true;
+        data.draftSource = source;
+        data.draftSuggestionId = suggestionId;
+        schedulePersist();
+        trackEvent("task_draft_suggestion_generated", {
+          task_id: taskId,
+          suggestion_id: suggestionId,
+          deliverable: suggestion.draftType,
+          source
+        });
+        return true;
+      };
+
       try {
         const existing = extractDraftContentForSuggestion(normalized, suggestion);
-        if (existing && !options.force && !draftDuplicatesPreparedContent(existing, normalized)) {
-          insertTaskDraft(taskId, existing, { focus: true, expand: true });
-          data.draftGenerated = true;
-          data.draftSource = "roadmap";
-          data.draftSuggestionId = suggestionId;
-          schedulePersist();
-          trackEvent("task_draft_suggestion_generated", {
-            task_id: taskId,
-            suggestion_id: suggestionId,
-            deliverable: suggestion.draftType,
-            source: "roadmap"
-          });
-          return;
-        }
+        if (existing && !options.force && tryInsertDraft(existing, "roadmap")) return;
 
         const localDraft = buildLocalDraftForSuggestion(normalized, suggestion);
-        const localIsUsable = localDraft && isUsableDraftContent(localDraft, normalized)
-          && !draftDuplicatesPreparedContent(localDraft, normalized);
-        const preferAi = Boolean(options.force) || suggestion.variant === "elevator_pitch"
-          || suggestion.variant === "marketing_plan" || suggestion.draftType === "founder_story";
+        const localReady = localDraft
+          && !draftDuplicatesPreparedContent(localDraft, normalized)
+          && (isUsableDraftContent(localDraft, normalized) || Boolean(suggestion.variant));
+        const preferAiEnhance = Boolean(options.force)
+          || suggestion.variant === "marketing_plan"
+          || suggestion.draftType === "founder_story";
 
-        if (localIsUsable && !preferAi) {
-          insertTaskDraft(taskId, localDraft, { focus: true, expand: true });
-          data.draftGenerated = true;
-          data.draftSource = "local";
-          data.draftSuggestionId = suggestionId;
-          schedulePersist();
-          trackEvent("task_draft_suggestion_generated", {
-            task_id: taskId,
-            suggestion_id: suggestionId,
-            deliverable: suggestion.draftType,
-            source: "local"
-          });
-          return;
-        }
+        if (localReady && !preferAiEnhance && tryInsertDraft(localDraft, "local")) return;
 
         const aiDraft = await generateAiTaskDraft(taskId, normalized, {
           draftType: suggestion.draftType,
           variant: suggestion.variant,
           suggestion
         });
-        const draft = (aiDraft?.trim() || (localIsUsable ? localDraft : "") || "").trim();
-        if (draft && isUsableDraftContent(draft, normalized) && !draftDuplicatesPreparedContent(draft, normalized)) {
-          insertTaskDraft(taskId, draft, { focus: true, expand: true });
-          data.draftGenerated = true;
-          data.draftSource = aiDraft?.trim() ? "ai" : "local";
-          data.draftSuggestionId = suggestionId;
-          schedulePersist();
-          trackEvent("task_draft_suggestion_generated", {
-            task_id: taskId,
-            suggestion_id: suggestionId,
-            deliverable: suggestion.draftType,
-            source: data.draftSource
-          });
-        }
+        if (aiDraft && tryInsertDraft(aiDraft, "ai")) return;
+
+        if (localReady && tryInsertDraft(localDraft, "local")) return;
+
+        flashSaveToast(`Couldn't generate ${suggestion.label} — try again in a moment.`);
+        trackEvent("task_draft_suggestion_failed", {
+          task_id: taskId,
+          suggestion_id: suggestionId,
+          deliverable: suggestion.draftType
+        });
       } finally {
         taskDraftGenerationInFlight.delete(taskId);
         suggestionBtn?.classList.remove("is-generating");
@@ -15495,7 +15489,10 @@ If recording answers:
       if (normalized && isTaskRestatement(copy, normalized)) return false;
       if (/^\[(starter draft|edit this draft|write your draft here|your prepared assets|mission brief)/i.test(copy)) return false;
       if (/^no draft needed/i.test(copy)) return false;
-      const hasUsableMarkers = /\bsubject:|dear |hi [a-z]|^to:|^\[your name\]|^\| .+\||^\[ \]|^[A-Z][A-Z0-9 /&—-]{3,}(?:DRAFT|SCRIPT|PLAN|EMAIL|SURVEY|CHECKLIST|AGENDA|FLYER|RESUME|PROPOSAL|OUTLINE|MISSION)|^1\. |phone script|google form|one-page business plan|one-page mission|mission statement|who we help|who you help|cover letter|tracking sheet|title:\s|body:\s|forms\.google|when they answer:|week of |linkedin post draft|facebook post draft|reddit post draft|hey everyone|presentation outline/im.test(copy);
+      const hasUsableMarkers = /\belevator pitch\b/i.test(copy)
+        || /\b(one-page mission|mission statement|who we help|who you help)\b/i.test(copy)
+        || /\bsubject:|dear |^to:|^\[your name\]|^\| .+\||^\[ \]|^[A-Z][A-Z0-9 /&—-]{3,}(?:DRAFT|SCRIPT|PLAN|EMAIL|SURVEY|CHECKLIST|AGENDA|FLYER|RESUME|PROPOSAL|OUTLINE|MISSION)|^1\. |phone script|google form|one-page business plan|cover letter|tracking sheet|title:\s|body:\s|forms\.google|when they answer:|week of |linkedin post draft|facebook post draft|reddit post draft|hey everyone|presentation outline/i.test(copy)
+        || /\bhi,? i['']m\b/i.test(copy);
       const looksLikeInstructions = /^(what to do|how to|your mission|step \d+:|first, you should|next, you should|you should|make sure you|this step is about|organization list \(start)/im.test(copy);
       if (/\bwhatimado\.com\b/i.test(copy) && copy.split(/\s+/).filter(Boolean).length >= 30 && !looksLikeInstructions) return true;
       return hasUsableMarkers && !looksLikeInstructions;
@@ -27382,13 +27379,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (!isFinal && ready[0]) {
         const tasks = (ready[0].tasks || []).filter((task) => !isPendingRoadmapTask(task));
-        const paddedTasks = [...tasks];
-        if (paddedTasks.length > 0) {
-          while (paddedTasks.length < expectedTasks) {
-            paddedTasks.push({ _pendingTask: true });
-          }
+        if (tasks.length) {
+          const pendingTaskSlots = Math.max(expectedTasks - 1, tasks.length - 1, 1);
+          ready[0] = {
+            ...ready[0],
+            tasks: [
+              tasks[0],
+              ...Array.from({ length: pendingTaskSlots }, () => ({ _pendingTask: true }))
+            ]
+          };
         }
-        ready[0] = { ...ready[0], tasks: paddedTasks };
       }
 
       if (isFinal) {
@@ -27409,57 +27409,109 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return ready;
     }
 
-    function delayMs(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
+    let roadmapDeferredRevealHandle = null;
+
+    function cancelDeferredRoadmapPhaseReveal() {
+      if (!roadmapDeferredRevealHandle) return;
+      roadmapDeferredRevealHandle.timers.forEach((timerId) => clearTimeout(timerId));
+      roadmapDeferredRevealHandle = null;
     }
 
-    async function staggerFillRemainingRoadmapPhases(fullStages, idea, ideaIndex, source, founderMode) {
+    function syncDeferredRoadmapSnapshot(idea, ideaIndex, source) {
+      if (!state.roadmapKey) return;
+      state.allRoadmaps[state.roadmapKey] = {
+        ...(state.allRoadmaps[state.roadmapKey] || {}),
+        idea,
+        stages: state.roadmapStages,
+        source
+      };
+      renderStages(state.roadmapStages);
+      if (hasPendingRoadmapContent(state.roadmapStages)) {
+        requestAnimationFrame(() => startPendingRoadmapProgressBars());
+      } else {
+        stopPendingRoadmapProgressBars();
+      }
+      registerRoadmapInSidebar(idea, ideaIndex);
+      renderSidebarRoadmaps();
+    }
+
+    function queueDeferredRoadmapPhaseReveal(fullStages, idea, ideaIndex, source, founderMode) {
+      cancelDeferredRoadmapPhaseReveal();
       const normalized = normalizeRoadmapStages(fullStages);
       if (!normalized.length || !state.roadmapKey) return;
 
-      while (state.roadmapStages.length < normalized.length) {
-        state.roadmapStages.push({
-          label: "",
-          desc: "",
-          tasks: [],
-          _pendingStage: true
-        });
-      }
+      const handle = {
+        timers: [],
+        activeKey: state.roadmapKey
+      };
+      roadmapDeferredRevealHandle = handle;
 
-      if (normalized[0]) {
-        state.roadmapStages[0] = { ...normalized[0] };
-        state.allRoadmaps[state.roadmapKey] = {
-          ...(state.allRoadmaps[state.roadmapKey] || {}),
-          idea,
-          stages: state.roadmapStages,
-          source
-        };
-        renderStages(state.roadmapStages);
-        if (hasPendingRoadmapContent(state.roadmapStages)) {
-          requestAnimationFrame(() => startPendingRoadmapProgressBars());
+      const schedule = (fn, delayMs) => {
+        const timerId = setTimeout(fn, delayMs);
+        handle.timers.push(timerId);
+      };
+
+      let elapsed = ROADMAP_REVEAL_INITIAL_HOLD_MS;
+      const fullPhase0 = normalized[0];
+
+      if (fullPhase0?.tasks?.length > 1) {
+        for (let taskIndex = 1; taskIndex < fullPhase0.tasks.length; taskIndex += 1) {
+          const captureIndex = taskIndex;
+          schedule(() => {
+            if (roadmapDeferredRevealHandle !== handle || handle.activeKey !== state.roadmapKey) return;
+            const current = state.roadmapStages[0];
+            if (!current) return;
+            const realTasks = (current.tasks || []).filter((task) => !isPendingRoadmapTask(task));
+            const nextTasks = [...realTasks, fullPhase0.tasks[captureIndex]];
+            while (nextTasks.length < fullPhase0.tasks.length) {
+              nextTasks.push({ _pendingTask: true });
+            }
+            state.roadmapStages[0] = { ...current, tasks: nextTasks };
+            syncDeferredRoadmapSnapshot(idea, ideaIndex, source);
+          }, elapsed);
+          elapsed += ROADMAP_TASK_REVEAL_DELAY_MS;
         }
-        await delayMs(400);
+        schedule(() => {
+          if (roadmapDeferredRevealHandle !== handle || handle.activeKey !== state.roadmapKey) return;
+          state.roadmapStages[0] = { ...fullPhase0 };
+          syncDeferredRoadmapSnapshot(idea, ideaIndex, source);
+        }, elapsed);
+        elapsed += ROADMAP_PHASE_REVEAL_DELAY_MS;
+      } else if (fullPhase0) {
+        schedule(() => {
+          if (roadmapDeferredRevealHandle !== handle || handle.activeKey !== state.roadmapKey) return;
+          state.roadmapStages[0] = { ...fullPhase0 };
+          syncDeferredRoadmapSnapshot(idea, ideaIndex, source);
+        }, elapsed);
+        elapsed += ROADMAP_PHASE_REVEAL_DELAY_MS;
       }
 
       for (let phaseIndex = 1; phaseIndex < normalized.length; phaseIndex += 1) {
-        state.roadmapStages[phaseIndex] = normalized[phaseIndex];
-        state.allRoadmaps[state.roadmapKey] = {
-          ...(state.allRoadmaps[state.roadmapKey] || {}),
-          idea,
-          stages: state.roadmapStages,
-          source
-        };
-        renderStages(state.roadmapStages);
-        if (phaseIndex < normalized.length - 1 && hasPendingRoadmapContent(state.roadmapStages)) {
-          requestAnimationFrame(() => startPendingRoadmapProgressBars());
-          await delayMs(450);
-        }
+        const capturePhase = phaseIndex;
+        schedule(() => {
+          if (roadmapDeferredRevealHandle !== handle || handle.activeKey !== state.roadmapKey) return;
+          while (state.roadmapStages.length <= capturePhase) {
+            state.roadmapStages.push({
+              label: "",
+              desc: "",
+              tasks: [],
+              _pendingStage: true
+            });
+          }
+          state.roadmapStages[capturePhase] = normalized[capturePhase];
+          syncDeferredRoadmapSnapshot(idea, ideaIndex, source);
+        }, elapsed);
+        elapsed += ROADMAP_PHASE_REVEAL_DELAY_MS;
       }
 
-      state.roadmapStages = state.roadmapStages.slice(0, normalized.length);
-      stopPendingRoadmapProgressBars();
-      registerRoadmapInSidebar(idea, ideaIndex);
-      renderSidebarRoadmaps();
+      schedule(() => {
+        if (roadmapDeferredRevealHandle !== handle || handle.activeKey !== state.roadmapKey) return;
+        state.roadmapStages = normalized.map((stage) => ({ ...stage }));
+        stopPendingRoadmapProgressBars();
+        syncDeferredRoadmapSnapshot(idea, ideaIndex, source);
+        schedulePersist();
+        roadmapDeferredRevealHandle = null;
+      }, elapsed + 400);
     }
 
     function renderPendingStageHtml(stageIndex) {
@@ -28196,6 +28248,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function viewRoadmap(idea, ideaIndex, options = {}) {
+      cancelDeferredRoadmapPhaseReveal();
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
       if (options.force) clearRemovedRoadmapKey(idea.title);
@@ -28271,6 +28324,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       clearProgressMap();
       setRoadmapRefining(false);
+      cancelDeferredRoadmapPhaseReveal();
       $("#roadmap-sub").textContent = founderMode
         ? "Building your whatimado.com launch roadmap..."
         : "Preparing your first mission…";
@@ -28325,8 +28379,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               );
             },
             onFullStagesReady(fullStages, meta = {}) {
-              if (!revealed || !fullStages?.length) return;
-              void staggerFillRemainingRoadmapPhases(
+              if (!revealed || !fullStages?.length || !hasPendingRoadmapContent(state.roadmapStages)) return;
+              queueDeferredRoadmapPhaseReveal(
                 fullStages,
                 idea,
                 ideaIndex,
@@ -28339,30 +28393,36 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             },
             onRefinementComplete(stages, meta = {}) {
               if (!revealed || !stages?.length) return;
-              void (async () => {
-                if (hasPendingRoadmapContent(state.roadmapStages)) {
-                  await staggerFillRemainingRoadmapPhases(
-                    stages,
-                    idea,
-                    ideaIndex,
-                    meta.roadmapSource || "ai",
-                    founderModeForGen
-                  );
-                }
-                publishRoadmapToUi(
+              if (hasPendingRoadmapContent(state.roadmapStages)) {
+                queueDeferredRoadmapPhaseReveal(
+                  stages,
                   idea,
                   ideaIndex,
-                  stages,
                   meta.roadmapSource || "ai",
-                  founderModeForGen,
-                  { isFinal: true, refineUpdate: true }
+                  founderModeForGen
                 );
                 setRoadmapRefining(false);
                 trackEvent("roadmap_refinement_applied", {
                   idea_index: ideaIndex,
-                  issues: meta.issues || []
+                  issues: meta.issues || [],
+                  deferred: true
                 });
-              })();
+                return;
+              }
+              cancelDeferredRoadmapPhaseReveal();
+              publishRoadmapToUi(
+                idea,
+                ideaIndex,
+                stages,
+                meta.roadmapSource || "ai",
+                founderModeForGen,
+                { isFinal: true, refineUpdate: true }
+              );
+              setRoadmapRefining(false);
+              trackEvent("roadmap_refinement_applied", {
+                idea_index: ideaIndex,
+                issues: meta.issues || []
+              });
             }
           }
         );
@@ -28373,8 +28433,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             result.roadmapSource || "ai",
             { isFinal: false }
           )) {
-            if (result.stages?.length > 1) {
-              await staggerFillRemainingRoadmapPhases(
+            if (result.stages?.length > 1 || (result.stages?.[0]?.tasks?.length || 0) > 1) {
+              queueDeferredRoadmapPhaseReveal(
                 result.stages,
                 idea,
                 ideaIndex,
@@ -28570,6 +28630,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           event.preventDefault();
           setDraftPanelExpanded(taskId, true);
         }
+      });
+
+      item.querySelectorAll(".task-draft-suggestion-btn").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (button.disabled || button.classList.contains("is-generating")) return;
+          void generateDraftFromSuggestion(button.dataset.taskId, button.dataset.suggestionId);
+        });
       });
 
       getTaskDraftTextarea(item)?.addEventListener("input", () => {
