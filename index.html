@@ -5506,6 +5506,16 @@
       padding: 1.25rem 1rem 3rem;
     }
 
+    #screen-settings .settings-page {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+
+    #screen-settings .settings-panel {
+      margin-top: 1.25rem;
+    }
+
     .maps-page-head {
       display: grid;
       gap: .85rem;
@@ -8997,6 +9007,38 @@
       border-top-color: #2563eb;
     }
 
+    .roadmap-phase--pending .roadmap-phase-head--pending {
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .roadmap-phase-loading-progress {
+      padding: .85rem .15rem .35rem;
+    }
+
+    .roadmap-task--pending {
+      padding: .95rem 1rem;
+      margin-bottom: .75rem;
+      border-radius: .75rem;
+      background: rgba(120, 130, 200, .06);
+      border: 1px dashed rgba(120, 130, 200, .18);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-task--pending {
+      background: rgba(37, 99, 235, .04);
+      border-color: rgba(37, 99, 235, .14);
+    }
+
+    .roadmap-task-loading-progress {
+      margin-top: .55rem;
+    }
+
+    .task-pending-label {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
     .roadmap-phase--skeleton .roadmap-phase-head {
       pointer-events: none;
       cursor: default;
@@ -12060,7 +12102,7 @@
           <svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-6"></path></svg>
           Analytics
         </button>
-        <button type="button" class="dashboard-nav-btn" id="sidebar-settings-btn">
+        <button type="button" class="dashboard-nav-btn" data-screen-link="settings" id="sidebar-settings-btn">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
           Settings
         </button>
@@ -12146,38 +12188,6 @@
           </div>
           <p class="saved-maps-home-copy">Your explorations and roadmaps live in the sidebar. Tap a roadmap to continue, or its title to see all paths.</p>
           <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
-        </section>
-
-        <section class="site-suggestions dashboard-settings-panel" id="account-preferences" aria-label="Your profile settings">
-          <h3 class="site-suggestions-title">Your profile</h3>
-          <p class="site-suggestions-copy">Saved here so new maps skip the location and name questions. Syncs with your account when signed in.</p>
-          <label class="site-suggestions-field" for="account-pref-name">
-            <span class="site-suggestions-field-label">Your name</span>
-            <input class="site-suggestions-input site-suggestions-name" id="account-pref-name" type="text" maxlength="80" autocomplete="name" placeholder="First name or what you'd like to be called">
-          </label>
-          <div class="account-pref-location-grid">
-            <label class="site-suggestions-field" for="account-pref-country">
-              <span class="site-suggestions-field-label">Country</span>
-              <input class="site-suggestions-input" id="account-pref-country" type="text" maxlength="80" autocomplete="country-name" placeholder="United States">
-            </label>
-            <label class="site-suggestions-field" for="account-pref-region">
-              <span class="site-suggestions-field-label">State / province / region</span>
-              <input class="site-suggestions-input" id="account-pref-region" type="text" maxlength="80" autocomplete="address-level1" placeholder="Texas">
-            </label>
-            <label class="site-suggestions-field" for="account-pref-city">
-              <span class="site-suggestions-field-label">City or town</span>
-              <input class="site-suggestions-input" id="account-pref-city" type="text" maxlength="80" autocomplete="address-level2" placeholder="Austin">
-            </label>
-            <label class="site-suggestions-field" for="account-pref-postal">
-              <span class="site-suggestions-field-label">ZIP / postal (optional)</span>
-              <input class="site-suggestions-input" id="account-pref-postal" type="text" maxlength="20" autocomplete="postal-code" placeholder="78701">
-            </label>
-          </div>
-          <div class="site-suggestions-footer">
-            <span class="site-suggestions-hint" id="account-pref-hint">Used for local resources and personalized roadmaps.</span>
-            <button class="back-btn" id="account-pref-save" type="button">Save profile</button>
-          </div>
-          <p class="site-suggestions-msg" id="account-pref-msg" hidden aria-live="polite"></p>
         </section>
 
         <section class="site-suggestions dashboard-settings-panel" id="site-suggestions" aria-label="Suggest a site improvement">
@@ -12285,6 +12295,49 @@
           <button type="button" class="action-btn" id="maps-new-btn">Start new map</button>
         </div>
         <div class="maps-library-list" id="maps-library-list"></div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-settings">
+      <div class="settings-page">
+        <div class="maps-page-head">
+          <button type="button" class="back-btn" data-screen-link="main">Back to home</button>
+          <div>
+            <p class="maps-page-kicker">Settings</p>
+            <h2 class="maps-page-title">Your profile</h2>
+            <p class="maps-page-sub">Name and location are saved here so new maps skip those questions. Syncs with your account when signed in.</p>
+          </div>
+        </div>
+
+        <section class="site-suggestions dashboard-settings-panel settings-panel" id="account-preferences" aria-label="Your profile settings">
+          <label class="site-suggestions-field" for="account-pref-name">
+            <span class="site-suggestions-field-label">Your name</span>
+            <input class="site-suggestions-input site-suggestions-name" id="account-pref-name" type="text" maxlength="80" autocomplete="name" placeholder="First name or what you'd like to be called">
+          </label>
+          <div class="account-pref-location-grid">
+            <label class="site-suggestions-field" for="account-pref-country">
+              <span class="site-suggestions-field-label">Country</span>
+              <input class="site-suggestions-input" id="account-pref-country" type="text" maxlength="80" autocomplete="country-name" placeholder="United States">
+            </label>
+            <label class="site-suggestions-field" for="account-pref-region">
+              <span class="site-suggestions-field-label">State / province / region</span>
+              <input class="site-suggestions-input" id="account-pref-region" type="text" maxlength="80" autocomplete="address-level1" placeholder="Texas">
+            </label>
+            <label class="site-suggestions-field" for="account-pref-city">
+              <span class="site-suggestions-field-label">City or town</span>
+              <input class="site-suggestions-input" id="account-pref-city" type="text" maxlength="80" autocomplete="address-level2" placeholder="Austin">
+            </label>
+            <label class="site-suggestions-field" for="account-pref-postal">
+              <span class="site-suggestions-field-label">ZIP / postal (optional)</span>
+              <input class="site-suggestions-input" id="account-pref-postal" type="text" maxlength="20" autocomplete="postal-code" placeholder="78701">
+            </label>
+          </div>
+          <div class="site-suggestions-footer">
+            <span class="site-suggestions-hint" id="account-pref-hint">Used for local resources and personalized roadmaps.</span>
+            <button class="back-btn" id="account-pref-save" type="button">Save profile</button>
+          </div>
+          <p class="site-suggestions-msg" id="account-pref-msg" hidden aria-live="polite"></p>
+        </section>
       </div>
     </section>
 
@@ -25260,6 +25313,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         $("#sidebar-progress-btn")?.classList.add("active");
       } else if (name === "stats") {
         $("#sidebar-stats-btn")?.classList.add("active");
+      } else if (name === "settings") {
+        $("#sidebar-settings-btn")?.classList.add("active");
       }
       if (name === "convo") {
         scrollConversation();
@@ -25285,12 +25340,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         updateStatsContinueButton();
         refreshLaunchStats();
       }
+      if (name === "settings") {
+        populateAccountPrefsForm();
+      }
       renderSidebarRoadmaps();
       updateScreenNavButtons();
       requestAnimationFrame(() => {
         updateScrollProgress();
         syncRoadmapStickyOffset();
       });
+    }
+
+    function openSettingsScreen() {
+      closeDashboardMobileNav();
+      populateAccountPrefsForm();
+      showScreen("settings");
     }
 
     function scrollToSiteSuggestions(source = "nav_drawer") {
@@ -27240,8 +27304,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           stopLoadingQuips();
           stopSiteLoadingProgress($("#roadmap-loader-progress"));
         } else {
+          const tagline = $("#roadmap-loading .loader-tagline");
+          if (tagline) tagline.textContent = "Building your first mission…";
           startLoadingQuips("#roadmap-loading .loader-tagline");
-          startSiteLoadingProgress($("#roadmap-loader-progress"), { durationMs: 28000, cap: 92 });
+          startSiteLoadingProgress($("#roadmap-loader-progress"), {
+            durationMs: options.progressDurationMs || 90000,
+            cap: options.progressCap || 96
+          });
         }
         syncRoadmapStickyOffset();
       } else {
@@ -27249,6 +27318,114 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         completeSiteLoadingProgress($("#roadmap-loader-progress"));
         updateRoadmapOverviewChrome();
       }
+    }
+
+    const pendingRoadmapProgressRoots = new Set();
+
+    function stopPendingRoadmapProgressBars() {
+      pendingRoadmapProgressRoots.forEach((root) => stopSiteLoadingProgress(root));
+      pendingRoadmapProgressRoots.clear();
+    }
+
+    function startPendingRoadmapProgressBars() {
+      stopPendingRoadmapProgressBars();
+      $$(".roadmap-phase-loading-progress, .roadmap-task-loading-progress").forEach((root) => {
+        pendingRoadmapProgressRoots.add(root);
+        startSiteLoadingProgress(root, { durationMs: 75000, cap: 90 });
+      });
+    }
+
+    function getExpectedRoadmapStageCount(founderMode = false) {
+      return founderMode ? 2 : 3;
+    }
+
+    function getExpectedRoadmapTasksPerStage(founderMode = false) {
+      return founderMode ? 2 : 2;
+    }
+
+    function isPendingRoadmapStage(stage) {
+      return Boolean(stage?._pendingStage);
+    }
+
+    function isPendingRoadmapTask(task) {
+      return Boolean(task?._pendingTask);
+    }
+
+    function hasPendingRoadmapContent(stages = state.roadmapStages) {
+      return (stages || []).some((stage) => isPendingRoadmapStage(stage)
+        || (stage.tasks || []).some((task) => isPendingRoadmapTask(task)));
+    }
+
+    function expandStagesForProgressiveReveal(stages, founderMode, { isFinal = false } = {}) {
+      const expectedStages = getExpectedRoadmapStageCount(founderMode);
+      const expectedTasks = getExpectedRoadmapTasksPerStage(founderMode);
+      let ready = normalizeRoadmapStages(stages || []).filter((stage) => !isPendingRoadmapStage(stage));
+      if (!ready.length) return ready;
+
+      if (!isFinal && ready[0]) {
+        const tasks = (ready[0].tasks || []).filter((task) => !isPendingRoadmapTask(task));
+        const paddedTasks = [...tasks];
+        if (paddedTasks.length > 0) {
+          while (paddedTasks.length < expectedTasks) {
+            paddedTasks.push({ _pendingTask: true });
+          }
+        }
+        ready[0] = { ...ready[0], tasks: paddedTasks };
+      }
+
+      if (isFinal) {
+        return ready.slice(0, expectedStages).map((stage) => ({
+          ...stage,
+          tasks: (stage.tasks || []).filter((task) => !isPendingRoadmapTask(task))
+        }));
+      }
+
+      while (ready.length < expectedStages) {
+        ready.push({
+          label: "",
+          desc: "",
+          tasks: [],
+          _pendingStage: true
+        });
+      }
+      return ready;
+    }
+
+    function renderPendingStageHtml(stageIndex) {
+      return (
+        `<article class="roadmap-phase stage-card roadmap-phase--pending" data-phase-index="${stageIndex}" aria-busy="true">` +
+        `<div class="roadmap-phase-head stage-head roadmap-phase-head--pending">` +
+        `<span class="roadmap-phase-num stage-num">${stageIndex + 1}</span>` +
+        `<span class="roadmap-phase-info">` +
+        `<span class="roadmap-phase-label stage-label">Building phase ${stageIndex + 1}…</span>` +
+        `</span></div>` +
+        `<div class="roadmap-phase-body stage-body">` +
+        `<div class="roadmap-phase-loading-progress site-loading-progress" aria-live="polite">` +
+        `<div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">` +
+        `<span class="site-loading-progress-fill"></span></div>` +
+        `<p class="site-loading-progress-meta">` +
+        `<span class="site-loading-progress-pct">0%</span>` +
+        `<span class="site-loading-progress-eta">Preparing missions…</span>` +
+        `</p></div></div></article>`
+      );
+    }
+
+    function renderPendingTaskHtml(id, taskIndex) {
+      const label = formatMissionTaskLabel(taskIndex);
+      return (
+        `<div class="task-item task-item--pending roadmap-task--pending" data-task-id="${id}" aria-busy="true">` +
+        `<div class="task-item-head">` +
+        `<span class="task-num">${taskIndex + 1}</span>` +
+        `<span class="task-pending-label">Building ${escapeHtml(label)}…</span>` +
+        `</div>` +
+        `<div class="roadmap-task-loading-progress site-loading-progress" aria-live="polite">` +
+        `<div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">` +
+        `<span class="site-loading-progress-fill"></span></div>` +
+        `<p class="site-loading-progress-meta">` +
+        `<span class="site-loading-progress-pct">0%</span>` +
+        `<span class="site-loading-progress-eta">Writing your next step…</span>` +
+        `</p></div></div>`
+      );
     }
 
     function setRoadmapRefining(refining) {
@@ -27786,7 +27963,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return null;
     }
 
-    function publishRoadmapToUi(idea, ideaIndex, stages, roadmapSource, founderMode, { isFinal = true, initialReveal = false, refineUpdate = false } = {}) {
+    function publishRoadmapToUi(idea, ideaIndex, stages, roadmapSource, founderMode, { isFinal = true, initialReveal = false, refineUpdate = false, progressive = false } = {}) {
       const expandedBefore = refineUpdate && state.expandedRoadmapPhases
         ? new Set(state.expandedRoadmapPhases)
         : null;
@@ -27794,7 +27971,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? new Set(state.expandedRoadmapTasks)
         : null;
 
-      state.roadmapStages = stages;
+      const renderStagesPayload = progressive || (!isFinal && !refineUpdate)
+        ? expandStagesForProgressiveReveal(stages, founderMode, { isFinal })
+        : (isFinal
+          ? expandStagesForProgressiveReveal(stages, founderMode, { isFinal: true })
+          : normalizeRoadmapStages(stages));
+
+      state.roadmapStages = renderStagesPayload;
       if (initialReveal && !refineUpdate) prepareFirstMissionForReveal(idea);
       if (refineUpdate && expandedBefore) state.expandedRoadmapPhases = expandedBefore;
       if (refineUpdate && expandedTasksBefore) state.expandedRoadmapTasks = expandedTasksBefore;
@@ -27803,9 +27986,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       clearRemovedRoadmapKey(idea.title);
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
       renderStages(state.roadmapStages);
+      if (isFinal) {
+        stopPendingRoadmapProgressBars();
+      } else if (hasPendingRoadmapContent(state.roadmapStages)) {
+        requestAnimationFrame(() => startPendingRoadmapProgressBars());
+      }
       registerRoadmapInSidebar(idea, ideaIndex);
       renderSidebarRoadmaps();
-      schedulePersist();
+      if (isFinal) schedulePersist();
       if (isFinal) {
         setRoadmapRefining(false);
         trackEvent("roadmap_generated", {
@@ -28013,15 +28201,32 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         completeCard.classList.remove("visible");
       }
       showScreen("roadmap");
-      setRoadmapLoading(true, { shell: true });
-      renderRoadmapSkeleton();
+      setRoadmapLoading(true);
 
       let revealed = false;
       const founderModeForGen = isFounderRoadmapForIdea(idea);
-      startRoadmapShellWait({
-        founderMode: founderModeForGen,
-        isRevealed: () => revealed
-      });
+      const revealRoadmapProgressively = (incomingStages, source, { isFinal = false, refineUpdate = false } = {}) => {
+        if (!stageOneHasRevealableMission(incomingStages)) return false;
+        if (!revealed) {
+          revealed = true;
+          completeSiteLoadingProgress($("#roadmap-loader-progress"));
+          setRoadmapLoading(false);
+        }
+        publishRoadmapToUi(
+          idea,
+          ideaIndex,
+          incomingStages,
+          source,
+          founderModeForGen,
+          {
+            isFinal,
+            initialReveal: !refineUpdate,
+            refineUpdate,
+            progressive: !isFinal
+          }
+        );
+        return true;
+      };
       try {
         const result = await generateRoadmapStagesFromAi(
           idea,
@@ -28033,29 +28238,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           },
           {
             onFirstMissionReady(stages) {
-              if (revealed || !stageOneHasRevealableMission(stages)) return;
-              revealed = true;
-              publishRoadmapToUi(
-                idea,
-                ideaIndex,
+              if (revealed) return;
+              revealRoadmapProgressively(
                 prepareStagesForInitialReveal(stages, idea),
                 "ai",
-                founderModeForGen,
-                { isFinal: false, initialReveal: true }
+                { isFinal: false }
               );
-              setRoadmapLoading(false);
             },
             onRefining(active) {
               if (revealed) setRoadmapRefining(active);
             },
             onRefinementComplete(stages, meta = {}) {
               if (!revealed || !stages?.length) return;
-              publishRoadmapToUi(
-                idea,
-                ideaIndex,
+              revealRoadmapProgressively(
                 stages,
                 meta.roadmapSource || "ai",
-                founderModeForGen,
                 { isFinal: true, refineUpdate: true }
               );
               setRoadmapRefining(false);
@@ -28068,17 +28265,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         );
 
         if (!revealed) {
-          if (stageOneHasRevealableMission(result.stages)) {
-            revealed = true;
-            publishRoadmapToUi(
-              idea,
-              ideaIndex,
-              prepareStagesForInitialReveal(result.stages, idea),
-              result.roadmapSource || "ai",
-              founderModeForGen,
-              { isFinal: false, initialReveal: true }
-            );
-            setRoadmapLoading(false);
+          if (revealRoadmapProgressively(
+            prepareStagesForInitialReveal(result.stages, idea),
+            result.roadmapSource || "ai",
+            { isFinal: false }
+          )) {
+            /* revealed */
           } else {
             throw new Error("Stage 1 had no revealable mission");
           }
@@ -28088,17 +28280,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         trackEvent("roadmap_generation_failed", { idea_index: ideaIndex, error: lastAdvisorError || error?.message || "unknown" });
         if (!revealed) {
           const fallbackStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
-          publishRoadmapToUi(idea, ideaIndex, fallbackStages, "fallback", founderModeForGen, {
-            isFinal: true,
-            initialReveal: true
-          });
-          revealed = true;
-          setRoadmapLoading(false);
+          revealRoadmapProgressively(fallbackStages, "fallback", { isFinal: true });
         }
       } finally {
         stopRoadmapShellWait();
-        setRoadmapLoading(false);
-        if (!revealed) setRoadmapRefining(false);
+        if (!revealed) {
+          setRoadmapLoading(false);
+          setRoadmapRefining(false);
+          stopPendingRoadmapProgressBars();
+        }
         const sub = $("#roadmap-sub");
         if (sub && revealed) sub.hidden = true;
       }
@@ -28350,9 +28540,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getStageProgressFromIndices(stageIndex) {
       const stage = state.roadmapStages[stageIndex];
-      const total = (stage?.tasks || []).length;
+      const tasks = (stage?.tasks || []).filter((task) => !isPendingRoadmapTask(task));
+      const total = tasks.length;
       let done = 0;
-      for (let taskIndex = 0; taskIndex < total; taskIndex += 1) {
+      for (let taskIndex = 0; taskIndex < (stage?.tasks || []).length; taskIndex += 1) {
+        if (isPendingRoadmapTask(stage.tasks[taskIndex])) continue;
         if (getRoadmapTaskData(`task-${stageIndex}-${taskIndex}`).checked) done += 1;
       }
       return { done, total };
@@ -29011,6 +29203,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function renderOverviewTaskHtml(task, stageIndex, taskIndex) {
       const id = `task-${stageIndex}-${taskIndex}`;
+      if (isPendingRoadmapTask(task)) {
+        return renderPendingTaskHtml(id, taskIndex);
+      }
       const normalized = normalizeRoadmapTask(task);
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "", tasks: [] };
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
@@ -29315,6 +29510,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
 
       stages.forEach((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) {
+          list.insertAdjacentHTML("beforeend", renderPendingStageHtml(stageIndex));
+          return;
+        }
         const progress = getStageProgressFromIndices(stageIndex);
         const statusClass = getPhaseStatusClass(stageIndex);
         const isOpen = isPhaseExpanded(stageIndex);
@@ -31345,14 +31544,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         showScreen("main", { skipScrollTop: true });
         requestAnimationFrame(() => {
           document.querySelector(".dashboard-quick-actions")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      });
-      $("#sidebar-settings-btn")?.addEventListener("click", () => {
-        closeDashboardMobileNav();
-        populateAccountPrefsForm();
-        showScreen("main", { skipScrollTop: true });
-        requestAnimationFrame(() => {
-          $("#account-preferences")?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
       $("#account-pref-save")?.addEventListener("click", () => saveAccountPrefsFromForm());
