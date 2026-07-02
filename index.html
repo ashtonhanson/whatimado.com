@@ -15218,6 +15218,19 @@
       return suggestions.filter((entry) => !entry.covered).slice(0, 6);
     }
 
+    function shouldRelaxDraftDuplicateCheck(suggestion) {
+      return Boolean(suggestion?.variant || suggestion?.id === "elevator_pitch");
+    }
+
+    function summarizeDraftSituation(situation, maxLen = 140) {
+      const copy = String(situation || "").replace(/\s+/g, " ").trim();
+      if (!copy) return "I'm working on my next step and could use guidance.";
+      if (copy.length <= maxLen) return copy;
+      const slice = copy.slice(0, maxLen);
+      const lastSpace = slice.lastIndexOf(" ");
+      return `${(lastSpace > 80 ? slice.slice(0, lastSpace) : slice).trim()}…`;
+    }
+
     function extractDraftContentForSuggestion(normalized, suggestion) {
       const script = String(normalized.script || "").trim();
       const followUp = String(normalized.followUp || "").trim();
@@ -15273,9 +15286,9 @@ Thank you,
         case "elevator_pitch":
           return `ELEVATOR PITCH — say this in ~30 seconds
 
-Hi, I'm [Your name] from ${location}. I'm building ${pathTitle.toLowerCase()} for people who [specific need in one phrase].
+Hi, I'm [Your name] from ${location}. I'm working on ${pathTitle.toLowerCase()} for people who [specific need in one phrase].
 
-${situationLine}
+${summarizeDraftSituation(situation)}
 
 What makes this different: [one honest sentence — not buzzwords].
 
@@ -15391,22 +15404,32 @@ If recording answers:
       if (taskDraftGenerationInFlight.has(taskId) && !options.force) return;
 
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      const draftEl = getTaskDraftTextarea(item);
+      let draftEl = getTaskDraftTextarea(item);
       const suggestionBtn = item?.querySelector(`.task-draft-suggestion-btn[data-suggestion-id="${suggestionId}"]`);
-      if (!draftEl) return;
+      if (!draftEl) {
+        setTaskExpanded(taskId, true);
+        ensurePhaseOpenForTask(taskId);
+        draftEl = getTaskDraftTextarea(item);
+      }
+      if (!draftEl) {
+        flashSaveToast(`Couldn't open the draft area — expand the mission and try again.`);
+        return;
+      }
 
       taskDraftGenerationInFlight.add(taskId);
       suggestionBtn?.classList.add("is-generating");
       draftEl.placeholder = `Generating ${suggestion.label.toLowerCase()}…`;
       draftEl.classList.add("is-generating-draft");
       const draftProgress = startDraftGeneratingProgress(taskId);
+      const relaxDuplicates = shouldRelaxDraftDuplicateCheck(suggestion);
 
       const tryInsertDraft = (draft, source) => {
         const cleaned = humanizeDraftFormatting(String(draft || "").trim());
         if (!cleaned || cleaned.length < 40) return false;
-        if (draftDuplicatesPreparedContent(cleaned, normalized)) return false;
+        if (!relaxDuplicates && draftDuplicatesPreparedContent(cleaned, normalized)) return false;
         if (!isUsableDraftContent(cleaned, normalized) && !suggestion.variant) return false;
-        insertTaskDraft(taskId, cleaned, { focus: true, expand: true });
+        const inserted = insertTaskDraft(taskId, cleaned, { focus: true, expand: true });
+        if (!inserted) return false;
         data.draftGenerated = true;
         data.draftSource = source;
         data.draftSuggestionId = suggestionId;
@@ -15426,7 +15449,7 @@ If recording answers:
 
         const localDraft = buildLocalDraftForSuggestion(normalized, suggestion);
         const localReady = localDraft
-          && !draftDuplicatesPreparedContent(localDraft, normalized)
+          && (relaxDuplicates || !draftDuplicatesPreparedContent(localDraft, normalized))
           && (isUsableDraftContent(localDraft, normalized) || Boolean(suggestion.variant));
         const preferAiEnhance = Boolean(options.force)
           || suggestion.variant === "marketing_plan"
@@ -15442,6 +15465,8 @@ If recording answers:
         if (aiDraft && tryInsertDraft(aiDraft, "ai")) return;
 
         if (localReady && tryInsertDraft(localDraft, "local")) return;
+
+        if (localDraft && suggestion.variant === "elevator_pitch" && tryInsertDraft(localDraft, "local")) return;
 
         flashSaveToast(`Couldn't generate ${suggestion.label} — try again in a moment.`);
         trackEvent("task_draft_suggestion_failed", {
@@ -16260,8 +16285,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const raw = await callAdvisor(prompt, 1600, { timeoutMs: 55000 });
       const draft = String(raw || "").trim();
       if (!draft || /^NO_DRAFT$/i.test(draft)) return null;
-      if (!isUsableDraftContent(draft, normalized)) return null;
-      if (draftDuplicatesPreparedContent(draft, normalized)) return null;
+      if (!isUsableDraftContent(draft, normalized) && !options.variant) return null;
+      if (!shouldRelaxDraftDuplicateCheck(options.suggestion) && draftDuplicatesPreparedContent(draft, normalized)) return null;
       return draft;
     }
 
