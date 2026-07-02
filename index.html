@@ -16808,8 +16808,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return normalizeRoadmapStages(stages).map((stage) => ({
         ...stage,
         tasks: stage.tasks.map((task) => {
+          if (isPendingRoadmapTask(task)) return { _pendingTask: true };
           const normalized = normalizeRoadmapTask(task);
-          if (!normalized.steps.length) {
+          if (!normalized.steps?.length) {
             const inferred = inferTaskStepsFromText(normalized.text);
             normalized.steps = stepsAreRedundantWithText(normalized.text, inferred)
               ? dedupeTaskSteps(normalized.text, getTemplateTaskSteps(normalized))
@@ -18439,31 +18440,35 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           .filter(Boolean)
       );
 
-      return normalizeRoadmapStages(stages).map((stage, stageIndex) => ({
-        ...stage,
-        tasks: stage.tasks.map((task) => {
-          const normalized = normalizeRoadmapTask(task);
-          if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return normalized;
+      return normalizeRoadmapStages(stages).map((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return stage;
+        return {
+          ...stage,
+          tasks: stage.tasks.map((task) => {
+            if (isPendingRoadmapTask(task)) return { _pendingTask: true };
+            const normalized = normalizeRoadmapTask(task);
+            if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return normalized;
 
-          const hasPackContacts = normalized.contacts.some((contact) => isKnownPackOrg(contact.org));
-          const hasGenericScript = normalized.script && (/whatimado\.com, a free ai possibility map/i.test(normalized.script) || isGenericLocalScript(normalized.script));
-          const hasPackLinks = normalized.links.some((url) =>
-            knownUrls.has(String(url).replace(/^https?:\/\//i, "").replace(/\/$/, "").toLowerCase())
-          );
-          const hasPackLocal = normalized.local && getKnownLocalResources().some((entry) => normalized.local.includes(entry.org));
+            const hasPackContacts = normalized.contacts.some((contact) => isKnownPackOrg(contact.org));
+            const hasGenericScript = normalized.script && (/whatimado\.com, a free ai possibility map/i.test(normalized.script) || isGenericLocalScript(normalized.script));
+            const hasPackLinks = normalized.links.some((url) =>
+              knownUrls.has(String(url).replace(/^https?:\/\//i, "").replace(/\/$/, "").toLowerCase())
+            );
+            const hasPackLocal = normalized.local && getKnownLocalResources().some((entry) => normalized.local.includes(entry.org));
 
-          if (hasPackContacts || hasGenericScript || hasPackLinks || hasPackLocal) {
-            return {
-              ...normalized,
-              contacts: [],
-              links: [],
-              script: "",
-              local: ""
-            };
-          }
-          return normalized;
-        })
-      }));
+            if (hasPackContacts || hasGenericScript || hasPackLinks || hasPackLocal) {
+              return {
+                ...normalized,
+                contacts: [],
+                links: [],
+                script: "",
+                local: ""
+              };
+            }
+            return normalized;
+          })
+        };
+      });
     }
 
     function scoreResourceForTask(entry, taskText) {
@@ -18512,7 +18517,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const cloned = normalizeRoadmapStages(stages);
 
       cloned.forEach((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return;
         stage.tasks = stage.tasks.map((task) => {
+          if (isPendingRoadmapTask(task)) return { _pendingTask: true };
           let normalized = normalizeRoadmapTask(task);
           const aiResourcesAlready = Boolean(
             normalized.contacts.length ||
@@ -18568,54 +18575,67 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function clearTaskResourcesForReinjection(stages, idea = state.currentIdea) {
-      return normalizeRoadmapStages(stages).map((stage, stageIndex) => ({
-        ...stage,
-        tasks: stage.tasks.map((task) => {
-          const normalized = normalizeRoadmapTask(task);
-          if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea) || taskNeedsTaskToolResources(normalized.text)) {
-            return { ...normalized, contacts: [], links: [], script: "", local: "" };
-          }
-          return normalized;
-        })
-      }));
+      return normalizeRoadmapStages(stages).map((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return stage;
+        return {
+          ...stage,
+          tasks: stage.tasks.map((task) => {
+            if (isPendingRoadmapTask(task)) return { _pendingTask: true };
+            const normalized = normalizeRoadmapTask(task);
+            if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea) || taskNeedsTaskToolResources(normalized.text)) {
+              return { ...normalized, contacts: [], links: [], script: "", local: "" };
+            }
+            return normalized;
+          })
+        };
+      });
     }
 
     function enrichCreativeOnlineResources(stages, idea = state.currentIdea) {
       if (!hasExistingCreativeSkill(idea)) return stages;
-      return (stages || []).map((stage) => ({
-        ...stage,
-        tasks: (stage.tasks || []).map((task) => {
-          const normalized = normalizeRoadmapTask(task);
-          if (!taskMentionsCreativePlatform(normalized.text)) return normalized;
-          const picked = pickCreativeResourcesForTask(normalized.text);
-          if (!picked.length) {
+      return (stages || []).map((stage) => {
+        if (isPendingRoadmapStage(stage)) return stage;
+        return {
+          ...stage,
+          tasks: (stage.tasks || []).map((task) => {
+            if (isPendingRoadmapTask(task)) return { _pendingTask: true };
+            const normalized = normalizeRoadmapTask(task);
+            if (!taskMentionsCreativePlatform(normalized.text)) return normalized;
+            const picked = pickCreativeResourcesForTask(normalized.text);
+            if (!picked.length) {
+              return applyResourceLayers(normalized, {
+                local: normalized.resourcesLocal || [],
+                national: normalized.resourcesNational || [],
+                global: []
+              });
+            }
             return applyResourceLayers(normalized, {
               local: normalized.resourcesLocal || [],
               national: normalized.resourcesNational || [],
-              global: []
+              global: picked
             });
-          }
-          return applyResourceLayers(normalized, {
-            local: normalized.resourcesLocal || [],
-            national: normalized.resourcesNational || [],
-            global: picked
-          });
-        })
-      }));
+          })
+        };
+      });
     }
 
     function ensureRoadmapLocalContacts(stages, idea = state.currentIdea, options = {}) {
-      const { force = false } = options;
-      let cleaned = stripMisplacedLocalContacts(stages, idea);
-      if (force) cleaned = clearTaskResourcesForReinjection(cleaned, idea);
-      const enriched = injectLocalContactsIntoRoadmap(
-        cleaned,
-        getUserLocation() ? getKnownLocalResourcesForPath(idea) : [],
-        getUserLocation(),
-        idea,
-        { force }
-      );
-      return enrichCreativeOnlineResources(enrichTaskClarity(enriched), idea);
+      try {
+        const { force = false } = options;
+        let cleaned = stripMisplacedLocalContacts(stages, idea);
+        if (force) cleaned = clearTaskResourcesForReinjection(cleaned, idea);
+        const enriched = injectLocalContactsIntoRoadmap(
+          cleaned,
+          getUserLocation() ? getKnownLocalResourcesForPath(idea) : [],
+          getUserLocation(),
+          idea,
+          { force }
+        );
+        return enrichCreativeOnlineResources(enrichTaskClarity(enriched), idea);
+      } catch (error) {
+        console.warn("[whatimado] ensureRoadmapLocalContacts failed:", error?.message || error);
+        return normalizeRoadmapStages(stages);
+      }
     }
 
     function refreshRoadmapTaskResources(options = {}) {
@@ -27385,6 +27405,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return Math.max(getExpectedRoadmapStageCount(founderMode), 3);
     }
 
+    function clearStalePendingStageMarker(stage) {
+      if (!stage || !isPendingRoadmapStage(stage)) return stage;
+      const realTasks = (stage.tasks || []).filter((task) => !isPendingRoadmapTask(task));
+      const hasContent = Boolean(stage.label?.trim()) && realTasks.some((task) => (
+        Boolean(getTaskText(task)?.trim()) || Boolean(getMissionTitle(task)?.trim())
+      ));
+      if (!hasContent) return stage;
+      const { _pendingStage, ...rest } = stage;
+      return rest;
+    }
+
+    function coerceRoadmapStagesForRender(stages) {
+      const sanitized = (stages || []).map(clearStalePendingStageMarker);
+      return normalizeRoadmapStages(sanitized)
+        .filter((stage) => !isPendingRoadmapStage(stage))
+        .map((stage) => ({
+          ...stage,
+          tasks: (stage.tasks || []).filter((task) => !isPendingRoadmapTask(task))
+        }))
+        .filter((stage) => stage.label?.trim() && stage.tasks.length > 0);
+    }
+
     function expandStagesForProgressiveReveal(stages, founderMode, { isFinal = false } = {}) {
       const slotCount = getProgressiveRoadmapSlotCount(founderMode);
       const expectedTasks = getExpectedRoadmapTasksPerStage(founderMode);
@@ -28127,9 +28169,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? new Set(state.expandedRoadmapTasks)
         : null;
 
-      const renderStagesPayload = (!isFinal && (progressive || !refineUpdate))
+      let renderStagesPayload = (!isFinal && (progressive || !refineUpdate))
         ? expandStagesForProgressiveReveal(stages, founderMode, { isFinal: false })
-        : expandStagesForProgressiveReveal(stages, founderMode, { isFinal: true });
+        : coerceRoadmapStagesForRender(stages);
+
+      if (!renderStagesPayload.length && stageOneHasRevealableMission(stages)) {
+        renderStagesPayload = coerceRoadmapStagesForRender(stages);
+        if (!renderStagesPayload.length) {
+          renderStagesPayload = normalizeRoadmapStages(
+            (stages || []).map(clearStalePendingStageMarker).filter((stage) => !isPendingRoadmapStage(stage))
+          );
+        }
+      }
+
+      if (!renderStagesPayload.length && stageOneHasRevealableMission(stages)) {
+        console.warn("[whatimado] publishRoadmapToUi: revealable stages collapsed to empty payload");
+      }
 
       state.roadmapStages = renderStagesPayload;
       if (initialReveal && !refineUpdate) prepareFirstMissionForReveal(idea);
@@ -28316,8 +28371,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         setRoadmapLoading(false);
         setRoadmapRefining(false);
         const normalizedStages = normalizeRoadmapStages(cached.stages);
-        const enrichedStages = ensureRoadmapLocalContacts(normalizedStages, idea);
-        let stagesToRender = enrichedStages;
+        let stagesToRender = normalizedStages;
+        try {
+          stagesToRender = ensureRoadmapLocalContacts(normalizedStages, idea);
+        } catch (error) {
+          console.warn("[whatimado] cached roadmap local enrich failed:", error?.message || error);
+          stagesToRender = normalizedStages;
+        }
         let cachedSource = cached.source || "ai";
         if (founderMode && roadmapLooksLikeEndUserReentry(stagesToRender)) {
           stagesToRender = normalizeRoadmapStages(getFounderFallbackStages(idea));
@@ -28406,11 +28466,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           {
             onFirstMissionReady(stages) {
               if (revealed) return;
-              revealRoadmapProgressively(
-                prepareStagesForInitialReveal(normalizeRoadmapStages(stages).slice(0, 1), idea),
-                "ai",
-                { isFinal: false }
-              );
+              revealRoadmapProgressively(stages, "ai", { isFinal: false });
             },
             onFullStagesReady(fullStages, meta = {}) {
               if (!revealed || !fullStages?.length || !roadmapNeedsDeferredReveal(fullStages)) return;
@@ -29721,12 +29777,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!list) return;
       list.innerHTML = "";
 
-      let payload = stages;
-      if (payload?.length && !stageOneHasRevealableMission(payload) && state.roadmapKey) {
+      let payload = Array.isArray(stages) ? stages : [];
+      if (payload.length && !stageOneHasRevealableMission(payload) && state.roadmapKey) {
         const cachedStages = state.allRoadmaps[state.roadmapKey]?.stages;
         if (cachedStages?.length && stageOneHasRevealableMission(cachedStages)) {
-          payload = normalizeRoadmapStages(cachedStages);
+          payload = coerceRoadmapStagesForRender(cachedStages);
           state.roadmapStages = payload;
+        }
+      }
+      if (!payload.length && state.roadmapKey) {
+        const cachedStages = state.allRoadmaps[state.roadmapKey]?.stages;
+        if (cachedStages?.length) {
+          const recovered = coerceRoadmapStagesForRender(cachedStages);
+          if (recovered.length) {
+            payload = recovered;
+            state.roadmapStages = recovered;
+          }
         }
       }
 
