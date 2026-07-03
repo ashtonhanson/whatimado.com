@@ -13937,6 +13937,10 @@
       );
     }
 
+    const FLEXIBLE_MISSION_JSON_INSTRUCTION =
+      'Respond only with a raw JSON array of exactly 1 stage with exactly 1 task:\n' +
+      '[{"label":"Short plain-language phase name","desc":"One sentence on what this mission achieves","tasks":[{"mission":"Plain goal in one line","text":"What the user does now — one small action","mentorHelp":"Bullet list of prepared assets (orgs ranked, links) — NOT draft copy","howTo":"Max 2 lines pointing at contacts below","why":"One short line naming the gap you filled","outcome":"Measurable proof when done","script":"","talkingPoints":"","followUp":"","duration":"30 minutes","difficulty":"Easy","resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[],"global":[]},"links":[],"contacts":[]}]}]\n';
+
     function stripFlexibleMissionDrafts(normalized) {
       if (!normalized || !isFlexiblePathMode()) return normalized;
       normalized.script = "";
@@ -21203,6 +21207,60 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return normalizeRoadmapStages(stages);
     }
 
+    function parseFlexibleBranchMissionResponse(response, idea, choice = null) {
+      if (!response?.trim()) return null;
+      const parsed = extractJsonArray(response, null);
+      if (!Array.isArray(parsed) || parsed.length < 1) return null;
+      const stages = parsed
+        .map((stage) => {
+          const label = String(stage?.label || choice?.title || "Your next mission").trim();
+          const desc = String(stage?.desc || choice?.tagline || "").trim();
+          const tasks = (Array.isArray(stage?.tasks) ? stage.tasks : [])
+            .filter((task) => task && getTaskText(task).trim());
+          if (!tasks.length && choice) {
+            tasks.push({
+              mission: choice.title,
+              text: choice.tagline || "Take the next small step on this direction.",
+              why: choice.why || "",
+              outcome: "One concrete action completed this week.",
+              script: "",
+              talkingPoints: "",
+              followUp: ""
+            });
+          }
+          return tasks.length ? { label, desc, tasks: tasks.slice(0, 1) } : null;
+        })
+        .filter(Boolean);
+      if (!stages.length) return null;
+      if (isGenericFallbackRoadmap(stages)) return null;
+      return normalizeRoadmapStages(stages);
+    }
+
+    function buildFlexibleMissionFallback(choice, idea = state.currentIdea) {
+      const title = String(choice?.title || "Your next mission").trim();
+      const tagline = String(choice?.tagline || "Take the next small step on this path.").trim();
+      return normalizeRoadmapStages([{
+        label: title,
+        desc: tagline,
+        tasks: [{
+          mission: title,
+          text: tagline,
+          mentorHelp: "Local contacts and links are loading — use the draft buttons when you are ready to reach out.",
+          howTo: "Review the contacts below and take one action this week.",
+          why: String(choice?.why || "").trim(),
+          outcome: "One concrete step completed toward this direction.",
+          script: "",
+          talkingPoints: "",
+          followUp: "",
+          duration: "30 minutes",
+          difficulty: "Easy",
+          resources: { local: [], national: [], global: [] },
+          links: [],
+          contacts: []
+        }]
+      }]);
+    }
+
     function parseTaskId(taskId) {
       const match = String(taskId).match(/^task-(\d+)-(\d+)$/);
       if (!match) return null;
@@ -27546,8 +27604,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           `Context:\n${getAdvisorContext()}\n` +
           getLocationContextBlock() +
           `\n${getFlexibleMissionTaskRules()}\n` +
-          (parsed ? `This replaces what comes after mission at stage ${parsed.stageIndex + 1}, task ${parsed.taskIndex + 1}.\n` : "") +
-          `Respond only with a raw JSON array of 1 stage with exactly 1 task.`
+          `${FLEXIBLE_MISSION_JSON_INSTRUCTION}` +
+          (parsed ? `\nThis replaces what comes after mission at stage ${parsed.stageIndex + 1}, task ${parsed.taskIndex + 1}.\n` : "")
         );
       }
 
@@ -27711,16 +27769,32 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         from_alter: Boolean(context.fromAlter)
       });
 
+      if (grid) {
+        grid.innerHTML = `<p class="roadmap-branch-picker-copy">Building "${escapeHtml(choice.title)}"…</p>`;
+      }
+
       try {
-        const response = await callAdvisor(
-          buildFlexibleBranchMissionPrompt(choice, taskId, context),
-          context.phaseComplete ? getRoadmapAdvisorTokenLimit(isFounderRoadmapForIdea(state.currentIdea)) : 900,
-          { timeoutMs: context.phaseComplete ? ROADMAP_ADVISOR_TIMEOUT_MS : 55000 }
-        );
-        const newStages = parseRoadmapResponse(response, state.currentIdea);
+        let response = "";
+        try {
+          response = await callAdvisor(
+            buildFlexibleBranchMissionPrompt(choice, taskId, context),
+            context.phaseComplete ? getRoadmapAdvisorTokenLimit(isFounderRoadmapForIdea(state.currentIdea)) : 1200,
+            { timeoutMs: context.phaseComplete ? ROADMAP_ADVISOR_TIMEOUT_MS : 55000 }
+          );
+        } catch (advisorError) {
+          if (context.phaseComplete) throw advisorError;
+          console.warn("[whatimado] flexible branch advisor failed, using fallback:", advisorError?.message || advisorError);
+        }
+        let newStages = parseFlexibleBranchMissionResponse(response, state.currentIdea, choice);
+        if (!newStages?.length && !context.phaseComplete) {
+          newStages = parseRoadmapResponse(response, state.currentIdea);
+        }
+        if (!newStages?.length && !context.phaseComplete) {
+          newStages = buildFlexibleMissionFallback(choice, state.currentIdea);
+        }
         if (!newStages?.length) throw new Error("empty branch mission");
 
-        if (context.firstMission) {
+        if (context.firstMission || (!taskId && !context.phaseComplete && !state.roadmapStages.length)) {
           state.flexibleFirstMissionPicked = true;
           const stage = newStages[0] || { label: "Your first mission", desc: "", tasks: [] };
           const newTask = stage.tasks?.[0] || newStages.flatMap((s) => s.tasks || [])[0];
@@ -27763,7 +27837,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           completeCard.classList.remove("visible");
         }
         state.roadmapAutoContinuePending = false;
-        if (context.firstMission) {
+        if (context.firstMission || (!taskId && !context.phaseComplete && !state.roadmapStages.length)) {
           prepareFirstMissionForReveal(state.currentIdea);
         }
         renderStages(state.roadmapStages);
@@ -27784,10 +27858,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         } else if (context.phaseComplete) {
           setTimeout(() => $("#stage-list")?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
         }
-      } catch {
-        if (grid) {
-          grid.innerHTML = `<p class="roadmap-branch-picker-copy">Couldn't build that direction — try another option or Show more options.</p>`;
+
+        if (!context.phaseComplete && newStages?.length) {
+          void maybeEnrichRoadmapLocalContacts({ silent: true });
         }
+      } catch (error) {
+        console.warn("[whatimado] flexible branch mission failed:", error?.message || error);
+        trackEvent("flexible_branch_mission_failed", {
+          branch_title: choice.title,
+          task_id: taskId || "",
+          error: error?.message || "unknown"
+        });
+        flashSaveToast("Couldn't build that direction — try another option.");
+        renderRoadmapBranchPicker(state.flexibleBranchOptions || [], taskId, context);
       }
     }
 
