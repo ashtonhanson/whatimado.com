@@ -26121,9 +26121,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function resolveTyping(text) {
       const typing = $("#typing-pair");
-      if (!typing) return;
+      if (!typing) return false;
       typing.querySelector(".bubble.ai").innerHTML = formatText(text);
       typing.removeAttribute("id");
+      scrollConversation();
+      return true;
+    }
+
+    function appendAssistantBubble(text) {
+      $("#typing-pair")?.remove();
+      const wrapper = document.createElement("div");
+      wrapper.className = "bubble-pair";
+      wrapper.innerHTML = `
+        <div class="bubble-ai">
+          <div>
+            <div class="ai-label">whatimado</div>
+            <div class="bubble ai">${formatText(text)}</div>
+          </div>
+        </div>`;
+      $("#bubble-chain").append(wrapper);
       scrollConversation();
     }
 
@@ -26700,7 +26716,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function pushProfileIntakeAssistantMessage(text) {
-      resolveTyping(text);
+      if (!resolveTyping(text)) appendAssistantBubble(text);
       state.history.push({ role: "assistant", content: text });
       showReplyBox(true);
       schedulePersist();
