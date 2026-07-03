@@ -1335,8 +1335,106 @@
       box-shadow: var(--shadow);
     }
 
-    html[data-color-scheme="adult"] .dashboard-search .prompt-footer {
+    html[data-color-scheme="adult"] .dashboard-search .prompt-footer .hint {
       display: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-footer {
+      justify-content: center;
+      border-top: 0;
+      padding: .75rem 0 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-path-mode-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .55rem;
+      max-width: 720px;
+      margin: .85rem auto 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-path-mode-label {
+      margin: 0;
+      color: var(--ink-muted);
+      font-size: .82rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-path-mode-bar .path-mode-actions {
+      justify-content: center;
+      width: 100%;
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice {
+      max-width: 38rem;
+      margin: 0 auto 1rem;
+      padding: 1rem 1.1rem 1.15rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice-label {
+      margin: 0 0 .75rem;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--ink);
+      text-align: center;
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice-actions {
+      display: grid;
+      gap: .65rem;
+    }
+
+    @media (min-width: 640px) {
+      html[data-color-scheme="adult"] .path-mode-choice-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .2rem;
+      width: 100%;
+      min-height: 72px;
+      padding: .85rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice-btn:hover {
+      border-color: rgba(37, 99, 235, .35);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice-btn strong {
+      font-size: .92rem;
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice-btn span {
+      font-size: .78rem;
+      color: var(--ink-muted);
+      line-height: 1.4;
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice-btn--direct strong {
+      color: #2563eb;
+    }
+
+    html[data-color-scheme="adult"] .path-mode-choice-btn--flex strong {
+      color: #0d9488;
     }
 
     html[data-color-scheme="adult"] .dashboard-settings-panel {
@@ -4608,6 +4706,77 @@
 
     .path-mode-btn--flex {
       background: color-mix(in srgb, var(--teal, #4ecdc4) 72%, var(--brand-purple-dark) 28%);
+    }
+
+    .path-mode-choice[hidden] {
+      display: none !important;
+    }
+
+    .path-mode-choice {
+      max-width: 38rem;
+      margin: 0 auto 1rem;
+      padding: 1rem 1.1rem 1.15rem;
+      border: 1px solid rgba(120, 130, 200, .2);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .9);
+    }
+
+    .path-mode-choice-label {
+      margin: 0 0 .75rem;
+      font-size: .95rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .path-mode-choice-actions {
+      display: grid;
+      gap: .65rem;
+    }
+
+    @media (min-width: 640px) {
+      .path-mode-choice-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .path-mode-choice-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .2rem;
+      width: 100%;
+      min-height: 72px;
+      padding: .85rem 1rem;
+      border: 1px solid rgba(120, 130, 200, .22);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .85);
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .path-mode-choice-btn strong {
+      font-size: .92rem;
+    }
+
+    .path-mode-choice-btn span {
+      font-size: .78rem;
+      opacity: .78;
+      line-height: 1.4;
+    }
+
+    .dashboard-path-mode-bar {
+      max-width: 720px;
+      margin: .85rem auto 0;
+      text-align: center;
+    }
+
+    .dashboard-path-mode-label {
+      margin: 0 0 .55rem;
+      font-size: .82rem;
+      font-weight: 600;
+      opacity: .72;
     }
 
     .roadmap-branch-picker {
@@ -12306,10 +12475,14 @@
             </button>
             <div class="prompt-footer">
               <span class="hint">More detail helps · <button type="button" class="hero-example-btn" id="hero-example-btn">Test Demo Prompt to See Process</button></span>
-              <div class="prompt-actions path-mode-actions">
-                <button class="action-btn path-mode-btn path-mode-btn--direct" id="direct-path-btn" type="button">Direct Path</button>
-                <button class="action-btn path-mode-btn path-mode-btn--flex" id="flexible-path-btn" type="button">Flexible Path</button>
-              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-path-mode-bar" id="dashboard-path-mode-bar">
+            <p class="dashboard-path-mode-label">After you share your situation, choose how to explore:</p>
+            <div class="prompt-actions path-mode-actions">
+              <button class="action-btn path-mode-btn path-mode-btn--direct" id="direct-path-btn" type="button">Direct Path</button>
+              <button class="action-btn path-mode-btn path-mode-btn--flex" id="flexible-path-btn" type="button">Flexible Path</button>
             </div>
           </div>
 
@@ -12487,6 +12660,19 @@
       <div class="convo-wrap">
         <div class="convo-spacer" id="convo-spacer" aria-hidden="true"></div>
       <div class="conversation" id="bubble-chain"></div>
+        <div class="path-mode-choice" id="path-mode-choice" hidden aria-label="Choose how to explore">
+          <p class="path-mode-choice-label">How do you want to explore your options?</p>
+          <div class="path-mode-choice-actions">
+            <button type="button" class="path-mode-choice-btn path-mode-choice-btn--direct" id="convo-direct-path-btn">
+              <strong>Direct Path</strong>
+              <span>One focused recommendation — we guide you step by step</span>
+            </button>
+            <button type="button" class="path-mode-choice-btn path-mode-choice-btn--flex" id="convo-flexible-path-btn">
+              <strong>Flexible Path</strong>
+              <span>Three options to compare — and more choices after each step</span>
+            </button>
+          </div>
+        </div>
         <div class="reply-box surface-card" id="reply-box">
         <div class="reply-inner">
           <textarea class="reply-textarea" id="reply-textarea" rows="4" placeholder="Type your response..."></textarea>
@@ -21509,6 +21695,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       selectedPathIndexes: [],
       ideaBatches: [],
       pathMode: null,
+      awaitingPathModeChoice: false,
       pendingBranchTaskId: null,
       branchPickerContext: null,
       flexibleBranchOptions: [],
@@ -22670,6 +22857,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         mapFeedbackSentiment: state.mapFeedbackSentiment,
         intakeMode: state.intakeMode || "standard",
         pathMode: state.pathMode || null,
+        awaitingPathModeChoice: Boolean(state.awaitingPathModeChoice),
         ideaBatches: Array.isArray(state.ideaBatches) ? state.ideaBatches : [],
         userLocation: normalizeUserLocation(state.userLocation),
         locationConfirmed: Boolean(state.locationConfirmed),
@@ -22704,6 +22892,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         mapFeedbackSentiment: source.mapFeedbackSentiment,
         intakeMode: source.intakeMode || "standard",
         pathMode: source.pathMode || null,
+        awaitingPathModeChoice: Boolean(source.awaitingPathModeChoice),
         ideaBatches: Array.isArray(source.ideaBatches) ? source.ideaBatches : [],
         userLocation: normalizeUserLocation(source.userLocation),
         locationConfirmed: Boolean(source.locationConfirmed),
@@ -22732,6 +22921,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.mapFeedbackSentiment = data.mapFeedbackSentiment ?? null;
       state.intakeMode = data.intakeMode || "standard";
       state.pathMode = data.pathMode === "direct" || data.pathMode === "flexible" ? data.pathMode : null;
+      state.awaitingPathModeChoice = Boolean(data.awaitingPathModeChoice);
       state.ideaBatches = Array.isArray(data.ideaBatches) && data.ideaBatches.length
         ? data.ideaBatches
         : (state.ideas.length ? [state.ideas.length] : []);
@@ -24439,6 +24629,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       syncHeaderHeight();
     }
 
+    function shouldShowPathModeChoiceOnRestore() {
+      return !state.pathMode
+        && state.step === 1
+        && state.history.length === 1
+        && state.history[0]?.role === "user"
+        && !state.ideas.length
+        && !state.mapChat;
+    }
+
     function restoreConversationBubbles() {
       const chain = $("#bubble-chain");
       if (!chain || !state.history.length) return;
@@ -24452,7 +24651,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           resolveTyping(entry.content);
         }
       });
-      if (state.step >= 2 && state.step < INTAKE_STEP_MAP) showReplyBox(true);
+      if (state.awaitingPathModeChoice || shouldShowPathModeChoiceOnRestore()) {
+        showPathModeChoice();
+      } else if (state.step >= 2 && state.step < INTAKE_STEP_MAP) {
+        showReplyBox(true);
+      }
     }
 
     function intakeEditAllowed() {
@@ -27387,48 +27590,46 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       void showFlexibleBranchPicker(taskId, { fromAlter: true });
     }
 
-    async function startFlowWithPathMode(pathMode) {
-      await startFlow({ pathMode });
+    function hidePathModeChoice() {
+      const el = $("#path-mode-choice");
+      if (el) el.hidden = true;
+      state.awaitingPathModeChoice = false;
     }
 
-    async function startFlow(options = {}) {
-      const text = $("#main-input")?.value.trim()
-        || document.querySelector(".legacy-main-input")?.value.trim()
-        || "";
-      if (!text || intakeInProgress) return;
-      const pathMode = options.pathMode === "direct" || options.pathMode === "flexible"
-        ? options.pathMode
-        : "flexible";
-      state.pathMode = pathMode;
-      stopRotatingPromptPlaceholder();
-      intakeInProgress = true;
-      beginNewIntake();
-      state.pathMode = pathMode;
-      intakeAbandonTracked = false;
-      state.intakeMode = "standard";
-      trackEvent("prompt_submitted", {
-        prompt_length: text.length,
-        founder_mode: isFounderOrProjectPrompt(text),
-        detailed_prompt: isDetailedPrompt(text),
-        intake_mode: "standard",
-        path_mode: pathMode
+    function showPathModeChoice() {
+      const el = $("#path-mode-choice");
+      if (el) el.hidden = false;
+      state.awaitingPathModeChoice = true;
+      showReplyBox(false);
+      hideProfileIntakeChips();
+      $("#typing-pair")?.remove();
+      requestAnimationFrame(() => {
+        alignConvoViewport("auto");
+        el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       });
-      showScreen("convo");
-      pushUserMessage(text);
+    }
+
+    async function continueIntakeWithPathMode(pathMode) {
+      if (!pathMode || intakeInProgress) return;
+      state.pathMode = pathMode;
+      hidePathModeChoice();
+      intakeInProgress = true;
       addTypingBubble();
       try {
+        const userText = getFirstUserMessage();
         const pathModeNote = pathMode === "direct"
           ? " They chose a DIRECT path — one focused recommendation, not multiple options."
           : " They chose a FLEXIBLE path — they will pick between options as they go.";
-        const answer = await callAdvisor(buildClarifyingPrompt(text) + pathModeNote, 450);
-        const fallback = getClarifyingFallback(text);
+        const answer = await callAdvisor(buildClarifyingPrompt(userText) + pathModeNote, 450);
+        const fallback = getClarifyingFallback(userText);
         const finalAnswer = answer || fallback;
 
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
+        trackEvent("path_mode_chosen", { path_mode: pathMode });
         trackEvent("clarifying_question_shown", {
-          prompt_length: text.length,
+          prompt_length: userText.length,
           intake_mode: "standard",
           path_mode: pathMode
         });
@@ -27438,6 +27639,57 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } finally {
         intakeInProgress = false;
       }
+    }
+
+    async function submitInitialPrompt(options = {}) {
+      const text = $("#main-input")?.value.trim()
+        || document.querySelector(".legacy-main-input")?.value.trim()
+        || "";
+      if (!text || intakeInProgress) return;
+
+      stopRotatingPromptPlaceholder();
+      beginNewIntake();
+      intakeAbandonTracked = false;
+      state.intakeMode = "standard";
+      state.pathMode = null;
+      state.awaitingPathModeChoice = false;
+      hidePathModeChoice();
+
+      trackEvent("prompt_submitted", {
+        prompt_length: text.length,
+        founder_mode: isFounderOrProjectPrompt(text),
+        detailed_prompt: isDetailedPrompt(text),
+        intake_mode: "standard"
+      });
+
+      showScreen("convo");
+      pushUserMessage(text);
+      showReplyBox(false);
+      hideProfileIntakeChips();
+      schedulePersist();
+
+      if (options.pathMode === "direct" || options.pathMode === "flexible") {
+        await continueIntakeWithPathMode(options.pathMode);
+        return;
+      }
+
+      showPathModeChoice();
+    }
+
+    async function startFlowWithPathMode(pathMode) {
+      const text = $("#main-input")?.value.trim()
+        || document.querySelector(".legacy-main-input")?.value.trim()
+        || "";
+      if (!text) {
+        $("#main-input")?.focus();
+        document.querySelector(".legacy-main-input")?.focus();
+        return;
+      }
+      await submitInitialPrompt({ pathMode });
+    }
+
+    async function startFlow(options = {}) {
+      await submitInitialPrompt(options);
     }
 
     async function startQuickFlow() {
@@ -30874,7 +31126,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.pendingBranchTaskId = null;
       state.branchPickerContext = null;
       state.flexibleBranchOptions = [];
+      state.awaitingPathModeChoice = false;
       hideRoadmapBranchPicker();
+      hidePathModeChoice();
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
       setRoadmapNavVisible(false);
@@ -32382,7 +32636,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function bindDashboardUi() {
-      $("#dashboard-search-go")?.addEventListener("click", () => startFlowWithPathMode("flexible"));
+      $("#dashboard-search-go")?.addEventListener("click", () => submitInitialPrompt());
       $("#dashboard-mobile-menu")?.addEventListener("click", toggleDashboardMobileNav);
       $("#dashboard-mobile-overlay")?.addEventListener("click", closeDashboardMobileNav);
       $("#dashboard-sync-btn")?.addEventListener("click", manualSave);
@@ -32479,13 +32733,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       $("#direct-path-btn")?.addEventListener("click", () => startFlowWithPathMode("direct"));
       $("#flexible-path-btn")?.addEventListener("click", () => startFlowWithPathMode("flexible"));
+      $("#convo-direct-path-btn")?.addEventListener("click", () => continueIntakeWithPathMode("direct"));
+      $("#convo-flexible-path-btn")?.addEventListener("click", () => continueIntakeWithPathMode("flexible"));
       document.querySelector(".legacy-direct-path-btn")?.addEventListener("click", () => startFlowWithPathMode("direct"));
       document.querySelector(".legacy-flexible-path-btn")?.addEventListener("click", () => startFlowWithPathMode("flexible"));
       $("#hero-example-btn")?.addEventListener("click", startQuickFlow);
       $("#main-input").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
-          startFlowWithPathMode("flexible");
+          submitInitialPrompt();
         }
       });
 
