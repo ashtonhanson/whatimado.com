@@ -14496,9 +14496,19 @@
       return "general";
     }
 
+    function isPlaceholderMentorHelp(text) {
+      const copy = String(text || "").trim().toLowerCase();
+      if (!copy) return false;
+      if (copy.includes("local contacts and links are loading")) return true;
+      if (/\b(use the )?draft buttons?\b/.test(copy) && /\b(loading|when you are ready|when you're ready)\b/.test(copy)) return true;
+      if (/\b(contacts?|links?).{0,24}\b(loading|are loading)\b/.test(copy)) return true;
+      return false;
+    }
+
     function sanitizeMentorFieldText(text, normalized) {
       let copy = humanizeTaskText(String(text || "").trim());
       if (!copy) return "";
+      if (isPlaceholderMentorHelp(copy)) return "";
       if (isGenericMentorCopy(copy, normalized)) return "";
       if (isTaskRestatement(copy, normalized)) return "";
       if (isExplanatoryTaskCopy(copy)) return "";
@@ -18988,7 +18998,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
           if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea) && loc && resources.length) {
             if (aiResourcesAlready && !force) {
-              return scrubRedundantTaskResources(normalized);
+              return scrubRedundantTaskResources(refreshTaskMentorHelpAfterResourceInjection(normalized));
             }
             if (!force && normalized.contacts.length && shouldShowTaskResources(normalized, stage, stageIndex, idea)) {
               normalized.contacts.forEach((contact) => {
@@ -19015,7 +19025,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             }
           } else if (taskNeedsTaskToolResources(normalized.text)) {
             if (!force && shouldShowTaskResources(normalized, stage, stageIndex, idea)) {
-              return scrubRedundantTaskResources(normalized);
+              return scrubRedundantTaskResources(refreshTaskMentorHelpAfterResourceInjection(normalized));
             }
             const tools = getTaskToolResources(normalized.text);
             if (tools.links.length || tools.contacts.length) {
@@ -19026,11 +19036,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             }
           }
 
-          return scrubRedundantTaskResources(normalized);
+          return scrubRedundantTaskResources(refreshTaskMentorHelpAfterResourceInjection(normalized));
         });
       });
 
       return cloned;
+    }
+
+    function refreshTaskMentorHelpAfterResourceInjection(normalized) {
+      if (!normalized || typeof normalized !== "object") return normalized;
+      if (!isPlaceholderMentorHelp(normalized.mentorHelp || normalized.mentorFindings)) return normalized;
+      normalized.mentorHelp = "";
+      normalized.mentorFindings = "";
+      const refreshed = inferMentorHelp(normalized);
+      if (refreshed) {
+        normalized.mentorHelp = refreshed;
+        normalized.mentorFindings = refreshed;
+      }
+      return normalized;
     }
 
     function clearTaskResourcesForReinjection(stages, idea = state.currentIdea) {
@@ -20905,6 +20928,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getLocationContextBlock() +
         `\n${getActionableTaskRules()}\n` +
         `Return exactly 1 stage with 2 missions (JSON key: tasks). Include mission, text, mentorHelp, howTo, outcome, and resources when relevant.\n` +
+        `NEVER say contacts are "loading" or mention draft buttons — list concrete prepared assets in mentorHelp now.\n` +
         ROADMAP_JSON_SCHEMA_TAIL
       );
     }
@@ -21158,14 +21182,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function buildFlexibleMissionFallback(choice, idea = state.currentIdea) {
       const title = String(choice?.title || "Your next mission").trim();
       const tagline = String(choice?.tagline || "Take the next small step on this path.").trim();
-      return normalizeRoadmapStages([{
+      const loc = getUserLocation();
+      const known = loc ? getKnownLocalResourcesForPath(idea, loc).slice(0, 5) : [];
+      const localResources = known.map((entry) => ({
+        name: entry.name || "Contact",
+        org: entry.org,
+        phone: entry.phone || "",
+        email: entry.email || "",
+        url: entry.url || ""
+      }));
+      let stages = normalizeRoadmapStages([{
         label: title,
         desc: tagline,
         tasks: [{
           mission: title,
           text: tagline,
-          mentorHelp: "Local contacts and links are loading — use the draft buttons when you are ready to reach out.",
-          howTo: "Review the contacts below and take one action this week.",
+          mentorHelp: "",
+          howTo: isFlexiblePathMode()
+            ? "Start with the first contact below."
+            : "Review the contacts below and take one action this week.",
           why: String(choice?.why || "").trim(),
           outcome: "One concrete step completed toward this direction.",
           script: "",
@@ -21173,11 +21208,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           followUp: "",
           duration: "30 minutes",
           difficulty: "Easy",
-          resources: { local: [], national: [], global: [] },
-          links: [],
-          contacts: []
+          resources: { local: localResources, national: [], global: [] },
+          links: localResources.map((entry) => entry.url).filter(Boolean),
+          contacts: localResources
         }]
       }]);
+      if (loc) {
+        stages = applyLocalResourceFallback(stages, loc);
+      }
+      return stages;
     }
 
     function parseTaskId(taskId) {
@@ -25139,14 +25178,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const runAlter = () => {
         state.mapChat = { type: "alter" };
         state.alterPathMode = false;
-        trackEvent("alter_path_started", { ideas_count: state.ideas.length });
+        trackEvent("alter_path_started", { ideas_count: state.ideas.length, path_mode: getPathMode() });
         showScreen("convo");
-        const prompt = "Want to tweak these paths or add new ones? Tell me what's not fitting, what direction you'd rather explore, or what to add. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back to your map anytime.";
+        const prompt = isDirectPathMode()
+          ? `Want to refine "${state.ideas[0]?.title || "your path"}"? Tell me what's not fitting — too slow, wrong focus, not local enough, etc. Chat as long as you need; tap "Update my path" when you're ready, or go back to your map anytime.`
+          : "Want to tweak these paths or add new ones? Tell me what's not fitting, what direction you'd rather explore, or what to add. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back to your map anytime.";
         addTypingBubble();
         resolveTyping(prompt);
         state.history.push({ role: "assistant", content: prompt });
         const reply = $("#reply-textarea");
-        if (reply) reply.placeholder = "e.g. These feel too online — I want something local and hands-on...";
+        if (reply) {
+          reply.placeholder = isDirectPathMode()
+            ? "e.g. Keep this as a job path — I want help desk or IT support, not freelance"
+            : "e.g. These feel too online — I want something local and hands-on...";
+        }
         showReplyBox(true);
         updateReplyMapActions();
         schedulePersist();
@@ -25316,7 +25361,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const active = Boolean(state.mapChat);
       actions.hidden = !active;
       if (applyBtn) {
-        applyBtn.textContent = state.mapChat?.type === "idea" ? "Update this path" : "Update my paths";
+        if (state.mapChat?.type === "idea") {
+          applyBtn.textContent = "Update this path";
+        } else if (isDirectPathMode() && state.mapChat?.type === "alter") {
+          applyBtn.textContent = "Update my path";
+        } else {
+          applyBtn.textContent = "Update my paths";
+        }
       }
       if (regenBtn) {
         regenBtn.hidden = !(state.mapChat?.type === "idea" && state.mapChat?.fromRoadmap);
@@ -25335,7 +25386,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function buildMapChatPrompt(summary) {
       const pathList = state.ideas.map((idea, index) => `${index + 1}. ${idea.title}`).join("\n");
-      let focusBlock = `The user is reviewing their possibility map and wants to discuss their paths.\nCurrent paths:\n${pathList}\n\nHelp them explore what's not fitting and what they'd rather do. Answer questions, compare options, and suggest practical next steps. Do NOT output JSON or regenerate paths — just have a helpful conversation.`;
+      let focusBlock = isDirectPathMode()
+        ? `The user is reviewing their single direct-path recommendation and wants to refine it.\nCurrent path: ${state.ideas[0]?.title || "their path"}\n\nHelp them clarify what's not fitting and what to adjust. Do NOT output JSON or regenerate paths — just have a helpful conversation.`
+        : `The user is reviewing their possibility map and wants to discuss their paths.\nCurrent paths:\n${pathList}\n\nHelp them explore what's not fitting and what they'd rather do. Answer questions, compare options, and suggest practical next steps. Do NOT output JSON or regenerate paths — just have a helpful conversation.`;
 
       if (state.mapChat?.type === "idea") {
         const idea = state.ideas[state.mapChat.index];
@@ -25372,16 +25425,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     async function applyAlterPathChanges() {
       const summary = getAdvisorContext();
+      const direct = isDirectPathMode();
+      const previousTitle = state.ideas[0]?.title || "";
       trackEvent("alter_path_submitted", {
         history_count: state.history.length,
-        previous_ideas_count: state.ideas.length
+        previous_ideas_count: state.ideas.length,
+        path_mode: getPathMode()
       });
-      const response = await callAdvisor(
-        `${buildIdeasPrompt(summary, 3)}\n\nThe user is revising their path options — previous paths did not fully fit. Generate 3 NEW ideas that reflect their latest feedback. Reference what they want changed.`,
-        900
-      );
 
-      state.ideas = extractJsonArray(response, getFallbackIdeas());
+      const refinePrompt = direct
+        ? `${buildIdeasPrompt(summary, 1)}\n\nThe user chose DIRECT PATH — one focused recommendation: "${previousTitle}". Refine THIS path from their feedback. Return exactly ONE idea. Keep the same path type (employment vs self-employment vs training) and goal unless they explicitly asked to switch — tighten the fit, don't pivot to a different strategy.`
+        : `${buildIdeasPrompt(summary, 3)}\n\nThe user is revising their path options — previous paths did not fully fit. Generate 3 NEW ideas that reflect their latest feedback. Reference what they want changed.`;
+
+      const response = await callAdvisor(refinePrompt, direct ? 700 : 900);
+
+      const fallback = direct && state.ideas[0] ? [state.ideas[0]] : getFallbackIdeas();
+      let ideas = extractJsonArray(response, fallback);
+      if (direct) ideas = ideas.slice(0, 1);
+
+      state.ideas = ideas;
       state.ideaBatches = [state.ideas.length];
       state.allRoadmaps = {};
       state.allTaskChats = {};
@@ -25396,7 +25458,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (reply) reply.placeholder = "Type your response...";
       updateReplyMapActions();
 
-      const closing = "Got it — I've updated your paths based on that. Take a look at your revised map.";
+      const closing = direct
+        ? "Got it — I've refined your path based on that. Take a look at the updated version on your map."
+        : "Got it — I've updated your paths based on that. Take a look at your revised map.";
       resolveTyping(closing);
       state.history.push({ role: "assistant", content: closing });
       schedulePersist();
@@ -25404,7 +25468,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setTimeout(() => {
         buildOpportunityMap(state.ideas);
         updateMapsNav();
-        trackEvent("map_regenerated", { ideas_count: state.ideas.length });
+        updateMapPathModeCopy();
+        trackEvent("map_regenerated", { ideas_count: state.ideas.length, path_mode: getPathMode() });
         updateMapAuxiliaryPanels();
         showScreen("map");
       }, 550);
@@ -27315,12 +27380,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     async function generateAndShowMap(options = {}) {
       const pathMode = options.pathMode || state.pathMode || "flexible";
       state.pathMode = pathMode;
-      const ideaCount = pathMode === "direct" ? 1 : 3;
+      const ideaCount = 3;
       const founderMode = options.founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
       mergeUserProfileFromConversation();
       const summary = getAdvisorContext();
       const directNote = pathMode === "direct"
-        ? "\n\nReturn exactly ONE best-fit focused path — the single strongest recommendation for this person right now. Do not offer alternatives in this response."
+        ? "\n\nReturn exactly THREE distinct path options — different viable strategies for this person. They will pick ONE on the map, then choose a starting direction before following a full step-by-step direct roadmap."
         : "";
       let response = await callAdvisor(
         (founderMode ? buildFounderIdeasPrompt(summary, ideaCount) : buildIdeasPrompt(summary, ideaCount)) + directNote,
@@ -27328,9 +27393,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
 
       let ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : getFallbackIdeas());
-      if (pathMode === "direct") {
-        ideas = ideas.slice(0, 1);
-      } else if (!founderMode && ideasAreTooSimilar(ideas)) {
+      ideas = ideas.slice(0, 3);
+      if (pathMode !== "direct" && !founderMode && ideasAreTooSimilar(ideas)) {
         response = await callAdvisor(
           `${buildIdeasPrompt(summary, 3)}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps.`,
           1200
@@ -27341,8 +27405,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.ideaBatches = [ideas.length];
       const closing = pathMode === "direct"
         ? (founderMode
-          ? "Here's your recommended focus for whatimado.com — opening your step-by-step roadmap."
-          : "Here's your recommended path — opening your step-by-step roadmap.")
+          ? "Here are three focused directions for whatimado.com — open the one that fits you best."
+          : "Here are three paths to choose from — open the one that fits you best for your full step-by-step roadmap.")
         : (founderMode
           ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
           : "Here are your paths. Tap any opportunity to see your full roadmap.");
@@ -27370,9 +27434,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         });
         updateMapAuxiliaryPanels();
         showScreen("map");
-        if (pathMode === "direct" && state.ideas.length === 1) {
-          setTimeout(() => viewRoadmap(state.ideas[0], 0), 650);
-        }
       }, 550);
     }
 
@@ -27569,7 +27630,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const subtitle = $("#screen-map .page-subtitle");
       if (!subtitle) return;
       subtitle.textContent = isDirectPathMode()
-        ? "One focused recommendation for you — open the roadmap to start your step-by-step plan."
+        ? "Pick three paths to compare — open one for your full step-by-step roadmap."
         : "Review each path below, then open a step-by-step roadmap for the one that fits you best.";
     }
 
@@ -27597,18 +27658,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? `\nDo NOT repeat these titles:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n`
         : "";
       const moment = firstMission
-        ? `They just chose the path "${state.currentIdea?.title || "their goal"}" on their map and need to pick their FIRST mission — three different ways to start.`
+        ? (isDirectPathMode()
+          ? `They chose the path "${state.currentIdea?.title || "their goal"}" on their map and need to pick ONE starting direction before their full direct roadmap loads — three different ways in.`
+          : `They just chose the path "${state.currentIdea?.title || "their goal"}" on their map and need to pick their FIRST mission — three different ways to start.`)
         : phaseComplete
         ? "They just finished a full phase on this path and need to choose the direction for the NEXT phase."
         : `They just completed this mission: "${taskText || "recent step"}".`;
+      const pathLabel = isDirectPathMode() && firstMission
+        ? "DIRECT path"
+        : "FLEXIBLE path";
+      const optionLabel = firstMission
+        ? (isDirectPathMode() ? "starting directions (ways into this path)" : "first missions (ways to start)")
+        : "next directions";
       return (
-        `You are whatimado. This user chose a FLEXIBLE path — they pick their next direction from 3 options.\n\n` +
+        `You are whatimado. This user chose a ${pathLabel}${firstMission && isDirectPathMode() ? " — they pick one direction, then follow a full linear roadmap" : " — they pick their next direction from 3 options"}.\n\n` +
         `Path: ${state.currentIdea?.title || "their goal"}\n` +
         `${moment}\n` +
         (firstMission ? "" : `Progress so far:\n${completedSummary}\n`) +
         `Context:\n${getAdvisorContext()}\n` +
         excludeBlock +
-        `\nGenerate exactly 3 DISTINCT viable ${firstMission ? "first missions (ways to start)" : "next directions"} — plain language, specific to them. Not full roadmaps.\n` +
+        `\nGenerate exactly 3 DISTINCT viable ${optionLabel} — plain language, specific to them. Not full roadmaps.\n` +
         `Respond only with a raw JSON array: [{"title":"short name","tagline":"one plain sentence","why":"one sentence why this fits now"}]`
       );
     }
@@ -27622,6 +27691,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const founderMode = isFounderRoadmapForIdea(idea);
 
       if (!phaseComplete) {
+        if (isDirectPathMode() && firstMission) {
+          return (
+            `${buildRoadmapPrompt(idea, getAdvisorContext(), { founderMode })}\n\n` +
+            `The user chose DIRECT PATH and picked this starting direction: "${choice.title}" — ${choice.tagline}\n` +
+            `Why they picked it: ${choice.why || choice.tagline}\n` +
+            `Build the FULL step-by-step roadmap for "${idea?.title || "this path"}" aligned to that direction. Include mentorHelp, resources, and scripts where relevant — not a single mission.\n` +
+            getRoadmapJsonInstruction({ founderMode, context: getAdvisorContext(), phase: "initial" })
+          );
+        }
         return (
           `You are whatimado — a helpful mentor who does the legwork. Generate exactly ONE mission (one stage with exactly one task) for a flexible-path user.\n\n` +
           `Chosen path: "${idea?.title || "their goal"}"\n` +
@@ -27799,37 +27877,68 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       try {
         let response = "";
+        const branchTokenLimit = context.phaseComplete
+          ? getRoadmapAdvisorTokenLimit(isFounderRoadmapForIdea(state.currentIdea))
+          : (isDirectPathMode() && context.firstMission
+            ? getRoadmapAdvisorTokenLimit(isFounderRoadmapForIdea(state.currentIdea))
+            : 1200);
+        const branchTimeoutMs = context.phaseComplete
+          ? ROADMAP_ADVISOR_TIMEOUT_MS
+          : (isDirectPathMode() && context.firstMission ? ROADMAP_ADVISOR_TIMEOUT_MS : 55000);
         try {
           response = await callAdvisor(
             buildFlexibleBranchMissionPrompt(choice, taskId, context),
-            context.phaseComplete ? getRoadmapAdvisorTokenLimit(isFounderRoadmapForIdea(state.currentIdea)) : 1200,
-            { timeoutMs: context.phaseComplete ? ROADMAP_ADVISOR_TIMEOUT_MS : 55000 }
+            branchTokenLimit,
+            { timeoutMs: branchTimeoutMs }
           );
         } catch (advisorError) {
           if (context.phaseComplete) throw advisorError;
-          console.warn("[whatimado] flexible branch advisor failed, using fallback:", advisorError?.message || advisorError);
+          console.warn("[whatimado] branch mission advisor failed, using fallback:", advisorError?.message || advisorError);
         }
         let newStages = parseFlexibleBranchMissionResponse(response, state.currentIdea, choice);
         if (!newStages?.length && !context.phaseComplete) {
           newStages = parseRoadmapResponse(response, state.currentIdea);
         }
-        if (!newStages?.length && !context.phaseComplete) {
+        if (!newStages?.length && !context.phaseComplete && !(isDirectPathMode() && context.firstMission)) {
           newStages = buildFlexibleMissionFallback(choice, state.currentIdea);
         }
         if (!newStages?.length) throw new Error("empty branch mission");
 
         if (context.firstMission || (!taskId && !context.phaseComplete && !state.roadmapStages.length)) {
           state.flexibleFirstMissionPicked = true;
-          const stage = newStages[0] || { label: "Your first mission", desc: "", tasks: [] };
-          const newTask = stage.tasks?.[0] || newStages.flatMap((s) => s.tasks || [])[0];
-          if (!newTask) throw new Error("empty first mission");
-          state.roadmapStages = normalizeRoadmapStages([{
-            label: stage.label || "Your first mission",
-            desc: stage.desc || "",
-            tasks: [newTask]
-          }]);
-          state.expandedRoadmapPhases = new Set([0]);
-          state.expandedRoadmapTasks = new Set(["task-0-0"]);
+
+          if (isDirectPathMode()) {
+            let fullStages = state.flexiblePendingFullStages?.length
+              ? normalizeRoadmapStages(state.flexiblePendingFullStages)
+              : null;
+            if (!fullStages?.length || !stageOneHasRevealableMission(fullStages)) {
+              fullStages = newStages?.length ? normalizeRoadmapStages(newStages) : null;
+            }
+            if (!fullStages?.length || !stageOneHasRevealableMission(fullStages)) {
+              fullStages = ensureRoadmapLocalContacts(
+                normalizeRoadmapStages(getFallbackStages(state.currentIdea)),
+                state.currentIdea
+              );
+            }
+            state.flexiblePendingFullStages = null;
+            state.roadmapStages = coerceRoadmapStagesForRender(fullStages);
+            if (!state.roadmapStages.length) {
+              state.roadmapStages = fullStages.filter((stage) => stage.label?.trim() && (stage.tasks || []).length);
+            }
+            state.expandedRoadmapPhases = new Set([0]);
+            state.expandedRoadmapTasks = new Set(["task-0-0"]);
+          } else {
+            const stage = newStages[0] || { label: "Your first mission", desc: "", tasks: [] };
+            const newTask = stage.tasks?.[0] || newStages.flatMap((s) => s.tasks || [])[0];
+            if (!newTask) throw new Error("empty first mission");
+            state.roadmapStages = normalizeRoadmapStages([{
+              label: stage.label || "Your first mission",
+              desc: stage.desc || "",
+              tasks: [newTask]
+            }]);
+            state.expandedRoadmapPhases = new Set([0]);
+            state.expandedRoadmapTasks = new Set(["task-0-0"]);
+          }
         } else if (context.phaseComplete) {
           state.roadmapExhausted = false;
           state.roadmapStages = [...state.roadmapStages, ...newStages];
@@ -27957,12 +28066,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       stopSiteLoadingProgress($("#roadmap-branch-build-progress"));
     }
 
-    function shouldOfferFlexibleFirstMissionPicker() {
+    function shouldOfferFirstMissionPicker() {
       syncFlexibleFirstMissionStateFromRoadmap();
-      return isFlexiblePathMode()
+      return (isFlexiblePathMode() || isDirectPathMode())
         && !state.flexibleFirstMissionPicked
         && !hasAnyCompletedRoadmapTasks()
         && !roadmapHasActiveFlexibleMission();
+    }
+
+    function shouldOfferFlexibleFirstMissionPicker() {
+      return shouldOfferFirstMissionPicker();
     }
 
     function revealFlexibleFirstMissionPicker(idea, ideaIndex, pendingStages = null) {
@@ -27971,7 +28084,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       state.roadmapStages = [];
       renderStages([]);
-      $("#roadmap-sub").textContent = "Pick your first mission — three ways to start.";
+      $("#roadmap-sub").textContent = isDirectPathMode()
+        ? "Pick your starting direction — three ways into this path."
+        : "Pick your first mission — three ways to start.";
       registerRoadmapInSidebar(idea, ideaIndex);
       renderSidebarRoadmaps();
       schedulePersist();
@@ -28011,7 +28126,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       try {
         const userText = getFirstUserMessage();
         const pathModeNote = pathMode === "direct"
-          ? " They chose a DIRECT path — one focused recommendation, not multiple options."
+          ? " They chose a DIRECT path — three options on the map, then one full step-by-step roadmap after they pick a starting direction."
           : " They chose a FLEXIBLE path — they will pick between options as they go.";
         const answer = await callAdvisor(buildClarifyingPrompt(userText) + pathModeNote, 450);
         const fallback = getClarifyingFallback(userText);
@@ -28337,7 +28452,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return (
         `<div class="map-paths-actions">` +
         moreBtn +
-        `<button type="button" class="back-btn map-toolbar-btn map-paths-alter-btn">Refine or add paths</button>` +
+        `<button type="button" class="back-btn map-toolbar-btn map-paths-alter-btn">${isDirectPathMode() ? "Refine this path" : "Refine or add paths"}</button>` +
         `<button type="button" class="back-btn map-toolbar-btn map-paths-reset-btn">New map</button>` +
         `</div>`
       );
@@ -29375,6 +29490,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         console.warn("[whatimado] publishRoadmapToUi: revealable stages collapsed to empty payload");
       }
 
+      if (!renderStagesPayload.length && idea) {
+        let fallback = normalizeRoadmapStages(getFallbackStages(idea));
+        try {
+          fallback = ensureRoadmapLocalContacts(fallback, idea);
+        } catch {
+          /* use un-enriched fallback */
+        }
+        renderStagesPayload = coerceRoadmapStagesForRender(fallback);
+        if (!renderStagesPayload.length && stageOneHasRevealableMission(fallback)) {
+          renderStagesPayload = fallback.filter((stage) => stage.label?.trim() && (stage.tasks || []).length);
+        }
+        if (renderStagesPayload.length) roadmapSource = "fallback";
+      }
+
       state.roadmapStages = renderStagesPayload;
       if (initialReveal && !refineUpdate) prepareFirstMissionForReveal(idea);
       if (refineUpdate && expandedBefore) state.expandedRoadmapPhases = expandedBefore;
@@ -29610,7 +29739,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
 
-      if (isFlexiblePathMode()) {
+      if (shouldOfferFirstMissionPicker()) {
         syncFlexibleFirstMissionStateFromRoadmap();
         if (!state.flexibleFirstMissionPicked) {
           state.flexiblePendingFullStages = null;
@@ -29622,7 +29751,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       cancelDeferredRoadmapPhaseReveal();
       $("#roadmap-sub").textContent = founderMode
         ? "Building your whatimado.com launch roadmap..."
-        : (isFlexiblePathMode() ? "Loading your first mission options…" : "Preparing your first mission…");
+        : (shouldOfferFirstMissionPicker()
+          ? (isDirectPathMode() ? "Loading your starting directions…" : "Loading your first mission options…")
+          : "Preparing your first mission…");
       const completeCard = $("#roadmap-complete-card");
       if (completeCard) {
         completeCard.hidden = true;
@@ -29632,7 +29763,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setRoadmapLoading(true);
 
       let revealed = false;
-      if (isFlexiblePathMode() && shouldOfferFlexibleFirstMissionPicker()) {
+      if (shouldOfferFirstMissionPicker()) {
         revealed = true;
         completeSiteLoadingProgress($("#roadmap-loader-progress"));
         setRoadmapLoading(false);
@@ -29684,7 +29815,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               revealRoadmapProgressively(stages, "ai", { isFinal: false });
             },
             onFullStagesReady(fullStages, meta = {}) {
-              if (isFlexiblePathMode() && !state.flexibleFirstMissionPicked) {
+              if (shouldOfferFirstMissionPicker()) {
                 state.flexiblePendingFullStages = fullStages;
                 return;
               }
@@ -29702,7 +29833,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             },
             onRefinementComplete(stages, meta = {}) {
               if (!revealed || !stages?.length) return;
-              if (isFlexiblePathMode() && !state.flexibleFirstMissionPicked) {
+              if (shouldOfferFirstMissionPicker()) {
                 state.flexiblePendingFullStages = stages;
                 setRoadmapRefining(false);
                 return;
@@ -31012,7 +31143,41 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
-    function renderStages(stages) {
+    function recoverEmptyRoadmapStages(idea = state.currentIdea, ideaIndex = getCurrentIdeaIndex()) {
+      const list = $("#stage-list");
+      if (!list || list.children.length || !idea) return false;
+      let fallback;
+      try {
+        fallback = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
+      } catch (error) {
+        console.warn("[whatimado] recoverEmptyRoadmapStages failed:", error?.message || error);
+        return false;
+      }
+      if (!stageOneHasRevealableMission(fallback)) return false;
+
+      state.roadmapStages = coerceRoadmapStagesForRender(fallback);
+      if (!state.roadmapStages.length) {
+        state.roadmapStages = fallback.filter((stage) => stage.label?.trim() && (stage.tasks || []).length);
+      }
+      if (!state.roadmapStages.length) return false;
+
+      state.allRoadmaps[state.roadmapKey] = {
+        ...(state.allRoadmaps[state.roadmapKey] || {}),
+        idea,
+        stages: state.roadmapStages,
+        source: "fallback"
+      };
+      prepareFirstMissionForReveal(idea);
+      renderStages(state.roadmapStages, { skipRecover: true });
+      schedulePersist();
+      trackEvent("roadmap_empty_recovered", {
+        idea_index: ideaIndex,
+        roadmap_key: state.roadmapKey || ""
+      });
+      return true;
+    }
+
+    function renderStages(stages, options = {}) {
       const list = $("#stage-list");
       if (!list) return;
       list.innerHTML = "";
@@ -31078,6 +31243,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $$(".task-ask-btn").forEach((button) => {
         button.addEventListener("click", () => askTask(button.dataset.taskId, getTaskTextById(button.dataset.taskId)));
       });
+
+      if (!options.skipRecover && !list.children.length && state.currentIdea) {
+        recoverEmptyRoadmapStages(state.currentIdea, getCurrentIdeaIndex());
+      }
+
       bindTaskPersistence();
       updateRoadmapOverviewHeader();
       updateRoadmapOverviewChrome();
