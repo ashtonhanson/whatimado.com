@@ -8531,6 +8531,23 @@
       margin: .55rem 0 .65rem;
     }
 
+    html[data-color-scheme="adult"] .task-draft-suggestions--flexible {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    html[data-color-scheme="adult"] .task-draft-suggestion-btn--flexible {
+      align-items: center;
+      text-align: center;
+      min-height: 2.75rem;
+      justify-content: center;
+    }
+
+    @media (max-width: 640px) {
+      html[data-color-scheme="adult"] .task-draft-suggestions--flexible {
+        grid-template-columns: 1fr;
+      }
+    }
+
     html[data-color-scheme="adult"] .task-draft-suggestion-btn {
       display: flex;
       flex-direction: column;
@@ -13907,6 +13924,34 @@
       return `${base}\n${PLAIN_LANGUAGE_AI_RULES}`;
     }
 
+    function getFlexibleMissionTaskRules() {
+      return (
+        "FLEXIBLE-PATH MISSION (on-demand draft buttons — do NOT pre-write copy):\n" +
+        "- Provide real contacts/resources only — names, phones, emails, URLs ranked for action.\n" +
+        "- Leave script, talkingPoints, and followUp as EMPTY strings.\n" +
+        "- Do NOT embed emails, phone scripts, or talking points in the mission — the user taps buttons to generate those.\n" +
+        "- mentorHelp = bullet list of what you found (orgs, links), never \"draft below\" or \"script below\".\n" +
+        "- howTo = max 2 lines pointing at contacts above (e.g. Email #1 on the list).\n" +
+        "- text = one small user action using the contacts (send, call, book).\n" +
+        `${PLAIN_LANGUAGE_AI_RULES}\n`
+      );
+    }
+
+    function stripFlexibleMissionDrafts(normalized) {
+      if (!normalized || !isFlexiblePathMode()) return normalized;
+      normalized.script = "";
+      normalized.talkingPoints = "";
+      normalized.followUp = "";
+      const scrubDraftRefs = (text) => String(text || "")
+        .replace(/\b(draft|ready-to-use|prepared)\s+(email|script|message|below)\b/gi, "email button")
+        .replace(/\b(script|email|draft)\s+below\b/gi, "buttons below")
+        .replace(/\buse the (draft|script|email) below\b/gi, "use the buttons below when ready");
+      normalized.mentorHelp = scrubDraftRefs(normalized.mentorHelp);
+      normalized.mentorFindings = scrubDraftRefs(normalized.mentorFindings);
+      normalized.howTo = scrubDraftRefs(normalized.howTo);
+      return normalized;
+    }
+
     function applyPlaybookTokens(text, idea, parsed, locRaw) {
       const title = idea?.title || "this path";
       const pb = getLocationPlaybook(parsed, locRaw);
@@ -15390,8 +15435,11 @@
       presentation: { id: "presentation", draftType: "presentation", label: "Presentation Outline", desc: "Slides structure" },
       founder_story: { id: "founder_story", draftType: "founder_story", label: "Founder Story", desc: "~120 words" },
       cold_message: { id: "cold_message", draftType: "cold_message", label: "Cold Message", desc: "Short DM or text" },
-      checklist: { id: "checklist", draftType: "checklist", label: "Step Checklist", desc: "Break it into steps" }
+      checklist: { id: "checklist", draftType: "checklist", label: "Step Checklist", desc: "Break it into steps" },
+      what_to_say: { id: "what_to_say", draftType: "checklist", label: "What to say", desc: "Talking points for this step", variant: "talking_points" }
     };
+
+    const FLEXIBLE_DRAFT_BUTTON_IDS = ["outreach_email", "phone_script", "what_to_say"];
 
     const PROFILE_DRAFT_SUGGESTION_IDS = {
       contact_orgs: ["outreach_email", "follow_up_email", "phone_script", "contact_tracker"],
@@ -15811,7 +15859,7 @@ If recording answers:
       };
 
       try {
-        const existing = extractDraftContentForSuggestion(normalized, suggestion);
+        const existing = isFlexiblePathMode() ? null : extractDraftContentForSuggestion(normalized, suggestion);
         if (existing && !options.force && tryInsertDraft(existing, "roadmap")) return;
 
         const localDraft = buildLocalDraftForSuggestion(normalized, suggestion);
@@ -16562,7 +16610,8 @@ NOTE TEMPLATE
         research_checklist: "Research checklist",
         interview_questions: "Interview / research questions",
         comparison: "Comparison spreadsheet",
-        contact_tracker: "Contact tracking spreadsheet"
+        contact_tracker: "Contact tracking spreadsheet",
+        talking_points: "What to say — talking points"
       };
       const label = variantLabels[variant] || USABLE_DRAFT_TYPE_LABELS[draftType] || String(draftType || "").replace(/_/g, " ");
       const resourceBlock = resources.length
@@ -16596,6 +16645,9 @@ NOTE TEMPLATE
         `- No preamble, no "here's a draft", no instructions about how to use it.\n` +
         `- Use [brackets] only for facts you cannot infer.\n` +
         `- Plain English, middle-school reading level.\n` +
+        (variant === "talking_points"
+          ? `- Output 4-6 short bullet lines the user can read on a call or in person — no email format.\n`
+          : "") +
         `- If you cannot produce a real ${label.toLowerCase()} for this task, output exactly: NO_DRAFT`
       );
     }
@@ -18165,9 +18217,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         };
       }
       attachResourceLayers(normalized, typeof task === "object" && task ? task : fallback);
-      return applyPlainLanguageToTask(
+      return stripFlexibleMissionDrafts(applyPlainLanguageToTask(
         enrichTaskMentorFields(scrubRedundantTaskResources(localizeTaskForUserLocation(normalized)))
-      );
+      ));
     }
 
     function normalizeTaskContact(entry) {
@@ -18443,34 +18495,101 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         blocks.push(`<div class="task-links"><div class="task-action-label">Direct links</div><div class="task-link-list">${links}</div></div>`);
       }
 
-      if (normalized.script && shouldShowTaskScript(normalized)) {
-        const scriptLabel = /\b(grant|funding)\b/i.test(`${normalized.text} ${normalized.script}`.slice(0, 200))
-          ? "Grant shortlist & draft"
-          : /\bsubject:/i.test(normalized.script)
-            ? "Outreach email"
-            : /\b(call|phone|voicemail)\b/i.test(normalized.text)
-              ? "Phone script"
-              : "Ready-to-use draft";
-        blocks.push(`<div class="task-script"><div class="task-action-label">${escapeHtml(scriptLabel)}</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
+      if (!isFlexiblePathMode()) {
+        if (normalized.script && shouldShowTaskScript(normalized)) {
+          const scriptLabel = /\b(grant|funding)\b/i.test(`${normalized.text} ${normalized.script}`.slice(0, 200))
+            ? "Grant shortlist & draft"
+            : /\bsubject:/i.test(normalized.script)
+              ? "Outreach email"
+              : /\b(call|phone|voicemail)\b/i.test(normalized.text)
+                ? "Phone script"
+                : "Ready-to-use draft";
+          blocks.push(`<div class="task-script"><div class="task-action-label">${escapeHtml(scriptLabel)}</div><pre class="task-script-block">${escapeHtml(normalized.script)}</pre></div>`);
+        }
+
+        const talkingPoints = renderMissionTalkingPointsHtml(normalized);
+        if (talkingPoints) blocks.push(talkingPoints);
+
+        const needsDraftPanel = Boolean(taskNeedsUsableDraft(normalized));
+        const followUp = needsDraftPanel ? "" : renderMissionFollowUpHtml(normalized);
+        if (followUp) blocks.push(followUp);
       }
-
-      const talkingPoints = renderMissionTalkingPointsHtml(normalized);
-      if (talkingPoints) blocks.push(talkingPoints);
-
-      const needsDraftPanel = Boolean(taskNeedsUsableDraft(normalized));
-      const followUp = needsDraftPanel ? "" : renderMissionFollowUpHtml(normalized);
-      if (followUp) blocks.push(followUp);
 
       if (normalized.alternatives) {
         blocks.push(`<div class="task-alternatives"><div class="task-action-label">If this doesn't fit</div><p class="task-alternatives-copy">${escapeHtml(humanizeTaskText(normalized.alternatives))}</p></div>`);
       }
 
       return blocks.length
-        ? `<section class="task-mentor-section task-mentor-section--resources"><h4 class="task-mentor-label">${taskNeedsUsableDraft(normalized) ? "Prepared for you" : "Helpful resources"}</h4><div class="task-action-pack${taskNeedsUsableDraft(normalized) ? "" : " task-action-pack--featured"}">${blocks.join("")}</div></section>`
+        ? `<section class="task-mentor-section task-mentor-section--resources"><h4 class="task-mentor-label">${isFlexiblePathMode() ? "Contacts & resources" : (taskNeedsUsableDraft(normalized) ? "Prepared for you" : "Helpful resources")}</h4><div class="task-action-pack${isFlexiblePathMode() || !taskNeedsUsableDraft(normalized) ? " task-action-pack--featured" : ""}">${blocks.join("")}</div></section>`
         : "";
     }
 
+    function getFlexibleDraftActionSuggestions() {
+      return FLEXIBLE_DRAFT_BUTTON_IDS
+        .map((id) => TASK_DRAFT_SUGGESTION_DEFS[id])
+        .filter(Boolean)
+        .map((def) => ({
+          ...def,
+          label: def.id === "outreach_email" ? "Draft email" : def.id === "phone_script" ? "Phone script" : "What to say"
+        }));
+    }
+
+    function renderFlexibleDraftButtonsHtml(taskId) {
+      const items = getFlexibleDraftActionSuggestions();
+      const buttons = items.map((entry) =>
+        `<button type="button" class="task-draft-suggestion-btn task-draft-suggestion-btn--flexible" data-task-id="${escapeHtml(taskId)}" data-suggestion-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.desc)}">
+          <span class="task-draft-suggestion-label">${escapeHtml(entry.label)}</span>
+        </button>`
+      ).join("");
+      return `<div class="task-draft-suggestions task-draft-suggestions--flexible" data-draft-suggestions>${buttons}</div>`;
+    }
+
     function renderTaskDraftSectionHtml(taskId, normalized) {
+      if (isFlexiblePathMode()) {
+        const suggestionsHtml = renderFlexibleDraftButtonsHtml(taskId);
+        return `
+              <section class="task-mentor-section task-mentor-section--draft">
+                <h4 class="task-mentor-label">Need words ready to send?</h4>
+                <p class="task-draft-hint">Tap a button when you want it — nothing generates until you click.</p>
+                ${suggestionsHtml}
+                <div class="task-draft-panel" data-draft-panel>
+                  <p class="task-draft-expand-hint">Your draft appears here after you pick a button above.</p>
+                  <div class="task-draft-generating" hidden aria-live="polite">
+                    <span class="task-draft-progress-status">Generating draft…</span>
+                    <div class="task-draft-progress">
+                      <div class="task-draft-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Draft generation progress">
+                        <span class="task-draft-progress-fill"></span>
+                      </div>
+                      <span class="task-draft-progress-label">0%</span>
+                    </div>
+                  </div>
+                  <div class="task-draft-collapsed-view" data-draft-collapsed hidden>
+                    <p class="task-draft-collapsed-preview" data-draft-preview hidden role="button" tabindex="0"></p>
+                    <div class="task-draft-actions">
+                      <button type="button" class="task-draft-toggle-btn task-draft-expand-btn" data-draft-expand="${escapeHtml(taskId)}">
+                        <span class="task-draft-chevron" aria-hidden="true">▼</span>
+                        <span>Expand draft</span>
+                      </button>
+                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(taskId)}" hidden>Delete draft</button>
+                    </div>
+                  </div>
+                  <div class="task-draft-body" hidden>
+                    <div class="task-draft-textarea-wrap">
+                      <textarea class="task-draft-textarea" placeholder="Your draft will appear here after you tap a button…"></textarea>
+                    </div>
+                    <div class="task-draft-toolbar">
+                      <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(taskId)}">Copy draft</button>
+                      <button type="button" class="task-draft-toggle-btn task-draft-compress-btn" data-draft-compress="${escapeHtml(taskId)}">
+                        <span class="task-draft-chevron" aria-hidden="true">▲</span>
+                        <span>Collapse draft</span>
+                      </button>
+                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(taskId)}">Delete draft</button>
+                    </div>
+                  </div>
+                </div>
+              </section>`;
+      }
+
       const suggestions = getTaskDraftSuggestions(normalized);
       const suggestionsHtml = renderTaskDraftSuggestionsHtml(taskId, normalized, suggestions);
       const hasPreparedAssets = taskHasPreparedAssets(normalized) || getFlatTaskResources(normalized).length > 0;
@@ -27426,7 +27545,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           (firstMission ? "This is their FIRST mission on this path.\n" : `Completed so far:\n${completedSummary}\n`) +
           `Context:\n${getAdvisorContext()}\n` +
           getLocationContextBlock() +
-          `\n${getActionableTaskRules()}\n` +
+          `\n${getFlexibleMissionTaskRules()}\n` +
           (parsed ? `This replaces what comes after mission at stage ${parsed.stageIndex + 1}, task ${parsed.taskIndex + 1}.\n` : "") +
           `Respond only with a raw JSON array of 1 stage with exactly 1 task.`
         );
@@ -27486,7 +27605,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.pendingBranchTaskId = taskId || null;
       state.branchPickerContext = {
         phaseComplete: Boolean(options.phaseComplete),
-        fromAlter: Boolean(options.fromAlter)
+        fromAlter: Boolean(options.fromAlter),
+        firstMission: Boolean(options.firstMission)
       };
 
       if (titleEl) {
@@ -27494,14 +27614,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ? "Pick your first mission"
           : options.phaseComplete
           ? "Pick the direction for your next phase"
-          : (options.fromAlter ? "Alter your path — pick a new direction" : "Pick your next direction");
+          : (options.fromAlter ? "Alter your path — pick a new direction" : "Pick your next mission");
       }
       if (copyEl) {
         copyEl.textContent = options.firstMission
           ? "Three ways to start this path — choose the first mission that fits you best."
           : options.phaseComplete
           ? "You finished this phase. Choose how you want the roadmap to continue."
-          : "Choose the approach that fits you best — your roadmap will continue from here.";
+          : (options.fromAlter
+            ? "Choose a new direction — your next mission will follow from here."
+            : "Three options for what to do next — pick the mission that fits you best.");
       }
       if (skipBtn) skipBtn.hidden = !options.fromAlter;
 
@@ -27524,6 +27646,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const picker = $("#roadmap-branch-picker");
       const grid = $("#roadmap-branch-grid");
       const moreBtn = $("#roadmap-branch-more-btn");
+      const completeCard = $("#roadmap-complete-card");
+      if (completeCard) {
+        completeCard.hidden = true;
+        completeCard.classList.remove("visible");
+      }
       if (picker) picker.hidden = false;
       if (grid) {
         grid.innerHTML = `<p class="roadmap-branch-picker-copy">Finding your next options…</p>`;
@@ -29352,6 +29479,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setRoadmapLoading(true);
 
       let revealed = false;
+      if (isFlexiblePathMode() && shouldOfferFlexibleFirstMissionPicker()) {
+        revealed = true;
+        completeSiteLoadingProgress($("#roadmap-loader-progress"));
+        setRoadmapLoading(false);
+        revealFlexibleFirstMissionPicker(idea, ideaIndex, null);
+      }
+
       const founderModeForGen = isFounderRoadmapForIdea(idea);
       const revealRoadmapProgressively = (incomingStages, source, { isFinal = false, refineUpdate = false } = {}) => {
         if (!stageOneHasRevealableMission(incomingStages)) return false;
@@ -29722,10 +29856,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           updateRoadmapOverviewChrome();
           if (check.checked && isFlexiblePathMode()) {
             setTimeout(() => {
-              const parsed = parseTaskId(taskId);
-              if (!parsed) return;
-              const { done, total } = getStageProgressFromIndices(parsed.stageIndex);
-              if (total > 0 && done === total) return;
               void showFlexibleBranchPicker(taskId);
             }, 500);
           } else if (check.checked) {
@@ -30911,20 +31041,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         });
       }
 
-      if (complete && !state.roadmapExhausted && !state.roadmapAutoContinuePending && !roadmapAutoContinueTimer) {
-        if (isFlexiblePathMode()) {
-          roadmapAutoContinueTimer = setTimeout(() => {
-            roadmapAutoContinueTimer = null;
-            const allDone = $$(".task-check").length > 0 && $$(".task-check").every((check) => check.checked);
-            if (allDone) void showFlexibleBranchPicker(null, { phaseComplete: true });
-          }, 1400);
-        } else {
-          roadmapAutoContinueTimer = setTimeout(() => {
-            roadmapAutoContinueTimer = null;
-            const allDone = $$(".task-check").length > 0 && $$(".task-check").every((check) => check.checked);
-            if (allDone) continueCompletedPlan({ auto: true });
-          }, 1400);
-        }
+      if (complete && !state.roadmapExhausted && !state.roadmapAutoContinuePending && !roadmapAutoContinueTimer && !isFlexiblePathMode()) {
+        roadmapAutoContinueTimer = setTimeout(() => {
+          roadmapAutoContinueTimer = null;
+          const allDone = $$(".task-check").length > 0 && $$(".task-check").every((check) => check.checked);
+          if (allDone) continueCompletedPlan({ auto: true });
+        }, 1400);
       }
     }
 
