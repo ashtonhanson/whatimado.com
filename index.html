@@ -1367,74 +1367,31 @@
       width: 100%;
     }
 
-    html[data-color-scheme="adult"] .path-mode-choice {
+    html[data-color-scheme="adult"] #screen-convo .path-mode-choice {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .55rem;
       max-width: 38rem;
       margin: 0 auto 1rem;
-      padding: 1rem 1.1rem 1.15rem;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #fff;
-      box-shadow: var(--shadow);
+      padding: 0 1rem 1rem;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
-    html[data-color-scheme="adult"] .path-mode-choice-label {
-      margin: 0 0 .75rem;
-      font-size: .95rem;
-      font-weight: 700;
-      color: var(--ink);
+    html[data-color-scheme="adult"] #screen-convo .path-mode-choice-label {
+      margin: 0;
+      color: var(--ink-muted);
+      font-size: .82rem;
+      font-weight: 600;
       text-align: center;
     }
 
-    html[data-color-scheme="adult"] .path-mode-choice-actions {
-      display: grid;
-      gap: .65rem;
-    }
-
-    @media (min-width: 640px) {
-      html[data-color-scheme="adult"] .path-mode-choice-actions {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    html[data-color-scheme="adult"] .path-mode-choice-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: .2rem;
+    html[data-color-scheme="adult"] #screen-convo .path-mode-choice .path-mode-actions {
+      justify-content: center;
       width: 100%;
-      min-height: 72px;
-      padding: .85rem 1rem;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: #fff;
-      color: var(--ink);
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-      transition: border-color .16s ease, box-shadow .16s ease;
-    }
-
-    html[data-color-scheme="adult"] .path-mode-choice-btn:hover {
-      border-color: rgba(37, 99, 235, .35);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
-    }
-
-    html[data-color-scheme="adult"] .path-mode-choice-btn strong {
-      font-size: .92rem;
-    }
-
-    html[data-color-scheme="adult"] .path-mode-choice-btn span {
-      font-size: .78rem;
-      color: var(--ink-muted);
-      line-height: 1.4;
-    }
-
-    html[data-color-scheme="adult"] .path-mode-choice-btn--direct strong {
-      color: #2563eb;
-    }
-
-    html[data-color-scheme="adult"] .path-mode-choice-btn--flex strong {
-      color: #0d9488;
     }
 
     html[data-color-scheme="adult"] .dashboard-settings-panel {
@@ -4712,58 +4669,27 @@
       display: none !important;
     }
 
-    .path-mode-choice {
+    #screen-convo .path-mode-choice {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .55rem;
       max-width: 38rem;
       margin: 0 auto 1rem;
-      padding: 1rem 1.1rem 1.15rem;
-      border: 1px solid rgba(120, 130, 200, .2);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, .9);
+      padding: 0 1rem 1rem;
     }
 
-    .path-mode-choice-label {
-      margin: 0 0 .75rem;
-      font-size: .95rem;
-      font-weight: 700;
+    #screen-convo .path-mode-choice-label {
+      margin: 0;
+      font-size: .82rem;
+      font-weight: 600;
+      opacity: .72;
       text-align: center;
     }
 
-    .path-mode-choice-actions {
-      display: grid;
-      gap: .65rem;
-    }
-
-    @media (min-width: 640px) {
-      .path-mode-choice-actions {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    .path-mode-choice-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: .2rem;
+    #screen-convo .path-mode-choice .path-mode-actions {
+      justify-content: center;
       width: 100%;
-      min-height: 72px;
-      padding: .85rem 1rem;
-      border: 1px solid rgba(120, 130, 200, .22);
-      border-radius: 14px;
-      background: rgba(255, 255, 255, .85);
-      color: inherit;
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .path-mode-choice-btn strong {
-      font-size: .92rem;
-    }
-
-    .path-mode-choice-btn span {
-      font-size: .78rem;
-      opacity: .78;
-      line-height: 1.4;
     }
 
     .dashboard-path-mode-bar {
@@ -12495,14 +12421,6 @@
             </div>
           </div>
 
-          <div class="dashboard-path-mode-bar" id="dashboard-path-mode-bar">
-            <p class="dashboard-path-mode-label">After you share your situation, choose how to explore:</p>
-            <div class="prompt-actions path-mode-actions">
-              <button class="action-btn path-mode-btn path-mode-btn--direct" id="direct-path-btn" type="button">Direct Path</button>
-              <button class="action-btn path-mode-btn path-mode-btn--flex" id="flexible-path-btn" type="button">Flexible Path</button>
-            </div>
-          </div>
-
           <div class="dashboard-quick-actions" aria-label="Quick starters">
             <button type="button" class="dashboard-quick-btn" data-prompt="I want to find a career I'll genuinely love based on my strengths and interests">⭐ Find a career I'll love</button>
             <button type="button" class="dashboard-quick-btn" data-prompt="I need to make more money soon and want realistic paths I can start now">💰 Make more money</button>
@@ -12552,10 +12470,6 @@
           <textarea class="prompt-textarea legacy-main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
           <div class="prompt-footer">
             <span class="hint">More detail helps · <button type="button" class="hero-example-btn legacy-hero-example-btn">Test Demo Prompt to See Process</button></span>
-            <div class="prompt-actions path-mode-actions">
-              <button class="action-btn path-mode-btn path-mode-btn--direct legacy-direct-path-btn" type="button">Direct Path</button>
-              <button class="action-btn path-mode-btn path-mode-btn--flex legacy-flexible-path-btn" type="button">Flexible Path</button>
-            </div>
           </div>
         </div>
 
@@ -12677,17 +12591,11 @@
       <div class="convo-wrap">
         <div class="convo-spacer" id="convo-spacer" aria-hidden="true"></div>
       <div class="conversation" id="bubble-chain"></div>
-        <div class="path-mode-choice" id="path-mode-choice" hidden aria-label="Choose how to explore">
-          <p class="path-mode-choice-label">How do you want to explore your options?</p>
-          <div class="path-mode-choice-actions">
-            <button type="button" class="path-mode-choice-btn path-mode-choice-btn--direct" id="convo-direct-path-btn">
-              <strong>Direct Path</strong>
-              <span>One focused recommendation — we guide you step by step</span>
-            </button>
-            <button type="button" class="path-mode-choice-btn path-mode-choice-btn--flex" id="convo-flexible-path-btn">
-              <strong>Flexible Path</strong>
-              <span>Three options to compare — and more choices after each step</span>
-            </button>
+        <div class="dashboard-path-mode-bar path-mode-choice" id="path-mode-choice" hidden aria-label="Choose how to explore">
+          <p class="dashboard-path-mode-label path-mode-choice-label">How do you want to explore your options?</p>
+          <div class="prompt-actions path-mode-actions">
+            <button type="button" class="action-btn path-mode-btn path-mode-btn--direct" id="convo-direct-path-btn">Direct Path</button>
+            <button type="button" class="action-btn path-mode-btn path-mode-btn--flex" id="convo-flexible-path-btn">Flexible Path</button>
           </div>
         </div>
         <div class="reply-box surface-card" id="reply-box">
@@ -27990,18 +27898,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       showPathModeChoice();
     }
 
-    async function startFlowWithPathMode(pathMode) {
-      const text = $("#main-input")?.value.trim()
-        || document.querySelector(".legacy-main-input")?.value.trim()
-        || "";
-      if (!text) {
-        $("#main-input")?.focus();
-        document.querySelector(".legacy-main-input")?.focus();
-        return;
-      }
-      await submitInitialPrompt({ pathMode });
-    }
-
     async function startFlow(options = {}) {
       await submitInitialPrompt(options);
     }
@@ -33071,12 +32967,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           alignConvoViewport("auto");
         }
       });
-      $("#direct-path-btn")?.addEventListener("click", () => startFlowWithPathMode("direct"));
-      $("#flexible-path-btn")?.addEventListener("click", () => startFlowWithPathMode("flexible"));
       $("#convo-direct-path-btn")?.addEventListener("click", () => continueIntakeWithPathMode("direct"));
       $("#convo-flexible-path-btn")?.addEventListener("click", () => continueIntakeWithPathMode("flexible"));
-      document.querySelector(".legacy-direct-path-btn")?.addEventListener("click", () => startFlowWithPathMode("direct"));
-      document.querySelector(".legacy-flexible-path-btn")?.addEventListener("click", () => startFlowWithPathMode("flexible"));
       $("#hero-example-btn")?.addEventListener("click", startQuickFlow);
       $("#main-input").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
