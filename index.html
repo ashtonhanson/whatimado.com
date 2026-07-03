@@ -26709,7 +26709,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function askProfileIncomeStep() {
       state.profileIntakeStep = "income";
       pushProfileIntakeAssistantMessage(
-        "I have a few quick questions so your paths fit you — not generic advice.\n\nWhen do you need income to start?"
+        "When do you need income to start?"
       );
       renderProfileIntakeChips([
         { field: "incomeUrgency", value: "immediate", label: "Immediately" },
@@ -28151,6 +28151,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
 
+      if (state.profileIntakeStep) {
+        handleProfileIntakeSubmit(text);
+        return;
+      }
+
       if (state.step === 2) {
         trackEvent("clarifying_answer_submitted", {
           reply_length: text.length,
@@ -28158,11 +28163,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         });
         addTypingBubble();
         beginProfileIntake();
-        return;
-      }
-
-      if (state.profileIntakeStep) {
-        handleProfileIntakeSubmit(text);
         return;
       }
 
