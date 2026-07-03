@@ -4591,6 +4591,115 @@
       transform: translateY(-1px);
     }
 
+    .path-mode-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      justify-content: flex-end;
+    }
+
+    .path-mode-btn {
+      min-width: 7.5rem;
+    }
+
+    .path-mode-btn--direct {
+      background: color-mix(in srgb, var(--brand-purple-dark) 88%, transparent);
+    }
+
+    .path-mode-btn--flex {
+      background: color-mix(in srgb, var(--teal, #4ecdc4) 72%, var(--brand-purple-dark) 28%);
+    }
+
+    .roadmap-branch-picker {
+      margin: 1rem 0 1.25rem;
+      padding: 1rem 1.1rem 1.15rem;
+      border-radius: 14px;
+      border: 1px solid rgba(120, 130, 200, .22);
+      background: rgba(120, 130, 200, .06);
+    }
+
+    .roadmap-branch-picker[hidden] {
+      display: none !important;
+    }
+
+    .roadmap-branch-picker-head {
+      margin: 0 0 .35rem;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .roadmap-branch-picker-copy {
+      margin: 0 0 .85rem;
+      color: var(--ink-muted, rgba(36, 18, 53, .68));
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+
+    .roadmap-branch-grid {
+      display: grid;
+      gap: .65rem;
+    }
+
+    @media (min-width: 700px) {
+      .roadmap-branch-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .roadmap-branch-card {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(120, 130, 200, .2);
+      border-radius: 12px;
+      padding: .85rem .9rem;
+      background: rgba(255, 255, 255, .72);
+      cursor: pointer;
+      transition: border-color .16s ease, transform .16s ease;
+    }
+
+    .roadmap-branch-card:hover:not(:disabled) {
+      border-color: rgba(120, 130, 200, .45);
+      transform: translateY(-1px);
+    }
+
+    .roadmap-branch-card:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
+
+    .roadmap-branch-card-title {
+      display: block;
+      margin-bottom: .35rem;
+      font-size: .88rem;
+      font-weight: 700;
+    }
+
+    .roadmap-branch-card-tagline {
+      display: block;
+      margin-bottom: .35rem;
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+
+    .roadmap-branch-card-why {
+      display: block;
+      font-size: .72rem;
+      color: var(--ink-muted, rgba(36, 18, 53, .62));
+      line-height: 1.4;
+    }
+
+    .roadmap-branch-picker-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: .85rem;
+    }
+
+    .task-alter-path-btn {
+      margin-left: .5rem;
+    }
+
     .pills {
       display: flex;
       flex-wrap: nowrap;
@@ -12197,8 +12306,9 @@
             </button>
             <div class="prompt-footer">
               <span class="hint">More detail helps · <button type="button" class="hero-example-btn" id="hero-example-btn">Test Demo Prompt to See Process</button></span>
-              <div class="prompt-actions">
-                <button class="action-btn" id="start-btn">Continue</button>
+              <div class="prompt-actions path-mode-actions">
+                <button class="action-btn path-mode-btn path-mode-btn--direct" id="direct-path-btn" type="button">Direct Path</button>
+                <button class="action-btn path-mode-btn path-mode-btn--flex" id="flexible-path-btn" type="button">Flexible Path</button>
               </div>
             </div>
           </div>
@@ -12252,8 +12362,9 @@
           <textarea class="prompt-textarea legacy-main-input" rows="4" placeholder="e.g. I'm 34, good with people and organizing, recently lost my job, need income within a few weeks, and I'd rather not go back to retail. Open to local or remote."></textarea>
           <div class="prompt-footer">
             <span class="hint">More detail helps · <button type="button" class="hero-example-btn legacy-hero-example-btn">Test Demo Prompt to See Process</button></span>
-            <div class="prompt-actions">
-              <button class="action-btn legacy-start-btn">Continue</button>
+            <div class="prompt-actions path-mode-actions">
+              <button class="action-btn path-mode-btn path-mode-btn--direct legacy-direct-path-btn" type="button">Direct Path</button>
+              <button class="action-btn path-mode-btn path-mode-btn--flex legacy-flexible-path-btn" type="button">Flexible Path</button>
             </div>
           </div>
         </div>
@@ -12544,6 +12655,16 @@
             </div>
 
             <div class="roadmap-phases" id="stage-list"></div>
+
+            <section class="roadmap-branch-picker" id="roadmap-branch-picker" hidden aria-live="polite">
+              <h3 class="roadmap-branch-picker-head" id="roadmap-branch-picker-title">Pick your next direction</h3>
+              <p class="roadmap-branch-picker-copy" id="roadmap-branch-picker-copy">Choose the approach that fits you best — your roadmap will continue from here.</p>
+              <div class="roadmap-branch-grid" id="roadmap-branch-grid"></div>
+              <div class="roadmap-branch-picker-actions">
+                <button type="button" class="back-btn map-toolbar-btn" id="roadmap-branch-more-btn">Show more options</button>
+                <button type="button" class="back-btn map-toolbar-btn" id="roadmap-branch-skip-btn" hidden>Keep current plan</button>
+              </div>
+            </section>
 
             <button type="button" class="roadmap-load-phases-btn" id="roadmap-load-phases-btn" hidden>Load next phases</button>
 
@@ -21387,6 +21508,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       deletedMapIds: [],
       selectedPathIndexes: [],
       ideaBatches: [],
+      pathMode: null,
+      pendingBranchTaskId: null,
+      branchPickerContext: null,
+      flexibleBranchOptions: [],
       sidebarRoadmapsExpanded: false,
       saveStatus: "idle",
       lastSyncStatus: "idle",
@@ -22544,6 +22669,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         mapFeedbackGiven: state.mapFeedbackGiven,
         mapFeedbackSentiment: state.mapFeedbackSentiment,
         intakeMode: state.intakeMode || "standard",
+        pathMode: state.pathMode || null,
+        ideaBatches: Array.isArray(state.ideaBatches) ? state.ideaBatches : [],
         userLocation: normalizeUserLocation(state.userLocation),
         locationConfirmed: Boolean(state.locationConfirmed),
         locationIntakeStep: state.locationIntakeStep || null,
@@ -22576,6 +22703,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         mapFeedbackGiven: source.mapFeedbackGiven,
         mapFeedbackSentiment: source.mapFeedbackSentiment,
         intakeMode: source.intakeMode || "standard",
+        pathMode: source.pathMode || null,
         ideaBatches: Array.isArray(source.ideaBatches) ? source.ideaBatches : [],
         userLocation: normalizeUserLocation(source.userLocation),
         locationConfirmed: Boolean(source.locationConfirmed),
@@ -22603,6 +22731,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.mapFeedbackGiven = Boolean(data.mapFeedbackGiven);
       state.mapFeedbackSentiment = data.mapFeedbackSentiment ?? null;
       state.intakeMode = data.intakeMode || "standard";
+      state.pathMode = data.pathMode === "direct" || data.pathMode === "flexible" ? data.pathMode : null;
       state.ideaBatches = Array.isArray(data.ideaBatches) && data.ideaBatches.length
         ? data.ideaBatches
         : (state.ideas.length ? [state.ideas.length] : []);
@@ -23726,6 +23855,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
       state.activeRoadmapCategoryId = data.activeRoadmapCategoryId ?? null;
       state.selectedPathIndexes = Array.isArray(data.selectedPathIndexes) ? data.selectedPathIndexes : [];
+      if (data.pathMode === "direct" || data.pathMode === "flexible") {
+        state.pathMode = data.pathMode;
+      }
       state.accountPrefs = hydrateAccountPrefsFromPayload(data);
 
       const staleTopLevelActive = data.activeMapId && getDeletedMapIds().has(data.activeMapId);
@@ -24269,8 +24401,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (payload) {
-        applySession(payload);
-        applyRemovedRoadmapGuards();
+      applySession(payload);
+      if (payload.pathMode === "direct" || payload.pathMode === "flexible") {
+        state.pathMode = payload.pathMode;
+      }
+      applyRemovedRoadmapGuards();
         restoreSessionUI();
         try {
           const stored = scrubPayloadTombstones(serializeSession());
@@ -26676,14 +26811,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
-    function buildFounderIdeasPrompt(summary) {
+    function buildFounderIdeasPrompt(summary, count = 3) {
       return (
         "You are whatimado, a practical advisor helping the FOUNDER grow whatimado.com into a sustainable mission-driven project without paywalling regular users.\n\n" +
         getFounderStageBlock(summary) +
         PLAIN_LANGUAGE_AI_RULES +
         "Conversation:\n" +
         summary +
-        "\n\nGenerate exactly 3 realistic path options for whatimado.com over the next 30-90 days and beyond.\n" +
+        `\n\nGenerate exactly ${count} realistic path option${count === 1 ? "" : "s"} for whatimado.com over the next 30-90 days and beyond.\n` +
         "Each path must use a DIFFERENT primary strategy — for example: (1) closed beta / functionality test OR sharing in communities, (2) donation or pay-what-you-can sustainability, (3) sponsor pitch OR nonprofit/grant partnership pipeline. Do not give three variations of the same tactic.\n" +
         "If they are still testing whether the site works, one path MUST be a closed beta with 3-8 testers — NOT a 15-30 person impact pilot.\n" +
         "Only suggest formal workforce/library pilots with impact data when the conversation shows they are past basic functionality testing.\n" +
@@ -26738,16 +26873,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function generateAndShowMap(options = {}) {
+      const pathMode = options.pathMode || state.pathMode || "flexible";
+      state.pathMode = pathMode;
+      const ideaCount = pathMode === "direct" ? 1 : 3;
       const founderMode = options.founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
       mergeUserProfileFromConversation();
       const summary = getAdvisorContext();
+      const directNote = pathMode === "direct"
+        ? "\n\nReturn exactly ONE best-fit focused path — the single strongest recommendation for this person right now. Do not offer alternatives in this response."
+        : "";
       let response = await callAdvisor(
-        founderMode ? buildFounderIdeasPrompt(summary) : buildIdeasPrompt(summary, 3),
+        (founderMode ? buildFounderIdeasPrompt(summary, ideaCount) : buildIdeasPrompt(summary, ideaCount)) + directNote,
         1200
       );
 
       let ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : getFallbackIdeas());
-      if (!founderMode && ideasAreTooSimilar(ideas)) {
+      if (pathMode === "direct") {
+        ideas = ideas.slice(0, 1);
+      } else if (!founderMode && ideasAreTooSimilar(ideas)) {
         response = await callAdvisor(
           `${buildIdeasPrompt(summary, 3)}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps.`,
           1200
@@ -26756,9 +26899,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       state.ideas = ideas;
       state.ideaBatches = [ideas.length];
-      const closing = founderMode
-        ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
-        : "Here are your paths. Tap any opportunity to see your full roadmap.";
+      const closing = pathMode === "direct"
+        ? (founderMode
+          ? "Here's your recommended focus for whatimado.com — opening your step-by-step roadmap."
+          : "Here's your recommended path — opening your step-by-step roadmap.")
+        : (founderMode
+          ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
+          : "Here are your paths. Tap any opportunity to see your full roadmap.");
       resolveTyping(closing);
       state.history.push({ role: "assistant", content: closing });
       state.step = INTAKE_STEP_MAP;
@@ -26767,6 +26914,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setTimeout(() => {
         state.selectedPathIndexes = [];
         buildOpportunityMap(state.ideas);
+        updateMapPathModeCopy();
         updateMapsNav();
         syncActiveMapIntoLibrary();
         ensureCategoryForCurrentMap();
@@ -26777,10 +26925,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ideas_count: state.ideas.length,
           founder_mode: founderMode,
           intake_mode: options.intakeMode || state.intakeMode || "standard",
+          path_mode: pathMode,
           saved_maps_count: state.savedMaps.length
         });
         updateMapAuxiliaryPanels();
         showScreen("map");
+        if (pathMode === "direct" && state.ideas.length === 1) {
+          setTimeout(() => viewRoadmap(state.ideas[0], 0), 650);
+        }
       }, 550);
     }
 
@@ -26961,25 +27113,314 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setTimeout(() => scrollToPathDetail(firstNewIndex), 120);
     }
 
-    async function startFlow() {
-      const text = $("#main-input").value.trim();
+    function getPathMode() {
+      return state.pathMode === "direct" || state.pathMode === "flexible" ? state.pathMode : "flexible";
+    }
+
+    function isDirectPathMode() {
+      return getPathMode() === "direct";
+    }
+
+    function isFlexiblePathMode() {
+      return getPathMode() === "flexible";
+    }
+
+    function updateMapPathModeCopy() {
+      const subtitle = $("#screen-map .page-subtitle");
+      if (!subtitle) return;
+      subtitle.textContent = isDirectPathMode()
+        ? "One focused recommendation for you — open the roadmap to start your step-by-step plan."
+        : "Review each path below, then open a step-by-step roadmap for the one that fits you best.";
+    }
+
+    function hideRoadmapBranchPicker() {
+      const picker = $("#roadmap-branch-picker");
+      if (picker) picker.hidden = true;
+      state.pendingBranchTaskId = null;
+      state.branchPickerContext = null;
+      state.flexibleBranchOptions = [];
+      const grid = $("#roadmap-branch-grid");
+      if (grid) grid.innerHTML = "";
+      const moreBtn = $("#roadmap-branch-more-btn");
+      if (moreBtn) {
+        moreBtn.disabled = false;
+        moreBtn.textContent = "Show more options";
+      }
+    }
+
+    function buildFlexibleBranchOptionsPrompt(taskId, excludeTitles = [], phaseComplete = false) {
+      const taskText = taskId ? getTaskTextById(taskId) : "";
+      const completedSummary = buildCompletedRoadmapSummary();
+      const excludeBlock = excludeTitles.length
+        ? `\nDo NOT repeat these titles:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n`
+        : "";
+      const moment = phaseComplete
+        ? "They just finished a full phase on this path and need to choose the direction for the NEXT phase."
+        : `They just completed this mission: "${taskText || "recent step"}".`;
+      return (
+        `You are whatimado. This user chose a FLEXIBLE path — they pick their next direction from 3 options after each step.\n\n` +
+        `Path: ${state.currentIdea?.title || "their goal"}\n` +
+        `${moment}\n` +
+        `Progress so far:\n${completedSummary}\n` +
+        `Context:\n${getAdvisorContext()}\n` +
+        excludeBlock +
+        `\nGenerate exactly 3 DISTINCT viable next directions (strategic forks — not full roadmaps). Plain language. Reference their situation.\n` +
+        `Respond only with a raw JSON array: [{"title":"short direction name","tagline":"one plain sentence","why":"one sentence why this fits now"}]`
+      );
+    }
+
+    function buildFlexibleBranchMissionPrompt(choice, taskId, phaseComplete = false) {
+      const parsed = taskId ? parseTaskId(taskId) : null;
+      const completedSummary = buildCompletedRoadmapSummary();
+      const phaseNote = phaseComplete
+        ? "Generate the NEXT 1-2 stages (with 1-2 missions each) for the chosen direction."
+        : "Generate exactly ONE new mission task to insert after their completed step.";
+      return (
+        `${buildRoadmapPrompt(state.currentIdea, getAdvisorContext(), { phase: "adapt", founderMode: isFounderRoadmapForIdea(state.currentIdea) })}\n\n` +
+        `${phaseNote}\n` +
+        `Chosen next direction: "${choice.title}" — ${choice.tagline}\n` +
+        `Why they picked it: ${choice.why || choice.tagline}\n` +
+        `Completed so far:\n${completedSummary}\n` +
+        (parsed ? `Insert after mission at stage ${parsed.stageIndex + 1}, task ${parsed.taskIndex + 1}.\n` : "") +
+        `Do NOT repeat completed missions. Match the chosen direction closely.`
+      );
+    }
+
+    async function generateFlexibleBranchOptions(taskId, options = {}) {
+      const excludeTitles = Array.isArray(options.excludeTitles) ? options.excludeTitles : [];
+      const phaseComplete = Boolean(options.phaseComplete);
+      const response = await callAdvisor(
+        buildFlexibleBranchOptionsPrompt(taskId, excludeTitles, phaseComplete),
+        700
+      );
+      let choices = extractJsonArray(response, []);
+      choices = choices
+        .filter((entry) => entry && String(entry.title || "").trim())
+        .map((entry) => ({
+          title: String(entry.title || "").trim(),
+          tagline: String(entry.tagline || entry.why || "").trim(),
+          why: String(entry.why || "").trim()
+        }))
+        .slice(0, 3);
+      if (!choices.length) {
+        choices = [
+          { title: "Double down on what worked", tagline: "Build on the momentum from your last step.", why: "Keeps progress moving without switching strategies." },
+          { title: "Try a faster shortcut", tagline: "Test a smaller version of the same goal this week.", why: "Good when you want quicker proof." },
+          { title: "Pivot to outreach", tagline: "Talk to real people before investing more time.", why: "Useful when you need outside input." }
+        ];
+      }
+      return choices;
+    }
+
+    function renderRoadmapBranchPicker(choices, taskId, options = {}) {
+      const grid = $("#roadmap-branch-grid");
+      const picker = $("#roadmap-branch-picker");
+      const titleEl = $("#roadmap-branch-picker-title");
+      const copyEl = $("#roadmap-branch-picker-copy");
+      const skipBtn = $("#roadmap-branch-skip-btn");
+      if (!grid || !picker) return;
+
+      state.flexibleBranchOptions = choices;
+      state.pendingBranchTaskId = taskId || null;
+      state.branchPickerContext = {
+        phaseComplete: Boolean(options.phaseComplete),
+        fromAlter: Boolean(options.fromAlter)
+      };
+
+      if (titleEl) {
+        titleEl.textContent = options.phaseComplete
+          ? "Pick the direction for your next phase"
+          : (options.fromAlter ? "Alter your path — pick a new direction" : "Pick your next direction");
+      }
+      if (copyEl) {
+        copyEl.textContent = options.phaseComplete
+          ? "You finished this phase. Choose how you want the roadmap to continue."
+          : "Choose the approach that fits you best — your roadmap will continue from here.";
+      }
+      if (skipBtn) skipBtn.hidden = !options.fromAlter;
+
+      grid.innerHTML = choices.map((choice, index) => (
+        `<button type="button" class="roadmap-branch-card" data-branch-index="${index}">` +
+        `<span class="roadmap-branch-card-title">${escapeHtml(choice.title)}</span>` +
+        `<span class="roadmap-branch-card-tagline">${escapeHtml(choice.tagline)}</span>` +
+        (choice.why ? `<span class="roadmap-branch-card-why">${escapeHtml(choice.why)}</span>` : "") +
+        `</button>`
+      )).join("");
+
+      picker.hidden = false;
+      requestAnimationFrame(() => {
+        picker.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    }
+
+    async function showFlexibleBranchPicker(taskId, options = {}) {
+      if (!state.currentIdea) return;
+      const picker = $("#roadmap-branch-picker");
+      const grid = $("#roadmap-branch-grid");
+      const moreBtn = $("#roadmap-branch-more-btn");
+      if (picker) picker.hidden = false;
+      if (grid) {
+        grid.innerHTML = `<p class="roadmap-branch-picker-copy">Finding your next options…</p>`;
+      }
+      if (moreBtn) moreBtn.disabled = true;
+
+      try {
+        const choices = await generateFlexibleBranchOptions(taskId, options);
+        renderRoadmapBranchPicker(choices, taskId, options);
+      } catch {
+        if (grid) {
+          grid.innerHTML = `<p class="roadmap-branch-picker-copy">Couldn't load options — tap Show more options to try again.</p>`;
+        }
+      } finally {
+        if (moreBtn) moreBtn.disabled = false;
+      }
+    }
+
+    async function fetchMoreBranchOptions() {
+      const taskId = state.pendingBranchTaskId;
+      const context = state.branchPickerContext || {};
+      const moreBtn = $("#roadmap-branch-more-btn");
+      if (moreBtn) {
+        moreBtn.disabled = true;
+        moreBtn.textContent = "Finding more…";
+      }
+      const excludeTitles = (state.flexibleBranchOptions || []).map((entry) => entry.title);
+      try {
+        const choices = await generateFlexibleBranchOptions(taskId, {
+          excludeTitles,
+          phaseComplete: Boolean(context.phaseComplete)
+        });
+        renderRoadmapBranchPicker(choices, taskId, context);
+      } finally {
+        if (moreBtn) {
+          moreBtn.disabled = false;
+          moreBtn.textContent = "Show more options";
+        }
+      }
+    }
+
+    async function applyFlexibleBranchChoice(branchIndex) {
+      const choice = state.flexibleBranchOptions?.[branchIndex];
+      if (!choice || !state.currentIdea) return;
+
+      const taskId = state.pendingBranchTaskId;
+      const context = state.branchPickerContext || {};
+      const grid = $("#roadmap-branch-grid");
+      if (grid) {
+        grid.querySelectorAll(".roadmap-branch-card").forEach((btn) => { btn.disabled = true; });
+      }
+
+      trackEvent("flexible_branch_chosen", {
+        branch_index: branchIndex,
+        branch_title: choice.title,
+        task_id: taskId || "",
+        phase_complete: Boolean(context.phaseComplete),
+        from_alter: Boolean(context.fromAlter)
+      });
+
+      try {
+        const response = await callAdvisor(
+          buildFlexibleBranchMissionPrompt(choice, taskId, context.phaseComplete),
+          getRoadmapAdvisorTokenLimit(isFounderRoadmapForIdea(state.currentIdea))
+        );
+        const newStages = parseRoadmapResponse(response, state.currentIdea);
+        if (!newStages?.length) throw new Error("empty branch mission");
+
+        if (context.phaseComplete) {
+          state.roadmapExhausted = false;
+          state.roadmapStages = [...state.roadmapStages, ...newStages];
+        } else if (taskId) {
+          const parsed = parseTaskId(taskId);
+          if (parsed && state.roadmapStages[parsed.stageIndex]) {
+            const stage = state.roadmapStages[parsed.stageIndex];
+            const tasks = (stage.tasks || []).filter((task) => !isPendingRoadmapTask(task));
+            const completedPrefix = tasks.slice(0, parsed.taskIndex + 1);
+            const newTask = newStages[0]?.tasks?.[0] || newStages.flatMap((s) => s.tasks || [])[0];
+            if (newTask) {
+              stage.tasks = [...completedPrefix, newTask];
+            }
+          }
+        }
+
+        if (state.roadmapKey) {
+          state.allRoadmaps[state.roadmapKey] = {
+            ...state.allRoadmaps[state.roadmapKey],
+            idea: state.currentIdea,
+            stages: state.roadmapStages
+          };
+        }
+
+        hideRoadmapBranchPicker();
+        const completeCard = $("#roadmap-complete-card");
+        if (completeCard) {
+          completeCard.hidden = true;
+          completeCard.classList.remove("visible");
+        }
+        state.roadmapAutoContinuePending = false;
+        renderStages(state.roadmapStages);
+        schedulePersist();
+        updateMomentum();
+
+        if (taskId) {
+          const parsed = parseTaskId(taskId);
+          if (parsed) {
+            const nextIndex = parsed.taskIndex + 1;
+            if (canExpandTask(parsed.stageIndex, nextIndex)) {
+              setTimeout(() => {
+                setTaskExpanded(`task-${parsed.stageIndex}-${nextIndex}`, true);
+                jumpToRoadmapTask(parsed.stageIndex, nextIndex);
+              }, 180);
+            }
+          }
+        } else if (context.phaseComplete) {
+          setTimeout(() => $("#stage-list")?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+        }
+      } catch {
+        if (grid) {
+          grid.innerHTML = `<p class="roadmap-branch-picker-copy">Couldn't build that direction — try another option or Show more options.</p>`;
+        }
+      }
+    }
+
+    function openTaskAlterPath(taskId) {
+      trackEvent("task_alter_path_opened", { task_id: taskId, path_mode: getPathMode() });
+      void showFlexibleBranchPicker(taskId, { fromAlter: true });
+    }
+
+    async function startFlowWithPathMode(pathMode) {
+      await startFlow({ pathMode });
+    }
+
+    async function startFlow(options = {}) {
+      const text = $("#main-input")?.value.trim()
+        || document.querySelector(".legacy-main-input")?.value.trim()
+        || "";
       if (!text || intakeInProgress) return;
+      const pathMode = options.pathMode === "direct" || options.pathMode === "flexible"
+        ? options.pathMode
+        : "flexible";
+      state.pathMode = pathMode;
       stopRotatingPromptPlaceholder();
       intakeInProgress = true;
       beginNewIntake();
+      state.pathMode = pathMode;
       intakeAbandonTracked = false;
       state.intakeMode = "standard";
       trackEvent("prompt_submitted", {
         prompt_length: text.length,
         founder_mode: isFounderOrProjectPrompt(text),
         detailed_prompt: isDetailedPrompt(text),
-        intake_mode: "standard"
+        intake_mode: "standard",
+        path_mode: pathMode
       });
       showScreen("convo");
       pushUserMessage(text);
       addTypingBubble();
       try {
-        const answer = await callAdvisor(buildClarifyingPrompt(text), 450);
+        const pathModeNote = pathMode === "direct"
+          ? " They chose a DIRECT path — one focused recommendation, not multiple options."
+          : " They chose a FLEXIBLE path — they will pick between options as they go.";
+        const answer = await callAdvisor(buildClarifyingPrompt(text) + pathModeNote, 450);
         const fallback = getClarifyingFallback(text);
         const finalAnswer = answer || fallback;
 
@@ -26988,7 +27429,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         state.step = 2;
         trackEvent("clarifying_question_shown", {
           prompt_length: text.length,
-          intake_mode: "standard"
+          intake_mode: "standard",
+          path_mode: pathMode
         });
         showReplyBox(true);
         updateSaveButtonVisibility();
@@ -27253,12 +27695,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function renderMapPathsActionsHtml() {
-      return (
-        `<div class="map-paths-actions">` +
+      const moreBtn = isDirectPathMode() ? "" : (
         `<button type="button" class="back-btn map-toolbar-btn more-ideas-btn map-paths-more-btn">` +
         `<span class="btn-spinner" aria-hidden="true"></span>` +
         `<span class="btn-label">Show me more paths</span>` +
-        `</button>` +
+        `</button>`
+      );
+      return (
+        `<div class="map-paths-actions">` +
+        moreBtn +
         `<button type="button" class="back-btn map-toolbar-btn map-paths-alter-btn">Refine or add paths</button>` +
         `<button type="button" class="back-btn map-toolbar-btn map-paths-reset-btn">New map</button>` +
         `</div>`
@@ -27434,6 +27879,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       syncPathSelectionUi();
       updateMapContextDisplays();
+      updateMapPathModeCopy();
       if (!options.skipPersist) schedulePersist();
     }
 
@@ -28445,6 +28891,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     async function viewRoadmap(idea, ideaIndex, options = {}) {
       cancelDeferredRoadmapPhaseReveal();
+      hideRoadmapBranchPicker();
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
       if (options.force) clearRemovedRoadmapKey(idea.title);
@@ -28888,7 +29335,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           schedulePersist();
           updateMomentum();
           updateRoadmapOverviewChrome();
-          if (check.checked) {
+          if (check.checked && isFlexiblePathMode()) {
+            setTimeout(() => {
+              const parsed = parseTaskId(taskId);
+              if (!parsed) return;
+              const { done, total } = getStageProgressFromIndices(parsed.stageIndex);
+              if (total > 0 && done === total) return;
+              void showFlexibleBranchPicker(taskId);
+            }, 500);
+          } else if (check.checked) {
             scheduleRoadmapAdaptation("task_completed", { taskId });
           } else {
             scheduleRoadmapAdaptation("task_skipped", { taskId, urgent: true, detail: getTaskTextById(taskId) });
@@ -29713,6 +30168,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             </div>
             <div class="task-mission-actions">
               <button type="button" class="task-condense-btn" data-task-collapse="${escapeHtml(id)}">Condense Mission</button>
+              ${state.pathMode ? `<button type="button" class="task-condense-btn task-alter-path-btn" data-task-alter-path="${escapeHtml(id)}">Alter Path</button>` : ""}
             </div>
           </div>
         </div>`;
@@ -30023,8 +30479,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#progress-pct").textContent = `${percent}%`;
 
       const status = $("#momentum-status");
-      if (percent === 0) status.textContent = "Check off tasks — your roadmap adapts as you go";
-      else if (percent < 50) status.textContent = "Good start. Next steps update to match your progress.";
+      if (percent === 0) {
+        status.textContent = isFlexiblePathMode()
+          ? "Check off tasks — you'll pick your next direction after each one"
+          : "Check off tasks — your roadmap adapts as you go";
+      } else if (percent < 50) status.textContent = "Good start. Next steps update to match your progress.";
       else if (percent < 100) status.textContent = "You're building momentum — the path ahead stays in sync.";
       else if (state.roadmapAutoContinuePending) status.textContent = "Phase complete — loading next steps…";
       else status.textContent = "Path complete!";
@@ -30047,7 +30506,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (completeCopy && complete && !state.roadmapAutoContinuePending) {
         completeCopy.textContent = state.roadmapExhausted
           ? "You've finished every meaningful phase on this path. Pick another path on your map, or start fresh with a new exploration."
-          : "Nice work — this phase is complete. The next phase loads automatically, and your remaining steps keep adapting as you go.";
+          : (isFlexiblePathMode()
+            ? "Nice work — this phase is complete. Pick your next direction below to continue."
+            : "Nice work — this phase is complete. The next phase loads automatically, and your remaining steps keep adapting as you go.");
       }
 
       updateRebuildRemainingButton();
@@ -30066,11 +30527,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (complete && !state.roadmapExhausted && !state.roadmapAutoContinuePending && !roadmapAutoContinueTimer) {
-        roadmapAutoContinueTimer = setTimeout(() => {
-          roadmapAutoContinueTimer = null;
-          const allDone = $$(".task-check").length > 0 && $$(".task-check").every((check) => check.checked);
-          if (allDone) continueCompletedPlan({ auto: true });
-        }, 1400);
+        if (isFlexiblePathMode()) {
+          roadmapAutoContinueTimer = setTimeout(() => {
+            roadmapAutoContinueTimer = null;
+            const allDone = $$(".task-check").length > 0 && $$(".task-check").every((check) => check.checked);
+            if (allDone) void showFlexibleBranchPicker(null, { phaseComplete: true });
+          }, 1400);
+        } else {
+          roadmapAutoContinueTimer = setTimeout(() => {
+            roadmapAutoContinueTimer = null;
+            const allDone = $$(".task-check").length > 0 && $$(".task-check").every((check) => check.checked);
+            if (allDone) continueCompletedPlan({ auto: true });
+          }, 1400);
+        }
       }
     }
 
@@ -30079,6 +30548,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!state.currentIdea || !state.roadmapStages.length) return;
       if (state.roadmapExhausted) return;
       if (state.roadmapAutoContinuePending && !auto) return;
+      if (isFlexiblePathMode() && !options.forceLinear) {
+        void showFlexibleBranchPicker(null, { phaseComplete: true });
+        return;
+      }
 
       const button = $("#continue-plan-btn");
       const continuingNote = $("#roadmap-continuing-note");
@@ -30398,6 +30871,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       state.selectedPathIndexes = [];
       state.ideaBatches = [];
+      state.pendingBranchTaskId = null;
+      state.branchPickerContext = null;
+      state.flexibleBranchOptions = [];
+      hideRoadmapBranchPicker();
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
       setRoadmapNavVisible(false);
@@ -30502,6 +30979,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function clearSessionOnSignOut(userId) {
+      clearTimeout(persistTimer);
+      persistTimer = null;
       intakeInProgress = false;
       state.savedMaps = [];
       state.activeMapId = null;
@@ -30515,7 +30994,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.lastSyncStatus = "idle";
       state.lastCloudSyncError = "";
       state.sidebarRoadmapsExpanded = false;
-      clearIntakeSession({ clearMainInput: true });
+      clearIntakeSession({ clearMainInput: true, preserveAccountPrefs: false });
+      state.accountPrefs = emptyAccountPrefs();
       state.lastScreen = "main";
       setSaveStatus("idle");
       $("#save-status-bar")?.classList.remove("visible");
@@ -30527,6 +31007,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       const nameInput = $("#site-suggestion-name");
       if (nameInput) nameInput.value = "";
+      populateAccountPrefsForm();
       resetSessionUIAfterClear();
     }
 
@@ -31073,6 +31554,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function signOut() {
+      clearTimeout(persistTimer);
+      persistTimer = null;
       if (state.currentUser && hasSavableProgress()) {
         const result = await flushPersist({ manual: true });
         if (!result?.cloudOk) {
@@ -31899,7 +32382,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function bindDashboardUi() {
-      $("#dashboard-search-go")?.addEventListener("click", startFlow);
+      $("#dashboard-search-go")?.addEventListener("click", () => startFlowWithPathMode("flexible"));
       $("#dashboard-mobile-menu")?.addEventListener("click", toggleDashboardMobileNav);
       $("#dashboard-mobile-overlay")?.addEventListener("click", closeDashboardMobileNav);
       $("#dashboard-sync-btn")?.addEventListener("click", manualSave);
@@ -31994,13 +32477,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           alignConvoViewport("auto");
         }
       });
-      $("#start-btn").addEventListener("click", startFlow);
+      $("#direct-path-btn")?.addEventListener("click", () => startFlowWithPathMode("direct"));
+      $("#flexible-path-btn")?.addEventListener("click", () => startFlowWithPathMode("flexible"));
+      document.querySelector(".legacy-direct-path-btn")?.addEventListener("click", () => startFlowWithPathMode("direct"));
+      document.querySelector(".legacy-flexible-path-btn")?.addEventListener("click", () => startFlowWithPathMode("flexible"));
       $("#hero-example-btn")?.addEventListener("click", startQuickFlow);
       $("#main-input").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
-          startFlow();
+          startFlowWithPathMode("flexible");
         }
+      });
+
+      $("#roadmap-branch-grid")?.addEventListener("click", (event) => {
+        const card = event.target.closest(".roadmap-branch-card");
+        if (!card || card.disabled) return;
+        const index = Number(card.dataset.branchIndex);
+        if (Number.isFinite(index)) void applyFlexibleBranchChoice(index);
+      });
+      $("#roadmap-branch-more-btn")?.addEventListener("click", () => void fetchMoreBranchOptions());
+      $("#roadmap-branch-skip-btn")?.addEventListener("click", hideRoadmapBranchPicker);
+      $("#stage-list")?.addEventListener("click", (event) => {
+        const alterBtn = event.target.closest("[data-task-alter-path]");
+        if (!alterBtn) return;
+        event.preventDefault();
+        openTaskAlterPath(alterBtn.dataset.taskAlterPath);
       });
 
       $("#bubble-chain")?.addEventListener("click", (event) => {
