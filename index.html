@@ -21699,6 +21699,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       pendingBranchTaskId: null,
       branchPickerContext: null,
       flexibleBranchOptions: [],
+      flexibleFirstMissionPicked: false,
+      flexiblePendingFullStages: null,
       sidebarRoadmapsExpanded: false,
       saveStatus: "idle",
       lastSyncStatus: "idle",
@@ -23761,6 +23763,37 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    function dedupeRoadmapCategoriesByMapId() {
+      const merged = new Map();
+      const withoutMapId = [];
+      state.roadmapCategories.forEach((category) => {
+        if (!category?.mapId) {
+          withoutMapId.push(category);
+          return;
+        }
+        const existing = merged.get(category.mapId);
+        if (!existing) {
+          merged.set(category.mapId, {
+            ...category,
+            items: [...(category.items || [])]
+          });
+          return;
+        }
+        const itemKey = (item) => `${item.mapId || category.mapId}|${item.ideaTitle}`;
+        const seen = new Set((existing.items || []).map(itemKey));
+        (category.items || []).forEach((item) => {
+          const key = itemKey(item);
+          if (seen.has(key)) return;
+          seen.add(key);
+          existing.items.push(item);
+        });
+      });
+      state.roadmapCategories = [
+        ...merged.values(),
+        ...withoutMapId.filter((category) => (category.items || []).length > 0 || isManualRoadmapCategory(category))
+      ];
+    }
+
     function renderSidebarRoadmaps() {
       const group = $("#dashboard-roadmaps-group");
       const sub = $("#dashboard-roadmaps-sub");
@@ -23770,6 +23803,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       pruneRoadmapSidebarAgainstData();
       ensureAllMapsInSidebar();
+      dedupeRoadmapCategoriesByMapId();
       state.roadmapCategories = state.roadmapCategories.filter(
         (category) => !category.mapId || !isDismissedSidebarMap(category.mapId)
       );
@@ -27351,50 +27385,69 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
-    function buildFlexibleBranchOptionsPrompt(taskId, excludeTitles = [], phaseComplete = false) {
+    function buildFlexibleBranchOptionsPrompt(taskId, excludeTitles = [], options = {}) {
+      const phaseComplete = Boolean(options.phaseComplete);
+      const firstMission = Boolean(options.firstMission);
       const taskText = taskId ? getTaskTextById(taskId) : "";
       const completedSummary = buildCompletedRoadmapSummary();
       const excludeBlock = excludeTitles.length
         ? `\nDo NOT repeat these titles:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n`
         : "";
-      const moment = phaseComplete
+      const moment = firstMission
+        ? `They just chose the path "${state.currentIdea?.title || "their goal"}" on their map and need to pick their FIRST mission — three different ways to start.`
+        : phaseComplete
         ? "They just finished a full phase on this path and need to choose the direction for the NEXT phase."
         : `They just completed this mission: "${taskText || "recent step"}".`;
       return (
-        `You are whatimado. This user chose a FLEXIBLE path — they pick their next direction from 3 options after each step.\n\n` +
+        `You are whatimado. This user chose a FLEXIBLE path — they pick their next direction from 3 options.\n\n` +
         `Path: ${state.currentIdea?.title || "their goal"}\n` +
         `${moment}\n` +
-        `Progress so far:\n${completedSummary}\n` +
+        (firstMission ? "" : `Progress so far:\n${completedSummary}\n`) +
         `Context:\n${getAdvisorContext()}\n` +
         excludeBlock +
-        `\nGenerate exactly 3 DISTINCT viable next directions (strategic forks — not full roadmaps). Plain language. Reference their situation.\n` +
-        `Respond only with a raw JSON array: [{"title":"short direction name","tagline":"one plain sentence","why":"one sentence why this fits now"}]`
+        `\nGenerate exactly 3 DISTINCT viable ${firstMission ? "first missions (ways to start)" : "next directions"} — plain language, specific to them. Not full roadmaps.\n` +
+        `Respond only with a raw JSON array: [{"title":"short name","tagline":"one plain sentence","why":"one sentence why this fits now"}]`
       );
     }
 
-    function buildFlexibleBranchMissionPrompt(choice, taskId, phaseComplete = false) {
+    function buildFlexibleBranchMissionPrompt(choice, taskId, options = {}) {
+      const phaseComplete = Boolean(options.phaseComplete);
+      const firstMission = Boolean(options.firstMission);
       const parsed = taskId ? parseTaskId(taskId) : null;
       const completedSummary = buildCompletedRoadmapSummary();
-      const phaseNote = phaseComplete
-        ? "Generate the NEXT 1-2 stages (with 1-2 missions each) for the chosen direction."
-        : "Generate exactly ONE new mission task to insert after their completed step.";
+      const idea = state.currentIdea;
+      const founderMode = isFounderRoadmapForIdea(idea);
+
+      if (!phaseComplete) {
+        return (
+          `You are whatimado — a helpful mentor who does the legwork. Generate exactly ONE mission (one stage with exactly one task) for a flexible-path user.\n\n` +
+          `Chosen path: "${idea?.title || "their goal"}"\n` +
+          `Chosen direction: "${choice.title}" — ${choice.tagline}\n` +
+          (firstMission ? "This is their FIRST mission on this path.\n" : `Completed so far:\n${completedSummary}\n`) +
+          `Context:\n${getAdvisorContext()}\n` +
+          getLocationContextBlock() +
+          `\n${getActionableTaskRules()}\n` +
+          (parsed ? `This replaces what comes after mission at stage ${parsed.stageIndex + 1}, task ${parsed.taskIndex + 1}.\n` : "") +
+          `Respond only with a raw JSON array of 1 stage with exactly 1 task.`
+        );
+      }
+
       return (
-        `${buildRoadmapPrompt(state.currentIdea, getAdvisorContext(), { phase: "adapt", founderMode: isFounderRoadmapForIdea(state.currentIdea) })}\n\n` +
-        `${phaseNote}\n` +
+        `${buildRoadmapPrompt(idea, getAdvisorContext(), { phase: "adapt", founderMode })}\n\n` +
+        `Generate the NEXT 1-2 stages (with 1-2 missions each) for the chosen direction.\n` +
         `Chosen next direction: "${choice.title}" — ${choice.tagline}\n` +
         `Why they picked it: ${choice.why || choice.tagline}\n` +
         `Completed so far:\n${completedSummary}\n` +
-        (parsed ? `Insert after mission at stage ${parsed.stageIndex + 1}, task ${parsed.taskIndex + 1}.\n` : "") +
         `Do NOT repeat completed missions. Match the chosen direction closely.`
       );
     }
 
     async function generateFlexibleBranchOptions(taskId, options = {}) {
       const excludeTitles = Array.isArray(options.excludeTitles) ? options.excludeTitles : [];
-      const phaseComplete = Boolean(options.phaseComplete);
       const response = await callAdvisor(
-        buildFlexibleBranchOptionsPrompt(taskId, excludeTitles, phaseComplete),
-        700
+        buildFlexibleBranchOptionsPrompt(taskId, excludeTitles, options),
+        700,
+        { timeoutMs: 45000 }
       );
       let choices = extractJsonArray(response, []);
       choices = choices
@@ -27406,7 +27459,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }))
         .slice(0, 3);
       if (!choices.length) {
-        choices = [
+        choices = options.firstMission
+          ? [
+              { title: "Talk to someone who's done it", tagline: "Learn what actually worked for people like you.", why: "Fast reality check before you invest more time." },
+              { title: "Build a small proof this week", tagline: "Test one concrete piece of the path.", why: "Shows progress without committing to everything at once." },
+              { title: "Reach out to one real opportunity", tagline: "Apply, email, or book one conversation.", why: "Forces momentum when you're ready to act." }
+            ]
+          : [
           { title: "Double down on what worked", tagline: "Build on the momentum from your last step.", why: "Keeps progress moving without switching strategies." },
           { title: "Try a faster shortcut", tagline: "Test a smaller version of the same goal this week.", why: "Good when you want quicker proof." },
           { title: "Pivot to outreach", tagline: "Talk to real people before investing more time.", why: "Useful when you need outside input." }
@@ -27431,12 +27490,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
 
       if (titleEl) {
-        titleEl.textContent = options.phaseComplete
+        titleEl.textContent = options.firstMission
+          ? "Pick your first mission"
+          : options.phaseComplete
           ? "Pick the direction for your next phase"
           : (options.fromAlter ? "Alter your path — pick a new direction" : "Pick your next direction");
       }
       if (copyEl) {
-        copyEl.textContent = options.phaseComplete
+        copyEl.textContent = options.firstMission
+          ? "Three ways to start this path — choose the first mission that fits you best."
+          : options.phaseComplete
           ? "You finished this phase. Choose how you want the roadmap to continue."
           : "Choose the approach that fits you best — your roadmap will continue from here.";
       }
@@ -27523,13 +27586,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       try {
         const response = await callAdvisor(
-          buildFlexibleBranchMissionPrompt(choice, taskId, context.phaseComplete),
-          getRoadmapAdvisorTokenLimit(isFounderRoadmapForIdea(state.currentIdea))
+          buildFlexibleBranchMissionPrompt(choice, taskId, context),
+          context.phaseComplete ? getRoadmapAdvisorTokenLimit(isFounderRoadmapForIdea(state.currentIdea)) : 900,
+          { timeoutMs: context.phaseComplete ? ROADMAP_ADVISOR_TIMEOUT_MS : 55000 }
         );
         const newStages = parseRoadmapResponse(response, state.currentIdea);
         if (!newStages?.length) throw new Error("empty branch mission");
 
-        if (context.phaseComplete) {
+        if (context.firstMission) {
+          state.flexibleFirstMissionPicked = true;
+          const stage = newStages[0] || { label: "Your first mission", desc: "", tasks: [] };
+          const newTask = stage.tasks?.[0] || newStages.flatMap((s) => s.tasks || [])[0];
+          if (!newTask) throw new Error("empty first mission");
+          state.roadmapStages = normalizeRoadmapStages([{
+            label: stage.label || "Your first mission",
+            desc: stage.desc || "",
+            tasks: [newTask]
+          }]);
+          state.expandedRoadmapPhases = new Set([0]);
+          state.expandedRoadmapTasks = new Set(["task-0-0"]);
+        } else if (context.phaseComplete) {
           state.roadmapExhausted = false;
           state.roadmapStages = [...state.roadmapStages, ...newStages];
         } else if (taskId) {
@@ -27560,6 +27636,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           completeCard.classList.remove("visible");
         }
         state.roadmapAutoContinuePending = false;
+        if (context.firstMission) {
+          prepareFirstMissionForReveal(state.currentIdea);
+        }
         renderStages(state.roadmapStages);
         schedulePersist();
         updateMomentum();
@@ -27583,6 +27662,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           grid.innerHTML = `<p class="roadmap-branch-picker-copy">Couldn't build that direction — try another option or Show more options.</p>`;
         }
       }
+    }
+
+    function hasAnyCompletedRoadmapTasks(roadmapKey = state.roadmapKey) {
+      const chats = state.allTaskChats?.[roadmapKey];
+      if (!chats) return false;
+      return Object.values(chats).some((entry) => entry?.checked);
+    }
+
+    function shouldOfferFlexibleFirstMissionPicker() {
+      return isFlexiblePathMode()
+        && !state.flexibleFirstMissionPicked
+        && !hasAnyCompletedRoadmapTasks();
+    }
+
+    function revealFlexibleFirstMissionPicker(idea, ideaIndex, pendingStages = null) {
+      if (pendingStages?.length) {
+        state.flexiblePendingFullStages = pendingStages;
+      }
+      state.roadmapStages = [];
+      renderStages([]);
+      $("#roadmap-sub").textContent = "Pick your first mission — three ways to start.";
+      registerRoadmapInSidebar(idea, ideaIndex);
+      renderSidebarRoadmaps();
+      schedulePersist();
+      void showFlexibleBranchPicker(null, { firstMission: true });
     }
 
     function openTaskAlterPath(taskId) {
@@ -29222,7 +29326,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
           void maybeEnrichRoadmapLocalContacts({ silent: true });
         }
+        if (shouldOfferFlexibleFirstMissionPicker()) {
+          revealFlexibleFirstMissionPicker(idea, ideaIndex, cached.stages);
+        }
         return;
+      }
+
+      if (isFlexiblePathMode()) {
+        state.flexibleFirstMissionPicked = false;
+        state.flexiblePendingFullStages = null;
       }
 
       clearProgressMap();
@@ -29230,7 +29342,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       cancelDeferredRoadmapPhaseReveal();
       $("#roadmap-sub").textContent = founderMode
         ? "Building your whatimado.com launch roadmap..."
-        : "Preparing your first mission…";
+        : (isFlexiblePathMode() ? "Loading your first mission options…" : "Preparing your first mission…");
       const completeCard = $("#roadmap-complete-card");
       if (completeCard) {
         completeCard.hidden = true;
@@ -29275,9 +29387,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           {
             onFirstMissionReady(stages) {
               if (revealed) return;
+              if (shouldOfferFlexibleFirstMissionPicker()) {
+                revealed = true;
+                completeSiteLoadingProgress($("#roadmap-loader-progress"));
+                setRoadmapLoading(false);
+                revealFlexibleFirstMissionPicker(idea, ideaIndex, stages);
+                return;
+              }
               revealRoadmapProgressively(stages, "ai", { isFinal: false });
             },
             onFullStagesReady(fullStages, meta = {}) {
+              if (isFlexiblePathMode() && !state.flexibleFirstMissionPicked) {
+                state.flexiblePendingFullStages = fullStages;
+                return;
+              }
               if (!revealed || !fullStages?.length || !roadmapNeedsDeferredReveal(fullStages)) return;
               queueDeferredRoadmapPhaseReveal(
                 fullStages,
@@ -29292,6 +29415,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             },
             onRefinementComplete(stages, meta = {}) {
               if (!revealed || !stages?.length) return;
+              if (isFlexiblePathMode() && !state.flexibleFirstMissionPicked) {
+                state.flexiblePendingFullStages = stages;
+                setRoadmapRefining(false);
+                return;
+              }
               if (roadmapNeedsDeferredReveal(stages)) {
                 queueDeferredRoadmapPhaseReveal(
                   stages,
@@ -29327,12 +29455,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         );
 
         if (!revealed) {
-          if (revealRoadmapProgressively(
+          if (shouldOfferFlexibleFirstMissionPicker()) {
+            revealed = true;
+            completeSiteLoadingProgress($("#roadmap-loader-progress"));
+            setRoadmapLoading(false);
+            revealFlexibleFirstMissionPicker(idea, ideaIndex, result.stages);
+          } else if (revealRoadmapProgressively(
             prepareStagesForInitialReveal(normalizeRoadmapStages(result.stages).slice(0, 1), idea),
             result.roadmapSource || "ai",
             { isFinal: false }
           )) {
-            if (result.stages?.length > 1 || (result.stages?.[0]?.tasks?.length || 0) > 1) {
+            if (!isFlexiblePathMode() && (result.stages?.length > 1 || (result.stages?.[0]?.tasks?.length || 0) > 1)) {
               queueDeferredRoadmapPhaseReveal(
                 result.stages,
                 idea,
@@ -31126,6 +31259,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.pendingBranchTaskId = null;
       state.branchPickerContext = null;
       state.flexibleBranchOptions = [];
+      state.flexibleFirstMissionPicked = false;
+      state.flexiblePendingFullStages = null;
       state.awaitingPathModeChoice = false;
       hideRoadmapBranchPicker();
       hidePathModeChoice();
