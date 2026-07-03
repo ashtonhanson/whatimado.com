@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-03-flexible-path-intake -->
+<!-- whatimado build: 2026-07-03-guest-session-isolation -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-03-flexible-path-intake">
+  <meta name="whatimado-build" content="2026-07-03-guest-session-isolation">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -4789,6 +4789,17 @@
       flex-wrap: wrap;
       gap: .5rem;
       margin-top: .85rem;
+    }
+
+    .roadmap-branch-building {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      padding: .15rem 0 .35rem;
+    }
+
+    .roadmap-branch-build-progress {
+      width: 100%;
     }
 
     .task-alter-path-btn {
@@ -21793,7 +21804,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       syncedLibraryStats: null,
       userProfile: emptyUserProfile(),
       profileIntakeStep: null,
-      accountPrefs: null
+      accountPrefs: null,
+      guestSessionToken: null
     };
 
     const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
@@ -21900,6 +21912,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       else if (root) updateSiteLoadingProgressUi(root, 100, 0);
     }
     let persistTimer = null;
+    let persistGeneration = 0;
     let saveToastTimer = null;
     let lastAdvisorError = "";
     let themeRenderColors = null;
@@ -22413,6 +22426,38 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getStorageKey() {
       return state.currentUser?.id ? `whatimado_journey_${state.currentUser.id}` : STORAGE_GUEST;
+    }
+
+    function invalidatePersistPipeline() {
+      persistGeneration += 1;
+      clearTimeout(persistTimer);
+      persistTimer = null;
+    }
+
+    function startGuestSession() {
+      state.guestSessionToken = createMapId();
+      return state.guestSessionToken;
+    }
+
+    function isGuestPayloadContaminated(payload) {
+      if (!payload || state.currentUser) return false;
+      if (payload.sessionOwner === "user" || payload.lastUserId) return true;
+      if (
+        state.guestSessionToken
+        && payload.guestSessionToken
+        && payload.guestSessionToken !== state.guestSessionToken
+      ) {
+        return true;
+      }
+      // Pre-token guest blobs that still carry a signed-in user's prefs after sign-out.
+      if (
+        state.guestSessionToken
+        && !payload.guestSessionToken
+        && accountPrefsHasIdentity(payload.accountPrefs)
+      ) {
+        return true;
+      }
+      return false;
     }
 
     function normalizeSessionPayload(data) {
@@ -22958,7 +23003,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         deletedMapIds: state.deletedMapIds,
         selectedPathIndexes: state.selectedPathIndexes,
         accountPrefs: syncAccountPrefsFromState(),
-        savedAt: Date.now()
+        savedAt: Date.now(),
+        sessionOwner: state.currentUser ? "user" : "guest",
+        guestSessionToken: state.currentUser ? null : (state.guestSessionToken || null),
+        lastUserId: state.currentUser?.id || null
       };
     }
 
@@ -23009,6 +23057,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.intakeMode = data.intakeMode || "standard";
       state.pathMode = data.pathMode === "direct" || data.pathMode === "flexible" ? data.pathMode : null;
       state.awaitingPathModeChoice = Boolean(data.awaitingPathModeChoice);
+      syncFlexibleFirstMissionStateFromRoadmap();
       state.ideaBatches = Array.isArray(data.ideaBatches) && data.ideaBatches.length
         ? data.ideaBatches
         : (state.ideas.length ? [state.ideas.length] : []);
@@ -24198,9 +24247,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
-    function beginNewIntake() {
+    function beginNewIntake(options = {}) {
       syncActiveMapIntoLibrary();
       state.activeMapId = null;
+      invalidatePersistPipeline();
+      if (options.freshProfile) {
+        clearIntakeSession({ preserveLibrary: true, preserveAccountPrefs: false });
+        state.accountPrefs = emptyAccountPrefs();
+        state.pathMode = null;
+        if (!state.currentUser) {
+          startGuestSession();
+          try {
+            localStorage.removeItem(STORAGE_GUEST);
+          } catch {
+            /* ignore */
+          }
+        }
+        return;
+      }
       const savedPrefs = accountPrefsHasIdentity(state.accountPrefs)
         ? normalizeAccountPrefs(state.accountPrefs)
         : snapshotAccountPrefsFromState();
@@ -24510,6 +24574,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return persistSession({ silent: !options.manual, manual: Boolean(options.manual), force: Boolean(options.force) });
     }
 
+    function shouldAbortPersistWrite(persistSnapshot) {
+      if (!persistSnapshot) return true;
+      if (persistSnapshot.generation !== persistGeneration) return true;
+      if (persistSnapshot.userId !== (state.currentUser?.id ?? null)) return true;
+      if (persistSnapshot.storageKey !== getStorageKey()) return true;
+      return false;
+    }
+
     function flashSaveToast(message) {
       const toast = $("#save-toast");
       if (!toast) return;
@@ -24601,16 +24673,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const { manual = false, silent = false, force = false } = options;
       if (!force && !hasSavableProgress()) return { ok: false };
 
+      const persistSnapshot = {
+        generation: persistGeneration,
+        storageKey: getStorageKey(),
+        userId: state.currentUser?.id ?? null
+      };
+
       setSaveStatus("saving");
       const { payload, localPayload, journeyId } = await buildMergedPersistPayload();
+      if (shouldAbortPersistWrite(persistSnapshot)) return { ok: false };
       if (journeyId) state.journeyId = journeyId;
       reconcileStateAfterRemoteTombstones(payload, localPayload);
 
       let localOk = false;
 
       try {
-        localStorage.setItem(getStorageKey(), JSON.stringify(payload));
-        localOk = true;
+        if (!shouldAbortPersistWrite(persistSnapshot)) {
+          localStorage.setItem(persistSnapshot.storageKey, JSON.stringify(payload));
+          localOk = true;
+        }
       } catch {
         localOk = false;
       }
@@ -24710,6 +24791,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (payload) {
+        if (isGuestPayloadContaminated(payload)) {
+          try {
+            localStorage.removeItem(STORAGE_GUEST);
+          } catch {
+            /* ignore */
+          }
+          if (!state.currentUser) {
+            startGuestSession();
+          }
+          payload = null;
+        }
+      }
+
+      if (payload) {
+      if (!state.currentUser && payload.guestSessionToken) {
+        state.guestSessionToken = payload.guestSessionToken;
+      } else if (!state.currentUser && !state.guestSessionToken) {
+        startGuestSession();
+      }
       applySession(payload);
       if (payload.pathMode === "direct" || payload.pathMode === "flexible") {
         state.pathMode = payload.pathMode;
@@ -24734,6 +24834,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         flashSaveToast("Could not load your saved maps — run 001_user_journeys.sql in Supabase.");
       } else if (state.currentUser) {
         state.lastSyncStatus = "idle";
+      } else if (!state.guestSessionToken) {
+        startGuestSession();
       }
 
       updateSaveButtonVisibility();
@@ -27677,9 +27779,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         from_alter: Boolean(context.fromAlter)
       });
 
-      if (grid) {
-        grid.innerHTML = `<p class="roadmap-branch-picker-copy">Building "${escapeHtml(choice.title)}"…</p>`;
-      }
+      const branchBuildProgress = startBranchBuildProgress(choice.title);
 
       try {
         let response = "";
@@ -27734,7 +27834,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           state.allRoadmaps[state.roadmapKey] = {
             ...state.allRoadmaps[state.roadmapKey],
             idea: state.currentIdea,
-            stages: state.roadmapStages
+            stages: state.roadmapStages,
+            flexibleFirstMissionPicked: Boolean(state.flexibleFirstMissionPicked)
           };
         }
 
@@ -27779,6 +27880,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         });
         flashSaveToast("Couldn't build that direction — try another option.");
         renderRoadmapBranchPicker(state.flexibleBranchOptions || [], taskId, context);
+      } finally {
+        stopBranchBuildProgress();
+        branchBuildProgress?.complete?.();
       }
     }
 
@@ -27788,10 +27892,61 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return Object.values(chats).some((entry) => entry?.checked);
     }
 
+    function roadmapHasActiveFlexibleMission(roadmapKey = state.roadmapKey) {
+      if (!roadmapKey) return false;
+      const stages = state.roadmapKey === roadmapKey
+        ? state.roadmapStages
+        : state.allRoadmaps?.[roadmapKey]?.stages;
+      return Boolean(stages?.length && stageOneHasRevealableMission(stages));
+    }
+
+    function syncFlexibleFirstMissionStateFromRoadmap(roadmapKey = state.roadmapKey) {
+      if (!roadmapKey) return;
+      const entry = state.allRoadmaps?.[roadmapKey];
+      const picked = Boolean(entry?.flexibleFirstMissionPicked)
+        || (state.roadmapKey === roadmapKey && roadmapHasActiveFlexibleMission(roadmapKey));
+      if (state.roadmapKey === roadmapKey) {
+        state.flexibleFirstMissionPicked = picked;
+      }
+    }
+
+    function renderBranchBuildProgressHtml(title) {
+      return `
+        <div class="roadmap-branch-building">
+          <p class="roadmap-branch-picker-copy">Building "${escapeHtml(title)}"…</p>
+          <div class="site-loading-progress roadmap-branch-build-progress" id="roadmap-branch-build-progress" aria-live="polite">
+            <div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Mission generation progress">
+              <span class="site-loading-progress-fill"></span>
+            </div>
+            <p class="site-loading-progress-meta">
+              <span class="site-loading-progress-pct">0%</span>
+              <span class="site-loading-progress-eta">Preparing your mission…</span>
+            </p>
+          </div>
+        </div>`;
+    }
+
+    function startBranchBuildProgress(title) {
+      const grid = $("#roadmap-branch-grid");
+      if (grid) grid.innerHTML = renderBranchBuildProgressHtml(title);
+      return startSiteLoadingProgress($("#roadmap-branch-build-progress"), {
+        durationMs: 52000,
+        cap: 92,
+        formatRemaining: (ms) => (ms > 0 ? `About ${Math.ceil(ms / 1000)}s remaining…` : "Almost ready…")
+      });
+    }
+
+    function stopBranchBuildProgress() {
+      completeSiteLoadingProgress($("#roadmap-branch-build-progress"));
+      stopSiteLoadingProgress($("#roadmap-branch-build-progress"));
+    }
+
     function shouldOfferFlexibleFirstMissionPicker() {
+      syncFlexibleFirstMissionStateFromRoadmap();
       return isFlexiblePathMode()
         && !state.flexibleFirstMissionPicked
-        && !hasAnyCompletedRoadmapTasks();
+        && !hasAnyCompletedRoadmapTasks()
+        && !roadmapHasActiveFlexibleMission();
     }
 
     function revealFlexibleFirstMissionPicker(idea, ideaIndex, pendingStages = null) {
@@ -27870,7 +28025,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!text || intakeInProgress) return;
 
       stopRotatingPromptPlaceholder();
-      beginNewIntake();
+      beginNewIntake({ freshProfile: true });
       intakeAbandonTracked = false;
       state.intakeMode = "standard";
       state.pathMode = null;
@@ -27914,7 +28069,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       intakeInProgress = true;
-      beginNewIntake();
+      beginNewIntake({ freshProfile: true });
       state.intakeMode = "quick";
       intakeAbandonTracked = false;
       trackEvent("prompt_submitted", {
@@ -29413,6 +29568,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           stages: stagesToRender,
           source: cachedSource
         };
+        syncFlexibleFirstMissionStateFromRoadmap();
         prepareFirstMissionForReveal(idea);
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedSource);
         renderStages(state.roadmapStages);
@@ -29439,8 +29595,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (isFlexiblePathMode()) {
-        state.flexibleFirstMissionPicked = false;
-        state.flexiblePendingFullStages = null;
+        syncFlexibleFirstMissionStateFromRoadmap();
+        if (!state.flexibleFirstMissionPicked) {
+          state.flexiblePendingFullStages = null;
+        }
       }
 
       clearProgressMap();
@@ -31362,6 +31520,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.flexibleBranchOptions = [];
       state.flexibleFirstMissionPicked = false;
       state.flexiblePendingFullStages = null;
+      state.pathMode = null;
       state.awaitingPathModeChoice = false;
       hideRoadmapBranchPicker();
       hidePathModeChoice();
@@ -31406,7 +31565,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         cancelLabel: "Keep current map"
       }).then((ok) => {
         if (!ok) return;
-        beginNewIntake();
+        beginNewIntake({ freshProfile: true });
         resetScreenNavHistory();
         state.lastScreen = "main";
         setSaveStatus("idle");
@@ -31469,8 +31628,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function clearSessionOnSignOut(userId) {
-      clearTimeout(persistTimer);
-      persistTimer = null;
+      invalidatePersistPipeline();
       intakeInProgress = false;
       state.savedMaps = [];
       state.activeMapId = null;
@@ -31484,8 +31642,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.lastSyncStatus = "idle";
       state.lastCloudSyncError = "";
       state.sidebarRoadmapsExpanded = false;
+      state.pathMode = null;
       clearIntakeSession({ clearMainInput: true, preserveAccountPrefs: false });
       state.accountPrefs = emptyAccountPrefs();
+      startGuestSession();
       state.lastScreen = "main";
       setSaveStatus("idle");
       $("#save-status-bar")?.classList.remove("visible");
@@ -32044,8 +32204,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function signOut() {
-      clearTimeout(persistTimer);
-      persistTimer = null;
+      invalidatePersistPipeline();
       if (state.currentUser && hasSavableProgress()) {
         const result = await flushPersist({ manual: true });
         if (!result?.cloudOk) {
@@ -32063,6 +32222,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           }
         }
       }
+      invalidatePersistPipeline();
       await supabaseClient?.auth.signOut();
     }
 
