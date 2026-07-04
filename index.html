@@ -28579,14 +28579,45 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return buildFlexibleMissionFallback(choice, state.currentIdea);
     }
 
+    function ensureRenderableRoadmapStages(stages, idea = state.currentIdea, choice = null) {
+      const tryCoerce = (candidate) => {
+        const coerced = coerceRoadmapStagesForRender(normalizeRoadmapStages(candidate || []));
+        if (coerced.length && stageOneHasRevealableMission(coerced)) return coerced;
+        const normalized = normalizeRoadmapStages(candidate || []);
+        const unfiltered = normalized
+          .filter((stage) => stage.label?.trim())
+          .map((stage) => ({
+            ...stage,
+            tasks: (stage.tasks || []).filter((task) => !isPendingRoadmapTask(task))
+          }))
+          .filter((stage) => stage.tasks.length > 0);
+        if (unfiltered.length && stageOneHasRevealableMission(unfiltered)) return unfiltered;
+        return null;
+      };
+
+      let ready = tryCoerce(stages);
+      if (ready?.length) return ready;
+
+      let fallback = getQuickFallbackStages(idea);
+      if (choice?.title && fallback?.length) {
+        fallback = personalizeDirectRoadmapWithChoice(fallback, choice);
+      }
+      ready = tryCoerce(fallback);
+      if (ready?.length) return ready;
+
+      if (choice?.title) {
+        ready = tryCoerce(buildFlexibleMissionFallback(choice, idea));
+        if (ready?.length) return ready;
+      }
+
+      ready = tryCoerce(buildMinimalRenderableStages(idea));
+      return ready || [];
+    }
+
     function publishFirstMissionRoadmap(stages, choice, taskId, context) {
       state.flexibleFirstMissionPicked = true;
-      let fullStages = normalizeRoadmapStages(stages);
+      state.roadmapStages = ensureRenderableRoadmapStages(stages, state.currentIdea, choice);
       state.flexiblePendingFullStages = null;
-      state.roadmapStages = coerceRoadmapStagesForRender(fullStages);
-      if (!state.roadmapStages.length) {
-        state.roadmapStages = fullStages.filter((stage) => stage.label?.trim() && (stage.tasks || []).length);
-      }
       state.expandedRoadmapPhases = new Set([0]);
       state.expandedRoadmapTasks = new Set(["task-0-0"]);
 
@@ -30704,6 +30735,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function resolveCachedRoadmapStages(cached) {
+      if (roadmapStagesAreRenderable(state.roadmapStages)) return state.roadmapStages;
       if (roadmapStagesAreRenderable(cached?.stages)) return cached.stages;
       if (roadmapStagesAreRenderable(state.flexiblePendingFullStages)) return state.flexiblePendingFullStages;
       return cached?.stages || [];
@@ -30747,8 +30779,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const cached = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
         ? state.allRoadmaps[state.roadmapKey]
         : null;
+
+      if (cachedEarly?.flexibleFirstMissionPicked && !roadmapStagesAreRenderable(cachedEarly?.stages)) {
+        const repaired = ensureRenderableRoadmapStages(cachedEarly.stages, idea);
+        if (repaired.length) {
+          state.roadmapStages = repaired;
+          state.allRoadmaps[state.roadmapKey] = {
+            ...(cachedEarly || {}),
+            idea,
+            stages: repaired,
+            flexibleFirstMissionPicked: true,
+            awaitingFirstMissionPick: false,
+            source: cachedEarly?.source || "fallback"
+          };
+        }
+      }
+
       const cachedHasMissions = roadmapStagesAreRenderable(cached?.stages)
-        || roadmapStagesAreRenderable(state.flexiblePendingFullStages);
+        || roadmapStagesAreRenderable(state.flexiblePendingFullStages)
+        || roadmapStagesAreRenderable(state.roadmapStages);
 
       syncFlexibleFirstMissionStateFromRoadmap();
       const wantsFirstMissionPicker = shouldOfferFirstMissionPicker();
@@ -30835,6 +30884,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           trackEvent("roadmap_founder_mismatch_fixed", { idea_index: ideaIndex, cached: true });
         }
         state.roadmapStages = stagesToRender;
+        if (!roadmapStagesAreRenderable(state.roadmapStages)) {
+          state.roadmapStages = ensureRenderableRoadmapStages(stagesToRender, idea);
+          stagesToRender = state.roadmapStages;
+        }
         state.flexibleFirstMissionPicked = true;
         state.allRoadmaps[state.roadmapKey] = {
           ...(cached || {}),
@@ -32419,6 +32472,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
 
       if (!options.skipRecover && !list.children.length && state.currentIdea) {
+        if (state.flexibleFirstMissionPicked || state.allRoadmaps[state.roadmapKey]?.flexibleFirstMissionPicked) {
+          const repaired = ensureRenderableRoadmapStages(state.roadmapStages, state.currentIdea);
+          if (repaired.length) {
+            state.roadmapStages = repaired;
+            if (state.roadmapKey) {
+              state.allRoadmaps[state.roadmapKey] = {
+                ...(state.allRoadmaps[state.roadmapKey] || {}),
+                stages: repaired,
+                flexibleFirstMissionPicked: true,
+                awaitingFirstMissionPick: false
+              };
+            }
+            renderStages(state.roadmapStages, { skipRecover: true });
+            schedulePersist();
+            return;
+          }
+        }
         recoverEmptyRoadmapStages(state.currentIdea, getCurrentIdeaIndex());
       }
 
