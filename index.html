@@ -25091,6 +25091,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
+        business_setup: ["workMode", parseBusinessSetup],
         relocate: ["willingToRelocate", parseRelocatePreference],
         founder_stage: ["founderStage", parseFounderStage]
       };
@@ -25133,6 +25134,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           { field: "workMode", value: "hybrid", label: "Hybrid" },
           { field: "workMode", value: "in_person", label: "In-person" },
           { field: "workMode", value: "flexible", label: "Flexible" }
+        ]);
+        return;
+      }
+      if (step === "business_setup") {
+        renderProfileIntakeChips([
+          { field: "workMode", value: "mobile", label: "Mobile — I go to them" },
+          { field: "workMode", value: "fixed_location", label: "At a shop or location" },
+          { field: "workMode", value: "online", label: "Online / remote" },
+          { field: "workMode", value: "mix", label: "Mix" }
         ]);
         return;
       }
@@ -26525,7 +26535,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         remote: "Remote work",
         hybrid: "Hybrid",
         in_person: "In-person only",
-        flexible: "Flexible / no strong preference"
+        flexible: "Flexible / no strong preference",
+        mobile: "Mobile — go to customers",
+        fixed_location: "Fixed location (shop, salon, office)",
+        online: "Online / remote delivery",
+        mix: "Mix of mobile, location, and online"
       },
       willingToRelocate: {
         yes: "Willing to relocate",
@@ -26839,6 +26853,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
+    function parseBusinessSetup(text) {
+      const q = String(text || "").toLowerCase();
+      if (/\b(mobile|van|truck|groom|travel|visit (the )?customer|at their|on the road|come to)\b/.test(q)) return "mobile";
+      if (/\b(online|website|ship|ecommerce|e-commerce|internet only|digital)\b/.test(q)) return "online";
+      if (/\b(shop|salon|store|office|studio|fixed|location|brick)\b/.test(q)) return "fixed_location";
+      if (/\b(mix|both|hybrid)\b/.test(q)) return "mix";
+      return parseWorkMode(text) || "";
+    }
+
+    function profilePathIsOwnBusiness(profile = normalizeUserProfile(state.userProfile)) {
+      return profile.pathPreference === "business";
+    }
+
+    function profileIntakeNeedsRelocateStep(profile = normalizeUserProfile(state.userProfile)) {
+      return profile.pathPreference === "employment";
+    }
+
     function parseRelocatePreference(text) {
       const q = String(text || "").toLowerCase();
       if (/\b(yes|willing|would move|relocate)\b/.test(q) && !/\b(not|no)\b/.test(q)) return "yes";
@@ -26864,7 +26895,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const profile = normalizeUserProfile(state.userProfile);
       if (!profile.incomeUrgency) profile.incomeUrgency = parseIncomeUrgency(blob);
       if (!profile.pathPreference) profile.pathPreference = parsePathPreference(blob);
-      if (!profile.workMode) profile.workMode = parseWorkMode(blob);
+      if (!profile.workMode) {
+        profile.workMode = profilePathIsOwnBusiness(profile)
+          ? parseBusinessSetup(blob)
+          : parseWorkMode(blob);
+      }
       if (!profile.willingToRelocate) profile.willingToRelocate = parseRelocatePreference(blob);
       if (!profile.founderStage && isFounderOrProjectPrompt(getFirstUserMessage())) {
         profile.founderStage = parseFounderStage(blob);
@@ -26960,6 +26995,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       trackEvent("profile_intake_step_shown", { step: "work_mode" });
     }
 
+    function askProfileBusinessSetupStep() {
+      state.profileIntakeStep = "business_setup";
+      pushProfileIntakeAssistantMessage("How will you reach customers?");
+      renderProfileIntakeChips([
+        { field: "workMode", value: "mobile", label: "Mobile — I go to them" },
+        { field: "workMode", value: "fixed_location", label: "At a shop or location" },
+        { field: "workMode", value: "online", label: "Online / remote" },
+        { field: "workMode", value: "mix", label: "Mix" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "business_setup" });
+    }
+
     function askProfileRelocateStep() {
       state.profileIntakeStep = "relocate";
       pushProfileIntakeAssistantMessage("Would you relocate for the right opportunity?");
@@ -27038,14 +27085,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           finishProfileIntake();
           return;
         }
+        if (profilePathIsOwnBusiness(profile)) {
+          if (!profile.workMode) return askProfileBusinessSetupStep();
+          finishProfileIntake();
+          return;
+        }
         if (!profile.workMode) return askProfileWorkModeStep();
-        if (!profile.willingToRelocate) return askProfileRelocateStep();
+        if (profileIntakeNeedsRelocateStep(profile) && !profile.willingToRelocate) {
+          return askProfileRelocateStep();
+        }
+        finishProfileIntake();
+        return;
+      }
+      if (step === "business_setup") {
+        if (!profile.workMode) return askProfileBusinessSetupStep();
         finishProfileIntake();
         return;
       }
       if (step === "work_mode") {
         if (!profile.workMode) return askProfileWorkModeStep();
-        if (!profile.willingToRelocate) return askProfileRelocateStep();
+        if (profileIntakeNeedsRelocateStep(profile) && !profile.willingToRelocate) {
+          return askProfileRelocateStep();
+        }
         finishProfileIntake();
         return;
       }
@@ -27076,10 +27137,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
       if (!profile.workMode) {
-        askProfileWorkModeStep();
+        if (profilePathIsOwnBusiness(profile)) askProfileBusinessSetupStep();
+        else askProfileWorkModeStep();
         return;
       }
-      if (!profile.willingToRelocate) {
+      if (profileIntakeNeedsRelocateStep(profile) && !profile.willingToRelocate) {
         askProfileRelocateStep();
         return;
       }
@@ -27101,6 +27163,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
+        business_setup: ["workMode", parseBusinessSetup],
         relocate: ["willingToRelocate", parseRelocatePreference],
         founder_stage: ["founderStage", parseFounderStage]
       };
@@ -27817,11 +27880,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!phaseComplete) {
         if (isDirectPathMode() && firstMission) {
           return (
-            `${buildRoadmapPrompt(idea, getAdvisorContext(), { founderMode })}\n\n` +
-            `The user chose DIRECT PATH and picked this starting direction: "${choice.title}" — ${choice.tagline}\n` +
+            `You are whatimado — a helpful mentor. Generate exactly ONE roadmap stage with 1-2 missions for a direct-path user who picked a starting direction.\n\n` +
+            `Path: "${idea?.title || "their goal"}"\n` +
+            `Starting direction: "${choice.title}" — ${choice.tagline}\n` +
             `Why they picked it: ${choice.why || choice.tagline}\n` +
-            `Build the FULL step-by-step roadmap for "${idea?.title || "this path"}" aligned to that direction. Include mentorHelp, resources, and scripts where relevant — not a single mission.\n` +
-            getRoadmapJsonInstruction({ founderMode, context: getAdvisorContext(), phase: "initial" })
+            `Context:\n${getAdvisorContext()}\n` +
+            getLocationContextBlock() +
+            `\n${getFlexibleMissionTaskRules()}\n` +
+            `Return exactly 1 stage with 1-2 tasks (JSON key: tasks). Full multi-phase roadmap loads separately — keep this fast and focused on their chosen direction only.\n` +
+            `${FLEXIBLE_MISSION_JSON_INSTRUCTION.replace("exactly 1 task", "1-2 tasks")}`
           );
         }
         return (
@@ -27978,6 +28045,87 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    function personalizeDirectRoadmapWithChoice(stages, choice) {
+      const copy = normalizeRoadmapStages(stages);
+      if (copy[0] && choice?.title) {
+        copy[0] = {
+          ...copy[0],
+          label: String(choice.title).trim(),
+          desc: String(choice.tagline || choice.why || copy[0].desc || "").trim()
+        };
+      }
+      return copy;
+    }
+
+    function resolveDirectFirstMissionStages(choice) {
+      if (roadmapStagesAreRenderable(state.flexiblePendingFullStages)) {
+        return personalizeDirectRoadmapWithChoice(state.flexiblePendingFullStages, choice);
+      }
+      try {
+        const fallback = ensureRoadmapLocalContacts(
+          normalizeRoadmapStages(getFallbackStages(state.currentIdea)),
+          state.currentIdea
+        );
+        if (roadmapStagesAreRenderable(fallback)) {
+          return personalizeDirectRoadmapWithChoice(fallback, choice);
+        }
+      } catch (error) {
+        console.warn("[whatimado] direct first mission fallback failed:", error?.message || error);
+      }
+      const minimal = buildMinimalRenderableStages(state.currentIdea);
+      if (minimal.length) return personalizeDirectRoadmapWithChoice(minimal, choice);
+      return buildFlexibleMissionFallback(choice, state.currentIdea);
+    }
+
+    function publishFirstMissionRoadmap(stages, choice, taskId, context) {
+      state.flexibleFirstMissionPicked = true;
+      let fullStages = normalizeRoadmapStages(stages);
+      state.flexiblePendingFullStages = null;
+      state.roadmapStages = coerceRoadmapStagesForRender(fullStages);
+      if (!state.roadmapStages.length) {
+        state.roadmapStages = fullStages.filter((stage) => stage.label?.trim() && (stage.tasks || []).length);
+      }
+      state.expandedRoadmapPhases = new Set([0]);
+      state.expandedRoadmapTasks = new Set(["task-0-0"]);
+
+      if (state.roadmapKey) {
+        state.allRoadmaps[state.roadmapKey] = {
+          ...(state.allRoadmaps[state.roadmapKey] || {}),
+          idea: state.currentIdea,
+          stages: state.roadmapStages,
+          flexibleFirstMissionPicked: true,
+          awaitingFirstMissionPick: false,
+          source: state.allRoadmaps[state.roadmapKey]?.source || "fallback"
+        };
+      }
+
+      hideRoadmapBranchPicker();
+      const completeCard = $("#roadmap-complete-card");
+      if (completeCard) {
+        completeCard.hidden = true;
+        completeCard.classList.remove("visible");
+      }
+      state.roadmapAutoContinuePending = false;
+      prepareFirstMissionForReveal(state.currentIdea);
+      renderStages(state.roadmapStages);
+      schedulePersist();
+      updateMomentum();
+
+      if (taskId) {
+        const parsed = parseTaskId(taskId);
+        if (parsed) {
+          const nextIndex = parsed.taskIndex + 1;
+          if (canExpandTask(parsed.stageIndex, nextIndex)) {
+            state.expandedRoadmapTasks = new Set([`task-${parsed.stageIndex}-${nextIndex}`]);
+          }
+        }
+      } else if (context.phaseComplete) {
+        setTimeout(() => $("#stage-list")?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+      }
+
+      void maybeEnrichRoadmapLocalContacts({ silent: true });
+    }
+
     async function applyFlexibleBranchChoice(branchIndex) {
       const choice = state.flexibleBranchOptions?.[branchIndex];
       if (!choice || !state.currentIdea) return;
@@ -27997,7 +28145,30 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         from_alter: Boolean(context.fromAlter)
       });
 
-      const branchBuildProgress = startBranchBuildProgress(choice.title);
+      const branchBuildProgress = startBranchBuildProgress(choice.title, {
+        quick: isDirectPathMode() && context.firstMission
+      });
+
+      if (isDirectPathMode() && context.firstMission) {
+        const usedPending = roadmapStagesAreRenderable(state.flexiblePendingFullStages);
+        try {
+          const fullStages = resolveDirectFirstMissionStages(choice);
+          publishFirstMissionRoadmap(fullStages, choice, taskId, context);
+          trackEvent("direct_first_mission_instant", {
+            branch_title: choice.title,
+            used_pending: usedPending,
+            stage_count: state.roadmapStages.length
+          });
+        } catch (error) {
+          console.warn("[whatimado] direct first mission instant failed:", error?.message || error);
+          flashSaveToast("Couldn't load that direction — try another option.");
+          renderRoadmapBranchPicker(state.flexibleBranchOptions || [], taskId, context);
+        } finally {
+          stopBranchBuildProgress();
+          branchBuildProgress?.complete?.();
+        }
+        return;
+      }
 
       try {
         let response = "";
@@ -28176,12 +28347,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         </div>`;
     }
 
-    function startBranchBuildProgress(title) {
+    function startBranchBuildProgress(title, options = {}) {
       const grid = $("#roadmap-branch-grid");
       if (grid) grid.innerHTML = renderBranchBuildProgressHtml(title);
       return startSiteLoadingProgress($("#roadmap-branch-build-progress"), {
-        durationMs: 52000,
-        cap: 92,
+        durationMs: options.quick ? 6000 : 52000,
+        cap: options.quick ? 96 : 92,
         formatRemaining: (ms) => (ms > 0 ? `About ${Math.ceil(ms / 1000)}s remaining…` : "Almost ready…")
       });
     }
