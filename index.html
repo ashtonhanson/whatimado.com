@@ -13946,9 +13946,12 @@
       '- Stage labels must sound like a step a friend would say — e.g. "Find five people to try your site" or "Decide who you\'re helping". NEVER paste the path title in quotes, NEVER "Define \\"{title}\\" mission + who it serves".\n';
 
     function getActionableTaskRules(idea = state.currentIdea) {
-      const base = isGroundedPractitioner(idea)
+      let base = isGroundedPractitioner(idea)
         ? `${ACTIONABLE_TASK_RULES}\n${GROUNDED_UNIVERSAL_RULES}`
         : ACTIONABLE_TASK_RULES;
+      if (shouldUseBusinessRoadmapTasks(idea)) {
+        base = `${base}\n${BUSINESS_OWNER_RULES}`;
+      }
       return `${base}\n${PLAIN_LANGUAGE_AI_RULES}`;
     }
 
@@ -14959,10 +14962,11 @@
         [/^Grow toward\s+["'].+["']/i, "Take the next step on your goal"],
         [/^Map what transfers to\s+["'].+["']/i, "Map skills you already have"],
         [/^Close gaps for\s+["'].+["']/i, "Close the skill gaps"],
-        [/^Get in the room in\s+(.+)/i, "Meet people hiring in $1"],
-        [/^Scan .+ hiring lanes/i, "Find who's hiring near you"],
-        [/^Package your proof/i, "Polish your resume and proof"],
-        [/^Push hard for two weeks/i, "Apply and follow up for two weeks"],
+        [/^Get in the room in\s+(.+)/i, shouldUseBusinessRoadmapTasks(idea) ? "Meet potential clients in $1" : "Meet people hiring in $1"],
+        [/^Scan .+ hiring lanes/i, shouldUseBusinessRoadmapTasks(idea) ? "Book your first paying clients" : "Find who's hiring near you"],
+        [/^Find who's hiring near you$/i, shouldUseBusinessRoadmapTasks(idea) ? "Book your first paying clients" : "Find who's hiring near you"],
+        [/^Package your proof/i, shouldUseBusinessRoadmapTasks(idea) ? "Package your service offer" : "Polish your resume and proof"],
+        [/^Push hard for two weeks/i, shouldUseBusinessRoadmapTasks(idea) ? "Push for clients for two weeks" : "Apply and follow up for two weeks"],
         [/^Choose your next move/i, "Decide your next move"],
         [/^First step toward\s+["'].+["']/i, "Take your first step on the longer path"]
       ];
@@ -17777,7 +17781,82 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (profile.pathPreference === "business" || profile.pathPreference === "either") return true;
       if (isGroundedPractitioner(idea)) return true;
       const blob = getConversationCareerBlob(idea);
-      return /\b(start my own|own business|self[- ]?employ|freelanc|my own thing|business owner|launch (?:a |my )?business|mobile groom|grooming company)\b/i.test(blob);
+      return /\b(start my own|own business|self[- ]?employ|freelanc|my own thing|business owner|launch (?:a |my )?business|mobile groom|grooming company|first \d+ clients|book your first)\b/i.test(blob);
+    }
+
+    function shouldUseBusinessRoadmapTasks(idea = state.currentIdea) {
+      if (userIsBusinessOwner(idea) || profilePathIsOwnBusiness()) return true;
+      const archetype = getPathArchetype(idea);
+      return archetype === "business" || archetype === "grounded" || archetype === "online_business";
+    }
+
+    function taskTextIsEmploymentFocused(text) {
+      const blob = String(text || "").toLowerCase();
+      if (!blob) return false;
+      if (/\bself[- ]?employ/.test(blob)) return false;
+      return /\b(indeed|google jobs|jobbank|find-a-job|gov\.uk\/find-a-job|finn\.no\/ledige|search for \d+ roles|roles matching|apply to \d+ (?:targeted )?(?:roles|jobs)|resume headline|hiring lanes|who'?s hiring|get hired|job posts|job search|staffing agenc|temp agenc|work coach|targeted roles|application push|interview for)\b/.test(blob);
+    }
+
+    function stageLabelIsEmploymentFocused(label) {
+      return /\b(hiring|job search|employers hiring|application push|who'?s hiring|get hired|resume|hiring lanes)\b/i.test(String(label || ""));
+    }
+
+    function roadmapHasEmploymentMismatch(stages, idea = state.currentIdea) {
+      if (!shouldUseBusinessRoadmapTasks(idea)) return false;
+      const blob = (stages || []).flatMap((s) => s.tasks || []).map(getTaskText).join(" ");
+      if (taskTextIsEmploymentFocused(blob)) return true;
+      return (stages || []).some((stage) => stageLabelIsEmploymentFocused(stage.label));
+    }
+
+    function getBusinessRoadmapTemplate(idea = state.currentIdea) {
+      const templates = buildStandardFallbackTemplates();
+      if (isGroundedPractitioner(idea)) {
+        return personalizeFallbackStages(templates.groundedPractitioner, idea);
+      }
+      return personalizeFallbackStages(templates.business, idea);
+    }
+
+    function rewriteBusinessOwnerMisalignedTasks(stages, idea = state.currentIdea) {
+      if (!shouldUseBusinessRoadmapTasks(idea) || !Array.isArray(stages)) return stages;
+      const businessTemplate = getBusinessRoadmapTemplate(idea);
+
+      return normalizeRoadmapStages(stages).map((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return stage;
+        const fallbackStage = businessTemplate[stageIndex] || businessTemplate[stageIndex % businessTemplate.length] || businessTemplate[0];
+        const stageMisaligned = stageLabelIsEmploymentFocused(stage.label);
+
+        return {
+          ...stage,
+          label: stageMisaligned && fallbackStage?.label ? fallbackStage.label : stage.label,
+          desc: stageMisaligned && fallbackStage?.desc ? fallbackStage.desc : stage.desc,
+          tasks: (stage.tasks || []).map((task, taskIndex) => {
+            if (isPendingRoadmapTask(task)) return { _pendingTask: true };
+            const normalized = normalizeRoadmapTask(task);
+            const source = stripMentorActionPrefix(preserveTaskSourceText(normalized) || normalized.text || "");
+            const missionBlob = String(normalized.mission || "").toLowerCase();
+            if (!taskTextIsEmploymentFocused(source) && !taskTextIsEmploymentFocused(missionBlob)) {
+              return normalized;
+            }
+            const replacement = fallbackStage?.tasks?.[taskIndex] ?? fallbackStage?.tasks?.[0];
+            if (!replacement) return normalized;
+            const replacementText = typeof replacement === "string" ? replacement : getTaskText(replacement);
+            return mentorizeTask({
+              ...normalized,
+              text: replacementText,
+              mission: "",
+              why: "",
+              script: "",
+              contacts: [],
+              links: [],
+              resourcesLocal: [],
+              resourcesNational: [],
+              resourcesGlobal: [],
+              resourceLayers: { local: [], national: [], global: [] },
+              _sourceText: replacementText
+            });
+          })
+        };
+      });
     }
 
     function inferTaskContextNote(normalized, stage = {}, idea = state.currentIdea) {
@@ -17790,11 +17869,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (businessOwner && /\b(workforce|american job center|job center|career center|workforce board|staffing agenc|temp agenc)\b/i.test(blob)) {
         return "You're building a business, not applying for jobs. Workforce centers often run self-employment programs, startup coaching, and small-business grants — this step is about those resources.";
       }
-      if (businessOwner && /\b(211|united way|library job search|job search help)\b/i.test(blob)) {
-        return "Community resource lines and libraries often connect entrepreneurs to free business advising and local programs — not just job listings.";
-      }
-      if (businessOwner && /\b(resume|cover letter|apply for jobs|get hired|job listing|indeed|linkedin jobs)\b/i.test(blob)) {
-        return "This path is about launching your own business. Skip generic job-search steps unless you're also exploring employment as a backup.";
+      if (businessOwner && taskTextIsEmploymentFocused(blob)) {
+        return "This path is about launching your own business — focus on your first paying clients, packages, and local outreach, not job listings.";
       }
       if (/\b(sbdc|score|small business development|sba local|business advisor)\b/i.test(blob)) {
         return "Free business advisors help with licensing, pricing, and landing your first clients — especially useful when you're starting on your own.";
@@ -18213,11 +18289,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (isJobSearchHomeworkText(text)) {
+        if (userIsBusinessOwner() && !/\b(backup|also (?:need|want) a job|while job hunting)\b/i.test(getConversationCareerBlob())) {
+          const profile = getUserSituationProfile();
+          return `Identify 10 ${profile.city || "local"} prospects who could book ${profile.serviceType || profile.craftLabel} — use the spreadsheet button below to track them.`;
+        }
         if (getFlatTaskResources(normalized).length) {
           return "Use the contacts and resources we prepared below — skip generic job board searches that won't match this mission.";
         }
       } else if (!isHomeworkTaskText(text)) {
         return text;
+      }
+
+      if (userIsBusinessOwner() && taskTextIsEmploymentFocused(text)) {
+        const profile = getUserSituationProfile();
+        return `Reach out to one ${profile.city || "local"} prospect who fits your ${profile.craftLabel || "service"} — log it in the tracker below.`;
       }
 
       if (script.length > 80) {
@@ -19477,7 +19562,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           { force }
         );
         const practitionerEnriched = injectPractitionerResourcesIntoRoadmap(enriched, idea);
-        return enrichCreativeOnlineResources(enrichTaskClarity(practitionerEnriched), idea);
+        const aligned = rewriteBusinessOwnerMisalignedTasks(practitionerEnriched, idea);
+        return enrichCreativeOnlineResources(enrichTaskClarity(aligned), idea);
       } catch (error) {
         console.warn("[whatimado] ensureRoadmapLocalContacts failed:", error?.message || error);
         return normalizeRoadmapStages(stages);
@@ -20339,6 +20425,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       '- Tasks must include specific dollar amounts, niche names, scripts, and finished pieces — reference THEIR craft and city from the conversation.\n' +
       '- Value-first outreach beats "need a job?" or "need a logo?" — lead with insight or a free sample concept.\n';
 
+    const BUSINESS_OWNER_RULES =
+      'BUSINESS OWNER — user is starting or growing their OWN business (NOT looking for a job):\n' +
+      '- NEVER assign Indeed, Google Jobs, job applications, resume tweaks for hiring managers, staffing agencies as job seekers, or "find who\'s hiring".\n' +
+      '- Focus on: first paying clients, pricing/packages, proof, outreach, local marketing, licensing when relevant.\n' +
+      '- Workforce or library career centers are OK ONLY when framed as self-employment coaching, small-business grants, or licensing help — NOT job listings.\n' +
+      '- Stage names must sound like building a business — e.g. "Book your first 10 clients", "Package your mobile offer" — NOT "Scan hiring lanes".\n';
+
     const GENERIC_GROUNDED_FALLBACK_IDEAS = [
       {
         title: "Premium Local {craftTitle}",
@@ -20655,7 +20748,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function roadmapHasGenericMismatch(stages, idea = null) {
       if (!isGroundedPractitioner(idea)) return false;
       const text = (stages || []).flatMap((s) => s.tasks || []).map(getTaskText).join(" ");
-      return /\b(workforce|american job center|211|staffing agenc|community college|compare training|upwork|fiverr|99designs?|skill sprint|local help-for-hire|contra\.com)\b/i.test(text);
+      return /\b(workforce|american job center|211|staffing agenc|community college|compare training|upwork|fiverr|99designs?|skill sprint|local help-for-hire|contra\.com|indeed|google jobs|job search|hiring lanes)\b/i.test(text);
     }
 
     function getGroundedSidebarResources(idea = null) {
@@ -20821,6 +20914,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getPathArchetype(idea) {
+      if (userIsBusinessOwner(idea) || profilePathIsOwnBusiness()) {
+        return isGroundedPractitioner(idea) ? "grounded" : "business";
+      }
       const situation = getPathSituationType(idea);
       const situationMap = {
         reentry: "reentry",
@@ -20840,8 +20936,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/portfolio/.test(ideaBlob) && /\b(logo|design|creative|art|brand|graphic)\b/.test(blob)) return "creative";
       if (/learn|skill|training|certif|course|degree|apprent/.test(ideaBlob) && !hasExperienceSignals(blob)) return "learning";
       if (/portfolio/.test(ideaBlob) && !hasExperienceSignals(blob)) return "learning";
+      if (/\bself[- ]?employ/.test(ideaBlob)) return "business";
+      if (/business|freelance|client|startup|sell|shop|service|gig|contractor|mobile groom|grooming|first \d+ clients/.test(ideaBlob)) return "business";
       if (/job|employ|hire|career|income|work for|staff|shift|union/.test(ideaBlob)) return "employment";
-      if (/business|freelance|client|startup|sell|shop|service|gig|contractor/.test(ideaBlob)) return "business";
       if (/creative|design|art|content|music|write|maker|logo|brand/.test(ideaBlob)) return "creative";
       const idx = Math.max(0, state.ideas.findIndex((entry) => entry.title === idea?.title));
       return ["employment", "business", "learning", "creative"][idx % 4];
@@ -21297,28 +21394,36 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function pickUniqueStandardFallbackStages(idea) {
       const templates = buildStandardFallbackTemplates();
+      const businessOwner = shouldUseBusinessRoadmapTasks(idea);
       const order = isReentrySituation(idea)
         ? ["reentry", "housing", "employment", "career_change", "business", "learning", "creative"]
         : getPathSituationType(idea) === "housing"
           ? ["housing", "reentry", "employment", "business", "learning"]
           : isGroundedPractitioner(idea)
             ? ["groundedPractitioner", "business", "skilled_trade", "creative", "employment", "learning"]
-            : ["employment", "career_change", "nonprofit", "skilled_trade", "online_business", "business", "learning", "creative", "housing"];
+            : businessOwner
+              ? ["business", "online_business", "groundedPractitioner", "skilled_trade", "creative", "career_change", "nonprofit", "learning"]
+              : ["employment", "career_change", "nonprofit", "skilled_trade", "online_business", "business", "learning", "creative", "housing"];
       const preferred = isGroundedPractitioner(idea)
         ? "groundedPractitioner"
-        : getPathArchetype(idea);
+        : businessOwner && getPathArchetype(idea) !== "employment"
+          ? getPathArchetype(idea)
+          : getPathArchetype(idea);
       const tryOrder = [preferred, ...order.filter((entry) => entry !== preferred)];
 
       for (const key of tryOrder) {
+        if (businessOwner && key === "employment") continue;
         const templateStages = templates[key] || templates.employment;
         const stages = personalizeFallbackStages(templateStages, idea);
         const usesBannedLabels = stages.some((stage) => isGenericStageLabel(stage.label));
         if (usesBannedLabels) continue;
         if (roadmapHasGenericStages(stages, idea)) continue;
+        if (roadmapHasEmploymentMismatch(stages, idea)) continue;
         if (!roadmapOverlapsSibling(stages, idea)) return stages;
       }
 
-      return personalizeFallbackStages(templates[preferred] || templates.employment, idea);
+      const fallbackKey = businessOwner ? (templates[preferred] ? preferred : "business") : preferred;
+      return personalizeFallbackStages(templates[fallbackKey] || templates.business || templates.employment, idea);
     }
 
     function buildMinimalRenderableStages(idea) {
@@ -29727,6 +29832,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         issues.push({ code: "local_resources" });
       }
       if (roadmapHasGenericMismatch(stages, idea)) issues.push({ code: "generic_mismatch" });
+      if (roadmapHasEmploymentMismatch(stages, idea)) issues.push({ code: "business_employment_mismatch" });
       if (!isFounderRoadmapForIdea(idea) && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
         issues.push({ code: "reentry" });
       }
@@ -29765,6 +29871,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         parts.push(
           `${getGroundedBusinessBlock(idea)}\n` +
           "Your last draft wrongly pushed cheap freelance platforms, workforce programs, or beginner training. Regenerate with grounded practitioner tasks: positioning, packages with prices, niche proof, weekly posts, 20-business outreach with value-first script, Google local SEO — for their stated craft in their city.\n"
+        );
+      }
+      if (codes.has("business_employment_mismatch")) {
+        parts.push(
+          `${getGroundedBusinessBlock(idea) || BUSINESS_OWNER_RULES}\n` +
+          "Your last draft used job-search or employment tasks (Indeed, Google Jobs, resume for hiring managers, 'who's hiring') for someone building their OWN business. Regenerate with business tasks only: first paying clients, packages with prices, local outreach, proof, Google Business Profile, reviews — for their stated craft in their city. NEVER assign job board searches unless they explicitly want employment as a backup.\n"
         );
       }
       if (codes.has("homework") || codes.has("parse_failed")) {
@@ -29845,6 +29957,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         stages = getFallbackStages(idea);
         source = "fallback";
         trackEvent("roadmap_reentry_fallback", { idea_index: ideaIndex });
+      }
+
+      if (stages && roadmapHasEmploymentMismatch(stages, idea)) {
+        stages = rewriteBusinessOwnerMisalignedTasks(stages, idea);
+        if (roadmapHasEmploymentMismatch(stages, idea)) {
+          stages = getFallbackStages(idea);
+          source = "fallback";
+          trackEvent("roadmap_business_employment_mismatch_fallback", { idea_index: ideaIndex });
+        } else {
+          trackEvent("roadmap_business_tasks_realigned", { idea_index: ideaIndex });
+        }
       }
 
       return {
