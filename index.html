@@ -14483,7 +14483,9 @@
     }
 
     function isGenericPreparedBelowText(text) {
-      return /^Review what I prepared below/i.test(String(text || "").trim());
+      const copy = String(text || "").trim();
+      return /^Review what I prepared below/i.test(copy)
+        || /^Use the contacts and resources we prepared below/i.test(copy);
     }
 
     function missionTitleLooksLikeHomework(mission, normalized) {
@@ -14495,9 +14497,11 @@
     }
 
     function taskHasPreparedAssets(normalized) {
+      const resources = getFlatTaskResources(normalized);
       return Boolean(
         getUsableDraftType(normalized) ||
         taskHasMentorDeliverable(normalized) ||
+        resources.length >= 1 ||
         (String(normalized.script || "").trim().length > 80 && !isExplanatoryTaskCopy(normalized.script))
       );
     }
@@ -17998,10 +18002,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Fill in the ally ranking sheet below — start with people who already know your work.";
       }
 
-      if (!isHomeworkTaskText(text)) return text;
-
       if (isJobSearchHomeworkText(text)) {
-        return "Use the contacts and resources we prepared below — skip generic job board searches that won't match this mission.";
+        if (getFlatTaskResources(normalized).length) {
+          return "Use the contacts and resources we prepared below — skip generic job board searches that won't match this mission.";
+        }
+      } else if (!isHomeworkTaskText(text)) {
+        return text;
       }
 
       if (script.length > 80) {
@@ -18482,6 +18488,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
       if (!hasResources) return false;
       if (isMisplacedPackResources(normalized, stage, stageIndex, idea)) return false;
+      if (taskNeedsPractitionerResources(normalized, stage, stageIndex, idea)) return true;
       if (taskNeedsLocalContacts(normalized, stage, stageIndex, idea)) return true;
       if (taskNeedsTaskToolResources(normalized.text)) return true;
       if (hasLayeredResources(normalized)) return true;
@@ -19257,7 +19264,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           idea,
           { force }
         );
-        return enrichCreativeOnlineResources(enrichTaskClarity(enriched), idea);
+        const practitionerEnriched = injectPractitionerResourcesIntoRoadmap(enriched, idea);
+        return enrichCreativeOnlineResources(enrichTaskClarity(practitionerEnriched), idea);
       } catch (error) {
         console.warn("[whatimado] ensureRoadmapLocalContacts failed:", error?.message || error);
         return normalizeRoadmapStages(stages);
@@ -20239,7 +20247,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         craftLabel: "local services",
         craftTitle: "Local Service",
         serviceType: "local help-for-hire or neighborhood services",
-        detect: /\b(cleaning|organiz|pet sit|dog walk|tutor|childcare|caregiv|errand|delivery|moving help|junk removal|house sit)\b/,
+        detect: /\b(cleaning|organiz|pet sit|dog walk|groom|pet groom|mobile groom|tutor|childcare|caregiv|errand|delivery|moving help|junk removal|house sit)\b/,
         niches: "busy families, seniors, small offices, Airbnb hosts, local neighborhoods",
         pricingBasic: "$40-80/hour or flat visit fee",
         pricingPremium: "recurring weekly/monthly packages with priority booking",
@@ -20446,6 +20454,103 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         phone: "",
         email: ""
       }));
+    }
+
+    function taskNeedsPractitionerResources(task, stage, stageIndex, idea = state.currentIdea) {
+      if (!isGroundedPractitioner(idea)) return false;
+      const normalized = normalizeRoadmapTask(task);
+      const taskText = String(normalized.text || "").trim();
+      if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
+      if (/\b(indeed|google jobs|jobbank|workforce board|american job center|staffing agenc|temp agency|211)\b/i.test(taskText)) {
+        return false;
+      }
+      return /\b(client|customer|book|booking|outreach|reach out|google business|nextdoor|review|price|package|vet|pet|groom|salon|mobile|market|promot|first paid|paid appointment|portfolio|positioning|niche|case study|testimonial|landing page|post one|businesses that fit|value-first|visibility|proof|seo|facebook marketplace|business profile|linkedin|instagram|maps|local search|warm lead|package|deliverable|showcase)\b/i.test(taskText);
+    }
+
+    function getPractitionerTaskResources(idea, taskText) {
+      const profile = getUserSituationProfile(idea);
+      const seen = new Set();
+      const resources = [];
+      const add = (entry) => {
+        const key = `${entry.org || ""}|${entry.url || ""}`.toLowerCase();
+        if (!key.replace(/\|/g, "").trim() || seen.has(key)) return;
+        seen.add(key);
+        resources.push({
+          name: entry.name || entry.org || "Resource",
+          org: entry.org || entry.name || "Resource",
+          url: entry.url || "",
+          phone: entry.phone || "",
+          email: entry.email || ""
+        });
+      };
+
+      getGroundedSidebarResources(idea).forEach(add);
+
+      if (/\b(google business|local search|review|seo|landing page)\b/i.test(taskText)) {
+        add({ name: "Local search", org: "Google Business Profile", url: "https://business.google.com/" });
+      }
+      if (/\b(nextdoor|neighbor|local)\b/i.test(taskText)) {
+        add({ name: "Neighborhood clients", org: "Nextdoor Business", url: "https://business.nextdoor.com/" });
+      }
+      if (/\b(pet|dog|groom|vet|mobile)\b/i.test(taskText)) {
+        add({ name: "Neighborhood clients", org: "Nextdoor", url: "https://nextdoor.com/" });
+        add({ name: "Local listings", org: "Facebook Marketplace", url: "https://www.facebook.com/marketplace/" });
+      }
+      if (/\b(outreach|reach out|email|script|pitch|businesses that fit|warm lead)\b/i.test(taskText)) {
+        add({ name: "Professional network", org: "LinkedIn", url: "https://www.linkedin.com/" });
+      }
+      if (/\b(license|llc|business structure|sbdc|legal|register)\b/i.test(taskText)) {
+        add({ name: "Free business advising", org: "SBA Local Assistance", url: "https://www.sba.gov/local-assistance/" });
+      }
+
+      const loc = getUserLocation();
+      if (loc) {
+        getKnownLocalResourcesForPath(idea, loc)
+          .filter((entry) => /\b(sbdc|score|small business|chamber|library)\b/i.test(`${entry.org} ${entry.name}`))
+          .slice(0, 2)
+          .forEach(add);
+      }
+
+      return {
+        contacts: resources,
+        links: resources.map((entry) => entry.url).filter(Boolean),
+        local: resources.slice(0, 2).map((entry) => entry.org).filter(Boolean).join(" · "),
+        script: ""
+      };
+    }
+
+    function injectPractitionerResourcesIntoRoadmap(stages, idea = state.currentIdea) {
+      if (!isGroundedPractitioner(idea) || !Array.isArray(stages)) return stages;
+      return normalizeRoadmapStages(stages).map((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return stage;
+        return {
+          ...stage,
+          tasks: stage.tasks.map((task) => {
+            if (isPendingRoadmapTask(task)) return { _pendingTask: true };
+            let normalized = normalizeRoadmapTask(task);
+            if (!taskNeedsPractitionerResources(normalized, stage, stageIndex, idea)) {
+              return normalized;
+            }
+            if (shouldShowTaskResources(normalized, stage, stageIndex, idea)) {
+              return scrubRedundantTaskResources(refreshTaskMentorHelpAfterResourceInjection(normalized));
+            }
+
+            const tools = getPractitionerTaskResources(idea, normalized.text);
+            if (!tools.contacts.length) return normalized;
+
+            normalized.resourcesGlobal = tools.contacts;
+            normalized.resourceLayers = {
+              local: [],
+              national: [],
+              global: tools.contacts
+            };
+            normalized.contacts = tools.contacts;
+            normalized.links = tools.links;
+            if (tools.local) normalized.local = tools.local;
+            return scrubRedundantTaskResources(refreshTaskMentorHelpAfterResourceInjection(normalized));
+          })
+        };
+      });
     }
 
     function getPremiumLogoSidebarResources() {
@@ -21018,17 +21123,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         label: humanizeTaskText(String(stage.label || `Phase ${stageIndex + 1}`).trim()),
         desc: humanizeTaskText(String(stage.desc || "").trim()),
         tasks: (stage.tasks || []).map((task, taskIndex) => {
-          const text = humanizeTaskText(String(typeof task === "string" ? task : getTaskText(task)).trim());
+          const source = typeof task === "string" ? { text: task } : { ...task };
+          const text = humanizeTaskText(String(getTaskText(source)).trim());
           if (!text || text.length < 8) return null;
           return {
+            ...source,
             text,
-            mission: summarizeMissionTitle(text) || `Step ${taskIndex + 1}`,
-            duration: "30 minutes",
-            difficulty: "Medium",
-            why: "",
-            howTo: "",
-            outcome: "",
-            steps: []
+            mission: source.mission || summarizeMissionTitle(text) || `Step ${taskIndex + 1}`,
+            duration: source.duration || "30 minutes",
+            difficulty: source.difficulty || "Medium",
+            why: source.why || "",
+            howTo: source.howTo || "",
+            outcome: source.outcome || "",
+            steps: source.steps || [],
+            contacts: source.contacts || [],
+            links: source.links || [],
+            resources: source.resources || source.resourceLayers || undefined,
+            script: source.script || ""
           };
         }).filter(Boolean)
       })).filter((stage) => stage.label && stage.tasks.length > 0);
@@ -28153,6 +28264,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.expandedRoadmapPhases = new Set([0]);
       state.expandedRoadmapTasks = new Set(["task-0-0"]);
 
+      state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, state.currentIdea, { force: true });
+
       if (state.roadmapKey) {
         state.allRoadmaps[state.roadmapKey] = {
           ...(state.allRoadmaps[state.roadmapKey] || {}),
@@ -28188,7 +28301,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         setTimeout(() => $("#stage-list")?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
       }
 
-      void maybeEnrichRoadmapLocalContacts({ silent: true });
+      void maybeEnrichRoadmapLocalContacts({ silent: true }).then((updated) => {
+        if (updated) {
+          renderStages(state.roadmapStages);
+          updateRoadmapLocalResourcesList();
+        }
+      });
     }
 
     async function applyFlexibleBranchChoice(branchIndex) {
@@ -29460,7 +29578,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function applyLocalResourceFixesIfPossible(stages, idea) {
-      if (!stages?.length || !hasSavedUserLocation() || !pathNeedsLocalResources(idea)) return stages;
+      if (!stages?.length) return stages;
+      if (isGroundedPractitioner(idea)) {
+        const practitionerStages = injectPractitionerResourcesIntoRoadmap(normalizeRoadmapStages(stages), idea);
+        if (roadmapHasRichLocalData(practitionerStages, idea)) return practitionerStages;
+      }
+      if (!hasSavedUserLocation() || !pathNeedsLocalResources(idea)) return stages;
       if (roadmapHasRichLocalData(stages, idea)) return stages;
       const fallback = applyLocalResourceFallback(stages, getUserLocation());
       return roadmapHasRichLocalData(fallback, idea) ? fallback : stages;
@@ -30121,7 +30244,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const normalizedStages = normalizeRoadmapStages(rawCachedStages);
         let stagesToRender = normalizedStages;
         try {
-          stagesToRender = ensureRoadmapLocalContacts(normalizedStages, idea);
+          stagesToRender = ensureRoadmapLocalContacts(normalizedStages, idea, { force: isGroundedPractitioner(idea) });
         } catch (error) {
           console.warn("[whatimado] cached roadmap local enrich failed:", error?.message || error);
           stagesToRender = normalizedStages;
@@ -30167,9 +30290,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         registerRoadmapInSidebar(idea, ideaIndex);
         renderSidebarRoadmaps();
         schedulePersist();
-        if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
-          void maybeEnrichRoadmapLocalContacts({ silent: true });
-        }
+        void maybeEnrichRoadmapLocalContacts({ silent: true }).then((updated) => {
+          if (updated) {
+            renderStages(state.roadmapStages);
+            updateRoadmapLocalResourcesList();
+          }
+        });
         return;
       }
 
