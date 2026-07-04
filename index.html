@@ -8551,6 +8551,25 @@
       margin: .55rem 0 .65rem;
     }
 
+    .task-inline-draft-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+      align-items: center;
+      margin: .55rem 0 .15rem;
+    }
+
+    .task-inline-draft-actions .task-action-label {
+      flex: 0 0 100%;
+      margin: 0 0 .15rem;
+    }
+
+    .task-inline-draft-actions .task-draft-suggestion-btn {
+      flex: 1 1 auto;
+      min-width: 8.5rem;
+      max-width: 100%;
+    }
+
     html[data-color-scheme="adult"] .task-draft-suggestions--flexible {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -15580,7 +15599,7 @@
     };
 
     function getTaskAssistanceThemes(normalized) {
-      const blob = `${normalized.text} ${normalized.mission || ""} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.howTo || ""}`.toLowerCase();
+      const blob = getTaskContentBlob(normalized);
 
       if (isPeopleInterviewTask(normalized)) {
         const themes = ["research"];
@@ -15628,25 +15647,55 @@
       }
 
       const ids = [];
+      getMentionedDraftSuggestionIds(normalized).forEach((id) => ids.push(id));
       const primary = getWritingDeliverableType(normalized);
       if (primary && PRIMARY_DRAFT_TYPE_TO_SUGGESTION[primary]) {
         ids.push(PRIMARY_DRAFT_TYPE_TO_SUGGESTION[primary]);
       }
-      const blob = `${normalized.text} ${normalized.mission || ""}`.toLowerCase();
+      const blob = getTaskContentBlob(normalized);
       if (/\bgrant|funding|scholarship\b/.test(blob)) ids.push("grant_proposal");
       if (/\bmeeting agenda|run the meeting\b/.test(blob)) ids.push("meeting_agenda");
       if (/\bflyer|poster|handout\b/.test(blob)) ids.push("flyer");
       if (/\bpresentation|slide deck|google slides\b/.test(blob)) ids.push("presentation");
       if (isFounderStoryTask(normalized)) ids.push("founder_story");
       if (getFlatTaskResources(normalized).length && !ids.includes("outreach_email")) {
-        ids.push("outreach_email", "phone_script");
+        ids.push("outreach_email", "phone_script", "contact_tracker");
       }
       if (isOrgListTask(normalized) && !ids.includes("comparison_sheet")) {
         ids.unshift("comparison_sheet");
       }
+      if (/\b(spreadsheet|tracker|tracking sheet|google sheet|excel)\b/.test(blob) && !ids.includes("contact_tracker")) {
+        ids.unshift("contact_tracker");
+      }
       if (!ids.length && /\b(write|draft|create|prepare|send|message)\b/.test(blob)) {
         ids.push("checklist", "outreach_email");
       }
+      return ids;
+    }
+
+    function getMentionedDraftSuggestionIds(normalized) {
+      const blob = getTaskContentBlob(normalized);
+      const ids = [];
+      if (/\b(spreadsheet|tracker|tracking sheet|google sheet|excel|log every|log each)\b/.test(blob)) {
+        ids.push(isOrgListTask(normalized) ? "comparison_sheet" : "contact_tracker");
+      }
+      if (/\b(comparison spreadsheet|compare (?:options|programs|routes|orgs))\b/.test(blob)) {
+        ids.push("comparison_sheet");
+      }
+      if (/\b(phone script|what to say on the call|voicemail script|script to read)\b/.test(blob)) {
+        ids.push("phone_script");
+      }
+      if (/\b(outreach email|draft email|email draft|follow-up email|follow up email)\b/.test(blob)) {
+        ids.push("follow_up_email");
+        ids.push("outreach_email");
+      }
+      if (/\b(checklist|step checklist|research checklist)\b/.test(blob)) {
+        ids.push("research_checklist");
+      }
+      if (/\b(business plan)\b/.test(blob)) ids.push("business_plan");
+      if (/\b(resume|curriculum vitae|\bcv\b)\b/.test(blob)) ids.push("resume");
+      if (/\b(cover letter)\b/.test(blob)) ids.push("cover_letter");
+      if (/\b(interview questions|survey people|google form)\b/.test(blob)) ids.push("interview_questions");
       return ids;
     }
 
@@ -15907,6 +15956,17 @@ If recording answers:
       return `<div class="task-draft-suggestions" data-draft-suggestions>${buttons}</div>`;
     }
 
+    function renderTaskInlineDraftButtonsHtml(taskId, normalized) {
+      const items = getTaskDraftSuggestions(normalized).slice(0, 3);
+      if (!items.length) return "";
+      const buttons = items.map((entry) =>
+        `<button type="button" class="task-draft-suggestion-btn" data-task-id="${escapeHtml(taskId)}" data-suggestion-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.desc)}">
+          <span class="task-draft-suggestion-label">${escapeHtml(entry.label)}</span>
+        </button>`
+      ).join("");
+      return `<div class="task-inline-draft-actions"><span class="task-action-label">Create or open</span>${buttons}</div>`;
+    }
+
     async function generateDraftFromSuggestion(taskId, suggestionId, options = {}) {
       const match = taskId?.match(/^task-(\d+)-(\d+)$/);
       if (!match || !suggestionId) return;
@@ -16089,7 +16149,7 @@ If recording answers:
     }
 
     function getWritingDeliverableType(normalized) {
-      const blob = `${normalized.text} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.script || ""} ${normalized.mission || ""}`.toLowerCase();
+      const blob = getTaskContentBlob(normalized);
 
       if (isOrgListTask(normalized)) return "spreadsheet";
       if (/\b(get one local org|say yes to trying|pilot with|nonprofit partner|local org to say yes)\b/.test(blob)) return "email";
@@ -17800,13 +17860,43 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function summarizeMissionTitle(text) {
-      let copy = humanizeTaskText(String(text || "").trim());
+      let copy = humanizeTaskText(stripMentorActionPrefix(String(text || "").trim()));
       if (!copy || isGenericOutcomeText(copy)) return "";
       copy = copy.replace(/^(review|use|read|call|send|apply to|start with)\s+/i, "");
       const first = copy.split(/(?<=[.!?])\s+/).find((part) => part.trim().length > 12) || copy;
       const trimmed = first.length > 92 ? `${first.slice(0, 89).trim()}…` : first.trim();
       if (!trimmed || isGenericOutcomeText(trimmed)) return "";
       return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    }
+
+    function stripMentorActionPrefix(text) {
+      return String(text || "").replace(/^(?:your one step:\s*)+/gi, "").trim();
+    }
+
+    function preserveTaskSourceText(normalized) {
+      if (!normalized._sourceText) {
+        normalized._sourceText = stripMentorActionPrefix(String(normalized.text || "").trim());
+      }
+      return normalized._sourceText;
+    }
+
+    function getTaskContentBlob(normalized) {
+      const source = preserveTaskSourceText(normalized);
+      return `${source} ${normalized.mission || ""} ${normalized.outcome || ""} ${normalized.why || ""} ${normalized.howTo || ""} ${normalized.mentorHelp || ""} ${normalized.mentorFindings || ""}`.toLowerCase();
+    }
+
+    function repairLoopedOneStepText(text) {
+      const copy = String(text || "").trim();
+      if (!/^your one step:/i.test(copy)) return humanizeTaskText(copy);
+      const inner = stripMentorActionPrefix(copy);
+      if (!inner) return humanizeTaskText(copy);
+      return `Your one step: ${inner.replace(/\.$/, "")}.`;
+    }
+
+    function getTaskDisplayActionText(normalized) {
+      const stored = String(normalized.text || "").trim();
+      if (stored) return repairLoopedOneStepText(stored);
+      return buildMentorUserActionText(normalized);
     }
 
     function buildProgressiveMissionTitle(normalized, taskIndex, stageLabel = "") {
@@ -17966,6 +18056,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function enrichTaskMentorFields(normalized, context = {}) {
       ensureDraftResources(normalized);
+      preserveTaskSourceText(normalized);
       sanitizeTaskMentorFields(normalized);
       normalized.mission = inferMissionTitle(normalized, context);
       normalized.howTo = inferHowTo(normalized);
@@ -18093,10 +18184,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function buildMentorUserActionText(normalized) {
-      const text = String(normalized.text || "").trim();
+      const sourceText = preserveTaskSourceText(normalized);
+      const text = sourceText;
       const script = String(normalized.script || "").trim();
       const resources = getFlatTaskResources(normalized);
-      const blob = text.toLowerCase();
+      const blob = getTaskContentBlob(normalized);
+      const mentionedDrafts = getMentionedDraftSuggestionIds(normalized);
+
+      if (mentionedDrafts.includes("contact_tracker")) {
+        return "Tap Contact Tracking Spreadsheet below — log each place you call or visit and what they said.";
+      }
+      if (mentionedDrafts.includes("comparison_sheet")) {
+        return "Tap Comparison Spreadsheet below — note what each option offers and where you could fit in.";
+      }
+      if (mentionedDrafts.includes("phone_script")) {
+        return "Tap Phone Script below, read it once out loud, then call the top contact on your list.";
+      }
+      if (mentionedDrafts.includes("outreach_email")) {
+        return "Tap Outreach Email below, personalize anything in [brackets], and send it.";
+      }
 
       if (/\b(one-page mission|mission statement|write (?:a |your )?one-page mission)\b/.test(blob)) {
         return "Review the one-page mission below — edit who you help, what changes for them, and how you'll measure success.";
@@ -18170,6 +18276,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const normalized = typeof task === "object" && task?.text !== undefined
         ? { ...task }
         : normalizeRoadmapTask(task);
+      preserveTaskSourceText(normalized);
       sanitizeTaskMentorFields(normalized);
       if (!normalized.mentorFindings) {
         normalized.mentorFindings = buildMentorFindingsText(normalized);
@@ -18781,8 +18888,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const suggestions = getTaskDraftSuggestions(normalized);
       const suggestionsHtml = renderTaskDraftSuggestionsHtml(taskId, normalized, suggestions);
       const hasPreparedAssets = taskHasPreparedAssets(normalized) || getFlatTaskResources(normalized).length > 0;
+      const hasMentionedDrafts = getMentionedDraftSuggestionIds(normalized).length > 0;
 
-      if (!suggestionsHtml && !hasPreparedAssets && !taskNeedsUsableDraft(normalized)) {
+      if (!suggestionsHtml && !hasPreparedAssets && !taskNeedsUsableDraft(normalized) && !hasMentionedDrafts) {
         return "";
       }
 
@@ -31522,7 +31630,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const simplified = true;
       const mission = humanizeTaskText(normalized.mission || inferMissionTitle(normalized, { taskIndex, stageLabel: stage.label }));
       const text = stripRepeatedPathReferences(
-        simplified ? buildMentorUserActionText(normalized) : humanizeTaskText(normalized.text),
+        simplified ? getTaskDisplayActionText(normalized) : humanizeTaskText(normalized.text),
         { idea: state.currentIdea, stageLabel: stage.label }
       );
       const actionRestatesMission = textSimilarity(text, mission) >= 0.62;
@@ -31549,6 +31657,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const contextNoteHtml = renderTaskContextNoteHtml(contextNote);
       const outcomeChecklist = simplified ? "" : renderTaskOutcomeChecklistHtml(id, normalized);
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
+      const inlineDraftButtons = renderTaskInlineDraftButtonsHtml(id, normalized);
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const aiAssist = renderTaskAiAssistHtml(id, normalized);
       const nextTaskId = getNextTaskId(stageIndex, taskIndex);
@@ -31590,11 +31699,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 <section class="task-mentor-section task-mentor-section--task">
                   <h4 class="task-mentor-label">What to do</h4>
                   <div class="task-text">${linkifyTaskTextHtml(text)}</div>
+                  ${inlineDraftButtons}
                 </section>
                 ${mentorHelp}
                 ${outcome && !isTaskRestatement(outcome, normalized) ? `
                 <p class="task-mentor-copy task-mentor-copy--outcome"><span class="task-mentor-label task-mentor-label--inline">Done when:</span> ${escapeHtml(outcome)}</p>
-                ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}` : `${contextNoteHtml}${mentorHelp}
+                ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}` : `${contextNoteHtml}${inlineDraftButtons}${mentorHelp}
                 ${outcome && !isTaskRestatement(outcome, normalized) ? `
                 <p class="task-mentor-copy task-mentor-copy--outcome"><span class="task-mentor-label task-mentor-label--inline">Done when:</span> ${escapeHtml(outcome)}</p>
                 ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}`;
