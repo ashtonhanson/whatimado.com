@@ -4647,10 +4647,69 @@
     }
 
     .path-mode-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .65rem;
+      width: 100%;
+    }
+
+    @media (max-width: 520px) {
+      .path-mode-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .path-mode-option {
       display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
-      justify-content: flex-end;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .35rem;
+      width: 100%;
+      min-width: 0;
+      padding: .85rem 1rem;
+      border: 1px solid color-mix(in srgb, var(--ink, #1a1a2e) 12%, transparent);
+      border-radius: .75rem;
+      background: var(--surface, #fff);
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+
+    .path-mode-option:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--ink, #1a1a2e) 8%, transparent);
+    }
+
+    .path-mode-option-title {
+      font-size: .92rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .path-mode-option-desc {
+      font-size: .78rem;
+      font-weight: 500;
+      line-height: 1.45;
+      opacity: .78;
+    }
+
+    .path-mode-option--direct {
+      border-color: color-mix(in srgb, var(--brand-purple-dark) 28%, transparent);
+      background: color-mix(in srgb, var(--brand-purple-dark) 6%, var(--surface, #fff));
+    }
+
+    .path-mode-option--direct .path-mode-option-title {
+      color: var(--brand-purple-dark);
+    }
+
+    .path-mode-option--flex {
+      border-color: color-mix(in srgb, var(--teal, #4ecdc4) 32%, transparent);
+      background: color-mix(in srgb, var(--teal, #4ecdc4) 8%, var(--surface, #fff));
+    }
+
+    .path-mode-option--flex .path-mode-option-title {
+      color: color-mix(in srgb, var(--teal, #4ecdc4) 72%, var(--ink, #1a1a2e) 28%);
     }
 
     .path-mode-btn {
@@ -12602,11 +12661,17 @@
       <div class="convo-wrap">
         <div class="convo-spacer" id="convo-spacer" aria-hidden="true"></div>
       <div class="conversation" id="bubble-chain"></div>
-        <div class="dashboard-path-mode-bar path-mode-choice" id="path-mode-choice" hidden aria-label="Choose how to explore">
-          <p class="dashboard-path-mode-label path-mode-choice-label">How do you want to explore your options?</p>
-          <div class="prompt-actions path-mode-actions">
-            <button type="button" class="action-btn path-mode-btn path-mode-btn--direct" id="convo-direct-path-btn">Direct Path</button>
-            <button type="button" class="action-btn path-mode-btn path-mode-btn--flex" id="convo-flexible-path-btn">Flexible Path</button>
+        <div class="dashboard-path-mode-bar path-mode-choice" id="path-mode-choice" hidden aria-label="Choose your roadmap style">
+          <p class="dashboard-path-mode-label path-mode-choice-label">How do you want to build your roadmap?</p>
+          <div class="path-mode-actions">
+            <button type="button" class="path-mode-option path-mode-option--direct" id="convo-direct-path-btn">
+              <span class="path-mode-option-title">Direct Roadmap</span>
+              <span class="path-mode-option-desc">A focused step-by-step guide to your goal.</span>
+            </button>
+            <button type="button" class="path-mode-option path-mode-option--flex" id="convo-flexible-path-btn">
+              <span class="path-mode-option-title">Flexible Roadmap</span>
+              <span class="path-mode-option-desc">Choose from a variety of options at every step to build the roadmap that works for you.</span>
+            </button>
           </div>
         </div>
         <div class="reply-box surface-card" id="reply-box">
@@ -27852,8 +27917,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? "They just finished a full phase on this path and need to choose the direction for the NEXT phase."
         : `They just completed this mission: "${taskText || "recent step"}".`;
       const pathLabel = isDirectPathMode() && firstMission
-        ? "DIRECT path"
-        : "FLEXIBLE path";
+        ? "Direct Roadmap"
+        : "Flexible Roadmap";
       const optionLabel = firstMission
         ? (isDirectPathMode() ? "starting directions (ways into this path)" : "first missions (ways to start)")
         : "next directions";
@@ -28461,8 +28526,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       try {
         const userText = getFirstUserMessage();
         const pathModeNote = pathMode === "direct"
-          ? " They chose a DIRECT path — three options on the map, then one full step-by-step roadmap after they pick a starting direction."
-          : " They chose a FLEXIBLE path — they will pick between options as they go.";
+          ? " They chose a Direct Roadmap — three options on the map, then one full step-by-step roadmap after they pick a starting direction."
+          : " They chose a Flexible Roadmap — they will pick between options at every step.";
         const answer = await callAdvisor(buildClarifyingPrompt(userText) + pathModeNote, 450);
         const fallback = getClarifyingFallback(userText);
         const finalAnswer = answer || fallback;
