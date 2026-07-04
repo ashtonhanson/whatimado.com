@@ -20939,6 +20939,42 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return personalizeFallbackStages(templates[preferred] || templates.employment, idea);
     }
 
+    function buildMinimalRenderableStages(idea) {
+      if (!idea) return [];
+      let raw;
+      try {
+        raw = getFallbackStages(idea);
+      } catch {
+        raw = personalizeFallbackStages(buildStandardFallbackTemplates().employment, idea);
+      }
+      if (!Array.isArray(raw) || !raw.length) return [];
+
+      return raw.map((stage, stageIndex) => ({
+        label: humanizeTaskText(String(stage.label || `Phase ${stageIndex + 1}`).trim()),
+        desc: humanizeTaskText(String(stage.desc || "").trim()),
+        tasks: (stage.tasks || []).map((task, taskIndex) => {
+          const text = humanizeTaskText(String(typeof task === "string" ? task : getTaskText(task)).trim());
+          if (!text || text.length < 8) return null;
+          return {
+            text,
+            mission: summarizeMissionTitle(text) || `Step ${taskIndex + 1}`,
+            duration: "30 minutes",
+            difficulty: "Medium",
+            why: "",
+            howTo: "",
+            outcome: "",
+            steps: []
+          };
+        }).filter(Boolean)
+      })).filter((stage) => stage.label && stage.tasks.length > 0);
+    }
+
+    function ensureRoadmapUiHasMissions(idea = state.currentIdea, ideaIndex = getCurrentIdeaIndex()) {
+      if (!idea) return false;
+      if ($("#stage-list")?.children.length && roadmapStagesAreRenderable(state.roadmapStages)) return true;
+      return recoverEmptyRoadmapStages(idea, ideaIndex, { force: true });
+    }
+
     function getFallbackStages(idea) {
       if (isFounderRoadmapForIdea(idea)) {
         return getFounderFallbackStages(idea);
@@ -25185,7 +25221,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         buildOpportunityMap(state.ideas);
       }
       updateMapsNav();
-      if (state.currentIdea && state.roadmapStages.length) {
+
+      const resumeRoadmap = state.lastScreen === "roadmap" && state.currentIdea;
+      if (resumeRoadmap) {
+        const ideaIndex = Math.max(0, state.ideas.findIndex((entry) => entry.title === state.currentIdea.title));
+        void viewRoadmap(state.currentIdea, ideaIndex, { reopen: true });
+      } else if (state.currentIdea && state.roadmapStages.length) {
         const sessionKey = state.roadmapKey || slugify(state.currentIdea.title);
         if (getMapRemovedRoadmapKeys(state.activeMapId).has(sessionKey)) {
           state.currentIdea = null;
@@ -25195,18 +25236,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages, source: "ai" };
         }
         if (state.currentIdea && state.roadmapStages.length) {
-        const founderMode = isFounderRoadmapForIdea(state.currentIdea);
-        const cachedEntry = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
-        setRoadmapNavVisible(true);
-        $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
-        $("#roadmap-title").textContent = humanizeTaskText(state.currentIdea.title || "");
-        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedEntry?.source || "ai");
-        $("#momentum-card").style.display = "flex";
-        setRoadmapLoading(false);
-        renderStages(state.roadmapStages);
+          const founderMode = isFounderRoadmapForIdea(state.currentIdea);
+          const cachedEntry = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
+          setRoadmapNavVisible(true);
+          $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
+          $("#roadmap-title").textContent = humanizeTaskText(state.currentIdea.title || "");
+          $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedEntry?.source || "ai");
+          $("#momentum-card").style.display = "flex";
+          setRoadmapLoading(false);
+          renderStages(state.roadmapStages);
         }
       }
-      if (state.lastScreen && state.lastScreen !== "main" && state.history.length) {
+
+      if (state.lastScreen && state.lastScreen !== "main" && state.history.length && !resumeRoadmap) {
         showScreen(state.lastScreen, { skipPersist: true, skipNavHistory: true });
       }
       updateMapAuxiliaryPanels();
@@ -26185,6 +26227,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (name === "map") updateMapAuxiliaryPanels();
       if (name === "roadmap") {
         updateRoadmapOverviewChrome();
+        if (state.currentIdea && !$("#stage-list")?.children.length) {
+          queueMicrotask(() => ensureRoadmapUiHasMissions(state.currentIdea, getCurrentIdeaIndex()));
+        }
       } else {
         syncRoadmapStickyOffset();
       }
@@ -28616,7 +28661,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         void removeRoadmapForPath(idea.title, { ideaIndex: index });
       });
       const openZone = card.querySelector(".opp-card-open-zone");
-      const openRoadmap = () => viewRoadmap(idea, index);
+      const openRoadmap = () => viewRoadmap(idea, index, {
+        reopen: hasRoadmapProgress(idea.title) || Boolean(state.allRoadmaps[slugify(idea.title)])
+      });
       openZone?.addEventListener("click", openRoadmap);
       openZone?.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -29809,12 +29856,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const cachedHasMissions = roadmapStagesAreRenderable(cached?.stages)
         || roadmapStagesAreRenderable(state.flexiblePendingFullStages);
 
+      syncFlexibleFirstMissionStateFromRoadmap();
+      const wantsFirstMissionPicker = shouldOfferFirstMissionPicker()
+        && !options.reopen
+        && !roadmapWasPreviouslyStarted(idea, cached);
+
       if (!cachedHasMissions && roadmapWasPreviouslyStarted(idea, cached)) {
         clearFlexibleFirstMissionPickedFlag();
-        syncFlexibleFirstMissionStateFromRoadmap();
       }
 
-      if (!cachedHasMissions && roadmapWasPreviouslyStarted(idea, cached) && recoverEmptyRoadmapStages(idea, ideaIndex, { force: true })) {
+      if (!cachedHasMissions && !wantsFirstMissionPicker && recoverEmptyRoadmapStages(idea, ideaIndex, { force: true })) {
         showScreen("roadmap");
         setRoadmapLoading(false);
         setRoadmapRefining(false);
@@ -31317,14 +31368,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       try {
         fallback = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
       } catch (error) {
-        console.warn("[whatimado] recoverEmptyRoadmapStages failed:", error?.message || error);
-        return false;
+        console.warn("[whatimado] recoverEmptyRoadmapStages normalize failed:", error?.message || error);
+        fallback = buildMinimalRenderableStages(idea);
+      }
+      if (!stageOneHasRevealableMission(fallback)) {
+        fallback = buildMinimalRenderableStages(idea);
       }
       if (!stageOneHasRevealableMission(fallback)) return false;
 
       state.roadmapStages = coerceRoadmapStagesForRender(fallback);
       if (!state.roadmapStages.length) {
         state.roadmapStages = fallback.filter((stage) => stage.label?.trim() && (stage.tasks || []).length);
+      }
+      if (!state.roadmapStages.length) {
+        state.roadmapStages = buildMinimalRenderableStages(idea);
       }
       if (!state.roadmapStages.length) return false;
 
