@@ -23686,6 +23686,39 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
     }
 
+    function migrateBrokenRoadmapEntries() {
+      let changed = false;
+      Object.entries(state.allRoadmaps || {}).forEach(([key, entry]) => {
+        if (!entry?.flexibleFirstMissionPicked) return;
+        const idea = entry.idea || state.ideas?.find((item) => slugify(item.title) === key);
+        if (!idea) return;
+        const renderable = roadmapStagesAreRenderable(entry.stages);
+        const phaseCount = countRenderableRoadmapPhases(entry.stages);
+        const needsRepair = !renderable || (isDirectPathMode() && phaseCount < 2);
+        if (!needsRepair) return;
+        const choice = entry.firstMissionBranchChoice || null;
+        const repaired = isDirectPathMode()
+          ? resolveFullDirectRoadmapStages(choice, idea)
+          : ensureRenderableRoadmapStages(entry.stages || [], idea, choice, { allowSingleMission: !isDirectPathMode() });
+        if (!repaired.length) return;
+        state.allRoadmaps[key] = {
+          ...entry,
+          idea,
+          stages: repaired,
+          flexibleFirstMissionPicked: true,
+          awaitingFirstMissionPick: false,
+          source: entry.source || "fallback"
+        };
+        if (state.roadmapKey === key) {
+          state.roadmapStages = repaired;
+          state.flexibleFirstMissionPicked = true;
+        }
+        changed = true;
+      });
+      if (changed) schedulePersist();
+      return changed;
+    }
+
     function applyMapSnapshot(data) {
       if (!data) return;
       state.step = data.step ?? 1;
@@ -23724,6 +23757,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
+      migrateBrokenRoadmapEntries();
       migrateIntakeStep();
       applyRemovedRoadmapGuards();
     }
@@ -25748,6 +25782,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           $("#momentum-card").style.display = "flex";
           setRoadmapLoading(false);
           renderStages(state.roadmapStages);
+          if (!$("#stage-list")?.children.length) {
+            repairRoadmapMissionsNow(state.currentIdea);
+          }
         }
       }
 
