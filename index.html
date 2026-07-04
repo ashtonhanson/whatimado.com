@@ -7486,6 +7486,21 @@
       border: 1px solid rgba(120, 130, 200, .12);
     }
 
+    .task-mentor-section--context {
+      background: rgba(78, 205, 196, .07);
+      margin: 0 -.15rem .65rem;
+      padding: .7rem .85rem;
+      border-radius: .65rem;
+      border: 1px solid rgba(78, 205, 196, .18);
+    }
+
+    .task-mentor-copy--context {
+      color: var(--ink, #f4f0ff);
+      font-size: .82rem;
+      line-height: 1.55;
+      margin: 0;
+    }
+
     .task-contact-rank {
       display: inline-block;
       margin-bottom: .25rem;
@@ -7507,6 +7522,15 @@
     html[data-color-scheme="adult"] .task-mentor-section--findings {
       background: rgba(36, 18, 53, .04);
       border-color: rgba(36, 18, 53, .08);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-section--context {
+      background: rgba(36, 18, 53, .04);
+      border-color: rgba(78, 205, 196, .22);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-copy--context {
+      color: var(--text, #241235);
     }
 
     html[data-color-scheme="adult"] .task-mentor-copy--findings {
@@ -13296,7 +13320,7 @@
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line naming the gap you filled — e.g. You needed names and emails, not another reminder to reach out. Empty string if nothing specific.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line explaining why THIS step fits their situation when it might look surprising (e.g. workforce visit for a business owner = self-employment programs, not job listings). Empty only if obviously on-track.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
@@ -13424,7 +13448,7 @@
       '- FORBIDDEN: research, find, look up, write a draft, create a list — do that in resources + script.\n' +
       '- resources.*: 3-8 REAL orgs with official URLs, phones, emails for their location. First in list = suggested first contact.\n' +
       `- Category hints (resolve to real names): ${RESOURCE_CATEGORY_HINTS}.\n` +
-      '- outcome = measurable proof only. why = gap you filled (one line) or empty.\n' +
+      '- outcome = measurable proof only. why = one line explaining why this step fits their goal when it might look surprising, or empty if obvious.\n' +
       '- Write like a helpful mentor — plain English, no business jargon, no startup language.\n' +
       '- Never invent fake grants or personal @gmail addresses.\n';
     let roadmapAutoContinueTimer = null;
@@ -13924,7 +13948,7 @@
 
     const FLEXIBLE_MISSION_JSON_INSTRUCTION =
       'Respond only with a raw JSON array of exactly 1 stage with exactly 1 task:\n' +
-      '[{"label":"Short plain-language phase name","desc":"One sentence on what this mission achieves","tasks":[{"mission":"Plain goal in one line","text":"What the user does now — one small action","mentorHelp":"Bullet list of prepared assets (orgs ranked, links) — NOT draft copy","howTo":"Max 2 lines pointing at contacts below","why":"One short line naming the gap you filled","outcome":"Measurable proof when done","script":"","talkingPoints":"","followUp":"","duration":"30 minutes","difficulty":"Easy","resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[],"global":[]},"links":[],"contacts":[]}]}]\n';
+      '[{"label":"Short plain-language phase name","desc":"One sentence on what this mission achieves","tasks":[{"mission":"Plain goal in one line","text":"What the user does now — one small action","mentorHelp":"Bullet list of prepared assets (orgs ranked, links) — NOT draft copy","howTo":"Max 2 lines pointing at contacts below","why":"One short line explaining why this step fits their goal when it might look surprising","outcome":"Measurable proof when done","script":"","talkingPoints":"","followUp":"","duration":"30 minutes","difficulty":"Easy","resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[],"global":[]},"links":[],"contacts":[]}]}]\n';
 
     function stripFlexibleMissionDrafts(normalized) {
       if (!normalized || !isFlexiblePathMode()) return normalized;
@@ -17329,7 +17353,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
-    function enrichTaskClarity(stages) {
+    function enrichTaskClarity(stages, idea = state.currentIdea) {
       return normalizeRoadmapStages(stages).map((stage) => ({
         ...stage,
         tasks: stage.tasks.map((task) => {
@@ -17346,7 +17370,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               normalized.steps = dedupeTaskSteps(normalized.text, getTemplateTaskSteps(normalized));
             }
           }
-          return normalized;
+          return ensureTaskContextNote(normalized, stage, idea);
         })
       }));
     }
@@ -17686,6 +17710,86 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (copy) return copy;
       }
       return "";
+    }
+
+    function userIsBusinessOwner(idea = state.currentIdea) {
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.pathPreference === "business" || profile.pathPreference === "either") return true;
+      if (isGroundedPractitioner(idea)) return true;
+      const blob = getConversationCareerBlob(idea);
+      return /\b(start my own|own business|self[- ]?employ|freelanc|my own thing|business owner|launch (?:a |my )?business|mobile groom|grooming company)\b/i.test(blob);
+    }
+
+    function inferTaskContextNote(normalized, stage = {}, idea = state.currentIdea) {
+      const blob = `${normalized.text} ${normalized.mission || ""} ${normalized.howTo || ""}`.toLowerCase();
+      const businessOwner = userIsBusinessOwner(idea);
+      const profile = getUserSituationProfile(idea);
+      const craft = profile.craftLabel || "your service";
+      const city = profile.city || "your area";
+
+      if (businessOwner && /\b(workforce|american job center|job center|career center|workforce board|staffing agenc|temp agenc)\b/i.test(blob)) {
+        return "You're building a business, not applying for jobs. Workforce centers often run self-employment programs, startup coaching, and small-business grants — this step is about those resources.";
+      }
+      if (businessOwner && /\b(211|united way|library job search|job search help)\b/i.test(blob)) {
+        return "Community resource lines and libraries often connect entrepreneurs to free business advising and local programs — not just job listings.";
+      }
+      if (businessOwner && /\b(resume|cover letter|apply for jobs|get hired|job listing|indeed|linkedin jobs)\b/i.test(blob)) {
+        return "This path is about launching your own business. Skip generic job-search steps unless you're also exploring employment as a backup.";
+      }
+      if (/\b(sbdc|score|small business development|sba local|business advisor)\b/i.test(blob)) {
+        return "Free business advisors help with licensing, pricing, and landing your first clients — especially useful when you're starting on your own.";
+      }
+      if (/\b(license|permit|llc|register your business|business structure)\b/i.test(blob)) {
+        return "Getting the legal basics right early protects you once you start taking paid clients.";
+      }
+      if (/\b(google business|local seo|review|nextdoor|facebook marketplace)\b/i.test(blob)) {
+        return `Most ${craft} clients in ${city} search online first. This step helps people near you find and trust you before you spend on ads or equipment.`;
+      }
+      if (/\b(outreach|reach out|pitch|first client|book|paid appointment|warm lead)\b/i.test(blob)) {
+        return "Your fastest proof of concept is one real paying client — not more planning. This step gets you there with less guesswork.";
+      }
+      if (/\b(package|pricing|positioning|niche|tier)\b/i.test(blob)) {
+        return "Clear pricing and positioning make outreach easier — you'll know exactly what to offer when someone says yes.";
+      }
+      if (/\b(proof|portfolio|case study|testimonial|showcase|before\/after)\b/i.test(blob)) {
+        return "People hire who they can see and trust. This step organizes proof so prospects don't have to take your word for it.";
+      }
+      if (/\b(vet|pet store|salon|partner|referral)\b/i.test(blob) && /\b(groom|pet|mobile|dog)\b/i.test(blob)) {
+        return "Vets, pet stores, and local salons often refer grooming clients — one good relationship can fill your calendar faster than ads.";
+      }
+
+      const stageDesc = String(stage.desc || "").trim();
+      if (stageDesc.length > 28 && stageDesc.length <= 200) {
+        const firstSentence = stageDesc.split(/(?<=[.!?])\s+/)[0]?.trim();
+        if (firstSentence && firstSentence.length > 20) return firstSentence;
+      }
+      return "";
+    }
+
+    function getTaskContextNote(normalized, stage = {}, idea = state.currentIdea) {
+      const existing = humanizeTaskText(sanitizeMentorFieldText(normalized.why || "", normalized));
+      if (existing && !isGenericMentorCopy(existing, normalized) && !isTaskRestatement(existing, normalized)) {
+        return existing;
+      }
+      return inferTaskContextNote(normalized, stage, idea);
+    }
+
+    function ensureTaskContextNote(normalized, stage = {}, idea = state.currentIdea) {
+      const note = getTaskContextNote(normalized, stage, idea);
+      if (note && (!normalized.why || isGenericMentorCopy(normalized.why, normalized))) {
+        normalized.why = note;
+      }
+      return normalized;
+    }
+
+    function renderTaskContextNoteHtml(note) {
+      const copy = String(note || "").trim();
+      if (!copy || copy.length < 12) return "";
+      return `
+        <section class="task-mentor-section task-mentor-section--context">
+          <h4 class="task-mentor-label">Why this step</h4>
+          <p class="task-mentor-copy task-mentor-copy--context">${escapeHtml(copy)}</p>
+        </section>`;
     }
 
     function isGenericOutcomeText(text) {
@@ -31426,6 +31530,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && !actionRestatesMission
         && !(isGenericPreparedBelowText(text) && !taskHasPreparedAssets(normalized));
       const howTo = humanizeTaskText(normalized.howTo || inferHowTo(normalized));
+      const contextNote = getTaskContextNote(normalized, stage);
       const why = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
       const outcome = humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized));
       const taskData = state.roadmapKey ? getRoadmapTaskData(id) : { checked: false };
@@ -31441,6 +31546,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const breakdown = simplified ? "" : renderTaskBreakdownHtml(normalized, id);
       const compressedBreakdown = renderCompressedBreakdownHtml(displaySteps, id);
       const mentorHelp = renderMentorFindingsHtml(normalized, { simplified });
+      const contextNoteHtml = renderTaskContextNoteHtml(contextNote);
       const outcomeChecklist = simplified ? "" : renderTaskOutcomeChecklistHtml(id, normalized);
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
@@ -31457,7 +31563,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 ${mentorHelp}
                 ${why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) ? `
                 <section class="task-mentor-section">
-                  <h4 class="task-mentor-label">Gap filled</h4>
+                  <h4 class="task-mentor-label">Why this step</h4>
                   <p class="task-mentor-copy">${escapeHtml(why)}</p>
                 </section>` : ""}
                 ${howTo && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
@@ -31480,6 +31586,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         : `<div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>`;
 
       const simplifiedWhatToDo = showWhatToDo ? `
+                ${contextNoteHtml}
                 <section class="task-mentor-section task-mentor-section--task">
                   <h4 class="task-mentor-label">What to do</h4>
                   <div class="task-text">${linkifyTaskTextHtml(text)}</div>
@@ -31487,7 +31594,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 ${mentorHelp}
                 ${outcome && !isTaskRestatement(outcome, normalized) ? `
                 <p class="task-mentor-copy task-mentor-copy--outcome"><span class="task-mentor-label task-mentor-label--inline">Done when:</span> ${escapeHtml(outcome)}</p>
-                ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}` : `${mentorHelp}
+                ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}` : `${contextNoteHtml}${mentorHelp}
                 ${outcome && !isTaskRestatement(outcome, normalized) ? `
                 <p class="task-mentor-copy task-mentor-copy--outcome"><span class="task-mentor-label task-mentor-label--inline">Done when:</span> ${escapeHtml(outcome)}</p>
                 ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}`;
@@ -31515,7 +31622,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   ${simplifiedMissionMarkup}
                   ${meta}
                   ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
-                  ${simplified && !isGenericMentorCopy(why, normalized) && why ? `<p class="task-mentor-copy task-mentor-copy--inline">${escapeHtml(why)}</p>` : ""}
                   ${simplified ? simplifiedWhatToDo : ""}
                   ${simplified && displaySteps.length >= 2 ? renderTaskBreakdownHtml(normalized, id) : ""}
                 </section>
