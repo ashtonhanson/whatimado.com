@@ -28498,16 +28498,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         completeCard.classList.remove("visible");
       }
       if (picker) picker.hidden = false;
-      if (grid) {
+
+      const instantChoices = getInstantFirstMissionBranchOptions(state.currentIdea, options);
+      if (instantChoices?.length) {
+        renderRoadmapBranchPicker(instantChoices, taskId, options);
+      } else if (grid) {
         grid.innerHTML = `<p class="roadmap-branch-picker-copy">Finding your next options…</p>`;
       }
       if (moreBtn) moreBtn.disabled = true;
 
+      const skipAiRefresh = Boolean(instantChoices?.length && options.firstMission && isDirectPathMode());
+      if (skipAiRefresh) {
+        if (moreBtn) moreBtn.disabled = false;
+        return;
+      }
+
       try {
         const choices = await generateFlexibleBranchOptions(taskId, options);
-        renderRoadmapBranchPicker(choices, taskId, options);
+        if (choices?.length) {
+          renderRoadmapBranchPicker(choices, taskId, options);
+        }
       } catch {
-        if (grid) {
+        if (!instantChoices?.length && grid) {
           grid.innerHTML = `<p class="roadmap-branch-picker-copy">Couldn't load options — tap Show more options to try again.</p>`;
         }
       } finally {
@@ -28554,19 +28566,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (roadmapStagesAreRenderable(state.flexiblePendingFullStages)) {
         return personalizeDirectRoadmapWithChoice(state.flexiblePendingFullStages, choice);
       }
-      try {
-        const fallback = ensureRoadmapLocalContacts(
-          normalizeRoadmapStages(getFallbackStages(state.currentIdea)),
-          state.currentIdea
-        );
-        if (roadmapStagesAreRenderable(fallback)) {
-          return personalizeDirectRoadmapWithChoice(fallback, choice);
-        }
-      } catch (error) {
-        console.warn("[whatimado] direct first mission fallback failed:", error?.message || error);
+      const quick = getQuickFallbackStages(state.currentIdea);
+      if (quick?.length) {
+        return personalizeDirectRoadmapWithChoice(quick, choice);
       }
-      const minimal = buildMinimalRenderableStages(state.currentIdea);
-      if (minimal.length) return personalizeDirectRoadmapWithChoice(minimal, choice);
       return buildFlexibleMissionFallback(choice, state.currentIdea);
     }
 
@@ -28581,7 +28584,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.expandedRoadmapPhases = new Set([0]);
       state.expandedRoadmapTasks = new Set(["task-0-0"]);
 
-      state.roadmapStages = ensureRoadmapLocalContacts(state.roadmapStages, state.currentIdea, { force: true });
+      renderStages(state.roadmapStages);
+      hideRoadmapBranchPicker();
+      const completeCard = $("#roadmap-complete-card");
+      if (completeCard) {
+        completeCard.hidden = true;
+        completeCard.classList.remove("visible");
+      }
+      state.roadmapAutoContinuePending = false;
+      prepareFirstMissionForReveal(state.currentIdea);
+      schedulePersist();
+      updateMomentum();
+
+      enrichRoadmapStagesAsync(state.roadmapStages, state.currentIdea);
 
       if (state.roadmapKey) {
         state.allRoadmaps[state.roadmapKey] = {
@@ -28593,18 +28608,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           source: state.allRoadmaps[state.roadmapKey]?.source || "fallback"
         };
       }
-
-      hideRoadmapBranchPicker();
-      const completeCard = $("#roadmap-complete-card");
-      if (completeCard) {
-        completeCard.hidden = true;
-        completeCard.classList.remove("visible");
-      }
-      state.roadmapAutoContinuePending = false;
-      prepareFirstMissionForReveal(state.currentIdea);
-      renderStages(state.roadmapStages);
-      schedulePersist();
-      updateMomentum();
 
       if (taskId) {
         const parsed = parseTaskId(taskId);
@@ -28645,10 +28648,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         from_alter: Boolean(context.fromAlter)
       });
 
-      const branchBuildProgress = startBranchBuildProgress(choice.title, {
-        quick: isDirectPathMode() && context.firstMission
-      });
-
       if (isDirectPathMode() && context.firstMission) {
         const usedPending = roadmapStagesAreRenderable(state.flexiblePendingFullStages);
         try {
@@ -28663,12 +28662,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           console.warn("[whatimado] direct first mission instant failed:", error?.message || error);
           flashSaveToast("Couldn't load that direction — try another option.");
           renderRoadmapBranchPicker(state.flexibleBranchOptions || [], taskId, context);
-        } finally {
-          stopBranchBuildProgress();
-          branchBuildProgress?.complete?.();
         }
         return;
       }
+
+      const branchBuildProgress = startBranchBuildProgress(choice.title, {
+        quick: isDirectPathMode() && context.firstMission
+      });
 
       try {
         let response = "";
@@ -28814,21 +28814,205 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function roadmapHasActiveFlexibleMission(roadmapKey = state.roadmapKey) {
       if (!roadmapKey) return false;
-      const stages = state.roadmapKey === roadmapKey
-        ? state.roadmapStages
-        : state.allRoadmaps?.[roadmapKey]?.stages;
+      const entry = state.allRoadmaps?.[roadmapKey];
+      if (entry?.awaitingFirstMissionPick && !entry?.flexibleFirstMissionPicked) return false;
+      const stages = entry?.stages?.length
+        ? entry.stages
+        : (state.roadmapKey === roadmapKey && state.flexibleFirstMissionPicked ? state.roadmapStages : null);
       return Boolean(stages?.length && stageOneHasRevealableMission(stages));
+    }
+
+    function getQuickFallbackStages(idea = state.currentIdea) {
+      try {
+        const fallback = normalizeRoadmapStages(getFallbackStages(idea));
+        if (roadmapStagesAreRenderable(fallback)) return fallback;
+      } catch (error) {
+        console.warn("[whatimado] getQuickFallbackStages failed:", error?.message || error);
+      }
+      const minimal = buildMinimalRenderableStages(idea);
+      return minimal.length ? minimal : null;
+    }
+
+    function enrichRoadmapStagesAsync(stages, idea = state.currentIdea) {
+      if (!Array.isArray(stages) || !stages.length) return;
+      void Promise.resolve().then(() => {
+        try {
+          const enriched = ensureRoadmapLocalContacts(stages, idea, {
+            force: isGroundedPractitioner(idea)
+          });
+          if (state.roadmapKey === slugify(idea?.title || "") && JSON.stringify(enriched) !== JSON.stringify(stages)) {
+            state.roadmapStages = enriched;
+            if (state.allRoadmaps[state.roadmapKey]) {
+              state.allRoadmaps[state.roadmapKey] = {
+                ...state.allRoadmaps[state.roadmapKey],
+                stages: enriched
+              };
+            }
+            renderStages(state.roadmapStages);
+            updateRoadmapLocalResourcesList();
+            schedulePersist();
+          }
+          if (roadmapStagesAreRenderable(enriched)) {
+            state.flexiblePendingFullStages = enriched;
+          }
+        } catch (error) {
+          console.warn("[whatimado] enrichRoadmapStagesAsync failed:", error?.message || error);
+        }
+      });
+    }
+
+    function directPathShouldInstantOpen(idea, cached) {
+      if (!isDirectPathMode() || isFounderRoadmapForIdea(idea)) return false;
+      if (hasAnyCompletedRoadmapTasks(state.roadmapKey)) return false;
+      const entry = cached || state.allRoadmaps?.[state.roadmapKey];
+      if (entry?.flexibleFirstMissionPicked && roadmapStagesAreRenderable(entry?.stages)) return false;
+      return true;
+    }
+
+    function openDirectPathInstantly(idea, ideaIndex, options = {}) {
+      const entry = state.allRoadmaps?.[state.roadmapKey];
+      if (!roadmapStagesAreRenderable(entry?.stages) && !roadmapStagesAreRenderable(state.roadmapStages)) {
+        clearFlexibleFirstMissionPickedFlag();
+      }
+      seedFlexiblePendingFromFallback(idea);
+      showScreen("roadmap");
+      setRoadmapLoading(false);
+      setRoadmapRefining(false);
+      if (state.flexibleFirstMissionPicked && roadmapStagesAreRenderable(state.roadmapStages)) {
+        renderStages(state.roadmapStages);
+        registerRoadmapInSidebar(idea, ideaIndex);
+        renderSidebarRoadmaps();
+        schedulePersist();
+        return "missions";
+      }
+      $("#roadmap-sub").textContent = "Pick your starting direction — three ways into this path.";
+      revealFlexibleFirstMissionPicker(idea, ideaIndex, state.flexiblePendingFullStages);
+      registerRoadmapInSidebar(idea, ideaIndex);
+      renderSidebarRoadmaps();
+      schedulePersist();
+      void warmRoadmapStagesInBackground(idea, ideaIndex, {
+        force: options.force,
+        previousStages: options.previousStages,
+        extraRefreshBlock: options.extraRefreshBlock
+      });
+      trackEvent("roadmap_direct_instant_open", { idea_index: ideaIndex });
+      return "picker";
     }
 
     function syncFlexibleFirstMissionStateFromRoadmap(roadmapKey = state.roadmapKey) {
       if (!roadmapKey) return;
       const entry = state.allRoadmaps?.[roadmapKey];
+      if (entry?.awaitingFirstMissionPick && !entry?.flexibleFirstMissionPicked) {
+        if (state.roadmapKey === roadmapKey) state.flexibleFirstMissionPicked = false;
+        return;
+      }
       const picked = Boolean(entry?.flexibleFirstMissionPicked)
-        || Boolean(entry?.stages?.length && stageOneHasRevealableMission(entry.stages))
-        || (state.roadmapKey === roadmapKey && roadmapHasActiveFlexibleMission(roadmapKey));
+        || (!entry?.awaitingFirstMissionPick && Boolean(entry?.stages?.length && stageOneHasRevealableMission(entry.stages)))
+        || (state.roadmapKey === roadmapKey && entry?.flexibleFirstMissionPicked && roadmapHasActiveFlexibleMission(roadmapKey));
       if (state.roadmapKey === roadmapKey) {
         state.flexibleFirstMissionPicked = picked;
       }
+    }
+
+    function seedFlexiblePendingFromFallback(idea = state.currentIdea) {
+      if (roadmapStagesAreRenderable(state.flexiblePendingFullStages)) {
+        return state.flexiblePendingFullStages;
+      }
+      const quick = getQuickFallbackStages(idea);
+      if (quick?.length) {
+        state.flexiblePendingFullStages = quick;
+        enrichRoadmapStagesAsync(quick, idea);
+        return quick;
+      }
+      return null;
+    }
+
+    function getInstantFirstMissionBranchOptions(idea = state.currentIdea, options = {}) {
+      if (!options.firstMission) return null;
+      const title = String(idea?.title || "this path").trim();
+      if (shouldUseBusinessRoadmapTasks(idea)) {
+        return [
+          {
+            title: "Book your first paying clients",
+            tagline: "Line up real appointments before you spend on equipment or a vehicle.",
+            why: "Proves demand while you still have steady income."
+          },
+          {
+            title: "Package your offer and price",
+            tagline: "Define what you sell, who it's for, and what each tier costs.",
+            why: "Makes every outreach conversation concrete."
+          },
+          {
+            title: "Reach out to 10 local prospects",
+            tagline: "DM, call, or visit the businesses and customers closest to you.",
+            why: "Forces momentum with real conversations this week."
+          }
+        ];
+      }
+      if (isDirectPathMode()) {
+        return [
+          {
+            title: `Fastest first win on "${title}"`,
+            tagline: "One move you can finish this week without a big commitment.",
+            why: "Builds momentum before you invest more time or money."
+          },
+          {
+            title: "Talk to someone who's already done it",
+            tagline: "Learn what actually worked for people in your situation.",
+            why: "Reality-checks the path before you go all in."
+          },
+          {
+            title: "Build a small proof this week",
+            tagline: "Test one concrete piece of the path with real feedback.",
+            why: "Shows progress without committing to everything at once."
+          }
+        ];
+      }
+      return [
+        {
+          title: "Talk to someone who's done it",
+          tagline: "Learn what actually worked for people like you.",
+          why: "Fast reality check before you invest more time."
+        },
+        {
+          title: "Build a small proof this week",
+          tagline: "Test one concrete piece of the path.",
+          why: "Shows progress without committing to everything at once."
+        },
+        {
+          title: "Reach out to one real opportunity",
+          tagline: "Apply, email, or book one conversation.",
+          why: "Forces momentum when you're ready to act."
+        }
+      ];
+    }
+
+    function warmRoadmapStagesInBackground(idea, ideaIndex, options = {}) {
+      return generateRoadmapStagesFromAi(idea, ideaIndex, options, {
+        onFirstMissionReady() {},
+        onFullStagesReady(fullStages) {
+          if (!fullStages?.length || !shouldOfferFirstMissionPicker()) return;
+          state.flexiblePendingFullStages = fullStages;
+          if (state.roadmapKey) {
+            state.allRoadmaps[state.roadmapKey] = {
+              ...(state.allRoadmaps[state.roadmapKey] || {}),
+              idea,
+              stages: fullStages,
+              awaitingFirstMissionPick: true,
+              flexibleFirstMissionPicked: false
+            };
+            schedulePersist();
+          }
+        },
+        onRefining() {},
+        onRefinementComplete(stages) {
+          if (!stages?.length || !shouldOfferFirstMissionPicker()) return;
+          state.flexiblePendingFullStages = stages;
+          schedulePersist();
+        }
+      }).catch((error) => {
+        console.warn("[whatimado] background roadmap warm failed:", error?.message || error);
+      });
     }
 
     function renderBranchBuildProgressHtml(title) {
@@ -28851,8 +29035,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const grid = $("#roadmap-branch-grid");
       if (grid) grid.innerHTML = renderBranchBuildProgressHtml(title);
       return startSiteLoadingProgress($("#roadmap-branch-build-progress"), {
-        durationMs: options.quick ? 6000 : 52000,
-        cap: options.quick ? 96 : 92,
+        durationMs: options.quick ? 3200 : 52000,
+        cap: options.quick ? 98 : 92,
         formatRemaining: (ms) => (ms > 0 ? `About ${Math.ceil(ms / 1000)}s remaining…` : "Almost ready…")
       });
     }
@@ -28880,11 +29064,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function roadmapWasPreviouslyStarted(idea, cached = null) {
       const key = state.roadmapKey || slugify(idea?.title || "");
       if (!key || !idea) return false;
-      if (cached || state.allRoadmaps?.[key]) return true;
+      const entry = cached || state.allRoadmaps?.[key];
+      if (entry?.awaitingFirstMissionPick && !entry?.flexibleFirstMissionPicked) return false;
+      if (entry?.flexibleFirstMissionPicked && roadmapStagesAreRenderable(entry?.stages)) return true;
       if (hasAnyCompletedRoadmapTasks(key)) return true;
       if (state.allTaskChats?.[key] && Object.keys(state.allTaskChats[key]).length) return true;
       return state.roadmapCategories.some((category) =>
-        (category.items || []).some((item) => item.ideaTitle === idea.title)
+        (category.items || []).some((item) => item.ideaTitle === idea.title && hasRoadmapProgress(idea.title))
       );
     }
 
@@ -30522,6 +30708,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       hideRoadmapBranchPicker();
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
+      const cachedEarly = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
+        ? state.allRoadmaps[state.roadmapKey]
+        : null;
+      state.roadmapStages = roadmapStagesAreRenderable(cachedEarly?.stages)
+        ? coerceRoadmapStagesForRender(cachedEarly.stages)
+        : [];
       if (options.force) clearRemovedRoadmapKey(idea.title);
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
@@ -30551,12 +30743,36 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || roadmapStagesAreRenderable(state.flexiblePendingFullStages);
 
       syncFlexibleFirstMissionStateFromRoadmap();
-      const wantsFirstMissionPicker = shouldOfferFirstMissionPicker()
-        && !options.reopen
-        && !roadmapWasPreviouslyStarted(idea, cached);
+      const wantsFirstMissionPicker = shouldOfferFirstMissionPicker();
 
       if (!cachedHasMissions && roadmapWasPreviouslyStarted(idea, cached)) {
         clearFlexibleFirstMissionPickedFlag();
+      }
+
+      if (directPathShouldInstantOpen(idea, cached) && !options.force) {
+        openDirectPathInstantly(idea, ideaIndex, options);
+        return;
+      }
+
+      if (!cachedHasMissions && wantsFirstMissionPicker) {
+        seedFlexiblePendingFromFallback(idea);
+        showScreen("roadmap");
+        setRoadmapLoading(false);
+        setRoadmapRefining(false);
+        $("#roadmap-sub").textContent = isDirectPathMode()
+          ? "Pick your starting direction — three ways into this path."
+          : "Pick your first mission — three ways to start.";
+        revealFlexibleFirstMissionPicker(idea, ideaIndex, state.flexiblePendingFullStages);
+        registerRoadmapInSidebar(idea, ideaIndex);
+        renderSidebarRoadmaps();
+        schedulePersist();
+        void warmRoadmapStagesInBackground(idea, ideaIndex, {
+          force: options.force,
+          previousStages: options.previousStages,
+          extraRefreshBlock: options.extraRefreshBlock
+        });
+        trackEvent("roadmap_first_mission_picker_instant", { idea_index: ideaIndex, path_mode: getPathMode() });
+        return;
       }
 
       if (!cachedHasMissions && !wantsFirstMissionPicker && recoverEmptyRoadmapStages(idea, ideaIndex, { force: true })) {
@@ -30571,6 +30787,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       const cachedIsUsable = cachedHasMissions;
+      if (cachedIsUsable && cached?.awaitingFirstMissionPick && shouldOfferFirstMissionPicker()) {
+        showScreen("roadmap");
+        setRoadmapLoading(false);
+        setRoadmapRefining(false);
+        seedFlexiblePendingFromFallback(idea);
+        revealFlexibleFirstMissionPicker(idea, ideaIndex, state.flexiblePendingFullStages || cached?.stages || null);
+        registerRoadmapInSidebar(idea, ideaIndex);
+        renderSidebarRoadmaps();
+        void warmRoadmapStagesInBackground(idea, ideaIndex, {
+          force: options.force,
+          previousStages: options.previousStages,
+          extraRefreshBlock: options.extraRefreshBlock
+        });
+        return;
+      }
+
       if (cachedIsUsable) {
         showScreen("roadmap");
         setRoadmapLoading(false);
@@ -30636,19 +30868,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (shouldOfferFirstMissionPicker()) {
         syncFlexibleFirstMissionStateFromRoadmap();
-        if (!state.flexibleFirstMissionPicked) {
-          state.flexiblePendingFullStages = null;
-        }
+      }
+
+      if (isDirectPathMode() && !hasAnyCompletedRoadmapTasks() && !cachedHasMissions) {
+        openDirectPathInstantly(idea, ideaIndex, options);
+        return;
       }
 
       clearProgressMap();
       setRoadmapRefining(false);
       cancelDeferredRoadmapPhaseReveal();
+      const founderModeForGen = isFounderRoadmapForIdea(idea);
       $("#roadmap-sub").textContent = founderMode
         ? "Building your whatimado.com launch roadmap..."
-        : (shouldOfferFirstMissionPicker()
-          ? (isDirectPathMode() ? "Loading your starting directions…" : "Loading your first mission options…")
-          : "Preparing your first mission…");
+        : "Preparing your first mission…";
       const completeCard = $("#roadmap-complete-card");
       if (completeCard) {
         completeCard.hidden = true;
@@ -30666,20 +30899,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       let revealed = false;
-      if (shouldOfferFirstMissionPicker() && !roadmapWasPreviouslyStarted(idea, cached)) {
-        revealed = true;
-        completeSiteLoadingProgress($("#roadmap-loader-progress"));
-        setRoadmapLoading(false);
-        if (recoverEmptyRoadmapStages(idea, ideaIndex)) {
-          registerRoadmapInSidebar(idea, ideaIndex);
-          renderSidebarRoadmaps();
-          schedulePersist();
-          return;
-        }
-        revealFlexibleFirstMissionPicker(idea, ideaIndex, cached?.stages?.length ? cached.stages : null);
-      }
+      let loadingFallbackTimer = null;
 
-      const founderModeForGen = isFounderRoadmapForIdea(idea);
       const revealRoadmapProgressively = (incomingStages, source, { isFinal = false, refineUpdate = false } = {}) => {
         if (!stageOneHasRevealableMission(incomingStages)) return false;
         if (!revealed) {
@@ -30702,6 +30923,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         );
         return true;
       };
+
+      loadingFallbackTimer = setTimeout(() => {
+        if (revealed) return;
+        try {
+          const fallbackStages = getQuickFallbackStages(idea)
+            || ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
+          if (stageOneHasRevealableMission(fallbackStages)) {
+            revealRoadmapProgressively(fallbackStages, "fallback", { isFinal: false });
+            trackEvent("roadmap_loading_fallback_timeout", { idea_index: ideaIndex });
+          }
+        } catch (error) {
+          console.warn("[whatimado] loading fallback timeout failed:", error?.message || error);
+        }
+      }, isDirectPathMode() ? 4000 : 12000);
+
       try {
         const result = await generateRoadmapStagesFromAi(
           idea,
@@ -30813,6 +31049,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           revealRoadmapProgressively(fallbackStages, "fallback", { isFinal: true });
         }
       } finally {
+        if (loadingFallbackTimer) clearTimeout(loadingFallbackTimer);
         stopRoadmapShellWait();
         if (!revealed) {
           setRoadmapLoading(false);
@@ -32065,12 +32302,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && !roadmapStagesAreRenderable(pendingStages);
       if (!options.force && !missionsMissing) return false;
 
-      let fallback;
-      try {
-        fallback = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
-      } catch (error) {
-        console.warn("[whatimado] recoverEmptyRoadmapStages normalize failed:", error?.message || error);
-        fallback = buildMinimalRenderableStages(idea);
+      let fallback = getQuickFallbackStages(idea);
+      if (!stageOneHasRevealableMission(fallback)) {
+        try {
+          fallback = ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
+        } catch (error) {
+          console.warn("[whatimado] recoverEmptyRoadmapStages normalize failed:", error?.message || error);
+          fallback = buildMinimalRenderableStages(idea);
+        }
       }
       if (!stageOneHasRevealableMission(fallback)) {
         fallback = buildMinimalRenderableStages(idea);
@@ -32099,6 +32338,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       hideRoadmapBranchPicker();
       prepareFirstMissionForReveal(idea);
       renderStages(state.roadmapStages, { skipRecover: true });
+      enrichRoadmapStagesAsync(state.roadmapStages, idea);
       schedulePersist();
       trackEvent("roadmap_empty_recovered", {
         idea_index: ideaIndex,
