@@ -13235,7 +13235,8 @@
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
-      '- Task text must NEVER quote the path title verbatim. Point users at the prepared draft below instead of "Write a one-page mission for \\"{title}\\"".\n' +
+      '- Task text must NEVER repeat or quote the path title, tagline, or stage name — the user already sees those in the header. Say "your goal" or "this path" instead.\n' +
+      '- Point users at the prepared draft below instead of "Write a one-page mission for \\"{title}\\"".\n' +
       '- NEVER use vague "this" — name the specific goal in plain words (e.g. "people who could help with your closed beta test" not "people who care about this").\n' +
       '- NEVER write paragraphs explaining what the task means. script = ONE immediately usable document only (email, proposal, resume, cover letter, spreadsheet, cold message, survey, business plan, marketing post, flyer, presentation, checklist, calendar, phone script, meeting agenda). If none applies, leave script empty.\n' +
       '- Contact 5 orgs → resources (names, emails, phones) + script (draft + follow-up email + phone script + spreadsheet tracker).\n' +
@@ -14885,6 +14886,57 @@
       return copy || humanizeTaskText(String(label || "").trim());
     }
 
+    function stripPartialTitleEmbeds(copy, sources = []) {
+      for (const source of sources) {
+        const words = String(source || "").split(/\s+/).filter(Boolean);
+        if (words.length < 3) continue;
+
+        for (let len = words.length; len >= 3; len--) {
+          const prefixWords = words.slice(0, len);
+          const prefixVariants = [prefixWords.join(" ")];
+          const lastWord = prefixWords[prefixWords.length - 1] || "";
+          const hyphenStem = lastWord.includes("-") ? lastWord.split("-")[0] : "";
+          if (hyphenStem && hyphenStem.length >= 4) {
+            prefixVariants.push([...prefixWords.slice(0, -1), hyphenStem].join(" "));
+          }
+
+          for (const prefix of prefixVariants) {
+            if (prefix.length < 12) continue;
+            if (!copy.toLowerCase().includes(prefix.toLowerCase())) continue;
+
+            const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const nextTitleWord = words[len]
+              ? words[len].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+              : "";
+            const nextTitleStem = words[len] && words[len].includes("-")
+              ? words[len].split("-")[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+              : "";
+            const noTitleContinuation = nextTitleWord
+              ? (nextTitleStem && nextTitleStem !== nextTitleWord
+                ? `(?!\\s+(?:${nextTitleWord}|${nextTitleStem})\\b)`
+                : `(?!\\s+${nextTitleWord}\\b)`)
+              : "";
+            const suffix = "(?:\\s*[—–-]|\\s+in\\b|\\s*$)";
+
+            copy = copy.replace(
+              new RegExp(`\\b((?:routes?|steps?|options?|programs?|training|paths?|plans?))\\s+for\\s+${escaped}${noTitleContinuation}\\s*([—–-])\\s*`, "gi"),
+              "$1 $2 "
+            );
+            copy = copy.replace(
+              new RegExp(`\\b(?:routes?|steps?|options?|programs?|training|paths?|plans?)\\s+for\\s+${escaped}${noTitleContinuation}(?:\\s+in\\b|\\s*$)`, "gi"),
+              (match) => match.replace(new RegExp(`\\s+for\\s+${escaped}${noTitleContinuation}`, "i"), "")
+            );
+            copy = copy.replace(
+              new RegExp(`\\bfor\\s+${escaped}${noTitleContinuation}${suffix}`, "gi"),
+              (match) => (/[—–-]/.test(match) ? "— " : "")
+            );
+            copy = copy.replace(new RegExp(`\\b${escaped}\\s*[—–-]\\s*`, "gi"), "");
+          }
+        }
+      }
+      return copy;
+    }
+
     function stripRepeatedPathReferences(text, options = {}) {
       const idea = options.idea ?? state.currentIdea;
       let copy = String(text || "").trim();
@@ -14900,21 +14952,35 @@
         options.stageLabel
       ].filter(Boolean);
 
+      const titleSuffix = "(?:\\s*[—–-]|\\s+in\\b|\\s*$)";
+
       for (const term of [...terms].sort((a, b) => b.length - a.length)) {
         const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         copy = copy.replace(new RegExp(`["']${escaped}["']`, "gi"), "this");
-        copy = copy.replace(new RegExp(`for\\s+["']${escaped}["']`, "gi"), "for this");
-        copy = copy.replace(new RegExp(`about\\s+["']${escaped}["']`, "gi"), "about this");
+        copy = copy.replace(new RegExp(`for\\s+["']${escaped}["']`, "gi"), "");
+        copy = copy.replace(new RegExp(`about\\s+["']${escaped}["']`, "gi"), "about");
         copy = copy.replace(new RegExp(`problem\\s+["']${escaped}["']\\s+addresses`, "gi"), "problem you're solving");
         copy = copy.replace(new RegExp(`gaps\\s+["']${escaped}["']\\s+would fill`, "gi"), "gaps you'd fill");
-        if (term.length > 28) {
-          copy = copy.replace(new RegExp(`\\b${escaped}\\b`, "gi"), "this project");
+        copy = copy.replace(
+          new RegExp(`\\b((?:routes?|steps?|options?|programs?|training|paths?|plans?))\\s+for\\s+${escaped}\\s*([—–-])\\s*`, "gi"),
+          "$1 $2 "
+        );
+        copy = copy.replace(
+          new RegExp(`\\b(?:routes?|steps?|options?|programs?|training|paths?|plans?)\\s+for\\s+${escaped}${titleSuffix}`, "gi"),
+          (match) => match.replace(new RegExp(`\\s+for\\s+${escaped}(?:\\s+in\\b|\\s*$)`, "i"), "")
+        );
+        copy = copy.replace(new RegExp(`\\bfor\\s+${escaped}\\s*[—–-]\\s*`, "gi"), "— ");
+        copy = copy.replace(new RegExp(`\\bfor\\s+${escaped}${titleSuffix}`, "gi"), "");
+        if (term.length > 14) {
+          copy = copy.replace(new RegExp(`\\b${escaped}\\b`, "gi"), "");
         }
       }
 
+      copy = stripPartialTitleEmbeds(copy, terms);
       copy = copy.replace(/\bfor this addresses\b/gi, "this addresses");
       copy = copy.replace(/\bproblem this project addresses\b/gi, "the problem you're solving");
       copy = copy.replace(/\bgaps this project would fill\b/gi, "gaps you'd fill");
+      copy = copy.replace(/^[—–-]\s*/g, "").replace(/\s*[—–-]\s*[—–-]\s*/g, " — ");
       copy = copy.replace(/\s{2,}/g, " ").replace(/\s+([,.;:])/g, "$1").trim();
       return copy;
     }
@@ -14951,7 +15017,7 @@
       let copy = String(text || "").trim();
       if (!copy) return copy;
 
-      const goal = getShortPathLabel(idea);
+      const goal = "your goal";
 
       if (/^List \d+ people\b/i.test(copy)) {
         copy = copy.replace(
@@ -14960,19 +15026,19 @@
         );
       }
 
-      copy = copy.replace(/\bwho care about this\b/gi, `who could back ${goal}`);
-      copy = copy.replace(/\bwho care about "this"\b/gi, `who could back ${goal}`);
-      copy = copy.replace(/\bcare about this\b/gi, `care about ${goal}`);
-      copy = copy.replace(/\bwould buy or share "this"\b/gi, `would buy or share ${goal}`);
-      copy = copy.replace(/\bwould buy or share this\b/gi, `would buy or share ${goal}`);
-      copy = copy.replace(/\bfor "this"\b/gi, `for ${goal}`);
-      copy = copy.replace(/\bfor this\b/gi, `for ${goal}`);
-      copy = copy.replace(/\babout "this"\b/gi, `about ${goal}`);
-      copy = copy.replace(/\babout this\b/gi, `about ${goal}`);
-      copy = copy.replace(/\brelated to this\b/gi, `related to ${goal}`);
-      copy = copy.replace(/\bmatters to this\b/gi, `matters to ${goal}`);
-      copy = copy.replace(/\bgaps this would fill\b/gi, `gaps ${goal} would fill`);
-      copy = copy.replace(/\bpeople who care about "this"\b/gi, `people who could help with ${goal}`);
+      copy = copy.replace(/\bwho care about this\b/gi, "who could back your goal");
+      copy = copy.replace(/\bwho care about "this"\b/gi, "who could back your goal");
+      copy = copy.replace(/\bcare about this\b/gi, "care about your goal");
+      copy = copy.replace(/\bwould buy or share "this"\b/gi, "would buy or share what you're building");
+      copy = copy.replace(/\bwould buy or share this\b/gi, "would buy or share what you're building");
+      copy = copy.replace(/\bfor "this"\b/gi, "for your goal");
+      copy = copy.replace(/\bfor this\b/gi, "for your goal");
+      copy = copy.replace(/\babout "this"\b/gi, "about your goal");
+      copy = copy.replace(/\babout this\b/gi, "about your goal");
+      copy = copy.replace(/\brelated to this\b/gi, "related to your goal");
+      copy = copy.replace(/\bmatters to this\b/gi, "matters to your goal");
+      copy = copy.replace(/\bgaps this would fill\b/gi, "gaps you'd fill");
+      copy = copy.replace(/\bpeople who care about "this"\b/gi, "people who could help with your goal");
 
       return copy.replace(/\s{2,}/g, " ").trim();
     }
@@ -15000,7 +15066,7 @@
         if (fromTask && !fromTask.toLowerCase().includes(title.toLowerCase().slice(0, 20))) {
           return fromTask;
         }
-        copy = copy.replace(new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), getShortPathLabel(idea));
+        copy = copy.replace(new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), "");
       }
 
       if (/^Land your first real opportunity for\b/i.test(copy)) {
@@ -15191,12 +15257,18 @@
     }
 
     function applyPlainLanguageToTask(normalized) {
-      normalized.text = stripRepeatedPathReferences(normalized.text, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
+      const stripOpts = { idea: state.currentIdea, stageLabel: normalized._stageLabel };
+
+      normalized.text = stripRepeatedPathReferences(normalized.text, stripOpts);
       normalized.text = specifyVagueTaskReferences(normalized.text, state.currentIdea);
       normalized.text = humanizeTaskText(normalized.text);
-      normalized.why = stripRepeatedPathReferences(normalized.why, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
+      normalized.text = stripRepeatedPathReferences(normalized.text, stripOpts);
+
+      normalized.why = stripRepeatedPathReferences(normalized.why, stripOpts);
       normalized.why = specifyVagueTaskReferences(normalized.why, state.currentIdea);
       normalized.why = humanizeTaskText(normalized.why);
+      normalized.why = stripRepeatedPathReferences(normalized.why, stripOpts);
+
       normalized.outcome = humanizeTaskText(normalized.outcome);
       normalized.alternatives = humanizeTaskText(normalized.alternatives);
       normalized.mission = humanizeTaskText(normalized.mission || "");
@@ -15206,12 +15278,19 @@
       if (normalized.mission) {
         normalized.mission = cleanMissionTitle(normalized.mission, normalized, state.currentIdea);
       }
-      normalized.howTo = stripRepeatedPathReferences(normalized.howTo, { idea: state.currentIdea, stageLabel: normalized._stageLabel });
+
+      normalized.howTo = stripRepeatedPathReferences(normalized.howTo, stripOpts);
       normalized.howTo = specifyVagueTaskReferences(normalized.howTo, state.currentIdea);
       normalized.howTo = humanizeTaskText(normalized.howTo || "");
+      normalized.howTo = stripRepeatedPathReferences(normalized.howTo, stripOpts);
+
+      normalized.mentorHelp = stripRepeatedPathReferences(normalized.mentorHelp, stripOpts);
       normalized.mentorHelp = humanizeTaskText(normalized.mentorHelp || "");
       normalized.mentorFindings = humanizeTaskText(normalized.mentorFindings || "");
-      normalized.steps = (normalized.steps || []).map((step) => humanizeTaskText(step));
+      normalized.steps = (normalized.steps || []).map((step) => {
+        const cleaned = stripRepeatedPathReferences(step, stripOpts);
+        return humanizeTaskText(cleaned);
+      });
       return normalized;
     }
 
@@ -30845,9 +30924,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
       const simplified = true;
       const mission = humanizeTaskText(normalized.mission || inferMissionTitle(normalized, { taskIndex, stageLabel: stage.label }));
-      const text = simplified
-        ? buildMentorUserActionText(normalized)
-        : humanizeTaskText(normalized.text);
+      const text = stripRepeatedPathReferences(
+        simplified ? buildMentorUserActionText(normalized) : humanizeTaskText(normalized.text),
+        { idea: state.currentIdea, stageLabel: stage.label }
+      );
       const actionRestatesMission = textSimilarity(text, mission) >= 0.62;
       const showWhatToDo = Boolean(text)
         && !actionRestatesMission
