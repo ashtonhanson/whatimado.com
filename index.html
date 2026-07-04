@@ -21463,7 +21463,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function ensureRoadmapUiHasMissions(idea = state.currentIdea, ideaIndex = getCurrentIdeaIndex()) {
-      if (!idea) return false;
+      if (!idea || isFirstMissionPickerActive()) return false;
       if ($("#stage-list")?.children.length && roadmapStagesAreRenderable(state.roadmapStages)) return true;
       return recoverEmptyRoadmapStages(idea, ideaIndex, { force: true });
     }
@@ -26730,7 +26730,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (name === "map") updateMapAuxiliaryPanels();
       if (name === "roadmap") {
         updateRoadmapOverviewChrome();
-        if (state.currentIdea && !$("#stage-list")?.children.length) {
+        if (state.currentIdea && !$("#stage-list")?.children.length && !isFirstMissionPickerActive()) {
           queueMicrotask(() => ensureRoadmapUiHasMissions(state.currentIdea, getCurrentIdeaIndex()));
         }
       } else {
@@ -28312,6 +28312,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       subtitle.textContent = isDirectPathMode()
         ? "Pick three paths to compare — open one for your full step-by-step roadmap."
         : "Review each path below, then open a step-by-step roadmap for the one that fits you best.";
+    }
+
+    function isFirstMissionPickerActive(roadmapKey = state.roadmapKey) {
+      if (!$("#roadmap-branch-picker")?.hidden) return true;
+      const entry = state.allRoadmaps?.[roadmapKey];
+      return Boolean(entry?.awaitingFirstMissionPick && !entry?.flexibleFirstMissionPicked);
     }
 
     function hideRoadmapBranchPicker() {
@@ -30705,7 +30711,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     async function viewRoadmap(idea, ideaIndex, options = {}) {
       cancelDeferredRoadmapPhaseReveal();
-      hideRoadmapBranchPicker();
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
       const cachedEarly = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
@@ -30715,6 +30720,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? coerceRoadmapStagesForRender(cachedEarly.stages)
         : [];
       if (options.force) clearRemovedRoadmapKey(idea.title);
+      if (!cachedEarly?.awaitingFirstMissionPick) {
+        hideRoadmapBranchPicker();
+      }
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
       state.expandedRoadmapPhases = null;
@@ -30749,7 +30757,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         clearFlexibleFirstMissionPickedFlag();
       }
 
-      if (directPathShouldInstantOpen(idea, cached) && !options.force) {
+      if (directPathShouldInstantOpen(idea, cached) && !options.force && !cachedHasMissions) {
         openDirectPathInstantly(idea, ideaIndex, options);
         return;
       }
@@ -30868,11 +30876,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (shouldOfferFirstMissionPicker()) {
         syncFlexibleFirstMissionStateFromRoadmap();
-      }
-
-      if (isDirectPathMode() && !hasAnyCompletedRoadmapTasks() && !cachedHasMissions) {
-        openDirectPathInstantly(idea, ideaIndex, options);
-        return;
       }
 
       clearProgressMap();
@@ -32293,7 +32296,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function recoverEmptyRoadmapStages(idea = state.currentIdea, ideaIndex = getCurrentIdeaIndex(), options = {}) {
-      if (!idea) return false;
+      if (!idea || isFirstMissionPickerActive()) return false;
 
       const cachedStages = state.allRoadmaps?.[state.roadmapKey]?.stages;
       const pendingStages = state.flexiblePendingFullStages?.length ? state.flexiblePendingFullStages : null;
