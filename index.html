@@ -28108,6 +28108,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!roadmapKey) return;
       const entry = state.allRoadmaps?.[roadmapKey];
       const picked = Boolean(entry?.flexibleFirstMissionPicked)
+        || Boolean(entry?.stages?.length && stageOneHasRevealableMission(entry.stages))
         || (state.roadmapKey === roadmapKey && roadmapHasActiveFlexibleMission(roadmapKey));
       if (state.roadmapKey === roadmapKey) {
         state.flexibleFirstMissionPicked = picked;
@@ -29760,10 +29761,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const cached = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
         ? state.allRoadmaps[state.roadmapKey]
         : null;
-      const cachedIsUsable = Boolean(cached?.stages?.length)
-        && stageOneHasRevealableMission(cached.stages)
-        && !isGenericFallbackRoadmap(cached.stages)
-        && !roadmapHasGenericStages(cached.stages, idea);
+      const cachedHasMissions = Boolean(cached?.stages?.length)
+        && stageOneHasRevealableMission(cached.stages);
+      const cachedIsUsable = cachedHasMissions;
       if (cachedIsUsable) {
         showScreen("roadmap");
         setRoadmapLoading(false);
@@ -29787,10 +29787,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           trackEvent("roadmap_founder_mismatch_fixed", { idea_index: ideaIndex, cached: true });
         }
         state.roadmapStages = stagesToRender;
+        state.flexibleFirstMissionPicked = true;
         state.allRoadmaps[state.roadmapKey] = {
           ...cached,
           stages: stagesToRender,
-          source: cachedSource
+          source: cachedSource,
+          flexibleFirstMissionPicked: true
         };
         syncFlexibleFirstMissionStateFromRoadmap();
         prepareFirstMissionForReveal(idea);
@@ -29811,9 +29813,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         schedulePersist();
         if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
           void maybeEnrichRoadmapLocalContacts({ silent: true });
-        }
-        if (shouldOfferFlexibleFirstMissionPicker()) {
-          revealFlexibleFirstMissionPicker(idea, ideaIndex, cached.stages);
         }
         return;
       }
@@ -29841,12 +29840,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       showScreen("roadmap");
       setRoadmapLoading(true);
 
+      if (!cachedHasMissions && !shouldOfferFirstMissionPicker() && recoverEmptyRoadmapStages(idea, ideaIndex)) {
+        setRoadmapLoading(false);
+        registerRoadmapInSidebar(idea, ideaIndex);
+        renderSidebarRoadmaps();
+        schedulePersist();
+        return;
+      }
+
       let revealed = false;
       if (shouldOfferFirstMissionPicker()) {
         revealed = true;
         completeSiteLoadingProgress($("#roadmap-loader-progress"));
         setRoadmapLoading(false);
-        revealFlexibleFirstMissionPicker(idea, ideaIndex, null);
+        if (recoverEmptyRoadmapStages(idea, ideaIndex)) {
+          registerRoadmapInSidebar(idea, ideaIndex);
+          renderSidebarRoadmaps();
+          schedulePersist();
+          return;
+        }
+        revealFlexibleFirstMissionPicker(idea, ideaIndex, cached?.stages?.length ? cached.stages : null);
       }
 
       const founderModeForGen = isFounderRoadmapForIdea(idea);
@@ -30516,9 +30529,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const why = $("#roadmap-side-why");
       if (why) {
-        why.textContent = idea.why
-          ? `${idea.why} Each task includes “What this step means” when wording might be unclear, plus time, cost, and local help when relevant.`
-          : "Each task includes “What this step means” when wording might be unclear, plus time, cost, and local help when relevant.";
+        why.textContent = "Each task includes what to do, time estimates, and local help when relevant.";
       }
       updateMapContextDisplays();
       renderRoadmapPotentialOutcome(idea);
