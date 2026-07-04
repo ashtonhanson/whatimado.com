@@ -14937,7 +14937,7 @@
       const tagline = String(idea?.tagline || "").trim();
       if (title && normalizeRoadmapText(raw) === normalizeRoadmapText(title)) return "Take the next step on this path";
       if (tagline && normalizeRoadmapText(raw) === normalizeRoadmapText(tagline)) {
-        return simplifyEmbeddedPathTitle(tagline, idea) || "Take the next step on this path";
+        return "Take the next step on this path";
       }
       return "";
     }
@@ -28355,8 +28355,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function syncAndRepairPickedRoadmap(idea = state.currentIdea, roadmapKey = state.roadmapKey) {
       if (!idea || !roadmapKey) return false;
       const entry = state.allRoadmaps?.[roadmapKey];
-      const picked = Boolean(entry?.flexibleFirstMissionPicked || state.flexibleFirstMissionPicked);
-      if (!picked) return false;
+      if (!entry?.flexibleFirstMissionPicked) return false;
 
       const sourceStages = entry?.stages?.length ? entry.stages : state.roadmapStages;
       const choice = entry?.firstMissionBranchChoice || null;
@@ -28770,7 +28769,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!idea || !state.roadmapKey) return false;
       const domReady = Boolean($("#stage-list")?.children.length);
       const needsFullDirect = shouldUseDirectRoadmapFlow()
-        && (state.flexibleFirstMissionPicked || getSavedFirstMissionBranchChoice())
+        && state.allRoadmaps?.[state.roadmapKey]?.flexibleFirstMissionPicked
         && countRenderableRoadmapPhases(state.roadmapStages) < 2;
       if (roadmapStagesAreRenderable(state.roadmapStages) && domReady && !needsFullDirect) return true;
 
@@ -28778,7 +28777,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const savedChoice = choice?.title ? choice : getSavedFirstMissionBranchChoice();
       const useDirect = shouldUseDirectRoadmapFlow();
       let repaired;
-      if (useDirect && (state.flexibleFirstMissionPicked || savedChoice)) {
+      if (useDirect && state.allRoadmaps?.[state.roadmapKey]?.flexibleFirstMissionPicked) {
         repaired = resolveFullDirectRoadmapStages(savedChoice, idea);
       } else {
         repaired = ensureRenderableRoadmapStages(state.roadmapStages, idea, savedChoice, {
@@ -29359,11 +29358,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (pending?.length) {
         state.flexiblePendingFullStages = pending;
       }
-      state.roadmapStages = [];
-      renderStages([]);
-      $("#roadmap-sub").textContent = isDirectPathMode()
-        ? "Pick your starting direction — three ways into this path."
-        : "Pick your first mission — three ways to start.";
+      state.flexibleFirstMissionPicked = false;
       if (state.roadmapKey) {
         state.allRoadmaps[state.roadmapKey] = {
           ...(state.allRoadmaps[state.roadmapKey] || {}),
@@ -29373,6 +29368,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           flexibleFirstMissionPicked: false
         };
       }
+      state.roadmapStages = [];
+      renderStages([], { skipRecover: true });
+      $("#roadmap-sub").textContent = isDirectPathMode()
+        ? "Pick your starting direction — three ways into this path."
+        : "Pick your first mission — three ways to start.";
       registerRoadmapInSidebar(idea, ideaIndex);
       renderSidebarRoadmaps();
       schedulePersist();
@@ -30973,16 +30973,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       cancelDeferredRoadmapPhaseReveal();
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
-      syncAndRepairPickedRoadmap(idea, state.roadmapKey);
+      const currentEntry = state.allRoadmaps[state.roadmapKey];
+      state.flexibleFirstMissionPicked = Boolean(currentEntry?.flexibleFirstMissionPicked);
+      if (currentEntry?.flexibleFirstMissionPicked) {
+        syncAndRepairPickedRoadmap(idea, state.roadmapKey);
+      } else {
+        state.roadmapStages = [];
+        state.flexiblePendingFullStages = currentEntry?.awaitingFirstMissionPick && currentEntry?.stages?.length
+          ? currentEntry.stages
+          : null;
+      }
       const cachedEarly = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
         ? state.allRoadmaps[state.roadmapKey]
         : null;
-      const coercedEarly = cachedEarly?.stages?.length
-        ? coerceRoadmapStagesForRender(normalizeRoadmapStages(cachedEarly.stages))
-        : [];
-      state.roadmapStages = coercedEarly.length
-        ? coercedEarly
-        : (roadmapHasVisibleMissionCards(state.roadmapStages) ? state.roadmapStages : []);
+      if (!state.roadmapStages.length && cachedEarly?.stages?.length && currentEntry?.flexibleFirstMissionPicked) {
+        const coercedEarly = coerceRoadmapStagesForRender(normalizeRoadmapStages(cachedEarly.stages));
+        if (coercedEarly.length) state.roadmapStages = coercedEarly;
+      }
       if (options.force) clearRemovedRoadmapKey(idea.title);
       if (!cachedEarly?.awaitingFirstMissionPick) {
         hideRoadmapBranchPicker();
@@ -32737,6 +32744,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
 
       if (!options.skipRecover && !list.children.length && state.currentIdea) {
+        if (shouldOfferFirstMissionPicker() || isFirstMissionPickerActive()) return;
         if (repairRoadmapMissionsNow(state.currentIdea)) return;
         if (!isFirstMissionPickerActive()) {
           recoverEmptyRoadmapStages(state.currentIdea, getCurrentIdeaIndex());
