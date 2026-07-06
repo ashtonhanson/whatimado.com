@@ -15956,7 +15956,7 @@
       return ids;
     }
 
-    function getTaskDraftSuggestions(normalized) {
+    function getTaskDraftSuggestions(normalized, options = {}) {
       const idOrder = [];
       if (isPeopleInterviewTask(normalized)) {
         getPeopleInterviewDraftSuggestionIds(normalized).forEach((id) => idOrder.push(id));
@@ -15987,7 +15987,10 @@
         });
       });
 
-      return suggestions.filter((entry) => !entry.covered).slice(0, 6);
+      const list = options.forDisplay
+        ? suggestions
+        : suggestions.filter((entry) => !entry.covered);
+      return list.slice(0, 6);
     }
 
     function shouldRelaxDraftDuplicateCheck(suggestion) {
@@ -16165,19 +16168,18 @@ If recording answers:
     }
 
     function renderTaskDraftSuggestionsHtml(taskId, normalized, suggestions = null) {
-      const items = suggestions || getTaskDraftSuggestions(normalized);
-      if (!items.length) {
-        if (taskHasPreparedAssets(normalized)) {
-          return `<p class="task-draft-suggestions-note">What's prepared above should be enough for this step. Use My Notes or Ask if you want a tweak.</p>`;
-        }
-        return "";
-      }
-      const buttons = items.map((entry) =>
-        `<button type="button" class="task-draft-suggestion-btn" data-task-id="${escapeHtml(taskId)}" data-suggestion-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.desc)}">
-          <span class="task-draft-suggestion-label">${escapeHtml(entry.label)}</span>
-          <span class="task-draft-suggestion-desc">${escapeHtml(entry.desc)}</span>
-        </button>`
-      ).join("");
+      const items = suggestions || getTaskDraftSuggestions(normalized, { forDisplay: true });
+      if (!items.length) return "";
+      const buttons = items.map((entry) => {
+        const actionLabel = entry.covered ? `Open ${entry.label}` : entry.label;
+        const actionDesc = entry.covered
+          ? `Use the draft we already prepared for this step`
+          : entry.desc;
+        return `<button type="button" class="task-draft-suggestion-btn" data-task-id="${escapeHtml(taskId)}" data-suggestion-id="${escapeHtml(entry.id)}" title="${escapeHtml(actionDesc)}">
+          <span class="task-draft-suggestion-label">${escapeHtml(actionLabel)}</span>
+          <span class="task-draft-suggestion-desc">${escapeHtml(actionDesc)}</span>
+        </button>`;
+      }).join("");
       return `<div class="task-draft-suggestions" data-draft-suggestions>${buttons}</div>`;
     }
 
@@ -19418,7 +19420,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               </section>`;
       }
 
-      const suggestions = getTaskDraftSuggestions(normalized);
+      const suggestions = getTaskDraftSuggestions(normalized, { forDisplay: true });
       const suggestionsHtml = renderTaskDraftSuggestionsHtml(taskId, normalized, suggestions);
       const hasPreparedAssets = taskHasPreparedAssets(normalized) || getFlatTaskResources(normalized).length > 0;
       const hasMentionedDrafts = getMentionedDraftSuggestionIds(normalized).length > 0;
@@ -19430,10 +19432,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return `
               <section class="task-mentor-section task-mentor-section--draft">
                 <h4 class="task-mentor-label">Quick help for this step</h4>
-                <p class="task-draft-hint">Pick what you need — we'll generate it when you click.</p>
+                <p class="task-draft-hint">Tap a button below — your draft appears in the box underneath.</p>
                 ${suggestionsHtml}
                 <div class="task-draft-panel" data-draft-panel>
-                  <p class="task-draft-expand-hint">Your draft appears here after you pick a suggestion above.</p>
+                  <p class="task-draft-expand-hint">Your draft appears here after you tap a button above.</p>
                   <div class="task-draft-generating" hidden aria-live="polite">
                     <span class="task-draft-progress-status">Generating draft…</span>
                     <div class="task-draft-progress">
@@ -32925,13 +32927,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
       const meta = renderTaskMentorMetaHtml(normalized);
-      const breakdown = simplified ? "" : renderTaskBreakdownHtml(normalized, id);
-      const compressedBreakdown = renderCompressedBreakdownHtml(displaySteps, id);
+      const showBreakdown = !simplified && displaySteps.length >= 2;
+      const breakdown = showBreakdown ? renderTaskBreakdownHtml(normalized, id) : "";
+      const compressedBreakdown = showBreakdown ? renderCompressedBreakdownHtml(displaySteps, id) : "";
       const mentorHelp = renderMentorFindingsHtml(normalized, { simplified });
       const contextNoteHtml = renderTaskContextNoteHtml(contextNote);
       const outcomeChecklist = simplified ? "" : renderTaskOutcomeChecklistHtml(id, normalized);
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
-      const inlineDraftButtons = renderTaskInlineDraftButtonsHtml(id, normalized);
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const aiAssist = renderTaskAiAssistHtml(id, normalized);
       const nextTaskId = getNextTaskId(stageIndex, taskIndex);
@@ -32974,10 +32976,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 <section class="task-mentor-section task-mentor-section--task">
                   <h4 class="task-mentor-label">What to do</h4>
                   <div class="task-text">${linkifyTaskTextHtml(text)}</div>
-                  ${inlineDraftButtons}
                 </section>
                 ${mentorHelp}
-                ${outcomeSection}` : `${contextNoteHtml}${inlineDraftButtons}${mentorHelp}${outcomeSection}`;
+                ${outcomeSection}` : `${contextNoteHtml}${mentorHelp}${outcomeSection}`;
 
       return `
         <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
@@ -33003,7 +33004,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   ${meta}
                   ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
                   ${simplified ? simplifiedWhatToDo : ""}
-                  ${simplified && displaySteps.length >= 2 ? renderTaskBreakdownHtml(normalized, id) : ""}
                 </section>
                 ${detailSections}
                 ${actionPack}
