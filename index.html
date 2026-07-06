@@ -15852,7 +15852,9 @@
         ids.push(PRIMARY_DRAFT_TYPE_TO_SUGGESTION[primary]);
       }
       const blob = getTaskContentBlob(normalized);
-      if (/\bgrant|funding|scholarship\b/.test(blob)) ids.push("grant_proposal");
+      if (/\bgrant|funding|scholarship\b/.test(blob) && !/\b(sbdc|score|business advisor|office hours|growth hub)\b/.test(blob)) {
+        ids.push("grant_proposal");
+      }
       if (/\bmeeting agenda|run the meeting\b/.test(blob)) ids.push("meeting_agenda");
       if (/\bflyer|poster|handout\b/.test(blob)) ids.push("flyer");
       if (/\bpresentation|slide deck|google slides\b/.test(blob)) ids.push("presentation");
@@ -18220,9 +18222,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function summarizeMissionTitle(text) {
       let copy = humanizeTaskText(stripMentorActionPrefix(String(text || "").trim()));
       if (!copy || isGenericOutcomeText(copy)) return "";
-      copy = copy.replace(/^(review|use|read|call|send|apply to|start with)\s+/i, "");
+      const lower = copy.toLowerCase();
+      if (/\b(post one|facebook|nextdoor|marketplace|community group)\b/.test(lower)) {
+        return "Post your offer where locals look";
+      }
+      if (/\b(sbdc|score|business advisor|small-business advisor|office hours)\b/.test(lower)) {
+        return "Book a free business advising session";
+      }
+      if (/\b(talk to|interview|ask \d+ people)\b/.test(lower)) {
+        const count = copy.match(/\b(\d+)\b/);
+        return count ? `Talk to ${count[1]} potential customers` : "Talk to people who might buy";
+      }
+      if (/\b(pric|pricing|rate card|package your)\b/.test(lower)) {
+        return "Set your prices and packages";
+      }
+      copy = copy.replace(/^(review|use|read|call|send|apply to|start with|search)\s+/i, "");
       const first = copy.split(/(?<=[.!?])\s+/).find((part) => part.trim().length > 12) || copy;
-      const trimmed = first.length > 92 ? `${first.slice(0, 89).trim()}…` : first.trim();
+      let trimmed = first.length > 72 ? `${first.slice(0, 69).trim()}…` : first.trim();
+      trimmed = trimmed.replace(/\s+[—–-]\s+.*$/, "").trim();
       if (!trimmed || isGenericOutcomeText(trimmed)) return "";
       return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
     }
@@ -18271,17 +18288,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function extractTaskAngle(normalized) {
       const blob = getTaskContentBlob(normalized);
+      const action = getTaskDisplayActionText(normalized).toLowerCase();
       if (/\b(publish|portfolio|website|your site|web page|case stud|testimonial|proof page|organized proof|go live)\b/.test(blob)) {
         return "publish_proof";
       }
-      if (/\b(pric|pricing|package|tier|offer|rate card)\b/.test(blob)) return "package_offer";
-      if (/\b(tracker|spreadsheet|comparison sheet|log each|contact tracking)\b/.test(blob)) return "track_outreach";
+      if (/\b(post one|facebook|nextdoor|reddit|marketplace|community group|tell one friend|gumtree|kijiji|finn\.no)\b/.test(action)) {
+        return "social_post";
+      }
       if (isPeopleInterviewTask(normalized)) return "interviews";
+      if (/\b(sbdc|score|small-business advisor|business advisor|office hours|growth hub|innovasjon norge|bdc|chamber of commerce)\b/.test(blob)) {
+        return "business_advisor";
+      }
+      if (/\b(tracker|spreadsheet|comparison sheet|log each|contact tracking)\b/.test(blob)) return "track_outreach";
       if (isOrgListTask(normalized)) return "org_research";
       if (/\blist \d+ people\b/.test(blob) || /\bally\b/.test(blob)) return "ally_list";
+      if (/\b(grant proposal|funding application|apply for (?:a )?grant)\b/.test(blob)) return "funding";
+      if (/\b(pric|pricing|package your|rate card|pricing sheet)\b/.test(blob)) return "package_offer";
       if (/\b(grant|funding|scholarship)\b/.test(blob)) return "funding";
       if (/\b(google business|seo|local search|visibility)\b/.test(blob)) return "visibility";
-      if (/\b(post|reddit|facebook|nextdoor|social|launch|share)\b/.test(blob)) return "visibility";
+      if (/\b(post|reddit|facebook|launch|share)\b/.test(blob)) return "visibility";
       if (/\b(first (?:paying )?client|first sale|first booking|paying customer)\b/.test(blob)) return "first_client";
       if (/\b(email|outreach|call|phone|dm|prospect)\b/.test(blob)) return "outreach";
       if (/\b(one-page mission|mission statement)\b/.test(blob)) return "mission_clarity";
@@ -18299,9 +18324,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ],
         package_offer: [
           "Define what you're selling",
-          "Set your prices",
+          "Set your prices and packages",
           "Package your offer clearly",
           "Spell out your tiers"
+        ],
+        social_post: [
+          "Post your offer where locals look",
+          "Share your story in one group",
+          "Put your work in front of neighbors",
+          "Tell locals what you're offering"
+        ],
+        business_advisor: [
+          "Book a free business session",
+          "Get expert pricing guidance",
+          "Use local startup advising",
+          "Ask a pro about next steps"
         ],
         track_outreach: [
           "Track who you've contacted",
@@ -18372,21 +18409,39 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!label) return true;
       const actionText = getTaskDisplayActionText(normalized);
       const sourceText = preserveTaskSourceText(normalized);
-      if (textSimilarity(label, actionText) >= 0.46) return true;
-      if (textSimilarity(label, sourceText) >= 0.46) return true;
-      if (textSimilarity(label, normalized.text || "") >= 0.46) return true;
-      const words = label.toLowerCase().split(/\s+/).filter((word) => word.length > 3);
-      if (!words.length) return false;
-      const taskBlob = `${actionText} ${sourceText}`.toLowerCase();
-      const overlap = words.filter((word) => taskBlob.includes(word)).length;
-      return overlap / words.length >= 0.58;
+      if (textSimilarity(label, actionText) >= 0.82) return true;
+      if (textSimilarity(label, sourceText) >= 0.82) return true;
+      if (textSimilarity(label, normalized.text || "") >= 0.82) return true;
+      return false;
+    }
+
+    function missionTitleAlignsWithTask(title, normalized) {
+      const label = String(title || "").trim().toLowerCase();
+      if (!label) return false;
+      const angle = extractTaskAngle(normalized);
+      const action = getTaskDisplayActionText(normalized).toLowerCase();
+      const angleChecks = {
+        social_post: /\b(post|share|facebook|nextdoor|group|local|story|offer)\b/,
+        business_advisor: /\b(book|session|advis|sbdc|score|guidance|expert)\b/,
+        interviews: /\b(talk|conversation|interview|people|customers|feedback)\b/,
+        package_offer: /\b(pric|package|tier|offer|sell|rate)\b/,
+        funding: /\b(grant|fund|apply|money)\b/,
+        first_client: /\b(client|booking|sale|paying|income)\b/,
+        outreach: /\b(reach|outreach|pitch|prospect|email|call)\b/
+      };
+      const check = angleChecks[angle];
+      if (!check) return true;
+      return check.test(label) || check.test(action);
     }
 
     function pickDistinctMissionTitle(normalized, options = {}) {
       const { taskIndex = 0, stageLabel = "", siblingTitles = [] } = options;
       const idea = state.currentIdea;
       const angle = extractTaskAngle(normalized);
-      const pool = [...getMissionTitleCandidates(angle, normalized, idea)];
+      const pool = [];
+      const fromAction = summarizeMissionTitle(getTaskDisplayActionText(normalized));
+      if (fromAction) pool.push(fromAction);
+      pool.push(...getMissionTitleCandidates(angle, normalized, idea));
       const forInfer = { ...normalized, mission: "" };
       const inferred = inferMissionTitle(forInfer, { taskIndex, stageLabel });
       if (inferred) pool.push(inferred);
@@ -18400,6 +18455,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const title = cleanMissionTitle(String(candidate || "").trim(), normalized, idea);
         if (!title || missionTitleLooksIncomplete(title)) continue;
         if (missionTitleTooCloseToTask(title, normalized)) continue;
+        if (!missionTitleAlignsWithTask(title, normalized)) continue;
         if (siblingTitles.some((sibling) => textSimilarity(sibling, title) >= 0.68)) continue;
         return title;
       }
@@ -18510,6 +18566,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (/\b(grant|funding|scholarship)\b/.test(blob)) {
         return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Secure your first grant or funding source";
+      }
+      if (/\b(sbdc|score|business advisor|office hours|growth hub)\b/.test(blob)) {
+        return taskIndex > 0
+          ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
+          : "Book a free business advising session";
+      }
+      if (/\b(post one|facebook|nextdoor|marketplace|community group)\b/.test(blob)) {
+        return taskIndex > 0
+          ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
+          : "Post your offer where locals look";
       }
       if (shouldUseBusinessRoadmapTasks(state.currentIdea)) {
         const service = getServiceLabel(state.currentIdea).replace(/\s+service$/i, "");
@@ -18832,6 +18898,122 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return normalized;
     }
 
+    function getTaskActionFingerprint(normalized) {
+      const base = normalizeRoadmapText(preserveTaskSourceText(normalized) || normalized.text || "");
+      return base.replace(/\b\d+\b/g, "#").replace(/\s+/g, " ").trim().slice(0, 160);
+    }
+
+    function tasksAreSubstantiallyRepeated(a, b) {
+      const fa = getTaskActionFingerprint(a);
+      const fb = getTaskActionFingerprint(b);
+      if (!fa || !fb) return false;
+      if (fa === fb) return true;
+      if (textSimilarity(fa, fb) >= 0.72) return true;
+      const angleA = extractTaskAngle(a);
+      const angleB = extractTaskAngle(b);
+      if (angleA === angleB && angleA !== "general" && textSimilarity(fa, fb) >= 0.5) return true;
+      return false;
+    }
+
+    function getMaxTasksPerAngle(angle) {
+      const limits = {
+        interviews: 1,
+        social_post: 2,
+        business_advisor: 1,
+        package_offer: 2,
+        funding: 1,
+        org_research: 1,
+        ally_list: 1,
+        track_outreach: 2,
+        outreach: 2,
+        visibility: 2,
+        first_client: 2
+      };
+      return limits[angle] ?? 3;
+    }
+
+    function buildAlternateTaskForAngle(angle, repeatIndex, idea = state.currentIdea) {
+      const service = getServiceLabel(idea);
+      const loc = getUserLocation() || "your area";
+      const alts = {
+        interviews: [
+          `Follow up with 2 people you already talked to — ask who else you should speak with about your ${service}`,
+          `Write down the top 3 objections you heard and how you'd answer each before your next conversation`
+        ],
+        social_post: [
+          `Share a short customer story or before/after in a different local group than your first post`,
+          `Reply helpfully in 3 threads where people ask about ${service.replace(/\s+service$/i, "")} — no pitch, just be useful`
+        ],
+        business_advisor: [
+          `Before your advising session, list your top 3 pricing questions for your ${service}`,
+          `After your session, write down the one change you'll make to your offer this week`
+        ],
+        package_offer: [
+          `Write two packages (basic and premium) for your ${service} with price, what's included, and turnaround time`,
+          `Ask one person what they'd realistically pay for your ${service} — adjust your draft price once`
+        ],
+        funding: [
+          `List 3 grants or programs in ${loc} that fit your ${service} — note deadlines and one eligibility rule each`,
+          `Draft a 5-sentence project summary you could paste into a funding application`
+        ],
+        outreach: [
+          `Send one warm follow-up to someone who showed interest in your ${service}`,
+          `Identify 5 local businesses that could refer ${service.replace(/\s+service$/i, "")} clients — note why each fits`
+        ],
+        visibility: [
+          `Update your Google Business Profile or main listing with your ${service} offer and one photo`,
+          `Ask your last happy customer for a one-sentence review you can post online`
+        ],
+        first_client: [
+          `Offer a limited intro rate to one new ${service.replace(/\s+service$/i, "")} client this week — set a clear end date`,
+          `Write down what almost stopped your last lead from buying — fix that one thing in your offer`
+        ]
+      };
+      const options = alts[angle] || [
+        `Take the next different action for your ${service} — pick something you have not done yet on this roadmap`,
+        `Review what already worked for your ${service} and do the next logical step forward`
+      ];
+      const text = options[Math.min(repeatIndex, options.length - 1)];
+      return normalizeRoadmapTask({ text, duration: "30 minutes", difficulty: "Medium" });
+    }
+
+    function dedupeTasksAcrossRoadmap(stages) {
+      const seen = [];
+      const angleCounts = {};
+
+      return (stages || []).map((stage, stageIndex) => {
+        const kept = [];
+        (stage.tasks || []).forEach((task) => {
+          if (isPendingRoadmapTask(task)) {
+            kept.push(task);
+            return;
+          }
+          let normalized = typeof task === "object" && task?.text !== undefined
+            ? { ...task }
+            : normalizeRoadmapTask(task);
+          const angle = extractTaskAngle(normalized);
+          const dupePrior = seen.some((prior) => tasksAreSubstantiallyRepeated(prior.task, normalized));
+          const angleCap = getMaxTasksPerAngle(angle);
+          const angleExceeded = (angleCounts[angle] || 0) >= angleCap;
+
+          if (dupePrior || angleExceeded) {
+            const alt = buildAlternateTaskForAngle(angle, angleCounts[angle] || 0, state.currentIdea);
+            if (!seen.some((prior) => tasksAreSubstantiallyRepeated(prior.task, alt))) {
+              normalized = alt;
+            } else {
+              return;
+            }
+          }
+
+          const finalAngle = extractTaskAngle(normalized);
+          seen.push({ task: normalized, stageIndex });
+          angleCounts[finalAngle] = (angleCounts[finalAngle] || 0) + 1;
+          kept.push(normalized);
+        });
+        return { ...stage, tasks: kept };
+      }).filter((stage) => (stage.tasks || []).length > 0);
+    }
+
     function dedupeMissionsInStage(tasks, stageLabel = "", stageIndex = 0) {
       const siblingTitles = [];
       return (tasks || []).map((task, taskIndex) => {
@@ -18854,7 +19036,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function mentorizeRoadmapStages(stages) {
-      return (stages || []).map((stage, stageIndex) => {
+      const dedupedStages = dedupeTasksAcrossRoadmap(stages);
+      return (dedupedStages || []).map((stage, stageIndex) => {
         const tasks = (stage.tasks || []).map((task) => (
           isPendingRoadmapTask(task) ? { _pendingTask: true } : mentorizeTask(task)
         ));
@@ -27260,7 +27443,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (name === "convo") {
         scrollConversation();
       } else if (!options.skipScrollTop) {
-        window.scrollTo({ top: 0, behavior: options.skipPersist ? "auto" : "smooth" });
+        if (name === "roadmap") {
+          ensureRoadmapOpensAtTop();
+        } else {
+          window.scrollTo({ top: 0, behavior: options.skipPersist ? "auto" : "smooth" });
+        }
       }
       if (!options.skipPersist) schedulePersist();
       if (!options.skipTrack && previousScreen !== name) {
@@ -29430,7 +29617,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       updateMomentum();
 
       if (context?.firstMission) {
-        scrollRoadmapToOverviewHeader();
+        ensureRoadmapOpensAtTop();
       }
 
       enrichRoadmapStagesAsync(state.roadmapStages, state.currentIdea);
@@ -29731,7 +29918,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setRoadmapLoading(false);
       setRoadmapRefining(false);
       if (state.flexibleFirstMissionPicked && roadmapHasVisibleMissionCards(state.roadmapStages)) {
-        renderStages(state.roadmapStages);
+        renderStages(state.roadmapStages, { scrollToHeader: true });
         registerRoadmapInSidebar(idea, ideaIndex);
         renderSidebarRoadmaps();
         schedulePersist();
@@ -31414,7 +31601,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.allRoadmaps[state.roadmapKey] = { idea, stages: state.roadmapStages, source: roadmapSource };
       clearRemovedRoadmapKey(idea.title);
       $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, roadmapSource);
-      renderStages(state.roadmapStages);
+      renderStages(state.roadmapStages, {
+        scrollToHeader: initialReveal && !refineUpdate
+      });
       if (isFinal) {
         stopPendingRoadmapProgressBars();
       } else if (hasPendingRoadmapContent(state.roadmapStages)) {
@@ -31737,7 +31926,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         syncFlexibleFirstMissionStateFromRoadmap();
         prepareFirstMissionForReveal(idea);
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedSource);
-        renderStages(state.roadmapStages);
+        renderStages(state.roadmapStages, { scrollToHeader: true });
         if (!$("#stage-list")?.children.length) {
           repairRoadmapMissionsNow(idea);
         }
@@ -32336,12 +32525,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         behavior: options.behavior ?? "smooth",
         extraOffset: options.extraOffset ?? 10
       });
+      if (options.delayMs === 0) return;
       window.setTimeout(() => {
         scrollRoadmapTargetIntoView(header, {
           behavior: "auto",
           extraOffset: options.extraOffset ?? 10
         });
       }, options.delayMs ?? 220);
+    }
+
+    function ensureRoadmapOpensAtTop(options = {}) {
+      const behavior = options.behavior ?? "auto";
+      const extraOffset = options.extraOffset ?? 10;
+      const run = () => scrollRoadmapToOverviewHeader({ behavior, delayMs: 0, extraOffset });
+      run();
+      requestAnimationFrame(() => requestAnimationFrame(run));
+      window.setTimeout(run, options.retryMs ?? 200);
     }
 
     function getActiveGlanceStageIndex(stages = state.roadmapStages) {
@@ -33248,7 +33447,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.flexiblePendingFullStages = null;
       hideRoadmapBranchPicker();
       prepareFirstMissionForReveal(idea);
-      renderStages(state.roadmapStages, { skipRecover: true });
+      renderStages(state.roadmapStages, { skipRecover: true, scrollToHeader: true });
       enrichRoadmapStagesAsync(state.roadmapStages, idea);
       schedulePersist();
       trackEvent("roadmap_empty_recovered", {
@@ -33362,6 +33561,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       updateRoadmapOverviewChrome();
       updateRoadmapLocalResourcesList();
       updateMomentum();
+      if (options.scrollToHeader) {
+        ensureRoadmapOpensAtTop();
+      }
     }
 
     function highlightUpdatedTasks(taskIds) {
