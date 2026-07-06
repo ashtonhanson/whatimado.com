@@ -6335,11 +6335,11 @@
       top: .85rem;
       right: .85rem;
       z-index: 3;
-      display: grid;
-      place-items: center;
-      width: 28px;
-      height: 28px;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
       margin: 0;
+      max-width: calc(100% - 1.4rem);
       cursor: pointer;
     }
 
@@ -6347,8 +6347,17 @@
       width: 18px;
       height: 18px;
       margin: 0;
+      flex: 0 0 auto;
       accent-color: var(--purple);
       cursor: pointer;
+    }
+
+    .opp-card-save-label {
+      font-size: .68rem;
+      font-weight: 700;
+      color: var(--plan-card-muted, var(--ink-muted));
+      line-height: 1.2;
+      white-space: nowrap;
     }
 
     .opp-card.is-saved {
@@ -12802,7 +12811,7 @@
           <div class="map-heading">
             <h2 class="page-title">Your <em>Possibility Maps</em></h2>
             <p class="map-parent-context" id="map-page-context" hidden></p>
-            <p class="page-subtitle">Review each path below, then open a step-by-step roadmap for the one that fits you best.</p>
+            <p class="page-subtitle">Click to explore. Check to Save.</p>
           </div>
         </div>
 
@@ -28727,9 +28736,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function updateMapPathModeCopy() {
       const subtitle = $("#screen-map .page-subtitle");
       if (!subtitle) return;
-      subtitle.textContent = isDirectPathMode()
-        ? "Pick three paths to compare — open one for your full step-by-step roadmap."
-        : "Review each path below, then open a step-by-step roadmap for the one that fits you best.";
+      subtitle.textContent = "Click to explore. Check to Save.";
     }
 
     function getSavedFirstMissionBranchChoice(roadmapKey = state.roadmapKey) {
@@ -28912,7 +28919,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (titleEl) {
         titleEl.textContent = options.firstMission
-          ? "Pick your first mission"
+          ? "More missions"
           : options.phaseComplete
           ? "Pick the direction for your next phase"
           : (options.fromAlter ? "Alter your path — pick a new direction" : "Pick your next mission");
@@ -30099,6 +30106,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       card.innerHTML = `
           <label class="opp-card-save" title="Save this path to revisit later">
             <input type="checkbox" class="opp-card-save-input opp-card-select-input" data-path-select="${index}" aria-label="Save ${escapeHtml(idea.title)} for later">
+            <span class="opp-card-save-label">Save map for later.</span>
           </label>
           <div class="opp-card-inner">
             <div class="opp-card-body">
