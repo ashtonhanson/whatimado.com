@@ -1820,8 +1820,8 @@
     }
 
     html[data-color-scheme="adult"] .bubble.ai {
-      color: #fff;
-      background: var(--purple);
+      color: var(--purple);
+      background: #fff;
       border: 1px solid var(--purple);
       box-shadow: var(--shadow);
     }
@@ -1831,7 +1831,7 @@
     }
 
     html[data-color-scheme="adult"] .typing-status {
-      color: rgba(255, 255, 255, .9);
+      color: var(--purple);
     }
 
     html[data-color-scheme="adult"] .reset-pill {
@@ -5121,11 +5121,11 @@
     }
 
     .bubble.ai {
-      color: #fff;
-      background: var(--purple);
+      color: var(--purple);
+      background: #fff;
       border: 1px solid var(--purple);
       border-top-left-radius: 6px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, .28);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .08);
     }
 
     .bubble-ai .ai-label {
@@ -5134,7 +5134,7 @@
 
     .ai-label {
       margin: 0 0 .35rem;
-      color: var(--purple-2);
+      color: var(--purple);
       font-size: .65rem;
       font-weight: 800;
       letter-spacing: .06em;
@@ -5143,7 +5143,7 @@
 
     .typing-status {
       margin: 0 0 .4rem;
-      color: rgba(255, 255, 255, .92);
+      color: var(--purple);
       font-size: .82rem;
       font-weight: 600;
       line-height: 1.35;
@@ -5155,19 +5155,19 @@
     }
 
     .bubble.ai .bubble-path-progress .site-loading-progress-track {
-      background: rgba(255, 255, 255, .22);
+      background: color-mix(in srgb, var(--purple) 14%, #fff);
     }
 
     .bubble.ai .bubble-path-progress .site-loading-progress-fill {
-      background: linear-gradient(90deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .72));
+      background: linear-gradient(90deg, var(--purple), var(--purple-2));
     }
 
     .bubble.ai .bubble-path-progress .site-loading-progress-meta {
-      color: rgba(255, 255, 255, .88);
+      color: var(--ink-muted, color-mix(in srgb, var(--purple) 72%, #000));
     }
 
     .bubble.ai .bubble-path-progress .site-loading-progress-pct {
-      color: #fff;
+      color: var(--purple);
     }
 
     .typing-dots {
@@ -5180,7 +5180,7 @@
       width: 5px;
       height: 5px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, .92);
+      background: var(--purple);
       animation: typing 1.2s infinite ease;
     }
 
@@ -7533,7 +7533,7 @@
 
     .task-mentor-section--context {
       background: rgba(78, 205, 196, .07);
-      margin: 0 -.15rem .65rem;
+      margin: 1.1rem -.15rem .85rem;
       padding: .7rem .85rem;
       border-radius: .65rem;
       border: 1px solid rgba(78, 205, 196, .18);
@@ -7608,7 +7608,18 @@
     }
 
     .task-mentor-copy--outcome {
-      margin-top: .65rem;
+      margin-top: 1.15rem;
+    }
+
+    .task-mentor-section--outcome {
+      margin-top: 1.35rem;
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .task-mentor-section--findings + .task-mentor-section--outcome,
+    .task-mentor-section--findings + .task-mentor-copy--outcome {
+      margin-top: 1.45rem;
     }
 
     .task-mentor-copy {
@@ -7630,6 +7641,7 @@
       flex-wrap: wrap;
       gap: .4rem;
       margin-top: .55rem;
+      margin-bottom: 1.15rem;
     }
 
     .task-mentor-badge {
@@ -15297,6 +15309,42 @@
       return personalizeTaskActionText(text, idea);
     }
 
+    function missionTitleLooksIncomplete(title) {
+      const copy = String(title || "").trim();
+      if (!copy) return true;
+      if (/\b(toward|for|with|into|about|to|on|in|at)\s*$/i.test(copy)) return true;
+      if (/\bLand your first foothold\b/i.test(copy) && copy.length < 48) return true;
+      return false;
+    }
+
+    function taskBlobSuggestsJobSearch(blob) {
+      const lower = String(blob || "").toLowerCase();
+      if (/\bself[- ]employ/.test(lower)) return false;
+      return /\b(job search|looking for (?:a )?job|get a job|hire me|resume|workforce|staffing|temp agency|interview for a job)\b/.test(lower)
+        || (/\bemployment\b/.test(lower) && !/\bself[- ]employment\b/.test(lower));
+    }
+
+    function repairIncompleteMissionTitle(copy, normalized, idea = state.currentIdea) {
+      let title = String(copy || "").trim();
+      if (!missionTitleLooksIncomplete(title)) return title;
+
+      const fromTask = summarizeMissionTitle(buildMentorUserActionText(normalized) || normalized.text);
+      if (fromTask && !missionTitleLooksIncomplete(fromTask)) return fromTask;
+
+      const blob = `${normalized.text} ${normalized.mission || ""} ${normalized.why || ""}`.toLowerCase();
+      if (shouldUseBusinessRoadmapTasks(idea)) {
+        const service = getServiceLabel(idea).replace(/\s+service$/i, "");
+        if (/\blist \d+ people\b/.test(blob) || /\bally\b/.test(blob)) return "Build your ally list";
+        if (/\b(contact|call|outreach|tracker|spreadsheet|prospect)\b/.test(blob)) {
+          return `Reach out to your first ${service} prospect`;
+        }
+        if (/\b(client|customer|booking|first sale)\b/.test(blob)) return "Win your first paying client";
+        return `Take your first step toward ${service}`;
+      }
+
+      return title.replace(/\s+\b(toward|for|with|into|about|to|on|in|at)\s*$/i, "").trim() || "Take your next step";
+    }
+
     function cleanMissionTitle(mission, normalized, idea = state.currentIdea) {
       let copy = humanizeTaskText(String(mission || "").trim());
       if (!copy) return copy;
@@ -15335,7 +15383,7 @@
         if (fromTask) return fromTask;
       }
 
-      return copy.trim();
+      return repairIncompleteMissionTitle(copy.trim(), normalized, idea);
     }
 
     function formatPotentialMetricValue(raw) {
@@ -17721,6 +17769,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           </ul>`;
     }
 
+    function renderTaskOutcomeSectionHtml(taskId, normalized, outcome) {
+      const checklist = renderTaskOutcomeChecklistHtml(taskId, normalized);
+      if ((!outcome || isTaskRestatement(outcome, normalized)) && !checklist) return "";
+      if (!outcome || isTaskRestatement(outcome, normalized)) return checklist;
+      return `
+        <section class="task-mentor-section task-mentor-section--outcome">
+          <h4 class="task-mentor-label">Done when</h4>
+          <p class="task-mentor-copy">${escapeHtml(outcome)}</p>
+          ${checklist}
+        </section>`;
+    }
+
     function renderTaskMentorMetaHtml(normalized) {
       const duration = formatDisplayDuration(normalized.duration);
       const difficulty = normalizeTaskDifficulty(normalized.difficulty) || "Easy";
@@ -18207,6 +18267,155 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         : `Step ${taskIndex + 1} toward your goal`;
     }
 
+    function extractTaskAngle(normalized) {
+      const blob = getTaskContentBlob(normalized);
+      if (/\b(publish|portfolio|website|your site|web page|case stud|testimonial|proof page|organized proof|go live)\b/.test(blob)) {
+        return "publish_proof";
+      }
+      if (/\b(pric|pricing|package|tier|offer|rate card)\b/.test(blob)) return "package_offer";
+      if (/\b(tracker|spreadsheet|comparison sheet|log each|contact tracking)\b/.test(blob)) return "track_outreach";
+      if (isPeopleInterviewTask(normalized)) return "interviews";
+      if (isOrgListTask(normalized)) return "org_research";
+      if (/\blist \d+ people\b/.test(blob) || /\bally\b/.test(blob)) return "ally_list";
+      if (/\b(grant|funding|scholarship)\b/.test(blob)) return "funding";
+      if (/\b(google business|seo|local search|visibility)\b/.test(blob)) return "visibility";
+      if (/\b(post|reddit|facebook|nextdoor|social|launch|share)\b/.test(blob)) return "visibility";
+      if (/\b(first (?:paying )?client|first sale|first booking|paying customer)\b/.test(blob)) return "first_client";
+      if (/\b(email|outreach|call|phone|dm|prospect)\b/.test(blob)) return "outreach";
+      if (/\b(one-page mission|mission statement)\b/.test(blob)) return "mission_clarity";
+      return "general";
+    }
+
+    function getMissionTitleCandidates(angle, normalized, idea = state.currentIdea) {
+      const service = getServiceLabel(idea).replace(/\s+service$/i, "");
+      const pools = {
+        publish_proof: [
+          "Put your proof online",
+          "Make your results visible",
+          "Show what you've accomplished",
+          "Share real examples publicly"
+        ],
+        package_offer: [
+          "Define what you're selling",
+          "Set your prices",
+          "Package your offer clearly",
+          "Spell out your tiers"
+        ],
+        track_outreach: [
+          "Track who you've contacted",
+          "Organize your outreach list",
+          "Log your conversations",
+          "Keep your pipeline tidy"
+        ],
+        first_client: [
+          "Land your first booking",
+          "Turn interest into income",
+          "Get a yes from a buyer",
+          "Close your first sale"
+        ],
+        outreach: [
+          "Reach out to one prospect",
+          "Start a sales conversation",
+          `Pitch your ${service}`,
+          "Open a warm conversation"
+        ],
+        interviews: [
+          "Learn from real conversations",
+          "Gather firsthand insight",
+          "Talk to people in the know",
+          "Validate with live feedback"
+        ],
+        org_research: [
+          "Map who already does this",
+          "Study the local landscape",
+          "See where you could fit in",
+          "Compare similar programs"
+        ],
+        ally_list: [
+          "Build your ally list",
+          "Line up people in your corner",
+          "Name your first supporters",
+          "Find people who can refer you"
+        ],
+        funding: [
+          "Find money to fund this",
+          "Target the right grant",
+          "Line up your first funding",
+          "Apply where you fit best"
+        ],
+        visibility: [
+          "Get seen by the right people",
+          "Show up where prospects look",
+          "Boost your local presence",
+          "Put your work in front of others"
+        ],
+        mission_clarity: [
+          "Lock in who you're helping",
+          "Clarify your purpose",
+          "Define your focus",
+          "State what you're building toward"
+        ],
+        general: [
+          "Take the next concrete step",
+          "Move this phase forward",
+          "Make measurable progress",
+          "Complete one focused action"
+        ]
+      };
+      return pools[angle] || pools.general;
+    }
+
+    function missionTitleTooCloseToTask(title, normalized) {
+      const label = String(title || "").trim();
+      if (!label) return true;
+      const actionText = getTaskDisplayActionText(normalized);
+      const sourceText = preserveTaskSourceText(normalized);
+      if (textSimilarity(label, actionText) >= 0.46) return true;
+      if (textSimilarity(label, sourceText) >= 0.46) return true;
+      if (textSimilarity(label, normalized.text || "") >= 0.46) return true;
+      const words = label.toLowerCase().split(/\s+/).filter((word) => word.length > 3);
+      if (!words.length) return false;
+      const taskBlob = `${actionText} ${sourceText}`.toLowerCase();
+      const overlap = words.filter((word) => taskBlob.includes(word)).length;
+      return overlap / words.length >= 0.58;
+    }
+
+    function pickDistinctMissionTitle(normalized, options = {}) {
+      const { taskIndex = 0, stageLabel = "", siblingTitles = [] } = options;
+      const idea = state.currentIdea;
+      const angle = extractTaskAngle(normalized);
+      const pool = [...getMissionTitleCandidates(angle, normalized, idea)];
+      const forInfer = { ...normalized, mission: "" };
+      const inferred = inferMissionTitle(forInfer, { taskIndex, stageLabel });
+      if (inferred) pool.push(inferred);
+
+      const rotated = [];
+      for (let i = 0; i < pool.length; i += 1) {
+        rotated.push(pool[(taskIndex + i) % pool.length]);
+      }
+
+      for (const candidate of rotated) {
+        const title = cleanMissionTitle(String(candidate || "").trim(), normalized, idea);
+        if (!title || missionTitleLooksIncomplete(title)) continue;
+        if (missionTitleTooCloseToTask(title, normalized)) continue;
+        if (siblingTitles.some((sibling) => textSimilarity(sibling, title) >= 0.68)) continue;
+        return title;
+      }
+
+      const stageBit = simplifyStageLabel(stageLabel, idea);
+      const fallbacks = [
+        stageBit ? `Part ${taskIndex + 1} — ${stageBit}` : `Mission ${taskIndex + 1}`,
+        `Step ${taskIndex + 1} on this path`,
+        `Focus ${taskIndex + 1} for this phase`
+      ];
+      for (const candidate of fallbacks) {
+        if (!siblingTitles.some((sibling) => textSimilarity(sibling, candidate) >= 0.68)) {
+          return candidate;
+        }
+      }
+      return `Mission ${taskIndex + 1}`;
+    }
+
     function inferTaskOutcome(normalized) {
       if (normalized.outcome) {
         const copy = sanitizeMentorFieldText(normalized.outcome, normalized);
@@ -18300,10 +18509,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(grant|funding|scholarship)\b/.test(blob)) {
         return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Secure your first grant or funding source";
       }
-      if (/\b(employ|job|hire|resume|workforce|staffing|temp agency|interview for a job)\b/.test(blob)) {
+      if (shouldUseBusinessRoadmapTasks(state.currentIdea)) {
+        const service = getServiceLabel(state.currentIdea).replace(/\s+service$/i, "");
+        if (/\blist \d+ people\b/.test(blob) || /\bally\b/.test(blob)) {
+          return taskIndex > 0
+            ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
+            : "Build your ally list";
+        }
+        if (/\b(contact|call|outreach|tracker|spreadsheet|prospect|director)\b/.test(blob)) {
+          return taskIndex > 0
+            ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
+            : `Reach out to your first ${service} prospect`;
+        }
+        if (/\b(client|customer|first sale|booking)\b/.test(blob)) {
+          return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Win your first paying client";
+        }
+      }
+      if (taskBlobSuggestsJobSearch(blob)) {
         return taskIndex > 0
           ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel)
-          : `Land your first foothold toward ${shortGoal}`;
+          : repairIncompleteMissionTitle(`Land your first foothold toward ${shortGoal}`, normalized);
       }
       if (/\b(email|outreach|call|contact|director)\b/.test(blob)) {
         return taskIndex > 0 ? buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel) : "Get a yes from the right person — starting with your best contact";
@@ -18478,7 +18703,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const draftType = getUsableDraftType(normalized);
       if (assets.length && (resources.length || draftType || (script.length > 80 && !isExplanatoryTaskCopy(script)))) {
-        return `Prepared: ${assets.join("; ")}.`;
+        if (resources.length === 1 && draftType === "contact_tracker") {
+          return "We found one local contact to start with and a tracking spreadsheet you can fill in as you go.";
+        }
+        if (resources.length && draftType) {
+          const draftLabel = USABLE_DRAFT_TYPE_LABELS[draftType] || "draft";
+          return `We prepared ${resources.length} contact${resources.length === 1 ? "" : "s"} and a ${draftLabel.toLowerCase()} you can open below.`;
+        }
+        return `Prepared for you: ${assets.join(", ")}.`;
       }
       return "";
     }
@@ -18492,7 +18724,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const mentionedDrafts = getMentionedDraftSuggestionIds(normalized);
 
       if (mentionedDrafts.includes("contact_tracker")) {
-        return "Tap Contact Tracking Spreadsheet below — log each place you call or visit and what they said.";
+        return "Open the Contact Tracking Spreadsheet below. Log each business you call or visit, who you spoke with, and whether they said yes, no, or maybe.";
       }
       if (mentionedDrafts.includes("comparison_sheet")) {
         return "Tap Comparison Spreadsheet below — note what each option offers and where you could fit in.";
@@ -18599,27 +18831,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function dedupeMissionsInStage(tasks, stageLabel = "", stageIndex = 0) {
-      const seen = new Set();
+      const siblingTitles = [];
       return (tasks || []).map((task, taskIndex) => {
         if (isPendingRoadmapTask(task)) return { _pendingTask: true };
-        const normalized = typeof task === "object" && task?.text !== undefined ? { ...task } : normalizeRoadmapTask(task);
-        let mission = String(normalized.mission || "").trim();
-        if (!mission || isGenericOutcomeText(mission) || textSimilarity(mission, normalized.outcome || "") > 0.82) {
-          mission = inferMissionTitle(normalized, { taskIndex, stageIndex, stageLabel });
-        }
-        const key = normalizeTextForCompare(mission);
-        if (seen.has(key)) {
-          mission = buildProgressiveMissionTitle(normalized, taskIndex, stageLabel);
-        }
-        let retryKey = normalizeTextForCompare(mission);
-        let attempt = 0;
-        while (seen.has(retryKey) && attempt < 3) {
-          attempt += 1;
-          mission = buildProgressiveMissionTitle(normalized, taskIndex + attempt, stageLabel);
-          retryKey = normalizeTextForCompare(mission);
-        }
-        seen.add(normalizeTextForCompare(mission));
-        normalized.mission = cleanMissionTitle(mission, normalized, state.currentIdea);
+        const normalized = typeof task === "object" && task?.text !== undefined
+          ? { ...task }
+          : normalizeRoadmapTask(task);
+        normalized.mission = pickDistinctMissionTitle(normalized, {
+          taskIndex,
+          stageIndex,
+          stageLabel,
+          siblingTitles
+        });
+        siblingTitles.push(normalized.mission);
         if (isGenericOutcomeText(normalized.outcome)) {
           normalized.outcome = inferTaskOutcome(normalized);
         }
@@ -29178,7 +29402,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.expandedRoadmapPhases = new Set([0]);
       state.expandedRoadmapTasks = new Set(["task-0-0"]);
 
-      showScreen("roadmap");
+      showScreen("roadmap", { skipScrollTop: Boolean(context?.firstMission) });
       setRoadmapLoading(false);
       setRoadmapRefining(false);
       const founderMode = isFounderRoadmapForIdea(state.currentIdea);
@@ -29202,6 +29426,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       prepareFirstMissionForReveal(state.currentIdea);
       schedulePersist();
       updateMomentum();
+
+      if (context?.firstMission) {
+        scrollRoadmapToOverviewHeader();
+      }
 
       enrichRoadmapStagesAsync(state.roadmapStages, state.currentIdea);
 
@@ -32096,6 +32324,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    function scrollRoadmapToOverviewHeader(options = {}) {
+      const header = $("#roadmap-overview-header") || $("#roadmap-status-badge");
+      if (!header) {
+        window.scrollTo({ top: 0, behavior: options.behavior ?? "smooth" });
+        return;
+      }
+      scrollRoadmapTargetIntoView(header, {
+        behavior: options.behavior ?? "smooth",
+        extraOffset: options.extraOffset ?? 10
+      });
+      window.setTimeout(() => {
+        scrollRoadmapTargetIntoView(header, {
+          behavior: "auto",
+          extraOffset: options.extraOffset ?? 10
+        });
+      }, options.delayMs ?? 220);
+    }
+
     function getActiveGlanceStageIndex(stages = state.roadmapStages) {
       if (!stages?.length) return 0;
       for (let stageIndex = 0; stageIndex < stages.length; stageIndex += 1) {
@@ -32653,7 +32899,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "", tasks: [] };
       const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
       const simplified = true;
-      const mission = humanizeTaskText(normalized.mission || inferMissionTitle(normalized, { taskIndex, stageLabel: stage.label }));
+      const mission = humanizeTaskText(
+        normalized.mission
+        || pickDistinctMissionTitle(normalized, { taskIndex, stageLabel: stage.label })
+      );
       const text = stripRepeatedPathReferences(
         simplified ? getTaskDisplayActionText(normalized) : humanizeTaskText(normalized.text),
         { idea: state.currentIdea, stageLabel: stage.label }
@@ -32719,6 +32968,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? `<span class="visually-hidden" id="${id}-label">${escapeHtml(mission)}</span>`
         : `<div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>`;
 
+      const outcomeSection = renderTaskOutcomeSectionHtml(id, normalized, outcome);
       const simplifiedWhatToDo = showWhatToDo ? `
                 ${contextNoteHtml}
                 <section class="task-mentor-section task-mentor-section--task">
@@ -32727,12 +32977,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   ${inlineDraftButtons}
                 </section>
                 ${mentorHelp}
-                ${outcome && !isTaskRestatement(outcome, normalized) ? `
-                <p class="task-mentor-copy task-mentor-copy--outcome"><span class="task-mentor-label task-mentor-label--inline">Done when:</span> ${escapeHtml(outcome)}</p>
-                ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}` : `${contextNoteHtml}${inlineDraftButtons}${mentorHelp}
-                ${outcome && !isTaskRestatement(outcome, normalized) ? `
-                <p class="task-mentor-copy task-mentor-copy--outcome"><span class="task-mentor-label task-mentor-label--inline">Done when:</span> ${escapeHtml(outcome)}</p>
-                ${renderTaskOutcomeChecklistHtml(id, normalized)}` : renderTaskOutcomeChecklistHtml(id, normalized)}`;
+                ${outcomeSection}` : `${contextNoteHtml}${inlineDraftButtons}${mentorHelp}${outcomeSection}`;
 
       return `
         <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
