@@ -1070,44 +1070,77 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-search {
+      --dashboard-send-size: 44px;
+      --dashboard-prompt-radius: 22px;
+      --dashboard-prompt-inset: 8px;
       position: relative;
       max-width: 720px;
       margin: 0 auto;
     }
 
-    html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
-      min-height: 58px;
-      max-height: 160px;
-      padding: 1rem 4.5rem 1rem 1.15rem;
-      border: 2px solid rgba(37, 99, 235, .42);
-      border-radius: 18px;
+    html[data-color-scheme="adult"] .dashboard-search-grow {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-field {
+      position: relative;
+      border-radius: var(--dashboard-prompt-radius);
+      border: 1px solid rgba(15, 23, 42, 0.08);
       background: #fff;
-      box-shadow: 0 8px 30px rgba(15, 23, 42, .06);
-      resize: vertical;
+      box-shadow:
+        0 0 0 1px rgba(15, 23, 42, 0.03),
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 8px 24px rgba(15, 23, 42, 0.06);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-field:focus-within {
+      border-color: rgba(37, 99, 235, 0.28);
+      box-shadow:
+        0 0 0 1px rgba(37, 99, 235, 0.12),
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 10px 28px rgba(37, 99, 235, 0.1);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
+      display: block;
+      width: 100%;
+      min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
+      max-height: 160px;
+      padding:
+        calc(var(--dashboard-prompt-inset) + 2px)
+        calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) + 4px)
+        calc(var(--dashboard-prompt-inset) + 2px)
+        calc(var(--dashboard-prompt-inset) + 6px);
+      border: 0;
+      border-radius: var(--dashboard-prompt-radius);
+      background: transparent;
+      box-shadow: none;
+      resize: none;
+      overflow-y: auto;
+      line-height: 1.5;
     }
 
     @media (max-width: 720px) {
       html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
-        min-height: 132px;
+        min-height: 120px;
         max-height: 280px;
-        padding-top: 1.1rem;
-        padding-bottom: 1.1rem;
       }
     }
 
     html[data-color-scheme="adult"] .dashboard-search .prompt-textarea:focus {
       outline: none;
-      border-color: rgba(37, 99, 235, .35);
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, .08), 0 8px 30px rgba(15, 23, 42, .06);
     }
 
     html[data-color-scheme="adult"] .dashboard-search-go {
       position: absolute;
-      right: .55rem;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 42px;
-      height: 42px;
+      right: var(--dashboard-prompt-inset);
+      bottom: var(--dashboard-prompt-inset);
+      width: var(--dashboard-send-size);
+      height: var(--dashboard-send-size);
       border: 0;
       border-radius: 50%;
       background: #2563eb;
@@ -1115,7 +1148,17 @@
       display: grid;
       place-items: center;
       cursor: pointer;
-      box-shadow: 0 8px 20px rgba(37, 99, 235, .28);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+      transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-go:hover {
+      background: #1d4ed8;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-go:active {
+      transform: scale(0.96);
     }
 
     html[data-color-scheme="adult"] .dashboard-search-go svg {
@@ -1127,10 +1170,11 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-search .prompt-footer,
-    html[data-color-scheme="adult"] .dashboard-search .prompt-box {
+    html[data-color-scheme="adult"] .dashboard-search.prompt-box {
       border: 0;
       background: transparent;
       box-shadow: none;
+      overflow: visible;
     }
 
     html[data-color-scheme="adult"] .dashboard-search .prompt-footer {
@@ -12599,10 +12643,14 @@
           <p class="dashboard-hero-sub">Tell me about yourself—your skills, interests, experience, challenges, and what you want next. The more you share, the better your Possibility Map will be.</p>
 
           <div class="prompt-box dashboard-search">
-            <textarea class="prompt-textarea" id="main-input" rows="2" placeholder=""></textarea>
-            <button type="button" class="dashboard-search-go" id="dashboard-search-go" aria-label="Continue">
-              <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-            </button>
+            <div class="dashboard-search-grow">
+              <div class="dashboard-search-field">
+                <textarea class="prompt-textarea" id="main-input" rows="1" placeholder=""></textarea>
+                <button type="button" class="dashboard-search-go" id="dashboard-search-go" aria-label="Continue">
+                  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                </button>
+              </div>
+            </div>
             <div class="prompt-footer">
               <span class="hint">More detail helps · <button type="button" class="hero-example-btn" id="hero-example-btn">Test Demo Prompt to See Process</button></span>
             </div>
@@ -18219,22 +18267,45 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return /you can point to something concrete|written list with names, links, or phone numbers|something concrete you finished|draft saved that you could send|you sent \(or have ready to send\)|you made the call \(or left a voicemail\)|you submitted the application|message sent \(or ready|tracker updated|tracker filled|logo brief saved|interviews completed/i.test(copy);
     }
 
-    function summarizeMissionTitle(text) {
+    function summarizeMissionTitle(text, options = {}) {
+      const usedTitles = options.usedTitles || [];
+      const pickUnused = (candidates) => candidates.find((candidate) =>
+        !usedTitles.some((used) => textSimilarity(used, candidate) >= 0.55)
+      ) || candidates[candidates.length - 1];
+
       let copy = humanizeTaskText(stripMentorActionPrefix(String(text || "").trim()));
       if (!copy || isGenericOutcomeText(copy)) return "";
       const lower = copy.toLowerCase();
       if (/\b(post one|facebook|nextdoor|marketplace|community group)\b/.test(lower)) {
-        return "Post your offer where locals look";
+        return pickUnused([
+          "Post your offer where locals look",
+          "Share your story in one group",
+          "Tell locals what you're offering",
+          "Show up in another local group"
+        ]);
       }
       if (/\b(sbdc|score|business advisor|small-business advisor|office hours)\b/.test(lower)) {
-        return "Book a free business advising session";
+        return pickUnused([
+          "Book a free business advising session",
+          "Get expert pricing guidance",
+          "Prep questions for your advisor visit"
+        ]);
       }
       if (/\b(talk to|interview|ask \d+ people)\b/.test(lower)) {
         const count = copy.match(/\b(\d+)\b/);
-        return count ? `Talk to ${count[1]} potential customers` : "Talk to people who might buy";
+        const base = count ? `Talk to ${count[1]} potential customers` : "Talk to people who might buy";
+        return pickUnused([
+          base,
+          "Learn from real conversations",
+          "Gather firsthand customer insight"
+        ]);
       }
       if (/\b(pric|pricing|rate card|package your)\b/.test(lower)) {
-        return "Set your prices and packages";
+        return pickUnused([
+          "Set your prices and packages",
+          "Define what you're selling",
+          "Spell out your service tiers"
+        ]);
       }
       copy = copy.replace(/^(review|use|read|call|send|apply to|start with|search)\s+/i, "");
       const first = copy.split(/(?<=[.!?])\s+/).find((part) => part.trim().length > 12) || copy;
@@ -18434,12 +18505,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return check.test(label) || check.test(action);
     }
 
+    function missionTitleIsUsed(title, usedTitles) {
+      const label = String(title || "").trim();
+      if (!label) return true;
+      return usedTitles.some((used) => textSimilarity(used, label) >= 0.55);
+    }
+
     function pickDistinctMissionTitle(normalized, options = {}) {
-      const { taskIndex = 0, stageLabel = "", siblingTitles = [] } = options;
+      const {
+        taskIndex = 0,
+        stageIndex = 0,
+        stageLabel = "",
+        siblingTitles = [],
+        usedTitles = siblingTitles
+      } = options;
       const idea = state.currentIdea;
       const angle = extractTaskAngle(normalized);
       const pool = [];
-      const fromAction = summarizeMissionTitle(getTaskDisplayActionText(normalized));
+      const fromAction = summarizeMissionTitle(getTaskDisplayActionText(normalized), { usedTitles });
       if (fromAction) pool.push(fromAction);
       pool.push(...getMissionTitleCandidates(angle, normalized, idea));
       const forInfer = { ...normalized, mission: "" };
@@ -18447,8 +18530,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (inferred) pool.push(inferred);
 
       const rotated = [];
+      const rotateOffset = taskIndex + stageIndex * 2;
       for (let i = 0; i < pool.length; i += 1) {
-        rotated.push(pool[(taskIndex + i) % pool.length]);
+        rotated.push(pool[(rotateOffset + i) % pool.length]);
       }
 
       for (const candidate of rotated) {
@@ -18456,22 +18540,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (!title || missionTitleLooksIncomplete(title)) continue;
         if (missionTitleTooCloseToTask(title, normalized)) continue;
         if (!missionTitleAlignsWithTask(title, normalized)) continue;
-        if (siblingTitles.some((sibling) => textSimilarity(sibling, title) >= 0.68)) continue;
+        if (missionTitleIsUsed(title, usedTitles)) continue;
         return title;
       }
 
       const stageBit = simplifyStageLabel(stageLabel, idea);
+      const actionBit = summarizeMissionTitle(getTaskDisplayActionText(normalized)) || "";
       const fallbacks = [
-        stageBit ? `Part ${taskIndex + 1} — ${stageBit}` : `Mission ${taskIndex + 1}`,
-        `Step ${taskIndex + 1} on this path`,
-        `Focus ${taskIndex + 1} for this phase`
-      ];
+        actionBit && stageBit ? `${actionBit.split("…")[0].trim()} (${stageBit})` : "",
+        stageBit ? `Part ${stageIndex + 1}.${taskIndex + 1} — ${stageBit}` : "",
+        `Step ${stageIndex + 1}.${taskIndex + 1} on this path`,
+        `Focus ${usedTitles.length + 1} for this path`
+      ].filter(Boolean);
       for (const candidate of fallbacks) {
-        if (!siblingTitles.some((sibling) => textSimilarity(sibling, candidate) >= 0.68)) {
-          return candidate;
-        }
+        const title = cleanMissionTitle(candidate, normalized, idea);
+        if (!title || missionTitleIsUsed(title, usedTitles)) continue;
+        return title;
       }
-      return `Mission ${taskIndex + 1}`;
+      return `Mission ${stageIndex + 1}.${taskIndex + 1}`;
     }
 
     function inferTaskOutcome(normalized) {
@@ -19014,8 +19100,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }).filter((stage) => (stage.tasks || []).length > 0);
     }
 
-    function dedupeMissionsInStage(tasks, stageLabel = "", stageIndex = 0) {
-      const siblingTitles = [];
+    function dedupeMissionsInStage(tasks, stageLabel = "", stageIndex = 0, usedTitles = []) {
       return (tasks || []).map((task, taskIndex) => {
         if (isPendingRoadmapTask(task)) return { _pendingTask: true };
         const normalized = typeof task === "object" && task?.text !== undefined
@@ -19025,9 +19110,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           taskIndex,
           stageIndex,
           stageLabel,
-          siblingTitles
+          usedTitles
         });
-        siblingTitles.push(normalized.mission);
+        usedTitles.push(normalized.mission);
         if (isGenericOutcomeText(normalized.outcome)) {
           normalized.outcome = inferTaskOutcome(normalized);
         }
@@ -19037,13 +19122,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function mentorizeRoadmapStages(stages) {
       const dedupedStages = dedupeTasksAcrossRoadmap(stages);
+      const usedTitles = [];
       return (dedupedStages || []).map((stage, stageIndex) => {
         const tasks = (stage.tasks || []).map((task) => (
           isPendingRoadmapTask(task) ? { _pendingTask: true } : mentorizeTask(task)
         ));
         return {
           ...stage,
-          tasks: dedupeMissionsInStage(tasks, stage.label, stageIndex)
+          tasks: dedupeMissionsInStage(tasks, stage.label, stageIndex, usedTitles)
         };
       });
     }
@@ -33458,6 +33544,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return true;
     }
 
+    function ensureDistinctMissionTitles(stages) {
+      const usedTitles = [];
+      return (stages || []).map((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return stage;
+        const tasks = (stage.tasks || []).map((task, taskIndex) => {
+          if (isPendingRoadmapTask(task)) return task;
+          const normalized = typeof task === "object" && task?.text !== undefined
+            ? { ...task }
+            : normalizeRoadmapTask(task);
+          const current = String(normalized.mission || "").trim();
+          if (!current || missionTitleIsUsed(current, usedTitles)) {
+            normalized.mission = pickDistinctMissionTitle(normalized, {
+              taskIndex,
+              stageIndex,
+              stageLabel: stage.label,
+              usedTitles
+            });
+          }
+          usedTitles.push(normalized.mission);
+          return normalized;
+        });
+        return { ...stage, tasks };
+      });
+    }
+
     function renderStages(stages, options = {}) {
       const list = $("#stage-list");
       if (!list) return;
@@ -33502,6 +33613,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const wouldShrink = directPathPicked && coercedPayload.length < (state.roadmapStages?.length || 0);
         if (!wouldShrink) {
           state.roadmapStages = coercedPayload;
+        }
+      }
+
+      payload = ensureDistinctMissionTitles(payload);
+      if (state.roadmapStages?.length) {
+        state.roadmapStages = payload;
+        if (state.roadmapKey) {
+          state.allRoadmaps[state.roadmapKey] = {
+            ...(state.allRoadmaps[state.roadmapKey] || {}),
+            stages: payload
+          };
         }
       }
 
@@ -35324,6 +35446,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const input = $("#main-input");
       if (!input || !prompt) return;
       input.value = prompt;
+      syncDashboardPromptHeight();
       stopRotatingPromptPlaceholder();
       input.focus();
     }
@@ -35357,6 +35480,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       promptPlaceholderTimer = setInterval(advance, 4500);
     }
 
+    function syncDashboardPromptHeight() {
+      const input = $("#main-input");
+      if (!input) return;
+      const mobile = window.matchMedia("(max-width: 720px)").matches;
+      const min = mobile ? 120 : Number.parseInt(getComputedStyle(input).minHeight, 10) || 60;
+      const max = mobile ? 280 : 160;
+      input.style.height = "auto";
+      const next = Math.min(max, Math.max(min, input.scrollHeight));
+      input.style.height = `${next}px`;
+    }
+
     function initRotatingPromptPlaceholder() {
       const input = $("#main-input");
       if (!input || input.dataset.placeholderRotateBound) return;
@@ -35364,9 +35498,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       input.addEventListener("focus", stopRotatingPromptPlaceholder);
       input.addEventListener("blur", startRotatingPromptPlaceholder);
       input.addEventListener("input", () => {
+        syncDashboardPromptHeight();
         if (input.value.trim()) stopRotatingPromptPlaceholder();
         else startRotatingPromptPlaceholder();
       });
+      syncDashboardPromptHeight();
       startRotatingPromptPlaceholder();
     }
 
@@ -35613,9 +35749,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       $$("[data-prompt]").forEach((button) => {
         button.addEventListener("click", () => {
-          $("#main-input").value = button.dataset.prompt;
-          stopRotatingPromptPlaceholder();
-          $("#main-input").focus();
+          applyDashboardPrompt(button.dataset.prompt);
         });
       });
 
