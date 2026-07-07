@@ -1122,6 +1122,16 @@
       resize: none;
       overflow-y: auto;
       line-height: 1.5;
+      transition: padding 0.15s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-textarea.is-compact {
+      padding-block: calc((min-height - 1.5em) / 2);
+      text-align: center;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search .prompt-textarea:not(.is-compact) {
+      text-align: left;
     }
 
     @media (max-width: 720px) {
@@ -35486,16 +35496,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const mobile = window.matchMedia("(max-width: 720px)").matches;
       const min = mobile ? 120 : Number.parseInt(getComputedStyle(input).minHeight, 10) || 60;
       const max = mobile ? 280 : 160;
+      const singleLine = !input.value.includes("\n");
+
+      input.classList.remove("is-compact");
       input.style.height = "auto";
-      const next = Math.min(max, Math.max(min, input.scrollHeight));
+      let scrollHeight = input.scrollHeight;
+
+      if (singleLine && (!input.value.trim() || scrollHeight <= min + 8)) {
+        input.classList.add("is-compact");
+        input.style.height = "auto";
+        scrollHeight = input.scrollHeight;
+      }
+
+      const next = Math.min(max, Math.max(min, scrollHeight));
       input.style.height = `${next}px`;
+      input.classList.toggle("is-compact", singleLine && next <= min + 6);
     }
 
     function initRotatingPromptPlaceholder() {
       const input = $("#main-input");
       if (!input || input.dataset.placeholderRotateBound) return;
       input.dataset.placeholderRotateBound = "1";
-      input.addEventListener("focus", stopRotatingPromptPlaceholder);
+      input.addEventListener("focus", () => {
+        stopRotatingPromptPlaceholder();
+        syncDashboardPromptHeight();
+      });
       input.addEventListener("blur", startRotatingPromptPlaceholder);
       input.addEventListener("input", () => {
         syncDashboardPromptHeight();
