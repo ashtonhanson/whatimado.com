@@ -1107,6 +1107,12 @@
         0 10px 28px rgba(37, 99, 235, 0.1);
     }
 
+    html[data-color-scheme="adult"] .dashboard-search-field.is-compact {
+      display: flex;
+      align-items: center;
+      min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
+    }
+
     html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
       display: block;
       width: 100%;
@@ -1125,17 +1131,29 @@
       overflow-y: auto;
       line-height: 1.5;
       text-align: left;
-      transition: padding 0.15s ease;
+      transition: padding 0.15s ease, height 0.15s ease;
+      field-sizing: content;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-field.is-compact .prompt-textarea {
+      min-height: 0;
+      max-height: none;
+      padding-block: 0;
+      overflow: hidden;
     }
 
     html[data-color-scheme="adult"] .dashboard-search .prompt-textarea.is-compact {
-      padding-block: calc((min-height - 1.5em) / 2);
+      height: auto;
     }
 
     @media (max-width: 720px) {
       html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
-        min-height: 120px;
+        min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
         max-height: 280px;
+      }
+
+      html[data-color-scheme="adult"] .dashboard-search-field.is-compact {
+        min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
       }
     }
 
@@ -35483,32 +35501,71 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (!input || input.value.trim() || document.activeElement === input) return;
         input.placeholder = PROMPT_PLACEHOLDER_EXAMPLES[promptPlaceholderIndex];
         promptPlaceholderIndex = (promptPlaceholderIndex + 1) % PROMPT_PLACEHOLDER_EXAMPLES.length;
+        syncDashboardPromptHeight();
       };
       advance();
       promptPlaceholderTimer = setInterval(advance, 4500);
     }
 
+    function measurePromptTextHeight(textarea, text) {
+      const copy = String(text || "").trim();
+      if (!copy) return 0;
+      const style = getComputedStyle(textarea);
+      let mirror = textarea._promptMeasureMirror;
+      if (!mirror) {
+        mirror = document.createElement("div");
+        textarea._promptMeasureMirror = mirror;
+        document.body.appendChild(mirror);
+      }
+      mirror.style.cssText = [
+        "position:absolute",
+        "visibility:hidden",
+        "pointer-events:none",
+        "white-space:pre-wrap",
+        "word-break:break-word",
+        `width:${textarea.clientWidth}px`,
+        `font:${style.font}`,
+        `line-height:${style.lineHeight}`,
+        `letter-spacing:${style.letterSpacing}`,
+        `padding:0 ${style.paddingRight} 0 ${style.paddingLeft}`,
+        "border:0",
+        "box-sizing:border-box"
+      ].join(";");
+      mirror.textContent = copy;
+      return mirror.offsetHeight;
+    }
+
     function syncDashboardPromptHeight() {
       const input = $("#main-input");
-      if (!input) return;
+      const field = input?.closest(".dashboard-search-field");
+      if (!input || !field) return;
       const mobile = window.matchMedia("(max-width: 720px)").matches;
-      const min = mobile ? 120 : Number.parseInt(getComputedStyle(input).minHeight, 10) || 60;
+      const fieldMin = 60;
       const max = mobile ? 280 : 160;
       const singleLine = !input.value.includes("\n");
+      const measureText = input.value.trim() || input.placeholder || "";
+      const textHeight = measurePromptTextHeight(input, measureText);
+      const style = getComputedStyle(input);
+      const padBlock = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
 
       input.classList.remove("is-compact");
+      field.classList.remove("is-compact");
+      field.style.minHeight = "";
       input.style.height = "auto";
-      let scrollHeight = input.scrollHeight;
 
-      if (singleLine && (!input.value.trim() || scrollHeight <= min + 8)) {
+      const fitsCompact = singleLine && (textHeight === 0 || textHeight <= fieldMin - 8);
+      if (fitsCompact) {
+        field.classList.add("is-compact");
         input.classList.add("is-compact");
-        input.style.height = "auto";
-        scrollHeight = input.scrollHeight;
+        input.style.height = textHeight ? `${textHeight}px` : "1.5em";
+        return;
       }
 
-      const next = Math.min(max, Math.max(min, scrollHeight));
+      const min = fieldMin;
+      input.style.height = "auto";
+      const contentHeight = textHeight ? textHeight + padBlock : input.scrollHeight;
+      const next = Math.min(max, Math.max(min, contentHeight));
       input.style.height = `${next}px`;
-      input.classList.toggle("is-compact", singleLine && next <= min + 6);
     }
 
     function initRotatingPromptPlaceholder() {
@@ -35525,6 +35582,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (input.value.trim()) stopRotatingPromptPlaceholder();
         else startRotatingPromptPlaceholder();
       });
+      if (!window._dashboardPromptResizeBound) {
+        window._dashboardPromptResizeBound = true;
+        window.addEventListener("resize", () => syncDashboardPromptHeight());
+      }
       syncDashboardPromptHeight();
       startRotatingPromptPlaceholder();
     }
