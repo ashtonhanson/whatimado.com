@@ -1073,6 +1073,8 @@
       --dashboard-send-size: 44px;
       --dashboard-prompt-radius: 30px;
       --dashboard-prompt-inset: 8px;
+      --dashboard-prompt-pad-left: 1.2rem;
+      --dashboard-prompt-pad-right: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) + 10px);
       position: relative;
       max-width: 720px;
       margin: 0 auto;
@@ -1112,9 +1114,9 @@
       max-height: 160px;
       padding:
         calc(var(--dashboard-prompt-inset) + 2px)
-        calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) + 4px)
+        var(--dashboard-prompt-pad-right)
         calc(var(--dashboard-prompt-inset) + 2px)
-        calc(var(--dashboard-prompt-inset) + 6px);
+        var(--dashboard-prompt-pad-left);
       border: 0;
       border-radius: var(--dashboard-prompt-radius);
       background: transparent;
@@ -1122,16 +1124,12 @@
       resize: none;
       overflow-y: auto;
       line-height: 1.5;
+      text-align: left;
       transition: padding 0.15s ease;
     }
 
     html[data-color-scheme="adult"] .dashboard-search .prompt-textarea.is-compact {
       padding-block: calc((min-height - 1.5em) / 2);
-      text-align: center;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-search .prompt-textarea:not(.is-compact) {
-      text-align: left;
     }
 
     @media (max-width: 720px) {
