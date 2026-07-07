@@ -7574,6 +7574,30 @@
       letter-spacing: -.01em;
     }
 
+    button.task-mission-title--toggle,
+    button.task-text--toggle {
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+    }
+
+    button.task-mentor-label--toggle {
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+    }
+
     .task-talking-points {
       margin: 0;
       padding: 0;
@@ -8383,6 +8407,8 @@
       background: transparent;
       text-align: left;
       cursor: pointer;
+      font: inherit;
+      color: inherit;
     }
 
     .task-compressed-mission {
@@ -17389,17 +17415,50 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    function toggleMissionExpanded(taskId, breakdownIndex = null) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (!item) return;
+
+      const hasBreakdown = breakdownIndex !== null && breakdownIndex !== undefined && breakdownIndex !== "";
+      if (hasBreakdown) {
+        const opening = !isTaskExpanded(taskId);
+        if (opening) setTaskExpanded(taskId, true);
+        window.setTimeout(() => openBreakdownStep(taskId, Number(breakdownIndex)), opening ? 180 : 0);
+        return;
+      }
+
+      if (isTaskExpanded(taskId)) {
+        setTaskExpanded(taskId, false);
+        return;
+      }
+
+      setTaskExpanded(taskId, true);
+      item.querySelector(".task-expanded-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
     function syncTaskExpandUi(taskId) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       if (!item) return;
       const expanded = isTaskExpanded(taskId);
       const panel = item.querySelector(".task-expanded-panel");
       const expandBtn = item.querySelector(".task-expand-btn");
+      const missionBtn = item.querySelector(".task-compressed-main");
+      const taskLabel = expandBtn?.textContent?.trim() || "mission";
       if (panel) {
         panel.hidden = false;
         panel.setAttribute("aria-hidden", expanded ? "false" : "true");
       }
-      if (expandBtn) expandBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      if (expandBtn) {
+        expandBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+        expandBtn.setAttribute("aria-label", `${expanded ? "Collapse" : "Expand"} task ${taskLabel}`);
+      }
+      if (missionBtn) {
+        missionBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+        missionBtn.setAttribute("aria-label", `${expanded ? "Collapse" : "Expand"} mission`);
+      }
+      item.querySelectorAll("[data-task-expand]").forEach((control) => {
+        control.setAttribute("aria-expanded", expanded ? "true" : "false");
+      });
       item.classList.toggle("is-expanded", expanded);
     }
 
@@ -32350,18 +32409,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const taskIndex = match ? Number(match[2]) : -1;
 
       const expandTask = (breakdownIndex = null) => {
-        setTaskExpanded(taskId, true);
-        const panel = item.querySelector(".task-expanded-panel");
-        panel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        if (breakdownIndex !== null && breakdownIndex !== undefined && breakdownIndex !== "") {
-          window.setTimeout(() => openBreakdownStep(taskId, Number(breakdownIndex)), 180);
-        }
+        toggleMissionExpanded(taskId, breakdownIndex);
       };
 
       item.querySelectorAll("[data-task-expand]").forEach((button) => {
         button.addEventListener("click", (event) => {
           event.stopPropagation();
           if (button.disabled) return;
+          if (event.target.closest("a")) return;
           expandTask(button.dataset.breakdownIndex);
         });
       });
@@ -33252,8 +33307,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const detailSections = simplified ? "" : `
                 <section class="task-mentor-section task-mentor-section--task">
-                  <h4 class="task-mentor-label">What to do</h4>
-                  <div class="task-text">${linkifyTaskTextHtml(text)}</div>
+                  <button type="button" class="task-mentor-label task-mentor-label--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">What to do</button>
+                  <button type="button" class="task-text task-text--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">${linkifyTaskTextHtml(text)}</button>
                   ${breakdown}
                 </section>
                 ${mentorHelp}
@@ -33277,16 +33332,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   ${outcomeChecklist}
                 </section>` : ""}`;
 
-      const simplifiedMissionMarkup = simplified
-        ? `<span class="visually-hidden" id="${id}-label">${escapeHtml(mission)}</span>`
-        : `<div class="task-mission-title" id="${id}-label">${linkifyTaskTextHtml(mission)}</div>`;
+      const simplifiedMissionMarkup = `<button type="button" class="task-mission-title task-mission-title--toggle" data-task-expand="${escapeHtml(id)}" id="${id}-label" aria-expanded="false">${linkifyTaskTextHtml(mission)}</button>`;
 
       const outcomeSection = renderTaskOutcomeSectionHtml(id, normalized, outcome);
       const simplifiedWhatToDo = showWhatToDo ? `
                 ${contextNoteHtml}
                 <section class="task-mentor-section task-mentor-section--task">
-                  <h4 class="task-mentor-label">What to do</h4>
-                  <div class="task-text">${linkifyTaskTextHtml(text)}</div>
+                  <button type="button" class="task-mentor-label task-mentor-label--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">What to do</button>
+                  <button type="button" class="task-text task-text--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">${linkifyTaskTextHtml(text)}</button>
                 </section>
                 ${mentorHelp}
                 ${outcomeSection}` : `${contextNoteHtml}${mentorHelp}${outcomeSection}`;
@@ -33296,7 +33349,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           <div class="task-compressed-row">
             <button type="button" class="task-expand-btn" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand task ${escapeHtml(taskLabel)}"${canExpand ? "" : " disabled"}>${escapeHtml(taskLabel)}</button>
             <div class="task-compressed-main-wrap">
-              <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}"${canExpand ? "" : " disabled"}>
+              <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand mission"${canExpand ? "" : " disabled"}>
                 <span class="task-compressed-mission">${escapeHtml(mission)}</span>
                 ${taskData.draft?.trim() ? `<span class="task-compressed-draft-hint"><span aria-hidden="true">▼</span> Assets</span>` : ""}
                 ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
