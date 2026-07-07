@@ -23257,6 +23257,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       syncedLibraryStats: null,
       userProfile: emptyUserProfile(),
       profileIntakeStep: null,
+      roadmapViewport: null,
       accountPrefs: null,
       guestSessionToken: null
     };
@@ -24437,6 +24438,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         allRoadmaps: state.allRoadmaps,
         expandedThreadId: state.expandedThreadId,
         activeTaskId: state.activeTaskId,
+        roadmapViewport: state.roadmapViewport,
         lastScreen: state.lastScreen,
         mapFeedbackGiven: state.mapFeedbackGiven,
         mapFeedbackSentiment: state.mapFeedbackSentiment,
@@ -24475,6 +24477,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         allRoadmaps: source.allRoadmaps,
         expandedThreadId: source.expandedThreadId,
         activeTaskId: source.activeTaskId,
+        roadmapViewport: source.roadmapViewport,
         lastScreen: source.lastScreen,
         mapFeedbackGiven: source.mapFeedbackGiven,
         mapFeedbackSentiment: source.mapFeedbackSentiment,
@@ -24537,6 +24540,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.allRoadmaps = data.allRoadmaps && typeof data.allRoadmaps === "object" ? data.allRoadmaps : {};
       state.expandedThreadId = data.expandedThreadId ?? null;
       state.activeTaskId = data.activeTaskId ?? null;
+      state.roadmapViewport = data.roadmapViewport && typeof data.roadmapViewport === "object"
+        ? {
+            scrollY: Number.isFinite(Number(data.roadmapViewport.scrollY)) ? Number(data.roadmapViewport.scrollY) : 0,
+            anchorTaskId: data.roadmapViewport.anchorTaskId ? String(data.roadmapViewport.anchorTaskId) : ""
+          }
+        : null;
       state.lastScreen = data.lastScreen ?? "main";
       state.mapFeedbackGiven = Boolean(data.mapFeedbackGiven);
       state.mapFeedbackSentiment = data.mapFeedbackSentiment ?? null;
@@ -26617,8 +26626,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const resumeRoadmap = state.lastScreen === "roadmap" && state.currentIdea;
       if (resumeRoadmap) {
-        const ideaIndex = Math.max(0, state.ideas.findIndex((entry) => entry.title === state.currentIdea.title));
-        void viewRoadmap(state.currentIdea, ideaIndex, { reopen: true });
+        const cachedEntry = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
+        if (!roadmapStagesAreRenderable(state.roadmapStages) && roadmapStagesAreRenderable(cachedEntry?.stages)) {
+          state.roadmapStages = normalizeRoadmapStages(cachedEntry.stages);
+        }
+        if (roadmapStagesAreRenderable(state.roadmapStages)) {
+          const founderMode = isFounderRoadmapForIdea(state.currentIdea);
+          setRoadmapNavVisible(true);
+          $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
+          $("#roadmap-title").textContent = humanizeTaskText(state.currentIdea.title || "");
+          $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedEntry?.source || "ai");
+          $("#momentum-card").style.display = "flex";
+          setRoadmapLoading(false);
+          setRoadmapRefining(false);
+          showScreen("roadmap", { skipPersist: true, skipNavHistory: true, skipScrollTop: true });
+          renderStages(state.roadmapStages, { skipRecover: true });
+          requestAnimationFrame(() => requestAnimationFrame(() => restoreRoadmapViewport()));
+        } else {
+          const ideaIndex = Math.max(0, state.ideas.findIndex((entry) => entry.title === state.currentIdea.title));
+          void viewRoadmap(state.currentIdea, ideaIndex, { reopen: true });
+        }
       } else if (state.currentIdea && state.roadmapStages.length) {
         const sessionKey = state.roadmapKey || slugify(state.currentIdea.title);
         if (getMapRemovedRoadmapKeys(state.activeMapId).has(sessionKey)) {
@@ -27587,6 +27614,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function showScreen(name, options = {}) {
       const previousScreen = state.lastScreen;
+      if (previousScreen === "roadmap" && name !== "roadmap") {
+        rememberRoadmapViewport();
+      }
       if (
         !options.skipNavHistory
         && previousScreen
@@ -27621,6 +27651,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
       if (!options.skipPersist) schedulePersist();
+      if (name === "roadmap") {
+        rememberRoadmapViewport();
+      }
       if (!options.skipTrack && previousScreen !== name) {
         trackEvent("screen_view", { screen: name, from: previousScreen });
       }
@@ -32710,6 +32743,47 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       window.setTimeout(run, options.retryMs ?? 200);
     }
 
+    function rememberRoadmapViewport() {
+      const roadmapActive = state.lastScreen === "roadmap" && $("#screen-roadmap")?.classList.contains("active");
+      if (!roadmapActive) return;
+      const stickyOffset = Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--roadmap-sticky-offset"), 10) || 80;
+      const tasks = $$(".task-item[data-task-id]");
+      let anchorTaskId = "";
+      for (const task of tasks) {
+        const top = task.getBoundingClientRect().top;
+        if (top >= stickyOffset - 12) {
+          anchorTaskId = task.dataset.taskId || "";
+          break;
+        }
+      }
+      if (!anchorTaskId && tasks.length) anchorTaskId = tasks[0].dataset.taskId || "";
+      state.roadmapViewport = {
+        scrollY: Math.max(0, Math.round(window.scrollY || 0)),
+        anchorTaskId
+      };
+    }
+
+    function restoreRoadmapViewport() {
+      const viewport = state.roadmapViewport;
+      if (!viewport || state.lastScreen !== "roadmap") return;
+      const anchorTaskId = String(viewport.anchorTaskId || "").trim();
+      if (anchorTaskId) {
+        const anchor = document.querySelector(`.task-item[data-task-id="${anchorTaskId}"]`);
+        if (anchor) {
+          const parsed = parseTaskId(anchorTaskId);
+          if (parsed) {
+            if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+            state.expandedRoadmapPhases.add(parsed.stageIndex);
+          }
+          scrollRoadmapTargetIntoView(anchor.querySelector(".task-compressed-row") || anchor, { behavior: "auto", extraOffset: 16 });
+          return;
+        }
+      }
+      if (Number.isFinite(viewport.scrollY)) {
+        window.scrollTo({ top: Math.max(0, Number(viewport.scrollY) || 0), behavior: "auto" });
+      }
+    }
+
     function getActiveGlanceStageIndex(stages = state.roadmapStages) {
       if (!stages?.length) return 0;
       for (let stageIndex = 0; stageIndex < stages.length; stageIndex += 1) {
@@ -35111,6 +35185,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ticking = true;
         requestAnimationFrame(() => {
           updateScrollProgress();
+          rememberRoadmapViewport();
           ticking = false;
         });
       }
