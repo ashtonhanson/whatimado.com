@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-07-roadmap-refresh-restore -->
+<!-- whatimado build: 2026-07-07-roadmap-refresh-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-07-roadmap-refresh-restore">
+  <meta name="whatimado-build" content="2026-07-07-roadmap-refresh-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -35779,6 +35779,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function showScreenAfterSignIn() {
       restoreActiveSavedMapSnapshot();
+      if (ensureRestoredScreenVisible()) return;
       if (state.ideas.length) {
         showScreen("map", { skipPersist: true });
       } else if (state.savedMaps.length) {
@@ -35791,7 +35792,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     async function setUser(user, options = {}) {
       const previousId = state.currentUser?.id ?? null;
       const nextId = user?.id ?? null;
-      const freshSignIn = Boolean(nextId && !previousId);
+      const sessionRestore = Boolean(options.sessionRestore);
+      const freshSignIn = Boolean(nextId && !previousId && !sessionRestore);
 
       if (previousId && !nextId) {
         clearSessionOnSignOut(previousId);
@@ -35802,7 +35804,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       updateSaveButtonVisibility();
       updateFounderNav();
 
-      if (nextId && !previousId) {
+      if (freshSignIn) {
         await mergeGuestSessionIntoAccount();
       }
 
@@ -35813,7 +35815,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (freshSignIn && hasSavableProgress()) {
         await persistSession({ silent: true });
       }
-      if (nextId !== previousId) {
+      if (nextId !== previousId && !sessionRestore) {
         trackEvent(nextId ? "auth_signed_in" : "auth_signed_out", {
           restored_progress: hasSavableProgress()
         });
@@ -35838,7 +35840,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
       const { data: { session } } = await supabaseClient.auth.getSession();
-      await setUser(session?.user ?? null, { reload: true });
+      await setUser(session?.user ?? null, { reload: true, sessionRestore: true });
       supabaseClient.auth.onAuthStateChange(async (event, session) => {
         if (event === "INITIAL_SESSION") return;
         const nextId = session?.user?.id ?? null;
