@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-08-progress-map-cards -->
+<!-- whatimado build: 2026-07-08-progress-map-connector -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-08-progress-map-cards">
+  <meta name="whatimado-build" content="2026-07-08-progress-map-connector">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7865,6 +7865,20 @@
       transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
     }
 
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 3.52rem;
+      right: calc(-.6rem - 2px);
+      width: calc(.6rem + 4px);
+      height: 2px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .22);
+      pointer-events: none;
+      z-index: 0;
+    }
+
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-income-dot--empty {
       visibility: hidden;
     }
@@ -7910,6 +7924,12 @@
         max-width: 7.7rem;
         min-height: 10rem;
         padding: .8rem .7rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop:not(:last-child)::after {
+        top: 3.6rem;
+        right: calc(-.5rem - 2px);
+        width: calc(.5rem + 4px);
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-income-dot {
