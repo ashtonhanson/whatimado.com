@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-07-skip-redundant-api -->
+<!-- whatimado build: 2026-07-07-complete-card-persist -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-07-skip-redundant-api">
+  <meta name="whatimado-build" content="2026-07-07-complete-card-persist">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7204,19 +7204,20 @@
       align-items: flex-start;
       gap: 0;
       position: relative;
-      padding-top: 1.55rem;
+      padding-top: .35rem;
       min-width: 0;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-timeline-rail::before {
       content: "";
       position: absolute;
-      top: calc(1.55rem + .82rem);
+      top: calc(.35rem + 1.35rem + .35rem + .825rem);
       left: calc(50% / var(--glance-stops, 1));
       right: calc(50% / var(--glance-stops, 1));
       height: 2px;
       background: linear-gradient(90deg, rgba(37, 99, 235, .18), rgba(37, 99, 235, .42), rgba(37, 99, 235, .18));
       pointer-events: none;
+      z-index: 0;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop {
@@ -7232,6 +7233,8 @@
       text-align: center;
       cursor: pointer;
       font: inherit;
+      position: relative;
+      z-index: 1;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-income-dot {
@@ -7241,8 +7244,8 @@
       min-height: 1.35rem;
       padding: .12rem .45rem;
       border-radius: 999px;
-      border: 1px solid rgba(34, 197, 94, .28);
-      background: rgba(34, 197, 94, .1);
+      border: 1px solid #86efac;
+      background: #ecfdf3;
       color: #15803d;
       font-size: .62rem;
       font-weight: 800;
@@ -7252,17 +7255,34 @@
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 0 0 2px #fff;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-in-progress .roadmap-glance-income-dot {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-complete .roadmap-glance-income-dot {
-      border-color: rgba(34, 197, 94, .42);
-      background: rgba(34, 197, 94, .16);
+      border-color: #86efac;
+      background: #dcfce7;
+      color: #15803d;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-upcoming .roadmap-glance-income-dot {
-      border-color: rgba(148, 163, 184, .28);
-      background: rgba(148, 163, 184, .1);
+      border-color: #cbd5e1;
+      background: #f8fafc;
       color: #64748b;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase .roadmap-glance-node,
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-stop .roadmap-glance-node {
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 0 0 2px #fff;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-copy {
@@ -7496,6 +7516,7 @@
       html[data-color-scheme="adult"] .roadmap-glance-income-dot {
         flex: 0 0 auto;
         margin-top: .15rem;
+        box-shadow: none;
       }
 
       html[data-color-scheme="adult"] .roadmap-glance-copy {
@@ -10119,6 +10140,10 @@
       border-radius: 16px;
       background: linear-gradient(180deg, rgba(37, 99, 235, .06) 0%, rgba(255, 255, 255, .92) 100%);
       box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .roadmap-complete-card.is-continuing {
+      border-color: rgba(37, 99, 235, .28);
     }
 
     .roadmap-complete-card.visible {
@@ -33251,6 +33276,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           updateRoadmapOverviewChrome();
           if (check.checked && isFlexiblePathMode()) {
             setTimeout(() => {
+              const allDone = $$(".task-check").length > 0 && $$(".task-check").every((entry) => entry.checked);
+              if (allDone) return;
               void showFlexibleBranchPicker(taskId);
             }, 500);
           } else if (check.checked) {
@@ -34669,23 +34696,33 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const complete = total > 0 && percent === 100;
       const continueBtn = $("#continue-plan-btn");
       const completeCopy = $("#roadmap-complete-copy");
-      const showComplete = complete && !state.roadmapAutoContinuePending;
+      const continuingNote = $("#roadmap-continuing-note");
+      const showComplete = complete;
 
       if (completeCard) {
         completeCard.hidden = !showComplete;
         completeCard.classList.toggle("visible", showComplete);
+        completeCard.classList.toggle("is-continuing", Boolean(state.roadmapAutoContinuePending));
+      }
+
+      if (continuingNote) {
+        continuingNote.hidden = !complete || !state.roadmapAutoContinuePending;
       }
 
       if (continueBtn) {
         continueBtn.hidden = !complete || state.roadmapExhausted || state.roadmapAutoContinuePending;
       }
 
-      if (completeCopy && complete && !state.roadmapAutoContinuePending) {
-        completeCopy.textContent = state.roadmapExhausted
-          ? "You've finished every meaningful phase on this path. Choose your next chapter below — or open another saved map."
-          : (isFlexiblePathMode()
-            ? "Nice work — this phase is complete. Pick your next direction below to continue."
-            : "Nice work — this phase is complete. The next phase loads automatically, and your remaining steps keep adapting as you go.");
+      if (completeCopy && complete) {
+        if (state.roadmapAutoContinuePending) {
+          completeCopy.textContent = "Phase complete — loading your next phase…";
+        } else {
+          completeCopy.textContent = state.roadmapExhausted
+            ? "You've finished every meaningful phase on this path. Choose your next chapter below — or open another saved map."
+            : (isFlexiblePathMode()
+              ? "Nice work — this phase is complete. Pick your next direction below to continue."
+              : "Nice work — this phase is complete. The next phase loads automatically, and your remaining steps keep adapting as you go.");
+        }
       }
 
       if (state.roadmapExhausted && complete && !state.roadmapAutoContinuePending) {
