@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-03-guest-session-isolation -->
+<!-- whatimado build: 2026-07-07-income-timeline-post-mission -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-03-guest-session-isolation">
+  <meta name="whatimado-build" content="2026-07-07-income-timeline-post-mission">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7194,6 +7194,315 @@
       font-weight: 700;
     }
 
+    html[data-color-scheme="adult"] .roadmap-glance-timeline {
+      margin-bottom: .65rem;
+      min-width: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-rail {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      position: relative;
+      padding-top: 1.55rem;
+      min-width: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-rail::before {
+      content: "";
+      position: absolute;
+      top: calc(1.55rem + .82rem);
+      left: calc(50% / var(--glance-stops, 1));
+      right: calc(50% / var(--glance-stops, 1));
+      height: 2px;
+      background: linear-gradient(90deg, rgba(37, 99, 235, .18), rgba(37, 99, 235, .42), rgba(37, 99, 235, .18));
+      pointer-events: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-stop {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+      padding: 0 .25rem;
+      border: 0;
+      background: transparent;
+      text-align: center;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-income-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.35rem;
+      padding: .12rem .45rem;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, .28);
+      background: rgba(34, 197, 94, .1);
+      color: #15803d;
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .01em;
+      line-height: 1.1;
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-complete .roadmap-glance-income-dot {
+      border-color: rgba(34, 197, 94, .42);
+      background: rgba(34, 197, 94, .16);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-upcoming .roadmap-glance-income-dot {
+      border-color: rgba(148, 163, 184, .28);
+      background: rgba(148, 163, 184, .1);
+      color: #64748b;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-copy {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .roadmap-post-mission-picker {
+      margin: 1rem 0 1.25rem;
+      padding: 1rem 1.1rem 1.15rem;
+      border-radius: 14px;
+      border: 1px solid rgba(120, 130, 200, .22);
+      background: rgba(120, 130, 200, .06);
+    }
+
+    .roadmap-post-mission-picker[hidden] {
+      display: none !important;
+    }
+
+    .roadmap-post-mission-head {
+      margin: 0 0 .35rem;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .roadmap-post-mission-copy {
+      margin: 0 0 .85rem;
+      color: var(--ink-muted, rgba(36, 18, 53, .68));
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+
+    .roadmap-post-mission-grid {
+      display: grid;
+      gap: .65rem;
+    }
+
+    @media (min-width: 700px) {
+      .roadmap-post-mission-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .roadmap-post-mission-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      border: 1px solid color-mix(in srgb, var(--purple) 72%, #ffffff);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--purple) 92%, transparent);
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .roadmap-post-mission-save {
+      position: absolute;
+      top: .65rem;
+      right: .65rem;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      margin: 0;
+      max-width: calc(100% - 1.2rem);
+      cursor: pointer;
+    }
+
+    .roadmap-post-mission-save-input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      flex: 0 0 auto;
+      accent-color: #fff;
+      cursor: pointer;
+    }
+
+    .roadmap-post-mission-save-label {
+      font-size: .62rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .88);
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .roadmap-post-mission-open {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+      min-height: 100%;
+      padding: 2.15rem .85rem .85rem;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background .16s ease;
+    }
+
+    .roadmap-post-mission-open:hover:not(:disabled) {
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .roadmap-post-mission-open:disabled {
+      opacity: .65;
+      cursor: wait;
+    }
+
+    .roadmap-post-mission-card.is-saved {
+      border-color: rgba(255, 255, 255, .55);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+    }
+
+    .roadmap-post-mission-card-title {
+      display: block;
+      margin-bottom: .35rem;
+      font-size: .88rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .roadmap-post-mission-card-tagline {
+      display: block;
+      margin-bottom: .35rem;
+      font-size: .76rem;
+      font-weight: 600;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, .92);
+    }
+
+    .roadmap-post-mission-card-why {
+      display: block;
+      font-size: .7rem;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, .78);
+    }
+
+    .roadmap-post-mission-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem .55rem;
+      margin-top: .55rem;
+      font-size: .64rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .72);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-picker {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(248, 250, 252, .95) 0%, #fff 100%);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-head {
+      color: var(--ink);
+      font-size: .92rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-copy {
+      color: var(--ink-muted);
+      font-size: .78rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-card {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, .04);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-save-label {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-save-input {
+      accent-color: var(--purple);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-open:hover:not(:disabled) {
+      background: rgba(37, 99, 235, .04);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-card-title {
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-card-tagline {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-card-why {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-card-meta {
+      color: #1d4ed8;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-post-mission-card.is-saved {
+      border-color: color-mix(in srgb, var(--purple) 42%, var(--line));
+    }
+
+    @media (max-width: 699px) {
+      html[data-color-scheme="adult"] .roadmap-glance-timeline-rail {
+        flex-direction: column;
+        gap: .35rem;
+        padding-top: 0;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-glance-timeline-rail::before {
+        display: none;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-glance-timeline-stop {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: .65rem;
+        width: 100%;
+        padding: .8rem .85rem;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        text-align: left;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-glance-income-dot {
+        flex: 0 0 auto;
+        margin-top: .15rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-glance-copy {
+        flex: 1 1 auto;
+      }
+    }
+
     html[data-color-scheme="adult"] .roadmap-glance-next-btn {
       margin-top: .85rem;
       padding: .62rem .9rem;
@@ -13081,6 +13390,12 @@
                 <button class="back-btn complete-action-btn" id="complete-reset-btn" type="button">Start fresh</button>
               </div>
             </div>
+
+            <section class="roadmap-post-mission-picker" id="roadmap-post-mission-picker" hidden aria-live="polite">
+              <h3 class="roadmap-post-mission-head" id="roadmap-post-mission-title">What's next for you</h3>
+              <p class="roadmap-post-mission-copy" id="roadmap-post-mission-copy">You finished this roadmap — pick a next chapter to keep building momentum.</p>
+              <div class="roadmap-post-mission-grid" id="roadmap-post-mission-grid"></div>
+            </section>
           </div>
 
           <footer class="roadmap-overview-footer">
@@ -15678,6 +15993,296 @@
       if (note) note.textContent = outcome.note || "";
 
       root.hidden = !(hasMetric || outcome.downstream);
+    }
+
+    function parseIncomeAmountToken(raw) {
+      const token = String(raw || "").trim().replace(/,/g, "");
+      const match = token.match(/^(\d+(?:\.\d+)?)(k)?$/i);
+      if (!match) return null;
+      const base = Number(match[1]);
+      if (!Number.isFinite(base)) return null;
+      return match[2] ? base * 1000 : base;
+    }
+
+    function parseIncomeAmountRange(income) {
+      const raw = String(income || "").trim();
+      if (!raw || !incomeTextLooksFinancial(raw)) return null;
+      const period = /\/\s*year|\byear\b|\byr\b|\bannually\b/i.test(raw)
+        ? "year"
+        : (/one[- ]?time|lump|grant/i.test(raw) ? "once" : "month");
+      const matches = [...raw.matchAll(/\$?\s*(\d[\d,]*(?:\.\d+)?\s*k?)/gi)];
+      if (!matches.length) return null;
+      const values = matches
+        .map((entry) => parseIncomeAmountToken(entry[1].replace(/\s+/g, "")))
+        .filter((value) => Number.isFinite(value));
+      if (!values.length) return null;
+      const low = Math.min(...values);
+      const high = Math.max(...values);
+      return { low, high, period };
+    }
+
+    function formatIncomeMilestoneShort(amount, period = "month") {
+      const value = Math.max(0, Math.round(Number(amount) || 0));
+      if (!value) return "—";
+      const compact = value >= 1000 ? `$${Math.round(value / 100) / 10}k` : `$${value}`;
+      if (period === "year") return `${compact}/yr`;
+      if (period === "once") return compact;
+      return `${compact}/mo`;
+    }
+
+    function deriveStageIncomeMilestones(idea = state.currentIdea, stages = state.roadmapStages) {
+      const safeStages = Array.isArray(stages) ? stages : [];
+      const count = safeStages.length;
+      if (!count) return [];
+
+      let range = parseIncomeAmountRange(idea?.income);
+      if (!range) {
+        const situation = getPathSituationType(idea);
+        const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+        const inferred = inferPotentialOutcomeRange(idea, situation, blob);
+        if (inferred?.metricValue) range = parseIncomeAmountRange(inferred.metricValue);
+      }
+      if (!range) {
+        const fallback = shouldUseBusinessRoadmapTasks(idea) ? 1500 : 3500;
+        range = { low: Math.round(fallback * 0.35), high: fallback, period: "month" };
+      }
+
+      return safeStages.map((_, index) => {
+        const t = count === 1 ? 1 : index / Math.max(count - 1, 1);
+        const amount = Math.round(range.low + (range.high - range.low) * t);
+        const label = formatIncomeMilestoneShort(amount, range.period);
+        return {
+          label,
+          title: `Income goal at this phase: ${label}`
+        };
+      });
+    }
+
+    function isGetHiredMilestone(idea = state.currentIdea) {
+      if (!idea) return false;
+      if (userIsBusinessOwner(idea) || shouldUseBusinessRoadmapTasks(idea)) return false;
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.pathPreference === "employment") return true;
+      const blob = `${idea.title || ""} ${idea.type || ""} ${idea.tagline || ""} ${idea.why || ""} ${getConversationCareerBlob(idea)}`.toLowerCase();
+      return /\b(get hired|find a job|job search|career change|employment track|land a role|targeted roles)\b/.test(blob);
+    }
+
+    function isBusinessOwnerPostMission(idea = state.currentIdea) {
+      return Boolean(idea) && (userIsBusinessOwner(idea) || shouldUseBusinessRoadmapTasks(idea) || profilePathIsOwnBusiness());
+    }
+
+    function getPostMissionFallbackOptions(scenario, idea = state.currentIdea) {
+      const pathTitle = idea?.title || "your path";
+      if (scenario === "employment") {
+        return [
+          {
+            title: "Certify for your next role",
+            type: "Professional development",
+            tagline: "Earn a credential employers recognize — faster than a full degree.",
+            why: `You finished "${pathTitle}" — a targeted cert can unlock the next salary tier.`,
+            cost: "$0–$500",
+            timeline: "4-8 weeks",
+            income: "$2.5k–$5k/mo"
+          },
+          {
+            title: "Expand your professional network",
+            type: "Professional development",
+            tagline: "Build relationships with hiring managers and peers in your target field.",
+            why: "Most next roles come through people — this path turns contacts into interviews.",
+            cost: "$0",
+            timeline: "3-6 weeks",
+            income: "$3k–$6k/mo"
+          },
+          {
+            title: "Target a higher-level role",
+            type: "Professional development",
+            tagline: "Package your proof and aim one step up — not sideways.",
+            why: "You proved you can finish — now pitch yourself for more responsibility and pay.",
+            cost: "$0–$200",
+            timeline: "6-10 weeks",
+            income: "$4k–$8k/mo"
+          }
+        ];
+      }
+
+      return [
+        {
+          title: "Hit consistent monthly revenue",
+          type: "Growth milestone",
+          tagline: "Systematize sales until income is predictable month to month.",
+          why: `You completed "${pathTitle}" — now lock in recurring revenue you can count on.`,
+          cost: "$0–$200",
+          timeline: "60-90 days",
+          income: "$3k–$8k/mo"
+        },
+        {
+          title: "Build team or systems",
+          type: "Growth milestone",
+          tagline: "Hire help or automate so you're not the bottleneck.",
+          why: "Growth stalls when everything runs through you — this path buys back time to scale.",
+          cost: "$200–$1k",
+          timeline: "8-12 weeks",
+          income: "$5k–$12k/mo"
+        },
+        {
+          title: "Expand market reach",
+          type: "Growth milestone",
+          tagline: "Add a new client segment, location, or offer line.",
+          why: "You've validated the core — now multiply what already works.",
+          cost: "$0–$500",
+          timeline: "10-16 weeks",
+          income: "$6k–$15k/mo"
+        }
+      ];
+    }
+
+    function ensurePostMissionIdeasOnMap(options) {
+      const indexes = [];
+      options.forEach((idea) => {
+        if (!idea?.title) return;
+        let index = state.ideas.findIndex((entry) => entry.title === idea.title);
+        if (index < 0) {
+          state.ideas.push(idea);
+          index = state.ideas.length - 1;
+          state.ideaBatches = Array.isArray(state.ideaBatches) ? [...state.ideaBatches] : [];
+          state.ideaBatches.push(1);
+        } else {
+          state.ideas[index] = { ...state.ideas[index], ...idea };
+        }
+        indexes.push(index);
+      });
+      state.postMissionIndexes = indexes;
+      if (state.lastScreen === "map" || document.querySelector("#screen-map")?.classList.contains("active")) {
+        buildOpportunityMap(state.ideas);
+        updateMapAuxiliaryPanels();
+      }
+      return indexes;
+    }
+
+    function hidePostMissionPicker() {
+      const picker = $("#roadmap-post-mission-picker");
+      if (picker) picker.hidden = true;
+      const grid = $("#roadmap-post-mission-grid");
+      if (grid) grid.innerHTML = "";
+    }
+
+    function renderPostMissionPicker(options, scenario) {
+      const picker = $("#roadmap-post-mission-picker");
+      const grid = $("#roadmap-post-mission-grid");
+      const titleEl = $("#roadmap-post-mission-title");
+      const copyEl = $("#roadmap-post-mission-copy");
+      if (!picker || !grid) return;
+
+      state.postMissionOptions = options;
+      state.postMissionScenario = scenario;
+      const indexes = ensurePostMissionIdeasOnMap(options);
+
+      if (titleEl) {
+        titleEl.textContent = scenario === "employment"
+          ? "Professional development paths"
+          : "Major growth milestones";
+      }
+      if (copyEl) {
+        copyEl.textContent = scenario === "employment"
+          ? "You finished your Get Hired roadmap — choose how you want to grow your career next. Save any path to revisit later."
+          : "You finished your business roadmap — pick the growth milestone that fits where you are now. Save any path to revisit later.";
+      }
+
+      grid.innerHTML = options.map((idea, index) => {
+        const ideaIndex = indexes[index];
+        const saved = isPathSavedForLater(idea.title);
+        const meta = [idea.timeline, idea.income].filter(Boolean).map((entry) => `<span>${escapeHtml(entry)}</span>`).join("");
+        return (
+          `<article class="roadmap-post-mission-card${saved ? " is-saved" : ""}" data-post-mission-card="${index}">` +
+          `<label class="roadmap-post-mission-save" title="Save this path to revisit later">` +
+          `<input type="checkbox" class="roadmap-post-mission-save-input" data-post-mission-save="${index}" aria-label="Save ${escapeHtml(idea.title)} for later"${saved ? " checked" : ""}>` +
+          `<span class="roadmap-post-mission-save-label">Save map for later.</span>` +
+          `</label>` +
+          `<button type="button" class="roadmap-post-mission-open" data-post-mission-open="${index}" data-post-mission-index="${ideaIndex}">` +
+          `<span class="roadmap-post-mission-card-title">${escapeHtml(idea.title)}</span>` +
+          `<span class="roadmap-post-mission-card-tagline">${escapeHtml(idea.tagline || "")}</span>` +
+          (idea.why ? `<span class="roadmap-post-mission-card-why">${escapeHtml(idea.why)}</span>` : "") +
+          (meta ? `<span class="roadmap-post-mission-card-meta">${meta}</span>` : "") +
+          `</button>` +
+          `</article>`
+        );
+      }).join("");
+
+      picker.hidden = false;
+      requestAnimationFrame(() => {
+        picker.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    }
+
+    async function showPostMissionPicker() {
+      if (!state.currentIdea || !state.roadmapExhausted) return;
+      const picker = $("#roadmap-post-mission-picker");
+      if (picker && !picker.hidden && (state.postMissionOptions?.length || 0) >= 3) return;
+      hideRoadmapBranchPicker();
+      const scenario = isGetHiredMilestone(state.currentIdea)
+        ? "employment"
+        : (isBusinessOwnerPostMission(state.currentIdea) ? "business" : "employment");
+      const fallbacks = getPostMissionFallbackOptions(scenario, state.currentIdea);
+      renderPostMissionPicker(fallbacks, scenario);
+      schedulePersist();
+
+      try {
+        const completedSummary = buildCompletedRoadmapSummary();
+        const prompt = scenario === "employment"
+          ? (
+            `You are whatimado. This user just completed their full "Get Hired" roadmap for "${state.currentIdea.title}".\n` +
+            `Generate exactly 3 DISTINCT professional development path options for what they should pursue next.\n` +
+            `Context:\n${getAdvisorContext()}\n\nCompleted roadmap:\n${completedSummary}\n` +
+            `Respond only with a raw JSON array: [{"title":"...","type":"Professional development","tagline":"one plain sentence","why":"one sentence","cost":"e.g. $0","timeline":"e.g. 4-8 weeks","income":"e.g. $3k-5k/mo"}]`
+          )
+          : (
+            `You are whatimado. This user just completed their full business-owner roadmap for "${state.currentIdea.title}".\n` +
+            `Generate exactly 3 DISTINCT major growth-phase milestone paths for what they should pursue next.\n` +
+            `Context:\n${getAdvisorContext()}\n\nCompleted roadmap:\n${completedSummary}\n` +
+            `Respond only with a raw JSON array: [{"title":"...","type":"Growth milestone","tagline":"one plain sentence","why":"one sentence","cost":"e.g. $0","timeline":"e.g. 60-90 days","income":"e.g. $5k-10k/mo"}]`
+          );
+        const response = await callAdvisor(prompt, 1200);
+        const ideas = filterNewIdeas(extractIdeasFromAdvisorResponse(response), state.ideas);
+        if (ideas.length >= 3 && state.roadmapExhausted) {
+          renderPostMissionPicker(ideas.slice(0, 3), scenario);
+          schedulePersist();
+        }
+      } catch {
+        /* keep fallback options visible */
+      }
+    }
+
+    function markRoadmapExhausted(options = {}) {
+      state.roadmapExhausted = true;
+      if (state.roadmapKey) {
+        state.allRoadmaps[state.roadmapKey] = {
+          ...state.allRoadmaps[state.roadmapKey],
+          roadmapExhausted: true
+        };
+      }
+      if (options.showPicker !== false) void showPostMissionPicker();
+    }
+
+    async function openPostMissionPath(optionIndex) {
+      const idea = state.postMissionOptions?.[optionIndex];
+      const ideaIndex = state.postMissionIndexes?.[optionIndex];
+      if (!idea || !Number.isFinite(ideaIndex)) return;
+
+      const grid = $("#roadmap-post-mission-grid");
+      grid?.querySelectorAll(".roadmap-post-mission-open").forEach((btn) => { btn.disabled = true; });
+
+      trackEvent("post_mission_path_opened", {
+        scenario: state.postMissionScenario || "",
+        option_index: optionIndex,
+        option_title: idea.title
+      });
+
+      hidePostMissionPicker();
+      await viewRoadmap(idea, ideaIndex, { force: true });
+    }
+
+    function applyPostMissionPath(index) {
+      void openPostMissionPath(index);
     }
 
     function applyPlainLanguageToTask(normalized) {
@@ -23255,6 +23860,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       roadmapExhausted: false,
       roadmapLastAdaptAt: 0,
       roadmapAutoContinuePending: false,
+      postMissionOptions: [],
+      postMissionScenario: null,
+      postMissionIndexes: [],
       expandedRoadmapPhases: null,
       expandedRoadmapTasks: null,
       activeMapId: null,
@@ -25232,11 +25840,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function syncPathSelectionUi() {
-      $$(".opp-card-select-input, .opp-card-save-input").forEach((input) => {
-        const index = Number(input.dataset.pathSelect);
-        const checked = state.selectedPathIndexes.includes(index);
-        input.checked = checked;
-        input.closest(".opp-card")?.classList.toggle("is-saved", checked);
+      $$(".opp-card-select-input, .opp-card-save-input, .roadmap-post-mission-save-input").forEach((input) => {
+        const pathIndex = Number(input.dataset.pathSelect);
+        const postMissionIndex = Number(input.dataset.postMissionSave);
+        let checked = false;
+        if (Number.isFinite(pathIndex)) {
+          checked = state.selectedPathIndexes.includes(pathIndex);
+          input.closest(".opp-card")?.classList.toggle("is-saved", checked);
+        } else if (Number.isFinite(postMissionIndex)) {
+          const idea = state.postMissionOptions?.[postMissionIndex];
+          checked = idea ? isPathSavedForLater(idea.title) : false;
+          input.checked = checked;
+          input.closest(".roadmap-post-mission-card")?.classList.toggle("is-saved", checked);
+        } else {
+          checked = input.checked;
+        }
+        if (Number.isFinite(pathIndex)) input.checked = checked;
       });
     }
 
@@ -32001,7 +32620,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!cachedEarly?.awaitingFirstMissionPick) {
         hideRoadmapBranchPicker();
       }
-      state.roadmapExhausted = false;
+      hidePostMissionPicker();
+      state.roadmapExhausted = Boolean(cachedEarly?.roadmapExhausted);
       state.roadmapAutoContinuePending = false;
       state.expandedRoadmapPhases = null;
       if (roadmapAutoContinueTimer) {
@@ -32818,7 +33438,65 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function renderRoadmapGlance(stages = state.roadmapStages) {
       const section = $("#roadmap-glance");
-      if (section) section.hidden = true;
+      const track = $("#roadmap-glance-track");
+      const meta = $("#roadmap-glance-meta");
+      const title = $("#roadmap-glance-title");
+      const lead = $("#roadmap-glance-lead");
+      const nextBtn = $("#roadmap-glance-next-btn");
+      if (!section || !track) return;
+
+      if (!stages?.length) {
+        section.hidden = true;
+        track.innerHTML = "";
+        if (meta) meta.hidden = true;
+        if (lead) lead.hidden = true;
+        if (nextBtn) nextBtn.hidden = true;
+        return;
+      }
+
+      section.hidden = false;
+      const { phaseCount, taskCount } = getRoadmapTaskTotals(stages);
+      const incomeMilestones = deriveStageIncomeMilestones(state.currentIdea, stages);
+      if (meta) {
+        meta.textContent = `${phaseCount} phase${phaseCount === 1 ? "" : "s"} · ${taskCount} mission${taskCount === 1 ? "" : "s"}`;
+        meta.hidden = false;
+      }
+      if (title) title.textContent = phaseCount === 1 ? "Your roadmap" : "Roadmap timeline";
+      if (lead) {
+        lead.textContent = "Each dot marks an estimated income goal — stay focused on reaching the next one.";
+        lead.hidden = false;
+      }
+
+      track.style.setProperty("--glance-stops", String(Math.max(stages.length, 1)));
+      track.innerHTML = `
+        <div class="roadmap-glance-timeline">
+          <div class="roadmap-glance-timeline-rail">
+            ${stages.map((stage, stageIndex) => {
+              const progress = getStageProgressFromIndices(stageIndex);
+              const status = getPhaseStatusClass(stageIndex);
+              const income = incomeMilestones[stageIndex];
+              const nodeLabel = progress.total > 0 && progress.done === progress.total ? "✓" : String(stageIndex + 1);
+              const desc = String(stage.desc || "").trim();
+              const descShort = desc.length > 72 ? `${desc.slice(0, 69)}…` : desc;
+              return `
+                <button type="button" class="roadmap-glance-timeline-stop roadmap-glance-phase ${status}" data-glance-phase="${stageIndex}">
+                  ${income?.label ? `<span class="roadmap-glance-income-dot" title="${escapeHtml(income.title || income.label)}">${escapeHtml(income.label)}</span>` : ""}
+                  <span class="roadmap-glance-node" aria-hidden="true">${nodeLabel}</span>
+                  <span class="roadmap-glance-copy">
+                    <span class="roadmap-glance-label">${escapeHtml(stage.label || `Phase ${stageIndex + 1}`)}</span>
+                    ${descShort ? `<span class="roadmap-glance-desc">${escapeHtml(descShort)}</span>` : ""}
+                    <span class="roadmap-glance-count">${progress.done}/${progress.total} missions</span>
+                  </span>
+                </button>`;
+            }).join("")}
+          </div>
+        </div>`;
+
+      track.querySelectorAll("[data-glance-phase]").forEach((button) => {
+        button.addEventListener("click", () => jumpToRoadmapPhase(Number(button.dataset.glancePhase)));
+      });
+
+      if (nextBtn) nextBtn.hidden = !getFirstIncompleteTaskPosition();
     }
 
     function collectLocalResourcesFromRoadmap() {
@@ -33954,10 +34632,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (completeCopy && complete && !state.roadmapAutoContinuePending) {
         completeCopy.textContent = state.roadmapExhausted
-          ? "You've finished every meaningful phase on this path. Pick another path on your map, or start fresh with a new exploration."
+          ? "You've finished every meaningful phase on this path. Choose your next chapter below — or open another saved map."
           : (isFlexiblePathMode()
             ? "Nice work — this phase is complete. Pick your next direction below to continue."
             : "Nice work — this phase is complete. The next phase loads automatically, and your remaining steps keep adapting as you go.");
+      }
+
+      if (state.roadmapExhausted && complete && !state.roadmapAutoContinuePending) {
+        void showPostMissionPicker();
+      } else {
+        hidePostMissionPicker();
       }
 
       updateRebuildRemainingButton();
@@ -34028,9 +34712,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
         const nextStages = parseRoadmapResponse(response, state.currentIdea);
         if (!nextStages || !stagesAreMeaningful(nextStages)) {
-          state.roadmapExhausted = true;
+          markRoadmapExhausted();
           if (completeCopy) {
-            completeCopy.textContent = "You've finished every meaningful phase on this path. Explore another path or rebuild remaining steps if something changed.";
+            completeCopy.textContent = "You've finished every meaningful phase on this path. Choose your next chapter below — or explore another saved path.";
           }
           if (button) button.hidden = true;
           trackEvent("continue_plan_exhausted", { roadmap_key: state.roadmapKey, auto });
@@ -36013,6 +36697,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       $("#roadmap-branch-more-btn")?.addEventListener("click", () => void fetchMoreBranchOptions());
       $("#roadmap-branch-skip-btn")?.addEventListener("click", hideRoadmapBranchPicker);
+      $("#roadmap-post-mission-grid")?.addEventListener("click", (event) => {
+        const saveInput = event.target.closest(".roadmap-post-mission-save-input");
+        if (saveInput) {
+          event.stopPropagation();
+          const optionIndex = Number(saveInput.dataset.postMissionSave);
+          const idea = state.postMissionOptions?.[optionIndex];
+          const ideaIndex = state.postMissionIndexes?.[optionIndex];
+          if (idea && Number.isFinite(ideaIndex)) {
+            togglePathSavedForLater(idea, ideaIndex, saveInput.checked);
+            saveInput.closest(".roadmap-post-mission-card")?.classList.toggle("is-saved", saveInput.checked);
+          }
+          return;
+        }
+        if (event.target.closest(".roadmap-post-mission-save")) {
+          event.stopPropagation();
+          return;
+        }
+        const openBtn = event.target.closest(".roadmap-post-mission-open");
+        if (!openBtn || openBtn.disabled) return;
+        const optionIndex = Number(openBtn.dataset.postMissionOpen);
+        if (Number.isFinite(optionIndex)) applyPostMissionPath(optionIndex);
+      });
       $("#stage-list")?.addEventListener("click", (event) => {
         const alterBtn = event.target.closest("[data-task-alter-path]");
         if (!alterBtn) return;
