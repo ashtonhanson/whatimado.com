@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-07-restore-screen-on-refresh -->
+<!-- whatimado build: 2026-07-07-roadmap-refresh-restore -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-07-restore-screen-on-refresh">
+  <meta name="whatimado-build" content="2026-07-07-roadmap-refresh-restore">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -24651,6 +24651,43 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return Boolean(data.history?.length || data.ideas?.length);
     }
 
+    function mapSnapshotHasResumableRoadmap(snapshot) {
+      if (!snapshot?.currentIdea) return false;
+      const key = snapshot.roadmapKey || slugify(snapshot.currentIdea.title);
+      if (roadmapStagesAreRenderable(snapshot.roadmapStages)) return true;
+      const cached = snapshot.allRoadmaps?.[key];
+      return roadmapStagesAreRenderable(cached?.stages);
+    }
+
+    function pickRestoredLastScreen(sessionLevel, mapLevel, mapSnapshot, sessionSavedAt = 0, mapUpdatedAt = 0) {
+      const sessionScreen = sessionLevel || "main";
+      const mapScreen = mapLevel || "main";
+      if (sessionScreen === mapScreen) return sessionScreen;
+      if (sessionScreen === "roadmap" || mapScreen === "roadmap") {
+        if (mapUpdatedAt > sessionSavedAt) return mapScreen;
+        if (sessionSavedAt > mapUpdatedAt) return sessionScreen;
+        if (mapSnapshotHasResumableRoadmap(mapSnapshot)) return "roadmap";
+      }
+      const priority = { roadmap: 5, map: 4, convo: 3, maps: 3, settings: 2, stats: 2, main: 1 };
+      const sessionRank = priority[sessionScreen] || 0;
+      const mapRank = priority[mapScreen] || 0;
+      return sessionRank >= mapRank ? sessionScreen : mapScreen;
+    }
+
+    function resolveRestoreScreen() {
+      const saved = state.lastScreen || "main";
+      if (saved === "roadmap" && canRestoreScreen("roadmap")) return "roadmap";
+      if (saved !== "roadmap" && mapSnapshotHasResumableRoadmap(state)) {
+        const mapEntry = state.activeMapId
+          ? state.savedMaps.find((map) => map.id === state.activeMapId)
+          : null;
+        if (mapEntry?.lastScreen === "roadmap" && canRestoreScreen("roadmap")) {
+          return "roadmap";
+        }
+      }
+      return saved;
+    }
+
     function applyActiveMapToSessionPayload(payload, activeEntry) {
       if (!payload || !activeEntry) return payload;
       const scrubbed = scrubMapRemovedRoadmaps({ ...activeEntry });
@@ -24659,13 +24696,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       payload.history = Array.isArray(scrubbed.history) ? scrubbed.history : [];
       payload.ideas = Array.isArray(scrubbed.ideas) ? scrubbed.ideas : [];
       payload.roadmapStages = Array.isArray(scrubbed.roadmapStages) ? scrubbed.roadmapStages : [];
-      payload.currentIdea = scrubbed.currentIdea ?? null;
-      payload.roadmapKey = scrubbed.roadmapKey ?? null;
+      payload.currentIdea = scrubbed.currentIdea ?? payload.currentIdea ?? null;
+      payload.roadmapKey = scrubbed.roadmapKey ?? payload.roadmapKey ?? null;
       payload.allTaskChats = scrubbed.allTaskChats && typeof scrubbed.allTaskChats === "object" ? scrubbed.allTaskChats : {};
       payload.allRoadmaps = scrubbed.allRoadmaps && typeof scrubbed.allRoadmaps === "object" ? scrubbed.allRoadmaps : {};
-      payload.expandedThreadId = scrubbed.expandedThreadId ?? null;
-      payload.activeTaskId = scrubbed.activeTaskId ?? null;
-      payload.lastScreen = scrubbed.lastScreen ?? payload.lastScreen ?? "main";
+      payload.expandedThreadId = scrubbed.expandedThreadId ?? payload.expandedThreadId ?? null;
+      payload.activeTaskId = scrubbed.activeTaskId ?? payload.activeTaskId ?? null;
+      payload.roadmapViewport = scrubbed.roadmapViewport ?? payload.roadmapViewport ?? null;
+      payload.lastScreen = pickRestoredLastScreen(
+        payload.lastScreen,
+        scrubbed.lastScreen,
+        scrubbed,
+        payload.savedAt ?? 0,
+        scrubbed.updatedAt ?? 0
+      );
       payload.mapFeedbackGiven = Boolean(scrubbed.mapFeedbackGiven);
       payload.mapFeedbackSentiment = scrubbed.mapFeedbackSentiment ?? null;
       payload.intakeMode = scrubbed.intakeMode || payload.intakeMode || "standard";
@@ -26501,6 +26545,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
 
+      state.lastScreen = resolveRestoreScreen();
+
       applyAccountPrefs(state.accountPrefs, {
         forceLocation: !state.activeMapId || !formatUserLocation(state.userLocation)
       });
@@ -27100,6 +27146,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       updateSaveButtonVisibility();
       refreshRoadmapsUi();
+      ensureRestoredScreenVisible();
       updateNavSyncStatus();
       populateAccountPrefsForm();
     }
@@ -27381,7 +27428,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function restoreLastScreenFromSession() {
-      const target = state.lastScreen || "main";
+      const target = resolveRestoreScreen();
+      state.lastScreen = target;
       if (target === "main" || !canRestoreScreen(target)) return false;
 
       const restoreOptions = { skipPersist: true, skipNavHistory: true };
@@ -27393,6 +27441,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       showScreen(target, restoreOptions);
       return true;
+    }
+
+    function ensureRestoredScreenVisible() {
+      const target = resolveRestoreScreen();
+      if (target === "main" || !canRestoreScreen(target)) return false;
+      const active = document.querySelector(".screen.active");
+      if (active?.id === `screen-${target}`) return true;
+      state.lastScreen = target;
+      return restoreLastScreenFromSession();
     }
 
     function restoreSessionUI() {
@@ -28380,6 +28437,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
       if (!options.skipPersist) schedulePersist();
+      if (name === "roadmap" && !options.skipPersist) {
+        persistRestoreScreenLocally();
+      }
       if (name === "roadmap") {
         rememberRoadmapViewport();
       }
@@ -33507,8 +33567,46 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       clearTimeout(roadmapViewportPersistTimer);
       roadmapViewportPersistTimer = setTimeout(() => {
         rememberRoadmapViewport();
+        if (state.lastScreen === "roadmap") persistRestoreScreenLocally();
         schedulePersist();
       }, 500);
+    }
+
+    function persistRestoreScreenLocally() {
+      if (!hasSavableProgress()) return;
+      try {
+        const storageKey = getStorageKey();
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+        const now = Date.now();
+        const restoreFields = {
+          lastScreen: state.lastScreen,
+          currentIdea: state.currentIdea,
+          roadmapKey: state.roadmapKey,
+          roadmapStages: state.roadmapStages,
+          roadmapViewport: state.roadmapViewport,
+          activeTaskId: state.activeTaskId,
+          expandedThreadId: state.expandedThreadId,
+          allRoadmaps: state.allRoadmaps,
+          allTaskChats: state.allTaskChats,
+          savedAt: now
+        };
+        Object.assign(payload, restoreFields);
+        if (state.activeMapId && Array.isArray(payload.savedMaps)) {
+          const mapIndex = payload.savedMaps.findIndex((map) => map.id === state.activeMapId);
+          if (mapIndex >= 0) {
+            payload.savedMaps[mapIndex] = {
+              ...payload.savedMaps[mapIndex],
+              ...restoreFields,
+              updatedAt: now
+            };
+          }
+        }
+        localStorage.setItem(storageKey, JSON.stringify(scrubPayloadTombstones(payload)));
+      } catch {
+        /* ignore storage failures */
+      }
     }
 
     function snapshotSessionBeforeUnload() {
@@ -37032,6 +37130,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           trackIntakeAbandonment();
           snapshotSessionBeforeUnload();
           if (hasSavableProgress()) void flushPersist();
+        });
+        window.addEventListener("beforeunload", () => {
+          snapshotSessionBeforeUnload();
         });
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "hidden") {
