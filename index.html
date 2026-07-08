@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-08-sidebar-roadmaps-toggle -->
+<!-- whatimado build: 2026-07-08-progress-map-scroll -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-08-sidebar-roadmaps-toggle">
+  <meta name="whatimado-build" content="2026-07-08-progress-map-scroll">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7733,7 +7733,85 @@
       opacity: 1;
     }
 
-    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-track {
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll {
+      position: relative;
+      min-width: 0;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll::before,
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: .15rem;
+      width: 1.75rem;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity .18s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll::before {
+      left: 0;
+      background: linear-gradient(90deg, #fff 30%, rgba(255, 255, 255, 0));
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll::after {
+      right: 0;
+      background: linear-gradient(270deg, #fff 30%, rgba(255, 255, 255, 0));
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll.can-scroll-left::before,
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll.can-scroll-right::after {
+      opacity: 1;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn {
+      position: absolute;
+      top: calc(.35rem + 1.35rem + .35rem + .825rem);
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.7rem;
+      height: 1.7rem;
+      padding: 0;
+      border: 1px solid rgba(37, 99, 235, .16);
+      border-radius: 999px;
+      background: #fff;
+      color: #2563eb;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, .08);
+      cursor: pointer;
+      transform: translateY(-50%);
+      transition: opacity .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn svg {
+      width: .82rem;
+      height: .82rem;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn--prev {
+      left: .15rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn--next {
+      right: .15rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn:hover {
+      border-color: rgba(37, 99, 235, .3);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, .14);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn[hidden] {
+      display: none !important;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll .roadmap-glance-track {
       display: block;
       overflow-x: auto;
       overflow-y: hidden;
@@ -7742,7 +7820,13 @@
       scroll-snap-type: x proximity;
       min-width: 0;
       max-width: 100%;
-      padding-bottom: .15rem;
+      padding: 0 1.85rem .15rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll .roadmap-glance-track::-webkit-scrollbar {
+      display: none;
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline {
@@ -8582,19 +8666,23 @@
         width: 100%;
       }
 
-      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-track {
-        display: block;
-        overflow-x: auto;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior-x: contain;
-        scroll-snap-type: x proximity;
-        min-width: 0;
-        max-width: 100%;
-        padding-bottom: .15rem;
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll {
+        width: 100%;
         margin: 0 -.15rem;
-        padding-left: .15rem;
-        padding-right: .15rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll .roadmap-glance-track {
+        margin: 0;
+        padding-left: 1.75rem;
+        padding-right: 1.75rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll::before {
+        background: linear-gradient(90deg, rgba(255, 255, 255, .98) 30%, rgba(255, 255, 255, 0));
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll::after {
+        background: linear-gradient(270deg, rgba(255, 255, 255, .98) 30%, rgba(255, 255, 255, 0));
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-track {
@@ -13357,7 +13445,15 @@
           </div>
         </div>
         <div class="roadmap-progress-map-timeline roadmap-progress-map-timeline--float" id="roadmap-float-timeline" hidden>
-          <div class="roadmap-glance-track" id="roadmap-float-timeline-track"></div>
+          <div class="roadmap-progress-map-scroll" data-progress-map-scroll>
+            <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--prev" hidden aria-label="Scroll progress map left">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+            </button>
+            <div class="roadmap-glance-track" id="roadmap-float-timeline-track"></div>
+            <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--next" hidden aria-label="Scroll progress map right">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -13791,7 +13887,15 @@
             <p class="roadmap-progress-summary" id="roadmap-progress-summary">0 of 0 tasks completed</p>
             <div class="roadmap-progress-map-timeline roadmap-progress-map-timeline--sidebar" id="roadmap-progress-timeline" hidden>
               <p class="roadmap-progress-map-lead">Each dot marks an estimated income goal — stay focused on reaching the next one.</p>
-              <div class="roadmap-glance-track" id="roadmap-progress-timeline-track"></div>
+              <div class="roadmap-progress-map-scroll" data-progress-map-scroll>
+                <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--prev" hidden aria-label="Scroll progress map left">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+                </button>
+                <div class="roadmap-glance-track" id="roadmap-progress-timeline-track"></div>
+                <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--next" hidden aria-label="Scroll progress map right">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+                </button>
+              </div>
             </div>
             <button type="button" class="roadmap-side-link" id="roadmap-view-progress-btn">Jump to current phase</button>
             <button type="button" class="roadmap-glance-next-btn" id="roadmap-progress-next-btn" hidden>Jump to your next mission</button>
@@ -34265,6 +34369,55 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    function getProgressMapScrollShell(track) {
+      return track?.closest("[data-progress-map-scroll]") || null;
+    }
+
+    function updateProgressMapScrollControls(track) {
+      const shell = getProgressMapScrollShell(track);
+      if (!shell || !track) return;
+      const prevBtn = shell.querySelector(".roadmap-progress-map-scroll-btn--prev");
+      const nextBtn = shell.querySelector(".roadmap-progress-map-scroll-btn--next");
+      const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+      const atStart = track.scrollLeft <= 4;
+      const atEnd = track.scrollLeft >= maxScroll - 4;
+      const canScroll = maxScroll > 8;
+
+      shell.classList.toggle("can-scroll-left", canScroll && !atStart);
+      shell.classList.toggle("can-scroll-right", canScroll && !atEnd);
+      if (prevBtn) prevBtn.hidden = !canScroll || atStart;
+      if (nextBtn) nextBtn.hidden = !canScroll || atEnd;
+    }
+
+    function scrollProgressMapTrack(track, direction = 1) {
+      if (!track) return;
+      const amount = Math.max(180, Math.round(track.clientWidth * 0.72));
+      track.scrollBy({ left: direction * amount, behavior: "smooth" });
+    }
+
+    function initProgressMapScrollControls(track) {
+      const shell = getProgressMapScrollShell(track);
+      if (!shell || track.dataset.scrollControlsBound) return;
+      track.dataset.scrollControlsBound = "1";
+
+      const prevBtn = shell.querySelector(".roadmap-progress-map-scroll-btn--prev");
+      const nextBtn = shell.querySelector(".roadmap-progress-map-scroll-btn--next");
+      prevBtn?.addEventListener("click", () => scrollProgressMapTrack(track, -1));
+      nextBtn?.addEventListener("click", () => scrollProgressMapTrack(track, 1));
+      track.addEventListener("scroll", () => updateProgressMapScrollControls(track), { passive: true });
+
+      if (!window._progressMapScrollResizeBound) {
+        window._progressMapScrollResizeBound = true;
+        window.addEventListener("resize", () => {
+          $$("[data-progress-map-scroll] .roadmap-glance-track").forEach(updateProgressMapScrollControls);
+        });
+      }
+    }
+
+    function refreshAllProgressMapScrollControls() {
+      $$("[data-progress-map-scroll] .roadmap-glance-track").forEach(updateProgressMapScrollControls);
+    }
+
     function scrollActiveProgressMapStop(track) {
       if (!track) return;
       const activeGlanceIndex = getActiveGlanceStageIndex();
@@ -34272,6 +34425,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!activeGlanceStop) return;
       requestAnimationFrame(() => {
         activeGlanceStop.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+        requestAnimationFrame(() => updateProgressMapScrollControls(track));
       });
     }
 
@@ -34298,6 +34452,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         track.style.setProperty("--glance-stops", stopCount);
         track.innerHTML = timelineHtml;
         bindProgressMapTimelineTrack(track);
+        initProgressMapScrollControls(track);
       });
 
       if (sidebarTimeline) sidebarTimeline.hidden = false;
@@ -34307,6 +34462,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       scrollActiveProgressMapStop(
         window.matchMedia("(max-width: 960px)").matches ? floatTrack : sidebarTrack
       );
+      requestAnimationFrame(() => refreshAllProgressMapScrollControls());
       syncRoadmapStickyOffset();
     }
 
