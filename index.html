@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-07-roadmap-refresh-fix -->
+<!-- whatimado build: 2026-07-07-prompt-mobile-scroll -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-07-roadmap-refresh-fix">
+  <meta name="whatimado-build" content="2026-07-07-prompt-mobile-scroll">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1131,7 +1131,7 @@
       overflow-y: auto;
       line-height: 1.5;
       text-align: left;
-      transition: padding 0.15s ease, height 0.15s ease;
+      transition: padding 0.15s ease;
       field-sizing: content;
     }
 
@@ -5109,6 +5109,59 @@
       width: min(100%, 650px);
       margin: 0 auto;
       padding: 0 1.5rem 3rem;
+      touch-action: pan-y;
+    }
+
+    .convo-pull-refresh {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .45rem;
+      height: 0;
+      margin: 0 auto .35rem;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      font-weight: 700;
+      opacity: 0;
+      overflow: hidden;
+      transition: opacity .15s ease;
+      pointer-events: none;
+    }
+
+    .convo-pull-refresh.is-visible {
+      opacity: 1;
+    }
+
+    .convo-pull-refresh.is-ready {
+      color: #2563eb;
+    }
+
+    .convo-pull-refresh.is-loading {
+      color: #2563eb;
+    }
+
+    .convo-pull-refresh-icon {
+      display: inline-block;
+      font-size: .95rem;
+      line-height: 1;
+      transition: transform .15s ease;
+    }
+
+    .convo-pull-refresh.is-ready .convo-pull-refresh-icon,
+    .convo-pull-refresh.is-loading .convo-pull-refresh-icon {
+      transform: rotate(180deg);
+    }
+
+    .convo-pull-refresh.is-loading .convo-pull-refresh-icon {
+      animation: convo-pull-spin .8s linear infinite;
+    }
+
+    @keyframes convo-pull-spin {
+      to { transform: rotate(540deg); }
+    }
+
+    html.is-convo-screen #screen-convo.active {
+      overscroll-behavior-y: auto;
     }
 
     .convo-spacer {
@@ -7027,53 +7080,22 @@
       gap: .85rem;
     }
 
-    html[data-color-scheme="adult"] .roadmap-glance {
-      padding: 1.05rem 1.15rem 1.15rem;
-      margin-bottom: 1.35rem;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: linear-gradient(180deg, rgba(248, 250, 252, .95) 0%, #fff 100%);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline {
+      margin: .55rem 0 .65rem;
       min-width: 0;
       max-width: 100%;
-      overflow: hidden;
     }
 
-    html[data-color-scheme="adult"] .roadmap-glance-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: .35rem .75rem;
-      margin-bottom: .85rem;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-glance-title {
-      margin: 0;
-      font-size: .92rem;
-      font-weight: 800;
-      letter-spacing: -.02em;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-glance-meta {
+    html[data-color-scheme="adult"] .roadmap-progress-map-lead {
+      margin: 0 0 .55rem;
       color: var(--ink-muted);
       font-size: .72rem;
-      font-weight: 700;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-glance-lead {
-      margin: 0 0 .75rem;
-      color: var(--ink-muted);
-      font-size: .78rem;
       line-height: 1.45;
     }
 
-    html[data-color-scheme="adult"] .roadmap-glance-track {
-      display: flex;
-      flex-direction: column;
-      gap: .35rem;
-      min-width: 0;
-      max-width: 100%;
+    html[data-color-scheme="adult"] .roadmap-progress-map .roadmap-glance-next-btn {
+      margin-top: .15rem;
+      width: 100%;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-task {
@@ -7502,37 +7524,87 @@
       border-color: color-mix(in srgb, var(--purple) 42%, var(--line));
     }
 
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-track {
+      display: block;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x proximity;
+      min-width: 0;
+      max-width: 100%;
+      padding-bottom: .15rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline {
+      min-width: min-content;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-rail {
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      min-width: max(100%, calc(var(--glance-stops, 3) * 7.25rem));
+      padding-top: .35rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-rail::before {
+      display: block;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop {
+      flex: 0 0 7.25rem;
+      min-width: 7.25rem;
+      max-width: 8.5rem;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+      padding: 0 .3rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      text-align: center;
+      scroll-snap-align: center;
+    }
+
     @media (max-width: 699px) {
-      html[data-color-scheme="adult"] .roadmap-glance-timeline-rail {
-        flex-direction: column;
-        gap: .35rem;
-        padding-top: 0;
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-rail {
+        min-width: max(100%, calc(var(--glance-stops, 3) * 6.75rem));
       }
 
-      html[data-color-scheme="adult"] .roadmap-glance-timeline-rail::before {
-        display: none;
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop {
+        flex: 0 0 6.75rem;
+        min-width: 6.75rem;
+        max-width: 7.5rem;
+        padding: 0 .2rem;
       }
 
-      html[data-color-scheme="adult"] .roadmap-glance-timeline-stop {
-        flex-direction: row;
-        align-items: flex-start;
-        gap: .65rem;
-        width: 100%;
-        padding: .8rem .85rem;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: #fff;
-        text-align: left;
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-income-dot {
+        font-size: .58rem;
+        padding: .1rem .38rem;
+        max-width: 6.25rem;
       }
 
-      html[data-color-scheme="adult"] .roadmap-glance-income-dot {
-        flex: 0 0 auto;
-        margin-top: .15rem;
-        box-shadow: none;
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-node {
+        width: 1.85rem;
+        height: 1.85rem;
+        font-size: .72rem;
       }
 
-      html[data-color-scheme="adult"] .roadmap-glance-copy {
-        flex: 1 1 auto;
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-label {
+        font-size: .68rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-desc {
+        font-size: .62rem;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-count {
+        font-size: .6rem;
       }
     }
 
@@ -8208,6 +8280,18 @@
       display: none !important;
     }
 
+    .roadmap-float-progress-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .65rem;
+      width: 100%;
+    }
+
+    .roadmap-float-progress-bar-wrap {
+      width: 100%;
+    }
+
     .roadmap-float-progress-label {
       color: #374151;
       font-size: .72rem;
@@ -8217,7 +8301,7 @@
     }
 
     .roadmap-float-progress-track {
-      width: 88px;
+      width: 100%;
       height: .35rem;
       border-radius: 999px;
       background: rgba(37, 99, 235, .12);
@@ -8245,11 +8329,26 @@
       .roadmap-float-progress {
         display: none !important;
       }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--sidebar {
+        display: none !important;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-side > .roadmap-progress-map {
+        display: none !important;
+      }
     }
 
     @media (max-width: 960px) {
       html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
         display: flex;
+        flex-direction: column;
         position: sticky;
         top: var(--topbar-h, 64px);
         left: 0;
@@ -8257,21 +8356,41 @@
         width: 100%;
         z-index: 19;
         flex-shrink: 0;
-        align-items: center;
-        gap: .65rem;
-        padding: .5rem 1rem;
+        align-items: stretch;
+        gap: .45rem;
+        padding: .55rem 1rem .7rem;
         border-radius: 0;
         border: 0;
         border-bottom: 1px solid rgba(37, 99, 235, .12);
         box-shadow: 0 2px 14px rgba(15, 23, 42, .08);
         background: rgba(255, 255, 255, .96);
         backdrop-filter: blur(10px);
-        pointer-events: none;
+        pointer-events: auto;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
+        margin: 0;
+        width: 100%;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-track {
+        display: block;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        min-width: 0;
+        max-width: 100%;
+        padding-bottom: .15rem;
+        margin: 0 -.15rem;
+        padding-left: .15rem;
+        padding-right: .15rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-track {
-        flex: 1;
-        width: auto;
+        flex: none;
+        width: 100%;
         max-width: none;
         height: .42rem;
       }
@@ -9701,21 +9820,17 @@
 
       html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
       html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
-      html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:first-child { order: 40; }
+      html[data-color-scheme="adult"] .roadmap-content { display: contents; }
       html[data-color-scheme="adult"] .roadmap-side > #roadmap-side-local-card { order: 50; }
-      html[data-color-scheme="adult"] .roadmap-content { order: 60; }
+      html[data-color-scheme="adult"] .roadmap-phases,
+      html[data-color-scheme="adult"] .roadmap-refining-banner,
+      html[data-color-scheme="adult"] .roadmap-branch-picker,
+      html[data-color-scheme="adult"] .roadmap-load-phases-btn,
+      html[data-color-scheme="adult"] .roadmap-complete-card--footer,
+      html[data-color-scheme="adult"] .roadmap-post-mission-picker { order: 65; width: 100%; }
       html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:nth-child(3) { order: 70; }
       html[data-color-scheme="adult"] .roadmap-side-help { order: 80; }
       html[data-color-scheme="adult"] .roadmap-overview-footer { order: 90; }
-
-      html[data-color-scheme="adult"] .roadmap-glance-track {
-        display: flex;
-        flex-direction: column;
-        gap: .35rem;
-        overflow: visible;
-        padding: 0;
-        scroll-snap-type: none;
-      }
 
       html[data-color-scheme="adult"] .roadmap-phase-head {
         padding: 1.1rem 1.15rem;
@@ -13023,11 +13138,18 @@
       </header>
 
       <div class="roadmap-float-progress" id="roadmap-float-progress" hidden aria-hidden="true">
-        <span class="roadmap-float-progress-label">Progress</span>
-        <div class="roadmap-float-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Roadmap progress">
-          <span class="roadmap-float-progress-fill" id="roadmap-float-progress-fill"></span>
+        <div class="roadmap-float-progress-summary">
+          <span class="roadmap-float-progress-label">Progress map</span>
+          <span class="roadmap-float-progress-text" id="roadmap-float-progress-text">0%</span>
         </div>
-        <span class="roadmap-float-progress-text" id="roadmap-float-progress-text">0%</span>
+        <div class="roadmap-float-progress-bar-wrap" aria-hidden="true">
+          <div class="roadmap-float-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Roadmap progress">
+            <span class="roadmap-float-progress-fill" id="roadmap-float-progress-fill"></span>
+          </div>
+        </div>
+        <div class="roadmap-progress-map-timeline roadmap-progress-map-timeline--float" id="roadmap-float-timeline" hidden>
+          <div class="roadmap-glance-track" id="roadmap-float-timeline-track"></div>
+        </div>
       </div>
 
   <main>
@@ -13220,6 +13342,10 @@
 
     <section class="screen" id="screen-convo">
       <div class="convo-wrap">
+        <div class="convo-pull-refresh" id="convo-pull-refresh" hidden aria-hidden="true">
+          <span class="convo-pull-refresh-icon" aria-hidden="true">↻</span>
+          <span class="convo-pull-refresh-label" id="convo-pull-refresh-label">Pull to refresh</span>
+        </div>
         <div class="convo-spacer" id="convo-spacer" aria-hidden="true"></div>
       <div class="conversation" id="bubble-chain"></div>
         <div class="dashboard-path-mode-bar path-mode-choice" id="path-mode-choice" hidden aria-label="Choose your roadmap style">
@@ -13377,16 +13503,6 @@
             <p class="roadmap-sub" id="roadmap-sub" hidden>Building your personalised roadmap...</p>
             <span id="roadmap-type" hidden></span>
 
-            <section class="roadmap-glance" id="roadmap-glance" hidden aria-label="Roadmap at a glance">
-              <div class="roadmap-glance-head">
-                <h3 class="roadmap-glance-title" id="roadmap-glance-title">This phase</h3>
-                <span class="roadmap-glance-meta" id="roadmap-glance-meta" hidden></span>
-              </div>
-              <p class="roadmap-glance-lead" id="roadmap-glance-lead" hidden></p>
-              <div class="roadmap-glance-track" id="roadmap-glance-track"></div>
-              <button type="button" class="roadmap-glance-next-btn" id="roadmap-glance-next-btn">Jump to your next mission</button>
-            </section>
-
             <div class="momentum-card" id="momentum-card" hidden aria-hidden="true">
               <div class="momentum-pct" id="momentum-pct">0%</div>
               <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
@@ -13454,16 +13570,21 @@
         </div>
 
         <aside class="roadmap-side" id="roadmap-side">
-          <div class="roadmap-side-card">
+          <div class="roadmap-side-card roadmap-progress-map">
             <div class="roadmap-side-card-head">
-              <h3 class="roadmap-side-card-title">Overall progress</h3>
+              <h3 class="roadmap-side-card-title">Progress map</h3>
               <span class="roadmap-side-progress-pct" id="roadmap-progress-pct">0%</span>
             </div>
             <div class="roadmap-progress-bar" aria-hidden="true">
               <span class="roadmap-progress-bar-fill" id="roadmap-progress-bar-fill"></span>
             </div>
             <p class="roadmap-progress-summary" id="roadmap-progress-summary">0 of 0 tasks completed</p>
-            <button type="button" class="roadmap-side-link" id="roadmap-view-progress-btn">View progress</button>
+            <div class="roadmap-progress-map-timeline roadmap-progress-map-timeline--sidebar" id="roadmap-progress-timeline" hidden>
+              <p class="roadmap-progress-map-lead">Each dot marks an estimated income goal — stay focused on reaching the next one.</p>
+              <div class="roadmap-glance-track" id="roadmap-progress-timeline-track"></div>
+            </div>
+            <button type="button" class="roadmap-side-link" id="roadmap-view-progress-btn">Jump to current phase</button>
+            <button type="button" class="roadmap-glance-next-btn" id="roadmap-progress-next-btn" hidden>Jump to your next mission</button>
           </div>
 
           <div class="roadmap-side-card" id="roadmap-side-local-card">
@@ -28185,8 +28306,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return $("#bubble-chain")?.lastElementChild ?? null;
     }
 
+    let convoScrollLockUntil = 0;
+    let convoPullRefreshState = null;
+
+    function markConvoUserScroll() {
+      convoScrollLockUntil = Date.now() + 900;
+    }
+
+    function isConvoNearBottom(threshold = 96) {
+      const doc = document.documentElement;
+      const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
+      return maxScroll - window.scrollY <= threshold;
+    }
+
     function alignConvoViewport(behavior = "smooth") {
       if (!$("#screen-convo")?.classList.contains("active")) return;
+      if (Date.now() < convoScrollLockUntil) return;
       const spacer = $("#convo-spacer");
       const anchor = getConvoAnchor();
       const replyBox = $("#reply-box");
@@ -28195,11 +28330,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10) || 60;
       const view = getVisibleViewport();
       const centerLine = view.top + headerH + (view.height - headerH) / 2;
+      const nearBottom = isConvoNearBottom();
 
       spacer.style.minHeight = "0px";
       void spacer.offsetHeight;
 
-      if (anchor) {
+      if (anchor && !nearBottom) {
         let anchorBottom = anchor.getBoundingClientRect().bottom;
         if (anchorBottom < centerLine) {
           spacer.style.minHeight = `${Math.ceil(centerLine - anchorBottom + 16)}px`;
@@ -28213,8 +28349,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
 
-      if (replyBox && getComputedStyle(replyBox).display !== "none") {
-        keepFieldVisible(replyBox.querySelector(".reply-textarea") || replyBox, "auto");
+      const replyTextarea = replyBox?.querySelector(".reply-textarea");
+      if (
+        replyTextarea
+        && getComputedStyle(replyBox).display !== "none"
+        && document.activeElement === replyTextarea
+      ) {
+        keepFieldVisible(replyTextarea, "auto");
       }
     }
 
@@ -28225,21 +28366,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return { top, height, bottom: top + height };
     }
 
+    function scrollFieldIntoKeyboardView(field, behavior = "auto") {
+      if (!field || window.innerWidth > 760) return;
+      const target = field.closest(".dashboard-search-field") || field.closest(".reply-box") || field;
+      const view = getVisibleViewport();
+      const rect = target.getBoundingClientRect();
+      const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10) || 56;
+      const idealTop = view.top + headerH + 10;
+      const idealBottom = view.bottom - 12;
+
+      if (rect.top < idealTop) {
+        window.scrollBy({ top: rect.top - idealTop, behavior });
+      } else if (rect.bottom > idealBottom) {
+        window.scrollBy({ top: rect.bottom - idealBottom, behavior });
+      }
+    }
+
     function keepFieldVisible(field, behavior = "smooth") {
       if (!field || window.innerWidth > 760) return;
-
-      const rect = field.getBoundingClientRect();
-      const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10) || 56;
-      const view = getVisibleViewport();
-      const padding = 14;
-      const minTop = view.top + headerH + padding;
-      const maxBottom = view.bottom - padding;
-
-      if (rect.bottom > maxBottom) {
-        window.scrollBy({ top: rect.bottom - maxBottom, behavior });
-      } else if (rect.top < minTop) {
-        window.scrollBy({ top: rect.top - minTop, behavior });
-      }
+      scrollFieldIntoKeyboardView(field, behavior);
     }
 
     function syncKeyboardInset() {
@@ -28253,10 +28398,101 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function scheduleKeepFieldVisible(field) {
-      keepFieldVisible(field, "auto");
-      setTimeout(() => keepFieldVisible(field, "smooth"), 120);
-      setTimeout(() => keepFieldVisible(field, "auto"), 350);
-      setTimeout(() => keepFieldVisible(field, "auto"), 650);
+      scrollFieldIntoKeyboardView(field, "auto");
+      setTimeout(() => scrollFieldIntoKeyboardView(field, "smooth"), 120);
+      setTimeout(() => scrollFieldIntoKeyboardView(field, "auto"), 350);
+      setTimeout(() => scrollFieldIntoKeyboardView(field, "auto"), 650);
+    }
+
+    async function runConvoPullRefresh() {
+      const indicator = $("#convo-pull-refresh");
+      const label = $("#convo-pull-refresh-label");
+      if (!indicator || convoPullRefreshState?.loading) return;
+      convoPullRefreshState = { loading: true };
+      indicator.hidden = false;
+      indicator.classList.add("is-visible", "is-loading");
+      indicator.classList.remove("is-ready");
+      if (label) label.textContent = "Refreshing…";
+      try {
+        await loadSession();
+        if ($("#screen-convo")?.classList.contains("active")) {
+          restoreConversationBubbles();
+          alignConvoViewport("auto");
+        }
+      } finally {
+        convoPullRefreshState = null;
+        indicator.classList.remove("is-loading", "is-ready", "is-visible");
+        indicator.hidden = true;
+        if (label) label.textContent = "Pull to refresh";
+        indicator.style.height = "0px";
+      }
+    }
+
+    function initConvoPullRefresh() {
+      const wrap = $(".convo-wrap");
+      const indicator = $("#convo-pull-refresh");
+      const label = $("#convo-pull-refresh-label");
+      if (!wrap || !indicator || wrap.dataset.pullRefreshBound) return;
+      wrap.dataset.pullRefreshBound = "1";
+      const threshold = 72;
+
+      wrap.addEventListener("touchstart", (event) => {
+        if (!$("#screen-convo")?.classList.contains("active")) return;
+        if (window.scrollY > 4) return;
+        const touch = event.touches[0];
+        if (!touch) return;
+        convoPullRefreshState = {
+          startY: touch.clientY,
+          pulling: false,
+          loading: false
+        };
+      }, { passive: true });
+
+      wrap.addEventListener("touchmove", (event) => {
+        const state = convoPullRefreshState;
+        if (!state || state.loading || window.scrollY > 4) return;
+        const touch = event.touches[0];
+        if (!touch) return;
+        const delta = touch.clientY - state.startY;
+        if (delta <= 8) {
+          indicator.classList.remove("is-visible", "is-ready");
+          indicator.hidden = true;
+          indicator.style.height = "0px";
+          return;
+        }
+        state.pulling = true;
+        const pull = Math.min(delta, threshold + 24);
+        indicator.hidden = false;
+        indicator.classList.add("is-visible");
+        indicator.classList.toggle("is-ready", pull >= threshold);
+        indicator.style.height = `${Math.max(28, pull * 0.55)}px`;
+        if (label) {
+          label.textContent = pull >= threshold ? "Release to refresh" : "Pull to refresh";
+        }
+      }, { passive: true });
+
+      wrap.addEventListener("touchend", () => {
+        const state = convoPullRefreshState;
+        if (!state || state.loading) return;
+        const ready = indicator.classList.contains("is-ready");
+        convoPullRefreshState = null;
+        if (ready) {
+          void runConvoPullRefresh();
+          return;
+        }
+        indicator.classList.remove("is-visible", "is-ready");
+        indicator.hidden = true;
+        indicator.style.height = "0px";
+        if (label) label.textContent = "Pull to refresh";
+      }, { passive: true });
+
+      wrap.addEventListener("touchcancel", () => {
+        convoPullRefreshState = null;
+        indicator.classList.remove("is-visible", "is-ready", "is-loading");
+        indicator.hidden = true;
+        indicator.style.height = "0px";
+        if (label) label.textContent = "Pull to refresh";
+      }, { passive: true });
     }
 
     function initMobileKeyboardAssist() {
@@ -28267,15 +28503,29 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       document.addEventListener("focusin", (event) => {
         if (!isField(event.target)) return;
         scheduleKeepFieldVisible(event.target);
+        if (event.target.id === "main-input") {
+          requestAnimationFrame(() => scrollFieldIntoKeyboardView(event.target, "auto"));
+        }
       });
+
+      document.addEventListener("touchstart", () => {
+        if ($("#screen-convo")?.classList.contains("active")) markConvoUserScroll();
+      }, { passive: true });
+      document.addEventListener("wheel", () => {
+        if ($("#screen-convo")?.classList.contains("active")) markConvoUserScroll();
+      }, { passive: true });
 
       const onViewportChange = () => {
         syncKeyboardInset();
         const active = document.activeElement;
         if (isField(active)) {
-          keepFieldVisible(active, "auto");
+          scrollFieldIntoKeyboardView(active, "auto");
         }
-        if ($("#screen-convo")?.classList.contains("active")) {
+        if (
+          $("#screen-convo")?.classList.contains("active")
+          && isField(active)
+          && !isConvoNearBottom()
+        ) {
           alignConvoViewport("auto");
         }
       };
@@ -28414,6 +28664,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         screenNavFuture = [];
       }
       state.lastScreen = name;
+      document.documentElement.classList.toggle("is-convo-screen", name === "convo");
       $$(".screen").forEach((screen) => screen.classList.toggle("active", screen.id === `screen-${name}`));
       $$(".nav-btn[data-screen-link], .dashboard-nav-btn[data-screen-link]").forEach((button) => button.classList.remove("active"));
       $(`[data-screen-link="${name}"]`)?.classList.add("active");
@@ -33651,39 +33902,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return stages.length - 1;
     }
 
-    function renderRoadmapGlance(stages = state.roadmapStages) {
-      const section = $("#roadmap-glance");
-      const track = $("#roadmap-glance-track");
-      const meta = $("#roadmap-glance-meta");
-      const title = $("#roadmap-glance-title");
-      const lead = $("#roadmap-glance-lead");
-      const nextBtn = $("#roadmap-glance-next-btn");
-      if (!section || !track) return;
-
-      if (!stages?.length) {
-        section.hidden = true;
-        track.innerHTML = "";
-        if (meta) meta.hidden = true;
-        if (lead) lead.hidden = true;
-        if (nextBtn) nextBtn.hidden = true;
-        return;
-      }
-
-      section.hidden = false;
-      const { phaseCount, taskCount } = getRoadmapTaskTotals(stages);
+    function buildProgressMapTimelineHtml(stages) {
       const incomeMilestones = deriveStageIncomeMilestones(state.currentIdea, stages);
-      if (meta) {
-        meta.textContent = `${phaseCount} phase${phaseCount === 1 ? "" : "s"} · ${taskCount} mission${taskCount === 1 ? "" : "s"}`;
-        meta.hidden = false;
-      }
-      if (title) title.textContent = phaseCount === 1 ? "Your roadmap" : "Roadmap timeline";
-      if (lead) {
-        lead.textContent = "Each dot marks an estimated income goal — stay focused on reaching the next one.";
-        lead.hidden = false;
-      }
-
-      track.style.setProperty("--glance-stops", String(Math.max(stages.length, 1)));
-      track.innerHTML = `
+      return `
         <div class="roadmap-glance-timeline">
           <div class="roadmap-glance-timeline-rail">
             ${stages.map((stage, stageIndex) => {
@@ -33706,12 +33927,62 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             }).join("")}
           </div>
         </div>`;
+    }
 
+    function bindProgressMapTimelineTrack(track) {
+      if (!track) return;
       track.querySelectorAll("[data-glance-phase]").forEach((button) => {
         button.addEventListener("click", () => jumpToRoadmapPhase(Number(button.dataset.glancePhase)));
       });
+    }
 
+    function scrollActiveProgressMapStop(track) {
+      if (!track) return;
+      const activeGlanceIndex = getActiveGlanceStageIndex();
+      const activeGlanceStop = track.querySelector(`[data-glance-phase="${activeGlanceIndex}"]`);
+      if (!activeGlanceStop) return;
+      requestAnimationFrame(() => {
+        activeGlanceStop.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+      });
+    }
+
+    function renderProgressMapTimeline(stages = state.roadmapStages) {
+      const sidebarTimeline = $("#roadmap-progress-timeline");
+      const sidebarTrack = $("#roadmap-progress-timeline-track");
+      const floatTimeline = $("#roadmap-float-timeline");
+      const floatTrack = $("#roadmap-float-timeline-track");
+      const nextBtn = $("#roadmap-progress-next-btn");
+      const tracks = [sidebarTrack, floatTrack].filter(Boolean);
+
+      if (!stages?.length) {
+        if (sidebarTimeline) sidebarTimeline.hidden = true;
+        if (floatTimeline) floatTimeline.hidden = true;
+        tracks.forEach((track) => { track.innerHTML = ""; });
+        if (nextBtn) nextBtn.hidden = true;
+        syncRoadmapStickyOffset();
+        return;
+      }
+
+      const stopCount = String(Math.max(stages.length, 1));
+      const timelineHtml = buildProgressMapTimelineHtml(stages);
+      tracks.forEach((track) => {
+        track.style.setProperty("--glance-stops", stopCount);
+        track.innerHTML = timelineHtml;
+        bindProgressMapTimelineTrack(track);
+      });
+
+      if (sidebarTimeline) sidebarTimeline.hidden = false;
+      if (floatTimeline) floatTimeline.hidden = false;
       if (nextBtn) nextBtn.hidden = !getFirstIncompleteTaskPosition();
+
+      scrollActiveProgressMapStop(
+        window.matchMedia("(max-width: 960px)").matches ? floatTrack : sidebarTrack
+      );
+      syncRoadmapStickyOffset();
+    }
+
+    function renderRoadmapGlance(stages = state.roadmapStages) {
+      renderProgressMapTimeline(stages);
     }
 
     function collectLocalResourcesFromRoadmap() {
@@ -36563,6 +36834,30 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     ];
     let promptPlaceholderTimer = null;
     let promptPlaceholderIndex = 0;
+    let dashboardPromptStableHeight = 0;
+
+    function getDashboardPromptFieldMin() {
+      const input = $("#main-input");
+      const field = input?.closest(".dashboard-search-field");
+      if (!field) return 60;
+      const style = getComputedStyle(field);
+      const parsed = parseFloat(style.minHeight);
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+      return 60;
+    }
+
+    function ensureDashboardPromptStableHeight() {
+      if (dashboardPromptStableHeight) return dashboardPromptStableHeight;
+      const input = $("#main-input");
+      if (!input) return getDashboardPromptFieldMin();
+      const style = getComputedStyle(input);
+      const lineHeight = parseFloat(style.lineHeight) || 22;
+      const padBlock = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      const fieldMin = getDashboardPromptFieldMin();
+      const twoLineTextHeight = measurePromptTextHeight(input, "Example prompt line one\nExample prompt line two");
+      dashboardPromptStableHeight = Math.max(fieldMin, Math.ceil(twoLineTextHeight + padBlock));
+      return dashboardPromptStableHeight;
+    }
 
     function stopRotatingPromptPlaceholder() {
       clearInterval(promptPlaceholderTimer);
@@ -36577,7 +36872,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (!input || input.value.trim() || document.activeElement === input) return;
         input.placeholder = PROMPT_PLACEHOLDER_EXAMPLES[promptPlaceholderIndex];
         promptPlaceholderIndex = (promptPlaceholderIndex + 1) % PROMPT_PLACEHOLDER_EXAMPLES.length;
-        syncDashboardPromptHeight();
       };
       advance();
       promptPlaceholderTimer = setInterval(advance, 4500);
@@ -36616,11 +36910,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const field = input?.closest(".dashboard-search-field");
       if (!input || !field) return;
       const mobile = window.matchMedia("(max-width: 720px)").matches;
-      const fieldMin = 60;
+      const fieldMin = ensureDashboardPromptStableHeight();
       const max = mobile ? 280 : 160;
+      const hasValue = Boolean(input.value.trim());
       const singleLine = !input.value.includes("\n");
-      const measureText = input.value.trim() || input.placeholder || "";
-      const textHeight = measurePromptTextHeight(input, measureText);
+      const measureText = hasValue ? input.value : "";
+      const textHeight = measureText ? measurePromptTextHeight(input, measureText) : 0;
       const style = getComputedStyle(input);
       const padBlock = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
 
@@ -36629,11 +36924,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       field.style.minHeight = "";
       input.style.height = "auto";
 
-      const fitsCompact = singleLine && (textHeight === 0 || textHeight <= fieldMin - 8);
-      if (fitsCompact) {
+      if (!hasValue && singleLine) {
         field.classList.add("is-compact");
         input.classList.add("is-compact");
-        input.style.height = textHeight ? `${textHeight}px` : "1.5em";
+        field.style.minHeight = `${fieldMin}px`;
+        input.style.height = `${Math.max(0, fieldMin - padBlock)}px`;
         return;
       }
 
@@ -36651,6 +36946,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       input.addEventListener("focus", () => {
         stopRotatingPromptPlaceholder();
         syncDashboardPromptHeight();
+        requestAnimationFrame(() => scrollFieldIntoKeyboardView(input, "auto"));
       });
       input.addEventListener("blur", startRotatingPromptPlaceholder);
       input.addEventListener("input", () => {
@@ -36660,8 +36956,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       if (!window._dashboardPromptResizeBound) {
         window._dashboardPromptResizeBound = true;
-        window.addEventListener("resize", () => syncDashboardPromptHeight());
+        window.addEventListener("resize", () => {
+          dashboardPromptStableHeight = 0;
+          syncDashboardPromptHeight();
+        });
       }
+      ensureDashboardPromptStableHeight();
       syncDashboardPromptHeight();
       startRotatingPromptPlaceholder();
     }
@@ -36899,6 +37199,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       bindDashboardUi();
       initRotatingPromptPlaceholder();
       initMobileKeyboardAssist();
+      initConvoPullRefresh();
       window.addEventListener("resize", syncHeaderHeight);
       $$("[data-screen-link]").forEach((element) => {
         element.addEventListener("click", (event) => {
@@ -36914,7 +37215,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
 
       window.addEventListener("resize", () => {
-        if ($("#screen-convo")?.classList.contains("active")) {
+        if ($("#screen-convo")?.classList.contains("active") && !isConvoNearBottom()) {
           alignConvoViewport("auto");
         }
       });
@@ -37034,7 +37335,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#roadmap-footer-regen-btn")?.addEventListener("click", regenerateCurrentRoadmap);
       $("#roadmap-edit-details-btn")?.addEventListener("click", () => showScreen("map"));
       $("#roadmap-view-progress-btn")?.addEventListener("click", scrollToActivePhase);
-      $("#roadmap-glance-next-btn")?.addEventListener("click", focusFirstOpenTaskAsk);
+      $("#roadmap-progress-next-btn")?.addEventListener("click", focusFirstOpenTaskAsk);
       $("#roadmap-ask-assistant-btn")?.addEventListener("click", focusFirstOpenTaskAsk);
       $("#roadmap-load-phases-btn")?.addEventListener("click", () => continueCompletedPlan());
       $("#roadmap-more-resources-btn")?.addEventListener("click", scrollToActivePhase);
