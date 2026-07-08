@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-08-sidebar-roadmaps -->
+<!-- whatimado build: 2026-07-08-sidebar-roadmaps-toggle -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-08-no-zoom-lock">
+  <meta name="whatimado-build" content="2026-07-08-sidebar-roadmaps">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -647,22 +647,9 @@
     html[data-color-scheme="adult"] .dashboard-roadmap-items {
       list-style: none;
       margin: .45rem 0 0;
-      padding: 0 .55rem .55rem 1.15rem;
+      padding: 0 .55rem .55rem .65rem;
       display: none;
       gap: 0;
-      position: relative;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-items::before {
-      content: "";
-      position: absolute;
-      top: .45rem;
-      bottom: .85rem;
-      left: 1.45rem;
-      width: 2px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(37, 99, 235, .34), rgba(37, 99, 235, .1));
-      pointer-events: none;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category.is-expanded .dashboard-roadmap-items {
@@ -675,6 +662,20 @@
       gap: .25rem;
       position: relative;
       z-index: 1;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: .71rem;
+      top: calc(.5rem + .28rem + .72rem);
+      bottom: -.15rem;
+      width: 2px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .22);
+      pointer-events: none;
+      z-index: 0;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item-row + .dashboard-roadmap-item-row {
@@ -724,6 +725,7 @@
       background: #fff;
       box-shadow: 0 0 0 2px #fff;
       position: relative;
+      z-index: 1;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active .dashboard-roadmap-item-marker {
@@ -13295,15 +13297,15 @@
           <svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
           Home
         </button>
-        <div class="dashboard-nav-group" id="dashboard-roadmaps-group">
-          <button type="button" class="dashboard-nav-btn dashboard-nav-btn--expand" id="sidebar-roadmaps-btn" aria-expanded="false" aria-controls="dashboard-roadmaps-sub">
+        <div class="dashboard-nav-group is-open" id="dashboard-roadmaps-group">
+          <button type="button" class="dashboard-nav-btn dashboard-nav-btn--expand" id="sidebar-roadmaps-btn" aria-expanded="true" aria-controls="dashboard-roadmaps-sub">
             <span class="dashboard-nav-btn-main">
               <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
               Roadmaps
             </span>
             <svg class="dashboard-nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
           </button>
-          <div class="dashboard-roadmaps-sub" id="dashboard-roadmaps-sub" hidden>
+          <div class="dashboard-roadmaps-sub" id="dashboard-roadmaps-sub">
             <div id="dashboard-roadmap-categories"></div>
           </div>
         </div>
@@ -24295,7 +24297,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       flexibleBranchOptions: [],
       flexibleFirstMissionPicked: false,
       flexiblePendingFullStages: null,
-      sidebarRoadmapsExpanded: false,
+      sidebarRoadmapsExpanded: true,
       saveStatus: "idle",
       lastSyncStatus: "idle",
       lastCloudSyncError: "",
@@ -26634,11 +26636,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return missionLabel;
     }
 
-    function renderSidebarRoadmaps() {
+    function updateSidebarRoadmapsPanelVisibility() {
       const group = $("#dashboard-roadmaps-group");
       const sub = $("#dashboard-roadmaps-sub");
-      const container = $("#dashboard-roadmap-categories");
       const toggle = $("#sidebar-roadmaps-btn");
+      if (group) group.classList.toggle("is-open", state.sidebarRoadmapsExpanded);
+      if (sub) sub.hidden = !state.sidebarRoadmapsExpanded;
+      if (toggle) toggle.setAttribute("aria-expanded", state.sidebarRoadmapsExpanded ? "true" : "false");
+    }
+
+    function renderSidebarRoadmaps() {
+      const sub = $("#dashboard-roadmaps-sub");
+      const container = $("#dashboard-roadmap-categories");
       if (!sub || !container) return;
 
       pruneRoadmapSidebarAgainstData();
@@ -26652,13 +26661,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.roadmapCategories.forEach((category) => syncCategoryFromMap(category));
 
       const hasCategories = state.roadmapCategories.length > 0;
-      if (hasCategories) state.sidebarRoadmapsExpanded = true;
 
-      if (group) {
-        group.classList.toggle("is-open", state.sidebarRoadmapsExpanded);
-      }
-      sub.hidden = !state.sidebarRoadmapsExpanded;
-      if (toggle) toggle.setAttribute("aria-expanded", state.sidebarRoadmapsExpanded ? "true" : "false");
+      updateSidebarRoadmapsPanelVisibility();
 
       if (!hasCategories) {
         container.innerHTML = '<p class="dashboard-roadmaps-empty">Start on Home — your explorations and roadmaps appear here as you go.</p>';
@@ -26817,7 +26821,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function toggleSidebarRoadmapsPanel() {
       state.sidebarRoadmapsExpanded = !state.sidebarRoadmapsExpanded;
-      renderSidebarRoadmaps();
+      updateSidebarRoadmapsPanelVisibility();
+      schedulePersist();
     }
 
     function cleanupRoadmapCategoriesForMap(mapId) {
