@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-07-complete-card-persist -->
+<!-- whatimado build: 2026-07-07-timeline-node-solid -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-07-complete-card-persist">
+  <meta name="whatimado-build" content="2026-07-07-timeline-node-solid">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7151,20 +7151,32 @@
       width: 1.65rem;
       height: 1.65rem;
       border-radius: 999px;
-      background: rgba(37, 99, 235, .1);
+      border: 2px solid #93c5fd;
+      background: #eff6ff;
       color: #1d4ed8;
       font-size: .72rem;
       font-weight: 800;
       line-height: 1;
     }
 
-    html[data-color-scheme="adult"] .roadmap-glance-phase.is-complete .roadmap-glance-node {
-      background: rgba(34, 197, 94, .14);
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-complete .roadmap-glance-node,
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-complete .roadmap-glance-node {
+      border-color: #86efac;
+      background: #dcfce7;
       color: #15803d;
     }
 
-    html[data-color-scheme="adult"] .roadmap-glance-phase.is-upcoming .roadmap-glance-node {
-      background: rgba(148, 163, 184, .16);
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-in-progress .roadmap-glance-node,
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-in-progress .roadmap-glance-node {
+      border-color: #60a5fa;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-upcoming .roadmap-glance-node,
+    html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-upcoming .roadmap-glance-node {
+      border-color: #cbd5e1;
+      background: #f8fafc;
       color: #64748b;
     }
 
@@ -7282,7 +7294,7 @@
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop .roadmap-glance-node {
       position: relative;
       z-index: 2;
-      box-shadow: 0 0 0 2px #fff;
+      box-shadow: 0 0 0 3px #fff;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-copy {
