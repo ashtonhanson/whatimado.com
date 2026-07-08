@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-07-timeline-node-solid -->
+<!-- whatimado build: 2026-07-07-restore-screen-on-refresh -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-07-timeline-node-solid">
+  <meta name="whatimado-build" content="2026-07-07-restore-screen-on-refresh">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -25270,7 +25270,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           state.userLocation = inferred;
         }
       }
-      state.roadmapExhausted = false;
+      state.roadmapExhausted = Boolean(
+        state.roadmapKey && state.allRoadmaps[state.roadmapKey]?.roadmapExhausted
+      );
       state.roadmapAutoContinuePending = false;
       migrateBrokenRoadmapEntries();
       migrateIntakeStep();
@@ -26827,6 +26829,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     async function flushPersist(options = {}) {
       clearTimeout(persistTimer);
       persistTimer = null;
+      if (state.lastScreen === "roadmap") rememberRoadmapViewport();
       if (!options.force && !hasSavableProgress()) return { ok: false };
       return persistSession({ silent: !options.manual, manual: Boolean(options.manual), force: Boolean(options.force) });
     }
@@ -27327,6 +27330,71 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       schedulePersist();
     }
 
+    function canRestoreScreen(screen = state.lastScreen) {
+      switch (screen) {
+        case "main":
+          return true;
+        case "convo":
+          return state.history.length > 0 || state.step >= 2;
+        case "map":
+          return state.ideas.length > 0;
+        case "roadmap":
+          return Boolean(state.currentIdea);
+        case "maps":
+          return state.savedMaps.length > 0;
+        case "settings":
+          return true;
+        case "stats":
+          return isFounderUser();
+        default:
+          return false;
+      }
+    }
+
+    function restoreRoadmapScreenFromSession() {
+      if (!state.currentIdea) return false;
+      const cachedEntry = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
+      if (!roadmapStagesAreRenderable(state.roadmapStages) && roadmapStagesAreRenderable(cachedEntry?.stages)) {
+        state.roadmapStages = normalizeRoadmapStages(cachedEntry.stages);
+      }
+      state.roadmapExhausted = Boolean(cachedEntry?.roadmapExhausted);
+
+      if (roadmapStagesAreRenderable(state.roadmapStages)) {
+        const founderMode = isFounderRoadmapForIdea(state.currentIdea);
+        setRoadmapNavVisible(true);
+        updateRoadmapOverviewHeader(state.currentIdea);
+        $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
+        $("#roadmap-title").textContent = humanizeTaskText(state.currentIdea.title || "");
+        $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedEntry?.source || "ai");
+        $("#momentum-card").style.display = "flex";
+        setRoadmapLoading(false);
+        setRoadmapRefining(false);
+        showScreen("roadmap", { skipPersist: true, skipNavHistory: true, skipScrollTop: true });
+        renderStages(state.roadmapStages, { skipRecover: true });
+        requestAnimationFrame(() => requestAnimationFrame(() => restoreRoadmapViewport()));
+        return true;
+      }
+
+      const ideaIndex = Math.max(0, state.ideas.findIndex((entry) => entry.title === state.currentIdea.title));
+      void viewRoadmap(state.currentIdea, ideaIndex, { reopen: true });
+      return true;
+    }
+
+    function restoreLastScreenFromSession() {
+      const target = state.lastScreen || "main";
+      if (target === "main" || !canRestoreScreen(target)) return false;
+
+      const restoreOptions = { skipPersist: true, skipNavHistory: true };
+      if (target === "roadmap") {
+        return restoreRoadmapScreenFromSession();
+      }
+      if (target === "settings") {
+        populateAccountPrefsForm();
+      }
+      showScreen(target, restoreOptions);
+      return true;
+    }
+
     function restoreSessionUI() {
       purgeOverlappingRoadmapCaches();
       if (state.history.length) restoreConversationBubbles();
@@ -27334,57 +27402,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         buildOpportunityMap(state.ideas);
       }
       updateMapsNav();
-
-      const resumeRoadmap = state.lastScreen === "roadmap" && state.currentIdea;
-      if (resumeRoadmap) {
-        const cachedEntry = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
-        if (!roadmapStagesAreRenderable(state.roadmapStages) && roadmapStagesAreRenderable(cachedEntry?.stages)) {
-          state.roadmapStages = normalizeRoadmapStages(cachedEntry.stages);
-        }
-        if (roadmapStagesAreRenderable(state.roadmapStages)) {
-          const founderMode = isFounderRoadmapForIdea(state.currentIdea);
-          setRoadmapNavVisible(true);
-          $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
-          $("#roadmap-title").textContent = humanizeTaskText(state.currentIdea.title || "");
-          $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedEntry?.source || "ai");
-          $("#momentum-card").style.display = "flex";
-          setRoadmapLoading(false);
-          setRoadmapRefining(false);
-          showScreen("roadmap", { skipPersist: true, skipNavHistory: true, skipScrollTop: true });
-          renderStages(state.roadmapStages, { skipRecover: true });
-          requestAnimationFrame(() => requestAnimationFrame(() => restoreRoadmapViewport()));
-        } else {
-          const ideaIndex = Math.max(0, state.ideas.findIndex((entry) => entry.title === state.currentIdea.title));
-          void viewRoadmap(state.currentIdea, ideaIndex, { reopen: true });
-        }
-      } else if (state.currentIdea && state.roadmapStages.length) {
-        const sessionKey = state.roadmapKey || slugify(state.currentIdea.title);
-        if (getMapRemovedRoadmapKeys(state.activeMapId).has(sessionKey)) {
-          state.currentIdea = null;
-          state.roadmapKey = null;
-          state.roadmapStages = [];
-        } else if (state.roadmapKey && !state.allRoadmaps[state.roadmapKey]) {
-          state.allRoadmaps[state.roadmapKey] = { idea: state.currentIdea, stages: state.roadmapStages, source: "ai" };
-        }
-        if (state.currentIdea && state.roadmapStages.length) {
-          const founderMode = isFounderRoadmapForIdea(state.currentIdea);
-          const cachedEntry = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
-          setRoadmapNavVisible(true);
-          $("#roadmap-type").textContent = state.currentIdea.type || "Roadmap";
-          $("#roadmap-title").textContent = humanizeTaskText(state.currentIdea.title || "");
-          $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedEntry?.source || "ai");
-          $("#momentum-card").style.display = "flex";
-          setRoadmapLoading(false);
-          renderStages(state.roadmapStages);
-          if (!$("#stage-list")?.children.length) {
-            repairRoadmapMissionsNow(state.currentIdea);
-          }
-        }
-      }
-
-      if (state.lastScreen && state.lastScreen !== "main" && state.history.length && !resumeRoadmap) {
-        showScreen(state.lastScreen, { skipPersist: true, skipNavHistory: true });
-      }
+      restoreLastScreenFromSession();
       updateMapAuxiliaryPanels();
       updateSaveButtonVisibility();
       updateMapsNav();
@@ -33483,6 +33501,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
     }
 
+    let roadmapViewportPersistTimer = null;
+    function scheduleRoadmapViewportPersist() {
+      if (state.lastScreen !== "roadmap") return;
+      clearTimeout(roadmapViewportPersistTimer);
+      roadmapViewportPersistTimer = setTimeout(() => {
+        rememberRoadmapViewport();
+        schedulePersist();
+      }, 500);
+    }
+
+    function snapshotSessionBeforeUnload() {
+      if (state.lastScreen === "roadmap") rememberRoadmapViewport();
+      if (!hasSavableProgress()) return;
+      try {
+        prepareLibraryForPersist();
+        const payload = scrubPayloadTombstones(serializeSession());
+        localStorage.setItem(getStorageKey(), JSON.stringify(payload));
+      } catch {
+        /* ignore storage failures during unload */
+      }
+    }
+
     function restoreRoadmapViewport() {
       const viewport = state.roadmapViewport;
       if (!viewport || state.lastScreen !== "roadmap") return;
@@ -36990,16 +37030,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ]);
         window.addEventListener("pagehide", () => {
           trackIntakeAbandonment();
+          snapshotSessionBeforeUnload();
           if (hasSavableProgress()) void flushPersist();
         });
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "hidden") {
             trackIntakeAbandonment();
+            snapshotSessionBeforeUnload();
             if (hasSavableProgress()) void flushPersist();
             return;
           }
           if (state.currentUser) syncSessionFromCloud();
         });
+        window.addEventListener("scroll", () => {
+          scheduleRoadmapViewportPersist();
+        }, { passive: true });
         trackEvent("app_loaded", {
           has_progress: hasSavableProgress(),
           ideas_count: state.ideas.length,
