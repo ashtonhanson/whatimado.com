@@ -1,11 +1,46 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-08-progress-map-solid -->
+<!-- whatimado build: 2026-07-08-no-zoom-lock -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-visual">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=0, interactive-widget=resizes-visual">
+  <script>
+    (function () {
+      const lockViewport = () => {
+        const meta = document.querySelector('meta[name="viewport"]');
+        if (!meta) return;
+        meta.setAttribute(
+          "content",
+          "width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=0, interactive-widget=resizes-visual"
+        );
+      };
+      const blockGesture = (event) => event.preventDefault();
+      const blockMultiTouch = (event) => {
+        if (event.touches && event.touches.length > 1) event.preventDefault();
+      };
+      const blockPinchWheel = (event) => {
+        if (event.ctrlKey) event.preventDefault();
+      };
+      const blockZoomKeys = (event) => {
+        if (!(event.ctrlKey || event.metaKey)) return;
+        if (event.key === "+" || event.key === "-" || event.key === "=" || event.key === "0") {
+          event.preventDefault();
+        }
+      };
+      lockViewport();
+      document.addEventListener("gesturestart", blockGesture, { passive: false });
+      document.addEventListener("gesturechange", blockGesture, { passive: false });
+      document.addEventListener("gestureend", blockGesture, { passive: false });
+      document.addEventListener("touchstart", blockMultiTouch, { passive: false });
+      document.addEventListener("touchmove", blockMultiTouch, { passive: false });
+      document.addEventListener("wheel", blockPinchWheel, { passive: false });
+      document.addEventListener("keydown", blockZoomKeys);
+      window.addEventListener("orientationchange", lockViewport);
+      window.visualViewport?.addEventListener("resize", lockViewport);
+    })();
+  </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-08-progress-map-solid">
+  <meta name="whatimado-build" content="2026-07-08-no-zoom-lock">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -3464,7 +3499,7 @@
       color: var(--ink);
       background: var(--html-bg);
       -webkit-font-smoothing: antialiased;
-      touch-action: manipulation;
+      touch-action: pan-x pan-y;
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
     }
@@ -3473,7 +3508,11 @@
       min-height: 100%;
       margin: 0;
       overflow-x: hidden;
-      touch-action: manipulation;
+      touch-action: pan-x pan-y;
+    }
+
+    html, body, #app, main, .screen, .dashboard-shell {
+      touch-action: pan-x pan-y;
     }
 
     @media (max-width: 760px) {
