@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-07-income-timeline-post-mission -->
+<!-- whatimado build: 2026-07-07-skip-redundant-api -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-07-income-timeline-post-mission">
+  <meta name="whatimado-build" content="2026-07-07-skip-redundant-api">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -16176,6 +16176,13 @@
       state.postMissionOptions = options;
       state.postMissionScenario = scenario;
       const indexes = ensurePostMissionIdeasOnMap(options);
+      if (state.roadmapKey) {
+        state.allRoadmaps[state.roadmapKey] = {
+          ...state.allRoadmaps[state.roadmapKey],
+          postMissionOptions: options,
+          postMissionScenario: scenario
+        };
+      }
 
       if (titleEl) {
         titleEl.textContent = scenario === "employment"
@@ -16214,7 +16221,7 @@
       });
     }
 
-    async function showPostMissionPicker() {
+    async function showPostMissionPicker(options = {}) {
       if (!state.currentIdea || !state.roadmapExhausted) return;
       const picker = $("#roadmap-post-mission-picker");
       if (picker && !picker.hidden && (state.postMissionOptions?.length || 0) >= 3) return;
@@ -16222,9 +16229,18 @@
       const scenario = isGetHiredMilestone(state.currentIdea)
         ? "employment"
         : (isBusinessOwnerPostMission(state.currentIdea) ? "business" : "employment");
+      const cached = state.roadmapKey ? state.allRoadmaps[state.roadmapKey] : null;
       const fallbacks = getPostMissionFallbackOptions(scenario, state.currentIdea);
-      renderPostMissionPicker(fallbacks, scenario);
+      const restoreOnly = Boolean(options.restoreOnly || options.allowAi === false);
+      const allowAi = !restoreOnly && options.allowAi !== false && !cached?.postMissionAiFetched;
+
+      if (cached?.postMissionOptions?.length >= 3) {
+        renderPostMissionPicker(cached.postMissionOptions, cached.postMissionScenario || scenario);
+      } else {
+        renderPostMissionPicker(fallbacks, scenario);
+      }
       schedulePersist();
+      if (!allowAi) return;
 
       try {
         const completedSummary = buildCompletedRoadmapSummary();
@@ -16245,6 +16261,14 @@
         const ideas = filterNewIdeas(extractIdeasFromAdvisorResponse(response), state.ideas);
         if (ideas.length >= 3 && state.roadmapExhausted) {
           renderPostMissionPicker(ideas.slice(0, 3), scenario);
+          if (state.roadmapKey) {
+            state.allRoadmaps[state.roadmapKey] = {
+              ...state.allRoadmaps[state.roadmapKey],
+              postMissionOptions: ideas.slice(0, 3),
+              postMissionScenario: scenario,
+              postMissionAiFetched: true
+            };
+          }
           schedulePersist();
         }
       } catch {
@@ -16260,7 +16284,7 @@
           roadmapExhausted: true
         };
       }
-      if (options.showPicker !== false) void showPostMissionPicker();
+      if (options.showPicker !== false) void showPostMissionPicker({ allowAi: true });
     }
 
     async function openPostMissionPath(optionIndex) {
@@ -20614,6 +20638,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!getUserLocation()) return false;
       if (!pathNeedsLocalResources(idea)) return false;
       return !roadmapHasRichLocalData(stages, idea);
+    }
+
+    function shouldEnrichCachedRoadmapOnOpen(idea = state.currentIdea, key = state.roadmapKey) {
+      if (!key || !idea) return false;
+      const cached = state.allRoadmaps[key];
+      if (cached?.localEnriched || cached?.localEnrichFailed) return false;
+      if (roadmapHasRichLocalData(state.roadmapStages, idea)) return false;
+      return roadmapNeedsLocalEnrichment(state.roadmapStages, idea);
     }
 
     function getKnownLocalResources(loc = getUserLocation()) {
@@ -30873,6 +30905,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function warmRoadmapStagesInBackground(idea, ideaIndex, options = {}) {
+      const roadmapKey = state.roadmapKey || slugify(idea?.title || "");
+      const cached = roadmapKey ? state.allRoadmaps[roadmapKey] : null;
+      const pendingStages = state.flexiblePendingFullStages || cached?.stages;
+      if (!options.force && roadmapStagesAreRenderable(pendingStages)) {
+        if (!state.flexiblePendingFullStages && roadmapStagesAreRenderable(cached?.stages)) {
+          state.flexiblePendingFullStages = normalizeRoadmapStages(cached.stages);
+        }
+        return Promise.resolve();
+      }
+
       return generateRoadmapStagesFromAi(idea, ideaIndex, options, {
         onFirstMissionReady() {},
         onFullStagesReady(fullStages) {
@@ -32784,21 +32826,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           idea_index: ideaIndex,
           stages_count: state.roadmapStages.length
         });
-        if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea) && state.allRoadmaps[state.roadmapKey]?.localEnrichFailed) {
-          state.allRoadmaps[state.roadmapKey] = {
-            ...state.allRoadmaps[state.roadmapKey],
-            localEnrichFailed: false
-          };
-        }
         registerRoadmapInSidebar(idea, ideaIndex);
         renderSidebarRoadmaps();
         schedulePersist();
-        void maybeEnrichRoadmapLocalContacts({ silent: true }).then((updated) => {
-          if (updated && roadmapStagesAreRenderable(state.roadmapStages) && $("#stage-list")?.children.length) {
-            renderStages(state.roadmapStages);
-            updateRoadmapLocalResourcesList();
-          }
-        });
+        if (shouldEnrichCachedRoadmapOnOpen(idea)) {
+          void maybeEnrichRoadmapLocalContacts({ silent: true }).then((updated) => {
+            if (updated && roadmapStagesAreRenderable(state.roadmapStages) && $("#stage-list")?.children.length) {
+              renderStages(state.roadmapStages);
+              updateRoadmapLocalResourcesList();
+            }
+          });
+        }
         return;
       }
 
@@ -33740,6 +33778,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const cached = state.allRoadmaps[key];
       if (cached?.localEnrichFailed && !force) return false;
       if (cached?.localEnriched && !force) return false;
+      if (!force && roadmapHasRichLocalData(state.roadmapStages, idea)) {
+        state.allRoadmaps[key] = {
+          ...(cached || {}),
+          idea,
+          stages: state.roadmapStages,
+          source: cached?.source || "ai",
+          localEnriched: true,
+          localEnrichFailed: false
+        };
+        schedulePersist();
+        return false;
+      }
 
       roadmapLocalEnrichInFlight = true;
       lastLocalEnrichError = "";
@@ -34639,7 +34689,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (state.roadmapExhausted && complete && !state.roadmapAutoContinuePending) {
-        void showPostMissionPicker();
+        void showPostMissionPicker({ restoreOnly: true });
       } else {
         hidePostMissionPicker();
       }
