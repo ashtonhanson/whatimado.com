@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-08-progress-map-scroll -->
+<!-- whatimado build: 2026-07-08-progress-map-cards -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-08-progress-map-scroll">
+  <meta name="whatimado-build" content="2026-07-08-progress-map-cards">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7817,10 +7817,10 @@
       overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-x: contain;
-      scroll-snap-type: x proximity;
+      scroll-snap-type: none;
       min-width: 0;
       max-width: 100%;
-      padding: 0 1.85rem .15rem;
+      padding: .2rem 1.85rem .35rem;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
@@ -7836,46 +7836,86 @@
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-rail {
       flex-direction: row;
       flex-wrap: nowrap;
-      align-items: flex-start;
-      min-width: max(100%, calc(var(--glance-stops, 3) * 7.25rem));
-      padding-top: .35rem;
+      align-items: stretch;
+      gap: .6rem;
+      min-width: max(100%, calc(var(--glance-stops, 3) * 8.85rem));
+      padding-top: 0;
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-rail::before {
-      display: block;
+      display: none;
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop {
-      flex: 0 0 7.25rem;
-      min-width: 7.25rem;
-      max-width: 8.5rem;
+      flex: 0 0 8.25rem;
+      min-width: 8.25rem;
+      max-width: 8.25rem;
+      min-height: 10.25rem;
       flex-direction: column;
       align-items: center;
-      gap: .35rem;
-      padding: 0 .3rem;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
+      justify-content: flex-start;
+      gap: .5rem;
+      padding: .85rem .8rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
       text-align: center;
-      scroll-snap-align: center;
+      scroll-snap-align: none;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-income-dot--empty {
+      visibility: hidden;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .28rem;
+      width: 100%;
+      flex: 1 1 auto;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-label {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      min-height: 2em;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-desc {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-count {
+      margin-top: auto;
+      padding-top: .15rem;
     }
 
     @media (max-width: 699px) {
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-rail {
-        min-width: max(100%, calc(var(--glance-stops, 3) * 6.75rem));
+        gap: .5rem;
+        min-width: max(100%, calc(var(--glance-stops, 3) * 8.2rem));
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop {
-        flex: 0 0 6.75rem;
-        min-width: 6.75rem;
-        max-width: 7.5rem;
-        padding: 0 .2rem;
+        flex: 0 0 7.7rem;
+        min-width: 7.7rem;
+        max-width: 7.7rem;
+        min-height: 10rem;
+        padding: .8rem .7rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-income-dot {
         font-size: .58rem;
         padding: .1rem .38rem;
-        max-width: 6.25rem;
+        max-width: 100%;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-node {
@@ -7890,10 +7930,6 @@
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-desc {
         font-size: .62rem;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        overflow: hidden;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-count {
@@ -34349,7 +34385,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               const descShort = desc.length > 72 ? `${desc.slice(0, 69)}…` : desc;
               return `
                 <button type="button" class="roadmap-glance-timeline-stop roadmap-glance-phase ${status}" data-glance-phase="${stageIndex}">
-                  ${income?.label ? `<span class="roadmap-glance-income-dot" title="${escapeHtml(income.title || income.label)}">${escapeHtml(income.label)}</span>` : ""}
+                  ${income?.label
+                    ? `<span class="roadmap-glance-income-dot" title="${escapeHtml(income.title || income.label)}">${escapeHtml(income.label)}</span>`
+                    : `<span class="roadmap-glance-income-dot roadmap-glance-income-dot--empty" aria-hidden="true">—</span>`}
                   <span class="roadmap-glance-node" aria-hidden="true">${nodeLabel}</span>
                   <span class="roadmap-glance-copy">
                     <span class="roadmap-glance-label">${escapeHtml(stage.label || `Phase ${stageIndex + 1}`)}</span>
