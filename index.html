@@ -8415,12 +8415,10 @@
       color: var(--text, #241235);
       font-size: .84rem;
       font-weight: 700;
-      line-height: 1.4;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+      line-height: 1.45;
+      white-space: normal;
+      overflow: visible;
+      display: block;
     }
 
     .task-item.is-done .task-compressed-mission {
@@ -14959,8 +14957,31 @@
       return /\b120-word\b|\bfounder story\b/.test(blob);
     }
 
-    function humanizeTaskText(text) {
+    function repairStackedExpansions(text) {
       let copy = String(text || "").trim();
+      if (!copy) return copy;
+      copy = copy.replace(/(\(a payment page for tips and donations\)(?:\s*\(a payment page for tips and donations\))+)/gi, "(a payment page for tips and donations)");
+      copy = copy.replace(/(\(a general AI chat tool\)(?:\s*\(a general AI chat tool\))+)/gi, "(a general AI chat tool)");
+      copy = copy.replace(/(\([^)]{8,140}\))(?:\s*\1)+/g, "$1");
+      return copy.replace(/\s{2,}/g, " ").trim();
+    }
+
+    function getTaskCompressedLabel(mission, text) {
+      const missionCopy = String(mission || "").trim();
+      const textCopy = String(text || "").trim();
+      if (!textCopy) return missionCopy;
+      if (!missionCopy || textSimilarity(missionCopy, textCopy) >= 0.72) return textCopy;
+      return missionCopy;
+    }
+
+    function shouldShowWhatToDoSection(text, normalized) {
+      const copy = String(text || "").trim();
+      if (!copy) return false;
+      return !(isGenericPreparedBelowText(copy) && !taskHasPreparedAssets(normalized));
+    }
+
+    function humanizeTaskText(text) {
+      let copy = repairStackedExpansions(text);
       if (!copy) return copy;
 
       copy = copy.replace(/\bopen notes\b/gi, "Use the My Notes box below");
@@ -14983,8 +15004,8 @@
 
       copy = copy.replace(/\bsub rules\b/gi, "that forum's posting rules");
       copy = copy.replace(/\bsubreddit\b/gi, "Reddit forum");
-      copy = copy.replace(/\bchatgpt\b/gi, "ChatGPT (a general AI chat tool)");
-      copy = copy.replace(/\bstripe\b/gi, "Stripe (a payment page for tips and donations)");
+      copy = copy.replace(/\bchatgpt\b(?!\s*\()/gi, "ChatGPT (a general AI chat tool)");
+      copy = copy.replace(/\bstripe\b(?!\s*\()/gi, "Stripe (a payment page for tips and donations)");
       copy = copy.replace(/\bpwyc\b/gi, "pay-what-you-can");
       copy = copy.replace(/\bpay-what-you-want\b/gi, "pay-what-you-can tips");
 
@@ -15066,7 +15087,7 @@
       copy = copy.replace(/\bpilot\b/gi, "small test");
       copy = copy.replace(/\bsigned pilot agreement\b/gi, "signed test agreement");
 
-      return copy;
+      return repairStackedExpansions(copy);
     }
 
     function isMetaStageLabel(text) {
@@ -15700,8 +15721,10 @@
       normalized.mentorFindings = humanizeTaskText(normalized.mentorFindings || "");
       normalized.steps = (normalized.steps || []).map((step) => {
         const cleaned = stripRepeatedPathReferences(step, stripOpts);
-        return personalizeTaskActionText(humanizeTaskText(cleaned), state.currentIdea);
+        return repairStackedExpansions(personalizeTaskActionText(humanizeTaskText(cleaned), state.currentIdea));
       });
+      normalized.text = repairStackedExpansions(normalized.text);
+      normalized.mission = repairStackedExpansions(normalized.mission || "");
       return normalized;
     }
 
@@ -18425,9 +18448,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getTaskDisplayActionText(normalized) {
-      const stored = String(normalized.text || "").trim();
+      const stored = repairStackedExpansions(String(normalized.text || "").trim());
       if (stored) return repairLoopedOneStepText(stored);
-      return buildMentorUserActionText(normalized);
+      return repairStackedExpansions(buildMentorUserActionText(normalized));
     }
 
     function buildProgressiveMissionTitle(normalized, taskIndex, stageLabel = "") {
@@ -33349,10 +33372,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         simplified ? getTaskDisplayActionText(normalized) : humanizeTaskText(normalized.text),
         { idea: state.currentIdea, stageLabel: stage.label }
       );
-      const actionRestatesMission = textSimilarity(text, mission) >= 0.62;
-      const showWhatToDo = Boolean(text)
-        && !actionRestatesMission
-        && !(isGenericPreparedBelowText(text) && !taskHasPreparedAssets(normalized));
+      const actionRestatesMission = textSimilarity(text, mission) >= 0.72;
+      const showWhatToDo = shouldShowWhatToDoSection(text, normalized);
+      const showExpandedMissionTitle = !(actionRestatesMission && showWhatToDo);
+      const compressedLabel = getTaskCompressedLabel(mission, text);
       const howTo = humanizeTaskText(normalized.howTo || inferHowTo(normalized));
       const contextNote = getTaskContextNote(normalized, stage);
       const why = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
@@ -33406,7 +33429,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   ${outcomeChecklist}
                 </section>` : ""}`;
 
-      const simplifiedMissionMarkup = `<button type="button" class="task-mission-title task-mission-title--toggle" data-task-expand="${escapeHtml(id)}" id="${id}-label" aria-expanded="false">${linkifyTaskTextHtml(mission)}</button>`;
+      const simplifiedMissionMarkup = showExpandedMissionTitle
+        ? `<button type="button" class="task-mission-title task-mission-title--toggle" data-task-expand="${escapeHtml(id)}" id="${id}-label" aria-expanded="false">${linkifyTaskTextHtml(mission)}</button>`
+        : `<span class="visually-hidden" id="${id}-label">${escapeHtml(mission)}</span>`;
 
       const outcomeSection = renderTaskOutcomeSectionHtml(id, normalized, outcome);
       const simplifiedWhatToDo = showWhatToDo ? `
@@ -33424,7 +33449,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             <button type="button" class="task-expand-btn" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand task ${escapeHtml(taskLabel)}"${canExpand ? "" : " disabled"}>${escapeHtml(taskLabel)}</button>
             <div class="task-compressed-main-wrap">
               <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand mission"${canExpand ? "" : " disabled"}>
-                <span class="task-compressed-mission">${escapeHtml(mission)}</span>
+                <span class="task-compressed-mission">${escapeHtml(compressedLabel)}</span>
                 ${taskData.draft?.trim() ? `<span class="task-compressed-draft-hint"><span aria-hidden="true">▼</span> Assets</span>` : ""}
                 ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
               </button>
