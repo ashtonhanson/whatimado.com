@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-07-no-zoom -->
+<!-- whatimado build: 2026-07-08-progress-map-solid -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-visual">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-07-no-zoom">
+  <meta name="whatimado-build" content="2026-07-08-progress-map-solid">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7182,11 +7182,11 @@
       box-shadow: 0 8px 22px rgba(37, 99, 235, .1);
     }
 
-    html[data-color-scheme="adult"] .roadmap-glance-phase.is-complete {
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-complete:not(.roadmap-glance-timeline-stop) {
       opacity: .88;
     }
 
-    html[data-color-scheme="adult"] .roadmap-glance-phase.is-upcoming {
+    html[data-color-scheme="adult"] .roadmap-glance-phase.is-upcoming:not(.roadmap-glance-timeline-stop) {
       opacity: .72;
     }
 
@@ -7546,6 +7546,15 @@
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card.is-saved {
       border-color: color-mix(in srgb, var(--purple) 42%, var(--line));
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop {
+      opacity: 1;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-node,
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-income-dot {
+      opacity: 1;
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-track {
