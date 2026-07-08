@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-08-no-zoom-lock -->
+<!-- whatimado build: 2026-07-08-sidebar-roadmaps -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -449,63 +449,126 @@
     html[data-color-scheme="adult"] .dashboard-roadmaps-sub {
       display: flex;
       flex-direction: column;
-      gap: .35rem;
-      margin: .1rem 0 .35rem .35rem;
-      padding-left: .65rem;
-      border-left: 1px solid var(--line);
+      gap: .55rem;
+      margin: .2rem 0 .45rem;
+      padding: .15rem .1rem .15rem 0;
       min-width: 0;
       overflow-x: hidden;
     }
 
     html[data-color-scheme="adult"] #dashboard-roadmap-categories {
+      display: grid;
+      gap: .55rem;
       min-width: 0;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmaps-empty {
-      margin: .15rem 0 .35rem;
-      padding: 0 .2rem;
+      margin: .2rem 0;
+      padding: .85rem .9rem;
+      border: 1px dashed rgba(37, 99, 235, .18);
+      border-radius: 14px;
+      background: rgba(37, 99, 235, .04);
       color: var(--ink-muted);
-      font-size: .72rem;
-      line-height: 1.45;
+      font-size: .74rem;
+      line-height: 1.5;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category {
+      display: grid;
+      gap: 0;
+      min-width: 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+      overflow: hidden;
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section .dashboard-roadmap-category-card {
+      border-color: rgba(37, 99, 235, .28);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, .08);
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-head {
       display: flex;
       align-items: flex-start;
-      gap: .1rem;
+      gap: .35rem;
       min-width: 0;
+      padding: .55rem .55rem .5rem;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-title {
       flex: 1;
       min-width: 0;
-      display: block;
+      display: flex;
+      align-items: flex-start;
+      gap: .55rem;
       width: auto;
-      padding: .45rem .5rem;
+      padding: 0;
       border: 0;
-      border-radius: 8px;
-      background: rgba(15, 23, 42, .04);
+      border-radius: 0;
+      background: transparent;
       color: var(--ink);
       font: inherit;
-      font-size: .68rem;
-      font-weight: 700;
-      letter-spacing: -.01em;
-      text-transform: none;
       text-align: left;
-      line-height: 1.35;
       cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-mark {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 1.85rem;
+      height: 1.85rem;
+      border-radius: 10px;
+      background: linear-gradient(145deg, rgba(37, 99, 235, .12), rgba(37, 99, 235, .05));
+      color: #2563eb;
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .14);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-mark svg {
+      width: .95rem;
+      height: .95rem;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section .dashboard-roadmap-category-mark {
+      background: linear-gradient(145deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-copy {
+      min-width: 0;
+      display: grid;
+      gap: .18rem;
+      padding-top: .08rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-label {
+      display: block;
+      color: var(--ink);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: -.01em;
+      line-height: 1.3;
       white-space: normal;
       overflow-wrap: anywhere;
       word-break: break-word;
     }
 
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-title span {
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-meta {
       display: block;
-      white-space: normal;
-      overflow: visible;
-      text-overflow: unset;
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      color: var(--ink-muted);
+      font-size: .64rem;
+      font-weight: 600;
+      line-height: 1.35;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-summary {
@@ -517,6 +580,239 @@
       line-height: 1.4;
       letter-spacing: 0;
       text-transform: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: .1rem;
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle,
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.55rem;
+      height: 1.55rem;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle:hover,
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete:hover {
+      background: rgba(15, 23, 42, .05);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete {
+      font-size: .95rem;
+      line-height: 1;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-chevron {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      flex-shrink: 0;
+      transition: transform .18s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-expanded .dashboard-roadmap-category-chevron {
+      transform: rotate(90deg);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-progress {
+      height: 3px;
+      background: rgba(15, 23, 42, .06);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-progress span {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: 0 999px 999px 0;
+      background: linear-gradient(90deg, #2563eb, #22c55e);
+      transition: width .25s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-items {
+      list-style: none;
+      margin: .45rem 0 0;
+      padding: 0 .55rem .55rem 1.15rem;
+      display: none;
+      gap: 0;
+      position: relative;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-items::before {
+      content: "";
+      position: absolute;
+      top: .45rem;
+      bottom: .85rem;
+      left: 1.45rem;
+      width: 2px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(37, 99, 235, .34), rgba(37, 99, 235, .1));
+      pointer-events: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-expanded .dashboard-roadmap-items {
+      display: grid;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row {
+      display: flex;
+      align-items: stretch;
+      gap: .25rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row + .dashboard-roadmap-item-row {
+      margin-top: .2rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: flex-start;
+      gap: .55rem;
+      width: 100%;
+      padding: .5rem .55rem .5rem .35rem;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--ink-muted);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item:hover {
+      background: rgba(37, 99, 235, .04);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active {
+      background: rgba(37, 99, 235, .08);
+      border-color: rgba(37, 99, 235, .16);
+      color: #1d4ed8;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item.is-complete:not(.is-active) {
+      color: #15803d;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-marker {
+      flex: 0 0 auto;
+      width: .72rem;
+      height: .72rem;
+      margin-top: .28rem;
+      border-radius: 999px;
+      border: 2px solid #93c5fd;
+      background: #fff;
+      box-shadow: 0 0 0 2px #fff;
+      position: relative;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active .dashboard-roadmap-item-marker {
+      border-color: #2563eb;
+      background: #2563eb;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(37, 99, 235, .14);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item.is-complete .dashboard-roadmap-item-marker {
+      border-color: #22c55e;
+      background: #22c55e;
+      color: #fff;
+      font-size: .48rem;
+      font-weight: 900;
+      line-height: .72rem;
+      text-align: center;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-copy {
+      min-width: 0;
+      display: grid;
+      gap: .16rem;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-title {
+      display: block;
+      font-size: .72rem;
+      font-weight: 700;
+      line-height: 1.4;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-meta {
+      display: block;
+      font-size: .6rem;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active .dashboard-roadmap-item-meta {
+      color: rgba(29, 78, 216, .72);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-delete {
+      flex: 0 0 auto;
+      align-self: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.45rem;
+      height: 1.45rem;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-muted);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s ease, background .15s ease, color .15s ease;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-delete svg {
+      width: .82rem;
+      height: .82rem;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row:hover .dashboard-roadmap-item-delete,
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-delete:focus-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-delete:hover {
+      color: #b91c1c;
+      background: rgba(254, 226, 226, .75);
+    }
+
+    @media (hover: none), (max-width: 960px) {
+      html[data-color-scheme="adult"] .dashboard-roadmap-item-delete {
+        opacity: 1;
+        pointer-events: auto;
+      }
     }
 
     html[data-color-scheme="adult"] .map-parent-context,
@@ -531,151 +827,6 @@
     html[data-color-scheme="adult"] .roadmap-parent-context {
       margin-top: .5rem;
       font-size: .84rem;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle,
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 1.65rem;
-      padding: 0;
-      border: 0;
-      border-radius: 8px;
-      background: transparent;
-      color: var(--ink-muted);
-      cursor: pointer;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle:hover,
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete:hover {
-      background: rgba(255, 255, 255, .72);
-      color: var(--ink);
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete {
-      font-size: .95rem;
-      line-height: 1;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category {
-      display: grid;
-      gap: .2rem;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category + .dashboard-roadmap-category {
-      margin-top: .35rem;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-chevron {
-      width: 14px;
-      height: 14px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      flex-shrink: 0;
-      transition: transform .18s ease;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-expanded .dashboard-roadmap-category-chevron {
-      transform: rotate(90deg);
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section {
-      padding-left: .35rem;
-      border-left: 3px solid #2563eb;
-      margin-left: -.1rem;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section .dashboard-roadmap-category-title {
-      background: rgba(37, 99, 235, .12);
-      color: #1d4ed8;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-active .dashboard-roadmap-category-title,
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-title:hover {
-      background: rgba(255, 255, 255, .85);
-      color: var(--ink);
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section.is-active .dashboard-roadmap-category-title {
-      background: rgba(37, 99, 235, .12);
-      color: #1d4ed8;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-items {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: none;
-      gap: .12rem;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-expanded .dashboard-roadmap-items {
-      display: grid;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-item {
-      width: 100%;
-      padding: .52rem .55rem .52rem .85rem;
-      border: 0;
-      border-radius: 10px;
-      background: transparent;
-      color: var(--ink-muted);
-      font: inherit;
-      font-size: .7rem;
-      font-weight: 500;
-      text-align: left;
-      line-height: 1.4;
-      cursor: pointer;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-item:hover {
-      background: rgba(255, 255, 255, .72);
-      color: var(--ink);
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active {
-      background: rgba(37, 99, 235, .12);
-      color: #1d4ed8;
-      font-weight: 700;
-      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .18);
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-item-row {
-      display: flex;
-      align-items: stretch;
-      gap: .3rem;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-item-row .dashboard-roadmap-item {
-      flex: 1;
-      min-width: 0;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-item-delete {
-      flex: 0 0 auto;
-      align-self: center;
-      padding: .35rem .45rem;
-      border: 1px solid rgba(15, 23, 42, .12);
-      border-radius: 8px;
-      background: #fff;
-      color: var(--ink-muted);
-      font: inherit;
-      font-size: .62rem;
-      font-weight: 700;
-      line-height: 1.2;
-      cursor: pointer;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-item-delete:hover {
-      color: #b91c1c;
-      border-color: rgba(185, 28, 28, .28);
-      background: rgba(254, 226, 226, .65);
     }
 
     html[data-color-scheme="adult"] .roadmap-remove-btn:hover {
@@ -26425,6 +26576,64 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ];
     }
 
+    function getSidebarRoadmapItemProgress(item) {
+      const key = slugify(item?.ideaTitle || "");
+      const stages = state.allRoadmaps[key]?.stages;
+      if (!Array.isArray(stages) || !stages.length) {
+        return { done: 0, total: 0, pct: 0, hasRoadmap: false, isComplete: false };
+      }
+
+      const taskChats = state.allTaskChats[key] || {};
+      let done = 0;
+      let total = 0;
+      stages.forEach((stage, stageIndex) => {
+        (stage.tasks || []).forEach((task, taskIndex) => {
+          if (isPendingRoadmapTask(task)) return;
+          total += 1;
+          if (taskChats[`task-${stageIndex}-${taskIndex}`]?.checked) done += 1;
+        });
+      });
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      return {
+        done,
+        total,
+        pct,
+        hasRoadmap: true,
+        isComplete: total > 0 && done === total
+      };
+    }
+
+    function getSidebarRoadmapCategoryProgress(category) {
+      const items = category?.items || [];
+      if (!items.length) return { done: 0, total: 0, pct: 0 };
+      let done = 0;
+      let total = 0;
+      items.forEach((item) => {
+        const progress = getSidebarRoadmapItemProgress(item);
+        done += progress.done;
+        total += progress.total;
+      });
+      return {
+        done,
+        total,
+        pct: total ? Math.round((done / total) * 100) : 0
+      };
+    }
+
+    function formatSidebarRoadmapItemMeta(progress) {
+      if (!progress.hasRoadmap) return "Roadmap ready to open";
+      if (progress.isComplete) return `Complete · ${progress.total} missions`;
+      if (progress.total > 0) return `${progress.done}/${progress.total} missions`;
+      return "Roadmap in progress";
+    }
+
+    function formatSidebarRoadmapCategoryMeta(category, progress) {
+      const count = (category.items || []).length;
+      const missionLabel = `${count} mission${count === 1 ? "" : "s"}`;
+      if (progress.total > 0) return `${missionLabel} · ${progress.pct}% complete`;
+      return missionLabel;
+    }
+
     function renderSidebarRoadmaps() {
       const group = $("#dashboard-roadmaps-group");
       const sub = $("#dashboard-roadmaps-sub");
@@ -26461,6 +26670,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const isCurrentSection = isCurrentRoadmapCategory(category);
         const deleteLabel = category.mapId ? "Delete map" : "Remove group";
         const shortTitle = abbreviateSidebarCategoryTitle(category.title);
+        const categoryProgress = getSidebarRoadmapCategoryProgress(category);
         const categoryClasses = [
           "dashboard-roadmap-category",
           isExpanded ? "is-expanded" : "",
@@ -26469,24 +26679,52 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ].filter(Boolean).join(" ");
         return `
         <div class="${categoryClasses}">
-          <div class="dashboard-roadmap-category-head">
-            <button type="button" class="dashboard-roadmap-category-title" data-open-map-category="${escapeHtml(category.id)}" title="${escapeHtml(category.title)}" aria-label="${escapeHtml(category.title)}">
-              <span class="dashboard-roadmap-category-label">${escapeHtml(shortTitle)}</span>
-            </button>
-            <button type="button" class="dashboard-roadmap-category-toggle" data-roadmap-category="${escapeHtml(category.id)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="Show roadmaps for this map" title="Show roadmaps">
-              <svg class="dashboard-roadmap-category-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
-            </button>
-            <button type="button" class="dashboard-roadmap-category-delete" data-delete-roadmap-category="${escapeHtml(category.id)}" aria-label="${deleteLabel}" title="${deleteLabel}">×</button>
+          <div class="dashboard-roadmap-category-card">
+            <div class="dashboard-roadmap-category-head">
+              <button type="button" class="dashboard-roadmap-category-title" data-open-map-category="${escapeHtml(category.id)}" title="${escapeHtml(category.title)}" aria-label="${escapeHtml(category.title)}">
+                <span class="dashboard-roadmap-category-mark" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M3 6.5 9 4l6 2.5 6-2.5v11L15 18l-6-2.5L3 17.5V6.5z"></path><path d="M9 4v13.5M15 6.5V18"></path></svg>
+                </span>
+                <span class="dashboard-roadmap-category-copy">
+                  <span class="dashboard-roadmap-category-label">${escapeHtml(shortTitle)}</span>
+                  <span class="dashboard-roadmap-category-meta">${escapeHtml(formatSidebarRoadmapCategoryMeta(category, categoryProgress))}</span>
+                </span>
+              </button>
+              <div class="dashboard-roadmap-category-tools">
+                <button type="button" class="dashboard-roadmap-category-toggle" data-roadmap-category="${escapeHtml(category.id)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="Show roadmaps for this map" title="Show roadmaps">
+                  <svg class="dashboard-roadmap-category-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+                </button>
+                <button type="button" class="dashboard-roadmap-category-delete" data-delete-roadmap-category="${escapeHtml(category.id)}" aria-label="${deleteLabel}" title="${deleteLabel}">×</button>
+              </div>
+            </div>
+            <div class="dashboard-roadmap-category-progress" aria-hidden="true">
+              <span style="width:${categoryProgress.pct}%"></span>
+            </div>
           </div>
           <ul class="dashboard-roadmap-items">
-            ${(category.items || []).map((item) => `
+            ${(category.items || []).map((item) => {
+              const progress = getSidebarRoadmapItemProgress(item);
+              const isActive = isActiveRoadmapSidebarItem(item);
+              const itemClasses = [
+                "dashboard-roadmap-item",
+                isActive ? "is-active" : "",
+                progress.isComplete ? "is-complete" : ""
+              ].filter(Boolean).join(" ");
+              return `
               <li class="dashboard-roadmap-item-row">
-                <button type="button" class="dashboard-roadmap-item ${isActiveRoadmapSidebarItem(item) ? "is-active" : ""}" data-open-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}">
-                  ${escapeHtml(item.ideaTitle)}
+                <button type="button" class="${itemClasses}" data-open-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}">
+                  <span class="dashboard-roadmap-item-marker" aria-hidden="true">${progress.isComplete ? "✓" : ""}</span>
+                  <span class="dashboard-roadmap-item-copy">
+                    <span class="dashboard-roadmap-item-title">${escapeHtml(item.ideaTitle)}</span>
+                    <span class="dashboard-roadmap-item-meta">${escapeHtml(formatSidebarRoadmapItemMeta(progress))}</span>
+                  </span>
                 </button>
-                <button type="button" class="dashboard-roadmap-item-delete" data-delete-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}" aria-label="Remove roadmap for ${escapeHtml(item.ideaTitle)}" title="Remove roadmap">Remove</button>
+                <button type="button" class="dashboard-roadmap-item-delete" data-delete-roadmap-item="${escapeHtml(item.id)}" data-roadmap-category="${escapeHtml(category.id)}" aria-label="Remove roadmap for ${escapeHtml(item.ideaTitle)}" title="Remove roadmap">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>
+                </button>
               </li>
-            `).join("")}
+            `;
+            }).join("")}
           </ul>
         </div>
       `;
