@@ -1715,7 +1715,7 @@
       padding: .45rem .6rem;
       border: 1px solid var(--line);
       border-radius: 10px;
-      background: var(--bg-soft);
+      background: #f3f4f6;
       color: var(--ink);
       font-size: .76rem;
       line-height: 1.35;
@@ -1727,8 +1727,23 @@
     }
 
     html[data-color-scheme="adult"] #site-suggestions .site-suggestions-input:focus {
-      border-color: rgba(37, 99, 235, .35);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+      border-color: #d1d5db;
+      box-shadow: 0 0 0 3px rgba(209, 213, 219, .45);
+    }
+
+    html[data-color-scheme="adult"] #site-suggestions .site-suggestions-footer .back-btn {
+      padding: .38rem .7rem;
+      font-size: .72rem;
+      color: var(--ink);
+      background: #f3f4f6;
+      border-color: #e5e7eb;
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] #site-suggestions .site-suggestions-footer .back-btn:hover {
+      color: var(--ink);
+      background: #e5e7eb;
+      border-color: #d1d5db;
     }
 
     html[data-color-scheme="adult"] #site-suggestions .site-suggestions-footer {
@@ -1740,11 +1755,6 @@
       font-size: .64rem;
       line-height: 1.3;
       color: var(--ink-muted);
-    }
-
-    html[data-color-scheme="adult"] #site-suggestions .site-suggestions-footer .back-btn {
-      padding: .38rem .7rem;
-      font-size: .72rem;
     }
 
     html[data-color-scheme="adult"] #site-suggestions .site-suggestions-delete-row {
@@ -2621,8 +2631,8 @@
       width: var(--orb-size, 18px);
       height: var(--orb-size, 18px);
       border-radius: 50%;
-      background: radial-gradient(circle at 32% 30%, var(--orb-color, #ffffff) 0%, color-mix(in srgb, var(--orb-color, #ffffff) 88%, transparent) 55%, color-mix(in srgb, var(--orb-color, #ffffff) 45%, transparent) 100%);
-      box-shadow: 0 0 12px color-mix(in srgb, var(--orb-color, #ffffff) 72%, transparent), 0 0 24px color-mix(in srgb, var(--orb-color, #ffffff) 28%, transparent);
+      background: radial-gradient(circle at 32% 30%, var(--orb-color, #d1d5db) 0%, color-mix(in srgb, var(--orb-color, #d1d5db) 88%, transparent) 55%, color-mix(in srgb, var(--orb-color, #d1d5db) 45%, transparent) 100%);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--orb-color, #d1d5db) 72%, transparent), 0 0 24px color-mix(in srgb, var(--orb-color, #d1d5db) 28%, transparent);
       opacity: 0;
       will-change: transform, opacity;
       animation-duration: var(--orb-duration, 60s);
@@ -37034,7 +37044,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const driftY = `${(Math.random() - 0.5) * 40}px`;
       const staticX = `${4 + (index * 9 + Math.random() * 7) % 84}vw`;
       const staticY = `${(Math.random() - 0.5) * 30}px`;
-      const palette = ["#ffffff", "#29abe2", "#fbb03b", "#1fd358"];
+      const palette = ["#d1d5db", "#29abe2", "#fbb03b", "#1fd358"];
       const color = palette[Math.floor(Math.random() * palette.length)];
 
       orb.dataset.direction = direction;
