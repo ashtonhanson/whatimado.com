@@ -36887,7 +36887,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       cloud.style.setProperty("--cloud-drift-y", driftY);
       cloud.style.setProperty("--cloud-static-x", staticX);
       if (staticClouds) cloud.classList.add("mario-cloud--static");
-      cloud.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${variant.viewBox}" aria-hidden="true"><use href="#${variant.id}"></use></svg>`;
+      cloud.innerHTML = ambient
+        ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${variant.viewBox}" aria-hidden="true"><use href="#${variant.id}" fill="#ffffff"></use></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${variant.viewBox}" aria-hidden="true"><use href="#${variant.id}"></use></svg>`;
       return cloud;
     }
 
