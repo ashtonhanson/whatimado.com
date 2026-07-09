@@ -83,9 +83,9 @@
       const schemes = ["adult", "midnight", "ocean", "sunset", "mario"];
       const shells = {
         adult: {
-          html: "#a8d4f5",
-          loader: "linear-gradient(180deg, #bddff8 0%, #a8d4f5 100%)",
-          theme: "#a8d4f5"
+          html: "#8ec8ef",
+          loader: "linear-gradient(180deg, #b8ddf5 0%, #8ec8ef 100%)",
+          theme: "#29abe2"
         },
         midnight: {
           html: "#07111f",
@@ -209,8 +209,11 @@
       --topbar-h: 64px;
       --roadmap-progress-h: 0px;
       --roadmap-sticky-offset: var(--topbar-h);
-      --bg: #a8d4f5;
-      --bg-soft: #bddff8;
+      --brand-blue: #29abe2;
+      --brand-orange: #fbb03b;
+      --brand-green: #1fd358;
+      --bg: #8ec8ef;
+      --bg-soft: #a8d8f5;
       --surface: #ffffff;
       --surface-2: #f3f4f6;
       --surface-3: #e5e7eb;
@@ -218,22 +221,22 @@
       --ink-muted: #6b7280;
       --muted: #9ca3af;
       --line: #e5e7eb;
-      --purple: #2563eb;
-      --purple-2: #3b82f6;
-      --teal: #2563eb;
-      --gold: #f59e0b;
-      --green: #10b981;
+      --purple: #29abe2;
+      --purple-2: #5ec4ef;
+      --teal: #1fd358;
+      --gold: #fbb03b;
+      --green: #1fd358;
       --rose: #ef4444;
-      --html-bg: #a8d4f5;
-      --bg-gradient: #a8d4f5;
+      --html-bg: #8ec8ef;
+      --bg-gradient: #8ec8ef;
       --header-bg: #ffffff;
       --header-border: #e5e7eb;
       --header-shadow: none;
-      --logo-gradient: none;
+      --logo-gradient: linear-gradient(135deg, #29abe2 0%, #1fd358 100%);
       --network-line-rgb: 209, 213, 219;
-      --browser-theme-color: #a8d4f5;
-      --theme-active-bg: rgba(37, 99, 235, .1);
-      --theme-active-border: rgba(37, 99, 235, .22);
+      --browser-theme-color: #29abe2;
+      --theme-active-bg: rgba(41, 171, 226, .12);
+      --theme-active-border: rgba(41, 171, 226, .24);
       --brand-purple-dark: #111827;
       --pastel-yellow-bg: #ffffff;
       --pastel-yellow-bg-hover: #f9fafb;
@@ -252,8 +255,8 @@
       --plan-card-note-bg: #f9fafb;
       --map-control-bg: #ffffff;
       --map-control-border: #e5e7eb;
-      --map-node-royal: #2563eb;
-      --map-node-royal-strong: #1d4ed8;
+      --map-node-royal: #29abe2;
+      --map-node-royal-strong: #1e8fc4;
       --shadow: 0 1px 3px rgba(0, 0, 0, .06);
       --header-h: var(--topbar-h);
     }
@@ -352,18 +355,41 @@
     html[data-color-scheme="adult"] .dashboard-brand-mark {
       width: 34px;
       height: 34px;
-      border-radius: 10px;
+      border-radius: 9px;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-      color: #fff;
-      box-shadow: 0 8px 20px rgba(37, 99, 235, .22);
+      overflow: hidden;
+      flex-shrink: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
-    html[data-color-scheme="adult"] .dashboard-brand-mark svg {
-      width: 18px;
-      height: 18px;
-      fill: currentColor;
+    html[data-color-scheme="adult"] .dashboard-brand-mark img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-brand-word {
+      display: inline-flex;
+      align-items: baseline;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      line-height: 1;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-brand-word .brand-what {
+      color: var(--brand-blue);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-brand-word .brand-ima {
+      color: var(--brand-orange);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-brand-word .brand-do {
+      color: var(--brand-green);
     }
 
     html[data-color-scheme="adult"] .dashboard-nav {
@@ -411,7 +437,7 @@
 
     html[data-color-scheme="adult"] .dashboard-nav-btn.active {
       background: rgba(37, 99, 235, .1);
-      color: #2563eb;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .dashboard-nav-group {
@@ -525,7 +551,7 @@
       height: 1.85rem;
       border-radius: 10px;
       background: linear-gradient(145deg, rgba(37, 99, 235, .12), rgba(37, 99, 235, .05));
-      color: #2563eb;
+      color: #29abe2;
       box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .14);
     }
 
@@ -538,7 +564,7 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section .dashboard-roadmap-category-mark {
-      background: linear-gradient(145deg, #2563eb, #1d4ed8);
+      background: linear-gradient(145deg, #29abe2, #1e8fc4);
       color: #fff;
       box-shadow: none;
     }
@@ -639,7 +665,7 @@
       height: 100%;
       width: 0;
       border-radius: 0 999px 999px 0;
-      background: linear-gradient(90deg, #2563eb, #22c55e);
+      background: linear-gradient(90deg, #29abe2, #1fd358);
       transition: width .25s ease;
     }
 
@@ -691,7 +717,7 @@
     html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active {
       background: rgba(37, 99, 235, .08);
       border-color: rgba(37, 99, 235, .16);
-      color: #1d4ed8;
+      color: #1e8fc4;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item.is-complete:not(.is-active) {
@@ -712,14 +738,14 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item.is-active .dashboard-roadmap-item-marker {
-      border-color: #2563eb;
-      background: #2563eb;
+      border-color: #29abe2;
+      background: #29abe2;
       box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(37, 99, 235, .14);
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item.is-complete .dashboard-roadmap-item-marker {
-      border-color: #22c55e;
-      background: #22c55e;
+      border-color: #1fd358;
+      background: #1fd358;
       color: #fff;
       font-size: .48rem;
       font-weight: 900;
@@ -866,7 +892,7 @@
     }
 
     html[data-color-scheme="adult"] .opp-card-save-input {
-      accent-color: #2563eb;
+      accent-color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .dashboard-sync-btn {
@@ -882,8 +908,8 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-sync-btn:hover:not(:disabled) {
-      border-color: #2563eb;
-      color: #2563eb;
+      border-color: #29abe2;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .dashboard-sync-btn.is-saving {
@@ -1126,7 +1152,7 @@
       padding: .38rem .8rem;
       border-radius: 999px;
       background: rgba(37, 99, 235, .08);
-      color: #2563eb;
+      color: #29abe2;
       font-size: .78rem;
       font-weight: 700;
     }
@@ -1187,7 +1213,7 @@
 
     html[data-color-scheme="adult"] .dashboard-value-kicker {
       margin: 0 0 .35rem;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .68rem;
       font-weight: 800;
       letter-spacing: .08em;
@@ -1364,7 +1390,7 @@
       height: var(--dashboard-send-size);
       border: 0;
       border-radius: 50%;
-      background: #2563eb;
+      background: #29abe2;
       color: #fff;
       display: grid;
       place-items: center;
@@ -1374,7 +1400,7 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-search-go:hover {
-      background: #1d4ed8;
+      background: #1e8fc4;
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
     }
 
@@ -1450,7 +1476,7 @@
     html[data-color-scheme="adult"] .dashboard-link-btn {
       border: 0;
       background: transparent;
-      color: #2563eb;
+      color: #29abe2;
       font: inherit;
       font-size: .88rem;
       font-weight: 600;
@@ -1505,7 +1531,7 @@
       display: block;
       height: 100%;
       border-radius: inherit;
-      background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+      background: linear-gradient(90deg, #29abe2 0%, #5ec4ef 100%);
     }
 
     html[data-color-scheme="adult"] .dashboard-explore-grid {
@@ -1571,9 +1597,9 @@
     html[data-color-scheme="adult"] .action-btn,
     html[data-color-scheme="adult"] .auth-submit,
     html[data-color-scheme="adult"] .send-btn {
-      background: #2563eb;
+      background: #29abe2;
       color: #fff;
-      border-color: #2563eb;
+      border-color: #29abe2;
       box-shadow: none;
     }
 
@@ -1747,7 +1773,7 @@
     }
 
     html[data-color-scheme="adult"] .stats-title em {
-      color: #2563eb;
+      color: #29abe2;
       font-style: normal;
     }
 
@@ -1756,7 +1782,7 @@
       align-items: center;
       gap: .4rem;
       margin: 0 0 .35rem;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .68rem;
       font-weight: 800;
       letter-spacing: .08em;
@@ -1799,7 +1825,7 @@
     }
 
     html[data-color-scheme="adult"] .stats-card-value--visits {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .stats-card-value--started {
@@ -1825,8 +1851,8 @@
 
     html[data-color-scheme="adult"] .stats-period-btn.active {
       color: #fff;
-      background: #2563eb;
-      border-color: #2563eb;
+      background: #29abe2;
+      border-color: #29abe2;
       box-shadow: 0 1px 2px rgba(37, 99, 235, .18);
     }
 
@@ -1845,8 +1871,8 @@
 
     html[data-color-scheme="adult"] .stats-sort-btn.active {
       color: #fff;
-      background: #2563eb;
-      border-color: #2563eb;
+      background: #29abe2;
+      border-color: #29abe2;
       box-shadow: 0 1px 2px rgba(37, 99, 235, .18);
     }
 
@@ -1866,7 +1892,7 @@
     }
 
     html[data-color-scheme="adult"] .stats-funnel-step--visits .stats-funnel-step-num {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .stats-funnel-step--started .stats-funnel-step-num {
@@ -1900,7 +1926,7 @@
     }
 
     html[data-color-scheme="adult"] .stats-metric-bar--visits {
-      background: #2563eb;
+      background: #29abe2;
     }
 
     html[data-color-scheme="adult"] .stats-metric-bar--started {
@@ -1912,7 +1938,7 @@
     }
 
     html[data-color-scheme="adult"] .stats-legend i.legend-visits {
-      background: #2563eb;
+      background: #29abe2;
     }
 
     html[data-color-scheme="adult"] .stats-legend i.legend-started {
@@ -1945,7 +1971,7 @@
     }
 
     html[data-color-scheme="adult"] #screen-map .page-title em {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .page-subtitle,
@@ -1956,7 +1982,7 @@
     }
 
     html[data-color-scheme="adult"] .map-heading-kicker {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .map-heading-kicker::before {
@@ -2023,15 +2049,15 @@
 
     html[data-color-scheme="adult"] .more-ideas-btn {
       color: #fff;
-      background: #2563eb;
-      border-color: #2563eb;
+      background: #29abe2;
+      border-color: #29abe2;
       box-shadow: 0 1px 2px rgba(37, 99, 235, .18);
     }
 
     html[data-color-scheme="adult"] .more-ideas-btn:hover:not(:disabled):not(.is-loading) {
       color: #fff;
-      background: #1d4ed8;
-      border-color: #1d4ed8;
+      background: #1e8fc4;
+      border-color: #1e8fc4;
     }
 
     html[data-color-scheme="adult"] .map-plans-divider-label {
@@ -2091,7 +2117,7 @@
       margin: .85rem 0 0;
       padding-top: .75rem;
       border-top: 1px dashed var(--line);
-      color: #2563eb;
+      color: #29abe2;
       font-size: .78rem;
       font-weight: 700;
       line-height: 1.45;
@@ -2216,8 +2242,8 @@
 
     html[data-color-scheme="adult"] .stats-period-btn.active {
       color: #fff;
-      background: #2563eb;
-      border-color: #2563eb;
+      background: #29abe2;
+      border-color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .stats-card,
@@ -2236,7 +2262,7 @@
     html[data-color-scheme="adult"] .maps-page-kicker,
     html[data-color-scheme="adult"] .stats-kicker,
     html[data-color-scheme="adult"] .roadmap-complete-kicker {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .save-status-bar {
@@ -2245,7 +2271,7 @@
 
     html[data-color-scheme="adult"] #save-signin-link,
     html[data-color-scheme="adult"] #map-signin-link {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     @media (max-width: 960px) {
@@ -2595,8 +2621,8 @@
       width: var(--orb-size, 18px);
       height: var(--orb-size, 18px);
       border-radius: 50%;
-      background: radial-gradient(circle at 32% 30%, #ffffff 0%, rgba(255, 255, 255, .92) 42%, rgba(255, 255, 255, .62) 100%);
-      box-shadow: 0 0 10px rgba(255, 255, 255, .72), 0 0 22px rgba(255, 255, 255, .28);
+      background: radial-gradient(circle at 32% 30%, var(--orb-color, #ffffff) 0%, color-mix(in srgb, var(--orb-color, #ffffff) 88%, transparent) 55%, color-mix(in srgb, var(--orb-color, #ffffff) 45%, transparent) 100%);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--orb-color, #ffffff) 72%, transparent), 0 0 24px color-mix(in srgb, var(--orb-color, #ffffff) 28%, transparent);
       opacity: 0;
       will-change: transform, opacity;
       animation-duration: var(--orb-duration, 60s);
@@ -5487,11 +5513,11 @@
     }
 
     .convo-pull-refresh.is-ready {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     .convo-pull-refresh.is-loading {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     .convo-pull-refresh-icon {
@@ -7189,7 +7215,7 @@
     }
 
     html[data-color-scheme="adult"] .opp-local-hint-list a {
-      color: #2563eb;
+      color: #29abe2;
       font-weight: 700;
       text-decoration: none;
     }
@@ -7328,7 +7354,7 @@
 
     html[data-color-scheme="adult"] .roadmap-status-badge.is-adapting {
       background: rgba(37, 99, 235, .14);
-      color: #1d4ed8;
+      color: #1e8fc4;
       animation: roadmap-adapt-pulse 1.4s ease-in-out infinite;
     }
 
@@ -7339,7 +7365,7 @@
 
     html[data-color-scheme="adult"] .roadmap-status-badge.is-complete {
       background: rgba(37, 99, 235, .1);
-      color: #1d4ed8;
+      color: #1e8fc4;
     }
 
     html[data-color-scheme="adult"] .roadmap-overview-desc {
@@ -7361,7 +7387,7 @@
     html[data-color-scheme="adult"] .roadmap-purpose-label {
       display: block;
       margin-bottom: .35rem;
-      color: #1d4ed8;
+      color: #1e8fc4;
       font-size: .62rem;
       font-weight: 800;
       letter-spacing: .06em;
@@ -7413,7 +7439,7 @@
       padding: 0;
       border: 0;
       background: none;
-      color: #2563eb;
+      color: #29abe2;
       font: inherit;
       font-size: .76rem;
       font-weight: 700;
@@ -7525,7 +7551,7 @@
       border-radius: 999px;
       border: 2px solid #93c5fd;
       background: #eff6ff;
-      color: #1d4ed8;
+      color: #1e8fc4;
       font-size: .72rem;
       font-weight: 800;
       line-height: 1;
@@ -7542,7 +7568,7 @@
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-in-progress .roadmap-glance-node {
       border-color: #60a5fa;
       background: #dbeafe;
-      color: #1d4ed8;
+      color: #1e8fc4;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase.is-upcoming .roadmap-glance-node,
@@ -7573,7 +7599,7 @@
     html[data-color-scheme="adult"] .roadmap-glance-count {
       display: block;
       margin-top: .35rem;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .66rem;
       font-weight: 700;
     }
@@ -7647,7 +7673,7 @@
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-in-progress .roadmap-glance-income-dot {
       border-color: #93c5fd;
       background: #eff6ff;
-      color: #1d4ed8;
+      color: #1e8fc4;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-complete .roadmap-glance-income-dot {
@@ -7867,7 +7893,7 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card-meta {
-      color: #1d4ed8;
+      color: #1e8fc4;
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card.is-saved {
@@ -7929,7 +7955,7 @@
       border: 1px solid rgba(37, 99, 235, .16);
       border-radius: 999px;
       background: #fff;
-      color: #2563eb;
+      color: #29abe2;
       box-shadow: 0 2px 10px rgba(15, 23, 42, .08);
       cursor: pointer;
       transform: translateY(-50%);
@@ -8113,7 +8139,7 @@
       border: 1px solid rgba(37, 99, 235, .22);
       border-radius: 12px;
       background: rgba(37, 99, 235, .06);
-      color: #1d4ed8;
+      color: #1e8fc4;
       font: inherit;
       font-size: .76rem;
       font-weight: 700;
@@ -8173,14 +8199,14 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-complete .roadmap-phase-num {
-      border-color: #22c55e;
-      background: #22c55e;
+      border-color: #1fd358;
+      background: #1fd358;
       color: #fff;
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-in-progress .roadmap-phase-num {
-      border-color: #2563eb;
-      background: #2563eb;
+      border-color: #29abe2;
+      background: #29abe2;
       color: #fff;
     }
 
@@ -8362,7 +8388,7 @@
 
     html[data-color-scheme="adult"] .task-chip--local {
       background: rgba(37, 99, 235, .1);
-      color: #1d4ed8;
+      color: #1e8fc4;
     }
 
     html[data-color-scheme="adult"] .overview-task-why {
@@ -8420,7 +8446,7 @@
     .task-alphabetic-letter {
       flex-shrink: 0;
       min-width: 1.35rem;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .76rem;
       font-weight: 800;
       line-height: 1.45;
@@ -8473,7 +8499,7 @@
     }
 
     html[data-color-scheme="adult"] .overview-task-inline-links a {
-      color: #2563eb;
+      color: #29abe2;
       font-size: .72rem;
       font-weight: 700;
       text-decoration: none;
@@ -8763,12 +8789,12 @@
 
     html[data-color-scheme="adult"] .task-question:focus {
       outline: none;
-      border-color: #2563eb;
+      border-color: #29abe2;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
     }
 
     html[data-color-scheme="adult"] .task-ask-btn {
-      background: #2563eb;
+      background: #29abe2;
     }
 
     .roadmap-float-progress {
@@ -8812,12 +8838,12 @@
       height: 100%;
       width: 0;
       border-radius: inherit;
-      background: linear-gradient(90deg, #2563eb, #22c55e);
+      background: linear-gradient(90deg, #29abe2, #1fd358);
       transition: width .25s ease;
     }
 
     .roadmap-float-progress-text {
-      color: #2563eb;
+      color: #29abe2;
       font-size: .68rem;
       font-weight: 800;
       min-width: 2.25rem;
@@ -8958,7 +8984,7 @@
       border: 1px solid rgba(37, 99, 235, .28);
       border-radius: 999px;
       background: rgba(37, 99, 235, .05);
-      color: #2563eb;
+      color: #29abe2;
       font-size: .68rem;
       font-weight: 700;
       cursor: pointer;
@@ -9006,7 +9032,7 @@
       display: inline-grid;
       place-items: center;
       min-width: 1.35rem;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .78rem;
       font-weight: 800;
     }
@@ -9021,7 +9047,7 @@
     }
 
     .task-breakdown-expand-hint {
-      color: #2563eb;
+      color: #29abe2;
       font-size: .68rem;
       font-weight: 700;
       line-height: 1;
@@ -9045,7 +9071,7 @@
       padding: .45rem .65rem;
       border-radius: .55rem;
       background: rgba(37, 99, 235, .06);
-      color: #1d4ed8;
+      color: #1e8fc4;
       font-size: .72rem;
       font-weight: 600;
       line-height: 1.4;
@@ -9194,7 +9220,7 @@
       border: 1px solid rgba(37, 99, 235, .24);
       border-radius: 999px;
       background: #fff;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .68rem;
       font-weight: 700;
       cursor: pointer;
@@ -9213,7 +9239,7 @@
     .task-draft-progress-status {
       display: block;
       margin: 0 0 .35rem;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .68rem;
       font-weight: 700;
     }
@@ -9237,13 +9263,13 @@
       height: 100%;
       width: 0;
       border-radius: inherit;
-      background: linear-gradient(90deg, #2563eb, #22c55e);
+      background: linear-gradient(90deg, #29abe2, #1fd358);
       transition: width .2s ease;
     }
 
     .task-draft-progress-label {
       flex-shrink: 0;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .64rem;
       font-weight: 700;
     }
@@ -9264,7 +9290,7 @@
       border: 1px solid rgba(37, 99, 235, .24);
       border-radius: 999px;
       background: #fff;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .68rem;
       font-weight: 700;
       cursor: pointer;
@@ -9342,7 +9368,7 @@
       border: 2px solid rgba(37, 99, 235, .35);
       border-radius: 999px;
       background: #fff;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .72rem;
       font-weight: 800;
       cursor: pointer;
@@ -9356,9 +9382,9 @@
     }
 
     .task-item.is-expanded .task-expand-btn {
-      background: #2563eb;
+      background: #29abe2;
       color: #fff;
-      border-color: #2563eb;
+      border-color: #29abe2;
     }
 
     .task-compressed-main {
@@ -9411,7 +9437,7 @@
       padding: .12rem .45rem;
       border-radius: 999px;
       background: rgba(37, 99, 235, .1);
-      color: #2563eb;
+      color: #29abe2;
       font-size: .58rem;
       font-weight: 800;
       letter-spacing: .02em;
@@ -9464,7 +9490,7 @@
       border: 1px solid rgba(37, 99, 235, .22);
       border-radius: 999px;
       background: rgba(37, 99, 235, .06);
-      color: #2563eb;
+      color: #29abe2;
       font-size: .72rem;
       font-weight: 700;
       cursor: pointer;
@@ -9560,7 +9586,7 @@
 
     .task-notes-draft-panel summary {
       cursor: pointer;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .74rem;
       font-weight: 700;
       list-style: none;
@@ -9576,7 +9602,7 @@
       border: 1px solid rgba(37, 99, 235, .25);
       border-radius: 999px;
       background: #fff;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .7rem;
       font-weight: 700;
       cursor: pointer;
@@ -9587,13 +9613,13 @@
     }
 
     html[data-color-scheme="adult"] .task-mentor-badge--time {
-      color: #1d4ed8;
+      color: #1e8fc4;
       background: rgba(37, 99, 235, .08);
       border-color: rgba(37, 99, 235, .18);
     }
 
     html[data-color-scheme="adult"] .task-ai-assist-btn {
-      color: #1d4ed8;
+      color: #1e8fc4;
       background: rgba(37, 99, 235, .07);
       border-color: rgba(37, 99, 235, .2);
     }
@@ -9645,7 +9671,7 @@
       padding: .5rem .75rem;
       border: 0;
       border-radius: 10px;
-      background: #2563eb;
+      background: #29abe2;
       color: #fff;
       font: inherit;
       font-size: .72rem;
@@ -9655,7 +9681,7 @@
 
     html[data-color-scheme="adult"] .task-writing-assist-btn--ghost {
       background: #fff;
-      color: #2563eb;
+      color: #29abe2;
       border: 1px solid rgba(37, 99, 235, .24);
     }
 
@@ -9825,7 +9851,7 @@
     html[data-color-scheme="adult"] .task-plain-explain--compact summary,
     html[data-color-scheme="adult"] .task-extra-detail summary {
       cursor: pointer;
-      color: #2563eb;
+      color: #29abe2;
       font-size: .72rem;
       font-weight: 700;
       list-style: none;
@@ -9927,7 +9953,7 @@
     html[data-color-scheme="adult"] .task-contact-meta a,
     html[data-color-scheme="adult"] .task-link-list a,
     html[data-color-scheme="adult"] .roadmap-local-meta a {
-      color: #2563eb;
+      color: #29abe2;
       font-weight: 700;
       text-decoration: none;
     }
@@ -10037,7 +10063,7 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-side-progress-pct {
-      color: #2563eb;
+      color: #29abe2;
       font-size: .95rem;
       font-weight: 800;
     }
@@ -10055,7 +10081,7 @@
       height: 100%;
       width: 0;
       border-radius: inherit;
-      background: linear-gradient(90deg, #2563eb, #22c55e);
+      background: linear-gradient(90deg, #29abe2, #1fd358);
       transition: width .25s ease;
     }
 
@@ -10105,7 +10131,7 @@
 
     html[data-color-scheme="adult"] .roadmap-local-item::before {
       content: "↗";
-      color: #2563eb;
+      color: #29abe2;
       font-weight: 800;
       flex-shrink: 0;
     }
@@ -10185,7 +10211,7 @@
       height: 100%;
       width: 0;
       border-radius: inherit;
-      background: linear-gradient(90deg, #2563eb, #22c55e);
+      background: linear-gradient(90deg, #29abe2, #1fd358);
       transition: width .35s ease;
     }
 
@@ -10205,7 +10231,7 @@
       padding: .65rem .85rem;
       border: 0;
       border-radius: 12px;
-      background: #2563eb;
+      background: #29abe2;
       color: #fff;
       font: inherit;
       font-size: .78rem;
@@ -10245,7 +10271,7 @@
       padding: .45rem .75rem;
       border: 0;
       border-radius: 10px;
-      background: #2563eb;
+      background: #29abe2;
       color: #fff;
       font: inherit;
       font-size: .74rem;
@@ -10254,7 +10280,7 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-location-save:hover {
-      background: #1d4ed8;
+      background: #1e8fc4;
     }
 
     @media (max-width: 960px) {
@@ -10316,7 +10342,7 @@
       }
 
       html[data-color-scheme="adult"] .task-mobile-local-list a {
-        color: #2563eb;
+        color: #29abe2;
         font-weight: 700;
         text-decoration: none;
       }
@@ -10458,7 +10484,7 @@
 
     html[data-color-scheme="adult"] .roadmap-refining-spinner {
       border-color: rgba(37, 99, 235, .22);
-      border-top-color: #2563eb;
+      border-top-color: #29abe2;
     }
 
     .roadmap-phase--pending .roadmap-phase-head--pending {
@@ -10628,7 +10654,7 @@
     }
 
     html[data-color-scheme="adult"] .site-loading-progress-fill {
-      background: linear-gradient(90deg, #2563eb, #22c55e);
+      background: linear-gradient(90deg, #29abe2, #1fd358);
     }
 
     html[data-color-scheme="adult"] .site-loading-progress-pct {
@@ -11224,7 +11250,7 @@
     }
 
     #screen-roadmap .task-text-link {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     #screen-roadmap .task-item.is-done .task-text {
@@ -12447,12 +12473,12 @@
 
     .confirm-ok {
       border: 0;
-      background: #2563eb;
+      background: #29abe2;
       color: #fff;
     }
 
     .confirm-ok:hover {
-      background: #1d4ed8;
+      background: #1e8fc4;
     }
 
     .confirm-ok--danger {
@@ -13112,7 +13138,7 @@
     }
 
     html[data-color-scheme="adult"] #screen-map .page-title em {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] #screen-map .page-subtitle,
@@ -13121,7 +13147,7 @@
     }
 
     html[data-color-scheme="adult"] #screen-map .map-heading-kicker {
-      color: #2563eb;
+      color: #29abe2;
     }
 
     html[data-color-scheme="adult"] #screen-map .page-header .map-header-nav .back-btn,
@@ -13141,8 +13167,8 @@
 
     html[data-color-scheme="adult"] #screen-map .more-ideas-btn {
       color: #fff;
-      background: #2563eb;
-      border-color: #2563eb;
+      background: #29abe2;
+      border-color: #29abe2;
     }
 
     html[data-color-scheme="adult"] .map-paths-actions .map-toolbar-btn,
@@ -13168,12 +13194,12 @@
 
     html[data-color-scheme="adult"] #screen-roadmap .task-ask-btn {
       color: #fff;
-      background: #2563eb;
+      background: #29abe2;
       box-shadow: none;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-ask-btn:hover {
-      background: #1d4ed8;
+      background: #1e8fc4;
     }
 
     html[data-color-scheme="adult"] .task-ask-suggestions-label {
@@ -13247,7 +13273,7 @@
       gap: .35rem;
       min-height: var(--preview-banner-h, 2.15rem);
       padding: .35rem .75rem;
-      background: linear-gradient(90deg, #1d4ed8, #2563eb);
+      background: linear-gradient(90deg, #1e8fc4, #29abe2);
       color: #fff;
       font-size: .72rem;
       font-weight: 700;
@@ -13609,9 +13635,9 @@
       <div class="dashboard-brand-wrap">
         <a class="dashboard-brand" href="#main" data-screen-link="main">
           <span class="dashboard-brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path></svg>
+            <img src="/whatimado-mark.svg" alt="" width="34" height="34">
           </span>
-          WhatImaDo
+          <span class="dashboard-brand-word" aria-label="whatimado"><span class="brand-what">what</span><span class="brand-ima">ima</span><span class="brand-do">do</span></span>
         </a>
         <span class="dashboard-beta-badge" aria-hidden="true">Beta</span>
       </div>
@@ -37008,6 +37034,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const driftY = `${(Math.random() - 0.5) * 40}px`;
       const staticX = `${4 + (index * 9 + Math.random() * 7) % 84}vw`;
       const staticY = `${(Math.random() - 0.5) * 30}px`;
+      const palette = ["#ffffff", "#29abe2", "#fbb03b", "#1fd358"];
+      const color = palette[Math.floor(Math.random() * palette.length)];
 
       orb.dataset.direction = direction;
       orb.style.setProperty("--orb-top", `${top}%`);
@@ -37018,6 +37046,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       orb.style.setProperty("--orb-drift-y", driftY);
       orb.style.setProperty("--orb-static-x", staticX);
       orb.style.setProperty("--orb-static-y", staticY);
+      orb.style.setProperty("--orb-color", color);
       if (staticOrbs) orb.classList.add("ambient-orb--static");
       return orb;
     }
