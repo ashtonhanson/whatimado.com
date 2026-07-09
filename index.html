@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-08-progress-map-connector -->
+<!-- whatimado build: 2026-07-08-preview-demo -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-08-progress-map-connector">
+  <meta name="whatimado-build" content="2026-07-08-preview-demo">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -13074,9 +13074,58 @@
     html[data-color-scheme="adult"] .task-question {
       padding: .75rem .9rem;
     }
+    html.has-preview-banner {
+      --preview-banner-h: 2.15rem;
+    }
+
+    html.has-preview-banner .app-header,
+    html.has-preview-banner .dashboard-topbar {
+      top: var(--preview-banner-h);
+    }
+
+    html.has-preview-banner .roadmap-float-progress:not([hidden]) {
+      top: calc(var(--topbar-h, 64px) + var(--preview-banner-h));
+    }
+
+    .preview-deploy-banner {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 120;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+      min-height: var(--preview-banner-h, 2.15rem);
+      padding: .35rem .75rem;
+      background: linear-gradient(90deg, #1d4ed8, #2563eb);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .01em;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(29, 78, 216, .25);
+    }
+
+    .preview-deploy-banner[hidden] {
+      display: none !important;
+    }
+
+    .preview-deploy-banner a {
+      color: #fff;
+      text-decoration: underline;
+      text-underline-offset: .12em;
+    }
+
+    .preview-deploy-banner strong {
+      font-weight: 800;
+    }
   </style>
 </head>
 <body>
+  <div class="preview-deploy-banner" id="preview-deploy-banner" hidden>
+    <strong>Preview build</strong>
+    <span>— you're on a test URL; production is unchanged at <a href="https://whatimado.com" target="_blank" rel="noopener noreferrer">whatimado.com</a></span>
+  </div>
   <div class="loader" id="loader">
     <div class="loader-inner">
       <img class="loader-logo" src="/logo.png" alt="whatimado.com" width="251" height="150">
@@ -37666,7 +37715,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    function initPreviewDeployBanner() {
+      const host = location.hostname.toLowerCase();
+      const isProduction = host === "whatimado.com" || host === "www.whatimado.com";
+      if (isProduction) return;
+      const banner = $("#preview-deploy-banner");
+      if (!banner) return;
+      banner.hidden = false;
+      document.documentElement.classList.add("has-preview-banner");
+      syncHeaderHeight();
+    }
+
     function bindEvents() {
+      initPreviewDeployBanner();
       syncHeaderHeight();
       initScrollProgress();
       initMobileNav();
