@@ -2588,15 +2588,69 @@
       z-index: 0;
     }
 
-    html[data-color-scheme="adult"] #mario-clouds.is-ambient .mario-cloud--ambient svg {
-      opacity: 1;
-      filter: brightness(0) invert(1) drop-shadow(0 10px 22px rgba(255, 255, 255, .5)) drop-shadow(0 3px 10px rgba(255, 255, 255, .35));
+    html[data-color-scheme="adult"] #mario-clouds.is-orbs .ambient-orb {
+      position: absolute;
+      top: var(--orb-top, 20%);
+      left: 0;
+      width: var(--orb-size, 18px);
+      height: var(--orb-size, 18px);
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 30%, #ffffff 0%, rgba(255, 255, 255, .92) 42%, rgba(255, 255, 255, .62) 100%);
+      box-shadow: 0 0 10px rgba(255, 255, 255, .72), 0 0 22px rgba(255, 255, 255, .28);
+      opacity: 0;
+      will-change: transform, opacity;
+      animation-duration: var(--orb-duration, 60s);
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      animation-delay: var(--orb-delay, 0s);
     }
 
-    html[data-color-scheme="adult"] #mario-clouds.is-static .mario-cloud {
+    html[data-color-scheme="adult"] #mario-clouds.is-orbs .ambient-orb[data-direction="ltr"] {
+      animation-name: ambient-orb-drift-ltr;
+    }
+
+    html[data-color-scheme="adult"] #mario-clouds.is-orbs .ambient-orb[data-direction="rtl"] {
+      animation-name: ambient-orb-drift-rtl;
+    }
+
+    @keyframes ambient-orb-drift-ltr {
+      0% {
+        transform: translate3d(-8vw, 0, 0);
+        opacity: 0;
+      }
+
+      12%,
+      88% {
+        opacity: var(--orb-opacity, .5);
+      }
+
+      100% {
+        transform: translate3d(calc(100vw + 8vw), var(--orb-drift-y, 0), 0);
+        opacity: 0;
+      }
+    }
+
+    @keyframes ambient-orb-drift-rtl {
+      0% {
+        transform: translate3d(calc(100vw + 8vw), 0, 0);
+        opacity: 0;
+      }
+
+      12%,
+      88% {
+        opacity: var(--orb-opacity, .5);
+      }
+
+      100% {
+        transform: translate3d(-8vw, var(--orb-drift-y, 0), 0);
+        opacity: 0;
+      }
+    }
+
+    html[data-color-scheme="adult"] #mario-clouds.is-static .ambient-orb {
       animation: none !important;
-      opacity: var(--cloud-opacity, .42) !important;
-      transform: translate3d(var(--cloud-static-x, 20vw), var(--cloud-drift-y, 0), 0) !important;
+      opacity: var(--orb-opacity, .45) !important;
+      transform: translate3d(var(--orb-static-x, 20vw), var(--orb-static-y, 0), 0) !important;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -13701,21 +13755,21 @@
 
         <section class="site-suggestions dashboard-settings-panel" id="site-suggestions" aria-label="Suggest a site improvement">
           <h3 class="site-suggestions-title">Suggest an improvement</h3>
-          <p class="site-suggestions-copy">Features, fixes, or changes you'd like to see on whatimado — we read every suggestion. Add your name below so we can credit you if we ship your idea.</p>
+          <p class="site-suggestions-copy">Features, fixes, or changes for whatimado — add your name if you'd like credit when we ship it.</p>
           <label class="site-suggestions-field" for="site-suggestion-name">
             <span class="site-suggestions-field-label">Your name (for credit)</span>
             <input class="site-suggestions-input site-suggestions-name" id="site-suggestion-name" type="text" maxlength="80" autocomplete="name" placeholder="How you'd like to be credited">
           </label>
           <label class="site-suggestions-field" for="site-suggestion-input">
             <span class="site-suggestions-field-label">Your suggestion</span>
-            <textarea class="site-suggestions-input" id="site-suggestion-input" rows="3" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
+            <textarea class="site-suggestions-input" id="site-suggestion-input" rows="2" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
           </label>
           <div class="site-suggestions-footer">
             <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
             <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
           </div>
           <p class="site-suggestions-msg" id="site-suggestion-msg" hidden aria-live="polite"></p>
-          <div class="site-suggestions-footer" style="margin-top:1rem">
+          <div class="site-suggestions-footer site-suggestions-delete-row">
             <button type="button" class="dashboard-link-btn dashboard-danger-btn" id="delete-all-maps-btn">Delete all maps and data</button>
           </div>
         </section>
@@ -36936,6 +36990,38 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    function buildAmbientOrbElement(index, options = {}) {
+      const staticOrbs = options.staticOrbs === true;
+      const orb = document.createElement("div");
+      orb.className = "ambient-orb";
+      const direction = Math.random() > 0.48 ? "ltr" : "rtl";
+      const duration = 42 + Math.random() * 76;
+      const delay = -(Math.random() * duration);
+      const sizeRoll = Math.random();
+      const size = sizeRoll < 0.45
+        ? 6 + Math.random() * 10
+        : sizeRoll < 0.82
+          ? 14 + Math.random() * 16
+          : 28 + Math.random() * 22;
+      const top = 6 + (index * 8 + Math.random() * 14) % 84;
+      const opacity = 0.38 + Math.random() * 0.42;
+      const driftY = `${(Math.random() - 0.5) * 40}px`;
+      const staticX = `${4 + (index * 9 + Math.random() * 7) % 84}vw`;
+      const staticY = `${(Math.random() - 0.5) * 30}px`;
+
+      orb.dataset.direction = direction;
+      orb.style.setProperty("--orb-top", `${top}%`);
+      orb.style.setProperty("--orb-size", `${size.toFixed(1)}px`);
+      orb.style.setProperty("--orb-duration", `${duration.toFixed(1)}s`);
+      orb.style.setProperty("--orb-delay", `${delay.toFixed(1)}s`);
+      orb.style.setProperty("--orb-opacity", opacity.toFixed(2));
+      orb.style.setProperty("--orb-drift-y", driftY);
+      orb.style.setProperty("--orb-static-x", staticX);
+      orb.style.setProperty("--orb-static-y", staticY);
+      if (staticOrbs) orb.classList.add("ambient-orb--static");
+      return orb;
+    }
+
     function buildMarioCloudElement(variant, index, options = {}) {
       const ambient = options.ambient === true;
       const staticClouds = options.staticClouds === true;
@@ -37007,7 +37093,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         marioCloudsStatic = null;
         mountMarioCloudsContainer(false);
         container.hidden = true;
-        container.classList.remove("is-active", "is-ambient", "is-static");
+        container.classList.remove("is-active", "is-ambient", "is-orbs", "is-static");
         container.replaceChildren();
         return;
       }
@@ -37015,6 +37101,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       container.hidden = false;
       container.classList.toggle("is-active", true);
       container.classList.toggle("is-ambient", ambient);
+      container.classList.toggle("is-orbs", ambient);
       container.classList.toggle("is-static", staticClouds);
 
       if (canReuse) return;
@@ -37025,14 +37112,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       marioCloudsStatic = staticClouds;
       container.replaceChildren();
 
-      const count = ambient
-        ? (layout === "mobile" ? 6 : 9)
-        : (layout === "mobile" ? 6 : 9);
+      if (ambient) {
+        const count = layout === "mobile" ? 16 : 24;
+        for (let i = 0; i < count; i += 1) {
+          container.appendChild(buildAmbientOrbElement(i, { staticOrbs: staticClouds }));
+        }
+        return;
+      }
+
+      const count = layout === "mobile" ? 6 : 9;
       const shuffled = [...MARIO_CLOUD_VARIANTS].sort(() => Math.random() - 0.5);
 
       for (let i = 0; i < count; i += 1) {
         const variant = shuffled[i % shuffled.length];
-        container.appendChild(buildMarioCloudElement(variant, i, { ambient, staticClouds }));
+        container.appendChild(buildMarioCloudElement(variant, i, { ambient: false, staticClouds }));
       }
     }
 
