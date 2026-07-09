@@ -1294,6 +1294,8 @@
 
     html[data-color-scheme="adult"] .dashboard-search-field {
       position: relative;
+      display: flex;
+      align-items: center;
       min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
       border-radius: var(--dashboard-prompt-radius);
       border: 1px solid rgba(15, 23, 42, 0.08);
@@ -1303,6 +1305,12 @@
         0 1px 2px rgba(15, 23, 42, 0.04),
         0 8px 24px rgba(15, 23, 42, 0.06);
       transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-field.is-expanded {
+      align-items: flex-start;
+      padding-top: calc(var(--dashboard-prompt-inset) + 2px);
+      padding-bottom: calc(var(--dashboard-prompt-inset) + 2px);
     }
 
     html[data-color-scheme="adult"] .dashboard-prompt-ghost {
@@ -1336,29 +1344,29 @@
 
     html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
       display: block;
+      flex: 1 1 auto;
       width: 100%;
-      min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
+      min-height: var(--dashboard-send-size);
       max-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
-      padding:
-        calc(var(--dashboard-prompt-inset) + 2px)
-        var(--dashboard-prompt-pad-right)
-        calc(var(--dashboard-prompt-inset) + 2px)
-        var(--dashboard-prompt-pad-left);
+      margin: 0;
+      padding: 0 var(--dashboard-prompt-pad-right) 0 var(--dashboard-prompt-pad-left);
       border: 0;
       border-radius: var(--dashboard-prompt-radius);
       background: transparent;
       box-shadow: none;
       resize: none;
       overflow-y: hidden;
-      line-height: 1.5;
+      line-height: var(--dashboard-send-size);
       text-align: left;
-      transition: max-height 0.15s ease, height 0.15s ease;
-      field-sizing: content;
+      transition: max-height 0.15s ease, height 0.15s ease, line-height 0.15s ease;
     }
 
     html[data-color-scheme="adult"] .dashboard-search-field.is-expanded .prompt-textarea {
       max-height: 160px;
+      line-height: 1.5;
       overflow-y: auto;
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     @media (max-width: 720px) {
@@ -15665,6 +15673,60 @@
       return Boolean(formatted && looksLikeRealLocation(formatted));
     }
 
+    function userLocationHasUsableFields(loc) {
+      const normalized = normalizeUserLocation(loc);
+      return Boolean(
+        normalized.country
+        || normalized.region
+        || normalized.city
+        || (normalized.raw && looksLikeRealLocation(normalized.raw))
+      );
+    }
+
+    function enrichUsableUserLocation(loc) {
+      const normalized = normalizeUserLocation(loc);
+      if (!userLocationHasUsableFields(normalized)) return null;
+      const enriched = enrichLocationFromKnownCities(normalized);
+      return formatUserLocation(enriched) ? enriched : null;
+    }
+
+    function findKnownUserLocation() {
+      if (state.locationConfirmed && formatUserLocation(state.userLocation)) {
+        return normalizeUserLocation(state.userLocation);
+      }
+      const currentFormatted = formatUserLocation(state.userLocation);
+      if (currentFormatted && looksLikeRealLocation(currentFormatted)) {
+        return normalizeUserLocation(state.userLocation);
+      }
+
+      const prefs = normalizeAccountPrefs(state.accountPrefs);
+      const fromPrefs = enrichUsableUserLocation(prefs.userLocation);
+      if (fromPrefs) return fromPrefs;
+
+      for (const map of state.savedMaps || []) {
+        const fromMap = enrichUsableUserLocation(map.userLocation);
+        if (fromMap) return fromMap;
+      }
+
+      return null;
+    }
+
+    function applyKnownUserLocation(loc, options = {}) {
+      if (!loc || !formatUserLocation(loc)) return false;
+      state.userLocation = normalizeUserLocation(loc);
+      state.locationConfirmed = true;
+      syncAccountPrefsFromState();
+      if (options.schedulePersist !== false) schedulePersist();
+      return true;
+    }
+
+    function ensureKnownUserLocationRestored(options = {}) {
+      if (hasSavedUserLocation()) return true;
+      const loc = findKnownUserLocation();
+      if (!loc) return false;
+      return applyKnownUserLocation(loc, options);
+    }
+
     function saveUserLocation(text, { confirmed = true } = {}) {
       state.userLocation = parseLocationAnswer(text);
       if (confirmed) state.locationConfirmed = true;
@@ -19608,16 +19670,44 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
+    function getIdeaSignalBlob(idea = state.currentIdea) {
+      return `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+    }
+
+    function isIdeaEmploymentPath(idea) {
+      const blob = getIdeaSignalBlob(idea);
+      if (/\b(self[- ]?employ|sell (?:a |your )?digital|digital product|gumroad|etsy|shopify|dropship|freelanc(?:e|ing)|your own (?:business|shop|store)|start (?:a |my )?business)\b/.test(blob)) {
+        return false;
+      }
+      if (/\b(type|employment)\b/.test(String(idea?.type || "").toLowerCase()) && !/\b(self[- ]?employ|business owner|freelance)\b/.test(blob)) {
+        return true;
+      }
+      return /\b(remote customer support|virtual assistant|staffing agenc|customer service rep|call center|data entry|admin assistant|apply for (?:paid )?remote|get hired|hourly wage|paycheck|w-?2|inbound (?:chat|email) support|live chat (?:agent|support)|email support (?:rep|agent)|work through\b.*\b(agenc|staffing))\b/.test(blob);
+    }
+
+    function isIdeaOnlineBusinessPath(idea) {
+      const blob = getIdeaSignalBlob(idea);
+      if (isIdeaEmploymentPath(idea)) return false;
+      return /\b(digital product|template|checklist|guide|toolkit|gumroad|etsy|sell (?:a |online)|pay[- ]what[- ]you[- ]want|buy while you sleep|notion template|pdf guide|downloadable|e-?book|printable)\b/.test(blob)
+        || (/\b(self[- ]?employ|self_employment)\b/.test(String(idea?.type || "").toLowerCase()) && /\b(sell|digital|online|product|template)\b/.test(blob));
+    }
+
     function userIsBusinessOwner(idea = state.currentIdea) {
+      if (isIdeaEmploymentPath(idea)) return false;
       const profile = normalizeUserProfile(state.userProfile);
-      if (profile.pathPreference === "business" || profile.pathPreference === "either") return true;
+      if (profile.pathPreference === "business") return true;
+      if (profile.pathPreference === "either") {
+        const blob = getConversationCareerBlob(idea);
+        return /\b(start my own|own business|self[- ]?employ|freelanc|my own thing|launch (?:a |my )?business|mobile groom|grooming company|first \d+ clients|book your first)\b/i.test(blob);
+      }
       if (isGroundedPractitioner(idea)) return true;
       const blob = getConversationCareerBlob(idea);
       return /\b(start my own|own business|self[- ]?employ|freelanc|my own thing|business owner|launch (?:a |my )?business|mobile groom|grooming company|first \d+ clients|book your first)\b/i.test(blob);
     }
 
     function shouldUseBusinessRoadmapTasks(idea = state.currentIdea) {
-      if (userIsBusinessOwner(idea) || profilePathIsOwnBusiness()) return true;
+      if (isIdeaEmploymentPath(idea)) return false;
+      if (isGroundedPractitioner(idea)) return true;
       const archetype = getPathArchetype(idea);
       return archetype === "business" || archetype === "grounded" || archetype === "online_business";
     }
@@ -21867,12 +21957,49 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const combined = `${blob} ${ideaBlob}`;
       if (/\b(nonprofit|non-profit|501\s*\(?\s*c\s*\)?\s*3|charity|foundation|mutual aid org|start a nonprofit|launch a nonprofit)\b/.test(combined)) return "nonprofit";
       if (/\b(homeless|unhoused|housing instability|in a shelter|living in (?:a )?(?:car|motel|shelter)|rebuilding after homelessness|no permanent address)\b/.test(combined)) return "housing";
+      if (/\b(remote customer support|virtual assistant|staffing agenc|customer service rep|call center|data entry clerk|admin assistant|inbound chat support|get hired|hourly wage|apply for (?:paid )?remote)\b/.test(combined)) return "employment";
       if (/\b(electrician|plumber|hvac|welder|apprenticeship|skilled trade|carpenter|union trade|journeyman|pipefitter|roofer|mason|mechanic trade)\b/.test(combined)) return "skilled_trade";
       if (/\b(career change|changing careers|switch careers|new career|second career|pivot careers|different field)\b/.test(combined)) return "career_change";
-      if (/\b(online business|e-?commerce|digital product|saas|shopify|amazon fba|dropship|sell online|etsy shop|digital course)\b/.test(combined)) return "online_business";
+      if (/\b(digital product|template|checklist|guide|toolkit|gumroad|etsy shop|sell online|pay[- ]what[- ]you[- ]want|buy while you sleep|notion template|downloadable)\b/.test(combined)) return "online_business";
       if (isGroundedPractitioner(idea)) return "grounded";
       if (isExplicitJobSeeker(blob)) return "employment";
       return "exploring";
+    }
+
+    function getIncomePathSpecificityBlock(idea = state.currentIdea) {
+      if (!idea) return "";
+      const locRaw = formatUserLocation(parseLocationAnswer(getUserLocation() || "")) || "your area";
+      const parsed = parseLocationAnswer(getUserLocation() || "");
+      const pb = getLocationPlaybook(parsed, locRaw);
+
+      if (isIdeaEmploymentPath(idea)) {
+        return (
+          `\nCONCRETE EMPLOYMENT PATH RULES for "${idea.title}":\n` +
+          `- This is a GET-HIRED path — NOT starting a business. No "talk to 3 potential clients", Facebook offers, or market validation homework.\n` +
+          `- Name SPECIFIC job types they could apply for THIS WEEK: inbound chat support ($15-18/hr), email support for online stores, appointment-setting VA ($16-22/hr), calendar/inbox VA for Realtors, data entry clerk (remote).\n` +
+          `- Name SPECIFIC channels: ${pb.employmentOffice}, ${pb.staffingList}, Indeed/Google Jobs filtered to remote chat or support roles in ${locRaw}.\n` +
+          `- First tasks: tailor a 1-page resume for customer support, apply to 3 named staffing agencies, complete one skills check (typing test or customer service quiz).\n` +
+          `- mentorHelp must list real staffing agencies and job searches for ${locRaw} — not generic "research jobs".\n`
+        );
+      }
+
+      if (isIdeaOnlineBusinessPath(idea) || getPathSituationType(idea) === "online_business") {
+        return (
+          `\nCONCRETE DIGITAL PRODUCT RULES for "${idea.title}":\n` +
+          `- Pick ONE specific product in the first task — not a vague "write an offer". Examples (tailor to their skills):\n` +
+          `  • Notion budget tracker for freelancers ($5 on Gumroad)\n` +
+          `  • Airbnb host cleaning checklist PDF ($4)\n` +
+          `  • Resume + cover letter pack for nurses or teachers ($9)\n` +
+          `  • Wedding planning timeline spreadsheet ($7)\n` +
+          `  • Meal prep planner for busy parents ($5)\n` +
+          `  • LinkedIn headline swipe file for career changers ($5)\n` +
+          `- Say WHICH tool: Canva for PDFs, Notion for templates, Google Sheets + Gumroad for spreadsheets.\n` +
+          `- Name specific communities (relevant subreddits, Facebook groups) — not "post everywhere".\n` +
+          `- mentorHelp should include a draft product title, price, and one-paragraph description they can paste.\n`
+        );
+      }
+
+      return "";
     }
 
     function getPathSpecificMilestoneBlock(idea) {
@@ -21988,12 +22115,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const pb = getLocationPlaybook(parsed, locRaw);
       const guides = {
         reentry: `Reentry / recently released in ${pb.countryLabel} — Stage 1–3 MUST be stability before career building: ID and documents per local rules, housing via ${pb.region === "norway" ? "NAV/kommune" : pb.region === "us" ? "211/shelter (US only)" : "official social services"}, ${pb.employmentGuide}, background-check-aware temp income, local benefits, compliance. Stage 4 may connect to the chosen path title. NEVER open with training first. Stage names example: "ID + shelter in ${locRaw}", "First paycheck work", "Benefits week" — NOT "Launch first test".`,
-        employment: `Employment path in ${pb.countryLabel} — ${pb.employmentGuide}. Tailored CV/resume, networking, interviews, local apprenticeships. Stage names must reference the job target and city — e.g. "Scan ${locRaw} hiring lanes", "Package proof for [role]", "Two-week application push". Do NOT use generic US startup language or wrong-country agencies.`,
+        employment: `Employment path "${idea?.title || "role"}" in ${pb.countryLabel} — ${pb.employmentGuide}. Name specific job titles (chat support, email support, VA, data entry), staffing agencies or job boards in ${locRaw}, and application steps. Tailored CV/resume, interviews. NEVER use business validation tasks ("talk to 3 potential clients", "post in Facebook groups"). Stage names reference the role and city — e.g. "Apply to ${locRaw} staffing for chat support", "Resume + typing test week". Do NOT use generic US startup language or wrong-country agencies.`,
         career_change: `Career change toward "${idea?.title || "new field"}" in ${pb.countryLabel} — map transferable skills, talk to people already in the field, close specific skill gaps, then interviews/trial work. Stage names must reflect the NEW field and transition — NOT generic test/feedback/repeat.`,
         nonprofit: `Starting or growing a nonprofit for "${idea?.title || "mission"}" in ${pb.countryLabel} — get clear on your cause, handle legal setup (501c3 or local equivalent), find advisors, run one small program with real people. Stage names reference the cause and community — plain language only, no business jargon.`,
         housing: `Rebuilding after homelessness or housing instability in ${pb.countryLabel} — Stage 1: safe place tonight + this week. Stage 2: ID, mail, benefits. Stage 3: income that fits housing timeline. Stage 4: first step on "${idea?.title || "longer path"}". NEVER open with business launches or online stores.`,
         skilled_trade: `Skilled trade path "${idea?.title || "trade"}" in ${pb.countryLabel} — license/insurance verification, apprenticeship or journeyman route, first paid jobs/service calls, repeat customers. Reference the trade by name and local licensing rules — NOT generic freelance or gig economy stages.`,
-        online_business: `Online business "${idea?.title || "offer"}" — pick ONE product/channel, set up store + payments, first 10 sales/signups, double what worked. Stage names name the product, platform, or audience — NOT "Launch first test" / "Gather feedback".`,
+        online_business: `Online business "${idea?.title || "offer"}" — pick ONE specific product (name it: template, checklist, guide, or tool) and ONE channel (Gumroad, Etsy, or Shopify). First task must say WHAT to make and HOW (e.g. "Create a $5 Notion budget tracker in Canva, export PDF, list on Gumroad"). Include draft product title + price in mentorHelp. Stage names name the product, platform, or audience — NOT "Launch first test" / "Gather feedback".`,
         business: `Local service or small business in ${pb.countryLabel} — ${pb.businessGuide}. Licensing, pricing, first customers, local marketing. Stage names reference the offer and city. Do NOT use US SBDC/SCORE outside the US.`,
         learning: `Training path in ${pb.countryLabel} — ${pb.learningGuide}. Program enrollment, local funding, portfolio proof. Stage names reference the credential or skill — NOT generic "test and feedback" phases.`,
         creative: `Creative / design income — for EXPERIENCED practitioners: premium positioning, 2-tier pricing, niche proof by industry, weekly content, value-first local outreach, Google local SEO. Do NOT default to Upwork/Fiverr/99designs or workforce programs as the main strategy.`,
@@ -23141,9 +23268,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getPathArchetype(idea) {
-      if (userIsBusinessOwner(idea) || profilePathIsOwnBusiness()) {
-        return isGroundedPractitioner(idea) ? "grounded" : "business";
-      }
+      if (isIdeaEmploymentPath(idea)) return "employment";
+      if (isGroundedPractitioner(idea)) return "grounded";
       const situation = getPathSituationType(idea);
       const situationMap = {
         reentry: "reentry",
@@ -23157,7 +23283,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
       if (situationMap[situation]) return situationMap[situation];
       if (isReentrySituation(idea)) return "reentry";
-      if (isGroundedPractitioner(idea)) return "grounded";
+      if (isIdeaOnlineBusinessPath(idea)) return "online_business";
+      if (userIsBusinessOwner(idea) || profilePathIsOwnBusiness()) {
+        return "business";
+      }
       const blob = getConversationCareerBlob(idea);
       const ideaBlob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
       if (/portfolio/.test(ideaBlob) && /\b(logo|design|creative|art|brand|graphic)\b/.test(blob)) return "creative";
@@ -23555,30 +23684,30 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ],
         online_business: [
           {
-            label: "Pick one channel for \"{title}\"",
-            desc: "One product, one audience, one platform — not everything at once.",
+            label: "Pick one product for \"{title}\"",
+            desc: "Choose ONE specific thing to sell — not a vague business idea.",
             tasks: [
-              "Write a one-sentence offer for \"{title}\": who buys, what they get, price, and delivery time",
-              "Choose ONE sales channel (Shopify, Etsy, Gumroad, or social DMs) — set up the account today",
-              "List 10 people who would buy or share \"{title}\" — message 3 with a personal note and link"
+              "Pick ONE product from this list (or substitute your own): Notion budget tracker ($5), Airbnb cleaning checklist PDF ($4), resume pack for nurses ($9), meal prep planner ($5), or wedding timeline spreadsheet ($7) — write the title and who buys it",
+              "Choose ONE sales channel (Gumroad, Etsy, or Shopify) — create the account and connect Stripe or PayPal today",
+              "Outline the product in 5 bullet points: what they get, how long it takes you to make, price, and delivery format (PDF, Notion link, spreadsheet)"
             ]
           },
           {
-            label: "Set up store + payments for \"{title}\"",
-            desc: "Make it easy to pay you in under 5 minutes.",
+            label: "Build + list \"{title}\"",
+            desc: "Create the product and make it buyable in under a day.",
             tasks: [
-              "Add 1-3 products or packages for \"{title}\" with photos, price, and clear description",
-              "Connect payment (Stripe, PayPal, or platform checkout) and run a $1 test purchase yourself",
-              "Write FAQ answers: shipping time, refunds, and how customers get what they bought"
+              "Build the product using Canva (PDF), Notion (template), or Google Sheets — finish a usable v1 in 2-3 hours",
+              "Create a Gumroad or Etsy listing with title, 3 screenshots, price ($3-9), and a 2-sentence description",
+              "Run a $1 test purchase yourself to confirm checkout and delivery work"
             ]
           },
           {
             label: "First 10 sales for \"{title}\"",
             desc: "Prove strangers will pay, not just friends.",
             tasks: [
-              "Post \"{title}\" in 3 places your buyers already hang out (Facebook group, Reddit, Instagram, local board)",
-              "Offer a limited launch discount or bonus for the first 10 buyers — track who came from where",
-              "After each sale, ask one question: what almost stopped you from buying?"
+              "Post in 3 specific communities where buyers hang out (name the subreddit, Facebook group, or hashtag) — share a helpful preview, not a hard sell",
+              "Offer a launch discount for the first 10 buyers — track which post brought each sale",
+              "After each sale, ask: what almost stopped you from buying?"
             ]
           },
           {
@@ -23930,6 +24059,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getUserStatedCraftBlock(idea) +
         getReentryPromptBlock(idea) +
         getPathSpecificMilestoneBlock(idea) +
+        getIncomePathSpecificityBlock(idea) +
         `\nPath type guidance: ${getRoadmapArchetypeGuidance(idea)}\n` +
         `\n${getActionableTaskRules()}\n` +
         `\nThis roadmap must be unique to "${idea.title}" and must NOT repeat stages or tasks from the other paths listed above.\n` +
@@ -27366,6 +27496,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       applyAccountPrefs(state.accountPrefs, {
         forceLocation: !state.activeMapId || !formatUserLocation(state.userLocation)
       });
+      ensureKnownUserLocationRestored({ schedulePersist: false });
+    }
+
+    function shouldPreserveAccountPrefsOnFreshIntake() {
+      if (accountPrefsHasIdentity(state.accountPrefs)) {
+        const prefs = normalizeAccountPrefs(state.accountPrefs);
+        const hasLocation = Boolean(prefs.locationConfirmed && formatUserLocation(prefs.userLocation));
+        if (hasLocation) return true;
+      }
+      if (state.currentUser && findKnownUserLocation()) return true;
+      return false;
     }
 
     function beginNewIntake(options = {}) {
@@ -27373,8 +27514,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.activeMapId = null;
       invalidatePersistPipeline();
       if (options.freshProfile) {
-        clearIntakeSession({ preserveLibrary: true, preserveAccountPrefs: false });
-        state.accountPrefs = emptyAccountPrefs();
+        const priorPrefs = accountPrefsHasIdentity(state.accountPrefs)
+          ? normalizeAccountPrefs(state.accountPrefs)
+          : null;
+        const preservePrefs = shouldPreserveAccountPrefsOnFreshIntake();
+        clearIntakeSession({ preserveLibrary: true, preserveAccountPrefs: preservePrefs });
+        if (!preservePrefs && !state.currentUser) {
+          state.accountPrefs = emptyAccountPrefs();
+        }
+        ensureKnownUserLocationRestored({ schedulePersist: false });
+        if (state.currentUser && priorPrefs) {
+          applyAccountPrefs({
+            ...priorPrefs,
+            userLocation: state.userLocation,
+            locationConfirmed: state.locationConfirmed
+          }, { forceLocation: true });
+        }
         state.pathMode = null;
         if (!state.currentUser) {
           startGuestSession();
@@ -29818,7 +29973,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const hasName = Boolean(normalized.userProfile?.name);
       const hasLocation = Boolean(
         normalized.locationConfirmed && formatUserLocation(normalized.userLocation)
-      );
+      ) || userLocationHasUsableFields(normalized.userLocation);
       return hasName || hasLocation;
     }
 
@@ -29884,10 +30039,32 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function snapshotAccountPrefsFromState() {
+      const existing = normalizeAccountPrefs(state.accountPrefs || emptyAccountPrefs());
+      const sessionLoc = normalizeUserLocation(state.userLocation);
+      const sessionHasLoc = hasSavedUserLocation();
+      const existingLoc = enrichUsableUserLocation(existing.userLocation);
+      const profile = normalizeUserProfile(state.userProfile);
+
       return normalizeAccountPrefs({
-        userLocation: state.userLocation,
-        locationConfirmed: state.locationConfirmed,
-        userProfile: normalizeUserProfile(state.userProfile),
+        userLocation: sessionHasLoc ? sessionLoc : (existingLoc || sessionLoc),
+        locationConfirmed: sessionHasLoc
+          ? Boolean(state.locationConfirmed)
+          : Boolean(existing.locationConfirmed || existingLoc),
+        userProfile: normalizeUserProfile({
+          ...existing.userProfile,
+          ...profile,
+          name: profile.name || existing.userProfile.name,
+          incomeUrgency: profile.incomeUrgency || existing.userProfile.incomeUrgency,
+          pathPreference: profile.pathPreference || existing.userProfile.pathPreference,
+          workMode: profile.workMode || existing.userProfile.workMode,
+          willingToRelocate: profile.willingToRelocate || existing.userProfile.willingToRelocate,
+          founderStage: profile.founderStage || existing.userProfile.founderStage,
+          skills: profile.skills || existing.userProfile.skills,
+          constraints: profile.constraints || existing.userProfile.constraints,
+          goals: profile.goals || existing.userProfile.goals,
+          summary: profile.summary || existing.userProfile.summary,
+          updatedAt: Math.max(profile.updatedAt || 0, existing.userProfile.updatedAt || 0)
+        }),
         savedAt: Date.now()
       });
     }
@@ -29896,9 +30073,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const normalized = normalizeAccountPrefs(prefs);
       state.accountPrefs = normalized;
       const restoreLocation = options.forceLocation || !hasSavedUserLocation();
-      if (restoreLocation && normalized.locationConfirmed && formatUserLocation(normalized.userLocation)) {
-        state.userLocation = normalizeUserLocation(normalized.userLocation);
-        state.locationConfirmed = true;
+      if (restoreLocation) {
+        const restored = enrichUsableUserLocation(normalized.userLocation);
+        if (restored) {
+          state.userLocation = restored;
+          state.locationConfirmed = Boolean(normalized.locationConfirmed || formatUserLocation(restored));
+        }
       }
       const profile = normalizeUserProfile(state.userProfile);
       const incoming = normalized.userProfile;
@@ -30279,6 +30459,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function finishProfileIntake() {
       state.profileIntakeStep = null;
       hideProfileIntakeChips();
+      ensureKnownUserLocationRestored({ schedulePersist: false });
       distillUserProfileSummary();
       persistAccountPrefs();
       trackEvent("profile_intake_completed", {
@@ -30362,6 +30543,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function beginProfileIntake() {
+      ensureKnownUserLocationRestored({ schedulePersist: false });
       mergeUserProfileFromConversation();
       const founder = isFounderOrProjectPrompt(getFirstUserMessage());
       if (profileIntakeIsComplete(founder)) {
@@ -30498,6 +30680,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function shouldAskLocation() {
+      ensureKnownUserLocationRestored({ schedulePersist: false });
+      if (hasSavedUserLocation()) return false;
+      if (state.currentUser) {
+        const prefs = normalizeAccountPrefs(state.accountPrefs);
+        const restored = enrichUsableUserLocation(prefs.userLocation);
+        if (restored) {
+          applyKnownUserLocation(restored, { schedulePersist: false });
+          return false;
+        }
+        if ((state.savedMaps || []).length > 0) return false;
+      }
       return !hasSavedUserLocation();
     }
 
@@ -30972,6 +31165,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const groundedIdeasNote = isGroundedPractitioner()
         ? `They are an EXPERIENCED ${getUserSituationProfile().craftLabel} provider keeping their practice going — paths must focus on PREMIUM local positioning, 2-tier pricing (${getUserSituationProfile().pricingBasic} / ${getUserSituationProfile().pricingPremium}), niche proof, weekly marketing, and value-first local outreach. NOT 'Skill Sprint Portfolio', NOT Upwork/Fiverr-first, NOT workforce programs.\n\n`
         : "";
+      const moneyUrgencyNote = /\b(make more money|need (?:more )?money|income fast|need income|money soon|realistic paths)\b/i.test(summary)
+        ? (
+          `MONEY-URGENCY RULES:\n` +
+          `Each idea's tagline must name something SPECIFIC — a product type, job title, or service niche.\n` +
+          `BAD tagline: "Build and sell a simple digital product people can buy while you sleep."\n` +
+          `GOOD tagline: "Sell a $5 Notion budget tracker for freelancers on Gumroad — list it this weekend with 3 screenshots."\n` +
+          `BAD tagline: "Remote customer support or virtual assistant work."\n` +
+          `GOOD tagline: "Apply for inbound chat support ($16/hr) through staffing agencies in ${getUserLocation() || "your city"} — many hire in 7-14 days with typing test only."\n` +
+          `Include at least one employment path (specific role + agency/job board) AND one digital product path (specific product + platform + price).\n\n`
+        )
+        : "";
 
       return (
         "You are whatimado, a practical possibility advisor. Read this entire conversation carefully.\n\n" +
@@ -30982,6 +31186,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getUserStatedCraftBlock() +
         getReentryIdeasPromptBlock() +
         excludeBlock +
+        moneyUrgencyNote +
         " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\n" +
         groundedIdeasNote +
         "Each idea must use a DIFFERENT primary strategy (for example: direct employment, self-employment, short training/certification, gig work, creative portfolio, or community-based route). Do NOT copy-paste structure between ideas — titles, taglines, first steps, and income models should feel distinct.\n" +
@@ -37724,18 +37929,30 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const hasValue = Boolean(input.value.trim());
       field.classList.toggle("has-value", hasValue);
+      const singleLineHeight = parseFloat(getComputedStyle(field).minHeight) || 60;
 
       if (!hasValue) {
         field.classList.remove("is-expanded");
         input.style.height = "";
+        input.style.lineHeight = "";
         return;
       }
 
-      field.classList.add("is-expanded");
+      input.style.height = "auto";
+      input.style.lineHeight = "1.5";
+      const scrollHeight = input.scrollHeight;
+      const needsExpand = scrollHeight > singleLineHeight + 6;
+      field.classList.toggle("is-expanded", needsExpand);
+
+      if (!needsExpand) {
+        input.style.height = `${getComputedStyle(document.documentElement).getPropertyValue("--dashboard-send-size").trim() || "44px"}`;
+        input.style.lineHeight = input.style.height;
+        return;
+      }
+
       const mobile = window.matchMedia("(max-width: 720px)").matches;
       const max = mobile ? 280 : 160;
-      input.style.height = "auto";
-      const next = Math.min(max, Math.max(60, input.scrollHeight));
+      const next = Math.min(max, Math.max(singleLineHeight, scrollHeight));
       input.style.height = `${next}px`;
     }
 
