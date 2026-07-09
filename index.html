@@ -8542,6 +8542,9 @@
       cursor: pointer;
       font: inherit;
       color: inherit;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
     }
 
     button.task-mentor-label--toggle {
@@ -16467,6 +16470,72 @@
       return humanizeTaskText(words.length >= 8 ? words : "your project");
     }
 
+    function craftMatchesIdea(serviceType, idea = state.currentIdea) {
+      if (!idea || !serviceType) return false;
+      const ideaBlob = `${idea.title || ""} ${idea.tagline || ""} ${idea.why || ""}`.toLowerCase();
+      const service = String(serviceType).toLowerCase();
+      if (/\b(handy|thumbtack|handyman|furniture assembly|drywall|picture hanging)\b/.test(ideaBlob)) {
+        return /\b(trade|home|handyman|construction|repair|gig|assembly)\b/.test(service);
+      }
+      if (/\b(canva|template|etsy|graphic|design|logo|visual)\b/.test(ideaBlob)) {
+        return /\b(design|graphic|visual|brand|template|logo)\b/.test(service);
+      }
+      if (/\b(support|chat|employ|staffing|hire|customer success|onboarding)\b/.test(ideaBlob)) {
+        return /\b(support|customer|chat|employ|onboard)\b/.test(service);
+      }
+      return true;
+    }
+
+    function getIdeaServiceLabel(idea = state.currentIdea) {
+      if (!idea) return "";
+      const title = String(idea.title || "").trim();
+      const tagline = String(idea.tagline || "").trim();
+      const blob = `${title} ${tagline} ${idea.why || ""}`.toLowerCase();
+
+      if (/\b(handy|thumbtack|taskrabbit)\b/.test(blob) || /\bhandyman\b/.test(blob)) {
+        return "handyman gigs on Handy or Thumbtack";
+      }
+      if (/\b(furniture assembly|drywall patch|picture hanging|small home repair)\b/.test(blob)) {
+        return "small home-repair gigs";
+      }
+      if (/\bcanva template\b/.test(blob) && /\bconstruction\b/.test(blob)) {
+        return "construction-themed Canva templates";
+      }
+      if (/\b(etsy|gumroad)\b/.test(blob) && /\btemplate\b/.test(blob)) {
+        const product = title.replace(/^sell\s+/i, "").trim();
+        if (product.length >= 8 && product.length <= 72) return product;
+      }
+      if (/\b(inbound chat|chat support|customer success|onboarding specialist)\b/.test(blob)) {
+        return getEmploymentRoleShortLabel(idea);
+      }
+
+      const ideaCraftBlob = `${title} ${tagline} ${idea.why || ""}`.toLowerCase();
+      for (const key of Object.keys(USER_CRAFT_PLAYBOOKS)) {
+        if (key === "default") continue;
+        const pb = USER_CRAFT_PLAYBOOKS[key];
+        if (pb.detect.test(ideaCraftBlob)) {
+          return pb.serviceType;
+        }
+      }
+
+      if (/\bgig\b/.test(blob)) {
+        const match = title.match(/(.{8,64}?\bgig\b[^.]*)/i);
+        if (match) return humanizeTaskText(match[1]);
+      }
+
+      const short = getShortPathLabel(idea);
+      if (short && short !== "your project" && !/take the next step/i.test(short)) {
+        return short.replace(/\s+service$/i, "");
+      }
+      return "";
+    }
+
+    function isGigPlatformPath(idea = state.currentIdea) {
+      if (!idea) return false;
+      const blob = getIdeaSignalBlob(idea);
+      return /\b(handy|thumbtack|taskrabbit|gig work|weekend handyman|handyman gig|furniture assembly)\b/.test(blob);
+    }
+
     function getServiceLabel(idea = state.currentIdea) {
       if (!idea) return "service";
       if (isDigitalProductPath(idea)) {
@@ -16475,6 +16544,14 @@
       if (isIdeaEmploymentPath(idea)) {
         return getEmploymentRoleShortLabel(idea);
       }
+
+      const ideaService = getIdeaServiceLabel(idea);
+      if (ideaService) {
+        const labeled = ideaService.charAt(0).toUpperCase() + ideaService.slice(1);
+        if (/\b(service|gigs?|templates?|roles?|support)\b/i.test(labeled)) return labeled;
+        return /\bservice\b/i.test(labeled) ? labeled : `${labeled} service`;
+      }
+
       const blob = getConversationCareerBlob(idea);
       const tagline = String(idea.tagline || "").trim();
       const profile = getUserSituationProfile(idea);
@@ -16503,9 +16580,10 @@
 
       const serviceType = String(profile.serviceType || "").trim();
       if (serviceType
-        && !/your stated craft|local help-for-hire|neighborhood services|consulting, coaching, or professional advice/i.test(serviceType)
+        && !/your stated craft|local help-for-hire|neighborhood services|consulting, coaching, or professional advice|graphic and visual design/i.test(serviceType)
         && serviceType.length >= 6
-        && serviceType.length <= 52) {
+        && serviceType.length <= 52
+        && craftMatchesIdea(serviceType, idea)) {
         const titled = serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
         return /\bservice\b/i.test(titled) ? titled : `${titled} service`;
       }
@@ -19715,17 +19793,42 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ].join("\n");
     }
 
+    function getCurrentIntakeUserBlob() {
+      return getConversationUserBlob();
+    }
+
     function conversationLacksSkillSignal(blob) {
       const text = String(blob || "").toLowerCase();
       if (text.length > 520) return false;
       return !/\b(skill|experience|good at|background|resume|certif|trained|worked as|years? (?:of )?experience|typing|customer service|sales|coding|design|writing|admin|trade|electrician|nurse|teacher|driver|manager|bartend|retail|warehouse|hospitality|data entry|support rep|onboard|communicat|organiz|detail-oriented|creative|hands[- ]on|learn|pick up|comfortable with)\b/.test(text);
     }
 
+    function userExplicitlyUnsureAboutSkills(text) {
+      const blob = String(text || "").toLowerCase();
+      return /\b(not (?:really )?sure|don'?t know|no idea|unsure|just give me|give me (?:some )?ideas|help me figure|not sure yet|no clue|whatever you think)\b/.test(blob);
+    }
+
+    function conversationDeclaresSkillUncertainty() {
+      return state.history
+        .filter((entry) => entry.role === "user")
+        .slice(1)
+        .some((entry) => userExplicitlyUnsureAboutSkills(entry.content));
+    }
+
+    function currentIntakeHasStatedSkills() {
+      if (conversationDeclaresSkillUncertainty()) return false;
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.skills && !userExplicitlyUnsureAboutSkills(profile.skills)) {
+        return !conversationLacksSkillSignal(profile.skills);
+      }
+      return !conversationLacksSkillSignal(getCurrentIntakeUserBlob());
+    }
+
     function profileIntakeNeedsSkillsStep(profile = normalizeUserProfile(state.userProfile)) {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
       if (!isMoneyMakingPrompt(getFirstUserMessage())) return false;
-      const blob = [getConversationUserBlob(), profile.skills].filter(Boolean).join("\n");
-      return conversationLacksSkillSignal(blob);
+      if (conversationDeclaresSkillUncertainty()) return false;
+      return conversationLacksSkillSignal(getCurrentIntakeUserBlob());
     }
 
     function getEmploymentRoleShortLabel(idea = state.currentIdea) {
@@ -19744,11 +19847,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function ideaInventsUserContext(idea) {
       const ideaBlob = `${idea?.why || ""} ${idea?.tagline || ""} ${idea?.title || ""}`;
-      const userBlob = getConversationUserBlob();
+      const userBlob = getCurrentIntakeUserBlob();
       const checks = [
         { idea: /\b(structured small test|partner(?:ship)? pilot|pilot partner|test with a partner)\b/i, user: /\b(partner|pilot|small test|testing with)\b/i },
         { idea: /\b(you(?:'|')?re already running|you already have a)\b/i, user: /\b(already (?:running|have|doing|built)|i(?:'|')?m running|we(?:'|')?re running)\b/i },
-        { idea: /\b(your existing (?:business|service|clients?))\b/i, user: /\b(my (?:business|service|clients?)|i run|i own|self[- ]?employ)\b/i }
+        { idea: /\b(your existing (?:business|service|clients?))\b/i, user: /\b(my (?:business|service|clients?)|i run|i own|self[- ]?employ)\b/i },
+        { idea: /\b(you(?:'|')?ve done|you(?:'|')?re decent at|your graphic design|security shifts?|decent with construction)\b/i, user: /\b(graphic design|construction|security guard|decent at|working as a security)\b/i }
       ];
       return checks.some(({ idea: ideaPattern, user: userPattern }) => ideaPattern.test(ideaBlob) && !userPattern.test(userBlob));
     }
@@ -20107,6 +20211,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function summarizeMissionTitle(text, options = {}) {
       const usedTitles = options.usedTitles || [];
+      const maxLength = Number(options.maxLength) > 40 ? Number(options.maxLength) : 72;
       const pickUnused = (candidates) => candidates.find((candidate) =>
         !usedTitles.some((used) => textSimilarity(used, candidate) >= 0.55)
       ) || candidates[candidates.length - 1];
@@ -20147,7 +20252,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       copy = copy.replace(/^(review|use|read|call|send|apply to|start with|search)\s+/i, "");
       const first = copy.split(/(?<=[.!?])\s+/).find((part) => part.trim().length > 12) || copy;
-      let trimmed = first.length > 72 ? `${first.slice(0, 69).trim()}…` : first.trim();
+      let trimmed = first.length > maxLength ? `${first.slice(0, maxLength - 1).trim()}…` : first.trim();
       trimmed = trimmed.replace(/\s+[—–-]\s+.*$/, "").trim();
       if (!trimmed || isGenericOutcomeText(trimmed)) return "";
       return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
@@ -20830,9 +20935,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Review what I prepared below and take the one small step that moves you forward.";
       }
       if (isHomeworkTaskText(text)) {
-        const short = summarizeMissionTitle(text);
+        const source = humanizeTaskText(
+          personalizeTaskActionText(preserveTaskSourceText(normalized) || text, state.currentIdea)
+        );
+        if (source.length >= 20 && source.length <= 320) {
+          return source;
+        }
+        const short = summarizeMissionTitle(source, { maxLength: 160 });
         if (short && textSimilarity(short, String(normalized.mission || "")) < 0.72) {
-          return `Your one step: ${short.replace(/\.$/, "")}.`;
+          return short.length >= source.length - 8 ? source : `Your one step: ${short.replace(/\.$/, "")}.`;
         }
       }
       return text;
@@ -23165,7 +23276,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         craftLabel: "trade services",
         craftTitle: "Trade Business",
         serviceType: "licensed trade or home services",
-        detect: /\b(electrician|plumber|hvac|contractor|carpenter|roofer|landscap|handyman|mechanic|welder|mason|painter)\b/,
+        detect: /\b(electrician|plumber|hvac|contractor|carpenter|roofer|landscap|handyman|handy|thumbtack|taskrabbit|mechanic|welder|mason|painter|furniture assembly|drywall|picture hanging)\b/,
         niches: "homeowners, property managers, small commercial buildings, real estate investors",
         pricingBasic: "service call / diagnostic fee ($75-150)",
         pricingPremium: "project quotes with clear scope ($500-5000+ depending on job)",
@@ -23249,7 +23360,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return [
         getFirstUserMessage(),
         getConversationSummary(),
-        getUserProfileBlob(),
+        currentIntakeHasStatedSkills() ? getUserProfileBlob() : "",
         idea?.title,
         idea?.type,
         idea?.tagline,
@@ -23270,6 +23381,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function detectUserCraft(idea = null) {
+      if (idea) {
+        const ideaBlob = `${idea.title || ""} ${idea.tagline || ""} ${idea.why || ""} ${idea.type || ""}`.toLowerCase();
+        for (const key of Object.keys(USER_CRAFT_PLAYBOOKS)) {
+          if (key === "default") continue;
+          const pb = USER_CRAFT_PLAYBOOKS[key];
+          if (pb.detect.test(ideaBlob)) return pb;
+        }
+      }
       const blob = getConversationCareerBlob(idea);
       for (const key of Object.keys(USER_CRAFT_PLAYBOOKS)) {
         if (key === "default") continue;
@@ -23314,6 +23433,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function isGroundedPractitioner(idea = null) {
+      if (!currentIntakeHasStatedSkills()) return false;
+      if (isGigPlatformPath(idea)) return false;
+      if (isIdeaEmploymentPath(idea)) return false;
+      if (isDigitalProductPath(idea)) return false;
       return getUserSituationProfile(idea).grounded;
     }
 
@@ -27854,17 +27977,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ? normalizeAccountPrefs(state.accountPrefs)
           : null;
         const preservePrefs = shouldPreserveAccountPrefsOnFreshIntake();
-        clearIntakeSession({ preserveLibrary: true, preserveAccountPrefs: preservePrefs });
+        clearIntakeSession({
+          preserveLibrary: true,
+          preserveAccountPrefs: preservePrefs,
+          profileOnlyIdentity: true
+        });
         if (!preservePrefs && !state.currentUser) {
           state.accountPrefs = emptyAccountPrefs();
         }
         ensureKnownUserLocationRestored({ schedulePersist: false });
         if (state.currentUser && priorPrefs) {
-          applyAccountPrefs({
+          applyAccountPrefs(accountPrefsIdentityOnly({
             ...priorPrefs,
             userLocation: state.userLocation,
             locationConfirmed: state.locationConfirmed
-          }, { forceLocation: true });
+          }), { forceLocation: true });
         }
         state.pathMode = null;
         if (!state.currentUser) {
@@ -30316,6 +30443,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
     }
 
+    function accountPrefsIdentityOnly(prefs) {
+      const normalized = normalizeAccountPrefs(prefs || emptyAccountPrefs());
+      return normalizeAccountPrefs({
+        savedAt: normalized.savedAt,
+        locationConfirmed: normalized.locationConfirmed,
+        userLocation: normalized.userLocation,
+        userProfile: {
+          ...emptyUserProfile(),
+          name: normalized.userProfile.name
+        }
+      });
+    }
+
     function accountPrefsHasIdentity(prefs) {
       const normalized = normalizeAccountPrefs(prefs);
       const hasName = Boolean(normalized.userProfile?.name);
@@ -30392,6 +30532,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const sessionHasLoc = hasSavedUserLocation();
       const existingLoc = enrichUsableUserLocation(existing.userLocation);
       const profile = normalizeUserProfile(state.userProfile);
+      const keepStoredSkills = currentIntakeHasStatedSkills();
 
       return normalizeAccountPrefs({
         userLocation: sessionHasLoc ? sessionLoc : (existingLoc || sessionLoc),
@@ -30407,10 +30548,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           workMode: profile.workMode || existing.userProfile.workMode,
           willingToRelocate: profile.willingToRelocate || existing.userProfile.willingToRelocate,
           founderStage: profile.founderStage || existing.userProfile.founderStage,
-          skills: profile.skills || existing.userProfile.skills,
-          constraints: profile.constraints || existing.userProfile.constraints,
+          skills: profile.skills || (keepStoredSkills ? existing.userProfile.skills : ""),
+          constraints: profile.constraints || (keepStoredSkills ? existing.userProfile.constraints : ""),
           goals: profile.goals || existing.userProfile.goals,
-          summary: profile.summary || existing.userProfile.summary,
+          summary: profile.summary || (keepStoredSkills ? existing.userProfile.summary : ""),
           updatedAt: Math.max(profile.updatedAt || 0, existing.userProfile.updatedAt || 0)
         }),
         savedAt: Date.now()
@@ -30537,6 +30678,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function distillUserProfileSummary() {
       const profile = normalizeUserProfile(state.userProfile);
+      const hasSkills = currentIntakeHasStatedSkills();
       const parts = [];
       const pushLabel = (field) => {
         const value = profile[field];
@@ -30549,7 +30691,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       pushLabel("willingToRelocate");
       pushLabel("founderStage");
       if (profile.goals) parts.push(profile.goals);
-      if (profile.skills) parts.push(`Skills: ${profile.skills}`);
+      if (hasSkills && profile.skills) parts.push(`Skills: ${profile.skills}`);
       profile.summary = parts.join(" · ");
       profile.updatedAt = Date.now();
       state.userProfile = profile;
@@ -30557,20 +30699,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getUserProfileBlob() {
       const profile = normalizeUserProfile(state.userProfile);
-      return [
-        profile.summary,
-        profile.skills,
-        profile.constraints,
-        profile.goals,
-        Object.entries(USER_PROFILE_FIELD_LABELS).map(([field, labels]) => {
-          const value = profile[field];
-          return value ? labels[value] : "";
-        }).filter(Boolean).join(" ")
-      ].filter(Boolean).join(" ").toLowerCase();
+      const parts = [];
+      const hasSkills = currentIntakeHasStatedSkills();
+      if (hasSkills && profile.skills) parts.push(profile.skills);
+      if (hasSkills && profile.constraints) parts.push(profile.constraints);
+      if (profile.goals) parts.push(profile.goals);
+      if (hasSkills && profile.summary) parts.push(profile.summary);
+      Object.entries(USER_PROFILE_FIELD_LABELS).forEach(([field, labels]) => {
+        if (field === "founderStage" && !isFounderOrProjectPrompt(getFirstUserMessage())) return;
+        const value = profile[field];
+        if (value) parts.push(labels[value] || "");
+      });
+      return parts.filter(Boolean).join(" ").toLowerCase();
     }
 
     function getUserProfileBlock() {
       const profile = normalizeUserProfile(state.userProfile);
+      const hasSkills = currentIntakeHasStatedSkills();
+      const unsure = conversationDeclaresSkillUncertainty();
       const lines = [];
       if (profile.name) lines.push(`Name: ${profile.name}`);
       if (getUserLocation()) lines.push(`Location: ${getUserLocation()}`);
@@ -30579,12 +30725,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (profile.workMode) lines.push(`Work mode: ${USER_PROFILE_FIELD_LABELS.workMode[profile.workMode] || profile.workMode}`);
       if (profile.willingToRelocate) lines.push(`Relocate: ${USER_PROFILE_FIELD_LABELS.willingToRelocate[profile.willingToRelocate] || profile.willingToRelocate}`);
       if (profile.founderStage) lines.push(`Founder / product stage: ${USER_PROFILE_FIELD_LABELS.founderStage[profile.founderStage] || profile.founderStage}`);
-      if (profile.skills) lines.push(`Skills / strengths: ${profile.skills}`);
-      if (profile.constraints) lines.push(`Constraints: ${profile.constraints}`);
+      if (hasSkills && profile.skills) {
+        lines.push(`Skills / strengths: ${profile.skills}`);
+      } else if (unsure) {
+        lines.push("Skills / strengths: User said they are not sure yet — suggest starter/discovery paths only; do NOT claim skills from prior sessions.");
+      }
+      if (hasSkills && profile.constraints) lines.push(`Constraints: ${profile.constraints}`);
       if (profile.goals) lines.push(`Primary goal: ${profile.goals}`);
-      if (profile.summary) lines.push(`Profile summary: ${profile.summary}`);
+      if (hasSkills && profile.summary) lines.push(`Profile summary: ${profile.summary}`);
       if (!lines.length) return "";
-      return `\nUSER PROFILE (authoritative — use this for fit, pacing, and path choice; do not contradict it):\n${lines.join("\n")}\n`;
+      return `\nUSER PROFILE (authoritative for THIS conversation only — use what they said below; ignore any skills not stated here):\n${lines.join("\n")}\n`;
     }
 
     function getAdvisorContext() {
@@ -30676,7 +30826,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!profile.founderStage && isFounderOrProjectPrompt(getFirstUserMessage())) {
         profile.founderStage = parseFounderStage(blob);
       }
-      if (!profile.skills) {
+      if (conversationDeclaresSkillUncertainty()) {
+        profile.skills = "";
+        profile.constraints = "";
+      } else if (!profile.skills) {
         const clarifyingAnswers = state.history
           .filter((entry) => entry.role === "user")
           .slice(1)
@@ -31567,10 +31720,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const excludeBlock = excludeTitles.length
         ? `\n\nDO NOT repeat or closely resemble these ideas already shown:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n\nGenerate exactly ${count} completely NEW and different ideas that are SPECIFIC to this person`
         : `\n\nGenerate exactly ${count} ideas that are SPECIFIC to this person`;
-      const resourceHint = isGroundedPractitioner()
+      const hasStatedSkills = currentIntakeHasStatedSkills();
+      const resourceHint = isGroundedPractitioner() && hasStatedSkills
         ? `premium local ${getUserSituationProfile().craftLabel} positioning, Google Business Profile, niche proof, value-first outreach to local businesses`
         : getLocationResourceHint();
-      const groundedIdeasNote = isGroundedPractitioner()
+      const groundedIdeasNote = isGroundedPractitioner() && hasStatedSkills
         ? `They are an EXPERIENCED ${getUserSituationProfile().craftLabel} provider keeping their practice going — paths must focus on PREMIUM local positioning, 2-tier pricing (${getUserSituationProfile().pricingBasic} / ${getUserSituationProfile().pricingPremium}), niche proof, weekly marketing, and value-first local outreach. NOT 'Skill Sprint Portfolio', NOT Upwork/Fiverr-first, NOT workforce programs.\n\n`
         : "";
       const moneyUrgencyNote = /\b(make more money|need (?:more )?money|income fast|need income|money soon|realistic paths)\b/i.test(summary)
@@ -31586,8 +31740,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         )
         : "";
       const profile = normalizeUserProfile(state.userProfile);
-      const skillsGapNote = conversationLacksSkillSignal(summary) && !profile.skills
-        ? `\nSKILLS GAP: User has NOT named concrete skills yet. Include at least one discovery path (inventory skills they can sell or apply with this week). Do NOT pretend they already run a business, pilot, or partner project.\n`
+      const skillsGapNote = !hasStatedSkills
+        ? (
+          `\nSKILLS GAP: User has NOT named concrete skills in THIS conversation` +
+          (conversationDeclaresSkillUncertainty() ? " — they explicitly said they are not sure." : ".") +
+          ` Suggest starter/discovery paths (common entry-level options labeled as examples). ` +
+          `Do NOT reference graphic design, construction, security jobs, or any skill they did not state in the messages above.\n`
+        )
         : profile.skills
           ? `\nTheir stated skills/strengths: ${profile.skills}\nEach idea must tie to these skills or a realistic 2–4 week skill they could learn.\n`
           : "";
@@ -36887,11 +37046,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function clearIntakeSession(options = {}) {
-      const preservedPrefs = options.preserveAccountPrefs === false
+      const rawPrefs = options.preserveAccountPrefs === false
         ? emptyAccountPrefs()
         : (accountPrefsHasIdentity(state.accountPrefs)
           ? normalizeAccountPrefs(state.accountPrefs)
           : snapshotAccountPrefsFromState());
+      const preservedPrefs = options.profileOnlyIdentity
+        ? accountPrefsIdentityOnly(rawPrefs)
+        : rawPrefs;
       state.step = 1;
       state.history = [];
       state.ideas = [];
