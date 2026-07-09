@@ -16255,7 +16255,9 @@
       }
       if (/\bwho it serves\b|\bmission\b/.test(blob)) return "Decide who you're helping";
       if (/\blegal structure\b/.test(blob)) return "Plan your legal setup";
-      if (/\bpilot\b/.test(blob)) return "Run a small test first";
+      if (/\bpilot\b/.test(blob) && !/\b(service pilots?|pilot tracking|notion template|for service pilots?)\b/.test(blob)) {
+        return "Run a small test first";
+      }
       if (/\boutreach\b|\bpartnership\b/.test(blob)) return "Reach out to your first partners";
       if (/\bdonation\b|\bstripe\b|\bsupporter\b/.test(blob)) return "Set up optional donations";
       if (/\bgrant\b|\bfunding\b|\bsponsor/.test(blob)) return "Explore funding options";
@@ -16467,6 +16469,12 @@
 
     function getServiceLabel(idea = state.currentIdea) {
       if (!idea) return "service";
+      if (isDigitalProductPath(idea)) {
+        return getDigitalProductPlan(idea).productName;
+      }
+      if (isIdeaEmploymentPath(idea)) {
+        return getEmploymentRoleShortLabel(idea);
+      }
       const blob = getConversationCareerBlob(idea);
       const tagline = String(idea.tagline || "").trim();
       const profile = getUserSituationProfile(idea);
@@ -16555,6 +16563,18 @@
         "what they pay now and what's missing from that service");
       copy = copy.replace(/\b\[topic\]/gi, serviceTopic);
       copy = copy.replace(/\b\[problem\]/gi, serviceTopic);
+
+      if (isIdeaEmploymentPath(idea)) {
+        const title = String(idea?.title || "").trim();
+        const role = getEmploymentRoleShortLabel(idea);
+        if (title.length > 36) {
+          const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          copy = copy.replace(new RegExp(`["']${escaped}["']`, "gi"), role);
+          copy = copy.replace(new RegExp(`apply to ["']${escaped}["']`, "gi"), `target ${role}`);
+          copy = copy.replace(new RegExp(`that apply to ["']${escaped}["']`, "gi"), `that apply to ${role}`);
+        }
+        copy = copy.replace(/\bwrite 5 skills from your past jobs that apply to\b/gi, "Write 5 skills from past jobs that apply to");
+      }
 
       if (/^List \d+ people\b/i.test(copy) && /\b(board|advise|refer|ally|allies)\b/i.test(copy)) {
         copy = copy.replace(
@@ -19684,6 +19704,91 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
     }
 
+    function isMoneyMakingPrompt(text) {
+      return /\b(make more money|need (?:more )?money|income fast|need income|money soon|realistic paths)\b/i.test(String(text || ""));
+    }
+
+    function getConversationUserBlob() {
+      return [
+        getFirstUserMessage(),
+        ...state.history.filter((entry) => entry.role === "user").map((entry) => entry.content)
+      ].join("\n");
+    }
+
+    function conversationLacksSkillSignal(blob) {
+      const text = String(blob || "").toLowerCase();
+      if (text.length > 520) return false;
+      return !/\b(skill|experience|good at|background|resume|certif|trained|worked as|years? (?:of )?experience|typing|customer service|sales|coding|design|writing|admin|trade|electrician|nurse|teacher|driver|manager|bartend|retail|warehouse|hospitality|data entry|support rep|onboard|communicat|organiz|detail-oriented|creative|hands[- ]on|learn|pick up|comfortable with)\b/.test(text);
+    }
+
+    function profileIntakeNeedsSkillsStep(profile = normalizeUserProfile(state.userProfile)) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (!isMoneyMakingPrompt(getFirstUserMessage())) return false;
+      const blob = [getConversationUserBlob(), profile.skills].filter(Boolean).join("\n");
+      return conversationLacksSkillSignal(blob);
+    }
+
+    function getEmploymentRoleShortLabel(idea = state.currentIdea) {
+      const title = String(idea?.title || "").trim();
+      const match = title.match(/\b(?:apply for|get hired as|land|target)\s+(?:a\s+)?(.+?)(?:\s+through|\s+at|\s+in\b|$)/i);
+      if (match?.[1]) {
+        const role = match[1].replace(/\s+roles?$/i, "").trim();
+        if (role.length >= 6 && role.length <= 56) return role;
+      }
+      if (/\bcustomer success\b/i.test(title)) return "customer success roles";
+      if (/\bonboarding specialist\b/i.test(title)) return "onboarding specialist roles";
+      if (/\bremote\b/i.test(title) && /\b(support|service)\b/i.test(title)) return "remote support roles";
+      if (/\bstaffing agenc/i.test(title)) return "staffing agency roles";
+      return getShortPathLabel(idea);
+    }
+
+    function ideaInventsUserContext(idea) {
+      const ideaBlob = `${idea?.why || ""} ${idea?.tagline || ""} ${idea?.title || ""}`;
+      const userBlob = getConversationUserBlob();
+      const checks = [
+        { idea: /\b(structured small test|partner(?:ship)? pilot|pilot partner|test with a partner)\b/i, user: /\b(partner|pilot|small test|testing with)\b/i },
+        { idea: /\b(you(?:'|')?re already running|you already have a)\b/i, user: /\b(already (?:running|have|doing|built)|i(?:'|')?m running|we(?:'|')?re running)\b/i },
+        { idea: /\b(your existing (?:business|service|clients?))\b/i, user: /\b(my (?:business|service|clients?)|i run|i own|self[- ]?employ)\b/i }
+      ];
+      return checks.some(({ idea: ideaPattern, user: userPattern }) => ideaPattern.test(ideaBlob) && !userPattern.test(userBlob));
+    }
+
+    function sanitizeIdeasAgainstInventedContext(ideas) {
+      return (ideas || []).map((idea) => {
+        if (!ideaInventsUserContext(idea)) return idea;
+        const cleaned = { ...idea };
+        if (cleaned.why) {
+          cleaned.why = cleaned.why
+            .replace(/\b(structured small test|partner pilot|pilot partner)\b/gi, "your situation")
+            .replace(/\byou(?:'|')?re already running\b/gi, "you want income soon");
+        }
+        return cleaned;
+      }).filter((idea) => !ideaInventsUserContext(idea) || idea?.title?.trim());
+    }
+
+    const GENERIC_MISSION_TITLE_PATTERNS = [
+      /^take the next concrete step$/i,
+      /^move this phase forward$/i,
+      /^make measurable progress$/i,
+      /^complete one focused action$/i,
+      /^track who you(?:'|')?ve contacted$/i,
+      /^organize your outreach list$/i,
+      /^log your conversations$/i,
+      /^keep your pipeline tidy$/i,
+      /^take the next step on (?:this path|your goal)/i,
+      /^pitch your run a small test/i,
+      /^step \d+ toward your goal$/i,
+      /^mission \d+\.\d+$/i
+    ];
+
+    function isGenericMissionTitle(title) {
+      const copy = String(title || "").trim();
+      if (!copy) return true;
+      if (GENERIC_MISSION_TITLE_PATTERNS.some((pattern) => pattern.test(copy))) return true;
+      if (/^(first|next|then):\s*(take the next|move this|complete one|track who)/i.test(copy)) return true;
+      return false;
+    }
+
     function isIdeaEmploymentPath(idea) {
       const blob = getIdeaSignalBlob(idea);
       if (/\b(self[- ]?employ|sell (?:a |your )?digital|digital product|gumroad|etsy|shopify|dropship|freelanc(?:e|ing)|your own (?:business|shop|store)|start (?:a |my )?business)\b/.test(blob)) {
@@ -19692,7 +19797,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(type|employment)\b/.test(String(idea?.type || "").toLowerCase()) && !/\b(self[- ]?employ|business owner|freelance)\b/.test(blob)) {
         return true;
       }
-      return /\b(remote customer support|virtual assistant|staffing agenc|customer service rep|call center|data entry|admin assistant|apply for (?:paid )?remote|get hired|hourly wage|paycheck|w-?2|inbound (?:chat|email) support|live chat (?:agent|support)|email support (?:rep|agent)|work through\b.*\b(agenc|staffing))\b/.test(blob);
+      return /\b(remote customer support|virtual assistant|staffing agenc|customer service rep|customer success|onboarding specialist|call center|data entry|admin assistant|apply for (?:paid )?remote|get hired|hourly wage|paycheck|w-?2|inbound (?:chat|email) support|live chat (?:agent|support)|email support (?:rep|agent)|work through\b.*\b(agenc|staffing))\b/.test(blob);
     }
 
     function isIdeaOnlineBusinessPath(idea) {
@@ -19776,6 +19881,37 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return (stages || []).some((stage) => stageLabelIsEmploymentFocused(stage.label));
     }
 
+    function taskTextIsCareerChangeHomework(text) {
+      const blob = String(text || "").toLowerCase();
+      return /\b(write \d+ skills from your past|map skills you already have|skills from your past jobs|talk to 3 people already doing|close skill gaps for|convert skills to opportunity)\b/.test(blob)
+        || /\bcareer change\b/.test(blob);
+    }
+
+    function stageLabelIsCareerChangeFocused(label) {
+      const copy = String(label || "").toLowerCase();
+      return /\bmap skills you already have\b/.test(copy)
+        || /\btalk to 3 people already doing\b/.test(copy)
+        || /\bclose (?:the )?skill gaps\b/.test(copy)
+        || /\bconvert skills to opportunity\b/.test(copy);
+    }
+
+    function roadmapHasCareerChangeOnEmploymentPath(stages, idea = state.currentIdea) {
+      if (!isIdeaEmploymentPath(idea)) return false;
+      if ((stages || []).some((stage) => stageLabelIsCareerChangeFocused(stage.label))) return true;
+      const blob = (stages || []).flatMap((s) => s.tasks || []).map(getTaskText).join(" ").toLowerCase();
+      return taskTextIsCareerChangeHomework(blob);
+    }
+
+    function roadmapHasGenericMissionTitles(stages) {
+      return (stages || []).some((stage) =>
+        (stage.tasks || []).some((task) => {
+          const normalized = normalizeRoadmapTask(task);
+          const mission = String(normalized.mission || summarizeMissionTitle(getTaskText(normalized)) || "").trim();
+          return isGenericMissionTitle(mission);
+        })
+      );
+    }
+
     function getBusinessRoadmapTemplate(idea = state.currentIdea) {
       const templates = buildStandardFallbackTemplates();
       if (isGroundedPractitioner(idea)) {
@@ -19785,6 +19921,49 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return personalizeFallbackStages(templates.online_business, idea);
       }
       return personalizeFallbackStages(templates.business, idea);
+    }
+
+    function rewriteEmploymentMisalignedTasks(stages, idea = state.currentIdea) {
+      if (!isIdeaEmploymentPath(idea) || !Array.isArray(stages)) return stages;
+      const employmentTemplate = personalizeFallbackStages(buildStandardFallbackTemplates().employment, idea);
+
+      return normalizeRoadmapStages(stages).map((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return stage;
+        const fallbackStage = employmentTemplate[stageIndex] || employmentTemplate[stageIndex % employmentTemplate.length] || employmentTemplate[0];
+        const stageMisaligned = stageLabelIsCareerChangeFocused(stage.label);
+
+        return {
+          ...stage,
+          label: stageMisaligned && fallbackStage?.label ? fallbackStage.label : stage.label,
+          desc: stageMisaligned && fallbackStage?.desc ? fallbackStage.desc : stage.desc,
+          tasks: (stage.tasks || []).map((task, taskIndex) => {
+            if (isPendingRoadmapTask(task)) return { _pendingTask: true };
+            const normalized = normalizeRoadmapTask(task);
+            const source = stripMentorActionPrefix(preserveTaskSourceText(normalized) || normalized.text || "");
+            const missionBlob = String(normalized.mission || "").toLowerCase();
+            if (!taskTextIsCareerChangeHomework(source) && !taskTextIsCareerChangeHomework(missionBlob) && !stageMisaligned) {
+              return normalized;
+            }
+            const replacement = fallbackStage?.tasks?.[taskIndex] ?? fallbackStage?.tasks?.[0];
+            if (!replacement) return normalized;
+            const replacementText = typeof replacement === "string" ? replacement : getTaskText(replacement);
+            return mentorizeTask({
+              ...normalized,
+              text: replacementText,
+              mission: "",
+              why: "",
+              script: "",
+              contacts: [],
+              links: [],
+              resourcesLocal: [],
+              resourcesNational: [],
+              resourcesGlobal: [],
+              resourceLayers: { local: [], national: [], global: [] },
+              _sourceText: replacementText
+            });
+          })
+        };
+      });
     }
 
     function rewriteBusinessOwnerMisalignedTasks(stages, idea = state.currentIdea) {
@@ -20019,6 +20198,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function extractTaskAngle(normalized) {
       const blob = getTaskContentBlob(normalized);
       const action = getTaskDisplayActionText(normalized).toLowerCase();
+      if (isDigitalProductPath(state.currentIdea) || isDigitalProductTask(normalized)) {
+        if (/\b(gumroad|etsy|listing|checkout|stripe|payment|screenshot|price)\b/.test(blob)) return "digital_listing";
+        if (/\b(post|reddit|community|launch|share|twitter)\b/.test(blob)) return "visibility";
+        if (/\b(notion|section|page|outline|dashboard|workspace|template)\b/.test(blob)) return "digital_build";
+        return "digital_build";
+      }
       if (/\b(publish|portfolio|website|your site|web page|case stud|testimonial|proof page|organized proof|go live)\b/.test(blob)) {
         return "publish_proof";
       }
@@ -20085,7 +20270,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         outreach: [
           "Reach out to one prospect",
           "Start a sales conversation",
-          `Pitch your ${service}`,
+          ...(isGenericMissionTitle(`Pitch your ${service}`) ? [] : [`Pitch your ${service}`]),
           "Open a warm conversation"
         ],
         interviews: [
@@ -20118,6 +20303,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           "Boost your local presence",
           "Put your work in front of others"
         ],
+        digital_build: [
+          "Outline your template sections",
+          "Build the Notion pages",
+          "Add the tracker fields",
+          "Draft your product layout"
+        ],
+        digital_listing: [
+          "Create your Gumroad listing",
+          "Set price and screenshots",
+          "Write your product description",
+          "Publish the checkout page"
+        ],
         mission_clarity: [
           "Lock in who you're helping",
           "Clarify your purpose",
@@ -20125,10 +20322,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           "State what you're building toward"
         ],
         general: [
-          "Take the next concrete step",
-          "Move this phase forward",
-          "Make measurable progress",
-          "Complete one focused action"
+          "Draft your next action",
+          "Finish this week's task",
+          "Complete the listed step",
+          "Do the action described below"
         ]
       };
       return pools[angle] || pools.general;
@@ -20181,8 +20378,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const idea = state.currentIdea;
       const angle = extractTaskAngle(normalized);
       const pool = [];
+      const fromSource = summarizeMissionTitle(preserveTaskSourceText(normalized), { usedTitles });
+      if (fromSource && !isGenericMissionTitle(fromSource)) pool.push(fromSource);
       const fromAction = summarizeMissionTitle(getTaskDisplayActionText(normalized), { usedTitles });
-      if (fromAction) pool.push(fromAction);
+      if (fromAction && !isGenericMissionTitle(fromAction)) pool.push(fromAction);
       pool.push(...getMissionTitleCandidates(angle, normalized, idea));
       const forInfer = { ...normalized, mission: "" };
       const inferred = inferMissionTitle(forInfer, { taskIndex, stageLabel });
@@ -20197,6 +20396,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       for (const candidate of rotated) {
         const title = cleanMissionTitle(String(candidate || "").trim(), normalized, idea);
         if (!title || missionTitleLooksIncomplete(title)) continue;
+        if (isGenericMissionTitle(title)) continue;
         if (missionTitleTooCloseToTask(title, normalized)) continue;
         if (!missionTitleAlignsWithTask(title, normalized)) continue;
         if (missionTitleIsUsed(title, usedTitles)) continue;
@@ -20225,6 +20425,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (copy) return copy;
       }
       const text = normalized.text.toLowerCase();
+      if (/\b(write \d+ skills|list skills|skills from your past|transferable skills|map skills)\b/.test(text)) {
+        return "List of at least 5 skills with one real example each, saved in your notes or doc.";
+      }
       if (/\b(email|message|outreach)\b/.test(text)) {
         return "Message sent (or ready in draft) and tracker updated with contact date.";
       }
@@ -20237,7 +20440,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(logo|brand)\b/.test(text)) {
         return "Logo brief saved and at least one AI prompt tested.";
       }
-      if (/\b(interview|survey|customer)\b/.test(text)) {
+      if (/\b(interview|survey)\b/.test(text) && !/\b(write|list \d+ skills|skills from)\b/.test(text)) {
+        return "At least 2 interviews completed and notes captured in the template.";
+      }
+      if (/\b(customer)\b/.test(text) && /\b(talk|interview|ask \d+)\b/.test(text)) {
         return "At least 2 interviews completed and notes captured in the template.";
       }
       if (/\b(draft|write|post)\b/.test(text)) {
@@ -20281,7 +20487,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function inferMissionTitle(normalized, context = {}) {
       const existing = String(normalized.mission || "").trim();
-      if (existing && !isGenericOutcomeText(existing) && !missionTitleLooksLikeHomework(existing, normalized)) {
+      if (existing && !isGenericOutcomeText(existing) && !isGenericMissionTitle(existing) && !missionTitleLooksLikeHomework(existing, normalized)) {
         return cleanMissionTitle(existing, normalized, state.currentIdea);
       }
       const taskIndex = Number.isInteger(context.taskIndex) ? context.taskIndex : 0;
@@ -22032,7 +22238,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const combined = `${blob} ${ideaBlob}`;
       if (/\b(nonprofit|non-profit|501\s*\(?\s*c\s*\)?\s*3|charity|foundation|mutual aid org|start a nonprofit|launch a nonprofit)\b/.test(combined)) return "nonprofit";
       if (/\b(homeless|unhoused|housing instability|in a shelter|living in (?:a )?(?:car|motel|shelter)|rebuilding after homelessness|no permanent address)\b/.test(combined)) return "housing";
-      if (/\b(remote customer support|virtual assistant|staffing agenc|customer service rep|call center|data entry clerk|admin assistant|inbound chat support|get hired|hourly wage|apply for (?:paid )?remote)\b/.test(combined)) return "employment";
+      if (/\b(remote customer support|virtual assistant|staffing agenc|customer service rep|customer success|onboarding specialist|call center|data entry clerk|admin assistant|inbound chat support|get hired|hourly wage|apply for (?:paid )?remote)\b/.test(combined)) return "employment";
       if (/\b(electrician|plumber|hvac|welder|apprenticeship|skilled trade|carpenter|union trade|journeyman|pipefitter|roofer|mason|mechanic trade)\b/.test(combined)) return "skilled_trade";
       if (/\b(career change|changing careers|switch careers|new career|second career|pivot careers|different field)\b/.test(combined)) return "career_change";
       if (/\b(digital product|template|checklist|guide|toolkit|gumroad|etsy shop|sell online|pay[- ]what[- ]you[- ]want|buy while you sleep|notion template|downloadable)\b/.test(combined)) return "online_business";
@@ -24240,6 +24446,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (stages.some((stage) => isGenericStageLabel(stage.label))) return null;
       if (roadmapHasGenericStages(stages, idea)) return null;
       if (isGenericFallbackRoadmap(stages)) return null;
+      if (roadmapHasCareerChangeOnEmploymentPath(stages, idea)) return null;
+      if (roadmapHasGenericMissionTitles(stages)) return null;
       if (roadmapHasTooMuchHomework(stages) || roadmapLacksMentorWork(stages)) return null;
       return normalizeRoadmapStages(stages);
     }
@@ -28344,6 +28552,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
         business_setup: ["workMode", parseBusinessSetup],
+        skills: ["skills", (value) => String(value || "").trim().slice(0, 200)],
         relocate: ["willingToRelocate", parseRelocatePreference],
         founder_stage: ["founderStage", parseFounderStage]
       };
@@ -28395,6 +28604,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           { field: "workMode", value: "fixed_location", label: "At a shop or location" },
           { field: "workMode", value: "online", label: "Online / remote" },
           { field: "workMode", value: "mix", label: "Mix" }
+        ]);
+        return;
+      }
+      if (step === "skills") {
+        renderProfileIntakeChips([
+          { field: "skills", value: "customer service, typing, and clear communication", label: "Customer service / admin" },
+          { field: "skills", value: "writing, organizing, spreadsheets, and research", label: "Writing / organizing" },
+          { field: "skills", value: "hands-on work, fixing things, and physical tasks", label: "Hands-on / trade-adjacent" },
+          { field: "skills", value: "teaching, coaching, or explaining things clearly", label: "Teaching / coaching" },
+          { field: "skills", value: "computers, troubleshooting, and learning new software fast", label: "Tech-comfortable" },
+          { field: "skills", value: "not sure yet — help me figure out what I can sell or apply with", label: "Not sure yet" }
         ]);
         return;
       }
@@ -30329,6 +30549,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       pushLabel("willingToRelocate");
       pushLabel("founderStage");
       if (profile.goals) parts.push(profile.goals);
+      if (profile.skills) parts.push(`Skills: ${profile.skills}`);
       profile.summary = parts.join(" · ");
       profile.updatedAt = Date.now();
       state.userProfile = profile;
@@ -30455,6 +30676,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!profile.founderStage && isFounderOrProjectPrompt(getFirstUserMessage())) {
         profile.founderStage = parseFounderStage(blob);
       }
+      if (!profile.skills) {
+        const clarifyingAnswers = state.history
+          .filter((entry) => entry.role === "user")
+          .slice(1)
+          .map((entry) => entry.content)
+          .join("\n");
+        if (clarifyingAnswers.length > 12 && !conversationLacksSkillSignal(clarifyingAnswers)) {
+          profile.skills = abbreviateQuestion(clarifyingAnswers, 200);
+        }
+      }
       if (!profile.goals && getFirstUserMessage()) {
         profile.goals = abbreviateQuestion(getFirstUserMessage(), 160);
       }
@@ -30466,6 +30697,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const profile = normalizeUserProfile(state.userProfile);
       if (!profile.incomeUrgency || !profile.pathPreference) return false;
       if (founderMode) return Boolean(profile.founderStage);
+      if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) return false;
       return Boolean(profile.workMode);
     }
 
@@ -30572,6 +30804,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       trackEvent("profile_intake_step_shown", { step: "relocate" });
     }
 
+    function askProfileSkillsStep() {
+      state.profileIntakeStep = "skills";
+      pushProfileIntakeAssistantMessage(
+        "What could you realistically use to earn money soon — skills you already have, or something you'd learn in 2–4 weeks?"
+      );
+      renderProfileIntakeChips([
+        { field: "skills", value: "customer service, typing, and clear communication", label: "Customer service / admin" },
+        { field: "skills", value: "writing, organizing, spreadsheets, and research", label: "Writing / organizing" },
+        { field: "skills", value: "hands-on work, fixing things, and physical tasks", label: "Hands-on / trade-adjacent" },
+        { field: "skills", value: "teaching, coaching, or explaining things clearly", label: "Teaching / coaching" },
+        { field: "skills", value: "computers, troubleshooting, and learning new software fast", label: "Tech-comfortable" },
+        { field: "skills", value: "not sure yet — help me figure out what I can sell or apply with", label: "Not sure yet" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "skills" });
+    }
+
     function askProfileFounderStageStep() {
       state.profileIntakeStep = "founder_stage";
       pushProfileIntakeAssistantMessage("Where is whatimado.com at right now?");
@@ -30646,6 +30894,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           return;
         }
         if (!profile.workMode) return askProfileWorkModeStep();
+        if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) {
+          return askProfileSkillsStep();
+        }
         if (profileIntakeNeedsRelocateStep(profile) && !profile.willingToRelocate) {
           return askProfileRelocateStep();
         }
@@ -30654,11 +30905,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (step === "business_setup") {
         if (!profile.workMode) return askProfileBusinessSetupStep();
+        if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) {
+          return askProfileSkillsStep();
+        }
         finishProfileIntake();
         return;
       }
       if (step === "work_mode") {
         if (!profile.workMode) return askProfileWorkModeStep();
+        if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) {
+          return askProfileSkillsStep();
+        }
+        if (profileIntakeNeedsRelocateStep(profile) && !profile.willingToRelocate) {
+          return askProfileRelocateStep();
+        }
+        finishProfileIntake();
+        return;
+      }
+      if (step === "skills") {
+        if (!profile.skills) return askProfileSkillsStep();
         if (profileIntakeNeedsRelocateStep(profile) && !profile.willingToRelocate) {
           return askProfileRelocateStep();
         }
@@ -30697,6 +30962,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         else askProfileWorkModeStep();
         return;
       }
+      if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) {
+        askProfileSkillsStep();
+        return;
+      }
       if (profileIntakeNeedsRelocateStep(profile) && !profile.willingToRelocate) {
         askProfileRelocateStep();
         return;
@@ -30720,6 +30989,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
         business_setup: ["workMode", parseBusinessSetup],
+        skills: ["skills", (value) => String(value || "").trim().slice(0, 200)],
         relocate: ["willingToRelocate", parseRelocatePreference],
         founder_stage: ["founderStage", parseFounderStage]
       };
@@ -31039,6 +31309,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (isDetailedPrompt(userText)) {
         return "What's the single most important outcome you want in the next 30 days?";
       }
+      if (isMoneyMakingPrompt(userText) && conversationLacksSkillSignal(userText)) {
+        return "What skills or strengths could you use to earn money soon — or what would you realistically learn in the next 2–4 weeks?";
+      }
       return "What are you naturally good at, and would you rather get hired, learn a new skill, or build your own thing?";
     }
 
@@ -31060,6 +31333,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (isDetailedPrompt(userText)) {
         return (
           "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Even though they gave a lot of detail, ask ONE short clarifying question that references something specific they mentioned and helps you prioritize the best paths for them. Do not ask where they live — the app asks that separately next. Plain text only.\n\nUser: " +
+          userText
+        );
+      }
+
+      if (isMoneyMakingPrompt(userText) && conversationLacksSkillSignal(userText)) {
+        return (
+          "You are whatimado, a practical possibility advisor. This person needs income soon but has not named concrete skills yet. Ask ONE short question about what they could realistically offer employers or buyers THIS WEEK — skills they already have OR something they would learn in 2–4 weeks (examples: customer service, organizing, writing, hands-on work, tech troubleshooting). Do not ask where they live — the app asks that separately next. Do not invent projects, partners, or pilots they never mentioned. Plain text only.\n\nUser: " +
           userText
         );
       }
@@ -31147,13 +31427,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
 
       let ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : getFallbackIdeas());
-      ideas = ideas.slice(0, 3);
+      ideas = sanitizeIdeasAgainstInventedContext(ideas).slice(0, 3);
       if (pathMode !== "direct" && !founderMode && ideasAreTooSimilar(ideas)) {
         response = await callAdvisor(
-          `${buildIdeasPrompt(summary, 3)}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps.`,
+          `${buildIdeasPrompt(summary, 3)}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps. Do NOT invent partners, pilots, or projects they never mentioned.`,
           1200
         );
-        ideas = extractJsonArray(response, ideas);
+        ideas = sanitizeIdeasAgainstInventedContext(extractJsonArray(response, ideas)).slice(0, 3);
       }
       state.ideas = ideas;
       state.ideaBatches = [ideas.length];
@@ -31301,9 +31581,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           `GOOD tagline: "Sell a $5 Notion budget tracker for freelancers on Gumroad — list it this weekend with 3 screenshots."\n` +
           `BAD tagline: "Remote customer support or virtual assistant work."\n` +
           `GOOD tagline: "Apply for inbound chat support ($16/hr) through staffing agencies in ${getUserLocation() || "your city"} — many hire in 7-14 days with typing test only."\n` +
-          `Include at least one employment path (specific role + agency/job board) AND one digital product path (specific product + platform + price).\n\n`
+          `Include at least one employment path (specific role + agency/job board) AND one digital product path (specific product + platform + price).\n` +
+          `FACTS-ONLY: Do NOT invent partners, pilots, structured tests, or side projects the user never mentioned. If skills are vague, say so in why and suggest starter paths based on common entry skills.\n\n`
         )
         : "";
+      const profile = normalizeUserProfile(state.userProfile);
+      const skillsGapNote = conversationLacksSkillSignal(summary) && !profile.skills
+        ? `\nSKILLS GAP: User has NOT named concrete skills yet. Include at least one discovery path (inventory skills they can sell or apply with this week). Do NOT pretend they already run a business, pilot, or partner project.\n`
+        : profile.skills
+          ? `\nTheir stated skills/strengths: ${profile.skills}\nEach idea must tie to these skills or a realistic 2–4 week skill they could learn.\n`
+          : "";
 
       return (
         "You are whatimado, a practical possibility advisor. Read this entire conversation carefully.\n\n" +
@@ -31315,6 +31602,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getReentryIdeasPromptBlock() +
         excludeBlock +
         moneyUrgencyNote +
+        skillsGapNote +
         " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\n" +
         groundedIdeasNote +
         "Each idea must use a DIFFERENT primary strategy (for example: direct employment, self-employment, short training/certification, gig work, creative portfolio, or community-based route). Do NOT copy-paste structure between ideas — titles, taglines, first steps, and income models should feel distinct.\n" +
@@ -33507,6 +33795,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           trackEvent("roadmap_business_employment_mismatch_fallback", { idea_index: ideaIndex });
         } else {
           trackEvent("roadmap_business_tasks_realigned", { idea_index: ideaIndex });
+        }
+      }
+
+      if (stages && roadmapHasCareerChangeOnEmploymentPath(stages, idea)) {
+        stages = rewriteEmploymentMisalignedTasks(stages, idea);
+        if (roadmapHasCareerChangeOnEmploymentPath(stages, idea)) {
+          stages = getFallbackStages(idea);
+          source = "fallback";
+          trackEvent("roadmap_employment_career_change_fallback", { idea_index: ideaIndex });
+        } else {
+          trackEvent("roadmap_employment_tasks_realigned", { idea_index: ideaIndex });
+        }
+      }
+
+      if (stages && roadmapHasGenericMissionTitles(stages)) {
+        stages = mentorizeRoadmapStages(stages);
+        if (roadmapHasGenericMissionTitles(stages)) {
+          stages = getFallbackStages(idea);
+          source = "fallback";
+          trackEvent("roadmap_generic_mission_fallback", { idea_index: ideaIndex });
         }
       }
 
