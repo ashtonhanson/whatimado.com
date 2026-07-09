@@ -14699,7 +14699,7 @@
           if (idea?.title?.trim()) titles.push(idea.title.trim());
         }
       }
-      return [...new Set(titles)];
+      return [...new Set(titles)].slice(0, 15);
     }
 
     function ideasMatchOverusedMoneyTemplates(ideas) {
@@ -14716,10 +14716,15 @@
       );
     }
 
+    function capExcludeTitles(titles, max = 12) {
+      return (titles || []).slice(0, max);
+    }
+
     function getMoneyPromptVariationNote(excludeTitles = []) {
       const angle = MONEY_IDEA_VARIATION_ANGLES[Math.floor(Math.random() * MONEY_IDEA_VARIATION_ANGLES.length)];
-      const excludeBlock = excludeTitles.length
-        ? `\nDo NOT repeat or closely paraphrase paths this user already saw for this same goal:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n`
+      const capped = capExcludeTitles(excludeTitles);
+      const excludeBlock = capped.length
+        ? `\nDo NOT repeat or closely paraphrase paths this user already saw for this same goal:\n${capped.map((title) => `- ${title}`).join("\n")}\n`
         : "";
       return (
         `\nMONEY-URGENCY VARIETY:\n${angle}\n` +
@@ -26772,6 +26777,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.step = data.step ?? 1;
       state.history = Array.isArray(data.history) ? data.history : [];
       state.ideas = Array.isArray(data.ideas) ? data.ideas : [];
+      if (repairMapIdeasIfNeeded()) {
+        console.warn("[whatimado] repaired saved map ideas missing titles");
+      }
       state.roadmapStages = Array.isArray(data.roadmapStages) ? normalizeRoadmapStages(data.roadmapStages) : [];
       state.currentIdea = data.currentIdea ?? null;
       state.roadmapKey = data.roadmapKey ?? null;
@@ -29405,8 +29413,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const response = await callAdvisor(refinePrompt, direct ? 700 : 900);
 
       const fallback = direct && state.ideas[0] ? [state.ideas[0]] : getFallbackIdeas();
-      let ideas = extractJsonArray(response, fallback);
-      if (direct) ideas = ideas.slice(0, 1);
+      let ideas = ensureIdeaSet(extractJsonArray(response, fallback), fallback, direct ? 1 : 3);
 
       state.ideas = ideas;
       state.ideaBatches = [state.ideas.length];
@@ -30372,7 +30379,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const typing = $("#typing-pair");
       if (!typing) return false;
       if ($("#chat-path-build-progress")) completeChatPathBuildProgress();
-      typing.querySelector(".bubble.ai").innerHTML = formatText(text);
+      const bubble = typing.querySelector(".bubble.ai");
+      if (bubble) {
+        bubble.innerHTML = formatText(text);
+      } else {
+        typing.innerHTML = `
+          <div class="bubble-ai">
+            <div>
+              <div class="ai-label">whatimado</div>
+              <div class="bubble ai">${formatText(text)}</div>
+            </div>
+          </div>`;
+      }
       typing.removeAttribute("id");
       stopChatPathBuildProgress();
       scrollConversation();
@@ -31174,7 +31192,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       trackEvent("profile_intake_step_shown", { step: "founder_stage" });
     }
 
-    function finishProfileIntake() {
+    async function finishProfileIntake() {
       state.profileIntakeStep = null;
       hideProfileIntakeChips();
       ensureKnownUserLocationRestored({ schedulePersist: false });
@@ -31197,12 +31215,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           profile_intake: true
         });
         intakeInProgress = true;
-        void generateAndShowMap({
-          founderMode: isFounderOrProjectPrompt(getFirstUserMessage()),
-          intakeMode: "quick"
-        }).finally(() => {
+        try {
+          await generateAndShowMap({
+            founderMode: isFounderOrProjectPrompt(getFirstUserMessage()),
+            intakeMode: "quick"
+          });
+        } catch (error) {
+          console.error("[whatimado] finishProfileIntake map generation failed:", error);
+          completeChatPathBuildProgress();
+          appendAssistantBubble("Something went wrong building your map — try Send again or start a new map.");
+        } finally {
           intakeInProgress = false;
-        });
+        }
         return;
       }
 
@@ -31212,7 +31236,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } else if (shouldAskName()) {
         askNameStep();
       } else {
-        void startPathGenerationAfterIntake();
+        await startPathGenerationAfterIntake();
       }
     }
 
@@ -31235,6 +31259,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
         if (profilePathIsOwnBusiness(profile)) {
           if (!profile.workMode) return askProfileBusinessSetupStep();
+          if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) {
+            return askProfileSkillsStep();
+          }
           finishProfileIntake();
           return;
         }
@@ -31499,7 +31526,66 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const fenced = response.match(/```(?:json)?\s*([\s\S]*?)```/i);
         if (fenced) parsed = extractJsonArray(fenced[1], null);
       }
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? normalizeIdeasFromAdvisor(parsed) : [];
+    }
+
+    function coerceIdeaShape(entry) {
+      if (!entry || typeof entry !== "object") return null;
+      const title = String(
+        entry.title || entry.name || entry.path || entry.headline || entry.idea || ""
+      ).trim();
+      if (!title) return null;
+      return {
+        title,
+        type: String(entry.type || entry.category || "Opportunity").trim(),
+        tagline: String(entry.tagline || entry.description || entry.summary || entry.subtitle || "").trim(),
+        why: String(entry.why || entry.reason || "").trim(),
+        cost: entry.cost != null ? String(entry.cost).trim() : "",
+        timeline: String(entry.timeline || entry.time || entry.duration || "").trim(),
+        income: String(entry.income || entry.earnings || entry.revenue || "").trim()
+      };
+    }
+
+    function normalizeIdeasFromAdvisor(ideas) {
+      return (ideas || [])
+        .map(coerceIdeaShape)
+        .filter(Boolean);
+    }
+
+    function hasValidIdeas(ideas, min = 1) {
+      return normalizeIdeasFromAdvisor(ideas).length >= min;
+    }
+
+    function ensureIdeaSet(ideas, fallback, count = 3) {
+      const valid = normalizeIdeasFromAdvisor(ideas);
+      const fallbacks = normalizeIdeasFromAdvisor(fallback);
+      const out = [];
+      const seen = new Set();
+      const pushUnique = (idea) => {
+        const key = normalizeIdeaText(idea.title);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        out.push(idea);
+      };
+      valid.forEach(pushUnique);
+      fallbacks.forEach((idea) => {
+        if (out.length >= count) return;
+        pushUnique(idea);
+      });
+      return out.slice(0, count);
+    }
+
+    function repairMapIdeasIfNeeded() {
+      const valid = normalizeIdeasFromAdvisor(state.ideas);
+      const needsRepair = !valid.length
+        || valid.length < 3
+        || valid.length !== (state.ideas || []).length
+        || (state.ideas || []).some((idea) => !String(idea?.title || "").trim());
+      if (!needsRepair) return false;
+      const targetCount = Math.max(3, valid.length || 3);
+      state.ideas = ensureIdeaSet(state.ideas, getFallbackIdeas(), targetCount);
+      state.ideaBatches = [state.ideas.length];
+      return true;
     }
 
     function filterNewIdeas(candidates, existingIdeas) {
@@ -31790,10 +31876,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           { timeoutMs: MAP_GENERATION_TIMEOUT_MS }
         );
 
-        ideas = extractJsonArray(response, fallbackIdeas);
-        ideas = sanitizeIdeasAgainstInventedContext(ideas).slice(0, 3);
-        if (!response?.trim() || !ideas.length) {
-          ideas = fallbackIdeas;
+        ideas = ensureIdeaSet(
+          sanitizeIdeasAgainstInventedContext(extractJsonArray(response, fallbackIdeas)),
+          fallbackIdeas,
+          ideaCount
+        );
+        if (!response?.trim() || !hasValidIdeas(ideas, 1)) {
+          ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
           usedFallback = true;
         } else if (
           !founderMode
@@ -31801,36 +31890,51 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           && (ideasMatchOverusedMoneyTemplates(ideas) || ideasOverlapKnownTitles(ideas, recentTitles))
         ) {
           response = await callAdvisor(
-            `${ideasPrompt(3, [...recentTitles, ...ideas.map((idea) => idea.title).filter(Boolean)])}\n\nYour last draft reused generic money-path templates or repeated prior paths. Regenerate 3 completely different strategies with new industries, titles, and first steps.`,
+            `${ideasPrompt(3, capExcludeTitles([...recentTitles, ...ideas.map((idea) => idea.title).filter(Boolean)]))}\n\nYour last draft reused generic money-path templates or repeated prior paths. Regenerate 3 completely different strategies with new industries, titles, and first steps. Each object MUST include a non-empty title and tagline.`,
             1200,
             { timeoutMs: MAP_GENERATION_TIMEOUT_MS }
           );
-          const regen = sanitizeIdeasAgainstInventedContext(extractJsonArray(response, fallbackIdeas)).slice(0, 3);
-          if (regen.length && !ideasMatchOverusedMoneyTemplates(regen) && !ideasOverlapKnownTitles(regen, recentTitles)) {
+          const regen = ensureIdeaSet(
+            sanitizeIdeasAgainstInventedContext(extractJsonArray(response, fallbackIdeas)),
+            fallbackIdeas,
+            ideaCount
+          );
+          if (
+            hasValidIdeas(regen, ideaCount)
+            && !ideasMatchOverusedMoneyTemplates(regen)
+            && !ideasOverlapKnownTitles(regen, recentTitles)
+          ) {
             ideas = regen;
-          } else if (regen.length) {
+          } else if (hasValidIdeas(regen, ideaCount) && !ideasMatchOverusedMoneyTemplates(regen)) {
             ideas = regen;
           } else {
-            ideas = fallbackIdeas;
+            ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
             usedFallback = true;
           }
         } else if (pathMode !== "direct" && !founderMode && ideasAreTooSimilar(ideas)) {
           response = await callAdvisor(
-            `${ideasPrompt(3, [...recentTitles, ...ideas.map((idea) => idea.title).filter(Boolean)])}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps. Do NOT invent partners, pilots, or projects they never mentioned.`,
+            `${ideasPrompt(3, capExcludeTitles([...recentTitles, ...ideas.map((idea) => idea.title).filter(Boolean)]))}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps. Do NOT invent partners, pilots, or projects they never mentioned. Each object MUST include a non-empty title and tagline.`,
             1200,
             { timeoutMs: MAP_GENERATION_TIMEOUT_MS }
           );
-          const regen = sanitizeIdeasAgainstInventedContext(extractJsonArray(response, ideas)).slice(0, 3);
-          if (regen.length) ideas = regen;
-          else usedFallback = true;
+          const regen = ensureIdeaSet(
+            sanitizeIdeasAgainstInventedContext(extractJsonArray(response, ideas)),
+            fallbackIdeas,
+            ideaCount
+          );
+          if (hasValidIdeas(regen, ideaCount)) ideas = regen;
+          else {
+            ideas = ensureIdeaSet(ideas, fallbackIdeas, ideaCount);
+            usedFallback = true;
+          }
         }
-        if (!ideas.length) {
-          ideas = fallbackIdeas;
+        if (!hasValidIdeas(ideas, 1)) {
+          ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
           usedFallback = true;
         }
       } catch (error) {
         console.error("[whatimado] generateAndShowMap failed:", error);
-        ideas = fallbackIdeas;
+        ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
         usedFallback = true;
         trackEvent("map_generation_failed", {
           error: lastAdvisorError || error?.message || "unknown",
@@ -31840,44 +31944,57 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         completeChatPathBuildProgress();
       }
 
-      state.ideas = ideas;
-      state.ideaBatches = [ideas.length];
-      const defaultClosing = pathMode === "direct"
-        ? (founderMode
-          ? "Here are three focused directions for whatimado.com — open the one that fits you best."
-          : "Here are three paths to choose from — open the one that fits you best for your full step-by-step roadmap.")
-        : (founderMode
-          ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
-          : "Here are your paths. Tap any opportunity to see your full roadmap.");
-      const closing = usedFallback && lastAdvisorError
-        ? `Here are starter paths to get you moving. (${lastAdvisorError})`
-        : defaultClosing;
-      if (!resolveTyping(closing)) appendAssistantBubble(closing);
-      state.history.push({ role: "assistant", content: closing });
-      state.step = INTAKE_STEP_MAP;
-      updateSaveButtonVisibility();
-      schedulePersist();
-      setTimeout(() => {
-        state.selectedPathIndexes = [];
+      try {
+        state.ideas = ensureIdeaSet(ideas, fallbackIdeas, ideaCount);
+        state.ideaBatches = [state.ideas.length];
+        const defaultClosing = pathMode === "direct"
+          ? (founderMode
+            ? "Here are three focused directions for whatimado.com — open the one that fits you best."
+            : "Here are three paths to choose from — open the one that fits you best for your full step-by-step roadmap.")
+          : (founderMode
+            ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
+            : "Here are your paths. Tap any opportunity to see your full roadmap.");
+        const closing = usedFallback && lastAdvisorError
+          ? `Here are starter paths to get you moving. (${lastAdvisorError})`
+          : defaultClosing;
+        if (!resolveTyping(closing)) appendAssistantBubble(closing);
+        state.history.push({ role: "assistant", content: closing });
+        state.step = INTAKE_STEP_MAP;
+        updateSaveButtonVisibility();
+        schedulePersist();
+        setTimeout(() => {
+          state.selectedPathIndexes = [];
+          buildOpportunityMap(state.ideas);
+          updateMapPathModeCopy();
+          updateMapsNav();
+          syncActiveMapIntoLibrary();
+          ensureCategoryForCurrentMap();
+          renderSavedMapsHome();
+          renderSidebarRoadmaps();
+          updateMapContextDisplays();
+          trackEvent("map_generated", {
+            ideas_count: state.ideas.length,
+            founder_mode: founderMode,
+            intake_mode: options.intakeMode || state.intakeMode || "standard",
+            path_mode: pathMode,
+            saved_maps_count: state.savedMaps.length,
+            used_fallback: usedFallback
+          });
+          updateMapAuxiliaryPanels();
+          showScreen("map");
+        }, 550);
+      } catch (error) {
+        console.error("[whatimado] generateAndShowMap UI failed:", error);
+        state.ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
+        state.ideaBatches = [state.ideas.length];
+        const rescueClosing = "Here are starter paths to get you moving.";
+        appendAssistantBubble(rescueClosing);
+        state.history.push({ role: "assistant", content: rescueClosing });
+        state.step = INTAKE_STEP_MAP;
         buildOpportunityMap(state.ideas);
-        updateMapPathModeCopy();
-        updateMapsNav();
-        syncActiveMapIntoLibrary();
-        ensureCategoryForCurrentMap();
-        renderSavedMapsHome();
-        renderSidebarRoadmaps();
-        updateMapContextDisplays();
-        trackEvent("map_generated", {
-          ideas_count: state.ideas.length,
-          founder_mode: founderMode,
-          intake_mode: options.intakeMode || state.intakeMode || "standard",
-          path_mode: pathMode,
-          saved_maps_count: state.savedMaps.length,
-          used_fallback: usedFallback
-        });
-        updateMapAuxiliaryPanels();
         showScreen("map");
-      }, 550);
+        schedulePersist();
+      }
     }
 
     function updateMapAuxiliaryPanels() {
@@ -31973,8 +32090,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function buildIdeasPrompt(summary, count, excludeTitles = []) {
-      const excludeBlock = excludeTitles.length
-        ? `\n\nDO NOT repeat or closely resemble these ideas already shown:\n${excludeTitles.map((title) => `- ${title}`).join("\n")}\n\nGenerate exactly ${count} completely NEW and different ideas that are SPECIFIC to this person`
+      const cappedExclude = capExcludeTitles(excludeTitles);
+      const excludeBlock = cappedExclude.length
+        ? `\n\nDO NOT repeat or closely resemble these ideas already shown:\n${cappedExclude.map((title) => `- ${title}`).join("\n")}\n\nGenerate exactly ${count} completely NEW and different ideas that are SPECIFIC to this person`
         : `\n\nGenerate exactly ${count} ideas that are SPECIFIC to this person`;
       const hasStatedSkills = currentIntakeHasStatedSkills();
       const resourceHint = isGroundedPractitioner() && hasStatedSkills
@@ -33613,6 +33731,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function buildOpportunityMap(ideas, options = {}) {
+      if (!hasValidIdeas(ideas, 1)) {
+        ideas = ensureIdeaSet(ideas, getFallbackIdeas(), 3);
+      } else {
+        ideas = normalizeIdeasFromAdvisor(ideas);
+        if (ideas.length < 3) ideas = ensureIdeaSet(ideas, getFallbackIdeas(), 3);
+      }
+      if (state.ideas !== ideas) {
+        state.ideas = ideas;
+        state.ideaBatches = [ideas.length];
+      }
       const nodes = $("#svg-nodes");
       const connections = $("#svg-connections");
       const labels = $("#opp-labels");
