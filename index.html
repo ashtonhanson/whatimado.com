@@ -17422,6 +17422,16 @@
         return ["interview_questions", "research_checklist"];
       }
 
+      if (isDigitalProductPath(state.currentIdea) || isDigitalProductTask(normalized)) {
+        const blob = getTaskContentBlob(normalized);
+        const ids = [];
+        if (/\b(notion|build|page|dashboard|section|workspace|template)\b/.test(blob)) ids.push("checklist");
+        if (/\b(gumroad|etsy|listing|checkout|stripe|paypal|price|screenshot)\b/.test(blob)) ids.push("checklist");
+        if (/\b(post|reddit|facebook|community|launch|indie|founder)\b/.test(blob)) ids.push("social_post");
+        if (/\b(outline|bullet|what they get|description)\b/.test(blob)) ids.push("checklist");
+        return ids.length ? ids : ["checklist"];
+      }
+
       const ids = [];
       getMentionedDraftSuggestionIds(normalized).forEach((id) => ids.push(id));
       const primary = getWritingDeliverableType(normalized);
@@ -17436,7 +17446,7 @@
       if (/\bflyer|poster|handout\b/.test(blob)) ids.push("flyer");
       if (/\bpresentation|slide deck|google slides\b/.test(blob)) ids.push("presentation");
       if (isFounderStoryTask(normalized)) ids.push("founder_story");
-      if (getFlatTaskResources(normalized).length && !ids.includes("outreach_email")) {
+      if (getFlatTaskResources(normalized).length && !ids.includes("outreach_email") && !isDigitalProductPath(state.currentIdea)) {
         ids.push("outreach_email", "phone_script", "contact_tracker");
       }
       if (isOrgListTask(normalized) && !ids.includes("comparison_sheet")) {
@@ -19692,6 +19702,42 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || (/\b(self[- ]?employ|self_employment)\b/.test(String(idea?.type || "").toLowerCase()) && /\b(sell|digital|online|product|template)\b/.test(blob));
     }
 
+    function isDigitalProductPath(idea = state.currentIdea) {
+      return isIdeaOnlineBusinessPath(idea) || getPathArchetype(idea) === "online_business";
+    }
+
+    function getDigitalProductPlan(idea = state.currentIdea) {
+      const title = String(idea?.title || "").trim() || "your digital product";
+      const tagline = String(idea?.tagline || "").trim();
+      const blob = `${title} ${tagline} ${idea?.why || ""}`;
+      const priceMatch = blob.match(/\$(\d+(?:\.\d+)?)/);
+      const price = priceMatch ? `$${priceMatch[1]}` : "$5";
+      let tool = "Notion";
+      if (/\b(canva|pdf|checklist pdf)\b/i.test(blob)) tool = "Canva";
+      else if (/\b(google sheets?|spreadsheet|excel)\b/i.test(blob)) tool = "Google Sheets";
+      let channel = "Gumroad";
+      if (/\betsy\b/i.test(blob)) channel = "Etsy";
+      else if (/\bshopify\b/i.test(blob)) channel = "Shopify";
+      let audience = "people who need this";
+      if (/\bsolopreneur/i.test(blob)) audience = "solopreneurs running early pilots";
+      else if (/\bfreelanc/i.test(blob)) audience = "freelancers";
+      else if (/\bfor\s+([^.—–]+)/i.test(blob)) audience = blob.match(/\bfor\s+([^.—–]+)/i)[1].trim().slice(0, 72);
+      const productName = title.replace(/^sell\s+(a\s+)?/i, "").trim() || title;
+      return { productName, price, tool, channel, audience, title };
+    }
+
+    function isDigitalProductTask(normalized, idea = state.currentIdea) {
+      if (isDigitalProductPath(idea)) return true;
+      const blob = getTaskContentBlob(normalized);
+      return /\b(gumroad|etsy|notion|digital product|template|checkout|listing|screenshot|pdf|stripe|shopify)\b/i.test(blob);
+    }
+
+    function isGenericProductPickCopy(text, idea = state.currentIdea) {
+      const copy = String(text || "").trim();
+      if (!copy || !isDigitalProductPath(idea)) return false;
+      return /\b(choose one specific thing to sell|pick one product from this list|not a vague business idea|pick one product for)\b/i.test(copy);
+    }
+
     function userIsBusinessOwner(idea = state.currentIdea) {
       if (isIdeaEmploymentPath(idea)) return false;
       const profile = normalizeUserProfile(state.userProfile);
@@ -19734,6 +19780,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const templates = buildStandardFallbackTemplates();
       if (isGroundedPractitioner(idea)) {
         return personalizeFallbackStages(templates.groundedPractitioner, idea);
+      }
+      if (isDigitalProductPath(idea)) {
+        return personalizeFallbackStages(templates.online_business, idea);
       }
       return personalizeFallbackStages(templates.business, idea);
     }
@@ -19816,8 +19865,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Vets, pet stores, and local salons often refer grooming clients — one good relationship can fill your calendar faster than ads.";
       }
 
+      if (isDigitalProductPath(idea) || isDigitalProductTask(normalized, idea)) {
+        const plan = getDigitalProductPlan(idea);
+        if (/\b(notion|build|page|dashboard|section|workspace)\b/.test(blob)) {
+          return `You're building "${plan.productName}" in ${plan.tool} — this step adds the actual pages and trackers buyers will use.`;
+        }
+        if (/\b(gumroad|etsy|listing|checkout|stripe|paypal|payment|screenshot)\b/.test(blob)) {
+          return `People can't buy until your ${plan.channel} listing is live with title, ${plan.price} price, and clear screenshots.`;
+        }
+        if (/\b(post|reddit|community|launch|share|indie|founder)\b/.test(blob)) {
+          return `First sales for ${plan.productName} usually come from one community where ${plan.audience} already hang out.`;
+        }
+        if (/\b(outline|bullet|section|offer|description|who buys)\b/.test(blob)) {
+          return `You already chose "${plan.productName}" — this step spells out exactly what ${plan.audience} get for ${plan.price}.`;
+        }
+        return `This step moves "${plan.productName}" closer to a paid ${plan.channel} listing you can share this week.`;
+      }
+
       const stageDesc = String(stage.desc || "").trim();
-      if (stageDesc.length > 28 && stageDesc.length <= 200) {
+      if (!isGenericProductPickCopy(stageDesc, idea) && stageDesc.length > 28 && stageDesc.length <= 200) {
         const firstSentence = stageDesc.split(/(?<=[.!?])\s+/)[0]?.trim();
         if (firstSentence && firstSentence.length > 20) return firstSentence;
       }
@@ -19826,7 +19892,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getTaskContextNote(normalized, stage = {}, idea = state.currentIdea) {
       const existing = humanizeTaskText(sanitizeMentorFieldText(normalized.why || "", normalized));
-      if (existing && !isGenericMentorCopy(existing, normalized) && !isTaskRestatement(existing, normalized)) {
+      if (existing
+        && !isGenericMentorCopy(existing, normalized)
+        && !isTaskRestatement(existing, normalized)
+        && !isGenericProductPickCopy(existing, idea)) {
         return existing;
       }
       return inferTaskContextNote(normalized, stage, idea);
@@ -20467,7 +20536,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = getTaskContentBlob(normalized);
       const mentionedDrafts = getMentionedDraftSuggestionIds(normalized);
 
-      if (mentionedDrafts.includes("contact_tracker")) {
+      if ((isDigitalProductPath(state.currentIdea) || isDigitalProductTask(normalized))
+        && text
+        && !/\b(call each business|visit, who you spoke|contact tracking spreadsheet|log each business)\b/i.test(text)) {
+        return personalizeTaskActionText(humanizeTaskText(text), state.currentIdea);
+      }
+
+      if (mentionedDrafts.includes("contact_tracker") && !isDigitalProductPath(state.currentIdea) && !isDigitalProductTask(normalized)) {
         return "Open the Contact Tracking Spreadsheet below. Log each business you call or visit, who you spoke with, and whether they said yes, no, or maybe.";
       }
       if (mentionedDrafts.includes("comparison_sheet")) {
@@ -21984,18 +22059,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (isIdeaOnlineBusinessPath(idea) || getPathSituationType(idea) === "online_business") {
+        const plan = getDigitalProductPlan(idea);
         return (
           `\nCONCRETE DIGITAL PRODUCT RULES for "${idea.title}":\n` +
-          `- Pick ONE specific product in the first task — not a vague "write an offer". Examples (tailor to their skills):\n` +
-          `  • Notion budget tracker for freelancers ($5 on Gumroad)\n` +
-          `  • Airbnb host cleaning checklist PDF ($4)\n` +
-          `  • Resume + cover letter pack for nurses or teachers ($9)\n` +
-          `  • Wedding planning timeline spreadsheet ($7)\n` +
-          `  • Meal prep planner for busy parents ($5)\n` +
-          `  • LinkedIn headline swipe file for career changers ($5)\n` +
-          `- Say WHICH tool: Canva for PDFs, Notion for templates, Google Sheets + Gumroad for spreadsheets.\n` +
-          `- Name specific communities (relevant subreddits, Facebook groups) — not "post everywhere".\n` +
-          `- mentorHelp should include a draft product title, price, and one-paragraph description they can paste.\n`
+          `- The product is ALREADY chosen: "${plan.productName}" for ${plan.audience} at ${plan.price} on ${plan.channel}. Do NOT ask them to "pick a product" or "choose one specific thing to sell" again.\n` +
+          `- Every task must say WHAT to build and HOW using ${plan.tool}: name the pages/sections, fields, screenshots, or listing fields.\n` +
+          `- Example task: "In Notion, create 4 pages for ${plan.productName}: Pilot Tracker (status column), Contact Log, Weekly Checklist, Instructions — add column headers only."\n` +
+          `- Example task: "On ${plan.channel}, create listing titled '${plan.productName}' at ${plan.price} with 3 screenshots and a 2-sentence description for ${plan.audience}."\n` +
+          `- NEVER use contact-tracking spreadsheets, phone scripts, or local business outreach — this is a digital download, not a service business.\n` +
+          `- mission, text, why, and outcome must all use DIFFERENT wording — never repeat the same sentence.\n` +
+          `- why must explain why THIS build/listing/post step matters — never copy the stage description verbatim.\n` +
+          `- mentorHelp should include a paste-ready listing description or section outline for "${plan.productName}".\n`
         );
       }
 
@@ -22054,12 +22128,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         },
         online_business: {
           good: [
-            `"Pick one product/channel for \\"${title}\\""`,
-            `"Set up store + payment for \\"${title}\\""`,
-            `"First 10 sales or signups for \\"${title}\\""`,
-            `"Double what already brought buyers"`
+            `"Outline pages for \\"${title}\\""`,
+            `"Build v1 in Notion/Canva for \\"${title}\\""`,
+            `"List \\"${title}\\" on Gumroad at your price"`,
+            `"First 10 sales from named communities"`
           ],
-          bad: ["Launch first test", "Gather feedback", "Build momentum"]
+          bad: ["Pick one product for", "Choose ONE specific thing to sell", "Launch first test", "Gather feedback"]
         },
         reentry: {
           good: [
@@ -23684,43 +23758,90 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ],
         online_business: [
           {
-            label: "Pick one product for \"{title}\"",
-            desc: "Choose ONE specific thing to sell — not a vague business idea.",
+            label: "Outline \"{title}\"",
+            desc: "Spell out what buyers get in this product before you build.",
             tasks: [
-              "Pick ONE product from this list (or substitute your own): Notion budget tracker ($5), Airbnb cleaning checklist PDF ($4), resume pack for nurses ($9), meal prep planner ($5), or wedding timeline spreadsheet ($7) — write the title and who buys it",
-              "Choose ONE sales channel (Gumroad, Etsy, or Shopify) — create the account and connect Stripe or PayPal today",
-              "Outline the product in 5 bullet points: what they get, how long it takes you to make, price, and delivery format (PDF, Notion link, spreadsheet)"
+              "List 5 pages or sections your product needs (tracker, checklist, instructions, etc.) — one sentence each saying what the buyer can do there",
+              "Draft your sales listing: product title, price, 2-sentence description, and who it's for",
+              "Open your build tool (Notion, Canva, or Google Sheets) and create empty pages with those section names"
             ]
           },
           {
-            label: "Build + list \"{title}\"",
-            desc: "Create the product and make it buyable in under a day.",
+            label: "Build \"{title}\"",
+            desc: "Create a usable v1 buyers can actually open and use.",
             tasks: [
-              "Build the product using Canva (PDF), Notion (template), or Google Sheets — finish a usable v1 in 2-3 hours",
-              "Create a Gumroad or Etsy listing with title, 3 screenshots, price ($3-9), and a 2-sentence description",
-              "Run a $1 test purchase yourself to confirm checkout and delivery work"
+              "Build each section you listed — add real column headers, checkboxes, or placeholder rows (finish a usable v1 in 2-3 hours)",
+              "Export or screenshot 3 views of the finished product for your listing",
+              "Write a 3-bullet 'How to use this' section at the top of the product"
             ]
           },
           {
-            label: "First 10 sales for \"{title}\"",
-            desc: "Prove strangers will pay, not just friends.",
+            label: "List \"{title}\" for sale",
+            desc: "Make it buyable in under an hour.",
             tasks: [
-              "Post in 3 specific communities where buyers hang out (name the subreddit, Facebook group, or hashtag) — share a helpful preview, not a hard sell",
+              "Create a Gumroad or Etsy listing with title, price, 3 screenshots, and your 2-sentence description",
+              "Connect Stripe or PayPal and run a $1 test purchase yourself",
+              "Set delivery to instant download or Notion duplicate link — test that buyers receive it"
+            ]
+          },
+          {
+            label: "Get first sales for \"{title}\"",
+            desc: "Put it in front of people who would actually buy.",
+            tasks: [
+              "Post in 3 specific communities where your buyers hang out (name the subreddit, Facebook group, or hashtag) — share a helpful preview, not a hard sell",
               "Offer a launch discount for the first 10 buyers — track which post brought each sale",
               "After each sale, ask: what almost stopped you from buying?"
-            ]
-          },
-          {
-            label: "Double what brought buyers",
-            desc: "Scale the channel that already worked.",
-            tasks: [
-              "Identify the top traffic source from your first 10 sales — plan 14 days of content or outreach there only",
-              "Improve one thing buyers asked about (photos, description, speed, packaging)",
-              "Set a 30-day revenue target for \"{title}\" and the one weekly habit that protects your time"
             ]
           }
         ]
       };
+    }
+
+    function personalizeOnlineBusinessFallbackStages(stages, idea, replaceTokens) {
+      const plan = getDigitalProductPlan(idea);
+      const tailored = [
+        {
+          label: `Outline "${plan.productName}"`,
+          desc: `Spell out what ${plan.audience} get in ${plan.productName} before you build.`,
+          tasks: [
+            `List 5 ${plan.tool} pages/sections for ${plan.productName} (e.g. pilot tracker, contact log, weekly checklist) — one sentence each for what the buyer can do there`,
+            `Draft your ${plan.channel} listing: title "${plan.productName}", price ${plan.price}, 2-sentence description for ${plan.audience}`,
+            `Open ${plan.tool}, create a workspace named "${plan.productName}", and add empty pages with those section names`
+          ]
+        },
+        {
+          label: `Build ${plan.productName}`,
+          desc: `Create a usable v1 in ${plan.tool} that ${plan.audience} can open today.`,
+          tasks: [
+            `Fill in each section of ${plan.productName} — add column headers, checkboxes, or sample rows (aim for 2-3 hours to finish v1)`,
+            `Take 3 screenshots showing the most useful views of ${plan.productName}`,
+            `Add a "How to use this" box at the top with 3 numbered steps for ${plan.audience}`
+          ]
+        },
+        {
+          label: `List on ${plan.channel}`,
+          desc: `Make ${plan.productName} buyable at ${plan.price}.`,
+          tasks: [
+            `Create a ${plan.channel} listing for "${plan.productName}" at ${plan.price} — upload your 3 screenshots and paste your description`,
+            `Connect Stripe or PayPal on ${plan.channel} and run a $1 test purchase`,
+            `Set delivery to instant download or duplicate-link — confirm the test buyer receives ${plan.productName}`
+          ]
+        },
+        {
+          label: `First sales for ${plan.productName}`,
+          desc: `Put ${plan.productName} in front of ${plan.audience}.`,
+          tasks: [
+            `Post in 3 communities where ${plan.audience} hang out (name each subreddit, Facebook group, or hashtag) — share one useful preview screenshot`,
+            `Offer a launch code for the first 10 buyers at ${plan.price} — note which post brought each sale`,
+            `DM 3 people who liked your preview and ask if ${plan.productName} solves a problem they mentioned`
+          ]
+        }
+      ];
+      return tailored.map((stage) => ({
+        label: replaceTokens(stage.label),
+        desc: personalizeTaskActionText(replaceTokens(stage.desc), idea),
+        tasks: stage.tasks.map((task) => personalizeTaskActionText(replaceTokens(task), idea))
+      }));
     }
 
     function personalizeFallbackStages(stages, idea) {
@@ -23741,6 +23862,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .replaceAll("{proofType}", profile.proofType)
         .replaceAll("{outreachScript}", profile.outreachScript)
         .replaceAll("{seoHint}", profile.seoHint);
+
+      if (isDigitalProductPath(idea)) {
+        return personalizeOnlineBusinessFallbackStages(stages, idea, replaceTokens);
+      }
 
       return stages.map((stage) => ({
         label: replaceTokens(stage.label),
@@ -24071,7 +24196,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `- script + talkingPoints + followUp required for reaching-out missions. resources.* = 3-8 real orgs with URLs.\n` +
         `- NEVER assign homework: research, find, look up, write from scratch.\n` +
         `- Reference their actual situation (skills, location, constraints, goals).\n` +
-        `- Do NOT mention whatimado.com unless this is a founder growth path.\n\n` +
+        `- Do NOT mention whatimado.com unless this is a founder growth path.\n` +
+        `- NEVER repeat the same sentence in mission, text, why, and outcome — each field must add new detail.\n` +
+        `- why must NOT copy the stage description verbatim.\n` +
+        `- For digital products (Notion templates, PDFs, Gumroad listings): tasks must name the product, tool (Notion/Canva/Gumroad), and concrete build steps — NOT contact spreadsheets or local business outreach.\n\n` +
         `BAD MISSIONS: "Validate local demand" / "Identify organizations aligned with your mission" / "Execute outreach framework"\n` +
         `GOOD MISSIONS: "Find out if people actually want this before you spend more" / "Find local orgs that already help your kind of person" / mission + contacts + draft email + follow-up — user only reviews and sends.\n\n` +
         getRoadmapJsonInstruction({ founderMode: false, context, phase })
