@@ -2631,8 +2631,8 @@
       width: var(--orb-size, 18px);
       height: var(--orb-size, 18px);
       border-radius: 50%;
-      background: radial-gradient(circle at 32% 30%, color-mix(in srgb, var(--orb-color, #d1d5db) 58%, transparent) 0%, color-mix(in srgb, var(--orb-color, #d1d5db) 34%, transparent) 55%, color-mix(in srgb, var(--orb-color, #d1d5db) 16%, transparent) 100%);
-      box-shadow: 0 0 10px color-mix(in srgb, var(--orb-color, #d1d5db) 46%, transparent), 0 0 18px color-mix(in srgb, var(--orb-color, #d1d5db) 18%, transparent);
+      background: radial-gradient(circle at 32% 30%, color-mix(in srgb, var(--orb-color, #cfd4db) 68%, transparent) 0%, color-mix(in srgb, var(--orb-color, #cfd4db) 46%, transparent) 55%, color-mix(in srgb, var(--orb-color, #cfd4db) 24%, transparent) 100%);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--orb-color, #cfd4db) 58%, transparent), 0 0 22px color-mix(in srgb, var(--orb-color, #cfd4db) 24%, transparent);
       opacity: 0;
       will-change: transform, opacity;
       animation-duration: var(--orb-duration, 60s);
@@ -2657,7 +2657,7 @@
 
       12%,
       88% {
-        opacity: var(--orb-opacity, .3);
+        opacity: var(--orb-opacity, .38);
       }
 
       100% {
@@ -2674,7 +2674,7 @@
 
       12%,
       88% {
-        opacity: var(--orb-opacity, .3);
+        opacity: var(--orb-opacity, .38);
       }
 
       100% {
@@ -2685,7 +2685,7 @@
 
     html[data-color-scheme="adult"] #mario-clouds.is-static .ambient-orb {
       animation: none !important;
-      opacity: var(--orb-opacity, .28) !important;
+      opacity: var(--orb-opacity, .34) !important;
       transform: translate3d(var(--orb-static-x, 20vw), var(--orb-static-y, 0), 0) !important;
     }
 
@@ -37035,16 +37035,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const delay = -(Math.random() * duration);
       const sizeRoll = Math.random();
       const size = sizeRoll < 0.45
-        ? 6 + Math.random() * 10
+        ? 9 + Math.random() * 12
         : sizeRoll < 0.82
-          ? 14 + Math.random() * 16
-          : 28 + Math.random() * 22;
+          ? 18 + Math.random() * 18
+          : 34 + Math.random() * 26;
       const top = 6 + (index * 8 + Math.random() * 14) % 84;
-      const opacity = 0.24 + Math.random() * 0.14;
+      const opacity = 0.32 + Math.random() * 0.16;
       const driftY = `${(Math.random() - 0.5) * 40}px`;
       const staticX = `${4 + (index * 9 + Math.random() * 7) % 84}vw`;
       const staticY = `${(Math.random() - 0.5) * 30}px`;
-      const palette = ["#d1d5db", "#b3ddf3", "#f6d9a2", "#b6ebc9"];
+      const palette = ["#d1d5db", "#cdd3da", "#d6dde4", "#e2e8ef"];
       const color = palette[Math.floor(Math.random() * palette.length)];
 
       orb.dataset.direction = direction;
