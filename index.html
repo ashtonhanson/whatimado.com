@@ -6841,6 +6841,7 @@
       border-color: var(--plan-card-border);
       box-shadow: var(--plan-card-shadow);
       transition: transform .18s ease, border-color .18s ease, background .18s ease;
+      cursor: pointer;
     }
 
     .opp-card-inner {
@@ -27781,9 +27782,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ideaIndex = state.ideas.findIndex((entry) => entry.title === item.ideaTitle);
         idea = state.ideas[ideaIndex];
       }
-      if (!idea) return;
+      if (!idea) {
+        flashSaveToast("That roadmap is out of date — open it from your possibility map.");
+        return;
+      }
 
-      await viewRoadmap(idea, ideaIndex, { reopen: true });
+      try {
+        await viewRoadmap(idea, ideaIndex, { reopen: true });
+      } catch (error) {
+        console.error("[whatimado] openRoadmapFromSidebar failed:", error);
+        flashSaveToast("Couldn't open that roadmap — try again.");
+        return;
+      }
       renderSidebarRoadmaps();
     }
 
@@ -32786,23 +32796,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return generateRoadmapStagesFromAi(idea, ideaIndex, options, {
         onFirstMissionReady() {},
         onFullStagesReady(fullStages) {
-          if (state.flexibleFirstMissionPicked || state.allRoadmaps?.[state.roadmapKey]?.flexibleFirstMissionPicked) return;
+          if (state.roadmapKey !== roadmapKey) return;
+          if (state.flexibleFirstMissionPicked || state.allRoadmaps?.[roadmapKey]?.flexibleFirstMissionPicked) return;
           if (!fullStages?.length || !shouldOfferFirstMissionPicker()) return;
           state.flexiblePendingFullStages = fullStages;
-          if (state.roadmapKey) {
-            state.allRoadmaps[state.roadmapKey] = {
-              ...(state.allRoadmaps[state.roadmapKey] || {}),
-              idea,
-              stages: fullStages,
-              awaitingFirstMissionPick: true,
-              flexibleFirstMissionPicked: false
-            };
-            schedulePersist();
-          }
+          state.allRoadmaps[roadmapKey] = {
+            ...(state.allRoadmaps[roadmapKey] || {}),
+            idea,
+            stages: fullStages,
+            awaitingFirstMissionPick: true,
+            flexibleFirstMissionPicked: false
+          };
+          schedulePersist();
         },
         onRefining() {},
         onRefinementComplete(stages) {
-          if (state.flexibleFirstMissionPicked || state.allRoadmaps?.[state.roadmapKey]?.flexibleFirstMissionPicked) return;
+          if (state.roadmapKey !== roadmapKey) return;
+          if (state.flexibleFirstMissionPicked || state.allRoadmaps?.[roadmapKey]?.flexibleFirstMissionPicked) return;
           if (!stages?.length || !shouldOfferFirstMissionPicker()) return;
           state.flexiblePendingFullStages = stages;
           schedulePersist();
@@ -33273,6 +33283,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    async function openPathRoadmap(index, options = {}) {
+      const idea = state.ideas?.[index];
+      if (!idea?.title) {
+        console.warn("[whatimado] openPathRoadmap: missing idea at index", index);
+        flashSaveToast("That path couldn't be opened — try refreshing your map.");
+        return;
+      }
+      const roadmapKey = slugify(idea.title);
+      try {
+        await viewRoadmap(idea, index, {
+          reopen: options.reopen ?? (hasRoadmapProgress(idea.title) || Boolean(state.allRoadmaps[roadmapKey])),
+          ...options
+        });
+      } catch (error) {
+        console.error("[whatimado] openPathRoadmap failed:", error);
+        flashSaveToast("Couldn't open that roadmap — try again.");
+      }
+    }
+
     function createOppCardElement(idea, index, color) {
       const card = document.createElement("article");
       card.className = "opp-card";
@@ -33322,14 +33351,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         void removeRoadmapForPath(idea.title, { ideaIndex: index });
       });
       const openZone = card.querySelector(".opp-card-open-zone");
-      const openRoadmap = () => viewRoadmap(idea, index, {
-        reopen: hasRoadmapProgress(idea.title) || Boolean(state.allRoadmaps[slugify(idea.title)])
-      });
-      openZone?.addEventListener("click", openRoadmap);
+      const openRoadmap = (event) => {
+        if (event?.target?.closest?.(".opp-card-discuss-btn, .opp-card-remove-roadmap-btn, .opp-card-save, .opp-card-save-input")) {
+          return;
+        }
+        void openPathRoadmap(index);
+      };
+      card.addEventListener("click", openRoadmap);
       openZone?.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          openRoadmap();
+          void openPathRoadmap(index);
         }
       });
       bindMapPathHover(card, index);
@@ -34294,17 +34326,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const loc = getUserLocation();
       if (loc && pathNeedsLocalResources(idea) && roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
-        const enriched = applyLocalResourceFallback(state.roadmapStages, loc);
-        if (roadmapHasRichLocalData(enriched, idea)) {
-          state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(enriched), idea);
-          if (state.roadmapKey) {
-            state.allRoadmaps[state.roadmapKey] = {
-              ...(state.allRoadmaps[state.roadmapKey] || {}),
-              stages: state.roadmapStages,
-              localEnriched: true,
-              localEnrichFailed: false
-            };
+        try {
+          const enriched = applyLocalResourceFallback(state.roadmapStages, loc);
+          if (roadmapHasRichLocalData(enriched, idea)) {
+            state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(enriched), idea);
+            if (state.roadmapKey) {
+              state.allRoadmaps[state.roadmapKey] = {
+                ...(state.allRoadmaps[state.roadmapKey] || {}),
+                stages: state.roadmapStages,
+                localEnriched: true,
+                localEnrichFailed: false
+              };
+            }
           }
+        } catch (error) {
+          console.warn("[whatimado] prepareFirstMissionForReveal local enrich failed:", error?.message || error);
         }
       }
 
@@ -34528,6 +34564,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function viewRoadmap(idea, ideaIndex, options = {}) {
+      if (!idea?.title) {
+        console.warn("[whatimado] viewRoadmap called without a valid idea");
+        flashSaveToast("That path couldn't be opened — try refreshing your map.");
+        return;
+      }
       cancelDeferredRoadmapPhaseReveal();
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
@@ -34573,15 +34614,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#roadmap-type").textContent = idea.type || "Roadmap";
       $("#roadmap-title").textContent = humanizeTaskText(idea.title);
       renderRoadmapPotentialOutcome(idea);
+      showScreen("roadmap");
 
       const cached = !options.force && !getMapRemovedRoadmapKeys(state.activeMapId).has(state.roadmapKey)
         ? state.allRoadmaps[state.roadmapKey]
         : null;
 
-      if (cachedEarly?.flexibleFirstMissionPicked && !roadmapHasVisibleMissionCards(cachedEarly?.stages)) {
-        syncAndRepairPickedRoadmap(idea, state.roadmapKey);
-        if (!roadmapHasVisibleMissionCards(state.roadmapStages)) {
-          repairRoadmapMissionsNow(idea, cachedEarly?.firstMissionBranchChoice || null);
+      try {
+        if (cachedEarly?.flexibleFirstMissionPicked && !roadmapHasVisibleMissionCards(cachedEarly?.stages)) {
+          syncAndRepairPickedRoadmap(idea, state.roadmapKey);
+          if (!roadmapHasVisibleMissionCards(state.roadmapStages)) {
+            repairRoadmapMissionsNow(idea, cachedEarly?.firstMissionBranchChoice || null);
+          }
+        }
+      } catch (error) {
+        console.warn("[whatimado] viewRoadmap prep repair failed:", error?.message || error);
+        if (!state.roadmapStages?.length) {
+          state.flexibleFirstMissionPicked = false;
+          clearFlexibleFirstMissionPickedFlag();
         }
       }
 
@@ -34589,16 +34639,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || roadmapHasVisibleMissionCards(state.flexiblePendingFullStages)
         || roadmapHasVisibleMissionCards(state.roadmapStages);
 
+      try {
+        if (!cachedHasMissions && roadmapWasPreviouslyStarted(idea, cached)) {
+          if (cached?.flexibleFirstMissionPicked || cached?.firstMissionBranchChoice?.title) {
+            syncAndRepairPickedRoadmap(idea, state.roadmapKey);
+          } else {
+            clearFlexibleFirstMissionPickedFlag();
+          }
+        }
+      } catch (error) {
+        console.warn("[whatimado] viewRoadmap stale-state repair failed:", error?.message || error);
+      }
+
       syncFlexibleFirstMissionStateFromRoadmap();
       const wantsFirstMissionPicker = shouldOfferFirstMissionPicker();
-
-      if (!cachedHasMissions && roadmapWasPreviouslyStarted(idea, cached)) {
-        if (cached?.flexibleFirstMissionPicked || cached?.firstMissionBranchChoice?.title) {
-          syncAndRepairPickedRoadmap(idea, state.roadmapKey);
-        } else {
-          clearFlexibleFirstMissionPickedFlag();
-        }
-      }
 
       if (directPathShouldInstantOpen(idea, cached) && !options.force && !cachedHasMissions) {
         openDirectPathInstantly(idea, ideaIndex, options);
