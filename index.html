@@ -2631,8 +2631,8 @@
       width: var(--orb-size, 18px);
       height: var(--orb-size, 18px);
       border-radius: 50%;
-      background: radial-gradient(circle at 32% 30%, color-mix(in srgb, var(--orb-color, #cfd4db) 68%, transparent) 0%, color-mix(in srgb, var(--orb-color, #cfd4db) 46%, transparent) 55%, color-mix(in srgb, var(--orb-color, #cfd4db) 24%, transparent) 100%);
-      box-shadow: 0 0 12px color-mix(in srgb, var(--orb-color, #cfd4db) 58%, transparent), 0 0 22px color-mix(in srgb, var(--orb-color, #cfd4db) 24%, transparent);
+      background: radial-gradient(circle at 32% 30%, color-mix(in srgb, var(--orb-color, #bcc4ce) 86%, transparent) 0%, color-mix(in srgb, var(--orb-color, #bcc4ce) 64%, transparent) 55%, color-mix(in srgb, var(--orb-color, #bcc4ce) 34%, transparent) 100%);
+      box-shadow: 0 0 14px color-mix(in srgb, var(--orb-color, #bcc4ce) 78%, transparent), 0 0 26px color-mix(in srgb, var(--orb-color, #bcc4ce) 38%, transparent);
       opacity: 0;
       will-change: transform, opacity;
       animation-duration: var(--orb-duration, 60s);
@@ -2657,7 +2657,7 @@
 
       12%,
       88% {
-        opacity: var(--orb-opacity, .38);
+        opacity: var(--orb-opacity, .5);
       }
 
       100% {
@@ -2674,7 +2674,7 @@
 
       12%,
       88% {
-        opacity: var(--orb-opacity, .38);
+        opacity: var(--orb-opacity, .5);
       }
 
       100% {
@@ -2685,7 +2685,7 @@
 
     html[data-color-scheme="adult"] #mario-clouds.is-static .ambient-orb {
       animation: none !important;
-      opacity: var(--orb-opacity, .34) !important;
+      opacity: var(--orb-opacity, .45) !important;
       transform: translate3d(var(--orb-static-x, 20vw), var(--orb-static-y, 0), 0) !important;
     }
 
@@ -37040,11 +37040,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ? 18 + Math.random() * 18
           : 34 + Math.random() * 26;
       const top = 6 + (index * 8 + Math.random() * 14) % 84;
-      const opacity = 0.32 + Math.random() * 0.16;
+      const opacity = 0.44 + Math.random() * 0.22;
       const driftY = `${(Math.random() - 0.5) * 40}px`;
       const staticX = `${4 + (index * 9 + Math.random() * 7) % 84}vw`;
       const staticY = `${(Math.random() - 0.5) * 30}px`;
-      const palette = ["#d1d5db", "#cdd3da", "#d6dde4", "#e2e8ef"];
+      const palette = ["#b8c2ce", "#c5ced8", "#d1d9e2", "#dde4ec"];
       const color = palette[Math.floor(Math.random() * palette.length)];
 
       orb.dataset.direction = direction;
