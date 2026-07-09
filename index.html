@@ -2640,12 +2640,12 @@
       width: var(--orb-size, 18px);
       height: var(--orb-size, 18px);
       border-radius: 50%;
-      background: color-mix(in srgb, var(--orb-color, #bcc4ce) 34%, transparent);
+      background: color-mix(in srgb, var(--orb-color, #bcc4ce) 52%, transparent);
       box-shadow: none;
-      opacity: var(--orb-opacity, .22);
+      opacity: var(--orb-opacity, .34);
       will-change: transform;
       animation-name: ambient-orb-wander;
-      animation-duration: var(--orb-duration, 120s);
+      animation-duration: var(--orb-duration, 72s);
       animation-timing-function: ease-in-out;
       animation-iteration-count: infinite;
       animation-delay: var(--orb-delay, 0s);
@@ -2658,21 +2658,21 @@
       }
 
       25% {
-        transform: translate3d(var(--orb-dx1, 4vw), var(--orb-dy1, -3vh), 0);
+        transform: translate3d(var(--orb-dx1, 8vw), var(--orb-dy1, -6vh), 0);
       }
 
       50% {
-        transform: translate3d(var(--orb-dx2, -5vw), var(--orb-dy2, 4vh), 0);
+        transform: translate3d(var(--orb-dx2, -10vw), var(--orb-dy2, 8vh), 0);
       }
 
       75% {
-        transform: translate3d(var(--orb-dx3, 2vw), var(--orb-dy3, 2vh), 0);
+        transform: translate3d(var(--orb-dx3, 5vw), var(--orb-dy3, 4vh), 0);
       }
     }
 
     html[data-color-scheme="adult"] #mario-clouds.is-static .ambient-orb {
       animation: none !important;
-      opacity: var(--orb-opacity, .2) !important;
+      opacity: var(--orb-opacity, .32) !important;
       transform: translate3d(var(--orb-static-x, 20vw), var(--orb-static-y, 0), 0) !important;
     }
 
@@ -38127,35 +38127,49 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    function getAmbientOrbSpreadPosition(index, total) {
+      const cols = Math.max(3, Math.ceil(Math.sqrt(total * 1.35)));
+      const rows = Math.ceil(total / cols);
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const cellW = 100 / cols;
+      const cellH = 100 / rows;
+      const left = col * cellW + cellW * 0.12 + Math.random() * cellW * 0.76;
+      const top = row * cellH + cellH * 0.1 + Math.random() * cellH * 0.8;
+      return { left, top };
+    }
+
     function buildAmbientOrbElement(index, options = {}) {
       const staticOrbs = options.staticOrbs === true;
+      const total = options.totalOrbs || 12;
       const orb = document.createElement("div");
       orb.className = "ambient-orb";
-      const duration = 95 + Math.random() * 85;
+      const duration = 48 + Math.random() * 52;
       const delay = -(Math.random() * duration);
       const sizeRoll = Math.random();
-      const size = sizeRoll < 0.5
-        ? 16 + Math.random() * 18
-        : sizeRoll < 0.85
-          ? 30 + Math.random() * 22
-          : 48 + Math.random() * 20;
-      const top = 8 + (index * 11 + Math.random() * 13) % 78;
-      const left = 4 + (index * 13 + Math.random() * 11) % 86;
-      const opacity = 0.14 + Math.random() * 0.12;
+      const size = sizeRoll < 0.4
+        ? 22 + Math.random() * 24
+        : sizeRoll < 0.8
+          ? 40 + Math.random() * 28
+          : 62 + Math.random() * 26;
+      const spread = getAmbientOrbSpreadPosition(index, total);
+      const left = spread.left;
+      const top = spread.top;
+      const opacity = 0.26 + Math.random() * 0.16;
       const palette = ["#29abe2", "#fbb03b", "#1fd358", "#9b8fe0", "#b8c5d6"];
-      const color = palette[index % palette.length];
-      const driftScale = 0.65 + Math.random() * 0.55;
-      const wanderX1 = `${((Math.random() - 0.5) * 16 * driftScale).toFixed(1)}vw`;
-      const wanderY1 = `${((Math.random() - 0.5) * 12 * driftScale).toFixed(1)}vh`;
-      const wanderX2 = `${((Math.random() - 0.5) * 20 * driftScale).toFixed(1)}vw`;
-      const wanderY2 = `${((Math.random() - 0.5) * 14 * driftScale).toFixed(1)}vh`;
-      const wanderX3 = `${((Math.random() - 0.5) * 12 * driftScale).toFixed(1)}vw`;
-      const wanderY3 = `${((Math.random() - 0.5) * 10 * driftScale).toFixed(1)}vh`;
+      const color = palette[Math.floor(Math.random() * palette.length)];
+      const driftScale = 0.9 + Math.random() * 0.75;
+      const wanderX1 = `${((Math.random() - 0.5) * 28 * driftScale).toFixed(1)}vw`;
+      const wanderY1 = `${((Math.random() - 0.5) * 22 * driftScale).toFixed(1)}vh`;
+      const wanderX2 = `${((Math.random() - 0.5) * 34 * driftScale).toFixed(1)}vw`;
+      const wanderY2 = `${((Math.random() - 0.5) * 26 * driftScale).toFixed(1)}vh`;
+      const wanderX3 = `${((Math.random() - 0.5) * 24 * driftScale).toFixed(1)}vw`;
+      const wanderY3 = `${((Math.random() - 0.5) * 20 * driftScale).toFixed(1)}vh`;
       const staticX = `${left}vw`;
       const staticY = `${(Math.random() - 0.5) * 30}px`;
 
-      orb.style.setProperty("--orb-left", `${left}vw`);
-      orb.style.setProperty("--orb-top", `${top}%`);
+      orb.style.setProperty("--orb-left", `${left.toFixed(1)}vw`);
+      orb.style.setProperty("--orb-top", `${top.toFixed(1)}%`);
       orb.style.setProperty("--orb-size", `${size.toFixed(1)}px`);
       orb.style.setProperty("--orb-duration", `${duration.toFixed(1)}s`);
       orb.style.setProperty("--orb-delay", `${delay.toFixed(1)}s`);
@@ -38264,9 +38278,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       container.replaceChildren();
 
       if (ambient) {
-        const count = layout === "mobile" ? 6 : 10;
+        const count = layout === "mobile" ? 10 : 14;
         for (let i = 0; i < count; i += 1) {
-          container.appendChild(buildAmbientOrbElement(i, { staticOrbs: staticClouds }));
+          container.appendChild(buildAmbientOrbElement(i, { staticOrbs: staticClouds, totalOrbs: count }));
         }
         return;
       }
