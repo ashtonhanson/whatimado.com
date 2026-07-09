@@ -1356,9 +1356,10 @@
       box-shadow: none;
       resize: none;
       overflow-y: hidden;
-      line-height: var(--dashboard-send-size);
+      line-height: 1.5;
       text-align: left;
-      transition: max-height 0.15s ease, height 0.15s ease, line-height 0.15s ease;
+      box-sizing: border-box;
+      transition: max-height 0.15s ease, height 0.15s ease, padding 0.15s ease;
     }
 
     html[data-color-scheme="adult"] .dashboard-search-field.is-expanded .prompt-textarea {
@@ -38624,32 +38625,46 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const field = input?.closest(".dashboard-search-field");
       if (!input || !field) return;
 
+      const rootStyle = getComputedStyle(document.documentElement);
+      const sendSize = parseFloat(rootStyle.getPropertyValue("--dashboard-send-size")) || 44;
+      const inset = parseFloat(rootStyle.getPropertyValue("--dashboard-prompt-inset")) || 8;
+      const collapsedHeight = sendSize + inset * 2;
       const hasValue = Boolean(input.value.trim());
       field.classList.toggle("has-value", hasValue);
-      const singleLineHeight = parseFloat(getComputedStyle(field).minHeight) || 60;
+
+      const resetInlineSizing = () => {
+        input.style.height = "";
+        input.style.lineHeight = "";
+        input.style.paddingTop = "";
+        input.style.paddingBottom = "";
+      };
 
       if (!hasValue) {
         field.classList.remove("is-expanded");
-        input.style.height = "";
-        input.style.lineHeight = "";
+        resetInlineSizing();
         return;
       }
 
+      resetInlineSizing();
       input.style.height = "auto";
       input.style.lineHeight = "1.5";
       const scrollHeight = input.scrollHeight;
-      const needsExpand = scrollHeight > singleLineHeight + 6;
+      const needsExpand = scrollHeight > sendSize + 4;
       field.classList.toggle("is-expanded", needsExpand);
 
       if (!needsExpand) {
-        input.style.height = `${getComputedStyle(document.documentElement).getPropertyValue("--dashboard-send-size").trim() || "44px"}`;
-        input.style.lineHeight = input.style.height;
+        const fontSize = parseFloat(getComputedStyle(input).fontSize) || 16;
+        const textBlockHeight = fontSize * 1.5;
+        const verticalPad = Math.max(inset, (collapsedHeight - textBlockHeight) / 2);
+        input.style.height = `${collapsedHeight}px`;
+        input.style.paddingTop = `${verticalPad}px`;
+        input.style.paddingBottom = `${verticalPad}px`;
         return;
       }
 
       const mobile = window.matchMedia("(max-width: 720px)").matches;
       const max = mobile ? 280 : 160;
-      const next = Math.min(max, Math.max(singleLineHeight, scrollHeight));
+      const next = Math.min(max, Math.max(collapsedHeight, scrollHeight));
       input.style.height = `${next}px`;
     }
 
