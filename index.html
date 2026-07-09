@@ -975,6 +975,12 @@
       display: flex;
       flex-direction: column;
       position: relative;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-main > .dashboard-topbar,
+    html[data-color-scheme="adult"] .dashboard-main > main,
+    html[data-color-scheme="adult"] .dashboard-main > .roadmap-float-progress {
+      position: relative;
       z-index: 1;
     }
 
@@ -2506,25 +2512,32 @@
 
     html[data-color-scheme="adult"] #mario-clouds.is-active {
       opacity: 1;
+      z-index: 0;
     }
 
-    html[data-color-scheme="adult"] .mario-cloud--ambient svg {
-      opacity: .68;
-      filter: drop-shadow(0 4px 12px rgba(148, 163, 184, .1));
+    html[data-color-scheme="adult"] #mario-clouds.is-ambient .mario-cloud--ambient svg {
+      opacity: .92;
+      filter: drop-shadow(0 8px 18px rgba(255, 255, 255, .45)) drop-shadow(0 3px 10px rgba(96, 165, 250, .18));
     }
 
-    html[data-color-scheme="adult"] .mario-cloud--ambient svg .st0 {
+    html[data-color-scheme="adult"] #mario-clouds.is-ambient .mario-cloud--ambient svg .st0 {
       fill: #ffffff;
     }
 
-    html[data-color-scheme="adult"] .mario-cloud--ambient svg .st1,
-    html[data-color-scheme="adult"] .mario-cloud--ambient svg .st3 {
-      fill: #f0f9ff;
-      opacity: .5;
+    html[data-color-scheme="adult"] #mario-clouds.is-ambient .mario-cloud--ambient svg .st1,
+    html[data-color-scheme="adult"] #mario-clouds.is-ambient .mario-cloud--ambient svg .st3 {
+      fill: #eef6ff;
+      opacity: .62;
+    }
+
+    html[data-color-scheme="adult"] #mario-clouds.is-static .mario-cloud {
+      animation: none !important;
+      opacity: var(--cloud-opacity, .42) !important;
+      transform: translate3d(var(--cloud-static-x, 20vw), var(--cloud-drift-y, 0), 0) !important;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      #mario-clouds,
+      #mario-clouds:not(.is-ambient),
       #adventure-scenery .adv-hills {
         display: none !important;
       }
@@ -36842,18 +36855,37 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     let marioCloudsLayout = null;
     let marioCloudsInitWidth = 0;
     let marioCloudsScheme = null;
+    let marioCloudsStatic = null;
+
+    function mountMarioCloudsContainer(isAdult) {
+      const container = $("#mario-clouds");
+      const main = $(".dashboard-main");
+      const scenery = $("#adventure-scenery");
+      if (!container || !scenery) return;
+
+      if (isAdult && main) {
+        if (container.parentElement !== main) main.prepend(container);
+        return;
+      }
+
+      if (container.parentElement !== scenery.parentElement) {
+        scenery.insertAdjacentElement("beforebegin", container);
+      }
+    }
 
     function buildMarioCloudElement(variant, index, options = {}) {
       const ambient = options.ambient === true;
+      const staticClouds = options.staticClouds === true;
       const cloud = document.createElement("div");
       cloud.className = ambient ? "mario-cloud mario-cloud--ambient" : "mario-cloud";
       const direction = Math.random() > 0.48 ? "ltr" : "rtl";
       const duration = ambient ? 84 + Math.random() * 96 : 52 + Math.random() * 78;
       const delay = -(Math.random() * duration);
-      const size = ambient ? 0.36 + Math.random() * 0.58 : 0.52 + Math.random() * 0.95;
+      const size = ambient ? 0.48 + Math.random() * 0.72 : 0.52 + Math.random() * 0.95;
       const top = 10 + (index * 11 + Math.random() * 9) % 72;
-      const opacity = ambient ? 0.1 + Math.random() * 0.12 : 0.28 + Math.random() * 0.16;
+      const opacity = ambient ? 0.34 + Math.random() * 0.2 : 0.28 + Math.random() * 0.16;
       const driftY = `${(Math.random() - 0.5) * (ambient ? 18 : 28)}px`;
+      const staticX = `${6 + (index * 14 + Math.random() * 10) % 74}vw`;
 
       cloud.dataset.direction = direction;
       cloud.style.setProperty("--cloud-top", `${top}%`);
@@ -36863,6 +36895,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       cloud.style.setProperty("--cloud-delay", `${delay.toFixed(1)}s`);
       cloud.style.setProperty("--cloud-opacity", opacity.toFixed(2));
       cloud.style.setProperty("--cloud-drift-y", driftY);
+      cloud.style.setProperty("--cloud-static-x", staticX);
+      if (staticClouds) cloud.classList.add("mario-cloud--static");
       cloud.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${variant.viewBox}" aria-hidden="true"><use href="#${variant.id}"></use></svg>`;
       return cloud;
     }
@@ -36886,45 +36920,54 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const scheme = document.documentElement.dataset.colorScheme;
       const isMario = scheme === "mario";
       const isAdult = scheme === "adult";
-      const shouldShow = (isMario || isAdult) && !reducedMotion;
+      const shouldShow = isAdult || (isMario && !reducedMotion);
       const ambient = isAdult;
+      const staticClouds = isAdult && reducedMotion;
       const layout = window.innerWidth < 760 ? "mobile" : "desktop";
       const width = window.innerWidth;
       const canReuse = !options.force
         && shouldShow
         && scheme === marioCloudsScheme
+        && staticClouds === marioCloudsStatic
         && layout === marioCloudsLayout
         && container.childElementCount > 0
         && Math.abs(width - marioCloudsInitWidth) < 48;
+
+      mountMarioCloudsContainer(isAdult);
 
       if (!shouldShow) {
         marioCloudsLayout = null;
         marioCloudsInitWidth = 0;
         marioCloudsScheme = null;
+        marioCloudsStatic = null;
+        mountMarioCloudsContainer(false);
         container.hidden = true;
-        container.classList.remove("is-active");
+        container.classList.remove("is-active", "is-ambient", "is-static");
         container.replaceChildren();
         return;
       }
 
       container.hidden = false;
       container.classList.toggle("is-active", true);
+      container.classList.toggle("is-ambient", ambient);
+      container.classList.toggle("is-static", staticClouds);
 
       if (canReuse) return;
 
       marioCloudsLayout = layout;
       marioCloudsInitWidth = width;
       marioCloudsScheme = scheme;
+      marioCloudsStatic = staticClouds;
       container.replaceChildren();
 
       const count = ambient
-        ? (layout === "mobile" ? 5 : 7)
+        ? (layout === "mobile" ? 6 : 9)
         : (layout === "mobile" ? 6 : 9);
       const shuffled = [...MARIO_CLOUD_VARIANTS].sort(() => Math.random() - 0.5);
 
       for (let i = 0; i < count; i += 1) {
         const variant = shuffled[i % shuffled.length];
-        container.appendChild(buildMarioCloudElement(variant, i, { ambient }));
+        container.appendChild(buildMarioCloudElement(variant, i, { ambient, staticClouds }));
       }
     }
 
