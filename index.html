@@ -25291,6 +25291,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     const JINGLE_SRC = "/Jingle.mp3";
     const ANALYTICS_SESSION_KEY = "whatimado_analytics_session_id";
     const PATH_BUILDING_MSG = "Building your custom path to success…";
+    const MAP_GENERATION_TIMEOUT_MS = 90000;
     const LOADING_QUIPS = [
       "Consulting the career oracle (it's winging it too)…",
       "Mapping paths that aren't just 'learn to code'…",
@@ -30151,7 +30152,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!root) return null;
       return startSiteLoadingProgress(root, {
         durationMs: 55000,
-        cap: 92,
+        cap: 96,
         formatRemaining: formatLoadingEta
       });
     }
@@ -31017,9 +31018,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           has_location: true,
           profile_intake: true
         });
+        intakeInProgress = true;
         void generateAndShowMap({
           founderMode: isFounderOrProjectPrompt(getFirstUserMessage()),
           intakeMode: "quick"
+        }).finally(() => {
+          intakeInProgress = false;
         });
         return;
       }
@@ -31265,10 +31269,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         has_location: Boolean(getUserLocation()),
         skipped_identity_prompts: !shouldAskLocation() && !shouldAskName()
       });
-      await generateAndShowMap({
-        founderMode: founder,
-        intakeMode: state.intakeMode || "standard"
-      });
+      intakeInProgress = true;
+      try {
+        await generateAndShowMap({
+          founderMode: founder,
+          intakeMode: state.intakeMode || "standard"
+        });
+      } catch (error) {
+        console.error("[whatimado] startPathGenerationAfterIntake failed:", error);
+        completeChatPathBuildProgress();
+        appendAssistantBubble("Something went wrong building your map — try Send again or start a new map.");
+      } finally {
+        intakeInProgress = false;
+      }
     }
 
     function normalizeIdeaText(text) {
@@ -31579,35 +31592,66 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.pathMode = pathMode;
       const ideaCount = 3;
       const founderMode = options.founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
-      mergeUserProfileFromConversation();
-      const summary = getAdvisorContext();
-      const directNote = pathMode === "direct"
-        ? "\n\nReturn exactly THREE distinct path options — different viable strategies for this person. They will pick ONE on the map, then choose a starting direction before following a full step-by-step direct roadmap."
-        : "";
-      let response = await callAdvisor(
-        (founderMode ? buildFounderIdeasPrompt(summary, ideaCount) : buildIdeasPrompt(summary, ideaCount)) + directNote,
-        1200
-      );
+      const fallbackIdeas = (founderMode ? getFounderFallbackIdeas() : getFallbackIdeas()).slice(0, 3);
+      let ideas = fallbackIdeas;
+      let usedFallback = false;
 
-      let ideas = extractJsonArray(response, founderMode ? getFounderFallbackIdeas() : getFallbackIdeas());
-      ideas = sanitizeIdeasAgainstInventedContext(ideas).slice(0, 3);
-      if (pathMode !== "direct" && !founderMode && ideasAreTooSimilar(ideas)) {
-        response = await callAdvisor(
-          `${buildIdeasPrompt(summary, 3)}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps. Do NOT invent partners, pilots, or projects they never mentioned.`,
-          1200
+      try {
+        mergeUserProfileFromConversation();
+        const summary = getAdvisorContext();
+        const directNote = pathMode === "direct"
+          ? "\n\nReturn exactly THREE distinct path options — different viable strategies for this person. They will pick ONE on the map, then choose a starting direction before following a full step-by-step direct roadmap."
+          : "";
+        let response = await callAdvisor(
+          (founderMode ? buildFounderIdeasPrompt(summary, ideaCount) : buildIdeasPrompt(summary, ideaCount)) + directNote,
+          1200,
+          { timeoutMs: MAP_GENERATION_TIMEOUT_MS }
         );
-        ideas = sanitizeIdeasAgainstInventedContext(extractJsonArray(response, ideas)).slice(0, 3);
+
+        ideas = extractJsonArray(response, fallbackIdeas);
+        ideas = sanitizeIdeasAgainstInventedContext(ideas).slice(0, 3);
+        if (!response?.trim() || !ideas.length) {
+          ideas = fallbackIdeas;
+          usedFallback = true;
+        } else if (pathMode !== "direct" && !founderMode && ideasAreTooSimilar(ideas)) {
+          response = await callAdvisor(
+            `${buildIdeasPrompt(summary, 3)}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps. Do NOT invent partners, pilots, or projects they never mentioned.`,
+            1200,
+            { timeoutMs: MAP_GENERATION_TIMEOUT_MS }
+          );
+          const regen = sanitizeIdeasAgainstInventedContext(extractJsonArray(response, ideas)).slice(0, 3);
+          if (regen.length) ideas = regen;
+          else usedFallback = true;
+        }
+        if (!ideas.length) {
+          ideas = fallbackIdeas;
+          usedFallback = true;
+        }
+      } catch (error) {
+        console.error("[whatimado] generateAndShowMap failed:", error);
+        ideas = fallbackIdeas;
+        usedFallback = true;
+        trackEvent("map_generation_failed", {
+          error: lastAdvisorError || error?.message || "unknown",
+          intake_mode: options.intakeMode || state.intakeMode || "standard"
+        });
+      } finally {
+        completeChatPathBuildProgress();
       }
+
       state.ideas = ideas;
       state.ideaBatches = [ideas.length];
-      const closing = pathMode === "direct"
+      const defaultClosing = pathMode === "direct"
         ? (founderMode
           ? "Here are three focused directions for whatimado.com — open the one that fits you best."
           : "Here are three paths to choose from — open the one that fits you best for your full step-by-step roadmap.")
         : (founderMode
           ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
           : "Here are your paths. Tap any opportunity to see your full roadmap.");
-      resolveTyping(closing);
+      const closing = usedFallback && lastAdvisorError
+        ? `Here are starter paths to get you moving. (${lastAdvisorError})`
+        : defaultClosing;
+      if (!resolveTyping(closing)) appendAssistantBubble(closing);
       state.history.push({ role: "assistant", content: closing });
       state.step = INTAKE_STEP_MAP;
       updateSaveButtonVisibility();
@@ -31627,7 +31671,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           founder_mode: founderMode,
           intake_mode: options.intakeMode || state.intakeMode || "standard",
           path_mode: pathMode,
-          saved_maps_count: state.savedMaps.length
+          saved_maps_count: state.savedMaps.length,
+          used_fallback: usedFallback
         });
         updateMapAuxiliaryPanels();
         showScreen("map");
@@ -37901,8 +37946,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const driftY = `${(Math.random() - 0.5) * 40}px`;
       const staticX = `${4 + (index * 9 + Math.random() * 7) % 84}vw`;
       const staticY = `${(Math.random() - 0.5) * 30}px`;
-      const palette = ["#b8c2ce", "#c5ced8", "#d1d9e2", "#dde4ec"];
-      const color = palette[Math.floor(Math.random() * palette.length)];
+      const palette = ["#29abe2", "#fbb03b", "#1fd358", "#9b8fe0", "#b8c5d6"];
+      const color = palette[index % palette.length];
 
       orb.dataset.direction = direction;
       orb.style.setProperty("--orb-top", `${top}%`);
