@@ -1,0 +1,31 @@
+---
+description: How to interpret layout and spacing requests for whatimado UI
+globs: index.html
+alwaysApply: true
+---
+
+# Layout intent (whatimado)
+
+When the user asks for padding, centering, or mobile fixes on the minimal home/chat UI:
+
+## Established layout (do not change without explicit ask)
+
+- **Home prompt column**: `min(94vw, 960px)` centered (`minimal-start-zone`)
+- **Chat column**: `min(94vw, 720px)` centered (`minimal-chat` when `is-chat-active`)
+- **Prompt/composer max-width**: `720px` (`dashboard-search`)
+- **Chat bubbles**: stay inside the chat column; left/right alignment within that column is intentional
+
+## How to read common requests
+
+| User says | Do | Don't |
+|-----------|-----|--------|
+| "More padding on mobile" | Add `padding-left/right` **inside** the existing centered column; increase textarea inner padding | Set `width: 100%` on the column or remove `max-width` |
+| "Centered compact frame" | Keep the 720px chat / 960px home widths; center the column on the page with modest viewport inset | Shrink everything to ~520px or new CSS variables that override established widths |
+| "Boxes at the edge" | Add gutter on the **container** while preserving column max-width | Stretch inputs/bubbles to full viewport width |
+
+## Before editing layout CSS
+
+1. Identify which container owns the element (home zone, chat column, bubble, composer, roadmap task).
+2. Change only that container's padding/inset unless the user explicitly asks to change max-width.
+3. If the request is ambiguous, prefer the smallest diff: padding/inset only.
+4. After changes, verify desktop chat still uses ~720px centered column and bubbles do not span the full monitor width.
