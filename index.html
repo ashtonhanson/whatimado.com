@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-topbar-chat-map-roadmap-fix">
+  <meta name="whatimado-build" content="2026-07-10-fixed-chat-composer">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -205,10 +205,15 @@
 
     [data-color-scheme="adult"] {
       color-scheme: light;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       --sidebar-w: 248px;
       --topbar-h: 52px;
       --roadmap-progress-h: 0px;
       --roadmap-sticky-offset: var(--topbar-h);
+      --composer-browser-gap: 12px;
+      --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+      --chat-composer-h: 96px;
       --brand-blue: #29abe2;
       --brand-orange: #fbb03b;
       --brand-green: #1fd358;
@@ -285,6 +290,16 @@
     html[data-color-scheme="adult"] body {
       background: var(--bg);
       color: var(--ink);
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html[data-color-scheme="adult"]::-webkit-scrollbar,
+    html[data-color-scheme="adult"] *::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+      background: transparent;
     }
 
     html[data-color-scheme="adult"] .dashboard-shell {
@@ -1284,20 +1299,16 @@
       min-height: 0;
       max-height: none;
       margin: 0 auto;
-      padding: 0 1.15rem 0;
+      padding: 0 1.15rem var(--chat-composer-h, 96px);
       overflow: hidden;
       overscroll-behavior: contain;
-      scrollbar-gutter: stable;
       box-sizing: border-box;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat::-webkit-scrollbar-thumb {
-      background: rgba(15, 23, 42, 0.14);
-      border-radius: 999px;
+      display: none;
+      width: 0;
+      height: 0;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .conversation {
@@ -1312,18 +1323,15 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(15, 23, 42, 0.14) transparent;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       scroll-padding-bottom: 1rem;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .conversation::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    html[data-color-scheme="adult"] #screen-main.is-chat-active .conversation::-webkit-scrollbar-thumb {
-      background: rgba(15, 23, 42, 0.14);
-      border-radius: 999px;
+      display: none;
+      width: 0;
+      height: 0;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-start-zone {
@@ -1542,6 +1550,14 @@
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .chat-composer-field.is-expanded .reply-textarea {
       overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .chat-composer-field .reply-textarea::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .chat-composer-field .dashboard-search-go {
@@ -14110,15 +14126,30 @@
         max-width: 100%;
         padding-left: var(--mobile-gutter);
         padding-right: var(--mobile-gutter);
+        padding-bottom: var(--chat-composer-h, 96px);
         box-sizing: border-box;
       }
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box {
-        width: 100%;
-        max-width: 100%;
-        padding-left: 0;
-        padding-right: 0;
-        box-sizing: border-box;
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: var(--composer-bottom, calc(env(safe-area-inset-bottom, 0px) + 10px));
+        width: min(calc(100vw - (2 * var(--mobile-gutter, 1.5rem))), 720px);
+        max-width: calc(100vw - (2 * var(--mobile-gutter, 1.5rem)));
+        margin: 0;
+        padding: 0;
+        z-index: 30;
+        background: transparent;
+        box-shadow: none;
+        pointer-events: none;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-inner,
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-actions,
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-map-actions,
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .profile-intake-chips {
+        pointer-events: auto;
       }
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-inner.chat-composer-field {
@@ -30989,14 +31020,52 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    function isMinimalChatComposerField(element) {
+      return Boolean(
+        $("#screen-main")?.classList.contains("is-chat-active") &&
+        element &&
+        (element.id === "reply-textarea" || element.closest("#reply-box"))
+      );
+    }
+
+    function syncChatComposerDock() {
+      const reply = $("#reply-box");
+      const chat = $("#minimal-chat");
+      if (!reply || !chat) return;
+      const chatActive = $("#screen-main")?.classList.contains("is-chat-active");
+      if (!chatActive || window.innerWidth > 760) {
+        chat.style.removeProperty("--chat-composer-h");
+        return;
+      }
+      if (getComputedStyle(reply).display === "none") {
+        chat.style.setProperty("--chat-composer-h", "0px");
+        return;
+      }
+      const rect = reply.getBoundingClientRect();
+      const reserve = Math.ceil(window.innerHeight - rect.top + 10);
+      chat.style.setProperty("--chat-composer-h", `${Math.max(Math.ceil(rect.height + 16), reserve)}px`);
+    }
+
     function syncKeyboardInset() {
       const vv = window.visualViewport;
+      const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--composer-browser-gap"), 10) || 12;
       if (!vv || window.innerWidth > 760) {
         document.documentElement.style.setProperty("--keyboard-inset", "0px");
+        document.documentElement.style.setProperty(
+          "--composer-bottom",
+          `calc(env(safe-area-inset-bottom, 0px) + 10px)`
+        );
+        syncChatComposerDock();
         return;
       }
       const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      const browserGap = inset > 0 ? gap : 10;
       document.documentElement.style.setProperty("--keyboard-inset", `${Math.round(inset)}px`);
+      document.documentElement.style.setProperty(
+        "--composer-bottom",
+        `calc(${Math.round(inset)}px + env(safe-area-inset-bottom, 0px) + ${browserGap}px)`
+      );
+      syncChatComposerDock();
     }
 
     function scheduleKeepFieldVisible(field) {
@@ -31115,7 +31184,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       document.addEventListener("focusin", (event) => {
         if (!isField(event.target)) return;
+        if (isMinimalChatComposerField(event.target)) {
+          syncKeyboardInset();
+          syncChatComposerDock();
+          return;
+        }
         scheduleKeepFieldVisible(event.target);
+      });
+
+      document.addEventListener("focusout", (event) => {
+        if (!isMinimalChatComposerField(event.target)) return;
+        window.setTimeout(() => {
+          syncKeyboardInset();
+          syncChatComposerDock();
+        }, 80);
       });
 
       document.addEventListener("touchstart", () => {
@@ -31128,23 +31210,33 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const onViewportResize = () => {
         const vv = window.visualViewport;
         syncKeyboardInset();
-        const heightChanged = vv && Math.abs(vv.height - lastVisualViewportHeight) > 24;
+        syncChatComposerDock();
         if (vv) lastVisualViewportHeight = vv.height;
         const active = document.activeElement;
+        if (isField(active) && isMinimalChatComposerField(active)) {
+          return;
+        }
         if (isField(active)) {
           keepFieldVisible(active, "auto");
           if (active.id === "main-input") {
             scrollMobileFieldBelowBrowserChrome(active.closest(".dashboard-search-field") || active, "auto");
           }
         }
-        if (heightChanged && isConvoScreenActive() && !convoPreferBottomAnchor()) {
+        if (
+          isConvoScreenActive() &&
+          !$("#screen-main")?.classList.contains("is-chat-active") &&
+          !convoPreferBottomAnchor()
+        ) {
           alignConvoViewport("auto", { force: true });
         }
       };
 
       window.addEventListener("resize", onViewportResize);
       window.visualViewport?.addEventListener("resize", onViewportResize);
-      window.visualViewport?.addEventListener("scroll", syncKeyboardInset);
+      window.visualViewport?.addEventListener("scroll", () => {
+        syncKeyboardInset();
+        syncChatComposerDock();
+      });
       window.addEventListener("scroll", markConvoManualScroll, { passive: true });
       syncKeyboardInset();
     }
@@ -31305,6 +31397,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || (resolvedName === "main" && (state.history.length > 0 || Boolean(state.profileIntakeStep)));
       document.documentElement.classList.toggle("convo-active", chatOnMain);
       $("#screen-main")?.classList.toggle("is-chat-active", chatOnMain);
+      requestAnimationFrame(() => {
+        syncKeyboardInset();
+        syncChatComposerDock();
+      });
       $$(".screen").forEach((screen) => {
         if (screen.id === "screen-convo") {
           screen.classList.remove("active");
@@ -31528,6 +31624,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
       scrollConversation();
+      requestAnimationFrame(() => syncChatComposerDock());
     }
 
     function extractAdvisorText(data) {
@@ -40235,6 +40332,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!hasText) {
         input.style.height = "";
         field.classList.remove("is-expanded");
+        syncChatComposerDock();
         return;
       }
 
@@ -40244,6 +40342,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const nextHeight = Math.min(max, Math.max(sendSize, input.scrollHeight));
       input.style.height = `${nextHeight}px`;
       field.classList.toggle("is-expanded", nextHeight > sendSize + 2);
+      syncChatComposerDock();
     }
 
     function syncDashboardPromptHeight() {
