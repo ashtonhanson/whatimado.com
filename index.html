@@ -498,6 +498,85 @@
       transition: border-color .16s ease, box-shadow .16s ease;
     }
 
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-card.has-inline-confirm,
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row.has-inline-confirm {
+      position: relative;
+      overflow: hidden;
+    }
+
+    html[data-color-scheme="adult"] .sidebar-inline-confirm {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: .3rem;
+      padding: .55rem .65rem;
+      background: #fff;
+      border-radius: inherit;
+      box-shadow: inset 3px 0 0 rgba(220, 38, 38, .4);
+      transform: translateX(102%);
+      transition: transform .26s cubic-bezier(.22, 1, .36, 1);
+      pointer-events: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row .sidebar-inline-confirm {
+      border-radius: 12px;
+      background: var(--bg-soft);
+    }
+
+    html[data-color-scheme="adult"] .sidebar-inline-confirm.is-visible {
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    html[data-color-scheme="adult"] .sidebar-inline-confirm-title {
+      margin: 0;
+      font-size: .72rem;
+      font-weight: 800;
+      line-height: 1.3;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .sidebar-inline-confirm-message {
+      margin: 0;
+      font-size: .66rem;
+      line-height: 1.4;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .sidebar-inline-confirm-detail {
+      margin: 0;
+      font-size: .6rem;
+      line-height: 1.4;
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .sidebar-inline-confirm-actions {
+      display: flex;
+      gap: .35rem;
+      margin-top: .2rem;
+    }
+
+    html[data-color-scheme="adult"] .sidebar-inline-confirm-btn {
+      flex: 1;
+      padding: .4rem .45rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font: inherit;
+      font-size: .64rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .sidebar-inline-confirm-btn--danger {
+      border-color: rgba(220, 38, 38, .28);
+      background: rgba(220, 38, 38, .08);
+      color: #b91c1c;
+    }
+
     html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section .dashboard-roadmap-category-card {
       border-color: rgba(37, 99, 235, .28);
       box-shadow: 0 4px 16px rgba(37, 99, 235, .08);
@@ -1173,7 +1252,7 @@
       min-height: 0;
       max-height: calc(100dvh - 52px);
       margin: 0 auto;
-      padding: 0 .5rem calc(.75rem + env(safe-area-inset-bottom, 0px));
+      padding: 0 1.15rem calc(.75rem + env(safe-area-inset-bottom, 0px));
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -1299,7 +1378,7 @@
       bottom: 0;
       z-index: 4;
       margin-top: auto;
-      padding: .85rem .35rem 1.1rem;
+      padding: .85rem 0 1.1rem;
       overflow: visible;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .94) 28%, #fff 100%);
       border: 0;
@@ -1315,7 +1394,7 @@
       position: relative;
       display: flex;
       align-items: flex-start;
-      margin: 0 .15rem;
+      margin: 0;
       --dashboard-send-size: 48px;
       --dashboard-prompt-inset: 12px;
       --dashboard-prompt-radius: 32px;
@@ -6806,6 +6885,51 @@
       max-width: 760px;
       margin: 0 auto;
       padding: 1.25rem 1rem 3rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-notes.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding-top: 52px;
+      padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box;
+    }
+
+    html[data-color-scheme="adult"] #screen-notes .notes-page {
+      width: min(92vw, 520px);
+      margin: 0 auto;
+      padding: 0 1rem 2rem;
+      text-align: center;
+    }
+
+    html[data-color-scheme="adult"] #screen-notes .maps-page-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-notes .maps-page-kicker,
+    html[data-color-scheme="adult"] #screen-notes .maps-page-title,
+    html[data-color-scheme="adult"] #screen-notes .maps-page-sub {
+      text-align: center;
+    }
+
+    html[data-color-scheme="adult"] #screen-notes .notes-library-list {
+      width: 100%;
+      text-align: left;
+    }
+
+    html[data-color-scheme="adult"] #screen-notes .map-library-actions {
+      justify-content: center;
+    }
+
+    html[data-color-scheme="adult"] #screen-notes .maps-empty {
+      text-align: center;
     }
 
     .notes-library-list {
@@ -13776,6 +13900,78 @@
 
     .preview-deploy-banner strong {
       font-weight: 800;
+    }
+
+    @media (max-width: 760px) {
+      html[data-color-scheme="adult"] {
+        --mobile-gutter: 1.35rem;
+      }
+
+      html[data-color-scheme="adult"] .minimal-home {
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] .minimal-start-zone {
+        width: 100%;
+        max-width: none;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat {
+        width: 100%;
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-inner.chat-composer-field {
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap .page,
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] #screen-map .page {
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] #screen-maps .maps-page,
+      html[data-color-scheme="adult"] #screen-settings .settings-page,
+      html[data-color-scheme="adult"] #screen-notes .notes-page {
+        width: 100%;
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task {
+        padding-left: .95rem;
+        padding-right: .95rem;
+      }
+
+      html[data-color-scheme="adult"] .overview-task-tools {
+        padding-left: .85rem;
+        padding-right: .85rem;
+      }
+
+      html[data-color-scheme="adult"] .task-textarea,
+      html[data-color-scheme="adult"] .task-question {
+        padding-left: .85rem;
+        padding-right: .85rem;
+      }
+
+      html[data-color-scheme="adult"] #site-suggestions .site-suggestions-input {
+        padding-left: .75rem;
+        padding-right: .75rem;
+      }
     }
   </style>
 </head>
@@ -28147,7 +28343,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (skipConfirm) return Promise.resolve(runRemoval());
 
-      return showConfirmDialog({
+      const confirmOptions = {
         title: "Remove this roadmap?",
         messageHtml: `This deletes step-by-step progress, My Notes, and Ask history for <strong>${escapeHtml(ideaTitle)}</strong>.`,
         detail: options.resetMapView
@@ -28156,16 +28352,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         confirmLabel: "Remove roadmap",
         cancelLabel: "Keep it",
         tone: "danger"
-      }).then((ok) => (ok ? runRemoval() : false));
+      };
+      const confirmPromise = options.anchorButton
+        ? showSidebarInlineConfirm(options.anchorButton, confirmOptions)
+        : showConfirmDialog(confirmOptions);
+      return confirmPromise.then((ok) => (ok ? runRemoval() : false));
     }
 
-    function removeRoadmapFromSidebar(categoryId, itemId) {
+    function removeRoadmapFromSidebar(categoryId, itemId, anchorButton = null) {
       const category = state.roadmapCategories.find((entry) => entry.id === categoryId);
       const item = category?.items?.find((entry) => entry.id === itemId);
       if (!item) return Promise.resolve(false);
       return removeRoadmapForPath(item.ideaTitle, {
         ideaIndex: item.ideaIndex,
-        mapId: item.mapId || category.mapId || state.activeMapId
+        mapId: item.mapId || category.mapId || state.activeMapId,
+        anchorButton
       });
     }
 
@@ -28417,13 +28618,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       schedulePersist();
     }
 
-    function deleteRoadmapCategoryFromSidebar(categoryId) {
+    function deleteRoadmapCategoryFromSidebar(categoryId, anchorButton = null) {
       const category = state.roadmapCategories.find((entry) => entry.id === categoryId);
       if (!category) return;
 
       const itemCount = (category.items || []).length;
       const title = category.title || "this group";
-      showConfirmDialog({
+      const confirmOptions = {
         title: category.mapId ? "Delete this map?" : "Remove group?",
         message: category.mapId
           ? `Delete "${title}" and all ${itemCount ? `${itemCount} roadmap${itemCount === 1 ? "" : "s"}` : "roadmaps"}?`
@@ -28434,7 +28635,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         confirmLabel: category.mapId ? "Delete map" : "Remove",
         cancelLabel: "Keep",
         tone: "danger"
-      }).then((ok) => {
+      };
+      const confirmPromise = anchorButton
+        ? showSidebarInlineConfirm(anchorButton, confirmOptions)
+        : showConfirmDialog(confirmOptions);
+      confirmPromise.then((ok) => {
         if (!ok) return;
 
         if (category.mapId) {
@@ -28997,7 +29202,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         scrollRoadmapTargetIntoView(item?.querySelector(".task-textarea") || item, { extraOffset: 24 });
         item?.querySelector(".task-textarea")?.focus({ preventScroll: true });
       });
-      closeDashboardMobileNav();
       trackEvent("saved_note_opened", { task_id: entry.taskId, map_id: entry.mapId });
     }
 
@@ -30965,7 +31169,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function openSettingsScreen() {
-      closeDashboardMobileNav();
       populateAccountPrefsForm();
       showScreen("settings");
     }
@@ -39774,6 +39977,116 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     let confirmDialogResolver = null;
     let confirmDialogKeyHandler = null;
+    let sidebarInlineConfirmResolver = null;
+    let sidebarInlineConfirmKeyHandler = null;
+
+    function dismissSidebarInlineConfirm(result = false) {
+      if (sidebarInlineConfirmKeyHandler) {
+        document.removeEventListener("keydown", sidebarInlineConfirmKeyHandler);
+        sidebarInlineConfirmKeyHandler = null;
+      }
+      const panel = document.querySelector(".sidebar-inline-confirm");
+      const host = panel?.closest(".has-inline-confirm");
+      const resolve = sidebarInlineConfirmResolver;
+      sidebarInlineConfirmResolver = null;
+      if (!panel) {
+        if (resolve) resolve(result);
+        return;
+      }
+      const finish = () => {
+        panel.remove();
+        host?.classList.remove("has-inline-confirm");
+        if (resolve) resolve(result);
+      };
+      if (panel.classList.contains("is-visible")) {
+        panel.classList.remove("is-visible");
+        window.setTimeout(finish, 240);
+      } else {
+        finish();
+      }
+    }
+
+    function showSidebarInlineConfirm(anchorButton, options = {}) {
+      document.querySelectorAll(".sidebar-inline-confirm").forEach((el) => {
+        el.remove();
+        el.closest(".has-inline-confirm")?.classList.remove("has-inline-confirm");
+      });
+      if (sidebarInlineConfirmResolver) {
+        const stale = sidebarInlineConfirmResolver;
+        sidebarInlineConfirmResolver = null;
+        stale(false);
+      }
+
+      const host = anchorButton?.closest(".dashboard-roadmap-category-card")
+        || anchorButton?.closest(".dashboard-roadmap-item-row");
+      if (!host) return showConfirmDialog(options);
+
+      const {
+        title = "Are you sure?",
+        message = "",
+        messageHtml = "",
+        detail = "",
+        confirmLabel = "Confirm",
+        cancelLabel = "Cancel",
+        tone = "default"
+      } = options;
+
+      return new Promise((resolve) => {
+        sidebarInlineConfirmResolver = resolve;
+
+        const panel = document.createElement("div");
+        panel.className = "sidebar-inline-confirm";
+        panel.setAttribute("role", "alertdialog");
+        panel.setAttribute("aria-labelledby", "sidebar-inline-confirm-title");
+        const messageMarkup = messageHtml
+          ? `<p class="sidebar-inline-confirm-message">${messageHtml}</p>`
+          : message ? `<p class="sidebar-inline-confirm-message">${escapeHtml(message)}</p>` : "";
+        panel.innerHTML = `
+          <p class="sidebar-inline-confirm-title" id="sidebar-inline-confirm-title">${escapeHtml(title)}</p>
+          ${messageMarkup}
+          ${detail ? `<p class="sidebar-inline-confirm-detail">${escapeHtml(detail)}</p>` : ""}
+          <div class="sidebar-inline-confirm-actions">
+            <button type="button" class="sidebar-inline-confirm-btn sidebar-inline-confirm-btn--cancel">${escapeHtml(cancelLabel)}</button>
+            <button type="button" class="sidebar-inline-confirm-btn ${tone === "danger" ? "sidebar-inline-confirm-btn--danger" : "sidebar-inline-confirm-btn--confirm"}">${escapeHtml(confirmLabel)}</button>
+          </div>
+        `;
+
+        host.classList.add("has-inline-confirm");
+        host.appendChild(panel);
+
+        const okBtn = panel.querySelector(".sidebar-inline-confirm-btn--danger, .sidebar-inline-confirm-btn--confirm");
+        const cancelBtn = panel.querySelector(".sidebar-inline-confirm-btn--cancel");
+
+        okBtn?.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (sidebarInlineConfirmKeyHandler) {
+            document.removeEventListener("keydown", sidebarInlineConfirmKeyHandler);
+            sidebarInlineConfirmKeyHandler = null;
+          }
+          const okResolve = sidebarInlineConfirmResolver;
+          sidebarInlineConfirmResolver = null;
+          panel.classList.remove("is-visible");
+          window.setTimeout(() => {
+            panel.remove();
+            host.classList.remove("has-inline-confirm");
+            if (okResolve) okResolve(true);
+          }, 240);
+        });
+
+        cancelBtn?.addEventListener("click", (event) => {
+          event.stopPropagation();
+          dismissSidebarInlineConfirm(false);
+        });
+
+        sidebarInlineConfirmKeyHandler = (event) => {
+          if (event.key === "Escape") dismissSidebarInlineConfirm(false);
+        };
+        document.addEventListener("keydown", sidebarInlineConfirmKeyHandler);
+
+        requestAnimationFrame(() => panel.classList.add("is-visible"));
+        cancelBtn?.focus();
+      });
+    }
 
     function hideConfirmDialog(result = false) {
       const overlay = $("#confirm-overlay");
@@ -39868,6 +40181,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function closeDashboardMobileNav() {
+      dismissSidebarInlineConfirm(false);
       dashboardMobileNavOpen = false;
       document.body.classList.remove("dashboard-mobile-nav-open");
       $("#dashboard-sidebar")?.classList.remove("is-mobile-open");
@@ -39936,31 +40250,41 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#dashboard-top-avatar")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-notify-btn")?.addEventListener("click", handleDashboardNotifyClick);
       $("#sidebar-roadmaps-btn")?.addEventListener("click", toggleSidebarRoadmapsPanel);
+      $("#dashboard-sidebar")?.addEventListener("click", (event) => {
+        if (
+          sidebarInlineConfirmResolver
+          && !event.target.closest(".sidebar-inline-confirm")
+          && !event.target.closest("[data-delete-roadmap-category], [data-delete-roadmap-item]")
+        ) {
+          dismissSidebarInlineConfirm(false);
+        }
+      });
       $("#dashboard-roadmap-categories")?.addEventListener("click", (event) => {
         const deleteItemBtn = event.target.closest("[data-delete-roadmap-item]");
         if (deleteItemBtn) {
           event.preventDefault();
           event.stopPropagation();
-          closeDashboardMobileNav();
-          removeRoadmapFromSidebar(deleteItemBtn.dataset.roadmapCategory, deleteItemBtn.dataset.deleteRoadmapItem);
+          removeRoadmapFromSidebar(
+            deleteItemBtn.dataset.roadmapCategory,
+            deleteItemBtn.dataset.deleteRoadmapItem,
+            deleteItemBtn
+          );
           return;
         }
         const deleteBtn = event.target.closest("[data-delete-roadmap-category]");
         if (deleteBtn) {
           event.preventDefault();
-          closeDashboardMobileNav();
-          deleteRoadmapCategoryFromSidebar(deleteBtn.dataset.deleteRoadmapCategory);
+          event.stopPropagation();
+          deleteRoadmapCategoryFromSidebar(deleteBtn.dataset.deleteRoadmapCategory, deleteBtn);
           return;
         }
         const itemBtn = event.target.closest("[data-open-roadmap-item]");
         if (itemBtn) {
-          closeDashboardMobileNav();
           openRoadmapFromSidebar(itemBtn.dataset.roadmapCategory, itemBtn.dataset.openRoadmapItem);
           return;
         }
         const openMapBtn = event.target.closest("[data-open-map-category]");
         if (openMapBtn) {
-          closeDashboardMobileNav();
           openMapFromSidebarCategory(openMapBtn.dataset.openMapCategory);
           return;
         }
@@ -39974,7 +40298,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       });
       $("#sidebar-discover-btn")?.addEventListener("click", () => {
-        closeDashboardMobileNav();
         showScreen("settings");
         requestAnimationFrame(() => {
           $("#site-suggestions")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -39985,9 +40308,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         button.addEventListener("click", () => {
           applyDashboardPrompt(button.dataset.prompt);
         });
-      });
-      $$(".dashboard-nav-btn[data-screen-link]").forEach((button) => {
-        button.addEventListener("click", closeDashboardMobileNav);
       });
       window.addEventListener("resize", () => {
         if (window.innerWidth > 960) closeDashboardMobileNav();
