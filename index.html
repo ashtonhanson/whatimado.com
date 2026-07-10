@@ -498,80 +498,75 @@
       transition: border-color .16s ease, box-shadow .16s ease;
     }
 
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-card.has-inline-confirm,
-    html[data-color-scheme="adult"] .dashboard-roadmap-item-row.has-inline-confirm {
-      position: relative;
-      overflow: hidden;
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-confirm-target .dashboard-roadmap-category-card,
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row.is-confirm-target {
+      border-color: rgba(220, 38, 38, .28);
+      box-shadow: 0 0 0 1px rgba(220, 38, 38, .12);
     }
 
-    html[data-color-scheme="adult"] .sidebar-inline-confirm {
-      position: absolute;
-      inset: 0;
-      z-index: 4;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: .3rem;
-      padding: .55rem .65rem;
-      background: #fff;
-      border-radius: inherit;
-      box-shadow: inset 3px 0 0 rgba(220, 38, 38, .4);
-      transform: translateX(102%);
-      transition: transform .26s cubic-bezier(.22, 1, .36, 1);
-      pointer-events: none;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-roadmap-item-row .sidebar-inline-confirm {
+    html[data-color-scheme="adult"] .sidebar-delete-strip {
+      margin: .35rem .15rem .55rem;
+      padding: .75rem .8rem;
+      border: 1px solid rgba(220, 38, 38, .22);
       border-radius: 12px;
-      background: var(--bg-soft);
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .1);
+      transform: translateY(-8px);
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition: transform .24s ease, opacity .24s ease, max-height .28s ease, margin .24s ease;
     }
 
-    html[data-color-scheme="adult"] .sidebar-inline-confirm.is-visible {
-      transform: translateX(0);
+    html[data-color-scheme="adult"] .sidebar-delete-strip.is-visible {
+      transform: translateY(0);
+      opacity: 1;
+      max-height: 220px;
       pointer-events: auto;
     }
 
-    html[data-color-scheme="adult"] .sidebar-inline-confirm-title {
+    html[data-color-scheme="adult"] .sidebar-delete-strip-title {
       margin: 0;
-      font-size: .72rem;
+      font-size: .74rem;
       font-weight: 800;
-      line-height: 1.3;
+      line-height: 1.35;
       color: var(--ink);
     }
 
-    html[data-color-scheme="adult"] .sidebar-inline-confirm-message {
-      margin: 0;
-      font-size: .66rem;
-      line-height: 1.4;
+    html[data-color-scheme="adult"] .sidebar-delete-strip-message {
+      margin: .3rem 0 0;
+      font-size: .68rem;
+      line-height: 1.45;
       color: var(--ink);
     }
 
-    html[data-color-scheme="adult"] .sidebar-inline-confirm-detail {
-      margin: 0;
-      font-size: .6rem;
+    html[data-color-scheme="adult"] .sidebar-delete-strip-detail {
+      margin: .25rem 0 0;
+      font-size: .62rem;
       line-height: 1.4;
       color: var(--ink-muted);
     }
 
-    html[data-color-scheme="adult"] .sidebar-inline-confirm-actions {
+    html[data-color-scheme="adult"] .sidebar-delete-strip-actions {
       display: flex;
-      gap: .35rem;
-      margin-top: .2rem;
+      gap: .4rem;
+      margin-top: .55rem;
     }
 
-    html[data-color-scheme="adult"] .sidebar-inline-confirm-btn {
+    html[data-color-scheme="adult"] .sidebar-delete-strip-btn {
       flex: 1;
-      padding: .4rem .45rem;
+      padding: .45rem .5rem;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
       font: inherit;
-      font-size: .64rem;
+      font-size: .66rem;
       font-weight: 700;
       cursor: pointer;
     }
 
-    html[data-color-scheme="adult"] .sidebar-inline-confirm-btn--danger {
+    html[data-color-scheme="adult"] .sidebar-delete-strip-btn--danger {
       border-color: rgba(220, 38, 38, .28);
       background: rgba(220, 38, 38, .08);
       color: #b91c1c;
@@ -1239,8 +1234,11 @@
       align-items: center;
       gap: 0;
       padding-top: 3.25rem;
-      min-height: calc(100dvh - 52px);
+      height: calc(100dvh - var(--topbar-h, 52px));
+      max-height: calc(100dvh - var(--topbar-h, 52px));
+      min-height: 0;
       width: 100%;
+      overflow: hidden;
       box-sizing: border-box;
     }
 
@@ -1250,15 +1248,12 @@
       flex-direction: column;
       width: min(94vw, 720px);
       min-height: 0;
-      max-height: calc(100dvh - 52px);
+      max-height: none;
       margin: 0 auto;
-      padding: 0 1.15rem calc(.75rem + env(safe-area-inset-bottom, 0px));
-      overflow-x: hidden;
-      overflow-y: auto;
+      padding: 0 1.15rem 0;
+      overflow: hidden;
       overscroll-behavior: contain;
       scrollbar-gutter: stable;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(15, 23, 42, 0.14) transparent;
       box-sizing: border-box;
     }
 
@@ -1271,15 +1266,32 @@
       border-radius: 999px;
     }
 
-    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-start-zone {
-      display: none;
-    }
-
     html[data-color-scheme="adult"] #screen-main.is-chat-active .conversation {
       display: flex;
       flex-direction: column;
       gap: 1.15rem;
+      flex: 1 1 auto;
+      min-height: 0;
       padding-top: .25rem;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(15, 23, 42, 0.14) transparent;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .conversation::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .conversation::-webkit-scrollbar-thumb {
+      background: rgba(15, 23, 42, 0.14);
+      border-radius: 999px;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-start-zone {
+      display: none;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .bubble-pair {
@@ -1298,6 +1310,7 @@
       max-width: min(100%, 540px);
       margin: 1.15rem 0 1rem;
       padding: 0;
+      flex-shrink: 0;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .path-mode-choice-label {
@@ -1374,11 +1387,11 @@
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box {
-      position: sticky;
-      bottom: 0;
+      position: static;
+      flex-shrink: 0;
       z-index: 4;
-      margin-top: auto;
-      padding: .85rem 0 1.1rem;
+      margin-top: 0;
+      padding: .75rem 0 calc(.9rem + env(safe-area-inset-bottom, 0px));
       overflow: visible;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .94) 28%, #fff 100%);
       border: 0;
@@ -13915,6 +13928,12 @@
       html[data-color-scheme="adult"] .minimal-start-zone {
         width: 100%;
         max-width: none;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-home {
+        height: calc(100dvh - var(--topbar-h, 52px));
+        max-height: calc(100dvh - var(--topbar-h, 52px));
+        padding-top: 2.5rem;
       }
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat {
@@ -30936,13 +30955,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function scrollMinimalChatToBottom(behavior = "smooth") {
+      const stream = $("#bubble-chain");
       const chat = $("#minimal-chat");
-      if (!chat) return;
+      const scrollEl = stream || chat;
+      if (!scrollEl) return;
       const spacer = $("#convo-spacer");
       if (spacer) spacer.style.minHeight = "0px";
       requestAnimationFrame(() => {
-        const top = chat.scrollHeight - chat.clientHeight;
-        chat.scrollTo({ top: Math.max(0, top), behavior });
+        const top = scrollEl.scrollHeight - scrollEl.clientHeight;
+        scrollEl.scrollTo({ top: Math.max(0, top), behavior });
       });
     }
 
@@ -39985,17 +40006,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         document.removeEventListener("keydown", sidebarInlineConfirmKeyHandler);
         sidebarInlineConfirmKeyHandler = null;
       }
-      const panel = document.querySelector(".sidebar-inline-confirm");
-      const host = panel?.closest(".has-inline-confirm");
+      const panel = document.querySelector(".sidebar-delete-strip, .sidebar-inline-confirm");
+      const target = panel?.previousElementSibling;
       const resolve = sidebarInlineConfirmResolver;
       sidebarInlineConfirmResolver = null;
       if (!panel) {
+        document.querySelectorAll(".is-confirm-target").forEach((el) => el.classList.remove("is-confirm-target"));
         if (resolve) resolve(result);
         return;
       }
       const finish = () => {
         panel.remove();
-        host?.classList.remove("has-inline-confirm");
+        target?.classList.remove("is-confirm-target");
+        document.querySelectorAll(".has-inline-confirm").forEach((el) => el.classList.remove("has-inline-confirm"));
         if (resolve) resolve(result);
       };
       if (panel.classList.contains("is-visible")) {
@@ -40007,9 +40030,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function showSidebarInlineConfirm(anchorButton, options = {}) {
-      document.querySelectorAll(".sidebar-inline-confirm").forEach((el) => {
+      document.querySelectorAll(".sidebar-delete-strip, .sidebar-inline-confirm").forEach((el) => {
         el.remove();
-        el.closest(".has-inline-confirm")?.classList.remove("has-inline-confirm");
+      });
+      document.querySelectorAll(".is-confirm-target, .has-inline-confirm").forEach((el) => {
+        el.classList.remove("is-confirm-target", "has-inline-confirm");
       });
       if (sidebarInlineConfirmResolver) {
         const stale = sidebarInlineConfirmResolver;
@@ -40017,9 +40042,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         stale(false);
       }
 
-      const host = anchorButton?.closest(".dashboard-roadmap-category-card")
+      const target = anchorButton?.closest(".dashboard-roadmap-category")
         || anchorButton?.closest(".dashboard-roadmap-item-row");
-      if (!host) return showConfirmDialog(options);
+      if (!target) return showConfirmDialog(options);
 
       const {
         title = "Are you sure?",
@@ -40035,27 +40060,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         sidebarInlineConfirmResolver = resolve;
 
         const panel = document.createElement("div");
-        panel.className = "sidebar-inline-confirm";
+        panel.className = "sidebar-delete-strip";
         panel.setAttribute("role", "alertdialog");
-        panel.setAttribute("aria-labelledby", "sidebar-inline-confirm-title");
+        panel.setAttribute("aria-labelledby", "sidebar-delete-strip-title");
         const messageMarkup = messageHtml
-          ? `<p class="sidebar-inline-confirm-message">${messageHtml}</p>`
-          : message ? `<p class="sidebar-inline-confirm-message">${escapeHtml(message)}</p>` : "";
+          ? `<p class="sidebar-delete-strip-message">${messageHtml}</p>`
+          : message ? `<p class="sidebar-delete-strip-message">${escapeHtml(message)}</p>` : "";
         panel.innerHTML = `
-          <p class="sidebar-inline-confirm-title" id="sidebar-inline-confirm-title">${escapeHtml(title)}</p>
+          <p class="sidebar-delete-strip-title" id="sidebar-delete-strip-title">${escapeHtml(title)}</p>
           ${messageMarkup}
-          ${detail ? `<p class="sidebar-inline-confirm-detail">${escapeHtml(detail)}</p>` : ""}
-          <div class="sidebar-inline-confirm-actions">
-            <button type="button" class="sidebar-inline-confirm-btn sidebar-inline-confirm-btn--cancel">${escapeHtml(cancelLabel)}</button>
-            <button type="button" class="sidebar-inline-confirm-btn ${tone === "danger" ? "sidebar-inline-confirm-btn--danger" : "sidebar-inline-confirm-btn--confirm"}">${escapeHtml(confirmLabel)}</button>
+          ${detail ? `<p class="sidebar-delete-strip-detail">${escapeHtml(detail)}</p>` : ""}
+          <div class="sidebar-delete-strip-actions">
+            <button type="button" class="sidebar-delete-strip-btn sidebar-delete-strip-btn--cancel">${escapeHtml(cancelLabel)}</button>
+            <button type="button" class="sidebar-delete-strip-btn ${tone === "danger" ? "sidebar-delete-strip-btn--danger" : "sidebar-delete-strip-btn--confirm"}">${escapeHtml(confirmLabel)}</button>
           </div>
         `;
 
-        host.classList.add("has-inline-confirm");
-        host.appendChild(panel);
+        target.classList.add("is-confirm-target");
+        target.insertAdjacentElement("afterend", panel);
 
-        const okBtn = panel.querySelector(".sidebar-inline-confirm-btn--danger, .sidebar-inline-confirm-btn--confirm");
-        const cancelBtn = panel.querySelector(".sidebar-inline-confirm-btn--cancel");
+        const okBtn = panel.querySelector(".sidebar-delete-strip-btn--danger, .sidebar-delete-strip-btn--confirm");
+        const cancelBtn = panel.querySelector(".sidebar-delete-strip-btn--cancel");
 
         okBtn?.addEventListener("click", (event) => {
           event.stopPropagation();
@@ -40068,7 +40093,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           panel.classList.remove("is-visible");
           window.setTimeout(() => {
             panel.remove();
-            host.classList.remove("has-inline-confirm");
+            target.classList.remove("is-confirm-target");
             if (okResolve) okResolve(true);
           }, 240);
         });
@@ -40083,7 +40108,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         };
         document.addEventListener("keydown", sidebarInlineConfirmKeyHandler);
 
-        requestAnimationFrame(() => panel.classList.add("is-visible"));
+        requestAnimationFrame(() => {
+          panel.classList.add("is-visible");
+          panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        });
         cancelBtn?.focus();
       });
     }
@@ -40253,7 +40281,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#dashboard-sidebar")?.addEventListener("click", (event) => {
         if (
           sidebarInlineConfirmResolver
-          && !event.target.closest(".sidebar-inline-confirm")
+          && !event.target.closest(".sidebar-delete-strip, .sidebar-inline-confirm")
           && !event.target.closest("[data-delete-roadmap-category], [data-delete-roadmap-item]")
         ) {
           dismissSidebarInlineConfirm(false);
