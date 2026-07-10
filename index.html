@@ -13920,25 +13920,6 @@
         --mobile-gutter: 1.35rem;
       }
 
-      html[data-color-scheme="adult"] .minimal-prompt.dashboard-search,
-      html[data-color-scheme="adult"] .dashboard-search,
-      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-inner.chat-composer-field {
-        --dashboard-send-size: 40px;
-        --dashboard-prompt-inset: 8px;
-        --dashboard-prompt-radius: 26px;
-        --dashboard-prompt-pad-left: 1rem;
-      }
-
-      html[data-color-scheme="adult"] .minimal-prompt .prompt-textarea,
-      html[data-color-scheme="adult"] .dashboard-search .prompt-textarea,
-      html[data-color-scheme="adult"] #screen-main.is-chat-active .chat-composer-field .reply-textarea {
-        font-size: 0.95rem;
-      }
-
-      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box {
-        padding: .55rem 0 calc(.7rem + env(safe-area-inset-bottom, 0px));
-      }
-
       html[data-color-scheme="adult"] .minimal-home {
         padding-left: var(--mobile-gutter);
         padding-right: var(--mobile-gutter);
@@ -13947,6 +13928,33 @@
       html[data-color-scheme="adult"] .minimal-start-zone {
         width: 100%;
         max-width: none;
+        gap: .65rem;
+      }
+
+      html[data-color-scheme="adult"] .minimal-prompt.dashboard-search {
+        --dashboard-send-size: 40px;
+        --dashboard-prompt-inset: 8px;
+        --dashboard-prompt-radius: 24px;
+        --dashboard-prompt-pad-left: 1rem;
+      }
+
+      html[data-color-scheme="adult"] .minimal-prompt .dashboard-prompt-ghost {
+        font-size: .94rem;
+      }
+
+      html[data-color-scheme="adult"] .minimal-prompt .prompt-textarea {
+        font-size: .94rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-inner.chat-composer-field {
+        --dashboard-send-size: 40px;
+        --dashboard-prompt-inset: 8px;
+        --dashboard-prompt-radius: 24px;
+        --dashboard-prompt-pad-left: 1rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .chat-composer-field .reply-textarea {
+        font-size: .94rem;
       }
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-home {
@@ -14262,7 +14270,7 @@
               <div class="nav-drawer-section">
                 <p class="nav-drawer-label">Navigate</p>
                 <div class="nav-group nav-group--scroll">
-      <button class="nav-btn active" data-screen-link="main" id="nav-home-btn">Home</button>
+      <button class="nav-btn" type="button" id="nav-new-map-btn">Start new map</button>
       <button class="nav-btn" type="button" id="nav-maps-btn" hidden aria-hidden="true"></button>
       <button class="nav-btn" data-screen-link="roadmap" id="nav-roadmap-btn" hidden>Roadmap</button>
       <button class="nav-btn" data-screen-link="stats" id="nav-stats-btn" hidden>Launch stats</button>
@@ -39607,6 +39615,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       hamburger.addEventListener("click", toggleMenu);
       overlay.addEventListener("click", closeMenu);
       $("#nav-donate-btn")?.addEventListener("click", closeMenu);
+      $("#nav-new-map-btn")?.addEventListener("click", () => confirmStartNewMap());
       $("#nav-suggest-btn")?.addEventListener("click", () => scrollToSiteSuggestions("nav_drawer"));
 
       drawer.querySelectorAll("button, a[data-screen-link]").forEach((element) => {
