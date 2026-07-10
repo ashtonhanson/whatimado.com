@@ -259,9 +259,6 @@
       --map-node-royal-strong: #1e8fc4;
       --shadow: 0 1px 3px rgba(0, 0, 0, .06);
       --header-h: var(--topbar-h);
-      --adult-compact-frame: 520px;
-      --adult-page-frame: 600px;
-      --adult-frame-inset: 1.15rem;
     }
 
     html[data-color-scheme="adult"] #bg-gradient,
@@ -1138,13 +1135,11 @@
       width: 100%;
       max-width: none;
       margin: 0 auto;
-      padding: .5rem var(--adult-frame-inset) calc(2.5rem + env(safe-area-inset-bottom, 0px));
+      padding: .5rem 1.15rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
-      align-items: center;
       gap: .85rem;
       min-height: calc(100dvh - 52px);
-      box-sizing: border-box;
     }
 
     html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-home {
@@ -1153,14 +1148,11 @@
     }
 
     html[data-color-scheme="adult"] .minimal-start-zone {
-      width: min(100%, var(--adult-compact-frame));
-      max-width: var(--adult-compact-frame);
-      margin: 0 auto;
+      width: min(94vw, 960px);
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: .85rem;
-      box-sizing: border-box;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-start-zone {
@@ -1256,12 +1248,11 @@
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      width: min(100%, var(--adult-compact-frame));
-      max-width: var(--adult-compact-frame);
+      width: min(94vw, 720px);
       min-height: 0;
       max-height: calc(100dvh - 52px);
       margin: 0 auto;
-      padding: 0 0 calc(.75rem + env(safe-area-inset-bottom, 0px));
+      padding: 0 1.15rem calc(.75rem + env(safe-area-inset-bottom, 0px));
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -1828,8 +1819,7 @@
       --dashboard-prompt-pad-left: 1.2rem;
       --dashboard-prompt-pad-right: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) + 10px);
       position: relative;
-      width: 100%;
-      max-width: var(--adult-compact-frame);
+      max-width: 720px;
       margin: 0 auto;
     }
 
@@ -6892,10 +6882,9 @@
     }
 
     #screen-notes .notes-page {
-      max-width: var(--adult-compact-frame, 520px);
+      max-width: 760px;
       margin: 0 auto;
-      padding: 1.25rem var(--adult-frame-inset, 1.15rem) 3rem;
-      box-sizing: border-box;
+      padding: 1.25rem 1rem 3rem;
     }
 
     html[data-color-scheme="adult"] #screen-notes.active {
@@ -6910,12 +6899,10 @@
     }
 
     html[data-color-scheme="adult"] #screen-notes .notes-page {
-      width: min(100%, var(--adult-compact-frame));
-      max-width: var(--adult-compact-frame);
+      width: min(92vw, 520px);
       margin: 0 auto;
-      padding: 0 0 2rem;
+      padding: 0 1rem 2rem;
       text-align: center;
-      box-sizing: border-box;
     }
 
     html[data-color-scheme="adult"] #screen-notes .maps-page-head {
@@ -6943,16 +6930,6 @@
 
     html[data-color-scheme="adult"] #screen-notes .maps-empty {
       text-align: center;
-    }
-
-    html[data-color-scheme="adult"] #screen-maps .maps-page,
-    html[data-color-scheme="adult"] #screen-settings .settings-page {
-      width: min(100%, var(--adult-page-frame));
-      max-width: var(--adult-page-frame);
-      margin: 0 auto;
-      padding-left: var(--adult-frame-inset);
-      padding-right: var(--adult-frame-inset);
-      box-sizing: border-box;
     }
 
     .notes-library-list {
@@ -13927,7 +13904,52 @@
 
     @media (max-width: 760px) {
       html[data-color-scheme="adult"] {
-        --adult-frame-inset: 1.25rem;
+        --mobile-gutter: 1.35rem;
+      }
+
+      html[data-color-scheme="adult"] .minimal-home {
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] .minimal-start-zone {
+        width: 100%;
+        max-width: none;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat {
+        width: 100%;
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-inner.chat-composer-field {
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap .page,
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] #screen-map .page {
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+      }
+
+      html[data-color-scheme="adult"] #screen-maps .maps-page,
+      html[data-color-scheme="adult"] #screen-settings .settings-page,
+      html[data-color-scheme="adult"] #screen-notes .notes-page {
+        width: 100%;
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task {
