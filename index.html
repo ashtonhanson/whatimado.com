@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-fixed-chat-composer">
+  <meta name="whatimado-build" content="2026-07-10-roadmap-mobile-restore">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1165,13 +1165,13 @@
 
     html[data-color-scheme="adult"] .topbar-logo img {
       display: block;
-      height: 32px;
+      height: 40px;
       width: auto;
     }
 
     @media (min-width: 768px) {
       html[data-color-scheme="adult"] .topbar-logo img {
-        height: 36px;
+        height: 44px;
       }
     }
 
@@ -9688,6 +9688,19 @@
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
         padding-top: .35rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
+        scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 52px)) + 10px);
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task {
+        scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 52px)) + 14px);
+      }
+
+      html[data-color-scheme="adult"] #screen-map.active .page-header--map,
+      html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
+        scroll-margin-top: calc(var(--topbar-h, 52px) + 8px);
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-overview-header {
@@ -20146,7 +20159,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       setTaskExpanded(taskId, true);
-      item.querySelector(".task-expanded-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      scrollRoadmapTargetIntoView(
+        item.querySelector(".task-compressed-row") || item.querySelector(".task-expanded-panel") || item,
+        { extraOffset: 16 }
+      );
     }
 
     function syncTaskExpandUi(taskId) {
@@ -20201,6 +20217,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    function scheduleRoadmapStickyOffsetRemeasure() {
+      syncRoadmapStickyOffset();
+      requestAnimationFrame(() => {
+        syncRoadmapStickyOffset();
+        requestAnimationFrame(syncRoadmapStickyOffset);
+      });
+    }
+
     function updateRoadmapFloatProgress(percent) {
       const bar = $("#roadmap-float-progress");
       const fill = $("#roadmap-float-progress-fill");
@@ -20210,7 +20234,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (fill) fill.style.width = `${rounded}%`;
       if (text) text.textContent = `${rounded}%`;
       if (track) track.setAttribute("aria-valuenow", String(rounded));
-      syncRoadmapStickyOffset();
+      scheduleRoadmapStickyOffsetRemeasure();
     }
 
     const draftProgressControllers = new Map();
@@ -27037,9 +27061,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return state.guestSessionToken;
     }
 
+    function scrubGuestPayloadForSessionLoad(payload) {
+      if (!payload || state.currentUser) return payload;
+      const next = { ...payload };
+      if (next.sessionOwner === "user") next.sessionOwner = "guest";
+      if (next.lastUserId) next.lastUserId = null;
+      return next;
+    }
+
     function isGuestPayloadContaminated(payload) {
       if (!payload || state.currentUser) return false;
-      if (payload.sessionOwner === "user" || payload.lastUserId) return true;
       if (
         state.guestSessionToken
         && payload.guestSessionToken
@@ -27047,15 +27078,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ) {
         return true;
       }
-      // Pre-token guest blobs that still carry a signed-in user's prefs after sign-out.
-      if (
-        state.guestSessionToken
-        && !payload.guestSessionToken
-        && accountPrefsHasIdentity(payload.accountPrefs)
-      ) {
-        return true;
-      }
       return false;
+    }
+
+    function recoverSessionRoadmapFromSavedMaps() {
+      if (state.currentIdea && state.roadmapKey && roadmapStagesAreRenderable(state.roadmapStages)) return;
+      const entry = state.activeMapId
+        ? state.savedMaps.find((map) => map.id === state.activeMapId)
+        : state.savedMaps[0];
+      if (!entry?.currentIdea) return;
+      const key = entry.roadmapKey || slugify(entry.currentIdea.title);
+      const cachedStages = entry.allRoadmaps?.[key]?.stages;
+      const stages = roadmapStagesAreRenderable(entry.roadmapStages)
+        ? entry.roadmapStages
+        : cachedStages;
+      if (!roadmapStagesAreRenderable(stages)) return;
+      applyMapSnapshot({
+        ...entry,
+        roadmapStages: stages
+      });
     }
 
     function normalizeSessionPayload(data) {
@@ -29094,6 +29135,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       applyRemovedRoadmapGuards();
       pruneRoadmapSidebarAgainstData();
       restoreActiveSavedMapSnapshot();
+      recoverSessionRoadmapFromSavedMaps();
       applyRemovedRoadmapGuards();
 
       if (state.activeMapId && getDeletedMapIds().has(state.activeMapId)) {
@@ -29813,6 +29855,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         payload = scrubPayloadTombstones(localPayload);
       }
 
+      if (payload && !state.currentUser) {
+        payload = scrubGuestPayloadForSessionLoad(payload);
+        if (payload.guestSessionToken) {
+          state.guestSessionToken = payload.guestSessionToken;
+        }
+      }
+
       if (payload) {
         if (isGuestPayloadContaminated(payload)) {
           try {
@@ -29828,7 +29877,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (payload) {
-      if (!state.currentUser && payload.guestSessionToken) {
+      if (!state.currentUser && payload.guestSessionToken && !state.guestSessionToken) {
         state.guestSessionToken = payload.guestSessionToken;
       } else if (!state.currentUser && !state.guestSessionToken) {
         startGuestSession();
@@ -36872,9 +36921,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         updateTaskNotesWordCount(taskId);
         bindTaskExpandControls(item, taskId);
         syncTaskExpandUi(taskId);
-        item.querySelectorAll(".task-extra-detail").forEach((detailsEl) => {
-          if (window.matchMedia("(max-width: 960px)").matches) detailsEl.removeAttribute("open");
-        });
         check?.addEventListener("change", () => {
           data.checked = check.checked;
           item.classList.toggle("is-done", check.checked);
@@ -37909,13 +37955,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
       }
       const meta = renderTaskMentorMetaHtml(normalized);
-      const showBreakdown = !simplified && displaySteps.length >= 2;
-      const breakdown = showBreakdown ? renderTaskBreakdownHtml(normalized, id) : "";
+      const showBreakdown = displaySteps.length >= 2;
+      const breakdown = !simplified && showBreakdown ? renderTaskBreakdownHtml(normalized, id) : "";
       const compressedBreakdown = showBreakdown ? renderCompressedBreakdownHtml(displaySteps, id) : "";
       const mentorHelp = renderMentorFindingsHtml(normalized, { simplified });
       const contextNoteHtml = renderTaskContextNoteHtml(contextNote);
       const outcomeChecklist = simplified ? "" : renderTaskOutcomeChecklistHtml(id, normalized);
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
+      const taskDetailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
+      const plainExplainHtml = renderTaskPlainExplainHtml(normalized, stageIndex, taskIndex);
+      const simplifiedWhyHow = [
+        why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) ? `
+                <section class="task-mentor-section">
+                  <h4 class="task-mentor-label">Why this step</h4>
+                  <p class="task-mentor-copy">${escapeHtml(why)}</p>
+                </section>` : "",
+        howTo && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
+                <section class="task-mentor-section">
+                  <h4 class="task-mentor-label">Next action</h4>
+                  <p class="task-mentor-copy">${escapeHtml(howTo)}</p>
+                </section>` : ""
+      ].join("");
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const aiAssist = renderTaskAiAssistHtml(id, normalized);
       const nextTaskId = getNextTaskId(stageIndex, taskIndex);
@@ -37955,12 +38015,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const outcomeSection = renderTaskOutcomeSectionHtml(id, normalized, outcome);
       const simplifiedWhatToDo = showWhatToDo ? `
                 ${contextNoteHtml}
+                ${plainExplainHtml}
                 <section class="task-mentor-section task-mentor-section--task">
                   <button type="button" class="task-mentor-label task-mentor-label--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">What to do</button>
                   <button type="button" class="task-text task-text--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">${linkifyTaskTextHtml(text)}</button>
+                  ${!simplified && breakdown ? breakdown : ""}
                 </section>
                 ${mentorHelp}
-                ${outcomeSection}` : `${contextNoteHtml}${mentorHelp}${outcomeSection}`;
+                ${simplifiedWhyHow}
+                ${taskDetailBlock}
+                ${outcomeSection}` : `${contextNoteHtml}${plainExplainHtml}${mentorHelp}${simplifiedWhyHow}${taskDetailBlock}${outcomeSection}`;
 
       return `
         <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
@@ -38270,6 +38334,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    function autoExpandActiveRoadmapTaskOnMobile() {
+      if (!window.matchMedia("(max-width: 960px)").matches) return;
+      if (document.documentElement.dataset.colorScheme !== "adult") return;
+      if (!$("#screen-roadmap")?.classList.contains("active")) return;
+      const pos = getFirstIncompleteTaskPosition();
+      if (!pos) return;
+      const taskId = `task-${pos.stageIndex}-${pos.taskIndex}`;
+      if (isTaskExpanded(taskId)) return;
+      ensurePhaseOpenForTask(taskId);
+      setTaskExpanded(taskId, true);
+    }
+
     function renderStages(stages, options = {}) {
       const list = $("#stage-list");
       if (!list) return;
@@ -38380,10 +38456,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       bindTaskPersistence();
+      autoExpandActiveRoadmapTaskOnMobile();
       updateRoadmapOverviewHeader();
       updateRoadmapOverviewChrome();
       updateRoadmapLocalResourcesList();
       updateMomentum();
+      scheduleRoadmapStickyOffsetRemeasure();
       if (options.scrollToHeader) {
         ensureRoadmapOpensAtTop();
       }
@@ -39836,7 +39914,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function syncHeaderHeight() {
       if (document.documentElement.dataset.colorScheme === "adult") {
+        const topbar = document.querySelector(".minimal-topbar");
+        const topbarH = topbar ? Math.max(52, Math.ceil(topbar.getBoundingClientRect().height)) : 52;
+        document.documentElement.style.setProperty("--topbar-h", `${topbarH}px`);
         document.documentElement.style.setProperty("--header-h", "0px");
+        syncRoadmapStickyOffset();
         return;
       }
       const header = document.querySelector(".app-header");
@@ -39930,19 +40012,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       window.addEventListener("pageshow", (event) => {
         if (!event.persisted) return;
-        try {
-          const raw = localStorage.getItem(getStorageKey());
-          if (!raw) return;
-          const data = JSON.parse(raw);
-          if (!Array.isArray(data?.roadmapStages) || !data.roadmapStages.length) return;
-          applySession(data);
-          if (state.lastScreen === "roadmap" && $("#screen-roadmap")?.classList.contains("active")) {
-            renderStages(state.roadmapStages);
-            renderAllTaskThreads();
-          }
-        } catch {
-          /* ignore restore errors */
-        }
+        void loadSession();
       });
     }
 
@@ -40824,6 +40894,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
 
       $("#bubble-chain")?.addEventListener("click", (event) => {
+        const chip = event.target.closest(".profile-intake-chip");
+        if (chip) {
+          event.preventDefault();
+          handleProfileChipClick(chip);
+          return;
+        }
         const editBtn = event.target.closest(".bubble-edit-btn");
         if (editBtn) {
           event.preventDefault();
