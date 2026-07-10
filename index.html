@@ -1496,7 +1496,8 @@
     html[data-color-scheme="adult"] .dashboard-search-field {
       position: relative;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      padding: var(--dashboard-prompt-inset);
       min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
       border-radius: var(--dashboard-prompt-radius);
       border: 1px solid rgba(15, 23, 42, 0.08);
@@ -1506,12 +1507,6 @@
         0 1px 2px rgba(15, 23, 42, 0.04),
         0 8px 24px rgba(15, 23, 42, 0.06);
       transition: border-color 0.18s ease, box-shadow 0.18s ease;
-    }
-
-    html[data-color-scheme="adult"] .dashboard-search-field.is-expanded {
-      align-items: flex-start;
-      padding-top: calc(var(--dashboard-prompt-inset) + 2px);
-      padding-bottom: calc(var(--dashboard-prompt-inset) + 2px);
     }
 
     html[data-color-scheme="adult"] .dashboard-prompt-ghost {
@@ -1548,9 +1543,9 @@
       flex: 1 1 auto;
       width: 100%;
       min-height: var(--dashboard-send-size);
-      max-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
+      max-height: 160px;
       margin: 0;
-      padding: 0 var(--dashboard-prompt-pad-right) 0 var(--dashboard-prompt-pad-left);
+      padding: calc((var(--dashboard-send-size) - 1.5em) / 2) var(--dashboard-prompt-pad-right) calc((var(--dashboard-send-size) - 1.5em) / 2) var(--dashboard-prompt-pad-left);
       border: 0;
       border-radius: var(--dashboard-prompt-radius);
       background: transparent;
@@ -1560,15 +1555,10 @@
       line-height: 1.5;
       text-align: left;
       box-sizing: border-box;
-      transition: max-height 0.15s ease, height 0.15s ease, padding 0.15s ease;
     }
 
     html[data-color-scheme="adult"] .dashboard-search-field.is-expanded .prompt-textarea {
-      max-height: 160px;
-      line-height: 1.5;
       overflow-y: auto;
-      padding-top: 0;
-      padding-bottom: 0;
     }
 
     @media (max-width: 720px) {
@@ -39168,47 +39158,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const field = input?.closest(".dashboard-search-field");
       if (!input || !field) return;
 
-      const rootStyle = getComputedStyle(document.documentElement);
-      const sendSize = parseFloat(rootStyle.getPropertyValue("--dashboard-send-size")) || 44;
-      const inset = parseFloat(rootStyle.getPropertyValue("--dashboard-prompt-inset")) || 8;
-      const collapsedHeight = sendSize + inset * 2;
-      const hasValue = Boolean(input.value.trim());
-      field.classList.toggle("has-value", hasValue);
+      const fieldStyle = getComputedStyle(field);
+      const sendSize = parseFloat(fieldStyle.getPropertyValue("--dashboard-send-size")) || 44;
+      const hasText = input.value.length > 0;
+      field.classList.toggle("has-value", Boolean(input.value.trim()));
 
-      const resetInlineSizing = () => {
+      if (!hasText) {
         input.style.height = "";
-        input.style.lineHeight = "";
-        input.style.paddingTop = "";
-        input.style.paddingBottom = "";
-      };
-
-      if (!hasValue) {
         field.classList.remove("is-expanded");
-        resetInlineSizing();
         return;
       }
 
-      resetInlineSizing();
-      input.style.height = "auto";
-      input.style.lineHeight = "1.5";
-      const scrollHeight = input.scrollHeight;
-      const needsExpand = scrollHeight > sendSize + 4;
-      field.classList.toggle("is-expanded", needsExpand);
-
-      if (!needsExpand) {
-        const fontSize = parseFloat(getComputedStyle(input).fontSize) || 16;
-        const textBlockHeight = fontSize * 1.5;
-        const verticalPad = Math.max(inset, (collapsedHeight - textBlockHeight) / 2);
-        input.style.height = `${collapsedHeight}px`;
-        input.style.paddingTop = `${verticalPad}px`;
-        input.style.paddingBottom = `${verticalPad}px`;
-        return;
-      }
-
+      input.style.height = "0px";
       const mobile = window.matchMedia("(max-width: 720px)").matches;
       const max = mobile ? 280 : 160;
-      const next = Math.min(max, Math.max(collapsedHeight, scrollHeight));
-      input.style.height = `${next}px`;
+      const nextHeight = Math.min(max, Math.max(sendSize, input.scrollHeight));
+      input.style.height = `${nextHeight}px`;
+      field.classList.toggle("is-expanded", nextHeight > sendSize + 2);
     }
 
     function initRotatingPromptPlaceholder() {
