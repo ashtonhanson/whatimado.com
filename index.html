@@ -6802,6 +6802,67 @@
       line-height: 1.5;
     }
 
+    #screen-notes .notes-page {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+
+    .notes-library-list {
+      display: grid;
+      gap: .7rem;
+    }
+
+    .saved-note-card {
+      display: grid;
+      gap: .55rem;
+      padding: 1rem;
+      border: 1px solid rgba(120, 130, 200, .14);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .saved-note-card-title {
+      margin: 0;
+      font-size: .95rem;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .saved-note-card-body {
+      margin: 0;
+      color: var(--ink-muted);
+      font-size: .84rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .saved-note-card-meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 600;
+    }
+
+    .task-save-notes-label {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      margin-top: .55rem;
+      color: var(--ink-muted);
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .task-save-notes-check {
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      accent-color: var(--brand-teal);
+    }
+
     .map-how-it-works {
       margin: 0 0 1rem;
       padding: .85rem 1rem;
@@ -14087,6 +14148,10 @@
           <svg viewBox="0 0 24 24"><path d="M12 3l2.4 7.4H22l-6 4.6 2.3 7L12 17.8 5.7 22l2.3-7-6-4.6h7.6L12 3z"></path></svg>
           Discoveries
         </button>
+        <button type="button" class="dashboard-nav-btn" data-screen-link="notes" id="sidebar-notes-btn">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"></path></svg>
+          My Notes
+        </button>
         <button type="button" class="dashboard-nav-btn" data-screen-link="roadmap" id="sidebar-progress-btn" hidden>
           <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 17V9M12 17V7M16 17v-5"></path></svg>
           Progress
@@ -14327,6 +14392,20 @@
           <button type="button" class="action-btn" id="maps-new-btn">Start new map</button>
         </div>
         <div class="maps-library-list" id="maps-library-list"></div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-notes">
+      <div class="notes-page">
+        <div class="maps-page-head">
+          <button type="button" class="back-btn" data-screen-link="main">Back to home</button>
+          <div>
+            <p class="maps-page-kicker">Your library</p>
+            <h2 class="maps-page-title">My Notes</h2>
+            <p class="maps-page-sub">Notes you saved from roadmap tasks — each labeled by the mission you wrote them for. Open a note to jump back to that task.</p>
+          </div>
+        </div>
+        <div class="notes-library-list" id="notes-library-list"></div>
       </div>
     </section>
 
@@ -26731,6 +26810,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       renderSidebarRoadmaps();
       renderMapsLibrary();
       renderSavedMapsHome();
+      renderSavedNotesLibrary();
       updateMapsNav();
       if (options.rebuildMap && state.ideas.length) {
         buildOpportunityMap(state.ideas, { skipPersist: true });
@@ -28799,6 +28879,137 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       updateMapsNav();
     }
 
+    function getRoadmapStagesFromMapSnapshot(map, roadmapKey) {
+      if (!map || !roadmapKey) return [];
+      if (map.roadmapKey === roadmapKey && Array.isArray(map.roadmapStages) && map.roadmapStages.length) {
+        return map.roadmapStages;
+      }
+      const cached = map.allRoadmaps?.[roadmapKey];
+      if (Array.isArray(cached?.stages) && cached.stages.length) return cached.stages;
+      return [];
+    }
+
+    function getTaskTitleFromMapSnapshot(map, roadmapKey, taskId) {
+      const parsed = parseTaskId(taskId);
+      if (!parsed) return "Saved note";
+      const stages = getRoadmapStagesFromMapSnapshot(map, roadmapKey);
+      const task = stages[parsed.stageIndex]?.tasks?.[parsed.taskIndex];
+      if (!task) return "Saved note";
+      const mission = getMissionTitle(task);
+      const text = getTaskText(task);
+      return mission || summarizeMissionTitle(text) || text || "Saved note";
+    }
+
+    function getRoadmapLabelFromMapSnapshot(map, roadmapKey) {
+      const fromCache = map.allRoadmaps?.[roadmapKey]?.idea?.title;
+      if (fromCache) return fromCache;
+      const idea = (map.ideas || []).find((entry) => slugify(entry.title) === roadmapKey);
+      if (idea?.title) return idea.title;
+      if (map.roadmapKey === roadmapKey && map.currentIdea?.title) return map.currentIdea.title;
+      return "Path";
+    }
+
+    function collectSavedNotesLibrary() {
+      syncActiveMapIntoLibrary();
+      const entries = [];
+      for (const map of state.savedMaps || []) {
+        const chats = map.allTaskChats || {};
+        for (const [roadmapKey, tasks] of Object.entries(chats)) {
+          if (!tasks || typeof tasks !== "object") continue;
+          for (const [taskId, data] of Object.entries(tasks)) {
+            if (!data?.saveNotes) continue;
+            const body = String(data.notes || "").trim();
+            if (!body) continue;
+            entries.push({
+              mapId: map.id,
+              mapTitle: map.title || "Untitled map",
+              roadmapKey,
+              roadmapTitle: getRoadmapLabelFromMapSnapshot(map, roadmapKey),
+              taskId,
+              taskTitle: getTaskTitleFromMapSnapshot(map, roadmapKey, taskId),
+              notes: body,
+              savedAt: data.notesSavedAt || map.updatedAt || 0
+            });
+          }
+        }
+      }
+      return entries.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+    }
+
+    function renderSavedNotesLibrary() {
+      const list = $("#notes-library-list");
+      if (!list) return;
+      const entries = collectSavedNotesLibrary();
+      if (!entries.length) {
+        list.innerHTML = '<p class="maps-empty">No saved notes yet. On any roadmap task, write in <strong>My Notes</strong> and check <strong>Save my notes</strong> to keep them here.</p>';
+        list._savedNotesEntries = [];
+        return;
+      }
+      list.innerHTML = entries.map((entry, index) => {
+        const preview = entry.notes.length > 280 ? `${entry.notes.slice(0, 280)}…` : entry.notes;
+        const when = entry.savedAt ? formatMapDate(entry.savedAt) : "";
+        return `
+          <article class="saved-note-card">
+            <h3 class="saved-note-card-title">${escapeHtml(entry.taskTitle)}</h3>
+            <p class="saved-note-card-body">${escapeHtml(preview)}</p>
+            <p class="saved-note-card-meta">${escapeHtml(entry.mapTitle)} · ${escapeHtml(entry.roadmapTitle)}${when ? ` · ${escapeHtml(when)}` : ""}</p>
+            <div class="map-library-actions">
+              <button type="button" class="back-btn" data-open-saved-note="${index}">Open task</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+      list._savedNotesEntries = entries;
+    }
+
+    async function openSavedNote(entry) {
+      if (!entry?.mapId || !entry.taskId) return;
+      loadSavedMap(entry.mapId, { skipScreen: true });
+      let ideaIndex = (state.ideas || []).findIndex((idea) => slugify(idea.title) === entry.roadmapKey);
+      let idea = state.ideas?.[ideaIndex];
+      if (!idea) {
+        idea = (state.ideas || []).find((item) => slugify(item.title) === entry.roadmapKey);
+        ideaIndex = state.ideas?.indexOf(idea) ?? -1;
+      }
+      if (!idea) {
+        flashSaveToast("That roadmap isn't available anymore — open the map first.");
+        showScreen("maps");
+        return;
+      }
+      try {
+        await viewRoadmap(idea, ideaIndex >= 0 ? ideaIndex : 0, { reopen: true });
+      } catch (error) {
+        console.error("[whatimado] openSavedNote failed:", error);
+        flashSaveToast("Couldn't open that note — try again.");
+        return;
+      }
+      const parsed = parseTaskId(entry.taskId);
+      if (parsed) {
+        if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
+        state.expandedRoadmapPhases.add(parsed.stageIndex);
+      }
+      setTaskExpanded(entry.taskId, true);
+      if (state.roadmapStages?.length) {
+        renderStages(state.roadmapStages);
+      }
+      queueMicrotask(() => {
+        const item = document.querySelector(`.task-item[data-task-id="${entry.taskId}"]`);
+        scrollRoadmapTargetIntoView(item?.querySelector(".task-textarea") || item, { extraOffset: 24 });
+        item?.querySelector(".task-textarea")?.focus({ preventScroll: true });
+      });
+      closeDashboardMobileNav();
+      trackEvent("saved_note_opened", { task_id: entry.taskId, map_id: entry.mapId });
+    }
+
+    function handleSavedNotesAction(event) {
+      const btn = event.target.closest("[data-open-saved-note]");
+      if (!btn) return;
+      const list = $("#notes-library-list");
+      const index = Number(btn.dataset.openSavedNote);
+      const entry = list?._savedNotesEntries?.[index];
+      if (entry) void openSavedNote(entry);
+    }
+
     function handleSavedMapAction(event) {
       const openBtn = event.target.closest("[data-open-map]");
       if (openBtn) {
@@ -29956,16 +30167,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getRoadmapTaskData(taskId) {
-      if (!state.roadmapKey) return { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [] };
+      if (!state.roadmapKey) return { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [], saveNotes: false };
       if (!state.allTaskChats[state.roadmapKey]) state.allTaskChats[state.roadmapKey] = {};
       if (!state.allTaskChats[state.roadmapKey][taskId]) {
-        state.allTaskChats[state.roadmapKey][taskId] = { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [] };
+        state.allTaskChats[state.roadmapKey][taskId] = { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [], saveNotes: false };
       }
       if (!Array.isArray(state.allTaskChats[state.roadmapKey][taskId].outcomeChecks)) {
         state.allTaskChats[state.roadmapKey][taskId].outcomeChecks = [];
       }
       if (state.allTaskChats[state.roadmapKey][taskId].draft === undefined) {
         state.allTaskChats[state.roadmapKey][taskId].draft = "";
+      }
+      if (state.allTaskChats[state.roadmapKey][taskId].saveNotes === undefined) {
+        state.allTaskChats[state.roadmapKey][taskId].saveNotes = false;
       }
       return state.allTaskChats[state.roadmapKey][taskId];
     }
@@ -30689,6 +30903,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         $("#sidebar-stats-btn")?.classList.add("active");
       } else if (name === "settings") {
         $("#sidebar-settings-btn")?.classList.add("active");
+      } else if (name === "notes") {
+        $("#sidebar-notes-btn")?.classList.add("active");
       }
       if (isConvo) {
         scrollConversation();
@@ -30732,6 +30948,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         startRotatingPromptPlaceholder();
       }
       if (name === "maps") refreshRoadmapsUi({ rebuildMap: state.lastScreen === "map" });
+      if (name === "notes") renderSavedNotesLibrary();
       if (name === "stats") {
         updateStatsContinueButton();
         refreshLaunchStats();
@@ -36021,9 +36238,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const data = getRoadmapTaskData(taskId);
         const check = item.querySelector(".task-check");
         const notes = item.querySelector(".task-textarea");
+        const saveNotesCheck = item.querySelector(".task-save-notes-check");
         if (check) check.checked = Boolean(data.checked);
         item.classList.toggle("is-done", Boolean(check?.checked));
         if (notes) notes.value = data.notes || "";
+        if (saveNotesCheck) saveNotesCheck.checked = Boolean(data.saveNotes);
         const draftEl = getTaskDraftTextarea(item);
         if (draftEl) draftEl.value = data.draft || "";
         item.classList.toggle("has-draft", Boolean(data.draft?.trim()));
@@ -36070,7 +36289,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           }
           data.notes = notes.value;
           updateTaskNotesWordCount(taskId);
+          if (data.saveNotes && notes.value.trim()) {
+            data.notesSavedAt = Date.now();
+          }
           schedulePersist();
+          renderSavedNotesLibrary();
           clearTimeout(notesAdaptTimer);
           notesAdaptTimer = setTimeout(() => {
             const signals = detectAdaptSignalsFromText(notes.value);
@@ -36081,6 +36304,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               });
             }
           }, 4500);
+        });
+        saveNotesCheck?.addEventListener("change", () => {
+          data.saveNotes = saveNotesCheck.checked;
+          if (data.saveNotes) {
+            data.notesSavedAt = Date.now();
+            if (!notes?.value.trim()) {
+              flashSaveToast("Add a note first — then it will appear in My Notes.");
+            }
+          } else {
+            data.notesSavedAt = null;
+          }
+          schedulePersist();
+          renderSavedNotesLibrary();
+          trackEvent("task_notes_save_toggled", { task_id: taskId, saved: data.saveNotes });
         });
         renderTaskThreads(taskId);
       });
@@ -37143,6 +37380,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               <section class="task-mentor-section task-mentor-section--notes">
                 <h4 class="task-mentor-label">My Notes</h4>
                 <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>
+                <label class="task-save-notes-label">
+                  <input type="checkbox" class="task-save-notes-check" aria-label="Save my notes to My Notes library">
+                  <span>Save my notes</span>
+                </label>
                 ${renderTaskWritingAssistHtml(id, normalized)}
                 ${notesExtras}
               </section>
@@ -39974,6 +40215,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         $("#main-input")?.focus();
       });
       $("#maps-library-list")?.addEventListener("click", handleSavedMapAction);
+      $("#notes-library-list")?.addEventListener("click", handleSavedNotesAction);
       $("#saved-maps-home-list")?.addEventListener("click", handleSavedMapAction);
       $("#jingle-replay-btn")?.addEventListener("click", async () => {
         const replay = $("#jingle-replay-btn");
