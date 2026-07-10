@@ -504,6 +504,12 @@
       box-shadow: 0 0 0 1px rgba(220, 38, 38, .12);
     }
 
+    html[data-color-scheme="adult"] .is-confirm-target .dashboard-roadmap-item-delete,
+    html[data-color-scheme="adult"] .is-confirm-target .dashboard-roadmap-category-delete {
+      pointer-events: none;
+      opacity: .45;
+    }
+
     html[data-color-scheme="adult"] .sidebar-delete-strip {
       margin: .35rem .15rem .55rem;
       padding: .75rem .8rem;
@@ -13917,18 +13923,22 @@
 
     @media (max-width: 760px) {
       html[data-color-scheme="adult"] {
-        --mobile-gutter: 1.35rem;
+        --mobile-gutter: 1.5rem;
+        --mobile-prompt-gutter: 1.15rem;
       }
 
-      html[data-color-scheme="adult"] .minimal-home {
+      html[data-color-scheme="adult"] .minimal-home,
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-home {
         padding-left: var(--mobile-gutter);
         padding-right: var(--mobile-gutter);
+        box-sizing: border-box;
       }
 
       html[data-color-scheme="adult"] .minimal-start-zone {
         width: 100%;
-        max-width: none;
+        max-width: 100%;
         gap: .65rem;
+        box-sizing: border-box;
       }
 
       html[data-color-scheme="adult"] .minimal-prompt.dashboard-search {
@@ -13936,6 +13946,11 @@
         --dashboard-prompt-inset: 8px;
         --dashboard-prompt-radius: 24px;
         --dashboard-prompt-pad-left: 1rem;
+        width: 100%;
+        max-width: 100%;
+        padding-left: var(--mobile-prompt-gutter);
+        padding-right: var(--mobile-prompt-gutter);
+        box-sizing: border-box;
       }
 
       html[data-color-scheme="adult"] .minimal-prompt .dashboard-prompt-ghost {
@@ -13946,11 +13961,27 @@
         font-size: .94rem;
       }
 
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat {
+        width: 100%;
+        max-width: 100%;
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+        box-sizing: border-box;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box {
+        padding-left: var(--mobile-prompt-gutter);
+        padding-right: var(--mobile-prompt-gutter);
+        box-sizing: border-box;
+      }
+
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-inner.chat-composer-field {
         --dashboard-send-size: 40px;
         --dashboard-prompt-inset: 8px;
         --dashboard-prompt-radius: 24px;
         --dashboard-prompt-pad-left: 1rem;
+        margin-left: 0;
+        margin-right: 0;
       }
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .chat-composer-field .reply-textarea {
@@ -13961,22 +13992,6 @@
         height: calc(100dvh - var(--topbar-h, 52px));
         max-height: calc(100dvh - var(--topbar-h, 52px));
         padding-top: 2.5rem;
-      }
-
-      html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat {
-        width: 100%;
-        padding-left: var(--mobile-gutter);
-        padding-right: var(--mobile-gutter);
-      }
-
-      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box {
-        padding-left: 0;
-        padding-right: 0;
-      }
-
-      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-inner.chat-composer-field {
-        margin-left: 0;
-        margin-right: 0;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .page,
@@ -28344,6 +28359,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           purgeRoadmapFromAllLibraryMaps(ideaTitle);
         }
         removeRoadmapSidebarItems(ideaTitle, mapId);
+        renderSidebarRoadmaps();
 
         let resolvedIndex = Number.isInteger(ideaIndex) ? ideaIndex : state.ideas.findIndex((entry) => entry.title === ideaTitle);
         if (resolvedIndex >= 0) setPathSelected(resolvedIndex, false);
@@ -28363,7 +28379,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         applyRemovedRoadmapGuards(mapId);
         refreshRoadmapsUi({ rebuildMap: true });
         schedulePersist();
-        void flushPersist();
+        void flushPersist({ force: true });
         trackEvent("roadmap_removed", {
           idea_title: ideaTitle,
           map_id: mapId || null,
@@ -28702,11 +28718,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           if (state.activeRoadmapCategoryId === categoryId) {
             state.activeRoadmapCategoryId = null;
           }
+          renderSidebarRoadmaps();
           if (getRoadmapSidebarCount() === 0 && state.lastScreen === "map") {
             resetPossibilityMapView();
           }
           refreshRoadmapsUi({ rebuildMap: true });
-          void flushPersist();
+          void flushPersist({ force: true });
           trackEvent("roadmap_category_deleted", { had_map: false });
         });
       });
@@ -40117,8 +40134,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         panel.remove();
         target?.classList.remove("is-confirm-target");
         document.querySelectorAll(".has-inline-confirm").forEach((el) => el.classList.remove("has-inline-confirm"));
-        if (resolve) resolve(result);
       };
+      if (resolve) resolve(result);
       if (panel.classList.contains("is-visible")) {
         panel.classList.remove("is-visible");
         window.setTimeout(finish, 240);
@@ -40181,22 +40198,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const cancelBtn = panel.querySelector(".sidebar-delete-strip-btn--cancel");
 
         okBtn?.addEventListener("click", (event) => {
+          event.preventDefault();
           event.stopPropagation();
-          if (sidebarInlineConfirmKeyHandler) {
-            document.removeEventListener("keydown", sidebarInlineConfirmKeyHandler);
-            sidebarInlineConfirmKeyHandler = null;
-          }
-          const okResolve = sidebarInlineConfirmResolver;
-          sidebarInlineConfirmResolver = null;
-          panel.classList.remove("is-visible");
-          window.setTimeout(() => {
-            panel.remove();
-            target.classList.remove("is-confirm-target");
-            if (okResolve) okResolve(true);
-          }, 240);
+          dismissSidebarInlineConfirm(true);
         });
 
         cancelBtn?.addEventListener("click", (event) => {
+          event.preventDefault();
           event.stopPropagation();
           dismissSidebarInlineConfirm(false);
         });
@@ -40390,7 +40398,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (deleteItemBtn) {
           event.preventDefault();
           event.stopPropagation();
-          removeRoadmapFromSidebar(
+          if (deleteItemBtn.closest(".is-confirm-target")) return;
+          void removeRoadmapFromSidebar(
             deleteItemBtn.dataset.roadmapCategory,
             deleteItemBtn.dataset.deleteRoadmapItem,
             deleteItemBtn
@@ -40401,7 +40410,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (deleteBtn) {
           event.preventDefault();
           event.stopPropagation();
-          deleteRoadmapCategoryFromSidebar(deleteBtn.dataset.deleteRoadmapCategory, deleteBtn);
+          if (deleteBtn.closest(".is-confirm-target")) return;
+          void deleteRoadmapCategoryFromSidebar(deleteBtn.dataset.deleteRoadmapCategory, deleteBtn);
           return;
         }
         const itemBtn = event.target.closest("[data-open-roadmap-item]");
