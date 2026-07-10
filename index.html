@@ -29961,6 +29961,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function restoreSessionUI() {
       purgeOverlappingRoadmapCaches();
       if (state.history.length) restoreConversationBubbles();
+      if (state.profileIntakeStep && !state.ideas.length) {
+        renderProfileChipsForStep(state.profileIntakeStep);
+      }
       if (state.ideas.length) {
         buildOpportunityMap(state.ideas);
       }
@@ -32146,10 +32149,54 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    function profileFieldToIntakeStep(field) {
+      const map = {
+        incomeUrgency: "income",
+        pathPreference: "path",
+        willingToRelocate: "relocate",
+        founderStage: "founder_stage",
+        skills: "skills"
+      };
+      if (field === "workMode") {
+        if (state.profileIntakeStep === "business_setup") return "business_setup";
+        return profilePathIsOwnBusiness() ? "business_setup" : "work_mode";
+      }
+      return map[field] || null;
+    }
+
+    function ensureProfileIntakeStep(stepHint = null) {
+      if (stepHint) {
+        state.profileIntakeStep = stepHint;
+        return stepHint;
+      }
+      if (state.profileIntakeStep) return state.profileIntakeStep;
+      const profile = normalizeUserProfile(state.userProfile);
+      if (!profile.incomeUrgency) return (state.profileIntakeStep = "income");
+      if (!profile.pathPreference) return (state.profileIntakeStep = "path");
+      const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+      if (founder && !profile.founderStage) return (state.profileIntakeStep = "founder_stage");
+      if (!profile.workMode) {
+        state.profileIntakeStep = profilePathIsOwnBusiness(profile) ? "business_setup" : "work_mode";
+        return state.profileIntakeStep;
+      }
+      if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) {
+        return (state.profileIntakeStep = "skills");
+      }
+      if (profileIntakeNeedsRelocateStep(profile) && !profile.willingToRelocate) {
+        return (state.profileIntakeStep = "relocate");
+      }
+      return null;
+    }
+
     function advanceProfileIntake() {
       const founder = isFounderOrProjectPrompt(getFirstUserMessage());
-      const step = state.profileIntakeStep;
+      const step = ensureProfileIntakeStep();
       const profile = normalizeUserProfile(state.userProfile);
+
+      if (!step) {
+        void finishProfileIntake();
+        return;
+      }
 
       if (step === "income") {
         if (!profile.incomeUrgency) return askProfileIncomeStep();
@@ -32209,8 +32256,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
       if (step === "relocate" || step === "founder_stage") {
-        finishProfileIntake();
+        void finishProfileIntake();
+        return;
       }
+
+      beginProfileIntake();
     }
 
     function beginProfileIntake() {
@@ -32251,14 +32301,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       finishProfileIntake();
     }
 
-    function applyProfileIntakeField(field, value) {
-      if (!field || !value) return;
+    function applyProfileIntakeField(field, value, stepHint = null) {
+      if (!field || value == null || value === "") return false;
+      ensureProfileIntakeStep(stepHint || profileFieldToIntakeStep(field));
       setUserProfileField(field, value);
       advanceProfileIntake();
+      return true;
     }
 
     function handleProfileIntakeSubmit(text) {
-      const step = state.profileIntakeStep;
+      const step = ensureProfileIntakeStep();
       const trimmed = String(text || "").trim();
       if (!trimmed) return;
 
@@ -32274,7 +32326,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const parser = parsers[step];
       if (parser) {
         const parsed = parser[1](trimmed) || trimmed.slice(0, 80);
+        if (!parsed) return;
         setUserProfileField(parser[0], parsed);
+      } else {
+        return;
       }
       hideProfileIntakeChips();
       advanceProfileIntake();
@@ -32282,12 +32337,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function handleProfileChipClick(button) {
-      if (!button) return;
-      const field = button.dataset.profileField;
-      const value = button.dataset.profileValue;
+      if (!button || intakeInProgress || button.disabled) return;
+      const field = button.getAttribute("data-profile-field") || button.dataset.profileField;
+      const value = button.getAttribute("data-profile-value") || button.dataset.profileValue;
       const label = button.textContent?.trim() || value;
-      pushUserMessage(label, intakeEditAllowed() ? { kind: "profile", step: state.profileIntakeStep, field, value } : null);
-      applyProfileIntakeField(field, value);
+      if (!field || value == null || value === "") return;
+
+      const step = ensureProfileIntakeStep(profileFieldToIntakeStep(field));
+      button.disabled = true;
+      hideProfileIntakeChips();
+
+      pushUserMessage(
+        label,
+        intakeEditAllowed() ? { kind: "profile", step, field, value } : null
+      );
+
+      if (!applyProfileIntakeField(field, value, step)) {
+        button.disabled = false;
+        renderProfileChipsForStep(step || profileFieldToIntakeStep(field) || "income");
+        return;
+      }
+
       schedulePersist();
     }
 
@@ -34357,7 +34427,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     async function submitReply() {
       const textarea = $("#reply-textarea");
       const text = textarea.value.trim();
-      if (!text) return;
+      if (!text || intakeInProgress) return;
       textarea.value = "";
       syncReplyPromptHeight();
 
