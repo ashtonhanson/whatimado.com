@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-progress-map-spacer-scroll">
+  <meta name="whatimado-build" content="2026-07-10-roadmap-header-clearance">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1141,9 +1141,10 @@
       width: 100%;
       justify-content: space-between;
       align-items: center;
-      height: var(--topbar-h, 52px);
+      box-sizing: border-box;
+      height: auto;
       min-height: var(--topbar-h, 52px);
-      padding: 0 1rem;
+      padding: env(safe-area-inset-top, 0px) 1rem 0;
       pointer-events: none;
       background: rgba(255, 255, 255, .98);
       border-bottom: 1px solid var(--line);
@@ -1657,7 +1658,7 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-main > main {
-      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 12px);
+      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 22px);
       transition: padding-top .32s cubic-bezier(.4, 0, .2, 1);
     }
 
@@ -1673,8 +1674,8 @@
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
       position: relative;
       z-index: 1;
-      margin-bottom: 1rem;
-      padding: .55rem 0 .7rem;
+      margin-bottom: .4rem;
+      padding: .75rem 0 .5rem;
       background: transparent;
       border-bottom: 1px solid rgba(37, 99, 235, .08);
     }
@@ -9609,7 +9610,7 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
-      padding-top: .35rem;
+      padding-top: .75rem;
     }
 
     .roadmap-float-progress[hidden] {
@@ -9744,7 +9745,20 @@
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-overview-header {
-        padding-top: .35rem;
+        padding-top: 0;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-header-actions {
+        order: 10;
+        padding-top: .85rem;
+        margin-bottom: .3rem;
+        padding-bottom: .4rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap #roadmap-rebuild-remaining-btn {
+        flex-basis: 100%;
+        margin-left: calc(40px + .55rem);
+        max-width: fit-content;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task {
@@ -11189,7 +11203,7 @@
         text-decoration: none;
       }
 
-      html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; padding-top: .35rem; }
+      html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
       html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
       html[data-color-scheme="adult"] .roadmap-content { display: contents; }
       html[data-color-scheme="adult"] .roadmap-side > #roadmap-side-local-card { order: 50; }
@@ -20406,10 +20420,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         bar.setAttribute("aria-hidden", show ? "false" : "true");
       }
       document.body.classList.toggle("is-roadmap-progress-visible", show && !collapsed);
-      const progressH = show && bar && !collapsed ? Math.ceil(bar.getBoundingClientRect().height) : 0;
+      const progressBarHeight = show && bar && !collapsed ? Math.ceil(bar.getBoundingClientRect().height) : 0;
+      const progressH = progressBarHeight;
+      const spacerHeight = progressBarHeight ? progressBarHeight + 14 : 0;
       document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
       if (spacer) {
-        spacer.style.height = progressH ? `${progressH}px` : "0px";
+        spacer.style.height = spacerHeight ? `${spacerHeight}px` : "0px";
         spacer.hidden = !show;
       }
       document.documentElement.style.setProperty(
@@ -40223,7 +40239,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function syncHeaderHeight() {
       if (document.documentElement.dataset.colorScheme === "adult") {
         const topbar = document.querySelector(".minimal-topbar");
-        const topbarH = topbar ? Math.max(52, Math.ceil(topbar.getBoundingClientRect().height)) : 52;
+        const logoH = topbar?.querySelector(".topbar-logo img")?.getBoundingClientRect().height || 0;
+        const menuH = topbar?.querySelector(".dashboard-mobile-menu")?.getBoundingClientRect().height || 0;
+        const topbarH = Math.max(52, Math.ceil(Math.max(logoH, menuH, 40) + 12));
         document.documentElement.style.setProperty("--topbar-h", `${topbarH}px`);
         document.documentElement.style.setProperty("--header-h", "0px");
         syncRoadmapStickyOffset();
