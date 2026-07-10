@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-roadmap-mobile-restore">
+  <meta name="whatimado-build" content="2026-07-10-progress-map-scroll-reveal">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1657,11 +1657,41 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-main > main {
-      padding-top: var(--topbar-h, 52px);
+      padding-top: calc(var(--topbar-h, 52px) + 6px);
+      transition: padding-top .32s cubic-bezier(.4, 0, .2, 1);
     }
 
     html[data-color-scheme="adult"] body.is-roadmap-progress-visible .dashboard-main > main {
-      padding-top: var(--roadmap-sticky-offset, var(--topbar-h, 52px));
+      padding-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 52px)) + 6px);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap.active,
+    html[data-color-scheme="adult"] #screen-map.active {
+      scroll-padding-top: calc(var(--topbar-h, 52px) + 12px);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
+      position: sticky;
+      top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px));
+      z-index: 14;
+      margin-bottom: 1rem;
+      padding: .55rem 0 .7rem;
+      background: rgba(255, 255, 255, .97);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(37, 99, 235, .08);
+    }
+
+    html[data-color-scheme="adult"] body.is-roadmap-progress-visible #screen-roadmap.active .roadmap-header-actions {
+      top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 52px)) + env(safe-area-inset-top, 0px));
+    }
+
+    html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
+      position: sticky;
+      top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px));
+      z-index: 14;
+      padding: .45rem 0 .65rem;
+      background: rgba(255, 255, 255, .97);
+      backdrop-filter: blur(10px);
     }
 
     html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
@@ -9670,6 +9700,15 @@
         pointer-events: auto;
         max-height: none;
         overflow: visible;
+        transform: translateY(0);
+        transition: transform .32s cubic-bezier(.4, 0, .2, 1), box-shadow .32s ease;
+        will-change: transform;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-progress.is-collapsed:not([hidden]) {
+        transform: translateY(calc(-100% - 1px));
+        pointer-events: none;
+        box-shadow: none;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
@@ -9687,24 +9726,15 @@
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
-        padding-top: .35rem;
+        padding-top: .5rem;
       }
 
-      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
-        scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 52px)) + 10px);
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-overview-header {
+        padding-top: .35rem;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task {
         scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 52px)) + 14px);
-      }
-
-      html[data-color-scheme="adult"] #screen-map.active .page-header--map,
-      html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
-        scroll-margin-top: calc(var(--topbar-h, 52px) + 8px);
-      }
-
-      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-overview-header {
-        padding-top: .15rem;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-title {
@@ -20204,17 +20234,82 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function syncRoadmapStickyOffset() {
       const bar = $("#roadmap-float-progress");
       const show = shouldShowMobileRoadmapProgress();
+      const collapsed = Boolean(bar?.classList.contains("is-collapsed"));
       if (bar) {
         bar.hidden = !show;
         bar.setAttribute("aria-hidden", show ? "false" : "true");
       }
-      document.body.classList.toggle("is-roadmap-progress-visible", show);
-      const progressH = show && bar ? bar.offsetHeight : 0;
+      document.body.classList.toggle("is-roadmap-progress-visible", show && !collapsed);
+      const progressH = show && bar && !collapsed ? bar.offsetHeight : 0;
       document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
       document.documentElement.style.setProperty(
         "--roadmap-sticky-offset",
         progressH ? `calc(var(--topbar-h, 64px) + ${progressH}px)` : "var(--topbar-h, 64px)"
       );
+    }
+
+    const roadmapProgressScrollState = {
+      lastY: 0,
+      collapsed: false,
+      ticking: false,
+      resizeObserver: null
+    };
+
+    function setRoadmapProgressCollapsed(collapsed) {
+      const bar = $("#roadmap-float-progress");
+      if (!shouldShowMobileRoadmapProgress()) {
+        collapsed = false;
+      }
+      if (roadmapProgressScrollState.collapsed === collapsed) return;
+      roadmapProgressScrollState.collapsed = collapsed;
+      bar?.classList.toggle("is-collapsed", collapsed);
+      scheduleRoadmapStickyOffsetRemeasure();
+    }
+
+    function resetRoadmapProgressScrollState() {
+      roadmapProgressScrollState.lastY = Math.max(0, window.scrollY || 0);
+      setRoadmapProgressCollapsed(false);
+    }
+
+    function handleRoadmapProgressScroll() {
+      if (!shouldShowMobileRoadmapProgress()) {
+        setRoadmapProgressCollapsed(false);
+        return;
+      }
+      const y = Math.max(0, window.scrollY || 0);
+      const delta = y - roadmapProgressScrollState.lastY;
+      if (y <= 16) {
+        setRoadmapProgressCollapsed(false);
+      } else if (delta > 12) {
+        setRoadmapProgressCollapsed(true);
+      } else if (delta < -12) {
+        setRoadmapProgressCollapsed(false);
+      }
+      roadmapProgressScrollState.lastY = y;
+    }
+
+    function bindRoadmapFloatProgressResizeObserver() {
+      const bar = $("#roadmap-float-progress");
+      if (!bar || roadmapProgressScrollState.resizeObserver) return;
+      if (typeof ResizeObserver === "undefined") return;
+      roadmapProgressScrollState.resizeObserver = new ResizeObserver(() => {
+        scheduleRoadmapStickyOffsetRemeasure();
+      });
+      roadmapProgressScrollState.resizeObserver.observe(bar);
+    }
+
+    function initRoadmapProgressScrollBehavior() {
+      bindRoadmapFloatProgressResizeObserver();
+      if (window._roadmapProgressScrollBound) return;
+      window._roadmapProgressScrollBound = true;
+      window.addEventListener("scroll", () => {
+        if (roadmapProgressScrollState.ticking) return;
+        roadmapProgressScrollState.ticking = true;
+        requestAnimationFrame(() => {
+          handleRoadmapProgressScroll();
+          roadmapProgressScrollState.ticking = false;
+        });
+      }, { passive: true });
     }
 
     function scheduleRoadmapStickyOffsetRemeasure() {
@@ -31430,6 +31525,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const previousScreen = state.lastScreen;
       if (previousScreen === "roadmap" && name !== "roadmap") {
         rememberRoadmapViewport();
+        resetRoadmapProgressScrollState();
       }
       if (
         !options.skipNavHistory
@@ -31493,6 +31589,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (name === "map") updateMapAuxiliaryPanels();
       if (name === "roadmap") {
         updateRoadmapOverviewChrome();
+        resetRoadmapProgressScrollState();
+        initRoadmapProgressScrollBehavior();
         queueMicrotask(() => {
           if (!state.currentIdea) return;
           if ($("#stage-list")?.children.length && roadmapHasVisibleMissionCards(state.roadmapStages)) return;
@@ -37087,7 +37185,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || 64;
       const extraOffset = options.extraOffset ?? 12;
       const progressBar = $("#roadmap-float-progress");
-      const progressH = shouldShowMobileRoadmapProgress() && progressBar ? progressBar.offsetHeight : 0;
+      const progressCollapsed = Boolean(progressBar?.classList.contains("is-collapsed"));
+      const progressH = shouldShowMobileRoadmapProgress() && progressBar && !progressCollapsed
+        ? progressBar.offsetHeight
+        : 0;
       const offset = topbarH + progressH + extraOffset;
 
       requestAnimationFrame(() => {
@@ -37119,12 +37220,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function ensureRoadmapOpensAtTop(options = {}) {
+      resetRoadmapProgressScrollState();
       const behavior = options.behavior ?? "auto";
-      const extraOffset = options.extraOffset ?? 10;
-      const run = () => scrollRoadmapToOverviewHeader({ behavior, delayMs: 0, extraOffset });
-      run();
-      requestAnimationFrame(() => requestAnimationFrame(run));
-      window.setTimeout(run, options.retryMs ?? 200);
+      window.scrollTo({ top: 0, behavior });
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "auto" });
+        scheduleRoadmapStickyOffsetRemeasure();
+      });
     }
 
     function rememberRoadmapViewport() {
@@ -40822,12 +40924,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       syncHeaderHeight();
       initScrollProgress();
       initMobileNav();
+      initRoadmapProgressScrollBehavior();
       bindColorSchemeControls();
       bindDashboardUi();
       initRotatingPromptPlaceholder();
       initMobileKeyboardAssist();
       initConvoPullRefresh();
       window.addEventListener("resize", syncHeaderHeight);
+      document.querySelector(".topbar-logo img")?.addEventListener("load", syncHeaderHeight);
       $$("[data-screen-link]").forEach((element) => {
         element.addEventListener("click", (event) => {
           event.preventDefault();
