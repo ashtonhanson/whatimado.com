@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-progress-map-scroll-reveal">
+  <meta name="whatimado-build" content="2026-07-10-distinct-roadmap-tasks">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -21755,6 +21755,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return title;
       }
 
+      const actionTitle = cleanMissionTitle(
+        summarizeMissionTitle(
+          preserveTaskSourceText(normalized) || getTaskDisplayActionText(normalized),
+          { usedTitles, maxLength: 72 }
+        ),
+        normalized,
+        idea
+      );
+      if (actionTitle && !isGenericMissionTitle(actionTitle) && !missionTitleIsUsed(actionTitle, usedTitles)) {
+        return actionTitle;
+      }
+
       const stageBit = simplifyStageLabel(stageLabel, idea);
       const actionBit = summarizeMissionTitle(getTaskDisplayActionText(normalized)) || "";
       const fallbacks = [
@@ -22275,9 +22287,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           `Send one warm follow-up to someone who showed interest in your ${service}`,
           `Identify 5 local businesses that could refer ${service.replace(/\s+service$/i, "")} clients — note why each fits`
         ],
+        track_outreach: [
+          `Call or visit the top 3 names on your tracker — log yes, no, or maybe for each conversation`,
+          `Add 5 more local businesses to your outreach list that fit your ${service.replace(/\s+service$/i, "")} offer`
+        ],
         visibility: [
           `Update your Google Business Profile or main listing with your ${service} offer and one photo`,
           `Ask your last happy customer for a one-sentence review you can post online`
+        ],
+        org_research: [
+          `Compare 3 local programs in ${loc} — note who they help, how to apply, and one phone number each`,
+          `Pick the best-fit org from your list and draft one sentence on why you're a good match for them`
         ],
         first_client: [
           `Offer a limited intro rate to one new ${service.replace(/\s+service$/i, "")} client this week — set a clear end date`,
@@ -22314,10 +22334,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           if (dupePrior || angleExceeded) {
             const alt = buildAlternateTaskForAngle(angle, angleCounts[angle] || 0, state.currentIdea);
             if (!seen.some((prior) => tasksAreSubstantiallyRepeated(prior.task, alt))) {
-              normalized = alt;
+              normalized = mentorizeTask(alt);
             } else {
               return;
             }
+          } else {
+            preserveTaskSourceText(normalized);
+            sanitizeTaskMentorFields(normalized);
           }
 
           const finalAngle = extractTaskAngle(normalized);
@@ -38041,7 +38064,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
       const actionRestatesMission = textSimilarity(text, mission) >= 0.72;
       const showWhatToDo = shouldShowWhatToDoSection(text, normalized);
-      const showExpandedMissionTitle = !(actionRestatesMission && showWhatToDo);
+      const showExpandedMissionTitle = !(actionRestatesMission && showWhatToDo)
+        && textSimilarity(mission, text) < 0.68;
       const compressedLabel = getTaskCompressedLabel(mission, text);
       const howTo = humanizeTaskText(normalized.howTo || inferHowTo(normalized));
       const contextNote = getTaskContextNote(normalized, stage);
@@ -38062,17 +38086,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const compressedBreakdown = showBreakdown ? renderCompressedBreakdownHtml(displaySteps, id) : "";
       const mentorHelp = renderMentorFindingsHtml(normalized, { simplified });
       const contextNoteHtml = renderTaskContextNoteHtml(contextNote);
+      const whyShownInContext = Boolean(contextNoteHtml.trim());
       const outcomeChecklist = simplified ? "" : renderTaskOutcomeChecklistHtml(id, normalized);
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const taskDetailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
       const plainExplainHtml = renderTaskPlainExplainHtml(normalized, stageIndex, taskIndex);
+      const howToRestatesAction = howTo && textSimilarity(howTo, text) >= 0.72;
       const simplifiedWhyHow = [
-        why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) ? `
+        !whyShownInContext && why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) && textSimilarity(why, text) < 0.72 ? `
                 <section class="task-mentor-section">
                   <h4 class="task-mentor-label">Why this step</h4>
                   <p class="task-mentor-copy">${escapeHtml(why)}</p>
                 </section>` : "",
-        howTo && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
+        howTo && !howToRestatesAction && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
                 <section class="task-mentor-section">
                   <h4 class="task-mentor-label">Next action</h4>
                   <p class="task-mentor-copy">${escapeHtml(howTo)}</p>
@@ -38411,29 +38437,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return true;
     }
 
-    function ensureDistinctMissionTitles(stages) {
+    function ensureProgressiveDistinctTasks(stages) {
+      const deduped = dedupeTasksAcrossRoadmap(stages);
       const usedTitles = [];
-      return (stages || []).map((stage, stageIndex) => {
-        if (isPendingRoadmapStage(stage)) return stage;
-        const tasks = (stage.tasks || []).map((task, taskIndex) => {
-          if (isPendingRoadmapTask(task)) return task;
-          const normalized = typeof task === "object" && task?.text !== undefined
-            ? { ...task }
-            : normalizeRoadmapTask(task);
-          const current = String(normalized.mission || "").trim();
-          if (!current || missionTitleIsUsed(current, usedTitles)) {
-            normalized.mission = pickDistinctMissionTitle(normalized, {
-              taskIndex,
-              stageIndex,
-              stageLabel: stage.label,
-              usedTitles
-            });
-          }
-          usedTitles.push(normalized.mission);
-          return normalized;
-        });
-        return { ...stage, tasks };
-      });
+      return (deduped || []).map((stage, stageIndex) => ({
+        ...stage,
+        tasks: dedupeMissionsInStage(
+          (stage.tasks || []).map((task) => {
+            if (isPendingRoadmapTask(task)) return { _pendingTask: true };
+            const normalized = typeof task === "object" && task?.text !== undefined
+              ? { ...task }
+              : normalizeRoadmapTask(task);
+            preserveTaskSourceText(normalized);
+            sanitizeTaskMentorFields(normalized);
+            ensureTaskContextNote(normalized, stage, state.currentIdea);
+            return normalized;
+          }),
+          stage.label,
+          stageIndex,
+          usedTitles
+        )
+      }));
+    }
+
+    function ensureDistinctMissionTitles(stages) {
+      return ensureProgressiveDistinctTasks(stages);
     }
 
     function autoExpandActiveRoadmapTaskOnMobile() {
