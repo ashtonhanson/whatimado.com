@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-path-buttons-map-center">
+  <meta name="whatimado-build" content="2026-07-10-topbar-chat-map-roadmap-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -206,7 +206,7 @@
     [data-color-scheme="adult"] {
       color-scheme: light;
       --sidebar-w: 248px;
-      --topbar-h: 64px;
+      --topbar-h: 52px;
       --roadmap-progress-h: 0px;
       --roadmap-sticky-offset: var(--topbar-h);
       --brand-blue: #29abe2;
@@ -1125,9 +1125,15 @@
       z-index: 25;
       width: 100%;
       justify-content: space-between;
-      height: 52px;
-      padding: .35rem 1rem 0;
+      align-items: center;
+      height: var(--topbar-h, 52px);
+      min-height: var(--topbar-h, 52px);
+      padding: 0 1rem;
       pointer-events: none;
+      background: rgba(255, 255, 255, .98);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 1px 0 rgba(15, 23, 42, .04);
     }
 
     html[data-color-scheme="adult"] .minimal-topbar .dashboard-topbar-start,
@@ -1261,7 +1267,7 @@
       justify-content: flex-start;
       align-items: center;
       gap: 0;
-      padding-top: 3.25rem;
+      padding-top: 0;
       height: calc(100dvh - var(--topbar-h, 52px));
       max-height: calc(100dvh - var(--topbar-h, 52px));
       min-height: 0;
@@ -1301,12 +1307,14 @@
       flex: 1 1 auto;
       min-height: 0;
       padding-top: .25rem;
+      padding-bottom: .35rem;
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: thin;
       scrollbar-color: rgba(15, 23, 42, 0.14) transparent;
+      scroll-padding-bottom: 1rem;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .conversation::-webkit-scrollbar {
@@ -1436,12 +1444,41 @@
       position: static;
       flex-shrink: 0;
       z-index: 4;
+      width: 100%;
+      max-width: 100%;
       margin-top: 0;
-      padding: .75rem 0 calc(.9rem + env(safe-area-inset-bottom, 0px));
+      padding: .65rem 0 calc(.9rem + env(safe-area-inset-bottom, 0px));
       overflow: visible;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .94) 28%, #fff 100%);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .94) 22%, #fff 100%);
       border: 0;
       box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box.has-intake-chips .reply-inner {
+      display: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box.has-intake-chips .reply-actions {
+      margin-top: 0;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box.has-intake-chips {
+      padding-top: 0;
+      background: transparent;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active #bubble-chain .profile-intake-chips {
+      align-self: flex-start;
+      width: 100%;
+      max-width: min(100%, 540px);
+      margin: 0 0 1rem;
+      padding: 0;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active #bubble-chain .profile-intake-chips-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box.surface-card {
@@ -1453,7 +1490,10 @@
       position: relative;
       display: flex;
       align-items: flex-start;
+      width: 100%;
+      max-width: 100%;
       margin: 0;
+      box-sizing: border-box;
       --dashboard-send-size: 48px;
       --dashboard-prompt-inset: 12px;
       --dashboard-prompt-radius: 32px;
@@ -1600,15 +1640,23 @@
       backdrop-filter: blur(12px);
     }
 
+    html[data-color-scheme="adult"] .dashboard-main > main {
+      padding-top: var(--topbar-h, 52px);
+    }
+
+    html[data-color-scheme="adult"] body.is-roadmap-progress-visible .dashboard-main > main {
+      padding-top: var(--roadmap-sticky-offset, var(--topbar-h, 52px));
+    }
+
     html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
       position: fixed;
       inset: 0 0 auto 0;
       width: 100%;
       z-index: 25;
-      background: transparent;
-      border-bottom: none;
-      backdrop-filter: none;
-      box-shadow: none;
+      background: rgba(255, 255, 255, .98);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 1px 0 rgba(15, 23, 42, .04);
       pointer-events: none;
     }
 
@@ -2377,10 +2425,15 @@
       display: none;
     }
 
+    html[data-color-scheme="adult"] #screen-map.active {
+      width: 100%;
+    }
+
     html[data-color-scheme="adult"] #screen-map.active .page {
       width: min(100%, 1080px);
       margin-inline: auto;
       padding-inline: clamp(1rem, 3vw, 1.5rem);
+      box-sizing: border-box;
     }
 
     html[data-color-scheme="adult"] #screen-map .page-header--map,
@@ -2393,8 +2446,14 @@
       margin-inline: auto;
     }
 
+    html[data-color-scheme="adult"] #screen-map .opp-plans-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
     html[data-color-scheme="adult"] #screen-map .opp-batch {
-      width: 100%;
+      width: min(100%, 1040px);
       margin-inline: auto;
     }
 
@@ -2404,8 +2463,15 @@
       justify-content: center;
     }
 
+    @media (min-width: 901px) {
+      html[data-color-scheme="adult"] #screen-map .opp-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
     html[data-color-scheme="adult"] #screen-map .map-paths-actions {
       justify-content: center;
+      width: 100%;
     }
 
     html[data-color-scheme="adult"] .map-overview {
@@ -9569,47 +9635,59 @@
       html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
         display: flex;
         flex-direction: column;
-        position: sticky;
-        top: var(--topbar-h, 64px);
+        position: fixed;
+        top: var(--topbar-h, 52px);
         left: 0;
         right: 0;
         width: 100%;
-        z-index: 19;
+        z-index: 24;
         flex-shrink: 0;
         align-items: stretch;
         gap: .45rem;
-        padding: .55rem 1rem .7rem;
+        padding: .55rem 1rem .75rem;
         border-radius: 0;
         border: 0;
         border-bottom: 1px solid rgba(37, 99, 235, .12);
         box-shadow: 0 2px 14px rgba(15, 23, 42, .08);
-        background: rgba(255, 255, 255, .96);
+        background: rgba(255, 255, 255, .98);
         backdrop-filter: blur(10px);
         pointer-events: auto;
+        max-height: none;
+        overflow: visible;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
         margin: 0;
         width: 100%;
+        max-height: none;
+        overflow: visible;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll {
         width: 100%;
-        margin: 0 -.15rem;
+        margin: 0;
+        overflow-x: auto;
+        overflow-y: visible;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
+        padding-top: .35rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-overview-header {
+        padding-top: .15rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-title {
+        font-size: clamp(1.35rem, 4.8vw, 1.85rem);
+        line-height: 1.15;
+        margin: .25rem 0 .45rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll .roadmap-glance-track {
         margin: 0;
-        padding-left: 1.75rem;
-        padding-right: 1.75rem;
-      }
-
-      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll::before {
-        background: linear-gradient(90deg, rgba(255, 255, 255, .98) 30%, rgba(255, 255, 255, 0));
-      }
-
-      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll::after {
-        background: linear-gradient(270deg, rgba(255, 255, 255, .98) 30%, rgba(255, 255, 255, 0));
+        padding-left: .35rem;
+        padding-right: .35rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-track {
@@ -9617,10 +9695,6 @@
         width: 100%;
         max-width: none;
         height: .42rem;
-      }
-
-      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
-        padding-top: .25rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-phases {
@@ -14040,8 +14114,10 @@
       }
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box {
-        padding-left: var(--mobile-prompt-gutter);
-        padding-right: var(--mobile-prompt-gutter);
+        width: 100%;
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 0;
         box-sizing: border-box;
       }
 
@@ -14061,7 +14137,7 @@
       html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-home {
         height: calc(100dvh - var(--topbar-h, 52px));
         max-height: calc(100dvh - var(--topbar-h, 52px));
-        padding-top: 2.5rem;
+        padding-top: 0;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .page,
@@ -31437,14 +31513,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       scrollConversation();
     }
 
-    function showReplyBox(show = true) {
+    function showReplyBox(show = true, options = {}) {
       const reply = $("#reply-box");
       if (!reply) return;
+      const chips = $("#profile-intake-chips");
+      const chipsInChain = chips && !chips.hidden && chips.parentElement === $("#bubble-chain");
       reply.style.display = show ? "block" : "none";
+      reply.classList.toggle("has-intake-chips", Boolean(chipsInChain || (chips && !chips.hidden && chips.querySelector(".profile-intake-chips-list")?.children.length)));
       if (show) {
         updateReplyMapActions();
         syncReplyPromptHeight();
-        $("#reply-textarea")?.focus();
+        if (!options.skipFocus && !reply.classList.contains("has-intake-chips")) {
+          $("#reply-textarea")?.focus();
+        }
       }
       scrollConversation();
     }
@@ -32086,15 +32167,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return Boolean(profile.workMode);
     }
 
+    function detachProfileIntakeChipsFromChain() {
+      const container = $("#profile-intake-chips");
+      const reply = $("#reply-box");
+      if (container && reply && container.parentElement === $("#bubble-chain")) {
+        const actions = reply.querySelector(".reply-actions");
+        reply.insertBefore(container, actions || null);
+      }
+    }
+
     function hideProfileIntakeChips() {
       const container = $("#profile-intake-chips");
       if (!container) return;
+      detachProfileIntakeChipsFromChain();
       container.hidden = true;
       container.innerHTML = "";
+      $("#reply-box")?.classList.remove("has-intake-chips");
     }
 
     function renderProfileIntakeChips(options = []) {
       const container = $("#profile-intake-chips");
+      const chain = $("#bubble-chain");
       if (!container) return;
       if (!options.length) {
         hideProfileIntakeChips();
@@ -32105,6 +32198,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `<button type="button" class="profile-intake-chip" data-profile-field="${escapeHtml(option.field)}" data-profile-value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</button>`
       ).join("");
       container.innerHTML = `<div class="profile-intake-chips-list">${buttons}</div>`;
+      chain?.appendChild(container);
+      showReplyBox(false);
+      requestAnimationFrame(() => scrollMinimalChatToBottom("smooth"));
     }
 
     function pushProfileIntakeAssistantMessage(text) {
@@ -38673,6 +38769,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#screen-main")?.classList.remove("is-chat-active");
       document.documentElement.classList.remove("convo-active");
       detachPathModeChoiceFromChain();
+      detachProfileIntakeChipsFromChain();
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
       setRoadmapNavVisible(false);
