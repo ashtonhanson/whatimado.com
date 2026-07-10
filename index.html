@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-realistic-progress-map-income">
+  <meta name="whatimado-build" content="2026-07-10-hero-titles-unblocked-open-at-top">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1670,28 +1670,22 @@
       scroll-padding-top: calc(var(--topbar-h, 52px) + 12px);
     }
 
+    /* Header controls scroll with the page so they never cover a hero/title section.
+       Only the progress map is allowed to overlay content on scroll. */
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
-      position: sticky;
-      top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px));
-      z-index: 14;
+      position: relative;
+      z-index: 1;
       margin-bottom: 1rem;
       padding: .55rem 0 .7rem;
-      background: rgba(255, 255, 255, .97);
-      backdrop-filter: blur(10px);
+      background: transparent;
       border-bottom: 1px solid rgba(37, 99, 235, .08);
     }
 
-    html[data-color-scheme="adult"] body.is-roadmap-progress-visible #screen-roadmap.active .roadmap-header-actions {
-      top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 52px)) + env(safe-area-inset-top, 0px));
-    }
-
     html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
-      position: sticky;
-      top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px));
-      z-index: 14;
+      position: relative;
+      z-index: 1;
       padding: .45rem 0 .65rem;
-      background: rgba(255, 255, 255, .97);
-      backdrop-filter: blur(10px);
+      background: transparent;
     }
 
     html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
@@ -35297,6 +35291,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           reopen: options.reopen ?? (hasRoadmapProgress(idea.title) || Boolean(state.allRoadmaps[roadmapKey])),
           ...options
         });
+        if ($("#screen-roadmap")?.classList.contains("active")) {
+          ensureRoadmapOpensAtTop();
+          requestAnimationFrame(() => ensureRoadmapOpensAtTop());
+        }
       } catch (error) {
         console.error("[whatimado] openPathRoadmap failed:", error);
         flashSaveToast("Couldn't open that roadmap — try again.");
