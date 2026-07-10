@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-logo-rollout">
+  <meta name="whatimado-build" content="2026-07-10-path-buttons-map-center">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1331,6 +1331,24 @@
       box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
     }
 
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat.is-awaiting-path-mode .conversation {
+      flex: 0 1 auto;
+      overflow-y: visible;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-chat.is-awaiting-path-mode {
+      overflow-y: auto;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active #bubble-chain .path-mode-choice {
+      align-self: flex-start;
+      width: 100%;
+      max-width: min(100%, 540px);
+      margin: 0 0 1rem;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
     html[data-color-scheme="adult"] #screen-main.is-chat-active .path-mode-choice {
       align-items: stretch;
       align-self: flex-start;
@@ -2357,6 +2375,37 @@
 
     html[data-color-scheme="adult"] .nav-drawer-section:has(.nav-group--theme) {
       display: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-map.active .page {
+      width: min(100%, 1080px);
+      margin-inline: auto;
+      padding-inline: clamp(1rem, 3vw, 1.5rem);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .page-header--map,
+    html[data-color-scheme="adult"] #screen-map .opp-plans-section,
+    html[data-color-scheme="adult"] #screen-map .map-feedback-card,
+    html[data-color-scheme="adult"] #screen-map .map-sync-nudge,
+    html[data-color-scheme="adult"] #screen-map .save-status-bar {
+      width: 100%;
+      max-width: 1040px;
+      margin-inline: auto;
+    }
+
+    html[data-color-scheme="adult"] #screen-map .opp-batch {
+      width: 100%;
+      margin-inline: auto;
+    }
+
+    html[data-color-scheme="adult"] #screen-map .opp-grid {
+      width: 100%;
+      margin-inline: auto;
+      justify-content: center;
+    }
+
+    html[data-color-scheme="adult"] #screen-map .map-paths-actions {
+      justify-content: center;
     }
 
     html[data-color-scheme="adult"] .map-overview {
@@ -14404,6 +14453,10 @@
           <svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
           Home
         </button>
+        <button type="button" class="dashboard-nav-btn" id="sidebar-new-map-btn">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+          Start new map
+        </button>
         <div class="dashboard-nav-group is-open" id="dashboard-roadmaps-group">
           <button type="button" class="dashboard-nav-btn dashboard-nav-btn--expand" id="sidebar-roadmaps-btn" aria-expanded="true" aria-controls="dashboard-roadmaps-sub">
             <span class="dashboard-nav-btn-main">
@@ -14524,11 +14577,11 @@
             <p class="dashboard-path-mode-label path-mode-choice-label">How do you want to explore your options?</p>
             <div class="path-mode-actions">
               <button type="button" class="path-mode-option path-mode-option--direct" id="convo-direct-path-btn">
-                <span class="path-mode-option-title">Direct Roadmap</span>
+                <span class="path-mode-option-title">Direct Path</span>
                 <span class="path-mode-option-desc">A focused step-by-step guide to your goal.</span>
               </button>
               <button type="button" class="path-mode-option path-mode-option--flex" id="convo-flexible-path-btn">
-                <span class="path-mode-option-title">Flexible Roadmap</span>
+                <span class="path-mode-option-title">Flexible Path</span>
                 <span class="path-mode-option-desc">Choose from a variety of options at every step to build the roadmap that works for you.</span>
               </button>
             </div>
@@ -34325,9 +34378,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       void showFlexibleBranchPicker(taskId, { fromAlter: true });
     }
 
+    function detachPathModeChoiceFromChain() {
+      const el = $("#path-mode-choice");
+      const chat = $("#minimal-chat");
+      const reply = $("#reply-box");
+      if (el && chat && el.parentElement === $("#bubble-chain")) {
+        chat.insertBefore(el, reply || null);
+      }
+    }
+
     function hidePathModeChoice() {
       const el = $("#path-mode-choice");
       if (el) el.hidden = true;
+      detachPathModeChoiceFromChain();
+      $("#minimal-chat")?.classList.remove("is-awaiting-path-mode");
       $("#path-mode-prompt-bubble")?.remove();
       state.awaitingPathModeChoice = false;
     }
@@ -34353,6 +34417,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           </div>`;
         $("#bubble-chain")?.append(wrapper);
       }
+      $("#bubble-chain")?.append(el);
+      $("#minimal-chat")?.classList.add("is-awaiting-path-mode");
       requestAnimationFrame(() => scrollConversation());
     }
 
@@ -38606,6 +38672,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       hidePathModeChoice();
       $("#screen-main")?.classList.remove("is-chat-active");
       document.documentElement.classList.remove("convo-active");
+      detachPathModeChoiceFromChain();
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
       setRoadmapNavVisible(false);
@@ -40397,6 +40464,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function bindDashboardUi() {
       $("#dashboard-search-go")?.addEventListener("click", () => submitInitialPrompt());
       $("#dashboard-mobile-menu")?.addEventListener("click", toggleDashboardMobileNav);
+      $("#sidebar-new-map-btn")?.addEventListener("click", () => {
+        closeDashboardMobileNav();
+        confirmStartNewMap();
+      });
       $("#dashboard-mobile-overlay")?.addEventListener("click", closeDashboardMobileNav);
       $("#dashboard-sync-btn")?.addEventListener("click", manualSave);
       $("#dashboard-profile-btn")?.addEventListener("click", handleDashboardProfileClick);
