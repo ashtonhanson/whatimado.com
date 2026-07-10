@@ -1033,23 +1033,39 @@
       overflow: hidden;
     }
 
-    html[data-color-scheme="adult"] .minimal-topbar {
-      background: transparent;
-      border-bottom: 0;
-      backdrop-filter: none;
+    html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
       justify-content: flex-end;
       height: 52px;
       padding: .35rem 1rem 0;
     }
 
     html[data-color-scheme="adult"] .minimal-home {
-      width: min(100%, 680px);
+      width: 100%;
+      max-width: none;
       margin: 0 auto;
       padding: .5rem 1.15rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
       gap: .85rem;
       min-height: calc(100dvh - 52px);
+    }
+
+    html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-home {
+      justify-content: center;
+      align-items: center;
+    }
+
+    html[data-color-scheme="adult"] .minimal-start-zone {
+      width: min(94vw, 960px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .85rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-start-zone {
+      width: 100%;
+      align-items: stretch;
     }
 
     html[data-color-scheme="adult"] .minimal-kicker {
@@ -1062,9 +1078,18 @@
       color: var(--ink-muted);
     }
 
-    html[data-color-scheme="adult"] .minimal-prompt {
+    html[data-color-scheme="adult"] .minimal-prompt.dashboard-search {
+      width: 100%;
+      max-width: none;
       flex-shrink: 0;
       margin: 0;
+    }
+
+    html[data-color-scheme="adult"] .minimal-prompt .dashboard-prompt-ghost {
+      right: calc(var(--dashboard-prompt-pad-right) + 0.25rem);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     html[data-color-scheme="adult"] .minimal-prompt .dashboard-search-field {
@@ -1079,6 +1104,13 @@
       touch-action: pan-y;
     }
 
+    html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-chat {
+      flex: 0 0 auto;
+      min-height: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
     html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-chat .conversation:empty,
     html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-chat .convo-spacer {
       display: none;
@@ -1088,12 +1120,20 @@
       display: none;
     }
 
-    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-prompt {
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-start-zone {
       position: sticky;
       top: 52px;
       z-index: 5;
       padding-bottom: .35rem;
       background: linear-gradient(180deg, rgba(255, 255, 255, .96) 72%, rgba(255, 255, 255, 0));
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-prompt {
+      position: static;
+      top: auto;
+      z-index: auto;
+      padding-bottom: 0;
+      background: transparent;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .ai-label {
@@ -1141,6 +1181,13 @@
       background: rgba(255, 255, 255, .92);
       border-bottom: 1px solid var(--line);
       backdrop-filter: blur(12px);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
+      background: transparent;
+      border-bottom: none;
+      backdrop-filter: none;
+      box-shadow: none;
     }
 
     html[data-color-scheme="adult"] .dashboard-topbar-start,
@@ -1523,7 +1570,8 @@
     html[data-color-scheme="adult"] .dashboard-search-go {
       position: absolute;
       right: var(--dashboard-prompt-inset);
-      bottom: var(--dashboard-prompt-inset);
+      top: 50%;
+      bottom: auto;
       width: var(--dashboard-send-size);
       height: var(--dashboard-send-size);
       border: 0;
@@ -1533,8 +1581,14 @@
       display: grid;
       place-items: center;
       cursor: pointer;
+      transform: translateY(-50%);
       box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
       transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-search-field.is-expanded .dashboard-search-go {
+      top: 50%;
+      transform: translateY(-50%);
     }
 
     html[data-color-scheme="adult"] .dashboard-search-go:hover {
@@ -1543,7 +1597,7 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-search-go:active {
-      transform: scale(0.96);
+      transform: translateY(-50%) scale(0.96);
     }
 
     html[data-color-scheme="adult"] .dashboard-search-go svg {
@@ -13819,17 +13873,20 @@
   <main>
     <section class="screen active" id="screen-main">
       <div class="main-workspace minimal-home">
+        <div class="minimal-start-zone">
         <p class="minimal-kicker">Writing roadmap</p>
 
         <div class="prompt-box dashboard-search minimal-prompt">
           <div class="dashboard-search-grow">
             <div class="dashboard-search-field">
-              <textarea class="prompt-textarea" id="main-input" rows="1" placeholder="Tell me what you're working toward…" aria-label="Your message"></textarea>
+              <textarea class="prompt-textarea" id="main-input" rows="1" placeholder="" aria-describedby="dashboard-prompt-ghost"></textarea>
+              <span class="dashboard-prompt-ghost" id="dashboard-prompt-ghost" aria-hidden="true"></span>
               <button type="button" class="dashboard-search-go" id="dashboard-search-go" aria-label="Continue">
                 <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
               </button>
             </div>
           </div>
+        </div>
         </div>
 
         <div class="minimal-chat convo-wrap" id="minimal-chat">
@@ -13878,7 +13935,6 @@
             <div class="dashboard-search-grow">
               <div class="dashboard-search-field">
                 <textarea class="prompt-textarea legacy-main-input-fallback" rows="1" placeholder="" aria-hidden="true" tabindex="-1"></textarea>
-                <span class="dashboard-prompt-ghost" id="dashboard-prompt-ghost" aria-hidden="true"></span>
               </div>
             </div>
             <div class="prompt-footer">
@@ -30369,6 +30425,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (name === "main" && !isConvo) {
         renderSavedMapsHome();
+        startRotatingPromptPlaceholder();
       }
       if (name === "maps") refreshRoadmapsUi({ rebuildMap: state.lastScreen === "map" });
       if (name === "stats") {
