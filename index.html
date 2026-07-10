@@ -293,21 +293,6 @@
       background: transparent;
     }
 
-    html[data-color-scheme="adult"] .dashboard-sidebar {
-      position: fixed;
-      inset: 0 auto 0 0;
-      z-index: 30;
-      width: var(--sidebar-w);
-      height: 100dvh;
-      max-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      padding: 1.25rem 1rem 1rem;
-      background: var(--bg-soft);
-      border-right: 1px solid var(--line);
-      overflow: hidden;
-    }
-
     html[data-color-scheme="adult"] .dashboard-brand-wrap {
       flex-shrink: 0;
       display: flex;
@@ -996,11 +981,144 @@
 
     html[data-color-scheme="adult"] .dashboard-main {
       flex: 1;
-      margin-left: var(--sidebar-w);
+      margin-left: 0;
       min-width: 0;
       display: flex;
       flex-direction: column;
       position: relative;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 41;
+      width: var(--sidebar-w);
+      height: 100dvh;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem 1rem 1rem;
+      background: var(--bg-soft);
+      border-right: 1px solid var(--line);
+      overflow: hidden;
+      transform: translateX(calc(-100% - 12px));
+      transition: transform .22s ease;
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-sidebar.is-mobile-open {
+      transform: translateX(0);
+      box-shadow: 8px 0 32px rgba(0, 0, 0, .12);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-mobile-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      border: 0;
+      padding: 0;
+      background: rgba(17, 24, 39, .36);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-mobile-overlay.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    html[data-color-scheme="adult"] body.dashboard-mobile-nav-open {
+      overflow: hidden;
+    }
+
+    html[data-color-scheme="adult"] .minimal-topbar {
+      background: transparent;
+      border-bottom: 0;
+      backdrop-filter: none;
+      justify-content: flex-end;
+      height: 52px;
+      padding: .35rem 1rem 0;
+    }
+
+    html[data-color-scheme="adult"] .minimal-home {
+      width: min(100%, 680px);
+      margin: 0 auto;
+      padding: .5rem 1.15rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column;
+      gap: .85rem;
+      min-height: calc(100dvh - 52px);
+    }
+
+    html[data-color-scheme="adult"] .minimal-kicker {
+      margin: .35rem 0 0;
+      text-align: center;
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .minimal-prompt {
+      flex-shrink: 0;
+      margin: 0;
+    }
+
+    html[data-color-scheme="adult"] .minimal-prompt .dashboard-search-field {
+      min-height: 52px;
+    }
+
+    html[data-color-scheme="adult"] .minimal-chat {
+      flex: 1 1 auto;
+      width: 100%;
+      margin: 0;
+      padding: 0 0 1rem;
+      touch-action: pan-y;
+    }
+
+    html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-chat .conversation:empty,
+    html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-chat .convo-spacer {
+      display: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-kicker {
+      display: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .minimal-prompt {
+      position: sticky;
+      top: 52px;
+      z-index: 5;
+      padding-bottom: .35rem;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .96) 72%, rgba(255, 255, 255, 0));
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .ai-label {
+      display: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .bubble-pair {
+      margin-bottom: .65rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .bubble.user {
+      background: #29abe2;
+      color: #fff;
+      border-radius: 18px 18px 4px 18px;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .bubble.ai {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px 18px 18px 4px;
+    }
+
+    html[data-color-scheme="adult"] #screen-main .path-mode-choice,
+    html[data-color-scheme="adult"] #screen-main .reply-box {
+      margin-top: .5rem;
     }
 
     html[data-color-scheme="adult"] .dashboard-main > .dashboard-topbar,
@@ -1116,6 +1234,11 @@
       margin-right: auto;
     }
 
+    html[data-color-scheme="adult"] .minimal-topbar .dashboard-mobile-menu {
+      display: grid;
+      margin-right: 0;
+    }
+
     html[data-color-scheme="adult"] main {
       flex: 1;
     }
@@ -1123,6 +1246,11 @@
     html[data-color-scheme="adult"] .screen {
       padding-top: 0;
       min-height: auto;
+    }
+
+    html[data-color-scheme="adult"] .main-workspace.minimal-home {
+      width: 100%;
+      padding: 0;
     }
 
     html[data-color-scheme="adult"] .main-workspace {
@@ -1382,6 +1510,7 @@
         overscroll-behavior-y: none;
       }
 
+      html[data-color-scheme="adult"].convo-active .minimal-chat,
       html[data-color-scheme="adult"].convo-active .convo-wrap {
         overscroll-behavior-y: contain;
       }
@@ -1653,6 +1782,7 @@
       width: 100%;
     }
 
+    html[data-color-scheme="adult"] #screen-main .path-mode-choice,
     html[data-color-scheme="adult"] #screen-convo .path-mode-choice {
       display: flex;
       flex-direction: column;
@@ -1667,7 +1797,7 @@
       box-shadow: none;
     }
 
-    html[data-color-scheme="adult"] #screen-convo .path-mode-choice-label {
+    html[data-color-scheme="adult"] #screen-main .path-mode-choice-label {
       margin: 0;
       color: var(--purple);
       font-size: .82rem;
@@ -1675,7 +1805,7 @@
       text-align: center;
     }
 
-    html[data-color-scheme="adult"] #screen-convo .path-mode-choice .path-mode-actions {
+    html[data-color-scheme="adult"] #screen-main .path-mode-choice .path-mode-actions {
       justify-content: center;
       width: 100%;
     }
@@ -2294,49 +2424,6 @@
     }
 
     @media (max-width: 960px) {
-      html[data-color-scheme="adult"] .dashboard-sidebar {
-        display: flex;
-        z-index: 41;
-        transform: translateX(calc(-100% - 12px));
-        transition: transform .22s ease;
-        box-shadow: none;
-      }
-
-      html[data-color-scheme="adult"] .dashboard-sidebar.is-mobile-open {
-        transform: translateX(0);
-        box-shadow: 8px 0 32px rgba(0, 0, 0, .12);
-      }
-
-      html[data-color-scheme="adult"] .dashboard-mobile-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 40;
-        border: 0;
-        padding: 0;
-        background: rgba(17, 24, 39, .36);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity .22s ease;
-        cursor: pointer;
-      }
-
-      html[data-color-scheme="adult"] .dashboard-mobile-overlay.is-visible {
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      html[data-color-scheme="adult"] body.dashboard-mobile-nav-open {
-        overflow: hidden;
-      }
-
-      html[data-color-scheme="adult"] .dashboard-main {
-        margin-left: 0;
-      }
-
-      html[data-color-scheme="adult"] .dashboard-mobile-menu {
-        display: grid;
-      }
-
       html[data-color-scheme="adult"] .saved-maps-home-list,
       html[data-color-scheme="adult"] .dashboard-explore-grid {
         grid-template-columns: 1fr;
@@ -13697,22 +13784,12 @@
     <button type="button" class="dashboard-mobile-overlay" id="dashboard-mobile-overlay" hidden aria-label="Close menu"></button>
 
     <div class="dashboard-main">
-      <header class="dashboard-topbar">
-        <div class="dashboard-topbar-start">
+      <header class="dashboard-topbar minimal-topbar">
+        <div class="dashboard-topbar-start" aria-hidden="true"></div>
+        <div class="dashboard-topbar-end">
           <button type="button" class="dashboard-topbar-btn dashboard-mobile-menu" id="dashboard-mobile-menu" aria-label="Open menu">
             <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
           </button>
-          <button type="button" class="dashboard-undo-btn dashboard-topbar-btn" id="global-undo-btn" aria-label="Undo last step" disabled>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14H4V9l1.5 1.5C7.8 8.2 10.2 7 13 7c4.4 0 8 3.6 8 8s-3.6 8-8 8c-2.8 0-5.3-1.4-6.8-3.5"></path></svg>
-          </button>
-        </div>
-        <div class="dashboard-topbar-end">
-        <button type="button" class="dashboard-topbar-btn" id="dashboard-notify-btn" aria-label="Notifications">
-          <svg viewBox="0 0 24 24"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg>
-        </button>
-        <button type="button" class="dashboard-topbar-avatar" id="dashboard-top-avatar" aria-label="Account">
-          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect fill='%23dbeafe' width='80' height='80'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%2393c5fd'/%3E%3Cpath d='M16 68c4-14 16-22 24-22s20 8 24 22' fill='%2393c5fd'/%3E%3C/svg%3E" alt="">
-        </button>
         </div>
       </header>
 
@@ -13741,8 +13818,58 @@
 
   <main>
     <section class="screen active" id="screen-main">
-      <div class="main-workspace">
-      <div class="dashboard-home">
+      <div class="main-workspace minimal-home">
+        <p class="minimal-kicker">Writing roadmap</p>
+
+        <div class="prompt-box dashboard-search minimal-prompt">
+          <div class="dashboard-search-grow">
+            <div class="dashboard-search-field">
+              <textarea class="prompt-textarea" id="main-input" rows="1" placeholder="Tell me what you're working toward…" aria-label="Your message"></textarea>
+              <button type="button" class="dashboard-search-go" id="dashboard-search-go" aria-label="Continue">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="minimal-chat convo-wrap" id="minimal-chat">
+          <div class="convo-pull-refresh" id="convo-pull-refresh" hidden aria-hidden="true">
+            <span class="convo-pull-refresh-icon" aria-hidden="true">↻</span>
+            <span class="convo-pull-refresh-label" id="convo-pull-refresh-label">Pull to refresh</span>
+          </div>
+          <div class="convo-spacer" id="convo-spacer" aria-hidden="true"></div>
+          <div class="conversation" id="bubble-chain"></div>
+          <div class="dashboard-path-mode-bar path-mode-choice" id="path-mode-choice" hidden aria-label="Choose your roadmap style">
+            <p class="dashboard-path-mode-label path-mode-choice-label">How do you want to explore your options?</p>
+            <div class="path-mode-actions">
+              <button type="button" class="path-mode-option path-mode-option--direct" id="convo-direct-path-btn">
+                <span class="path-mode-option-title">Direct Roadmap</span>
+                <span class="path-mode-option-desc">A focused step-by-step guide to your goal.</span>
+              </button>
+              <button type="button" class="path-mode-option path-mode-option--flex" id="convo-flexible-path-btn">
+                <span class="path-mode-option-title">Flexible Roadmap</span>
+                <span class="path-mode-option-desc">Choose from a variety of options at every step to build the roadmap that works for you.</span>
+              </button>
+            </div>
+          </div>
+          <div class="reply-box surface-card" id="reply-box">
+            <div class="reply-inner">
+              <textarea class="reply-textarea" id="reply-textarea" rows="2" placeholder="Type your response…"></textarea>
+              <button class="send-btn" id="reply-send-btn">Send</button>
+            </div>
+            <div class="profile-intake-chips" id="profile-intake-chips" hidden aria-label="Quick answer options"></div>
+            <div class="reply-actions">
+              <div class="reply-map-actions" id="reply-map-actions" hidden>
+                <button type="button" class="reply-map-btn" id="reply-apply-map-btn">Update my paths</button>
+                <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-regen-roadmap-btn" hidden>Regenerate roadmap</button>
+                <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-map-btn">Back to map</button>
+              </div>
+              <button class="reset-pill" id="reply-reset-btn" type="button">Start new map</button>
+            </div>
+          </div>
+        </div>
+
+      <div class="dashboard-home dashboard-home-legacy" hidden>
         <div class="dashboard-hero">
           <h1>Let us help you figure out what you're <span class="hero-no-break">gonna do.</span></h1>
           <p class="dashboard-hero-sub">Tell me about yourself—your skills, interests, experience, challenges, and what you want next. The more you share, the better your Possibility Map will be.</p>
@@ -13750,11 +13877,8 @@
           <div class="prompt-box dashboard-search">
             <div class="dashboard-search-grow">
               <div class="dashboard-search-field">
-                <textarea class="prompt-textarea" id="main-input" rows="1" placeholder="" aria-describedby="dashboard-prompt-ghost"></textarea>
+                <textarea class="prompt-textarea legacy-main-input-fallback" rows="1" placeholder="" aria-hidden="true" tabindex="-1"></textarea>
                 <span class="dashboard-prompt-ghost" id="dashboard-prompt-ghost" aria-hidden="true"></span>
-                <button type="button" class="dashboard-search-go" id="dashboard-search-go" aria-label="Continue">
-                  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-                </button>
               </div>
             </div>
             <div class="prompt-footer">
@@ -13779,27 +13903,7 @@
           <p class="saved-maps-home-copy">Your explorations and roadmaps live in the sidebar. Tap a roadmap to continue, or its title to see all paths.</p>
           <div class="saved-maps-home-list" id="saved-maps-home-list"></div>
         </section>
-
-        <section class="site-suggestions dashboard-settings-panel" id="site-suggestions" aria-label="Suggest a site improvement">
-          <h3 class="site-suggestions-title">Suggest an improvement</h3>
-          <p class="site-suggestions-copy">Features, fixes, or changes for whatimado — add your name if you'd like credit when we ship it.</p>
-          <label class="site-suggestions-field" for="site-suggestion-name">
-            <span class="site-suggestions-field-label">Your name (for credit)</span>
-            <input class="site-suggestions-input site-suggestions-name" id="site-suggestion-name" type="text" maxlength="80" autocomplete="name" placeholder="How you'd like to be credited">
-          </label>
-          <label class="site-suggestions-field" for="site-suggestion-input">
-            <span class="site-suggestions-field-label">Your suggestion</span>
-            <textarea class="site-suggestions-input" id="site-suggestion-input" rows="2" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
-          </label>
-          <div class="site-suggestions-footer">
-            <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
-            <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
-          </div>
-          <p class="site-suggestions-msg" id="site-suggestion-msg" hidden aria-live="polite"></p>
-          <div class="site-suggestions-footer site-suggestions-delete-row">
-            <button type="button" class="dashboard-link-btn dashboard-danger-btn" id="delete-all-maps-btn">Delete all maps and data</button>
-          </div>
-        </section>
+      </div>
       </div>
 
       <div class="home-legacy-extra">
@@ -13925,47 +14029,31 @@
           </div>
           <p class="site-suggestions-msg" id="account-pref-msg" hidden aria-live="polite"></p>
         </section>
+
+        <section class="site-suggestions dashboard-settings-panel settings-panel" id="site-suggestions" aria-label="Suggest a site improvement">
+          <h3 class="site-suggestions-title">Suggest an improvement</h3>
+          <p class="site-suggestions-copy">Features, fixes, or changes for whatimado — add your name if you'd like credit when we ship it.</p>
+          <label class="site-suggestions-field" for="site-suggestion-name">
+            <span class="site-suggestions-field-label">Your name (for credit)</span>
+            <input class="site-suggestions-input site-suggestions-name" id="site-suggestion-name" type="text" maxlength="80" autocomplete="name" placeholder="How you'd like to be credited">
+          </label>
+          <label class="site-suggestions-field" for="site-suggestion-input">
+            <span class="site-suggestions-field-label">Your suggestion</span>
+            <textarea class="site-suggestions-input" id="site-suggestion-input" rows="2" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
+          </label>
+          <div class="site-suggestions-footer">
+            <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
+            <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
+          </div>
+          <p class="site-suggestions-msg" id="site-suggestion-msg" hidden aria-live="polite"></p>
+          <div class="site-suggestions-footer site-suggestions-delete-row">
+            <button type="button" class="dashboard-link-btn dashboard-danger-btn" id="delete-all-maps-btn">Delete all maps and data</button>
+          </div>
+        </section>
       </div>
     </section>
 
-    <section class="screen" id="screen-convo">
-      <div class="convo-wrap">
-        <div class="convo-pull-refresh" id="convo-pull-refresh" hidden aria-hidden="true">
-          <span class="convo-pull-refresh-icon" aria-hidden="true">↻</span>
-          <span class="convo-pull-refresh-label" id="convo-pull-refresh-label">Pull to refresh</span>
-        </div>
-        <div class="convo-spacer" id="convo-spacer" aria-hidden="true"></div>
-      <div class="conversation" id="bubble-chain"></div>
-        <div class="dashboard-path-mode-bar path-mode-choice" id="path-mode-choice" hidden aria-label="Choose your roadmap style">
-          <p class="dashboard-path-mode-label path-mode-choice-label">How do you want to explore your options?</p>
-          <div class="path-mode-actions">
-            <button type="button" class="path-mode-option path-mode-option--direct" id="convo-direct-path-btn">
-              <span class="path-mode-option-title">Direct Roadmap</span>
-              <span class="path-mode-option-desc">A focused step-by-step guide to your goal.</span>
-            </button>
-            <button type="button" class="path-mode-option path-mode-option--flex" id="convo-flexible-path-btn">
-              <span class="path-mode-option-title">Flexible Roadmap</span>
-              <span class="path-mode-option-desc">Choose from a variety of options at every step to build the roadmap that works for you.</span>
-            </button>
-          </div>
-        </div>
-        <div class="reply-box surface-card" id="reply-box">
-        <div class="reply-inner">
-          <textarea class="reply-textarea" id="reply-textarea" rows="4" placeholder="Type your response..."></textarea>
-          <button class="send-btn" id="reply-send-btn">Send</button>
-          </div>
-          <div class="profile-intake-chips" id="profile-intake-chips" hidden aria-label="Quick answer options"></div>
-          <div class="reply-actions">
-            <div class="reply-map-actions" id="reply-map-actions" hidden>
-              <button type="button" class="reply-map-btn" id="reply-apply-map-btn">Update my paths</button>
-              <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-regen-roadmap-btn" hidden>Regenerate roadmap</button>
-              <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-map-btn">Back to map</button>
-            </div>
-            <button class="reset-pill" id="reply-reset-btn" type="button">Start new map</button>
-          </div>
-        </div>
-      </div>
-    </section>
+    <section class="screen" id="screen-convo" hidden aria-hidden="true"></section>
 
     <section class="screen" id="screen-map">
       <div class="page">
@@ -29832,7 +29920,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     let convoPullRefreshState = null;
 
     function markConvoManualScroll() {
-      if ($("#screen-convo")?.classList.contains("active")) {
+      if (isConvoScreenActive()) {
         convoManualScrollAt = Date.now();
       }
     }
@@ -29859,7 +29947,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function alignConvoViewport(behavior = "smooth", options = {}) {
-      if (!$("#screen-convo")?.classList.contains("active")) return;
+      if (!isConvoScreenActive()) return;
       if (!options.force) {
         if (Date.now() - convoManualScrollAt < 900) return;
         if (convoPreferBottomAnchor()) {
@@ -29963,7 +30051,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (label) label.textContent = "Refreshing…";
       try {
         await loadSession();
-        if ($("#screen-convo")?.classList.contains("active")) {
+        if (isConvoScreenActive()) {
           restoreConversationBubbles();
           alignConvoViewport("auto", { force: true });
         }
@@ -29985,7 +30073,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const threshold = 72;
 
       wrap.addEventListener("touchstart", (event) => {
-        if (!$("#screen-convo")?.classList.contains("active")) return;
+        if (!isConvoScreenActive()) return;
         if (window.scrollY > 4) return;
         const touch = event.touches[0];
         if (!touch) return;
@@ -30054,10 +30142,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
 
       document.addEventListener("touchstart", () => {
-        if ($("#screen-convo")?.classList.contains("active")) markConvoManualScroll();
+        if (isConvoScreenActive()) markConvoManualScroll();
       }, { passive: true });
       document.addEventListener("wheel", () => {
-        if ($("#screen-convo")?.classList.contains("active")) markConvoManualScroll();
+        if (isConvoScreenActive()) markConvoManualScroll();
       }, { passive: true });
 
       const onViewportResize = () => {
@@ -30072,7 +30160,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             scrollMobileFieldBelowBrowserChrome(active.closest(".dashboard-search-field") || active, "auto");
           }
         }
-        if (heightChanged && $("#screen-convo")?.classList.contains("active") && !convoPreferBottomAnchor()) {
+        if (heightChanged && isConvoScreenActive() && !convoPreferBottomAnchor()) {
           alignConvoViewport("auto", { force: true });
         }
       };
@@ -30196,7 +30284,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       updateScreenNavButtons();
     }
 
+    function isConvoScreenActive() {
+      return document.documentElement.classList.contains("convo-active")
+        || $("#screen-main")?.classList.contains("is-chat-active");
+    }
+
     function showScreen(name, options = {}) {
+      const isConvo = name === "convo";
+      const resolvedName = isConvo ? "main" : name;
       const previousScreen = state.lastScreen;
       if (previousScreen === "roadmap" && name !== "roadmap") {
         rememberRoadmapViewport();
@@ -30206,18 +30301,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && previousScreen
         && previousScreen !== name
         && SCREEN_NAV_SCREENS.has(previousScreen)
-        && SCREEN_NAV_SCREENS.has(name)
+        && SCREEN_NAV_SCREENS.has(isConvo ? "convo" : name)
       ) {
         screenNavPast.push(previousScreen);
         screenNavFuture = [];
       }
-      state.lastScreen = name;
-      document.documentElement.classList.toggle("convo-active", name === "convo");
-      $$(".screen").forEach((screen) => screen.classList.toggle("active", screen.id === `screen-${name}`));
+      state.lastScreen = isConvo ? "convo" : name;
+      const chatOnMain = isConvo
+        || (resolvedName === "main" && (state.history.length > 0 || Boolean(state.profileIntakeStep)));
+      document.documentElement.classList.toggle("convo-active", chatOnMain);
+      $("#screen-main")?.classList.toggle("is-chat-active", chatOnMain);
+      $$(".screen").forEach((screen) => {
+        if (screen.id === "screen-convo") {
+          screen.classList.remove("active");
+          return;
+        }
+        screen.classList.toggle("active", screen.id === `screen-${resolvedName}`);
+      });
       $$(".nav-btn[data-screen-link], .dashboard-nav-btn[data-screen-link]").forEach((button) => button.classList.remove("active"));
       $(`[data-screen-link="${name}"]`)?.classList.add("active");
       $$(".dashboard-nav-btn").forEach((button) => button.classList.remove("active"));
-      if (name === "main") {
+      if (name === "main" || isConvo) {
         $("#dashboard-sidebar")?.querySelector('[data-screen-link="main"]')?.classList.add("active");
       } else if (name === "roadmap") {
         $("#sidebar-progress-btn")?.classList.add("active");
@@ -30226,7 +30330,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } else if (name === "settings") {
         $("#sidebar-settings-btn")?.classList.add("active");
       }
-      if (name === "convo") {
+      if (isConvo) {
         scrollConversation();
       } else if (!options.skipScrollTop) {
         if (name === "roadmap") {
@@ -30263,9 +30367,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } else {
         syncRoadmapStickyOffset();
       }
-      if (name === "main") {
+      if (name === "main" && !isConvo) {
         renderSavedMapsHome();
-        startRotatingPromptPlaceholder();
       }
       if (name === "maps") refreshRoadmapsUi({ rebuildMap: state.lastScreen === "map" });
       if (name === "stats") {
@@ -37520,6 +37623,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.awaitingPathModeChoice = false;
       hideRoadmapBranchPicker();
       hidePathModeChoice();
+      $("#screen-main")?.classList.remove("is-chat-active");
+      document.documentElement.classList.remove("convo-active");
       $("#bubble-chain").innerHTML = "";
       $("#typing-pair")?.remove();
       setRoadmapNavVisible(false);
@@ -39150,7 +39255,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function openDashboardMobileNav() {
-      if (window.innerWidth > 960) return;
       dashboardMobileNavOpen = true;
       document.body.classList.add("dashboard-mobile-nav-open");
       $("#dashboard-sidebar")?.classList.add("is-mobile-open");
@@ -39247,9 +39351,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       $("#sidebar-discover-btn")?.addEventListener("click", () => {
         closeDashboardMobileNav();
-        showScreen("main", { skipScrollTop: true });
+        showScreen("settings");
         requestAnimationFrame(() => {
-          document.querySelector(".dashboard-quick-actions")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          $("#site-suggestions")?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
       $("#account-pref-save")?.addEventListener("click", () => saveAccountPrefsFromForm());
@@ -39302,7 +39406,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
 
       window.addEventListener("resize", () => {
-        if ($("#screen-convo")?.classList.contains("active") && !convoPreferBottomAnchor()) {
+        if (isConvoScreenActive() && !convoPreferBottomAnchor()) {
           alignConvoViewport("auto", { force: true });
         }
       });
