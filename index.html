@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-hero-titles-unblocked-open-at-top">
+  <meta name="whatimado-build" content="2026-07-10-progress-map-spacer-scroll">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1657,17 +1657,15 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-main > main {
-      padding-top: calc(var(--topbar-h, 52px) + 6px);
+      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 12px);
       transition: padding-top .32s cubic-bezier(.4, 0, .2, 1);
     }
 
-    html[data-color-scheme="adult"] body.is-roadmap-progress-visible .dashboard-main > main {
-      padding-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 52px)) + 6px);
-    }
+    /* Progress map clearance is handled by the in-flow spacer inside #screen-roadmap. */
 
     html[data-color-scheme="adult"] #screen-roadmap.active,
     html[data-color-scheme="adult"] #screen-map.active {
-      scroll-padding-top: calc(var(--topbar-h, 52px) + 12px);
+      scroll-padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 16px);
     }
 
     /* Header controls scroll with the page so they never cover a hero/title section.
@@ -9602,6 +9600,18 @@
       display: none;
     }
 
+    .roadmap-float-progress-spacer {
+      display: none;
+      width: 100%;
+      height: 0;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
+      padding-top: .35rem;
+    }
+
     .roadmap-float-progress[hidden] {
       display: none !important;
     }
@@ -9676,7 +9686,7 @@
         display: flex;
         flex-direction: column;
         position: fixed;
-        top: var(--topbar-h, 52px);
+        top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px));
         left: 0;
         right: 0;
         width: 100%;
@@ -9720,7 +9730,17 @@
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
-        padding-top: .5rem;
+        padding-top: .75rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-progress-spacer {
+        display: block;
+        order: 5;
+        width: 100%;
+        flex-shrink: 0;
+        height: var(--roadmap-progress-h, 0px);
+        pointer-events: none;
+        transition: height .28s cubic-bezier(.4, 0, .2, 1);
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-overview-header {
@@ -11169,7 +11189,7 @@
         text-decoration: none;
       }
 
-      html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
+      html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; padding-top: .35rem; }
       html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
       html[data-color-scheme="adult"] .roadmap-content { display: contents; }
       html[data-color-scheme="adult"] .roadmap-side > #roadmap-side-local-card { order: 50; }
@@ -15033,6 +15053,7 @@
       </div>
 
       <div class="page roadmap-layout roadmap-page" id="roadmap-page">
+        <div class="roadmap-float-progress-spacer" id="roadmap-float-progress-spacer" aria-hidden="true"></div>
         <div class="roadmap-main">
           <div class="roadmap-header-actions">
             <button class="screen-nav-btn roadmap-page-nav-back" id="roadmap-page-nav-back" type="button" aria-label="Back to map">
@@ -20377,6 +20398,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function syncRoadmapStickyOffset() {
       const bar = $("#roadmap-float-progress");
+      const spacer = $("#roadmap-float-progress-spacer");
       const show = shouldShowMobileRoadmapProgress();
       const collapsed = Boolean(bar?.classList.contains("is-collapsed"));
       if (bar) {
@@ -20384,11 +20406,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         bar.setAttribute("aria-hidden", show ? "false" : "true");
       }
       document.body.classList.toggle("is-roadmap-progress-visible", show && !collapsed);
-      const progressH = show && bar && !collapsed ? bar.offsetHeight : 0;
+      const progressH = show && bar && !collapsed ? Math.ceil(bar.getBoundingClientRect().height) : 0;
       document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
+      if (spacer) {
+        spacer.style.height = progressH ? `${progressH}px` : "0px";
+        spacer.hidden = !show;
+      }
       document.documentElement.style.setProperty(
         "--roadmap-sticky-offset",
-        progressH ? `calc(var(--topbar-h, 64px) + ${progressH}px)` : "var(--topbar-h, 64px)"
+        progressH ? `calc(var(--topbar-h, 64px) + env(safe-area-inset-top, 0px) + ${progressH}px)` : "calc(var(--topbar-h, 64px) + env(safe-area-inset-top, 0px))"
       );
     }
 
@@ -20422,11 +20448,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       const y = Math.max(0, window.scrollY || 0);
       const delta = y - roadmapProgressScrollState.lastY;
-      if (y <= 16) {
+      if (Math.abs(delta) < 1) return;
+      if (y <= 6) {
         setRoadmapProgressCollapsed(false);
-      } else if (delta > 12) {
+      } else if (delta > 0) {
         setRoadmapProgressCollapsed(true);
-      } else if (delta < -12) {
+      } else if (delta < 0) {
         setRoadmapProgressCollapsed(false);
       }
       roadmapProgressScrollState.lastY = y;
@@ -20434,12 +20461,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function bindRoadmapFloatProgressResizeObserver() {
       const bar = $("#roadmap-float-progress");
+      const timeline = $("#roadmap-float-timeline");
       if (!bar || roadmapProgressScrollState.resizeObserver) return;
       if (typeof ResizeObserver === "undefined") return;
       roadmapProgressScrollState.resizeObserver = new ResizeObserver(() => {
         scheduleRoadmapStickyOffsetRemeasure();
       });
       roadmapProgressScrollState.resizeObserver.observe(bar);
+      if (timeline) roadmapProgressScrollState.resizeObserver.observe(timeline);
     }
 
     function initRoadmapProgressScrollBehavior() {
@@ -37397,6 +37426,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       requestAnimationFrame(() => {
         window.scrollTo({ top: 0, behavior: "auto" });
         scheduleRoadmapStickyOffsetRemeasure();
+        requestAnimationFrame(scheduleRoadmapStickyOffsetRemeasure);
       });
     }
 
