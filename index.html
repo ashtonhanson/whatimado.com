@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-mobile-padding-delete-fix">
+  <meta name="whatimado-build" content="2026-07-10-logo-rollout">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -67,7 +67,7 @@
   <meta property="og:url" content="https://whatimado.com/">
   <meta property="og:title" content="whatimado.com — Map paths you haven't considered">
   <meta property="og:description" content="Stuck on what's next? Free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
-  <meta property="og:image" content="https://whatimado.com/og-image.png?v=2">
+  <meta property="og:image" content="https://whatimado.com/og-image.png?v=3">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:type" content="image/png">
@@ -75,7 +75,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="whatimado.com — Map paths you haven't considered">
   <meta name="twitter:description" content="Stuck on what's next? Free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
-  <meta name="twitter:image" content="https://whatimado.com/og-image.png?v=2">
+  <meta name="twitter:image" content="https://whatimado.com/og-image.png?v=3">
   <meta name="theme-color" content="#07080f">
   <script>
     (() => {
@@ -354,6 +354,12 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-brand-logo {
+      display: block;
+      height: 34px;
+      width: auto;
     }
 
     html[data-color-scheme="adult"] .dashboard-brand-word {
@@ -1118,18 +1124,34 @@
       inset: 0 0 auto 0;
       z-index: 25;
       width: 100%;
-      justify-content: flex-end;
+      justify-content: space-between;
       height: 52px;
       padding: .35rem 1rem 0;
       pointer-events: none;
     }
 
-    html[data-color-scheme="adult"] .minimal-topbar .dashboard-topbar-start {
-      display: none;
-    }
-
+    html[data-color-scheme="adult"] .minimal-topbar .dashboard-topbar-start,
     html[data-color-scheme="adult"] .minimal-topbar .dashboard-topbar-end {
       pointer-events: auto;
+    }
+
+    html[data-color-scheme="adult"] .topbar-logo {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    html[data-color-scheme="adult"] .topbar-logo img {
+      display: block;
+      height: 32px;
+      width: auto;
+    }
+
+    @media (min-width: 768px) {
+      html[data-color-scheme="adult"] .topbar-logo img {
+        height: 36px;
+      }
     }
 
     html[data-color-scheme="adult"] .minimal-home {
@@ -4489,7 +4511,7 @@
       width: 100%;
       height: 100%;
       display: block;
-      mix-blend-mode: lighten;
+      object-fit: contain;
     }
 
     .logo-text {
@@ -4514,7 +4536,6 @@
       display: block;
       height: 38px;
       width: auto;
-      mix-blend-mode: lighten;
     }
 
     .loader-logo {
@@ -14043,7 +14064,7 @@
   </div>
   <div class="loader" id="loader">
     <div class="loader-inner">
-      <img class="loader-logo" src="/logo.png" alt="whatimado.com" width="251" height="150">
+      <img class="loader-logo" src="/logo.png" alt="whatimado" width="1921" height="819">
       <p class="loader-quote">"The two most important days in your life are the day you are born and the day you find out why."</p>
       <small class="loader-tagline">Let us help you figure out what you're gonna do.</small>
       <div class="site-loading-progress" id="loader-progress" aria-live="polite">
@@ -14240,10 +14261,7 @@
       <div class="app-header-stack">
         <div class="app-header-inner">
     <a class="logo" href="#main" data-screen-link="main">
-      <span class="logo-icon" aria-hidden="true">
-              <img src="/logo-icon.png" alt="" width="86" height="86">
-      </span>
-      <span class="logo-text">WhatimaDo</span>
+      <img class="logo-img" src="/logo.png" alt="whatimado" width="1921" height="819">
     </a>
 
     <nav class="nav" aria-label="Main navigation">
@@ -14274,7 +14292,7 @@
             <div class="nav-drawer" id="nav-drawer">
               <div class="nav-drawer-head">
                 <span class="nav-drawer-head-logo" aria-hidden="true">
-                  <img src="/logo-icon.png" alt="" width="32" height="32">
+                  <img src="/whatimado-mark.svg" alt="" width="32" height="32">
                 </span>
                 <div class="nav-drawer-head-copy">
                   <p class="nav-drawer-head-title">Menu</p>
@@ -14373,10 +14391,7 @@
     <aside class="dashboard-sidebar" id="dashboard-sidebar" aria-label="Sidebar">
       <div class="dashboard-brand-wrap">
         <a class="dashboard-brand" href="#main" data-screen-link="main">
-          <span class="dashboard-brand-mark" aria-hidden="true">
-            <img src="/whatimado-mark.svg" alt="" width="34" height="34">
-          </span>
-          <span class="dashboard-brand-word" aria-label="whatimado"><span class="brand-what">what</span><span class="brand-ima">ima</span><span class="brand-do">do</span></span>
+          <img class="dashboard-brand-logo" src="/logo.png" alt="whatimado" width="1921" height="819">
         </a>
         <span class="dashboard-beta-badge" aria-hidden="true">Beta</span>
       </div>
@@ -14440,7 +14455,11 @@
 
     <div class="dashboard-main">
       <header class="dashboard-topbar minimal-topbar">
-        <div class="dashboard-topbar-start" aria-hidden="true"></div>
+        <div class="dashboard-topbar-start">
+          <a class="topbar-logo" href="#main" data-screen-link="main" aria-label="whatimado home">
+            <img src="/logo.png" alt="whatimado" width="1921" height="819">
+          </a>
+        </div>
         <div class="dashboard-topbar-end">
           <button type="button" class="dashboard-topbar-btn dashboard-mobile-menu" id="dashboard-mobile-menu" aria-label="Open menu">
             <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
@@ -14802,7 +14821,7 @@
     <section class="screen" id="screen-roadmap">
       <div class="roadmap-loading" id="roadmap-loading" hidden>
         <div class="loader-inner">
-          <img class="loader-logo" src="/logo.png" alt="" width="251" height="150">
+          <img class="loader-logo" src="/logo.png" alt="whatimado" width="1921" height="819">
           <p class="loader-tagline">Preparing your first mission…</p>
           <div class="site-loading-progress" id="roadmap-loader-progress" aria-live="polite">
             <div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
