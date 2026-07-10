@@ -143,7 +143,7 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after {
@@ -1071,11 +1071,23 @@
     html[data-color-scheme="adult"] .minimal-kicker {
       margin: .35rem 0 0;
       text-align: center;
-      font-size: .78rem;
+      font-family: "Fraunces", Georgia, "Times New Roman", serif;
+      font-size: clamp(1.65rem, 4.8vw, 2.4rem);
+      font-weight: 500;
+      font-style: normal;
+      letter-spacing: -.03em;
+      line-height: 1.08;
+      text-transform: none;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .minimal-kicker-accent {
+      font-style: italic;
       font-weight: 600;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
+      background: var(--logo-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
 
     html[data-color-scheme="adult"] .minimal-prompt.dashboard-search {
@@ -13874,7 +13886,7 @@
     <section class="screen active" id="screen-main">
       <div class="main-workspace minimal-home">
         <div class="minimal-start-zone">
-        <p class="minimal-kicker">Writing roadmap</p>
+        <h1 class="minimal-kicker">Roadmap <span class="minimal-kicker-accent">Generator</span></h1>
 
         <div class="prompt-box dashboard-search minimal-prompt">
           <div class="dashboard-search-grow">
