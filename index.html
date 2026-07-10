@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-distinct-roadmap-tasks">
+  <meta name="whatimado-build" content="2026-07-10-realistic-progress-map-income">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -15155,7 +15155,7 @@
             </div>
             <p class="roadmap-progress-summary" id="roadmap-progress-summary">0 of 0 tasks completed</p>
             <div class="roadmap-progress-map-timeline roadmap-progress-map-timeline--sidebar" id="roadmap-progress-timeline" hidden>
-              <p class="roadmap-progress-map-lead">Each dot marks an estimated income goal — stay focused on reaching the next one.</p>
+              <p class="roadmap-progress-map-lead">Dollar marks show only on phases where pay is realistically possible — prep steps stay blank.</p>
               <div class="roadmap-progress-map-scroll" data-progress-map-scroll>
                 <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--prev" hidden aria-label="Scroll progress map left">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
@@ -17995,15 +17995,22 @@
       if (situation === "business" || situation === "online_business" || situation === "grounded" || situation === "creative") {
         return {
           metricLabel: "Income Potential",
-          metricValue: "$500–$2,000/month",
-          note: "Typical early range for this kind of work — varies by market, pricing, and effort."
+          metricValue: "$150–$800/month",
+          note: "Typical early side-income range — many paths start lower and build slowly."
         };
       }
       if (situation === "skilled_trade") {
         return {
           metricLabel: "Income Potential",
-          metricValue: "$500–$2,000/month",
-          note: "Early side-work or part-time range — full-time trade income can be higher with licensing and experience."
+          metricValue: "$200–$1,200/month",
+          note: "Early part-time or side-work range — full-time trade pay can take longer."
+        };
+      }
+      if (situation === "housing") {
+        return {
+          metricLabel: "Income Potential",
+          metricValue: "$100–$600/month",
+          note: "Modest first earnings from gigs or hourly work — stability usually comes in steps."
         };
       }
       if (isFounderRoadmapForIdea(idea)) {
@@ -18124,6 +18131,119 @@
       return `${compact}/mo`;
     }
 
+    function getStageContentBlob(stage, idea) {
+      const taskText = (stage?.tasks || [])
+        .map((task) => getTaskText(task) || getMissionTitle(task) || "")
+        .join(" ");
+      return `${stage?.label || ""} ${stage?.desc || ""} ${taskText}`.toLowerCase();
+    }
+
+    function stageIsPrepPhase(blob) {
+      if (/\b(first (?:paying )?client|first sale|first booking|first gig|get paid|charge|invoice|land (?:a )?client|collect payment|recurring revenue|consistent monthly|paying customer)\b/.test(blob)) {
+        return false;
+      }
+      return /\b(find|research|list|scan|map|learn|study|certif|resume|cv|cover letter|polish|proof|package|organize|tracker|spreadsheet|outline|setup|prepare|who'?s hiring|hiring near|job search|network|interview prep|skills|training|apply|follow up|outreach list|log each|contact tracking|name \d+|compare|draft|build your|proof page|workforce|sbdc|who to contact)\b/.test(blob);
+    }
+
+    function stageIsFirstIncomePhase(blob) {
+      return /\b(first (?:paying )?client|first sale|first booking|first gig|first shift|first errand|first paid|get paid|collect payment|charge|invoice|land (?:a )?client|cash|tips|donation|booking|push for client|client push|two week push|paid job|paying customer|run errands|deliver|gig work)\b/.test(blob);
+    }
+
+    function stageIsScalePhase(blob) {
+      return /\b(recurring|consistent|monthly revenue|repeat client|scale|expand|systemat|multiple clients|full.?time|steady income|predictable|regular client)\b/.test(blob);
+    }
+
+    function classifyStageIncomeProfile(stage, stageIndex, totalStages, idea, situation) {
+      const blob = getStageContentBlob(stage, idea);
+      const isLast = stageIndex === totalStages - 1;
+      const isEmployment = situation === "employment"
+        || situation === "career_change"
+        || isGetHiredMilestone(idea);
+
+      if (isEmployment) {
+        if (isLast) {
+          return {
+            showMilestone: true,
+            earnsIncome: true,
+            milestoneRole: "goal",
+            title: "Potential monthly pay if you land a role — earlier phases do not pay yet"
+          };
+        }
+        return {
+          showMilestone: false,
+          earnsIncome: false,
+          title: "Job-search step — income starts after you are hired"
+        };
+      }
+
+      if (stageIsPrepPhase(blob)) {
+        return {
+          showMilestone: false,
+          earnsIncome: false,
+          title: "Setup and outreach prep — earnings usually come in later phases"
+        };
+      }
+
+      if (stageIsFirstIncomePhase(blob)) {
+        const role = stageIsScalePhase(blob) ? (isLast ? "goal" : "growth") : "first";
+        return {
+          showMilestone: true,
+          earnsIncome: true,
+          milestoneRole: role,
+          title: role === "first"
+            ? "First realistic earnings here — often modest at the start"
+            : (isLast ? "Steadier income if this path works out" : "Growth-phase income if clients repeat")
+        };
+      }
+
+      if (stageIsScalePhase(blob)) {
+        return {
+          showMilestone: true,
+          earnsIncome: true,
+          milestoneRole: isLast ? "goal" : "growth",
+          title: isLast ? "Steadier income if this path works out" : "Growth-phase income if clients repeat"
+        };
+      }
+
+      if (isLast) {
+        return {
+          showMilestone: true,
+          earnsIncome: true,
+          milestoneRole: "first",
+          title: "First income target if this phase converts — usually at the low end of the range"
+        };
+      }
+
+      return {
+        showMilestone: false,
+        earnsIncome: false,
+        title: "Building toward income — pay is not typical in this phase yet"
+      };
+    }
+
+    function roundIncomeMilestoneAmount(amount, period = "month") {
+      let value = Math.max(0, Math.round(Number(amount) || 0));
+      if (!value) return 0;
+      if (period === "year") {
+        if (value >= 10000) value = Math.round(value / 1000) * 1000;
+        else value = Math.round(value / 500) * 500;
+        return value;
+      }
+      if (value >= 1000) value = Math.round(value / 100) * 100;
+      else if (value >= 200) value = Math.round(value / 50) * 50;
+      else value = Math.round(value / 25) * 25;
+      return value;
+    }
+
+    function amountForMilestoneRole(role, range) {
+      const low = Math.min(range.low, range.high);
+      const high = Math.max(range.low, range.high);
+      if (role === "first") return roundIncomeMilestoneAmount(low, range.period);
+      if (role === "growth") return roundIncomeMilestoneAmount(low + (high - low) * 0.55, range.period);
+      if (role === "goal") return roundIncomeMilestoneAmount(high, range.period);
+      return roundIncomeMilestoneAmount(high, range.period);
+    }
+
     function deriveStageIncomeMilestones(idea = state.currentIdea, stages = state.roadmapStages) {
       const safeStages = Array.isArray(stages) ? stages : [];
       const count = safeStages.length;
@@ -18137,17 +18257,47 @@
         if (inferred?.metricValue) range = parseIncomeAmountRange(inferred.metricValue);
       }
       if (!range) {
-        const fallback = shouldUseBusinessRoadmapTasks(idea) ? 1500 : 3500;
-        range = { low: Math.round(fallback * 0.35), high: fallback, period: "month" };
+        const situation = getPathSituationType(idea);
+        if (situation === "employment" || situation === "career_change") {
+          range = { low: 2800, high: 4200, period: "month" };
+        } else if (situation === "housing") {
+          range = { low: 100, high: 500, period: "month" };
+        } else {
+          range = { low: 75, high: 600, period: "month" };
+        }
       }
 
-      return safeStages.map((_, index) => {
-        const t = count === 1 ? 1 : index / Math.max(count - 1, 1);
-        const amount = Math.round(range.low + (range.high - range.low) * t);
+      const situation = getPathSituationType(idea);
+      const stageProfiles = safeStages.map((stage, index) =>
+        classifyStageIncomeProfile(stage, index, count, idea, situation)
+      );
+      const earners = stageProfiles
+        .map((profile, index) => ({ ...profile, index }))
+        .filter((profile) => profile.earnsIncome);
+
+      return safeStages.map((stage, index) => {
+        const profile = stageProfiles[index];
+        if (!profile.showMilestone || !profile.earnsIncome) {
+          return {
+            label: "",
+            title: profile.title || "No earnings expected in this phase yet"
+          };
+        }
+
+        const earnerIndex = earners.findIndex((entry) => entry.index === index);
+        let amount = amountForMilestoneRole(profile.milestoneRole, range);
+        if (earners.length > 1 && profile.milestoneRole !== "first" && profile.milestoneRole !== "goal") {
+          const t = earnerIndex / Math.max(earners.length - 1, 1);
+          amount = roundIncomeMilestoneAmount(range.low + (range.high - range.low) * t, range.period);
+        } else if (earners.length > 1 && profile.milestoneRole === "growth") {
+          amount = roundIncomeMilestoneAmount(range.low + (range.high - range.low) * 0.55, range.period);
+        }
+
+        amount = Math.min(Math.max(range.low, amount), range.high);
         const label = formatIncomeMilestoneShort(amount, range.period);
         return {
           label,
-          title: `Income goal at this phase: ${label}`
+          title: profile.title || `Realistic income for this phase: ${label}`
         };
       });
     }
