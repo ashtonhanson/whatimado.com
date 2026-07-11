@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-10-roadmap-header-clearance">
+  <meta name="whatimado-build" content="2026-07-11-home-nav-profile-clarify-padding">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -444,6 +444,13 @@
     html[data-color-scheme="adult"] .dashboard-nav-btn.active {
       background: rgba(37, 99, 235, .1);
       color: #29abe2;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-nav-meta {
+      font-size: .78em;
+      font-weight: 600;
+      color: var(--ink-muted);
+      white-space: nowrap;
     }
 
     html[data-color-scheme="adult"] .dashboard-nav-group {
@@ -1658,7 +1665,7 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-main > main {
-      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 22px);
+      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 36px);
       transition: padding-top .32s cubic-bezier(.4, 0, .2, 1);
     }
 
@@ -1675,7 +1682,7 @@
       position: relative;
       z-index: 1;
       margin-bottom: .4rem;
-      padding: .75rem 0 .5rem;
+      padding: 1.1rem 0 .5rem;
       background: transparent;
       border-bottom: 1px solid rgba(37, 99, 235, .08);
     }
@@ -1683,8 +1690,15 @@
     html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
       position: relative;
       z-index: 1;
-      padding: .45rem 0 .65rem;
+      padding: 1rem 0 .65rem;
       background: transparent;
+    }
+
+    html[data-color-scheme="adult"] #screen-map.active .page-header--map,
+    html[data-color-scheme="adult"] #screen-settings .maps-page-head,
+    html[data-color-scheme="adult"] #screen-maps .maps-page-head,
+    html[data-color-scheme="adult"] #screen-notes .maps-page-head {
+      padding-top: .85rem;
     }
 
     html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
@@ -9610,7 +9624,7 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
-      padding-top: .75rem;
+      padding-top: 1.1rem;
     }
 
     .roadmap-float-progress[hidden] {
@@ -9750,7 +9764,7 @@
 
       html[data-color-scheme="adult"] .roadmap-header-actions {
         order: 10;
-        padding-top: .85rem;
+        padding-top: 1rem;
         margin-bottom: .3rem;
         padding-bottom: .4rem;
       }
@@ -14487,7 +14501,7 @@
     <div class="app-header-nav-wrap">
       <div class="app-header-stack">
         <div class="app-header-inner">
-    <a class="logo" href="#main" data-screen-link="main">
+    <a class="logo" href="#main" data-home-nav>
       <img class="logo-img" src="/logo.png" alt="whatimado" width="1921" height="819">
     </a>
 
@@ -14617,7 +14631,7 @@
   <div class="dashboard-shell">
     <aside class="dashboard-sidebar" id="dashboard-sidebar" aria-label="Sidebar">
       <div class="dashboard-brand-wrap">
-        <a class="dashboard-brand" href="#main" data-screen-link="main">
+        <a class="dashboard-brand" href="#main" data-home-nav>
           <img class="dashboard-brand-logo" src="/logo.png" alt="whatimado" width="1921" height="819">
         </a>
         <span class="dashboard-beta-badge" aria-hidden="true">Beta</span>
@@ -14627,13 +14641,9 @@
         <span>Undo</span>
       </button>
       <nav class="dashboard-nav" aria-label="Primary">
-        <button type="button" class="dashboard-nav-btn active" data-screen-link="main">
+        <button type="button" class="dashboard-nav-btn active" id="sidebar-home-btn" data-home-nav>
           <svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
-          Home
-        </button>
-        <button type="button" class="dashboard-nav-btn" id="sidebar-new-map-btn">
-          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
-          Start new map
+          Home <span class="dashboard-nav-meta">(start new map)</span>
         </button>
         <div class="dashboard-nav-group is-open" id="dashboard-roadmaps-group">
           <button type="button" class="dashboard-nav-btn dashboard-nav-btn--expand" id="sidebar-roadmaps-btn" aria-expanded="true" aria-controls="dashboard-roadmaps-sub">
@@ -14647,10 +14657,6 @@
             <div id="dashboard-roadmap-categories"></div>
           </div>
         </div>
-        <button type="button" class="dashboard-nav-btn" id="sidebar-discover-btn">
-          <svg viewBox="0 0 24 24"><path d="M12 3l2.4 7.4H22l-6 4.6 2.3 7L12 17.8 5.7 22l2.3-7-6-4.6h7.6L12 3z"></path></svg>
-          Discoveries
-        </button>
         <button type="button" class="dashboard-nav-btn" data-screen-link="notes" id="sidebar-notes-btn">
           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"></path></svg>
           My Notes
@@ -14687,7 +14693,7 @@
     <div class="dashboard-main">
       <header class="dashboard-topbar minimal-topbar">
         <div class="dashboard-topbar-start">
-          <a class="topbar-logo" href="#main" data-screen-link="main" aria-label="whatimado home">
+          <a class="topbar-logo" href="#main" data-home-nav aria-label="whatimado home">
             <img src="/logo.png" alt="whatimado" width="1921" height="819">
           </a>
         </div>
@@ -15798,6 +15804,7 @@
       /^feedback$/
     ];
     const INTAKE_STEP_MAP = 5;
+    const MIN_CLARIFYING_QUESTIONS = 2;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
       'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line explaining why THIS step fits their situation when it might look surprising (e.g. workforce visit for a business owner = self-employment programs, not job listings). Empty only if obviously on-track.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
@@ -26731,6 +26738,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       syncedLibraryStats: null,
       userProfile: emptyUserProfile(),
       profileIntakeStep: null,
+      clarifyingQuestionsAsked: 0,
       roadmapViewport: null,
       accountPrefs: null,
       guestSessionToken: null
@@ -27989,6 +27997,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         locationDraft: state.locationDraft || emptyLocationDraft(),
         userProfile: normalizeUserProfile(state.userProfile),
         profileIntakeStep: state.profileIntakeStep || null,
+        clarifyingQuestionsAsked: Number(state.clarifyingQuestionsAsked) || 0,
         roadmapCategories: state.roadmapCategories,
         activeRoadmapCategoryId: state.activeRoadmapCategoryId,
         dismissedRoadmapSidebarMapIds: state.dismissedRoadmapSidebarMapIds,
@@ -28028,6 +28037,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         locationDraft: source.locationDraft || emptyLocationDraft(),
         userProfile: normalizeUserProfile(source.userProfile),
         profileIntakeStep: source.profileIntakeStep || null,
+        clarifyingQuestionsAsked: Number(source.clarifyingQuestionsAsked) || 0,
         removedRoadmapKeys: Array.isArray(source.removedRoadmapKeys) ? source.removedRoadmapKeys : []
       };
     }
@@ -28104,6 +28114,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         : emptyLocationDraft();
       state.userProfile = normalizeUserProfile(data.userProfile);
       state.profileIntakeStep = data.profileIntakeStep || null;
+      state.clarifyingQuestionsAsked = Number(data.clarifyingQuestionsAsked) || 0;
       if (!hasSavedUserLocation()) {
         const inferred = inferLocationFromConversation();
         if (formatUserLocation(inferred) && looksLikeRealLocation(formatUserLocation(inferred))) {
@@ -31731,6 +31742,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || $("#screen-main")?.classList.contains("is-chat-active");
     }
 
+    function navigateHomeDefault() {
+      closeDashboardMobileNav();
+      intakeInProgress = false;
+      clearIntakeSession({ preserveAccountPrefs: true });
+      hidePathModeChoice();
+      stopRotatingPromptPlaceholder();
+      startRotatingPromptPlaceholder();
+      renderSavedMapsHome();
+      showScreen("main", { forceHomeDefault: true });
+      schedulePersist();
+    }
+
+    function openProfileScreen() {
+      closeDashboardMobileNav();
+      populateAccountPrefsForm();
+      showScreen("settings");
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      });
+    }
+
     function showScreen(name, options = {}) {
       const isConvo = name === "convo";
       const resolvedName = isConvo ? "main" : name;
@@ -31750,8 +31782,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         screenNavFuture = [];
       }
       state.lastScreen = isConvo ? "convo" : name;
-      const chatOnMain = isConvo
-        || (resolvedName === "main" && (state.history.length > 0 || Boolean(state.profileIntakeStep)));
+      const chatOnMain = !options.forceHomeDefault && (
+        isConvo
+        || (resolvedName === "main" && (state.history.length > 0 || Boolean(state.profileIntakeStep)))
+      );
       document.documentElement.classList.toggle("convo-active", chatOnMain);
       $("#screen-main")?.classList.toggle("is-chat-active", chatOnMain);
       requestAnimationFrame(() => {
@@ -31769,7 +31803,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $(`[data-screen-link="${name}"]`)?.classList.add("active");
       $$(".dashboard-nav-btn").forEach((button) => button.classList.remove("active"));
       if (name === "main" || isConvo) {
-        $("#dashboard-sidebar")?.querySelector('[data-screen-link="main"]')?.classList.add("active");
+        $("#sidebar-home-btn")?.classList.add("active");
       } else if (name === "roadmap") {
         $("#sidebar-progress-btn")?.classList.add("active");
       } else if (name === "stats") {
@@ -33434,6 +33468,51 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    function buildSecondClarifyingPrompt() {
+      const transcript = state.history
+        .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
+        .join("\n\n");
+      return (
+        "You are whatimado, an empathetic possibility advisor. The user already answered one follow-up question. Ask ONE more short clarifying question that goes deeper — a blocker, resource limit (time, money, transport, childcare), dealbreaker, or priority they have not spelled out yet. Reference their latest answer. Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
+        transcript
+      );
+    }
+
+    function getSecondClarifyingFallback() {
+      const blob = `${getFirstUserMessage()} ${state.history.filter((entry) => entry.role === "user").map((entry) => entry.content).join(" ")}`.toLowerCase();
+      if (/housing|homeless|shelter|evict/.test(blob)) {
+        return "Besides housing, what's the biggest blocker right now — ID, transportation, health, or something else?";
+      }
+      if (/recover|sober|aa|rehab/.test(blob)) {
+        return "What support or schedule do you need to keep stable while you build income — meetings, treatment, or something else?";
+      }
+      return "What's the main constraint right now — time, money, transportation, childcare, or something else you can't work around?";
+    }
+
+    async function askFollowUpClarifyingQuestion() {
+      intakeInProgress = true;
+      try {
+        const answer = await callAdvisor(buildSecondClarifyingPrompt(), 450);
+        const fallback = getSecondClarifyingFallback();
+        const finalAnswer = answer || fallback;
+        resolveTyping(finalAnswer);
+        state.history.push({ role: "assistant", content: finalAnswer });
+        state.step = 2;
+        state.clarifyingQuestionsAsked = MIN_CLARIFYING_QUESTIONS;
+        trackEvent("clarifying_question_shown", {
+          prompt_length: getFirstUserMessage().length,
+          intake_mode: state.intakeMode || "standard",
+          path_mode: state.pathMode || null,
+          clarifying_round: 2
+        });
+        showReplyBox(true);
+        updateSaveButtonVisibility();
+        schedulePersist();
+      } finally {
+        intakeInProgress = false;
+      }
+    }
+
     function buildFounderIdeasPrompt(summary, count = 3) {
       return (
         "You are whatimado, a practical advisor helping the FOUNDER grow whatimado.com into a sustainable mission-driven project without paywalling regular users.\n\n" +
@@ -34992,11 +35071,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
+        state.clarifyingQuestionsAsked = 1;
         trackEvent("path_mode_chosen", { path_mode: pathMode });
         trackEvent("clarifying_question_shown", {
           prompt_length: userText.length,
           intake_mode: "standard",
-          path_mode: pathMode
+          path_mode: pathMode,
+          clarifying_round: 1
         });
         showReplyBox(true);
         updateSaveButtonVisibility();
@@ -35158,8 +35239,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (state.step === 2) {
         trackEvent("clarifying_answer_submitted", {
           reply_length: text.length,
-          intake_mode: state.intakeMode || "standard"
+          intake_mode: state.intakeMode || "standard",
+          clarifying_round: state.clarifyingQuestionsAsked || 1
         });
+        if ((state.clarifyingQuestionsAsked || 0) < MIN_CLARIFYING_QUESTIONS) {
+          addTypingBubble();
+          await askFollowUpClarifyingQuestion();
+          return;
+        }
         addTypingBubble();
         beginProfileIntake();
         return;
@@ -39247,6 +39334,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.awaitingLocationCountry = "";
       state.userProfile = emptyUserProfile();
       state.profileIntakeStep = null;
+      state.clarifyingQuestionsAsked = 0;
       hideProfileIntakeChips();
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
@@ -40241,7 +40329,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const topbar = document.querySelector(".minimal-topbar");
         const logoH = topbar?.querySelector(".topbar-logo img")?.getBoundingClientRect().height || 0;
         const menuH = topbar?.querySelector(".dashboard-mobile-menu")?.getBoundingClientRect().height || 0;
-        const topbarH = Math.max(52, Math.ceil(Math.max(logoH, menuH, 40) + 12));
+        const topbarH = Math.max(56, Math.ceil(Math.max(logoH, menuH, 40) + 16));
         document.documentElement.style.setProperty("--topbar-h", `${topbarH}px`);
         document.documentElement.style.setProperty("--header-h", "0px");
         syncRoadmapStickyOffset();
@@ -41021,21 +41109,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function handleDashboardProfileClick() {
-      if (state.currentUser) {
-        showConfirmDialog({
-          title: "Sign out?",
-          message: `Signed in as ${state.currentUser.email}.`,
-          confirmLabel: "Sign out",
-          cancelLabel: "Stay signed in"
-        }).then((ok) => {
-          if (!ok) return;
-          closeDashboardMobileNav();
-          signOut();
-        });
-        return;
-      }
-      closeDashboardMobileNav();
-      showAuth("signin");
+      openProfileScreen();
     }
 
     function handleDashboardNotifyClick() {
@@ -41056,10 +41130,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function bindDashboardUi() {
       $("#dashboard-search-go")?.addEventListener("click", () => submitInitialPrompt());
       $("#dashboard-mobile-menu")?.addEventListener("click", toggleDashboardMobileNav);
-      $("#sidebar-new-map-btn")?.addEventListener("click", () => {
-        closeDashboardMobileNav();
-        confirmStartNewMap();
-      });
       $("#dashboard-mobile-overlay")?.addEventListener("click", closeDashboardMobileNav);
       $("#dashboard-sync-btn")?.addEventListener("click", manualSave);
       $("#dashboard-profile-btn")?.addEventListener("click", handleDashboardProfileClick);
@@ -41115,12 +41185,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           schedulePersist();
         }
       });
-      $("#sidebar-discover-btn")?.addEventListener("click", () => {
-        showScreen("settings");
-        requestAnimationFrame(() => {
-          $("#site-suggestions")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      });
       $("#account-pref-save")?.addEventListener("click", () => saveAccountPrefsFromForm());
       $$(".dashboard-quick-btn").forEach((button) => {
         button.addEventListener("click", () => {
@@ -41156,6 +41220,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       initConvoPullRefresh();
       window.addEventListener("resize", syncHeaderHeight);
       document.querySelector(".topbar-logo img")?.addEventListener("load", syncHeaderHeight);
+      $$("[data-home-nav]").forEach((element) => {
+        element.addEventListener("click", (event) => {
+          event.preventDefault();
+          navigateHomeDefault();
+        });
+      });
       $$("[data-screen-link]").forEach((element) => {
         element.addEventListener("click", (event) => {
           event.preventDefault();
