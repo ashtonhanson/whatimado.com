@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-11-home-nav-profile-clarify-padding">
+  <meta name="whatimado-build" content="2026-07-11-human-tasks-draft-buttons-padding">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1173,13 +1173,13 @@
 
     html[data-color-scheme="adult"] .topbar-logo img {
       display: block;
-      height: 40px;
+      height: 44px;
       width: auto;
     }
 
     @media (min-width: 768px) {
       html[data-color-scheme="adult"] .topbar-logo img {
-        height: 44px;
+        height: 48px;
       }
     }
 
@@ -1665,7 +1665,7 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-main > main {
-      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 36px);
+      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 56px);
       transition: padding-top .32s cubic-bezier(.4, 0, .2, 1);
     }
 
@@ -1682,7 +1682,7 @@
       position: relative;
       z-index: 1;
       margin-bottom: .4rem;
-      padding: 1.1rem 0 .5rem;
+      padding: 1.5rem 0 .5rem;
       background: transparent;
       border-bottom: 1px solid rgba(37, 99, 235, .08);
     }
@@ -1690,7 +1690,7 @@
     html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
       position: relative;
       z-index: 1;
-      padding: 1rem 0 .65rem;
+      padding: 1.25rem 0 .65rem;
       background: transparent;
     }
 
@@ -1698,7 +1698,7 @@
     html[data-color-scheme="adult"] #screen-settings .maps-page-head,
     html[data-color-scheme="adult"] #screen-maps .maps-page-head,
     html[data-color-scheme="adult"] #screen-notes .maps-page-head {
-      padding-top: .85rem;
+      padding-top: 1.1rem;
     }
 
     html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
@@ -9624,7 +9624,7 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
-      padding-top: 1.1rem;
+      padding-top: 1.5rem;
     }
 
     .roadmap-float-progress[hidden] {
@@ -9745,7 +9745,7 @@
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
-        padding-top: .75rem;
+        padding-top: 1rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-spacer {
@@ -9764,7 +9764,7 @@
 
       html[data-color-scheme="adult"] .roadmap-header-actions {
         order: 10;
-        padding-top: 1rem;
+        padding-top: 1.5rem;
         margin-bottom: .3rem;
         padding-bottom: .4rem;
       }
@@ -16329,7 +16329,7 @@
         return {
           region,
           countryLabel: "United States",
-          jobSearchRoles: `Search Indeed + Google Jobs for 10 roles matching "{title}" within 25 miles of ${locRaw}; save links with pay and requirements`,
+          jobSearchRoles: `Search Indeed and Google Jobs for about 10 jobs that fit {title} near ${locRaw} — save each link with pay and requirements`,
           employmentOffice: `Call or visit your local American Job Center / workforce board in ${locRaw} and ask what programs fit "{title}"`,
           staffingList: `List 3 staffing agencies, temp firms, or union halls in ${locRaw} that place people into work like "{title}"`,
           jobFair: `Attend one local job fair, hiring event, or workforce workshop in ${locRaw} related to "{title}"`,
@@ -16447,9 +16447,9 @@
       normalized.talkingPoints = "";
       normalized.followUp = "";
       const scrubDraftRefs = (text) => String(text || "")
-        .replace(/\b(draft|ready-to-use|prepared)\s+(email|script|message|below)\b/gi, "email button")
-        .replace(/\b(script|email|draft)\s+below\b/gi, "buttons below")
-        .replace(/\buse the (draft|script|email) below\b/gi, "use the buttons below when ready");
+        .replace(/\b(prepared draft|ready-to-use draft|draft email|draft script)\b/gi, "draft above")
+        .replace(/\b(script|email|draft)\s+below\b/gi, "draft buttons above")
+        .replace(/\buse the (draft|script|email) below\b/gi, "tap a draft button above when you're ready");
       normalized.mentorHelp = scrubDraftRefs(normalized.mentorHelp);
       normalized.mentorFindings = scrubDraftRefs(normalized.mentorFindings);
       normalized.howTo = scrubDraftRefs(normalized.howTo);
@@ -16500,7 +16500,8 @@
       if (!text || isUSLocation(parsed)) return String(text || "");
       const pb = getLocationPlaybook(parsed, locRaw);
       const title = state.currentIdea?.title || "this path";
-      const fill = (value) => String(value || "").replaceAll("{title}", title);
+      const rolePhrase = humanizePathGoalForTasks(title);
+      const fill = (value) => String(value || "").replaceAll("{title}", rolePhrase);
       let out = String(text);
 
       const lineReplacements = [
@@ -17330,10 +17331,103 @@
       return !(isGenericPreparedBelowText(copy) && !taskHasPreparedAssets(normalized));
     }
 
+    function humanizePathGoalForTasks(title, idea = state.currentIdea) {
+      let copy = String(title || "").trim();
+      if (!copy) return "this kind of work";
+      copy = copy.replace(/^Quick-start\s+/i, "");
+      copy = copy.replace(/^Get back into\s+/i, "getting back into ");
+      copy = copy.replace(/^Apply for (?:a\s+)?/i, "");
+      copy = copy.replace(/^Land (?:a\s+)?/i, "landing ");
+      copy = copy.replace(/\bwork with a crew\b/i, "working with a crew");
+      copy = copy.replace(/\bpainting work\b/i, "painting");
+      copy = copy.replace(/\bnear you\.?$/i, "");
+      copy = copy.replace(/\s{2,}/g, " ").trim();
+      if (/^[A-Z]/.test(copy) && !/^getting|^landing|^working/.test(copy)) {
+        copy = copy.charAt(0).toLowerCase() + copy.slice(1);
+      }
+      return copy || "this kind of work";
+    }
+
+    function shortenLocationForSpeech(locRaw) {
+      const parsed = parseLocationAnswer(String(locRaw || "").trim());
+      const city = parsed.city || String(locRaw || "").split(",")[0]?.trim();
+      const region = parsed.region || "";
+      if (city && region) return `${city}, ${region}`;
+      if (city) return city;
+      return String(locRaw || "").split(",").slice(0, 2).join(", ").trim() || "your area";
+    }
+
+    function taskShouldHideOutreachDrafts(normalized) {
+      const blob = getTaskContentBlob(normalized);
+      const isResumeEdit = /\b(rewrite|polish|update|revise|edit|tailor)\b/.test(blob)
+        && /\b(resume|headline|summary|cv\b|curriculum vitae)\b/.test(blob);
+      const isStoryPrep = /\b(prepare \d+ short stories|practice out loud|60 second)\b/.test(blob);
+      const isResearchOnly = /\b(search indeed|google jobs|save \d+ (?:roles|listings|jobs|links)|open the contact tracking)\b/.test(blob)
+        && !/\b(email|call|reach out|contact|send|script|voicemail)\b/.test(blob);
+      const isDocPrep = /\b(gather what i need|proof page|documents needed|id, resume)\b/.test(blob)
+        && !/\b(email|call|reach out|send)\b/.test(blob);
+      return isResumeEdit || isStoryPrep || isResearchOnly || isDocPrep;
+    }
+
+    function buildTalkingPointsDraft(normalized) {
+      const blob = getTaskContentBlob(normalized);
+      const { location } = getTaskDraftContext(normalized);
+      const city = shortenLocationForSpeech(location).split(",")[0]?.trim() || "your area";
+      if (/\bresume|headline|summary|rewrite\b/.test(blob)) {
+        const goal = humanizePathGoalForTasks(state.currentIdea?.title);
+        return `WHILE YOU EDIT YOUR RESUME
+
+• Pull 5–8 words that repeat across your saved job posts.
+• Headline: [target job title] + [one proof point].
+• Summary: 2–3 lines on your experience and what you want next.
+• Cut anything that doesn't support ${goal}.
+• Keep it to one page.`;
+      }
+      if (/\b(stories|practice out loud|60 second)\b/.test(blob)) {
+        return `YOUR 3 STORIES — about 60 seconds each
+
+Story 1 — reliability or teamwork
+• Situation: ___
+• What you did: ___
+• Result: ___
+
+Story 2 — a skill that fits the jobs you're targeting
+• Situation: ___
+• What you did: ___
+• Result: ___
+
+Story 3 — learning fast or handling a tough day
+• Situation: ___
+• What you did: ___
+• Result: ___
+
+Practice each one out loud once and time yourself.`;
+      }
+      if (/\b(search|save \d+|listings|job posts)\b/.test(blob)) {
+        return `WHILE YOU SEARCH NEAR ${city.toUpperCase()}
+
+• Save the link, pay, and requirements for each listing.
+• Skip vague posts with no wage unless they're a strong fit.
+• Note keywords that repeat — you'll reuse them on your resume.
+• Stop at 10 solid options, then pick the best 3 to apply to first.`;
+      }
+      const points = (normalized.talkingPoints || []).filter(Boolean);
+      if (points.length) {
+        return points.map((point) => `• ${humanizeTaskText(point)}`).join("\n");
+      }
+      return `KEY POINTS FOR THIS STEP
+
+• What you're trying to get done: [one line in your words]
+• What you'll bring: [skill or experience]
+• What you need from them: [info, interview, or next step]
+• If they're busy: ask who handles this or when to call back`;
+    }
+
     function humanizeTaskText(text) {
       let copy = repairStackedExpansions(text);
       if (!copy) return copy;
 
+      copy = copy.replace(/\bemail button button\b/gi, "the draft buttons above");
       copy = copy.replace(/\bopen notes\b/gi, "Use the My Notes box below");
 
       const redditNames = {
@@ -17436,6 +17530,18 @@
       copy = copy.replace(/\borg pilots\b/gi, "partnership tests with organizations");
       copy = copy.replace(/\bpilot\b/gi, "small test");
       copy = copy.replace(/\bsigned pilot agreement\b/gi, "signed test agreement");
+
+      copy = copy.replace(
+        /Search Indeed \+ Google Jobs for 10 roles matching "([^"]+)" within 25 miles of ([^;]+); save links with pay and requirements/gi,
+        (match, role, loc) => `Search Indeed and Google Jobs for about 10 jobs that fit ${humanizePathGoalForTasks(role)} near ${shortenLocationForSpeech(loc)} — save each link with pay and requirements`
+      );
+      copy = copy.replace(/\bwithin 25 miles of ([^;,]+)/gi, (match, loc) => `near ${shortenLocationForSpeech(loc)}`);
+      copy = copy.replace(/\bfor Get back into /gi, "for getting back into ");
+      copy = copy.replace(/\bhelp for Get back into /gi, "help for getting back into ");
+      copy = copy.replace(/\bmatching "([^"]+)"/gi, (match, role) => `that fit ${humanizePathGoalForTasks(role)}`);
+      copy = copy.replace(/\bmatching \{title\}/gi, (match) => `that fit ${humanizePathGoalForTasks(state.currentIdea?.title)}`);
+      copy = copy.replace(/\bfor \{title\}/gi, (match) => `for ${humanizePathGoalForTasks(state.currentIdea?.title)}`);
+      copy = copy.replace(/\b(Get back into [^.]+?)(?= using| within| near| in |;|,|$)/gi, (match, goal) => humanizePathGoalForTasks(goal));
 
       return repairStackedExpansions(copy);
     }
@@ -17852,12 +17958,15 @@
       if (isIdeaEmploymentPath(idea)) {
         const title = String(idea?.title || "").trim();
         const role = getEmploymentRoleShortLabel(idea);
+        const roleSpeech = humanizePathGoalForTasks(title || role, idea);
         if (title.length > 36) {
           const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          copy = copy.replace(new RegExp(`["']${escaped}["']`, "gi"), role);
-          copy = copy.replace(new RegExp(`apply to ["']${escaped}["']`, "gi"), `target ${role}`);
-          copy = copy.replace(new RegExp(`that apply to ["']${escaped}["']`, "gi"), `that apply to ${role}`);
+          copy = copy.replace(new RegExp(`["']${escaped}["']`, "gi"), roleSpeech);
+          copy = copy.replace(new RegExp(`apply to ["']${escaped}["']`, "gi"), `target ${roleSpeech}`);
+          copy = copy.replace(new RegExp(`that apply to ["']${escaped}["']`, "gi"), `that apply to ${roleSpeech}`);
         }
+        copy = copy.replace(/\bfor Get back into /gi, `for ${roleSpeech.includes("getting") ? roleSpeech : `getting back into ${roleSpeech}`} `.replace(/\s{2,}/g, " "));
+        copy = copy.replace(/\bmatching "([^"]+)"/gi, (match, quoted) => `that fit ${humanizePathGoalForTasks(quoted, idea)}`);
         copy = copy.replace(/\bwrite 5 skills from your past jobs that apply to\b/gi, "Write 5 skills from past jobs that apply to");
       }
 
@@ -18901,7 +19010,7 @@
       if (/\bflyer|poster|handout\b/.test(blob)) ids.push("flyer");
       if (/\bpresentation|slide deck|google slides\b/.test(blob)) ids.push("presentation");
       if (isFounderStoryTask(normalized)) ids.push("founder_story");
-      if (getFlatTaskResources(normalized).length && !ids.includes("outreach_email") && !isDigitalProductPath(state.currentIdea)) {
+      if (getFlatTaskResources(normalized).length && !ids.includes("outreach_email") && !isDigitalProductPath(state.currentIdea) && !taskShouldHideOutreachDrafts(normalized)) {
         ids.push("outreach_email", "phone_script", "contact_tracker");
       }
       if (isOrgListTask(normalized) && !ids.includes("comparison_sheet")) {
@@ -18910,7 +19019,7 @@
       if (/\b(spreadsheet|tracker|tracking sheet|google sheet|excel)\b/.test(blob) && !ids.includes("contact_tracker")) {
         ids.unshift("contact_tracker");
       }
-      if (!ids.length && /\b(write|draft|create|prepare|send|message)\b/.test(blob)) {
+      if (!ids.length && /\b(write|draft|create|prepare|send|message)\b/.test(blob) && !taskShouldHideOutreachDrafts(normalized)) {
         ids.push("checklist", "outreach_email");
       }
       return ids;
@@ -19176,6 +19285,10 @@ ${whyLine}`;
 
         case "interview_questions":
           return buildInterviewQuestionsDraft(normalized);
+
+        case "what_to_say":
+        case "talking_points":
+          return buildTalkingPointsDraft(normalized);
 
         default:
           if (suggestion.draftType === "founder_story") {
@@ -20127,7 +20240,7 @@ NOTE TEMPLATE
         `- Use [brackets] only for facts you cannot infer.\n` +
         `- Plain English, middle-school reading level.\n` +
         (variant === "talking_points"
-          ? `- Output 4-6 short bullet lines the user can read on a call or in person — no email format.\n`
+          ? `- Output 4-6 short bullet lines the user can read on a call or in person — no email format, no checklist that repeats the task title.\n`
           : "") +
         `- If you cannot produce a real ${label.toLowerCase()} for this task, output exactly: NO_DRAFT`
       );
@@ -22126,9 +22239,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return buildProgressiveMissionTitle(normalized, taskIndex, context.stageLabel);
     }
 
+    function howToReferencesDraftButtons(text) {
+      return /\b(email button|draft button|buttons below|draft below|prepared draft|ready-to-edit draft)\b/i.test(String(text || ""));
+    }
+
     function inferHowTo(normalized) {
       const existing = sanitizeMentorFieldText(normalized.howTo, normalized);
-      if (existing) return existing;
+      if (existing && !(taskShouldHideOutreachDrafts(normalized) && howToReferencesDraftButtons(existing))) {
+        return existing;
+      }
+      if (taskShouldHideOutreachDrafts(normalized)) {
+        const blob = getTaskContentBlob(normalized);
+        if (/\bresume|headline|summary|rewrite\b/.test(blob)) {
+          return "Use your saved job posts as a word bank — match their language in your headline and summary.";
+        }
+        if (/\bstories|practice out loud\b/.test(blob)) {
+          return "Write bullet notes first, then say each story out loud once and time yourself.";
+        }
+        if (/\bsearch|save \d+\b/.test(blob)) {
+          return "Save each listing's link, pay, and requirements in one place so you can compare them later.";
+        }
+        return "";
+      }
       const resources = getFlatTaskResources(normalized);
       const parts = [];
       if (resources.length) {
@@ -23071,7 +23203,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         : "";
     }
 
-    function getFlexibleDraftActionSuggestions() {
+    function getFlexibleDraftActionSuggestions(normalized) {
+      if (taskShouldHideOutreachDrafts(normalized)) {
+        const blob = getTaskContentBlob(normalized);
+        if (/\bresume|headline|summary|rewrite\b/.test(blob)) {
+          const def = TASK_DRAFT_SUGGESTION_DEFS.resume;
+          return def ? [{ ...def, label: "Resume draft" }] : [];
+        }
+        if (/\b(stories|practice out loud|60 second)\b/.test(blob)) {
+          const def = TASK_DRAFT_SUGGESTION_DEFS.what_to_say;
+          return def ? [{ ...def, label: "Story outline", variant: "talking_points" }] : [];
+        }
+        return [];
+      }
       return FLEXIBLE_DRAFT_BUTTON_IDS
         .map((id) => TASK_DRAFT_SUGGESTION_DEFS[id])
         .filter(Boolean)
@@ -23081,8 +23225,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }));
     }
 
-    function renderFlexibleDraftButtonsHtml(taskId) {
-      const items = getFlexibleDraftActionSuggestions();
+    function renderFlexibleDraftButtonsHtml(taskId, normalized) {
+      const items = getFlexibleDraftActionSuggestions(normalized);
+      if (!items.length) return "";
       const buttons = items.map((entry) =>
         `<button type="button" class="task-draft-suggestion-btn task-draft-suggestion-btn--flexible" data-task-id="${escapeHtml(taskId)}" data-suggestion-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.desc)}">
           <span class="task-draft-suggestion-label">${escapeHtml(entry.label)}</span>
@@ -23093,7 +23238,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function renderTaskDraftSectionHtml(taskId, normalized) {
       if (isFlexiblePathMode()) {
-        const suggestionsHtml = renderFlexibleDraftButtonsHtml(taskId);
+        const suggestionsHtml = renderFlexibleDraftButtonsHtml(taskId, normalized);
+        if (!suggestionsHtml) return "";
         return `
               <section class="task-mentor-section task-mentor-section--draft">
                 <h4 class="task-mentor-label">Need words ready to send?</h4>
