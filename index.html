@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-11-human-tasks-draft-buttons-padding">
+  <meta name="whatimado-build" content="2026-07-11-logo-header-gap-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -209,6 +209,7 @@
       -ms-overflow-style: none;
       --sidebar-w: 248px;
       --topbar-h: 52px;
+      --roadmap-header-gap: 1.5rem;
       --roadmap-progress-h: 0px;
       --roadmap-sticky-offset: var(--topbar-h);
       --composer-browser-gap: 12px;
@@ -1151,7 +1152,7 @@
       box-sizing: border-box;
       height: auto;
       min-height: var(--topbar-h, 52px);
-      padding: env(safe-area-inset-top, 0px) 1rem 0;
+      padding: env(safe-area-inset-top, 0px) 1rem .65rem;
       pointer-events: none;
       background: rgba(255, 255, 255, .98);
       border-bottom: 1px solid var(--line);
@@ -1173,13 +1174,13 @@
 
     html[data-color-scheme="adult"] .topbar-logo img {
       display: block;
-      height: 44px;
+      height: 48px;
       width: auto;
     }
 
     @media (min-width: 768px) {
       html[data-color-scheme="adult"] .topbar-logo img {
-        height: 48px;
+        height: 52px;
       }
     }
 
@@ -1665,7 +1666,7 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-main > main {
-      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 56px);
+      padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px));
       transition: padding-top .32s cubic-bezier(.4, 0, .2, 1);
     }
 
@@ -1678,11 +1679,16 @@
 
     /* Header controls scroll with the page so they never cover a hero/title section.
        Only the progress map is allowed to overlay content on scroll. */
+    html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
+      padding-top: calc(1.35rem + var(--roadmap-header-gap, 1.5rem));
+    }
+
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
       position: relative;
       z-index: 1;
+      margin-top: 0;
       margin-bottom: .4rem;
-      padding: 1.5rem 0 .5rem;
+      padding: 0 0 .5rem;
       background: transparent;
       border-bottom: 1px solid rgba(37, 99, 235, .08);
     }
@@ -1690,7 +1696,7 @@
     html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
       position: relative;
       z-index: 1;
-      padding: 1.25rem 0 .65rem;
+      padding: calc(.85rem + var(--roadmap-header-gap, 1.5rem)) 0 .65rem;
       background: transparent;
     }
 
@@ -9624,7 +9630,8 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
-      padding-top: 1.5rem;
+      margin-top: 0;
+      padding-top: 0;
     }
 
     .roadmap-float-progress[hidden] {
@@ -9745,7 +9752,7 @@
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
-        padding-top: 1rem;
+        padding-top: calc(1rem + var(--roadmap-header-gap, 1.5rem));
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-spacer {
@@ -9764,8 +9771,9 @@
 
       html[data-color-scheme="adult"] .roadmap-header-actions {
         order: 10;
-        padding-top: 1.5rem;
+        margin-top: 0;
         margin-bottom: .3rem;
+        padding-top: 0;
         padding-bottom: .4rem;
       }
 
@@ -40475,7 +40483,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const topbar = document.querySelector(".minimal-topbar");
         const logoH = topbar?.querySelector(".topbar-logo img")?.getBoundingClientRect().height || 0;
         const menuH = topbar?.querySelector(".dashboard-mobile-menu")?.getBoundingClientRect().height || 0;
-        const topbarH = Math.max(56, Math.ceil(Math.max(logoH, menuH, 40) + 16));
+        const topbarH = Math.max(56, Math.ceil(Math.max(logoH, menuH, 40) + 22));
         document.documentElement.style.setProperty("--topbar-h", `${topbarH}px`);
         document.documentElement.style.setProperty("--header-h", "0px");
         syncRoadmapStickyOffset();
