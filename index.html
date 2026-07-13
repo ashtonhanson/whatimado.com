@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-13-stability-stages-enforced">
+  <meta name="whatimado-build" content="2026-07-13-delete-overlay-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -529,82 +529,149 @@
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category.is-confirm-target .dashboard-roadmap-category-card,
     html[data-color-scheme="adult"] .dashboard-roadmap-item-row.is-confirm-target {
-      border-color: rgba(220, 38, 38, .28);
-      box-shadow: 0 0 0 1px rgba(220, 38, 38, .12);
+      position: relative;
+      z-index: 2;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category.is-confirm-target .dashboard-roadmap-category-card,
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row.is-confirm-target {
+      border-color: rgba(120, 130, 200, .32);
+      box-shadow: 0 0 0 1px rgba(120, 130, 200, .1);
     }
 
     html[data-color-scheme="adult"] .is-confirm-target .dashboard-roadmap-item-delete,
-    html[data-color-scheme="adult"] .is-confirm-target .dashboard-roadmap-category-delete {
+    html[data-color-scheme="adult"] .is-confirm-target .dashboard-roadmap-category-delete,
+    html[data-color-scheme="adult"] .is-confirm-target .opp-card-remove-roadmap-btn,
+    html[data-color-scheme="adult"] .is-confirm-target .roadmap-remove-btn {
+      visibility: hidden;
       pointer-events: none;
-      opacity: .45;
     }
 
+    /* Delete confirm overlays directly on the roadmap / mission row */
+    html[data-color-scheme="adult"] .roadmap-delete-popover,
     html[data-color-scheme="adult"] .sidebar-delete-strip {
-      margin: .35rem .15rem .55rem;
-      padding: .75rem .8rem;
-      border: 1px solid rgba(220, 38, 38, .22);
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: .4rem;
+      margin: 0;
+      padding: .7rem .75rem;
+      border: 1px solid rgba(120, 130, 200, .28);
       border-radius: 12px;
-      background: #fff;
-      box-shadow: 0 8px 22px rgba(15, 23, 42, .1);
-      transform: translateY(-8px);
+      background: rgba(255, 255, 255, .98);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .14);
       opacity: 0;
-      max-height: 0;
-      overflow: hidden;
+      transform: scale(.96);
       pointer-events: none;
-      transition: transform .24s ease, opacity .24s ease, max-height .28s ease, margin .24s ease;
+      transition: transform .18s ease, opacity .18s ease;
     }
 
+    html[data-color-scheme="adult"] .roadmap-delete-popover.is-visible,
     html[data-color-scheme="adult"] .sidebar-delete-strip.is-visible {
-      transform: translateY(0);
       opacity: 1;
-      max-height: 220px;
+      transform: scale(1);
       pointer-events: auto;
     }
 
+    html[data-color-scheme="adult"] .roadmap-delete-popover--compact {
+      inset: auto;
+      top: 50%;
+      right: 0;
+      left: auto;
+      width: min(16rem, 92vw);
+      transform: translateY(-50%) scale(.96);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-delete-popover--compact.is-visible {
+      transform: translateY(-50%) scale(1);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-delete-popover-title,
     html[data-color-scheme="adult"] .sidebar-delete-strip-title {
       margin: 0;
-      font-size: .74rem;
+      font-size: .76rem;
       font-weight: 800;
       line-height: 1.35;
       color: var(--ink);
     }
 
+    html[data-color-scheme="adult"] .roadmap-delete-popover-message,
     html[data-color-scheme="adult"] .sidebar-delete-strip-message {
-      margin: .3rem 0 0;
-      font-size: .68rem;
+      margin: 0;
+      font-size: .7rem;
       line-height: 1.45;
       color: var(--ink);
     }
 
+    html[data-color-scheme="adult"] .roadmap-delete-popover-detail,
     html[data-color-scheme="adult"] .sidebar-delete-strip-detail {
-      margin: .25rem 0 0;
-      font-size: .62rem;
+      margin: 0;
+      font-size: .64rem;
       line-height: 1.4;
       color: var(--ink-muted);
     }
 
+    html[data-color-scheme="adult"] .roadmap-delete-popover-actions,
     html[data-color-scheme="adult"] .sidebar-delete-strip-actions {
       display: flex;
-      gap: .4rem;
-      margin-top: .55rem;
+      gap: .45rem;
+      margin-top: .15rem;
     }
 
+    html[data-color-scheme="adult"] .roadmap-delete-popover-btn,
     html[data-color-scheme="adult"] .sidebar-delete-strip-btn {
       flex: 1;
-      padding: .45rem .5rem;
+      padding: .48rem .55rem;
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 999px;
       background: #fff;
       font: inherit;
-      font-size: .66rem;
+      font-size: .68rem;
       font-weight: 700;
       cursor: pointer;
+      color: var(--ink);
     }
 
+    html[data-color-scheme="adult"] .roadmap-delete-popover-btn--cancel,
+    html[data-color-scheme="adult"] .sidebar-delete-strip-btn--cancel {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-delete-popover-btn--danger,
     html[data-color-scheme="adult"] .sidebar-delete-strip-btn--danger {
       border-color: rgba(220, 38, 38, .28);
-      background: rgba(220, 38, 38, .08);
+      background: rgba(254, 242, 242, .95);
       color: #b91c1c;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-delete-popover-btn--confirm,
+    html[data-color-scheme="adult"] .sidebar-delete-strip-btn--confirm {
+      border-color: rgba(120, 130, 200, .35);
+      background: var(--purple);
+      color: #fff;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-delete-anchor {
+      position: relative;
+      flex: 0 0 auto;
+      align-self: center;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-item-row {
+      position: relative;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-card {
+      position: relative;
+    }
+
+    html[data-color-scheme="adult"] .opp-card-remove-wrap,
+    html[data-color-scheme="adult"] .roadmap-remove-anchor {
+      position: relative;
+      display: inline-flex;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category.is-current-section .dashboard-roadmap-category-card {
@@ -708,8 +775,7 @@
       flex-shrink: 0;
     }
 
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle,
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete {
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle {
       flex-shrink: 0;
       display: inline-flex;
       align-items: center;
@@ -724,15 +790,43 @@
       cursor: pointer;
     }
 
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle:hover,
-    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete:hover {
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-toggle:hover {
       background: rgba(15, 23, 42, .05);
       color: var(--ink);
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-delete {
-      font-size: .95rem;
-      line-height: 1;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.65rem;
+      height: 1.65rem;
+      padding: 0;
+      border: 1px solid rgba(120, 130, 200, .24);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--purple);
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete:hover {
+      border-color: rgba(220, 38, 38, .32);
+      background: rgba(254, 242, 242, .95);
+      color: #b91c1c;
+    }
+      border-color: rgba(220, 38, 38, .32);
+      background: rgba(254, 242, 242, .95);
+      color: #b91c1c;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-roadmap-category-delete svg {
+      width: .78rem;
+      height: .78rem;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-chevron {
@@ -881,16 +975,16 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.45rem;
-      height: 1.45rem;
+      width: 1.65rem;
+      height: 1.65rem;
       padding: 0;
-      border: 0;
-      border-radius: 8px;
-      background: transparent;
-      color: var(--ink-muted);
+      border: 1px solid rgba(120, 130, 200, .24);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--purple);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .15s ease, background .15s ease, color .15s ease;
+      transition: opacity .15s ease, border-color .15s ease, background .15s ease, color .15s ease;
       cursor: pointer;
     }
 
@@ -909,8 +1003,9 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-item-delete:hover {
+      border-color: rgba(220, 38, 38, .32);
       color: #b91c1c;
-      background: rgba(254, 226, 226, .75);
+      background: rgba(254, 242, 242, .95);
     }
 
     @media (hover: none), (max-width: 960px) {
@@ -941,20 +1036,23 @@
     }
 
     html[data-color-scheme="adult"] .opp-card-remove-roadmap-btn {
-      border: 0;
-      padding: 0;
-      background: transparent;
-      color: var(--ink-muted);
+      border: 1px solid rgba(120, 130, 200, .28);
+      border-radius: 999px;
+      padding: .32rem .62rem;
+      background: #fff;
+      color: var(--purple);
       font: inherit;
-      font-size: .72rem;
+      font-size: .7rem;
       font-weight: 700;
-      text-decoration: underline;
-      text-underline-offset: .12em;
+      text-decoration: none;
       cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
     }
 
     html[data-color-scheme="adult"] .opp-card-remove-roadmap-btn:hover {
+      border-color: rgba(220, 38, 38, .32);
       color: #b91c1c;
+      background: rgba(254, 242, 242, .95);
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-add-btn {
@@ -15202,7 +15300,7 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
             </button>
             <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
-            <button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button>
+            <span class="roadmap-remove-anchor"><button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button></span>
             <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Refresh next steps</button>
           </div>
 
@@ -15923,6 +16021,7 @@
       /^feedback$/
     ];
     const INTAKE_STEP_MAP = 5;
+    const ROADMAP_DELETE_TRASH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>';
     const MIN_CLARIFYING_QUESTIONS = 2;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
@@ -29878,18 +29977,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const wasViewingRemoved = $("#screen-roadmap")?.classList.contains("active")
           && (state.roadmapKey === key || state.currentIdea?.title === ideaTitle);
 
-        clearRoadmapSessionForPath(ideaTitle);
         if (mapId) {
           purgeRoadmapFromLibrary(mapId, ideaTitle);
         } else {
           purgeRoadmapFromAllLibraryMaps(ideaTitle);
         }
+        clearRoadmapSessionForPath(ideaTitle);
         removeRoadmapSidebarItems(ideaTitle, mapId);
         pruneEmptyRoadmapCategories();
-        renderSidebarRoadmaps();
+        applyRemovedRoadmapGuards(mapId);
+        syncActiveMapIntoLibrary();
 
         let resolvedIndex = Number.isInteger(ideaIndex) ? ideaIndex : state.ideas.findIndex((entry) => entry.title === ideaTitle);
         if (resolvedIndex >= 0) setPathSelected(resolvedIndex, false);
+
+        renderSidebarRoadmaps();
 
         if (resetMapView) {
           resetPossibilityMapToEmpty();
@@ -29902,8 +30004,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           resetPossibilityMapView();
         }
 
-        syncActiveMapIntoLibrary();
-        applyRemovedRoadmapGuards(mapId);
         refreshRoadmapsUi({ rebuildMap: true });
         schedulePersist();
         void flushPersist({ force: true });
@@ -29917,6 +30017,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const { mapId = state.activeMapId, skipConfirm = false } = options;
       if (!ideaTitle) return Promise.resolve(false);
+      if (roadmapDeleteInFlight) return Promise.resolve(false);
 
       const key = slugify(ideaTitle);
       const sidebarHasItem = state.roadmapCategories.some((category) =>
@@ -29926,11 +30027,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           return true;
         })
       );
-      if (!hasRoadmapProgress(ideaTitle, mapId) && !sidebarHasItem && !state.allRoadmaps[key] && !state.allTaskChats[key]) {
-        return Promise.resolve(false);
-      }
+      const canRemove = sidebarHasItem
+        || hasRoadmapProgress(ideaTitle, mapId)
+        || Boolean(state.allRoadmaps[key])
+        || Boolean(state.allTaskChats[key]);
+      if (!canRemove) return Promise.resolve(false);
 
-      if (skipConfirm) return Promise.resolve(runRemoval());
+      const finishRemoval = () => {
+        if (roadmapDeleteInFlight) return false;
+        roadmapDeleteInFlight = true;
+        try {
+          return runRemoval();
+        } finally {
+          roadmapDeleteInFlight = false;
+        }
+      };
+
+      if (skipConfirm) return Promise.resolve(finishRemoval());
 
       const confirmOptions = {
         title: "Remove this roadmap?",
@@ -29940,12 +30053,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           : "The path stays on your map — you can open a fresh roadmap anytime.",
         confirmLabel: "Remove roadmap",
         cancelLabel: "Keep it",
-        tone: "danger"
+        tone: "danger",
+        compact: Boolean(options.anchorButton?.closest(".opp-card-remove-wrap, .roadmap-remove-anchor"))
       };
       const confirmPromise = options.anchorButton
         ? showSidebarInlineConfirm(options.anchorButton, confirmOptions)
         : showConfirmDialog(confirmOptions);
-      return confirmPromise.then((ok) => (ok ? runRemoval() : false));
+      return confirmPromise.then((ok) => (ok ? finishRemoval() : false));
     }
 
     function removeRoadmapFromSidebar(categoryId, itemId, anchorButton = null) {
@@ -29959,9 +30073,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
-    function removeCurrentRoadmap() {
+    function removeCurrentRoadmap(anchorButton = null) {
       if (!state.currentIdea?.title) return Promise.resolve(false);
-      return removeRoadmapForPath(state.currentIdea.title, { ideaIndex: getCurrentIdeaIndex() });
+      return removeRoadmapForPath(state.currentIdea.title, {
+        ideaIndex: getCurrentIdeaIndex(),
+        anchorButton
+      });
     }
 
     function ensureAllMapsInSidebar() {
@@ -30153,7 +30270,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 <button type="button" class="dashboard-roadmap-category-toggle" data-roadmap-category="${escapeHtml(category.id)}" aria-expanded="${isExpanded ? "true" : "false"}" aria-label="Show roadmaps for this map" title="Show roadmaps">
                   <svg class="dashboard-roadmap-category-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
                 </button>
-                <button type="button" class="dashboard-roadmap-category-delete" data-delete-roadmap-category="${escapeHtml(category.id)}" aria-label="${deleteLabel}" title="${deleteLabel}">×</button>
+                <button type="button" class="dashboard-roadmap-category-delete" data-delete-roadmap-category="${escapeHtml(category.id)}" aria-label="${deleteLabel}" title="${deleteLabel}">${ROADMAP_DELETE_TRASH_ICON}</button>
               </div>
             </div>
             <div class="dashboard-roadmap-category-progress" aria-hidden="true">
@@ -30223,7 +30340,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           : "Roadmap shortcuts in this group will disappear from the sidebar.",
         confirmLabel: category.mapId ? "Delete map" : "Remove",
         cancelLabel: "Keep",
-        tone: "danger"
+        tone: "danger",
+        compact: false
       };
       const confirmPromise = anchorButton
         ? showSidebarInlineConfirm(anchorButton, confirmOptions)
@@ -36483,7 +36601,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               </div>
               <div class="opp-card-actions">
                 <button type="button" class="opp-card-discuss-btn">Alter this path</button>
-                ${hasRoadmapProgress(idea.title) ? `<button type="button" class="opp-card-remove-roadmap-btn" data-remove-roadmap-index="${index}">Remove roadmap</button>` : ""}
+                ${hasRoadmapProgress(idea.title) ? `<span class="opp-card-remove-wrap"><button type="button" class="opp-card-remove-roadmap-btn" data-remove-roadmap-index="${index}">Remove roadmap</button></span>` : ""}
               </div>
             </div>
           </div>`;
@@ -36501,7 +36619,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       card.querySelector(".opp-card-remove-roadmap-btn")?.addEventListener("click", (event) => {
         event.stopPropagation();
-        void removeRoadmapForPath(idea.title, { ideaIndex: index });
+        const btn = event.currentTarget;
+        void removeRoadmapForPath(idea.title, { ideaIndex: index, anchorButton: btn });
       });
       const openZone = card.querySelector(".opp-card-open-zone");
       const openRoadmap = (event) => {
@@ -41954,41 +42073,55 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     let confirmDialogKeyHandler = null;
     let sidebarInlineConfirmResolver = null;
     let sidebarInlineConfirmKeyHandler = null;
+    let roadmapDeleteInFlight = false;
+
+    function getRoadmapDeleteConfirmTarget(anchorButton) {
+      if (anchorButton?.matches?.("[data-delete-roadmap-category]")) {
+        return anchorButton.closest(".dashboard-roadmap-category-card");
+      }
+      if (anchorButton?.matches?.("[data-delete-roadmap-item], .dashboard-roadmap-item-delete")) {
+        return anchorButton.closest(".dashboard-roadmap-item-row");
+      }
+      return anchorButton?.closest(".dashboard-roadmap-item-row")
+        || anchorButton?.closest(".dashboard-roadmap-category-card")
+        || anchorButton?.closest(".opp-card-remove-wrap")
+        || anchorButton?.closest(".roadmap-remove-anchor")
+        || anchorButton?.closest(".roadmap-delete-anchor");
+    }
 
     function dismissSidebarInlineConfirm(result = false) {
       if (sidebarInlineConfirmKeyHandler) {
         document.removeEventListener("keydown", sidebarInlineConfirmKeyHandler);
         sidebarInlineConfirmKeyHandler = null;
       }
-      const panel = document.querySelector(".sidebar-delete-strip, .sidebar-inline-confirm");
-      const target = panel?.previousElementSibling;
+      const target = document.querySelector(".is-confirm-target");
+      const panel = target?.querySelector(".roadmap-delete-popover, .sidebar-delete-strip");
       const resolve = sidebarInlineConfirmResolver;
       sidebarInlineConfirmResolver = null;
-      if (!panel) {
+      if (!panel || !target) {
         document.querySelectorAll(".is-confirm-target").forEach((el) => el.classList.remove("is-confirm-target"));
         if (resolve) resolve(result);
         return;
       }
       const finish = () => {
         panel.remove();
-        target?.classList.remove("is-confirm-target");
-        document.querySelectorAll(".has-inline-confirm").forEach((el) => el.classList.remove("has-inline-confirm"));
+        target.classList.remove("is-confirm-target");
       };
       if (resolve) resolve(result);
       if (panel.classList.contains("is-visible")) {
         panel.classList.remove("is-visible");
-        window.setTimeout(finish, 240);
+        window.setTimeout(finish, 180);
       } else {
         finish();
       }
     }
 
     function showSidebarInlineConfirm(anchorButton, options = {}) {
-      document.querySelectorAll(".sidebar-delete-strip, .sidebar-inline-confirm").forEach((el) => {
+      document.querySelectorAll(".roadmap-delete-popover, .sidebar-delete-strip").forEach((el) => {
         el.remove();
       });
-      document.querySelectorAll(".is-confirm-target, .has-inline-confirm").forEach((el) => {
-        el.classList.remove("is-confirm-target", "has-inline-confirm");
+      document.querySelectorAll(".is-confirm-target").forEach((el) => {
+        el.classList.remove("is-confirm-target");
       });
       if (sidebarInlineConfirmResolver) {
         const stale = sidebarInlineConfirmResolver;
@@ -41996,8 +42129,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         stale(false);
       }
 
-      const target = anchorButton?.closest(".dashboard-roadmap-category")
-        || anchorButton?.closest(".dashboard-roadmap-item-row");
+      const target = getRoadmapDeleteConfirmTarget(anchorButton);
       if (!target) return showConfirmDialog(options);
 
       const {
@@ -42007,46 +42139,52 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         detail = "",
         confirmLabel = "Confirm",
         cancelLabel = "Cancel",
-        tone = "default"
+        tone = "default",
+        compact = false
       } = options;
 
       return new Promise((resolve) => {
         sidebarInlineConfirmResolver = resolve;
 
         const panel = document.createElement("div");
-        panel.className = "sidebar-delete-strip";
+        panel.className = `roadmap-delete-popover${compact ? " roadmap-delete-popover--compact" : ""}`;
         panel.setAttribute("role", "alertdialog");
-        panel.setAttribute("aria-labelledby", "sidebar-delete-strip-title");
+        panel.setAttribute("aria-labelledby", "roadmap-delete-popover-title");
         const messageMarkup = messageHtml
-          ? `<p class="sidebar-delete-strip-message">${messageHtml}</p>`
-          : message ? `<p class="sidebar-delete-strip-message">${escapeHtml(message)}</p>` : "";
+          ? `<p class="roadmap-delete-popover-message">${messageHtml}</p>`
+          : message ? `<p class="roadmap-delete-popover-message">${escapeHtml(message)}</p>` : "";
         panel.innerHTML = `
-          <p class="sidebar-delete-strip-title" id="sidebar-delete-strip-title">${escapeHtml(title)}</p>
+          <p class="roadmap-delete-popover-title" id="roadmap-delete-popover-title">${escapeHtml(title)}</p>
           ${messageMarkup}
-          ${detail ? `<p class="sidebar-delete-strip-detail">${escapeHtml(detail)}</p>` : ""}
-          <div class="sidebar-delete-strip-actions">
-            <button type="button" class="sidebar-delete-strip-btn sidebar-delete-strip-btn--cancel">${escapeHtml(cancelLabel)}</button>
-            <button type="button" class="sidebar-delete-strip-btn ${tone === "danger" ? "sidebar-delete-strip-btn--danger" : "sidebar-delete-strip-btn--confirm"}">${escapeHtml(confirmLabel)}</button>
+          ${detail ? `<p class="roadmap-delete-popover-detail">${escapeHtml(detail)}</p>` : ""}
+          <div class="roadmap-delete-popover-actions">
+            <button type="button" class="roadmap-delete-popover-btn roadmap-delete-popover-btn--cancel">${escapeHtml(cancelLabel)}</button>
+            <button type="button" class="roadmap-delete-popover-btn ${tone === "danger" ? "roadmap-delete-popover-btn--danger" : "roadmap-delete-popover-btn--confirm"}">${escapeHtml(confirmLabel)}</button>
           </div>
         `;
 
         target.classList.add("is-confirm-target");
-        target.insertAdjacentElement("afterend", panel);
+        target.appendChild(panel);
 
-        const okBtn = panel.querySelector(".sidebar-delete-strip-btn--danger, .sidebar-delete-strip-btn--confirm");
-        const cancelBtn = panel.querySelector(".sidebar-delete-strip-btn--cancel");
+        const okBtn = panel.querySelector(".roadmap-delete-popover-btn--danger, .roadmap-delete-popover-btn--confirm");
+        const cancelBtn = panel.querySelector(".roadmap-delete-popover-btn--cancel");
 
-        okBtn?.addEventListener("click", (event) => {
+        const onConfirm = (event) => {
           event.preventDefault();
           event.stopPropagation();
+          if (okBtn) okBtn.disabled = true;
+          if (cancelBtn) cancelBtn.disabled = true;
           dismissSidebarInlineConfirm(true);
-        });
+        };
 
-        cancelBtn?.addEventListener("click", (event) => {
+        const onCancel = (event) => {
           event.preventDefault();
           event.stopPropagation();
           dismissSidebarInlineConfirm(false);
-        });
+        };
+
+        okBtn?.addEventListener("click", onConfirm);
+        cancelBtn?.addEventListener("click", onCancel);
 
         sidebarInlineConfirmKeyHandler = (event) => {
           if (event.key === "Escape") dismissSidebarInlineConfirm(false);
@@ -42055,9 +42193,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
         requestAnimationFrame(() => {
           panel.classList.add("is-visible");
-          panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          cancelBtn?.focus();
         });
-        cancelBtn?.focus();
       });
     }
 
@@ -42228,6 +42365,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           event.stopPropagation();
           if (deleteBtn.closest(".is-confirm-target")) return;
           void deleteRoadmapCategoryFromSidebar(deleteBtn.dataset.deleteRoadmapCategory, deleteBtn);
+          return;
+        }
+        if (event.target.closest(".roadmap-delete-popover, .sidebar-delete-strip")) {
+          event.preventDefault();
+          event.stopPropagation();
           return;
         }
         const itemBtn = event.target.closest("[data-open-roadmap-item]");
@@ -42447,7 +42589,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#roadmap-load-phases-btn")?.addEventListener("click", () => continueCompletedPlan());
       $("#roadmap-more-resources-btn")?.addEventListener("click", scrollToActivePhase);
       $("#roadmap-change-path-btn")?.addEventListener("click", changeCurrentPath);
-      $("#roadmap-remove-btn")?.addEventListener("click", () => { void removeCurrentRoadmap(); });
+      $("#roadmap-remove-btn")?.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void removeCurrentRoadmap(event.currentTarget);
+      });
       $("#roadmap-rebuild-remaining-btn")?.addEventListener("click", () => regenerateRemainingRoadmap());
       $("#continue-plan-btn")?.addEventListener("click", () => continueCompletedPlan());
       $("#complete-map-btn")?.addEventListener("click", () => showScreen("map"));
