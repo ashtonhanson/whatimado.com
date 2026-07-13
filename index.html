@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-11-logo-header-gap-fix">
+  <meta name="whatimado-build" content="2026-07-13-id-dedupe-chat-delete-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -214,7 +214,7 @@
       --roadmap-sticky-offset: var(--topbar-h);
       --composer-browser-gap: 12px;
       --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-      --chat-composer-h: 96px;
+      --chat-composer-h: 120px;
       --brand-blue: #29abe2;
       --brand-orange: #fbb03b;
       --brand-green: #1fd358;
@@ -1334,7 +1334,7 @@
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       -ms-overflow-style: none;
-      scroll-padding-bottom: 1rem;
+      scroll-padding-bottom: 1.25rem;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .conversation::-webkit-scrollbar {
@@ -1466,7 +1466,7 @@
       margin-top: 0;
       padding: .65rem 0 calc(.9rem + env(safe-area-inset-bottom, 0px));
       overflow: visible;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .94) 22%, #fff 100%);
+      background: transparent;
       border: 0;
       box-shadow: none;
     }
@@ -21892,6 +21892,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(google business|seo|local search|visibility)\b/.test(blob)) return "visibility";
       if (/\b(post|reddit|facebook|launch|share)\b/.test(blob)) return "visibility";
       if (/\b(first (?:paying )?client|first sale|first booking|paying customer)\b/.test(blob)) return "first_client";
+      if (/\b(county clerk|dmv|birth certificate|state id|driver'?s license|social security card|documents needed for)\b/.test(blob)) return "id_documents";
+      if (isJobSearchTask(normalized)) return "job_search";
       if (/\b(email|outreach|call|phone|dm|prospect)\b/.test(blob)) return "outreach";
       if (/\b(one-page mission|mission statement)\b/.test(blob)) return "mission_clarity";
       return "general";
@@ -22562,8 +22564,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getTaskActionFingerprint(normalized) {
-      const base = normalizeRoadmapText(preserveTaskSourceText(normalized) || normalized.text || "");
+      let base = normalizeRoadmapText(preserveTaskSourceText(normalized) || normalized.text || "");
+      base = base.replace(/\b(indeed|google jobs|jobbank|finn\.no|gov\.uk\/find-a-job)\b/gi, "jobboard");
+      base = base.replace(/\bwithin 25 miles of\b/gi, "near");
       return base.replace(/\b\d+\b/g, "#").replace(/\s+/g, " ").trim().slice(0, 160);
+    }
+
+    function isJobSearchTask(normalized) {
+      const blob = getTaskContentBlob(normalized).toLowerCase();
+      return /\b(search indeed|google jobs|jobbank|finn\.no|find-a-job)\b/.test(blob)
+        || (/\b(search|save)\b/.test(blob) && /\b(jobs?|roles?|listings?)\b/.test(blob));
     }
 
     function tasksAreSubstantiallyRepeated(a, b) {
@@ -22572,6 +22582,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!fa || !fb) return false;
       if (fa === fb) return true;
       if (textSimilarity(fa, fb) >= 0.72) return true;
+      if (isJobSearchTask(a) && isJobSearchTask(b)) return true;
       const angleA = extractTaskAngle(a);
       const angleB = extractTaskAngle(b);
       if (angleA === angleB && angleA !== "general" && textSimilarity(fa, fb) >= 0.5) return true;
@@ -22590,7 +22601,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         track_outreach: 2,
         outreach: 2,
         visibility: 2,
-        first_client: 2
+        first_client: 2,
+        job_search: 1,
+        id_documents: 1
       };
       return limits[angle] ?? 3;
     }
@@ -22638,6 +22651,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         first_client: [
           `Offer a limited intro rate to one new ${service.replace(/\s+service$/i, "")} client this week — set a clear end date`,
           `Write down what almost stopped your last lead from buying — fix that one thing in your offer`
+        ],
+        job_search: [
+          `Pick the 3 strongest listings from your saved jobs and note one reason each fits you`,
+          `Call or visit your local workforce office — ask which employers hire quickly for ${service.replace(/\s+service$/i, "")} or similar work`
+        ],
+        id_documents: [
+          `List every document you still need for ID — mark which ones you can get this week vs. need help with`,
+          `Call the office on your ID checklist — confirm walk-in hours, fees, and what to bring`
         ]
       };
       const options = alts[angle] || [
@@ -23410,6 +23431,98 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function isReentryPath(idea = state.currentIdea) {
       if (isFounderRoadmapForIdea(idea)) return false;
       return isReentrySituation(idea);
+    }
+
+    function conversationMentionsIdNeed(text = "") {
+      const blob = String(text || "").toLowerCase();
+      return /\b(need(?:s|ed)? (?:an? )?(?:id|identification|birth certificate|driver'?s license|state id|ssn|social security)|don'?t have (?:a )?(?:id|birth certificate|driver'?s license|social security)|no (?:valid )?id|get(?:ting)? (?:an? )?(?:id|birth certificate|documents)|replace (?:my )?(?:id|license)|sort (?:my )?id|id and housing|without (?:an? )?id)\b/.test(blob);
+    }
+
+    function conversationConfirmsHasId(text = "") {
+      const blob = String(text || "").toLowerCase();
+      if (conversationMentionsIdNeed(blob)) return false;
+      return /\b(have (?:my )?(?:id|driver'?s license|state id|birth certificate)|id is (?:good|fine|set|valid)|already have (?:an? )?(?:id|birth certificate|license))\b/.test(blob);
+    }
+
+    function updateIdStatusFromConversation() {
+      const blob = [
+        getFirstUserMessage(),
+        ...state.history.filter((entry) => entry.role === "user").map((entry) => entry.content)
+      ].join(" ").toLowerCase();
+      state.userProfile = normalizeUserProfile(state.userProfile);
+      if (conversationConfirmsHasId(blob)) {
+        state.userProfile.idStatus = "has";
+      } else if (conversationMentionsIdNeed(blob) || (isReentrySituation() && !conversationConfirmsHasId(blob))) {
+        state.userProfile.idStatus = "needs";
+      }
+      state.userProfile.updatedAt = Date.now();
+    }
+
+    function userNeedsIdFirst(idea = null) {
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.idStatus === "has") return false;
+      if (profile.idStatus === "needs") return true;
+      const blob = [
+        getFirstUserMessage(),
+        ...state.history.filter((entry) => entry.role === "user").map((entry) => entry.content)
+      ].join(" ").toLowerCase();
+      if (conversationConfirmsHasId(blob)) return false;
+      if (conversationMentionsIdNeed(blob)) return true;
+      if (isReentrySituation(idea)) return true;
+      if (/\b(homeless|shelter|re-?enter|getting out|just got out|parole|probation)\b/.test(blob) && !conversationConfirmsHasId(blob)) {
+        return true;
+      }
+      return false;
+    }
+
+    function getIdPriorityPromptBlock(idea = state.currentIdea) {
+      if (!userNeedsIdFirst(idea)) return "";
+      const loc = getUserLocation() || "their city";
+      const parsed = parseLocationAnswer(loc);
+      const idLine = isUSLocation(parsed)
+        ? `Visit the county clerk or DMV site for ${loc} — list documents for state ID (birth certificate, Social Security card, proof of address)`
+        : `Check official government ID requirements for ${parsed.country || "their country"} — list documents needed and the nearest office serving ${loc}`;
+      return (
+        `\nID / DOCUMENTS PRIORITY — user may NOT have valid ID yet. NON-NEGOTIABLE:\n` +
+        `- Stage 1 MUST include getting ID or documents sorted BEFORE job applications, Indeed searches, or long training.\n` +
+        `- First task example: ${idLine}\n` +
+        `- Do NOT open with "Search Indeed", resume rewrites for hiring managers, or certification programs until ID basics are underway.\n` +
+        `- Temp/day-labor paths that work without full ID may appear in stage 2 — not stage 1 unless ID task is also present.\n`
+      );
+    }
+
+    function getIdPriorityIdeasPromptBlock() {
+      if (!userNeedsIdFirst()) return "";
+      return (
+        `\nID / DOCUMENTS — user likely needs ID or a birth certificate before formal job searches.\n` +
+        `- At least ONE path must focus on getting ID/documents sorted OR income that does not require full ID yet (temp labor, day labor, reentry workforce help).\n` +
+        `- Taglines for other paths should say they come AFTER ID is handled when relevant.\n` +
+        `- Do NOT suggest three paths that all assume they can apply online today.\n`
+      );
+    }
+
+    function getIdRoadmapCorrectionBlock(idea = state.currentIdea) {
+      const loc = getUserLocation() || "their city";
+      return (
+        `\nID CORRECTION — user needs ID or documents before job-search homework.\n` +
+        `Regenerate stage 1 to start with ID/documents in ${loc} (county clerk, DMV, or local reentry ID help).\n` +
+        `Move Indeed/Google Jobs searches to stage 2 or later — never duplicate the same job-board search in multiple tasks.\n` +
+        `Do NOT use Gumroad, digital product, or unrelated "why" text on employment tasks.\n`
+      );
+    }
+
+    function roadmapSkipsIdBasics(stages, idea = state.currentIdea) {
+      if (!userNeedsIdFirst(idea) || !Array.isArray(stages) || !stages.length) return false;
+      const first = stages[0];
+      const blob = [
+        first.label,
+        first.desc,
+        ...(first.tasks || []).slice(0, 3).map((task) => getTaskText(task))
+      ].join(" ").toLowerCase();
+      const idRx = /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed)\b/;
+      if (idRx.test(blob)) return false;
+      const jobFirstRx = /\b(indeed|google jobs|search .* jobs|job search|apply online|resume for hiring|who'?s hiring)\b/;
+      return jobFirstRx.test(blob);
     }
 
     function getReentryPromptBlock(idea = state.currentIdea) {
@@ -26132,6 +26245,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getLocationContextBlock() +
         getUserStatedCraftBlock(idea) +
         getReentryPromptBlock(idea) +
+        getIdPriorityPromptBlock(idea) +
         getPathSpecificMilestoneBlock(idea) +
         getIncomePathSpecificityBlock(idea) +
         `\nPath type guidance: ${getRoadmapArchetypeGuidance(idea)}\n` +
@@ -29012,6 +29126,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    function pruneEmptyRoadmapCategories() {
+      state.roadmapCategories = state.roadmapCategories.filter((category) => {
+        if ((category.items || []).length > 0) return true;
+        if (isManualRoadmapCategory(category)) return true;
+        return false;
+      });
+      if (state.activeRoadmapCategoryId && !state.roadmapCategories.some((c) => c.id === state.activeRoadmapCategoryId)) {
+        state.activeRoadmapCategoryId = null;
+      }
+    }
+
     function removeRoadmapSidebarItems(ideaTitle, mapId) {
       state.roadmapCategories.forEach((category) => {
         category.items = (category.items || []).filter((item) => {
@@ -29020,13 +29145,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           return false;
         });
       });
-      state.roadmapCategories = state.roadmapCategories.filter(
-        (category) => (category.items || []).length > 0 || category.mapId
-      );
-      if (state.activeRoadmapCategoryId && !state.roadmapCategories.some((c) => c.id === state.activeRoadmapCategoryId)) {
-        state.activeRoadmapCategoryId = null;
-      }
-    }
+      pruneEmptyRoadmapCategories();
 
     function purgeRoadmapFromLibrary(mapId, ideaTitle) {
       markRoadmapRemovedInLibrary(ideaTitle, mapId);
@@ -29051,6 +29170,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           purgeRoadmapFromAllLibraryMaps(ideaTitle);
         }
         removeRoadmapSidebarItems(ideaTitle, mapId);
+        pruneEmptyRoadmapCategories();
         renderSidebarRoadmaps();
 
         let resolvedIndex = Number.isInteger(ideaIndex) ? ideaIndex : state.ideas.findIndex((entry) => entry.title === ideaTitle);
@@ -29725,6 +29845,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         markAllRoadmapsRemovedOnMap(mapId);
         state.savedMaps = state.savedMaps.filter((map) => map.id !== mapId);
         cleanupRoadmapCategoriesForMap(mapId);
+        pruneEmptyRoadmapCategories();
         if (!state.activeMapId && !state.ideas.length) {
           showScreen("main");
         }
@@ -30441,6 +30562,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const entry = { role: "user", content: text };
       if (intakeMeta) entry.intakeMeta = intakeMeta;
       state.history.push(entry);
+      updateIdStatusFromConversation();
     }
 
     function applyLocationAnswerToDraft(text, step) {
@@ -31563,8 +31685,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
       const rect = reply.getBoundingClientRect();
-      const reserve = Math.ceil(window.innerHeight - rect.top + 10);
-      chat.style.setProperty("--chat-composer-h", `${Math.max(Math.ceil(rect.height + 16), reserve)}px`);
+      const reserve = Math.ceil(rect.height + 16);
+      chat.style.setProperty("--chat-composer-h", `${Math.max(reserve, 120)}px`);
     }
 
     function syncKeyboardInset() {
@@ -32383,6 +32505,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         workMode: "",
         willingToRelocate: "",
         founderStage: "",
+        idStatus: "",
         skills: "",
         constraints: "",
         goals: "",
@@ -32617,6 +32740,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         workMode: String(source.workMode || "").trim(),
         willingToRelocate: String(source.willingToRelocate || "").trim(),
         founderStage: String(source.founderStage || "").trim(),
+        idStatus: String(source.idStatus || "").trim(),
         skills: String(source.skills || "").trim(),
         constraints: String(source.constraints || "").trim(),
         goals: String(source.goals || "").trim(),
@@ -32682,6 +32806,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (profile.workMode) lines.push(`Work mode: ${USER_PROFILE_FIELD_LABELS.workMode[profile.workMode] || profile.workMode}`);
       if (profile.willingToRelocate) lines.push(`Relocate: ${USER_PROFILE_FIELD_LABELS.willingToRelocate[profile.willingToRelocate] || profile.willingToRelocate}`);
       if (profile.founderStage) lines.push(`Founder / product stage: ${USER_PROFILE_FIELD_LABELS.founderStage[profile.founderStage] || profile.founderStage}`);
+      if (profile.idStatus === "needs") lines.push("ID/documents: still needs valid ID or birth certificate");
+      if (profile.idStatus === "has") lines.push("ID/documents: has valid ID");
       if (hasSkills && profile.skills) {
         lines.push(`Skills / strengths: ${profile.skills}`);
       } else if (unsure) {
@@ -33576,7 +33702,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Are you still testing if the site works with a few people, getting your first strangers to try it, or ready to run a formal pilot with a partner for grant/sponsor data?";
       }
       if (isReentrySituation({ title: userText })) {
-        return "Do you have stable housing and ID right now, or is getting those settled the most urgent thing this week?";
+        return "Do you have your ID and birth certificate lined up, or is getting those settled the most urgent thing this week?";
+      }
+      if (conversationMentionsIdNeed(userText) || /\b(homeless|shelter|just got out|getting out)\b/i.test(userText)) {
+        return "Do you have a valid ID right now, or is getting that sorted the first thing you need to tackle?";
       }
       if (isDetailedPrompt(userText)) {
         return "What's the single most important outcome you want in the next 30 days?";
@@ -33597,7 +33726,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (isReentrySituation({ title: userText })) {
         return (
-          "You are whatimado, an empathetic advisor for someone rebuilding after incarceration or release. Read their message carefully. Ask ONE short follow-up question that references something specific they said — housing, ID/documents, parole or probation, background checks, urgent income timeline, or skills they already have. Do not ask where they live — the app asks that separately next. Do not ask about long-term training or business ideas yet. Plain text only.\n\nUser: " +
+          "You are whatimado, an empathetic advisor for someone rebuilding after incarceration or release. Read their message carefully. Ask ONE short follow-up question that references something specific they said — ID/documents, housing, parole or probation, background checks, urgent income timeline, or skills they already have. If they have not mentioned ID yet, ask whether they have ID and a birth certificate lined up or still need to get those sorted. Do not ask where they live — the app asks that separately next. Do not ask about long-term training or business ideas yet. Plain text only.\n\nUser: " +
+          userText
+        );
+      }
+
+      if (conversationMentionsIdNeed(userText) || /\b(homeless|shelter|evict|just got out|getting out)\b/i.test(userText)) {
+        return (
+          "You are whatimado, an empathetic advisor. This person may need ID or documents before they can work or apply for programs. Ask ONE short question about whether they have valid ID now or need to get that sorted first — reference something specific they said. Do not ask where they live. Plain text only.\n\nUser: " +
           userText
         );
       }
@@ -33627,7 +33763,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
         .join("\n\n");
       return (
-        "You are whatimado, an empathetic possibility advisor. The user already answered one follow-up question. Ask ONE more short clarifying question that goes deeper — a blocker, resource limit (time, money, transport, childcare), dealbreaker, or priority they have not spelled out yet. Reference their latest answer. Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
+        "You are whatimado, an empathetic possibility advisor. The user already answered one follow-up question. Ask ONE more short clarifying question that goes deeper — a blocker, resource limit (time, money, transport, childcare, ID/documents), dealbreaker, or priority they have not spelled out yet. If ID/documents have not been discussed and they may need them, ask about that. Reference their latest answer. Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
         transcript
       );
     }
@@ -33636,6 +33772,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = `${getFirstUserMessage()} ${state.history.filter((entry) => entry.role === "user").map((entry) => entry.content).join(" ")}`.toLowerCase();
       if (/housing|homeless|shelter|evict/.test(blob)) {
         return "Besides housing, what's the biggest blocker right now — ID, transportation, health, or something else?";
+      }
+      if (conversationMentionsIdNeed(blob) || userNeedsIdFirst()) {
+        return "What documents do you still need for ID — and do you know where to go locally to get them?";
       }
       if (/recover|sober|aa|rehab/.test(blob)) {
         return "What support or schedule do you need to keep stable while you build income — meetings, treatment, or something else?";
@@ -34008,6 +34147,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getLocationContextBlock() +
         getUserStatedCraftBlock() +
         getReentryIdeasPromptBlock() +
+        getIdPriorityIdeasPromptBlock() +
         excludeBlock +
         moneyUrgencyNote +
         skillsGapNote +
@@ -36150,6 +36290,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!isFounderRoadmapForIdea(idea) && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
         issues.push({ code: "reentry" });
       }
+      if (!isFounderRoadmapForIdea(idea) && userNeedsIdFirst(idea) && roadmapSkipsIdBasics(stages, idea)) {
+        issues.push({ code: "id_basics" });
+      }
       return issues;
     }
 
@@ -36202,6 +36345,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (codes.has("reentry")) {
         parts.push(getReentryRoadmapCorrectionBlock(idea));
+        parts.push(getActionableTaskRules());
+      }
+      if (codes.has("id_basics")) {
+        parts.push(getIdRoadmapCorrectionBlock(idea));
         parts.push(getActionableTaskRules());
       }
 
@@ -36557,7 +36704,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           working = patchRoadmapStages(working, locallyEnriched, [{ code: "local_resources" }]);
         }
 
-        const aiIssueCodes = ["homework", "parse_failed", "generic_stages", "overlap", "refresh_stale", "generic_mismatch", "reentry"];
+        const aiIssueCodes = ["homework", "parse_failed", "generic_stages", "overlap", "refresh_stale", "generic_mismatch", "reentry", "id_basics"];
         const needsAiCorrection = issues.some((issue) => aiIssueCodes.includes(issue.code));
 
         if (needsAiCorrection) {
@@ -41290,15 +41437,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#dashboard-top-avatar")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-notify-btn")?.addEventListener("click", handleDashboardNotifyClick);
       $("#sidebar-roadmaps-btn")?.addEventListener("click", toggleSidebarRoadmapsPanel);
-      $("#dashboard-sidebar")?.addEventListener("click", (event) => {
-        if (
-          sidebarInlineConfirmResolver
-          && !event.target.closest(".sidebar-delete-strip, .sidebar-inline-confirm")
-          && !event.target.closest("[data-delete-roadmap-category], [data-delete-roadmap-item]")
-        ) {
-          dismissSidebarInlineConfirm(false);
-        }
-      });
       $("#dashboard-roadmap-categories")?.addEventListener("click", (event) => {
         const deleteItemBtn = event.target.closest("[data-delete-roadmap-item]");
         if (deleteItemBtn) {
