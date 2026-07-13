@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-13-roadmap-confirm-gate">
+  <meta name="whatimado-build" content="2026-07-13-stability-stages-enforced">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -19148,7 +19148,14 @@ Practice each one out loud once and time yourself.`;
       if (/\bpresentation|slide deck|google slides\b/.test(blob)) ids.push("presentation");
       if (isFounderStoryTask(normalized)) ids.push("founder_story");
       if (getFlatTaskResources(normalized).length && !ids.includes("outreach_email") && !isDigitalProductPath(state.currentIdea) && !taskShouldHideOutreachDrafts(normalized)) {
-        ids.push("outreach_email", "phone_script", "contact_tracker");
+        const employmentBlob = getTaskContentBlob(normalized);
+        const skipTrackerForStability = userNeedsIdFirst()
+          && (isJobSearchHomeworkText(normalized.text) || taskTextIsEmploymentFocused(employmentBlob));
+        if (skipTrackerForStability) {
+          if (/\b(call|211|shelter|workforce|dmv|clerk)\b/.test(employmentBlob)) ids.push("phone_script");
+        } else {
+          ids.push("outreach_email", "phone_script", "contact_tracker");
+        }
       }
       if (isOrgListTask(normalized) && !ids.includes("comparison_sheet")) {
         ids.unshift("comparison_sheet");
@@ -22595,6 +22602,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (mentionedDrafts.includes("contact_tracker") && !isDigitalProductPath(state.currentIdea) && !isDigitalProductTask(normalized)) {
+        if (userNeedsIdFirst() && (isJobSearchHomeworkText(text) || taskTextIsEmploymentFocused(blob))) {
+          return humanizeTaskText(text || "Use the local resources below — call or visit the first org on the list today.");
+        }
         return "Open the Contact Tracking Spreadsheet below. Log each business you call or visit, who you spoke with, and whether they said yes, no, or maybe.";
       }
       if (mentionedDrafts.includes("comparison_sheet")) {
@@ -23620,10 +23630,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.userProfile.updatedAt = Date.now();
     }
 
+    function ideaMentionsStabilityNeed(idea = state.currentIdea) {
+      const blob = `${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      return /\b(get (?:your |an? )?id|id sorted|sort (?:your )?id|no id|without (?:an? )?id|birth certificate|shelter|housing|place to stay|211|documents first|before you apply|mailing address|day[- ]?labor.*id|id.*day[- ]?labor)\b/.test(blob);
+    }
+
     function userNeedsIdFirst(idea = null) {
       const profile = normalizeUserProfile(state.userProfile);
       if (profile.idStatus === "has") return false;
       if (profile.idStatus === "needs") return true;
+      if (ideaMentionsStabilityNeed(idea)) return true;
       const blob = [
         getFirstUserMessage(),
         ...state.history.filter((entry) => entry.role === "user").map((entry) => entry.content)
@@ -23670,47 +23686,67 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    function getRecoveryStabilityPromptBlock(idea = state.currentIdea) {
+      const blob = getConversationUserBlob().toLowerCase();
+      if (!/\b(sober|recovery|rehab|aa\b|rebuild(?:ing)? (?:my )?life)\b/.test(blob) && !ideaMentionsStabilityNeed(idea)) return "";
+      const loc = getUserLocation() || "their city";
+      return (
+        `\nRECOVERY / REBUILDING — stability before job boards:\n` +
+        `- User is rebuilding (sober/recovery/housing instability). Stage 1 MUST cover safe shelter + ID/documents in ${loc} BEFORE Indeed, Google Jobs, resume polish, or contact-tracking spreadsheets.\n` +
+        `- Name concrete steps: call 211 or local shelter, county clerk/DMV for ID requirements, mailing address through shelter or social service.\n` +
+        `- Day-labor or temp work may appear in stage 3 — NOT stage 1 unless shelter and ID tasks are already present in stages 1–2.\n` +
+        `- Path title "${idea?.title || "this path"}" must match the stage order — do not say "get ID sorted" in the title then open with job searches.\n`
+      );
+    }
+
     function getIdRoadmapCorrectionBlock(idea = state.currentIdea) {
       const loc = getUserLocation() || "their city";
       return (
-        `\nID CORRECTION — user needs ID or documents before job-search homework.\n` +
-        `Regenerate stage 1 to start with ID/documents in ${loc} (county clerk, DMV, or local reentry ID help).\n` +
-        `Move Indeed/Google Jobs searches to stage 2 or later — never duplicate the same job-board search in multiple tasks.\n` +
+        `\nID / HOUSING CORRECTION — user needs shelter and/or ID before job-search homework.\n` +
+        `Regenerate stages 1–2 to cover:\n` +
+        `- Stage 1: Safe place to stay tonight + this week in ${loc} (211, shelter intake, what ID they require).\n` +
+        `- Stage 2: Get ID sorted — birth certificate, Social Security card if needed, state ID at DMV/county clerk, mailing address for applications.\n` +
+        `- Stage 3+: Income (temp labor, staffing) and only then formal job board searches if ID is in progress.\n` +
+        `REMOVE "Search Indeed/Google Jobs" and "Contact Tracking Spreadsheet" from stage 1 entirely.\n` +
         `Do NOT use Gumroad, digital product, or unrelated "why" text on employment tasks.\n`
       );
+    }
+
+    function roadmapNeedsStabilityFirst(stages, idea = state.currentIdea) {
+      if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return false;
+      if (!Array.isArray(stages) || !stages.length) return false;
+      const first = stages[0];
+      const allTasks = (first.tasks || []).map((task) => getTaskText(task)).join(" ");
+      const blob = [first.label, first.desc, allTasks].join(" ").toLowerCase();
+      const stabilityRx = /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed|shelter|housing|211|safe place|mailing address|social services|call or visit 2 shelter)\b/;
+      const firstTask = String(getTaskText(first.tasks?.[0] || "")).toLowerCase();
+      if (/\b(indeed|google jobs|search .* jobs|job search|who'?s hiring|contact tracking spreadsheet)\b/.test(firstTask)) {
+        return true;
+      }
+      if (stabilityRx.test(blob)) return false;
+      return /\b(indeed|google jobs|job search|apply online|resume for hiring|who'?s hiring|hiring lanes|staffing agenc)\b/.test(blob);
     }
 
     function ensureStabilityFirstRoadmapStages(stages, idea = state.currentIdea) {
       if (isFounderRoadmapForIdea(idea)) return stages;
       if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return stages;
       if (!Array.isArray(stages) || !stages.length) return stages;
-      if (!roadmapSkipsIdBasics(stages, idea)) return stages;
+      if (!roadmapNeedsStabilityFirst(stages, idea)) return stages;
 
       const templates = buildStandardFallbackTemplates();
       const housingStages = personalizeFallbackStages(templates.housing, idea);
-      const prepend = userNeedsHousingFirst(idea)
-        ? housingStages.slice(0, 2)
-        : [housingStages[1]];
+      const prepend = housingStages.slice(0, 2);
       const tail = stages.filter((stage, index) => {
-        if (index === 0 && roadmapSkipsIdBasics([stage], idea)) return false;
-        return true;
+        if (index !== 0) return true;
+        const stageBlob = [stage.label, stage.desc, ...(stage.tasks || []).map((task) => getTaskText(task))].join(" ").toLowerCase();
+        return !/\b(indeed|google jobs|who'?s hiring|hiring lanes|scan .+ hiring)\b/.test(stageBlob);
       });
       const merged = [...prepend, ...tail].slice(0, 4);
-      return merged.length ? merged : housingStages.slice(0, 4);
+      return merged.length >= 2 ? merged : housingStages.slice(0, 4);
     }
 
     function roadmapSkipsIdBasics(stages, idea = state.currentIdea) {
-      if (!userNeedsIdFirst(idea) || !Array.isArray(stages) || !stages.length) return false;
-      const first = stages[0];
-      const blob = [
-        first.label,
-        first.desc,
-        ...(first.tasks || []).slice(0, 3).map((task) => getTaskText(task))
-      ].join(" ").toLowerCase();
-      const stabilityRx = /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed|shelter|housing|211|safe place|mailing address|social services)\b/;
-      if (stabilityRx.test(blob)) return false;
-      const jobFirstRx = /\b(indeed|google jobs|search .* jobs|job search|apply online|resume for hiring|who'?s hiring)\b/;
-      return jobFirstRx.test(blob);
+      return roadmapNeedsStabilityFirst(stages, idea);
     }
 
     function getReentryPromptBlock(idea = state.currentIdea) {
@@ -26687,6 +26723,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (isFounderRoadmapForIdea(idea)) {
         return getFounderFallbackStages(idea);
       }
+      if (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea)) {
+        return personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea);
+      }
       return pickUniqueStandardFallbackStages(idea);
     }
 
@@ -26916,6 +26955,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getLocationContextBlock() +
         getUserStatedCraftBlock(idea) +
         getReentryPromptBlock(idea) +
+        getRecoveryStabilityPromptBlock(idea) +
         getIdPriorityPromptBlock(idea) +
         getPathSpecificMilestoneBlock(idea) +
         getIncomePathSpecificityBlock(idea) +
@@ -37062,12 +37102,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return roadmapHasRichLocalData(fallback, idea) ? fallback : stages;
     }
 
+    function applyStabilityFirstRoadmapFixes(stages, idea, founderMode = false) {
+      if (founderMode || isFounderRoadmapForIdea(idea)) return stages;
+      if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return stages;
+      let fixed = ensureStabilityFirstRoadmapStages(stages, idea);
+      if (roadmapNeedsStabilityFirst(fixed, idea)) {
+        fixed = personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea);
+      }
+      return fixed;
+    }
+
     function finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource = "ai", lenient = false } = {}) {
       if (lenient && stages?.length) {
         const normalized = normalizeRoadmapStages(stages);
         if (stageOneHasRevealableMission(normalized)) {
+          let fixed = applyLocalResourceFixesIfPossible(normalized, idea);
+          fixed = applyStabilityFirstRoadmapFixes(fixed, idea, founderMode);
           return {
-            stages: applyLocalResourceFixesIfPossible(normalized, idea),
+            stages: ensureRoadmapLocalContacts(normalizeRoadmapStages(fixed), idea),
             roadmapSource
           };
         }
@@ -37140,12 +37192,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (stages && !founderMode && (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea))) {
-        stages = ensureStabilityFirstRoadmapStages(stages, idea);
-        if (roadmapSkipsIdBasics(stages, idea)) {
-          stages = personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea);
-          source = "fallback";
-          trackEvent("roadmap_id_basics_fallback", { idea_index: ideaIndex });
-        }
+        stages = applyStabilityFirstRoadmapFixes(stages, idea, founderMode);
       }
 
       return {
@@ -37515,6 +37562,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? new Set(state.expandedRoadmapTasks)
         : null;
 
+      stages = applyStabilityFirstRoadmapFixes(normalizeRoadmapStages(stages || []), idea, founderMode);
+
       let renderStagesPayload = (!isFinal && (progressive || !refineUpdate))
         ? expandStagesForProgressiveReveal(stages, founderMode, { isFinal: false })
         : coerceRoadmapStagesForRender(stages);
@@ -37871,6 +37920,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           cachedSource = "fallback";
           trackEvent("roadmap_founder_mismatch_fixed", { idea_index: ideaIndex, cached: true });
         }
+        stagesToRender = applyStabilityFirstRoadmapFixes(stagesToRender, idea, founderMode);
         state.roadmapStages = stagesToRender;
         if (!roadmapStagesAreRenderable(state.roadmapStages)) {
           state.roadmapStages = ensureRenderableRoadmapStages(stagesToRender, idea, cached?.firstMissionBranchChoice, {
