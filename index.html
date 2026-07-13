@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-13-delete-overlay-fix">
+  <meta name="whatimado-build" content="2026-07-13-stability-id-intake-fix">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -16904,6 +16904,10 @@
         const founder = isFounderOrProjectPrompt(getFirstUserMessage());
         if (!profileIntakeIsComplete(founder)) {
           const profile = normalizeUserProfile(state.userProfile);
+          if (profileIntakeNeedsIdStep(profile)) {
+            askProfileIdStatusStep();
+            return;
+          }
           if (!profile.incomeUrgency) {
             askProfileIncomeStep();
             return;
@@ -22701,8 +22705,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (mentionedDrafts.includes("contact_tracker") && !isDigitalProductPath(state.currentIdea) && !isDigitalProductTask(normalized)) {
-        if (userNeedsIdFirst() && (isJobSearchHomeworkText(text) || taskTextIsEmploymentFocused(blob))) {
+        if (
+          (userNeedsIdFirst() || userNeedsHousingFirst())
+          && (isJobSearchHomeworkText(text) || taskTextIsEmploymentFocused(blob) || stageHasJobSearchHomework({ tasks: [normalized] }))
+        ) {
           return humanizeTaskText(text || "Use the local resources below — call or visit the first org on the list today.");
+        }
+        if (userNeedsIdFirst() || userNeedsHousingFirst()) {
+          return humanizeTaskText(text || "Call or visit the first local shelter or ID-help resource below — write down what they tell you.");
         }
         return "Open the Contact Tracking Spreadsheet below. Log each business you call or visit, who you spoke with, and whether they said yes, no, or maybe.";
       }
@@ -23723,10 +23733,38 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.userProfile = normalizeUserProfile(state.userProfile);
       if (conversationConfirmsHasId(blob)) {
         state.userProfile.idStatus = "has";
-      } else if (conversationMentionsIdNeed(blob) || conversationMentionsHousingInstability(blob) || conversationMentionsStabilityRebuild(blob) || (isReentrySituation() && !conversationConfirmsHasId(blob))) {
+      } else if (
+        conversationMentionsIdNeed(blob)
+        || conversationMentionsStabilityRebuild(blob)
+        || (isReentrySituation() && !conversationConfirmsHasId(blob))
+      ) {
         state.userProfile.idStatus = "needs";
       }
       state.userProfile.updatedAt = Date.now();
+    }
+
+    function profileIntakeNeedsIdStep(profile = normalizeUserProfile(state.userProfile)) {
+      if (profile.idStatus === "has" || profile.idStatus === "needs") return false;
+      if (conversationConfirmsHasId(getConversationUserBlob())) return false;
+      const blob = getConversationUserBlob().toLowerCase();
+      return conversationMentionsHousingInstability(blob)
+        || isReentrySituation()
+        || conversationMentionsStabilityRebuild(blob)
+        || /\b(sober|recovery|rebuild(?:ing)? (?:my )?life)\b/.test(blob);
+    }
+
+    function parseIdStatus(text) {
+      const q = String(text || "").toLowerCase();
+      if (/\b(yes|yeah|yep|have (?:my )?(?:id|license|state id|driver'?s license|birth certificate)|got (?:my )?(?:id|license)|valid id|id is (?:good|fine|valid))\b/.test(q)) {
+        return "has";
+      }
+      if (/\b(no|nope|not yet|don'?t have|do not have|need to get|still need|lost (?:my )?(?:id|license)|missing (?:my )?(?:id|documents)|no id)\b/.test(q)) {
+        return "needs";
+      }
+      if (/\b(not sure|unsure|don'?t know|maybe|sort of|working on)\b/.test(q)) {
+        return "needs";
+      }
+      return "";
     }
 
     function ideaMentionsStabilityNeed(idea = state.currentIdea) {
@@ -23811,37 +23849,48 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    function stageHasJobSearchHomework(stage) {
+      if (!stage) return false;
+      const blob = [
+        stage.label,
+        stage.desc,
+        ...(stage.tasks || []).map((task) => getTaskText(task))
+      ].join(" ").toLowerCase();
+      return /\b(indeed|google jobs|search .* jobs|job search|who'?s hiring|hiring lanes|scan .+ hiring|contact tracking spreadsheet|log each business you call)\b/.test(blob);
+    }
+
+    function stageHasStabilityBasics(stage) {
+      if (!stage) return false;
+      const blob = [
+        stage.label,
+        stage.desc,
+        ...(stage.tasks || []).map((task) => getTaskText(task))
+      ].join(" ").toLowerCase();
+      return /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed|shelter|housing|211|safe place|mailing address|social services|call or visit 2 shelter|secure tonight)\b/.test(blob);
+    }
+
     function roadmapNeedsStabilityFirst(stages, idea = state.currentIdea) {
       if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return false;
-      if (!Array.isArray(stages) || !stages.length) return false;
+      if (!Array.isArray(stages) || !stages.length) return true;
       const first = stages[0];
-      const allTasks = (first.tasks || []).map((task) => getTaskText(task)).join(" ");
-      const blob = [first.label, first.desc, allTasks].join(" ").toLowerCase();
-      const stabilityRx = /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed|shelter|housing|211|safe place|mailing address|social services|call or visit 2 shelter)\b/;
-      const firstTask = String(getTaskText(first.tasks?.[0] || "")).toLowerCase();
-      if (/\b(indeed|google jobs|search .* jobs|job search|who'?s hiring|contact tracking spreadsheet)\b/.test(firstTask)) {
-        return true;
-      }
-      if (stabilityRx.test(blob)) return false;
-      return /\b(indeed|google jobs|job search|apply online|resume for hiring|who'?s hiring|hiring lanes|staffing agenc)\b/.test(blob);
+      if (stageHasJobSearchHomework(first)) return true;
+      if (stageHasStabilityBasics(first)) return false;
+      return stageHasJobSearchHomework(first) || /\b(resume for hiring|apply online|package your proof)\b/.test(
+        [first.label, first.desc].join(" ").toLowerCase()
+      );
+    }
+
+    function getStabilityFirstRoadmapStages(idea = state.currentIdea) {
+      return personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea).slice(0, 4);
     }
 
     function ensureStabilityFirstRoadmapStages(stages, idea = state.currentIdea) {
       if (isFounderRoadmapForIdea(idea)) return stages;
       if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return stages;
-      if (!Array.isArray(stages) || !stages.length) return stages;
-      if (!roadmapNeedsStabilityFirst(stages, idea)) return stages;
-
-      const templates = buildStandardFallbackTemplates();
-      const housingStages = personalizeFallbackStages(templates.housing, idea);
-      const prepend = housingStages.slice(0, 2);
-      const tail = stages.filter((stage, index) => {
-        if (index !== 0) return true;
-        const stageBlob = [stage.label, stage.desc, ...(stage.tasks || []).map((task) => getTaskText(task))].join(" ").toLowerCase();
-        return !/\b(indeed|google jobs|who'?s hiring|hiring lanes|scan .+ hiring)\b/.test(stageBlob);
-      });
-      const merged = [...prepend, ...tail].slice(0, 4);
-      return merged.length >= 2 ? merged : housingStages.slice(0, 4);
+      if (!Array.isArray(stages) || !stages.length || roadmapNeedsStabilityFirst(stages, idea)) {
+        return getStabilityFirstRoadmapStages(idea);
+      }
+      return stages;
     }
 
     function roadmapSkipsIdBasics(stages, idea = state.currentIdea) {
@@ -31434,6 +31483,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
       const parsers = {
+        id_status: ["idStatus", parseIdStatus],
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
@@ -31444,7 +31494,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
       const parser = parsers[meta.step];
       if (parser) {
-        const parsed = parser[1](entry.content) || entry.content.slice(0, 80);
+        const parsed = parser[1](entry.content) || (parser[0] === "idStatus" ? "needs" : entry.content.slice(0, 80));
         profile[parser[0]] = parsed;
       }
     }
@@ -31456,6 +31506,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           { field: "incomeUrgency", value: "immediate", label: "Immediately" },
           { field: "incomeUrgency", value: "three_months", label: "Within 3 months" },
           { field: "incomeUrgency", value: "long_term", label: "Long-term is OK" }
+        ]);
+        return;
+      }
+      if (step === "id_status") {
+        renderProfileIntakeChips([
+          { field: "idStatus", value: "has", label: "Yes, I have valid ID" },
+          { field: "idStatus", value: "needs", label: "No — I still need to get ID sorted" },
+          { field: "idStatus", value: "needs", label: "Not sure / working on it" }
         ]);
         return;
       }
@@ -33327,6 +33385,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         validation: "Getting first strangers to try it",
         pilot: "Structured pilot with a partner",
         growth: "Grants, sponsors, or scaling"
+      },
+      idStatus: {
+        has: "Has valid ID / documents",
+        needs: "Still needs ID or birth certificate"
       }
     };
 
@@ -33601,6 +33663,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
       pushLabel("incomeUrgency");
       pushLabel("pathPreference");
+      pushLabel("idStatus");
       pushLabel("workMode");
       pushLabel("willingToRelocate");
       pushLabel("founderStage");
@@ -33758,6 +33821,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!profile.goals && getFirstUserMessage()) {
         profile.goals = abbreviateQuestion(getFirstUserMessage(), 160);
       }
+      updateIdStatusFromConversation();
       state.userProfile = profile;
       distillUserProfileSummary();
     }
@@ -33811,6 +33875,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.history.push({ role: "assistant", content: text });
       showReplyBox(true);
       schedulePersist();
+    }
+
+    function askProfileIdStatusStep() {
+      state.profileIntakeStep = "id_status";
+      pushProfileIntakeAssistantMessage(
+        "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?"
+      );
+      renderProfileIntakeChips([
+        { field: "idStatus", value: "has", label: "Yes, I have valid ID" },
+        { field: "idStatus", value: "needs", label: "No — I still need to get ID sorted" },
+        { field: "idStatus", value: "needs", label: "Not sure / working on it" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "id_status" });
     }
 
     function askProfileIncomeStep() {
@@ -33968,6 +34045,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const map = {
         incomeUrgency: "income",
         pathPreference: "path",
+        idStatus: "id_status",
         willingToRelocate: "relocate",
         founderStage: "founder_stage",
         skills: "skills"
@@ -33986,6 +34064,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (state.profileIntakeStep) return state.profileIntakeStep;
       const profile = normalizeUserProfile(state.userProfile);
+      if (profileIntakeNeedsIdStep(profile)) return (state.profileIntakeStep = "id_status");
       if (!profile.incomeUrgency) return (state.profileIntakeStep = "income");
       if (!profile.pathPreference) return (state.profileIntakeStep = "path");
       const founder = isFounderOrProjectPrompt(getFirstUserMessage());
@@ -34013,6 +34092,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
 
+      if (step === "id_status") {
+        if (profileIntakeNeedsIdStep(profile)) return askProfileIdStatusStep();
+        askProfileIncomeStep();
+        return;
+      }
       if (step === "income") {
         if (!profile.incomeUrgency) return askProfileIncomeStep();
         askProfilePathPreferenceStep();
@@ -34082,11 +34166,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ensureKnownUserLocationRestored({ schedulePersist: false });
       mergeUserProfileFromConversation();
       const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profileIntakeNeedsIdStep(profile)) {
+        askProfileIdStatusStep();
+        return;
+      }
       if (profileIntakeIsComplete(founder)) {
         finishProfileIntake();
         return;
       }
-      const profile = normalizeUserProfile(state.userProfile);
       if (!profile.incomeUrgency) {
         askProfileIncomeStep();
         return;
@@ -34130,6 +34218,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!trimmed) return;
 
       const parsers = {
+        id_status: ["idStatus", parseIdStatus],
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
@@ -34140,7 +34229,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
       const parser = parsers[step];
       if (parser) {
-        const parsed = parser[1](trimmed) || trimmed.slice(0, 80);
+        const parsed = parser[1](trimmed) || (parser[0] === "idStatus" ? "needs" : trimmed.slice(0, 80));
         if (!parsed) return;
         setUserProfileField(parser[0], parsed);
       } else {
@@ -34537,7 +34626,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (isReentrySituation({ title: userText })) {
         return "Do you have your ID and birth certificate lined up, or is getting those settled the most urgent thing this week?";
       }
-      if (conversationMentionsIdNeed(userText) || /\b(homeless|shelter|just got out|getting out)\b/i.test(userText)) {
+      if (
+        conversationMentionsIdNeed(userText)
+        || conversationMentionsHousingInstability(userText)
+        || /\b(homeless|shelter|just got out|getting out|sober|recovery|rebuild(?:ing)? (?:my )?life)\b/i.test(userText)
+      ) {
         return "Do you have a valid ID right now, or is getting that sorted the first thing you need to tackle?";
       }
       if (isDetailedPrompt(userText)) {
@@ -34564,9 +34657,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         );
       }
 
-      if (conversationMentionsIdNeed(userText) || /\b(homeless|shelter|evict|just got out|getting out)\b/i.test(userText)) {
+      if (conversationMentionsIdNeed(userText) || conversationMentionsHousingInstability(userText) || /\b(homeless|shelter|evict|just got out|getting out|sober|recovery|rebuild(?:ing)? (?:my )?life)\b/i.test(userText)) {
         return (
-          "You are whatimado, an empathetic advisor. This person may need ID or documents before they can work or apply for programs. Ask ONE short question about whether they have valid ID now or need to get that sorted first — reference something specific they said. Do not ask where they live. Plain text only.\n\nUser: " +
+          "You are whatimado, an empathetic advisor. This person may need ID, documents, or stable housing before they can work or apply for programs. Ask ONE short question about whether they have valid ID now or need to get that sorted first — reference something specific they said. Do not ask where they live. Plain text only.\n\nUser: " +
           userText
         );
       }
@@ -34603,8 +34696,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getSecondClarifyingFallback() {
       const blob = `${getFirstUserMessage()} ${state.history.filter((entry) => entry.role === "user").map((entry) => entry.content).join(" ")}`.toLowerCase();
-      if (/housing|homeless|shelter|evict/.test(blob)) {
-        return "Besides housing, what's the biggest blocker right now — ID, transportation, health, or something else?";
+      if (/housing|homeless|shelter|evict|no place to stay|nowhere to stay/.test(blob)) {
+        return "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
       }
       if (conversationMentionsIdNeed(blob) || userNeedsIdFirst()) {
         return "What documents do you still need for ID — and do you know where to go locally to get them?";
@@ -34620,7 +34713,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       try {
         const answer = await callAdvisor(buildSecondClarifyingPrompt(), 450);
         const fallback = getSecondClarifyingFallback();
-        const finalAnswer = answer || fallback;
+        let finalAnswer = answer || fallback;
+        const blob = getConversationUserBlob().toLowerCase();
+        const idAlreadyDiscussed = conversationMentionsIdNeed(blob) || conversationConfirmsHasId(blob);
+        const needsIdQuestion = !idAlreadyDiscussed && (
+          conversationMentionsHousingInstability(blob)
+          || conversationMentionsStabilityRebuild(blob)
+          || /\b(sober|recovery|rebuild(?:ing)? (?:my )?life)\b/.test(blob)
+        );
+        if (needsIdQuestion && !/\b(id|identification|birth certificate|driver'?s license|state id|documents)\b/i.test(finalAnswer || "")) {
+          finalAnswer = "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
+        }
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
@@ -36414,8 +36517,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (state.intakeMode === "quick") {
           mergeUserProfileFromConversation();
           const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+          const profile = normalizeUserProfile(state.userProfile);
+          if (profileIntakeNeedsIdStep(profile)) {
+            askProfileIdStatusStep();
+            return;
+          }
           if (!profileIntakeIsComplete(founder)) {
-            const profile = normalizeUserProfile(state.userProfile);
             if (!profile.incomeUrgency) {
               askProfileIncomeStep();
               return;
@@ -36949,7 +37056,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function queueDeferredRoadmapPhaseReveal(fullStages, idea, ideaIndex, source, founderMode) {
       cancelDeferredRoadmapPhaseReveal();
-      const normalized = normalizeRoadmapStages(fullStages);
+      const normalized = applyStabilityFirstRoadmapFixes(normalizeRoadmapStages(fullStages), idea, founderMode);
       if (!normalized.length || !state.roadmapKey) return;
 
       const handle = {
@@ -37224,11 +37331,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function applyStabilityFirstRoadmapFixes(stages, idea, founderMode = false) {
       if (founderMode || isFounderRoadmapForIdea(idea)) return stages;
       if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return stages;
-      let fixed = ensureStabilityFirstRoadmapStages(stages, idea);
-      if (roadmapNeedsStabilityFirst(fixed, idea)) {
-        fixed = personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea);
-      }
-      return fixed;
+      return ensureStabilityFirstRoadmapStages(stages, idea);
     }
 
     function finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource = "ai", lenient = false } = {}) {
@@ -37423,6 +37526,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function prepareStagesForInitialReveal(stages, idea) {
       let ready = normalizeRoadmapStages(stages);
       ready = applyLocalResourceFixesIfPossible(ready, idea);
+      ready = applyStabilityFirstRoadmapFixes(ready, idea, isFounderRoadmapForIdea(idea));
       return ready;
     }
 
