@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-13-fix-loader-syntax">
+  <meta name="whatimado-build" content="2026-07-13-roadmap-confirm-gate">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -5899,6 +5899,109 @@
     #screen-convo .path-mode-choice .path-mode-actions {
       justify-content: center;
       width: 100%;
+    }
+
+    /* UX: pre/post roadmap confirmation gate — chat stays source of truth before visual roadmap updates */
+    .roadmap-confirm-gate[hidden] {
+      display: none !important;
+    }
+
+    #screen-convo .roadmap-confirm-gate,
+    #minimal-chat .roadmap-confirm-gate {
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+      max-width: 38rem;
+      margin: 0 auto 1rem;
+      padding: .85rem 1rem 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(120, 130, 200, .22);
+      background: rgba(120, 130, 200, .06);
+    }
+
+    .roadmap-confirm-gate-label {
+      margin: 0;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--purple);
+      text-align: center;
+    }
+
+    .roadmap-confirm-bullets {
+      margin: 0;
+      padding-left: 1.15rem;
+      font-size: .88rem;
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .roadmap-confirm-bullets li + li {
+      margin-top: .35rem;
+    }
+
+    .roadmap-confirm-actions {
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+      width: 100%;
+    }
+
+    .roadmap-confirm-btn {
+      width: 100%;
+      padding: .62rem .85rem;
+      border-radius: 999px;
+      font-size: .84rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(120, 130, 200, .35);
+      background: #fff;
+      color: var(--purple);
+    }
+
+    .roadmap-confirm-btn--primary {
+      background: var(--purple);
+      color: #fff;
+      border-color: var(--purple);
+    }
+
+    .roadmap-confirm-btn--ghost {
+      background: transparent;
+    }
+
+    /* UX: context-aware roadblock buttons on each task */
+    .task-roadblock-section {
+      margin-top: .65rem;
+      padding-top: .55rem;
+      border-top: 1px solid rgba(120, 130, 200, .14);
+    }
+
+    .task-roadblock-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .35rem;
+    }
+
+    .task-roadblock-btn {
+      font-size: .76rem;
+      line-height: 1.25;
+      padding: .38rem .62rem;
+      border-radius: 999px;
+      border: 1px solid rgba(120, 130, 200, .28);
+      background: rgba(255, 255, 255, .85);
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .task-roadblock-btn--ask {
+      border-style: dashed;
+      color: var(--purple);
+      font-weight: 600;
+    }
+
+    .task-roadblock-btn:active {
+      transform: scale(.98);
     }
 
     .dashboard-path-mode-bar {
@@ -14778,6 +14881,14 @@
               </button>
             </div>
           </div>
+          <div class="roadmap-confirm-gate" id="roadmap-confirm-gate" hidden aria-label="Confirm your roadmap plan">
+            <p class="roadmap-confirm-gate-label" id="roadmap-confirm-gate-label">Here's the plan I'd suggest — does this look right?</p>
+            <ul class="roadmap-confirm-bullets" id="roadmap-confirm-bullets"></ul>
+            <div class="roadmap-confirm-actions">
+              <button type="button" class="roadmap-confirm-btn roadmap-confirm-btn--primary" id="roadmap-confirm-primary">Looks good, create my roadmap</button>
+              <button type="button" class="roadmap-confirm-btn roadmap-confirm-btn--ghost" id="roadmap-confirm-secondary">Change something first</button>
+            </div>
+          </div>
           <div class="reply-box surface-card" id="reply-box">
             <div class="reply-inner chat-composer-field">
               <textarea class="reply-textarea" id="reply-textarea" rows="1" placeholder="Type your response…"></textarea>
@@ -17153,10 +17264,28 @@
       return false;
     }
 
+    function mentorFieldConflictsWithTask(text, normalized, idea = state.currentIdea) {
+      const copy = String(text || "").toLowerCase();
+      if (!copy) return false;
+      const taskBlob = `${normalized?.text || ""} ${normalized?.mission || ""} ${normalized?.howTo || ""}`.toLowerCase();
+      const employmentTask = isIdeaEmploymentPath(idea)
+        || taskTextIsEmploymentFocused(taskBlob)
+        || isJobSearchHomeworkText(normalized?.text || "");
+      if (employmentTask && /\b(gumroad|etsy|checkout|digital product|notion template|pay[- ]what[- ]you[- ]want|screenshot|listing is live|people can'?t buy)\b/.test(copy)) {
+        return true;
+      }
+      if (!isDigitalProductPath(idea) && !isDigitalProductTask(normalized, idea)
+        && /\b(gumroad|etsy|notion template|digital product|checkout page|people can'?t buy until)\b/.test(copy)) {
+        return true;
+      }
+      return false;
+    }
+
     function sanitizeMentorFieldText(text, normalized) {
       let copy = humanizeTaskText(String(text || "").trim());
       if (!copy) return "";
       if (isPlaceholderMentorHelp(copy)) return "";
+      if (mentorFieldConflictsWithTask(copy, normalized)) return "";
       if (isGenericMentorCopy(copy, normalized)) return "";
       if (isTaskRestatement(copy, normalized)) return "";
       if (isExplanatoryTaskCopy(copy)) return "";
@@ -21712,7 +21841,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Vets, pet stores, and local salons often refer grooming clients — one good relationship can fill your calendar faster than ads.";
       }
 
-      if (isDigitalProductPath(idea) || isDigitalProductTask(normalized, idea)) {
+      if ((isIdeaEmploymentPath(idea) || taskTextIsEmploymentFocused(blob)) && !isDigitalProductPath(idea)) {
+        if (/\b(indeed|google jobs|job search|jobbank|find-a-job|roles matching)\b/i.test(blob)) {
+          return userNeedsIdFirst(idea)
+            ? "Most formal employers need ID before they can hire you — this list shows who is actually hiring near you so you know where to apply once your documents are sorted."
+            : "A short list of real openings beats endless scrolling — you'll know where to apply first.";
+        }
+        if (/\b(resume|hiring manager|application|staffing|temp agenc|workforce)\b/i.test(blob)) {
+          return userNeedsIdFirst(idea)
+            ? "ID and a safe place to stay unlock jobs and benefits — this step lines up the paperwork and contacts you'll need before applications go out."
+            : "Hiring managers decide fast — clear proof and outreach help you stand out from a generic application.";
+        }
+      }
+
+      if (!isIdeaEmploymentPath(idea) && !taskTextIsEmploymentFocused(blob)
+        && (isDigitalProductPath(idea) || isDigitalProductTask(normalized, idea))) {
         const plan = getDigitalProductPlan(idea);
         if (/\b(notion|build|page|dashboard|section|workspace)\b/.test(blob)) {
           return `You're building "${plan.productName}" in ${plan.tool} — this step adds the actual pages and trackers buyers will use.`;
@@ -21742,7 +21885,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (existing
         && !isGenericMentorCopy(existing, normalized)
         && !isTaskRestatement(existing, normalized)
-        && !isGenericProductPickCopy(existing, idea)) {
+        && !isGenericProductPickCopy(existing, idea)
+        && !mentorFieldConflictsWithTask(existing, normalized, idea)) {
         return existing;
       }
       return inferTaskContextNote(normalized, stage, idea);
@@ -23435,7 +23579,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function conversationMentionsIdNeed(text = "") {
       const blob = String(text || "").toLowerCase();
-      return /\b(need(?:s|ed)? (?:an? )?(?:id|identification|birth certificate|driver'?s license|state id|ssn|social security)|don'?t have (?:a )?(?:id|birth certificate|driver'?s license|social security)|no (?:valid )?id|get(?:ting)? (?:an? )?(?:id|birth certificate|documents)|replace (?:my )?(?:id|license)|sort (?:my )?id|id and housing|without (?:an? )?id)\b/.test(blob);
+      return /\b(need(?:s|ed)? (?:an? )?(?:id|identification|birth certificate|driver'?s license|state id|ssn|social security)|don'?t have (?:a |an )?(?:id|birth certificate|driver'?s license|social security)|no (?:valid )?id\b|no job or id|no id or job|(?:don'?t|do not) have (?:a |an )?id|missing (?:my )?(?:id|documents|papers)|lost my (?:id|license)|get(?:ting)? (?:an? )?(?:id|birth certificate|documents)|replace (?:my )?(?:id|license)|sort (?:my )?id|id and housing|without (?:an? )?id|need (?:a |an )?id)\b/.test(blob);
+    }
+
+    function conversationMentionsHousingInstability(text = "") {
+      const blob = String(text || "").toLowerCase();
+      return /\b(no place to stay|nowhere to stay|no(?:where| )?(?:to )?(?:live|stay|sleep)|(?:don'?t|do not) have (?:a )?(?:place|home|housing|somewhere to stay)|homeless|unhoused|in a shelter|living in (?:a |my )?(?:car|motel|shelter|van)|no home|no housing|evict|between places|couch surf|couchsurf|staying with friends temporarily|no permanent address)\b/.test(blob);
+    }
+
+    function conversationMentionsStabilityRebuild(text = "") {
+      const blob = String(text || "").toLowerCase();
+      return /\b(\d+\s*days?\s*sober|sober from|in recovery|rebuild(?:ing)? (?:my )?life|starting over|fresh start)\b/.test(blob)
+        && /\b(no job|no id|no place|homeless|shelter|need a plan|nowhere|starting from nothing)\b/.test(blob);
+    }
+
+    function userNeedsHousingFirst(idea = null) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      const blob = getConversationUserBlob().toLowerCase();
+      if (conversationMentionsHousingInstability(blob)) return true;
+      return getPathSituationType(idea) === "housing";
     }
 
     function conversationConfirmsHasId(text = "") {
@@ -23452,7 +23614,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.userProfile = normalizeUserProfile(state.userProfile);
       if (conversationConfirmsHasId(blob)) {
         state.userProfile.idStatus = "has";
-      } else if (conversationMentionsIdNeed(blob) || (isReentrySituation() && !conversationConfirmsHasId(blob))) {
+      } else if (conversationMentionsIdNeed(blob) || conversationMentionsHousingInstability(blob) || conversationMentionsStabilityRebuild(blob) || (isReentrySituation() && !conversationConfirmsHasId(blob))) {
         state.userProfile.idStatus = "needs";
       }
       state.userProfile.updatedAt = Date.now();
@@ -23468,8 +23630,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ].join(" ").toLowerCase();
       if (conversationConfirmsHasId(blob)) return false;
       if (conversationMentionsIdNeed(blob)) return true;
+      if (/\bno job or id\b|\bno id or job\b/.test(blob)) return true;
+      if (conversationMentionsStabilityRebuild(blob)) return true;
+      if (conversationMentionsHousingInstability(blob) && !conversationConfirmsHasId(blob)) return true;
       if (isReentrySituation(idea)) return true;
-      if (/\b(homeless|shelter|re-?enter|getting out|just got out|parole|probation)\b/.test(blob) && !conversationConfirmsHasId(blob)) {
+      if (/\b(homeless|shelter|re-?enter|getting out|just got out|parole|probation|sober from|in recovery|rebuild(?:ing)? (?:my )?life)\b/.test(blob) && !conversationConfirmsHasId(blob)) {
         return true;
       }
       return false;
@@ -23493,8 +23658,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getIdPriorityIdeasPromptBlock() {
       if (!userNeedsIdFirst()) return "";
+      const housingNote = userNeedsHousingFirst()
+        ? `- At least ONE path must focus on shelter tonight + ID/documents — NOT three job-search paths.\n`
+        : "";
       return (
         `\nID / DOCUMENTS — user likely needs ID or a birth certificate before formal job searches.\n` +
+        housingNote +
         `- At least ONE path must focus on getting ID/documents sorted OR income that does not require full ID yet (temp labor, day labor, reentry workforce help).\n` +
         `- Taglines for other paths should say they come AFTER ID is handled when relevant.\n` +
         `- Do NOT suggest three paths that all assume they can apply online today.\n`
@@ -23511,6 +23680,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    function ensureStabilityFirstRoadmapStages(stages, idea = state.currentIdea) {
+      if (isFounderRoadmapForIdea(idea)) return stages;
+      if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return stages;
+      if (!Array.isArray(stages) || !stages.length) return stages;
+      if (!roadmapSkipsIdBasics(stages, idea)) return stages;
+
+      const templates = buildStandardFallbackTemplates();
+      const housingStages = personalizeFallbackStages(templates.housing, idea);
+      const prepend = userNeedsHousingFirst(idea)
+        ? housingStages.slice(0, 2)
+        : [housingStages[1]];
+      const tail = stages.filter((stage, index) => {
+        if (index === 0 && roadmapSkipsIdBasics([stage], idea)) return false;
+        return true;
+      });
+      const merged = [...prepend, ...tail].slice(0, 4);
+      return merged.length ? merged : housingStages.slice(0, 4);
+    }
+
     function roadmapSkipsIdBasics(stages, idea = state.currentIdea) {
       if (!userNeedsIdFirst(idea) || !Array.isArray(stages) || !stages.length) return false;
       const first = stages[0];
@@ -23519,8 +23707,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         first.desc,
         ...(first.tasks || []).slice(0, 3).map((task) => getTaskText(task))
       ].join(" ").toLowerCase();
-      const idRx = /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed)\b/;
-      if (idRx.test(blob)) return false;
+      const stabilityRx = /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed|shelter|housing|211|safe place|mailing address|social services)\b/;
+      if (stabilityRx.test(blob)) return false;
       const jobFirstRx = /\b(indeed|google jobs|search .* jobs|job search|apply online|resume for hiring|who'?s hiring)\b/;
       return jobFirstRx.test(blob);
     }
@@ -24081,7 +24269,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const ideaBlob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
       const combined = `${blob} ${ideaBlob}`;
       if (/\b(nonprofit|non-profit|501\s*\(?\s*c\s*\)?\s*3|charity|foundation|mutual aid org|start a nonprofit|launch a nonprofit)\b/.test(combined)) return "nonprofit";
-      if (/\b(homeless|unhoused|housing instability|in a shelter|living in (?:a )?(?:car|motel|shelter)|rebuilding after homelessness|no permanent address)\b/.test(combined)) return "housing";
+      if (/\b(homeless|unhoused|housing instability|in a shelter|living in (?:a )?(?:car|motel|shelter)|rebuilding after homelessness|no permanent address|no place to stay|nowhere to stay|no home|no housing|(?:don'?t|do not) have (?:a )?(?:place|home|housing|somewhere))\b/.test(combined)) return "housing";
       if (/\b(remote customer support|virtual assistant|staffing agenc|customer service rep|customer success|onboarding specialist|call center|data entry clerk|admin assistant|inbound chat support|get hired|hourly wage|apply for (?:paid )?remote)\b/.test(combined)) return "employment";
       if (/\b(electrician|plumber|hvac|welder|apprenticeship|skilled trade|carpenter|union trade|journeyman|pipefitter|roofer|mason|mechanic trade)\b/.test(combined)) return "skilled_trade";
       if (/\b(career change|changing careers|switch careers|new career|second career|pivot careers|different field)\b/.test(combined)) return "career_change";
@@ -24098,8 +24286,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const pb = getLocationPlaybook(parsed, locRaw);
 
       if (isIdeaEmploymentPath(idea)) {
+        const idBlock = userNeedsIdFirst(idea)
+          ? (
+            `- USER NEEDS ID / DOCUMENTS FIRST — stage 1 MUST cover ID or birth certificate + safe shelter basics BEFORE Indeed, resume polish, or job applications.\n` +
+            `- Move job board searches and resume tasks to stage 2 or later.\n`
+          )
+          : "";
         return (
           `\nCONCRETE EMPLOYMENT PATH RULES for "${idea.title}":\n` +
+          idBlock +
           `- This is a GET-HIRED path — NOT starting a business. No "talk to 3 potential clients", Facebook offers, or market validation homework.\n` +
           `- Name SPECIFIC job types they could apply for THIS WEEK: inbound chat support ($15-18/hr), email support for online stores, appointment-setting VA ($16-22/hr), calendar/inbox VA for Realtors, data entry clerk (remote).\n` +
           `- Name SPECIFIC channels: ${pb.employmentOffice}, ${pb.staffingList}, Indeed/Google Jobs filtered to remote chat or support roles in ${locRaw}.\n` +
@@ -24417,7 +24612,480 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       updateRoadmapOverviewChrome();
     }
 
+    function parseRoadmapPlanSummaryResponse(response) {
+      const fallbackIntro = "Here's a high-level plan based on what you shared. Review it before I build your full roadmap.";
+      if (!response?.trim()) {
+        return { intro: fallbackIntro, bullets: ["Step 1: Sort basics first (shelter, ID, or documents if needed)", "Step 2: Line up income that fits your situation", "Step 3: Build toward your chosen path"] };
+      }
+      let parsed = null;
+      const fenced = response.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      const jsonText = fenced ? fenced[1] : response;
+      const objectMatch = jsonText.match(/\{[\s\S]*\}/);
+      if (objectMatch) {
+        try {
+          parsed = JSON.parse(objectMatch[0]);
+        } catch {
+          parsed = null;
+        }
+      }
+      if (parsed && Array.isArray(parsed.bullets)) {
+        const bullets = parsed.bullets.map((entry) => String(entry || "").trim()).filter(Boolean).slice(0, 7);
+        if (bullets.length) {
+          return {
+            intro: String(parsed.intro || fallbackIntro).trim() || fallbackIntro,
+            bullets
+          };
+        }
+      }
+      const bullets = response
+        .split(/\n+/)
+        .map((line) => line.replace(/^[\s\-*•\d.)]+/, "").trim())
+        .filter((line) => line.length > 8)
+        .slice(0, 7);
+      return {
+        intro: fallbackIntro,
+        bullets: bullets.length ? bullets : ["Step 1: Handle stability basics first", "Step 2: Take the next practical step toward your goal"]
+      };
+    }
+
+    function buildRoadmapPlanSummaryPrompt(idea) {
+      const context = getAdvisorContext();
+      const stabilityNote = (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea))
+        ? "User likely needs shelter, ID, and essential documents BEFORE formal job searches or long training."
+        : "Order steps by what unlocks the next — stability basics before employment when relevant.";
+      return (
+        `Plan a HIGH-LEVEL roadmap outline for "${idea?.title || "this path"}" — NOT detailed tasks yet.\n\n` +
+        `Context:\n${context}\n\n` +
+        `${stabilityNote}\n` +
+        `${getIdPriorityPromptBlock(idea)}\n` +
+        `Output ONLY valid JSON:\n` +
+        `{"intro":"2-3 short supportive sentences","bullets":["Step 1: ...","Step 2: ..."]}\n` +
+        `- 3 to 7 bullets.\n` +
+        `- Simple, scannable language — no jargon.\n` +
+        `- Stability-first when user lacks housing, ID, or documents.\n`
+      );
+    }
+
+    function buildRoadmapPlanRevisionPrompt(idea, userFeedback) {
+      return (
+        `${buildRoadmapPlanSummaryPrompt(idea)}\n\n` +
+        `The user wants changes before we build the full roadmap:\n"${String(userFeedback || "").slice(0, 600)}"\n\n` +
+        `Regenerate the JSON summary reflecting their feedback. Keep 3-7 bullets.`
+      );
+    }
+
+    function buildRoadmapUpdateSummaryPrompt(idea, session) {
+      const recent = state.history.slice(-10).map((entry) => `${entry.role}: ${entry.content}`).join("\n");
+      return (
+        `The user hit a roadblock on "${session.taskTitle}": "${session.roadblockLabel}".\n\n` +
+        `Recent chat:\n${recent}\n\n` +
+        `${getIdPriorityPromptBlock(idea)}\n` +
+        `Propose an UPDATED high-level plan that addresses this blocker.\n` +
+        `Output ONLY JSON: {"intro":"acknowledge blocker + ask if plan looks right before updating roadmap","bullets":["Step 1: ...",...]}\n` +
+        `- 3 to 7 bullets.\n` +
+        `- Stability-first when relevant.\n`
+      );
+    }
+
+    async function requestRoadmapPlanSummary(idea, extraPrompt = "") {
+      const response = await callAdvisor(
+        buildRoadmapPlanSummaryPrompt(idea) + (extraPrompt ? `\n\n${extraPrompt}` : ""),
+        700,
+        { timeoutMs: 60000 }
+      );
+      return parseRoadmapPlanSummaryResponse(response);
+    }
+
+    function hideRoadmapConfirmGate() {
+      const gate = $("#roadmap-confirm-gate");
+      if (!gate) return;
+      gate.hidden = true;
+      $("#minimal-chat")?.classList.remove("is-awaiting-roadmap-confirm");
+      const chat = $("#minimal-chat");
+      const replyBox = $("#reply-box");
+      if (chat && gate.parentElement === $("#bubble-chain") && replyBox) {
+        chat.insertBefore(gate, replyBox);
+      }
+    }
+
+    function renderRoadmapConfirmBullets(bullets = []) {
+      const list = $("#roadmap-confirm-bullets");
+      if (!list) return;
+      list.innerHTML = bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("");
+    }
+
+    function attachRoadmapConfirmGateToChat() {
+      const gate = $("#roadmap-confirm-gate");
+      const chain = $("#bubble-chain");
+      if (!gate || !chain) return;
+      if (gate.parentElement !== chain) chain.append(gate);
+      gate.hidden = false;
+      $("#minimal-chat")?.classList.add("is-awaiting-roadmap-confirm");
+    }
+
+    function showRoadmapConfirmGate({ mode = "initial", idea, ideaIndex, bullets = [], introText = "", viewOptions = {} } = {}) {
+      const isUpdate = mode === "update";
+      state.roadmapConfirmGate = {
+        mode,
+        idea,
+        ideaIndex,
+        bullets,
+        viewOptions,
+        awaitingRevision: false,
+        roadmapKey: slugify(idea?.title || "")
+      };
+
+      const label = $("#roadmap-confirm-gate-label");
+      const primary = $("#roadmap-confirm-primary");
+      const secondary = $("#roadmap-confirm-secondary");
+      if (label) {
+        label.textContent = isUpdate
+          ? "Here's the updated plan based on what you shared. Does this look right before I update your roadmap?"
+          : "Here's the plan I'd suggest — does this look right?";
+      }
+      if (primary) {
+        primary.textContent = isUpdate ? "Yes, update my roadmap" : "Looks good, create my roadmap";
+      }
+      if (secondary) {
+        secondary.textContent = isUpdate ? "Change this again" : "Change something first";
+      }
+
+      renderRoadmapConfirmBullets(bullets);
+      showReplyBox(false);
+      hideProfileIntakeChips();
+      attachRoadmapConfirmGateToChat();
+      if (introText) {
+        appendAssistantBubble(introText);
+      }
+      requestAnimationFrame(() => scrollConversation());
+    }
+
+    function roadmapPlanIsConfirmed(roadmapKey) {
+      if (!roadmapKey) return false;
+      return Boolean(state.allRoadmaps[roadmapKey]?.planConfirmed);
+    }
+
+    function markRoadmapPlanConfirmed(roadmapKey) {
+      if (!roadmapKey) return;
+      state.allRoadmaps[roadmapKey] = {
+        ...(state.allRoadmaps[roadmapKey] || {}),
+        planConfirmed: true
+      };
+    }
+
+    async function beginRoadmapConfirmGate(idea, ideaIndex, viewOptions = {}) {
+      state.currentIdea = idea;
+      state.roadmapKey = slugify(idea.title);
+      setRoadmapNavVisible(true);
+      showScreen("convo");
+      addTypingBubble("Reviewing your situation…");
+      try {
+        const summary = await requestRoadmapPlanSummary(idea);
+        const intro = summary.intro || "Here's a high-level plan based on what you shared.";
+        resolveTyping(intro);
+        state.history.push({ role: "assistant", content: intro });
+        showRoadmapConfirmGate({
+          mode: "initial",
+          idea,
+          ideaIndex,
+          bullets: summary.bullets,
+          introText: "",
+          viewOptions
+        });
+        trackEvent("roadmap_confirm_gate_shown", { mode: "initial", idea_index: ideaIndex });
+        schedulePersist();
+      } catch (error) {
+        console.warn("[whatimado] roadmap confirm gate failed:", error?.message || error);
+        completeChatPathBuildProgress();
+        appendAssistantBubble("I couldn't draft a plan summary — I'll build your roadmap directly.");
+        await viewRoadmap(idea, ideaIndex, { ...viewOptions, skipConfirmGate: true });
+      }
+    }
+
+    async function confirmRoadmapPlanGate() {
+      const gate = state.roadmapConfirmGate;
+      if (!gate?.idea) return;
+      hideRoadmapConfirmGate();
+      markRoadmapPlanConfirmed(gate.roadmapKey || slugify(gate.idea.title));
+      trackEvent("roadmap_confirm_gate_accepted", { mode: gate.mode, idea_index: gate.ideaIndex });
+
+      if (gate.mode === "update") {
+        state.roadmapConfirmGate = null;
+        state.roadblockSession = null;
+        await applyConfirmedRoadmapUpdate(gate);
+        return;
+      }
+
+      state.roadmapConfirmGate = null;
+      const extraRefreshBlock = gate.bullets?.length
+        ? `\nUSER-CONFIRMED HIGH-LEVEL PLAN:\n${gate.bullets.map((bullet) => `- ${bullet}`).join("\n")}\n`
+        : "";
+      await viewRoadmap(gate.idea, gate.ideaIndex, {
+        ...gate.viewOptions,
+        skipConfirmGate: true,
+        extraRefreshBlock
+      });
+    }
+
+    function declineRoadmapPlanGate() {
+      const gate = state.roadmapConfirmGate;
+      if (!gate) return;
+      gate.awaitingRevision = true;
+      hideRoadmapConfirmGate();
+      const prompt = gate.mode === "update"
+        ? "What would you like to change about this updated plan? Tell me in your own words."
+        : "What would you like to change about this plan? Tell me what's missing, out of order, or not realistic for you.";
+      appendAssistantBubble(prompt);
+      state.history.push({ role: "assistant", content: prompt });
+      showReplyBox(true);
+      trackEvent("roadmap_confirm_gate_revision_requested", { mode: gate.mode });
+      schedulePersist();
+    }
+
+    async function handleRoadmapConfirmRevision(userFeedback) {
+      const gate = state.roadmapConfirmGate;
+      if (!gate?.idea || !gate.awaitingRevision) return;
+      gate.awaitingRevision = false;
+      addTypingBubble("Updating the plan…");
+      try {
+        const summary = await requestRoadmapPlanSummary(
+          gate.idea,
+          `User requested changes: "${String(userFeedback || "").slice(0, 600)}"`
+        );
+        const intro = summary.intro || "Here's a revised plan based on your feedback.";
+        resolveTyping(intro);
+        state.history.push({ role: "assistant", content: intro });
+        gate.bullets = summary.bullets;
+        showRoadmapConfirmGate({
+          mode: gate.mode,
+          idea: gate.idea,
+          ideaIndex: gate.ideaIndex,
+          bullets: summary.bullets,
+          viewOptions: gate.viewOptions
+        });
+        schedulePersist();
+      } catch (error) {
+        console.warn("[whatimado] roadmap revision failed:", error?.message || error);
+        appendAssistantBubble("I couldn't revise the plan just now — try describing the change again.");
+        gate.awaitingRevision = true;
+        showReplyBox(true);
+      }
+    }
+
+    function getTaskTitleById(taskId) {
+      const parsed = parseTaskId(taskId);
+      if (!parsed) return "";
+      const task = state.roadmapStages[parsed.stageIndex]?.tasks?.[parsed.taskIndex];
+      if (!task) return "";
+      const normalized = normalizeRoadmapTask(task);
+      return humanizeTaskText(normalized.mission || getTaskText(task)).slice(0, 96);
+    }
+
+    function getTaskRoadblockOptions(normalized, stage = {}, idea = state.currentIdea) {
+      const blob = `${normalized.text || ""} ${normalized.mission || ""} ${stage.label || ""} ${stage.desc || ""}`.toLowerCase();
+      const userBlob = getConversationUserBlob().toLowerCase();
+      const options = [];
+      const add = (label) => {
+        if (options.length >= 5) return;
+        if (!options.includes(label)) options.push(label);
+      };
+
+      if (/\b(id|driver'?s license|dmv|state id|identification|birth certificate|social security)\b/.test(blob)) {
+        add("I don't have my birth certificate");
+        add("I don't have a mailing address");
+        add("I lost my Social Security card");
+        add("I can't pay the ID fee");
+      }
+      if (/\b(shelter|housing|211|place to stay|bed|homeless|unhoused)\b/.test(blob)) {
+        add("Shelters are full near me");
+        add("I don't have transportation to get there");
+        add("I'm not sure what ID I need");
+        add("I have pets and can't leave them");
+      }
+      if (/\b(indeed|job search|apply|resume|hiring|staffing|employer|workforce)\b/.test(blob)) {
+        if (userNeedsIdFirst(idea)) add("I don't have ID yet");
+        add("I don't have a resume");
+        add("I don't have reliable transportation");
+        add("I'm worried about background checks");
+        add("I don't have a phone or email");
+      }
+      if (/\b(benefit|snap|medicaid|211|food|healthcare|voucher)\b/.test(blob)) {
+        add("I don't know if I qualify");
+        add("I don't have documents to apply");
+        add("I can't get to an office");
+      }
+      if (/\b(sober|recovery|aa|meeting|treatment)\b/.test(userBlob) || /\b(recover|sober)\b/.test(blob)) {
+        add("I'm worried about staying sober through this step");
+      }
+      if (options.length < 2) {
+        add("I don't know where to start");
+        add("I can't afford this step");
+      }
+      return options.slice(0, 5);
+    }
+
+    function renderTaskRoadblockButtonsHtml(taskId, normalized, stage) {
+      const options = getTaskRoadblockOptions(normalized, stage);
+      const buttons = options.map((label) =>
+        `<button type="button" class="task-roadblock-btn" data-task-id="${escapeHtml(taskId)}" data-roadblock="${escapeHtml(label)}">${escapeHtml(label)}</button>`
+      ).join("");
+      return `
+        <section class="task-roadblock-section" aria-label="Common roadblocks for this step">
+          <h4 class="task-mentor-label">Stuck on this step?</h4>
+          <div class="task-roadblock-buttons">
+            ${buttons}
+            <button type="button" class="task-roadblock-btn task-roadblock-btn--ask" data-task-id="${escapeHtml(taskId)}" data-roadblock="__ask__">Ask about a different issue</button>
+          </div>
+        </section>`;
+    }
+
+    function buildRoadblockAckPrompt(session) {
+      return (
+        `The user is working on their roadmap and hit a roadblock.\n` +
+        `Task: "${session.taskTitle}"\n` +
+        `Roadblock: "${session.roadblockLabel}"\n\n` +
+        `Respond in the SAME chat thread. Rules:\n` +
+        `- Acknowledge the specific roadblock in plain language (1-2 sentences).\n` +
+        `- Ask 1-3 targeted clarifying questions to understand what's blocking them.\n` +
+        `- Do NOT regenerate the full roadmap yet.\n` +
+        `- Do NOT use bullet lists longer than 3 items.\n` +
+        `- Supportive, simple tone.\n`
+      );
+    }
+
+    function buildRoadblockFollowUpPrompt(session, userReply) {
+      const recent = state.history.slice(-8).map((entry) => `${entry.role}: ${entry.content}`).join("\n");
+      return (
+        `Roadblock troubleshooting for task "${session.taskTitle}" (${session.roadblockLabel}).\n\n` +
+        `Recent chat:\n${recent}\n\n` +
+        `User just said: "${String(userReply || "").slice(0, 500)}"\n\n` +
+        `If you need more detail, ask up to 2 more clarifying questions.\n` +
+        `If you have enough context, end your reply with exactly this marker on its own line: [[READY_FOR_PLAN_UPDATE]]\n` +
+        `Do NOT update the roadmap yet — only gather context or signal readiness.\n`
+      );
+    }
+
+    async function respondToRoadblockSession(userReply = "") {
+      const session = state.roadblockSession;
+      if (!session) return;
+      addTypingBubble();
+      try {
+        const prompt = userReply
+          ? buildRoadblockFollowUpPrompt(session, userReply)
+          : buildRoadblockAckPrompt(session);
+        const answer = await callAdvisor(prompt, userReply ? 550 : 450);
+        const ready = /\[\[READY_FOR_PLAN_UPDATE\]\]/.test(answer || "");
+        const cleaned = String(answer || "").replace(/\[\[READY_FOR_PLAN_UPDATE\]\]/g, "").trim()
+          || "Got it — let me help you work through this.";
+        resolveTyping(cleaned);
+        state.history.push({ role: "assistant", content: cleaned });
+        session.clarifyCount = (session.clarifyCount || 0) + (userReply ? 1 : 0);
+        showReplyBox(true);
+        schedulePersist();
+
+        if (ready || session.clarifyCount >= 3) {
+          await proposeRoadmapUpdateAfterRoadblock();
+        }
+      } catch (error) {
+        console.warn("[whatimado] roadblock response failed:", error?.message || error);
+        appendAssistantBubble("Something went wrong — try describing the blocker again.");
+        showReplyBox(true);
+      }
+    }
+
+    async function proposeRoadmapUpdateAfterRoadblock() {
+      const session = state.roadblockSession;
+      const idea = state.currentIdea;
+      if (!session || !idea) return;
+      session.phase = "awaiting_confirm";
+      addTypingBubble("Updating your plan…");
+      try {
+        const response = await callAdvisor(buildRoadmapUpdateSummaryPrompt(idea, session), 700);
+        const summary = parseRoadmapPlanSummaryResponse(response);
+        const intro = summary.intro || "Here's an updated plan that addresses what you shared.";
+        resolveTyping(intro);
+        state.history.push({ role: "assistant", content: intro });
+        showRoadmapConfirmGate({
+          mode: "update",
+          idea,
+          ideaIndex: getCurrentIdeaIndex(),
+          bullets: summary.bullets,
+          viewOptions: {}
+        });
+        trackEvent("roadmap_confirm_gate_shown", { mode: "update", task_id: session.taskId });
+        schedulePersist();
+      } catch (error) {
+        console.warn("[whatimado] roadblock plan update failed:", error?.message || error);
+        appendAssistantBubble("I couldn't draft an updated plan — tell me more about what's blocking you.");
+        session.phase = "discuss";
+        showReplyBox(true);
+      }
+    }
+
+    async function handleRoadblockChatReply(userText) {
+      const session = state.roadblockSession;
+      if (!session || session.phase !== "discuss") return;
+      await respondToRoadblockSession(userText);
+    }
+
+    function handleRoadblockButtonClick(taskId, roadblockKey) {
+      const taskTitle = getTaskTitleById(taskId) || "this step";
+      const roadblockLabel = roadblockKey === "__ask__"
+        ? "I have a different issue with this step"
+        : String(roadblockKey || "").trim();
+      if (!roadblockLabel) return;
+
+      const message = roadblockKey === "__ask__"
+        ? `Roadblock on "${taskTitle}": I have a different issue with this step.`
+        : `Roadblock on "${taskTitle}": ${roadblockLabel}.`;
+
+      state.mapChat = null;
+      state.alterPathMode = false;
+      showScreen("convo");
+      pushUserMessage(message, { kind: "roadblock", taskId, roadblock: roadblockLabel });
+      state.roadblockSession = {
+        taskId,
+        taskTitle,
+        roadblockLabel,
+        phase: "discuss",
+        clarifyCount: 0
+      };
+      showReplyBox(false);
+      trackEvent("task_roadblock_clicked", { task_id: taskId, roadblock: roadblockLabel.slice(0, 80) });
+      void respondToRoadblockSession();
+    }
+
+    async function applyConfirmedRoadmapUpdate(gate) {
+      const bullets = gate?.bullets || [];
+      const extraRefreshBlock = bullets.length
+        ? `\nUSER-CONFIRMED UPDATED PLAN (apply to roadmap — do not skip stability basics):\n${bullets.map((bullet) => `- ${bullet}`).join("\n")}\n`
+        : "";
+      const pos = getFirstIncompleteTaskPosition();
+      showScreen("roadmap");
+
+      if (pos && state.roadmapStages.length) {
+        const adapted = await adaptRemainingRoadmap({
+          reason: "obstacle",
+          detail: bullets.join("; "),
+          skipConfirm: true,
+          extraRefreshBlock
+        });
+        if (!adapted) {
+          appendAssistantBubble("I couldn't update the roadmap just now — try again from the task.");
+          showScreen("convo");
+        }
+        return;
+      }
+
+      await viewRoadmap(gate.idea, gate.ideaIndex, {
+        force: true,
+        skipConfirmGate: true,
+        extraRefreshBlock
+      });
+    }
+
     function scheduleRoadmapAdaptation(reason, options = {}) {
+      if (state.roadblockSession || state.roadmapConfirmGate) return;
       if (!state.roadmapStages.length || !state.currentIdea) return;
       const pos = getFirstIncompleteTaskPosition();
       const hasRemaining = Boolean(
@@ -24492,6 +25160,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           `${buildRoadmapPrompt(state.currentIdea, context, { phase: adaptPhase, founderMode })}\n\n` +
           `LIVING ROADMAP — progress snapshot:\n${progressBlock}\n\n` +
           `Completed work (keep checked — build ONLY what comes after):\n${completedSummary}\n\n` +
+          (options.extraRefreshBlock ? `${options.extraRefreshBlock}\n\n` : "") +
           `Replace all remaining future stages. Shorten the path when possible. Never repeat completed or skipped tasks verbatim.\n` +
           `Mission rule: every new mission includes title, mentorHelp, howTo, resources, script, talkingPoints, and followUp when relevant.\n`,
           getRoadmapAdvisorTokenLimit(founderMode)
@@ -25941,7 +26610,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const businessOwner = shouldUseBusinessRoadmapTasks(idea);
       const order = isReentrySituation(idea)
         ? ["reentry", "housing", "employment", "career_change", "business", "learning", "creative"]
-        : getPathSituationType(idea) === "housing"
+        : userNeedsIdFirst(idea) || userNeedsHousingFirst(idea)
+          ? ["housing", "reentry", "employment", "career_change", "business", "learning", "creative"]
+          : getPathSituationType(idea) === "housing"
           ? ["housing", "reentry", "employment", "business", "learning"]
           : isGroundedPractitioner(idea)
             ? ["groundedPractitioner", "business", "skilled_trade", "creative", "employment", "learning"]
@@ -27009,7 +27680,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       clarifyingQuestionsAsked: 0,
       roadmapViewport: null,
       accountPrefs: null,
-      guestSessionToken: null
+      guestSessionToken: null,
+      /* UX: roadmap confirmation + roadblock chat orchestration (chat = source of truth) */
+      roadmapConfirmGate: null,
+      roadblockSession: null
     };
 
     const QUICK_TRY_EXAMPLE = "I feel stuck, I'm good with people, and I need income soon.";
@@ -35502,6 +36176,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       pushUserMessage(text, intakeMeta);
 
+      if (state.roadmapConfirmGate?.awaitingRevision) {
+        showReplyBox(false);
+        addTypingBubble();
+        await handleRoadmapConfirmRevision(text);
+        return;
+      }
+
+      if (state.roadblockSession?.phase === "discuss") {
+        showReplyBox(false);
+        await handleRoadblockChatReply(text);
+        return;
+      }
+
       if (state.mapChat) {
         const intent = detectMapChatIntent(text);
         if (intent === "regenerate_roadmap" && state.mapChat.type === "idea") {
@@ -36452,6 +37139,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
 
+      if (stages && !founderMode && (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea))) {
+        stages = ensureStabilityFirstRoadmapStages(stages, idea);
+        if (roadmapSkipsIdBasics(stages, idea)) {
+          stages = personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea);
+          source = "fallback";
+          trackEvent("roadmap_id_basics_fallback", { idea_index: ideaIndex });
+        }
+      }
+
       return {
         stages: ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
         roadmapSource: source
@@ -37200,6 +37896,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         };
         state.flexiblePendingFullStages = null;
         syncFlexibleFirstMissionStateFromRoadmap();
+        markRoadmapPlanConfirmed(state.roadmapKey);
         prepareFirstMissionForReveal(idea);
         $("#roadmap-sub").textContent = getRoadmapSubtitle(founderMode, cachedSource);
         renderStages(state.roadmapStages, { scrollToHeader: true });
@@ -37229,6 +37926,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (shouldOfferFirstMissionPicker()) {
         syncFlexibleFirstMissionStateFromRoadmap();
+      }
+
+      /* UX: confirmation gate — summarize plan in chat before generating full visual roadmap */
+      if (
+        !options.skipConfirmGate
+        && !options.force
+        && !roadmapPlanIsConfirmed(state.roadmapKey)
+        && !state.roadmapConfirmGate
+      ) {
+        await beginRoadmapConfirmGate(idea, ideaIndex, options);
+        return;
       }
 
       clearProgressMap();
@@ -38689,6 +39397,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ].join("");
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const aiAssist = renderTaskAiAssistHtml(id, normalized);
+      const roadblockSection = renderTaskRoadblockButtonsHtml(id, normalized, stage);
       const nextTaskId = getNextTaskId(stageIndex, taskIndex);
       const taskLabel = formatMissionTaskLabel(taskIndex);
 
@@ -38779,6 +39488,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 ${notesExtras}
               </section>
               ${aiAssist}
+              ${roadblockSection}
               <div class="task-threads" id="threads-${id}"></div>
               <div class="task-ask-row">
                 <textarea class="task-question" id="question-${id}" rows="4" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
@@ -39158,6 +39868,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       $$(".task-ask-btn").forEach((button) => {
         button.addEventListener("click", () => askTask(button.dataset.taskId, getTaskTextById(button.dataset.taskId)));
+      });
+
+      list.querySelectorAll(".task-roadblock-btn").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          handleRoadblockButtonClick(button.dataset.taskId, button.dataset.roadblock);
+        });
       });
 
       if (!options.skipRecover && !list.children.length && state.currentIdea) {
@@ -39653,6 +40371,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.flexiblePendingFullStages = null;
       state.pathMode = null;
       state.awaitingPathModeChoice = false;
+      state.roadmapConfirmGate = null;
+      state.roadblockSession = null;
+      hideRoadmapConfirmGate();
       hideRoadmapBranchPicker();
       hidePathModeChoice();
       $("#screen-main")?.classList.remove("is-chat-active");
@@ -41539,6 +42260,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       $("#convo-direct-path-btn")?.addEventListener("click", () => continueIntakeWithPathMode("direct"));
       $("#convo-flexible-path-btn")?.addEventListener("click", () => continueIntakeWithPathMode("flexible"));
+      $("#roadmap-confirm-primary")?.addEventListener("click", () => { void confirmRoadmapPlanGate(); });
+      $("#roadmap-confirm-secondary")?.addEventListener("click", declineRoadmapPlanGate);
       $("#hero-example-btn")?.addEventListener("click", startQuickFlow);
       $("#main-input").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
