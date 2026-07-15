@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-15-dependent-aware-task-resources">
+  <meta name="whatimado-build" content="2026-07-15-flat-numbered-roadmap-tasks">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -15349,7 +15349,7 @@
           </div>
 
           <header class="roadmap-overview-header" id="roadmap-overview-header">
-            <span class="roadmap-status-badge" id="roadmap-status-badge">Active missions</span>
+            <span class="roadmap-status-badge" id="roadmap-status-badge">Active tasks</span>
             <p class="roadmap-parent-context" id="roadmap-parent-context" hidden></p>
             <h2 class="roadmap-title" id="roadmap-title"></h2>
             <div class="roadmap-potential-outcome" id="roadmap-potential-outcome" hidden>
@@ -16108,12 +16108,13 @@
     const ROADMAP_DELETE_TRASH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>';
     const MIN_CLARIFYING_QUESTIONS = 2;
     const ROADMAP_JSON_INSTRUCTION =
-      'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What to do NOW in 1–3 short concrete sentences: who to contact, what to ask for, what to prepare. Must NOT restate the mission title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call 211 and ask for shelter beds and waitlists tonight. Write down 3 program names, phone numbers, and what ID each place needs.\\"","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line explaining why THIS step fits their situation when it might look surprising (e.g. workforce visit for a business owner = self-employment programs, not job listings). Empty only if obviously on-track.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
+      'Return exactly 4 stages with 3 tasks each. Tasks are numbered in one continuous sequence across the roadmap; never create lettered subtasks.\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Specific nutshell task title, 6–14 words, naming the action and target/result — e.g. Call a housing navigator about beds, waitlists, and required ID","text":"Detailed What to do instructions in 2–3 short concrete sentences: who to contact, what to ask, what to prepare, and what answer to record. Must NOT restate the task title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call the first housing contact below and ask about beds available tonight, waitlist timing, intake hours, and required ID. Write down the contact name, the earliest opening, and any documents you need to bring.\\"","mentorHelp":"Internal asset context only; do not rely on this field for user instructions.","howTo":"One concrete next action only when it adds information not already in text.","why":"One short line explaining why THIS task fits their situation when it might look surprising. Empty only if obviously on-track.","outcome":"Internal progress proof only; do not rely on this field for user instructions.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"","difficulty":"Easy|Medium|Advanced","steps":[],"alternatives":"If this task does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
-      '- Inside each task body (text, why, howTo, mentorHelp, outcome), NEVER repeat the mission title — it already appears once at the top.\n' +
+      '- Every task title must be a clear 6–14 word nutshell naming the action plus its target or result. Avoid vague titles such as "Take the next step", "Get support", or "Make a plan".\n' +
+      '- Inside each task body (text, why, howTo, mentorHelp, outcome), NEVER repeat the task title — it already appears once at the top.\n' +
       '- NEVER use ellipses (…) or "..." in titles or body text — rewrite so the line fits cleanly.\n' +
       '- Location in user-facing text: shortest natural form only (e.g. "Austin" not "Austin, Texas, United States"). Omit location when obvious.\n' +
       '- Task text must NEVER repeat or quote the path title, tagline, or stage name — the user already sees those in the header. Name their specific service instead (e.g. "your Mobile Pet Grooming service" not "your goal" or "this path").\n' +
@@ -16125,9 +16126,9 @@
       '- When a step could be reduced by a real grant, voucher, benefit, fee waiver, scholarship, or assistance program, include the exact program in resources with its official application page and published contact details. Never invent funding or imply eligibility is guaranteed.\n' +
       '- Build a logo → script (logo brief + mood board keywords + color palette hex + typography + AI image prompts + SVG recommendations).\n' +
       '- Interview customers → script (interview questions + Google Form field list + short survey + call script + note template table).\n' +
-      'MISSION PHILOSOPHY:\n' +
-      '- Think in MISSIONS (measurable progress toward the goal), not homework tasks.\n' +
-      '- BAD mission: "Find 10 nonprofits." GOOD mission: "Get one local org to say yes to trying your idea."\n' +
+      'TASK PHILOSOPHY:\n' +
+      '- Think in specific, measurable tasks, not homework or nested subtasks.\n' +
+      '- BAD title: "Get support." GOOD title: "Call a housing navigator about beds, waitlists, and required ID."\n' +
       '- YOU provide the work product. text = what they do with it (review, send, call).\n' +
       '- NEVER assign: research, find, look up, write from scratch — put results in resources + script + talkingPoints + followUp.\n' +
       '- resources.local = 3-8 real named orgs with published address/phone/email/official URL when available. First contact in list = suggested first contact.\n' +
@@ -16757,7 +16758,7 @@
 
     const FLEXIBLE_MISSION_JSON_INSTRUCTION =
       'Respond only with a raw JSON array of exactly 1 stage with exactly 1 task:\n' +
-      '[{"label":"Short plain-language phase name","desc":"One sentence on what this mission achieves","tasks":[{"mission":"Plain goal in one line","text":"What the user does now — one small action","mentorHelp":"Bullet list of prepared assets (orgs ranked, links) — NOT draft copy","howTo":"Max 2 lines pointing at contacts below","why":"One short line explaining why this step fits their goal when it might look surprising","outcome":"Measurable proof when done","script":"","talkingPoints":"","followUp":"","duration":"30 minutes","difficulty":"Easy","resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[],"global":[]},"links":[],"contacts":[]}]}]\n';
+      '[{"label":"Short plain-language phase name","desc":"One sentence on what this task achieves","tasks":[{"mission":"Specific 6–14 word nutshell title naming the action and target/result","text":"Detailed instructions in 2–3 short sentences: who to contact, what to ask, what to prepare, and what to record","mentorHelp":"","howTo":"One concrete next action only when it adds new information","why":"One short line explaining why this task fits their goal when it might look surprising","outcome":"","script":"","talkingPoints":"","followUp":"","duration":"","difficulty":"Easy","steps":[],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[],"global":[]},"links":[],"contacts":[]}]}]\n';
 
     function stripFlexibleMissionDrafts(normalized) {
       if (!normalized || !isFlexiblePathMode()) return normalized;
@@ -17575,8 +17576,16 @@
       return String.fromCharCode(65 + Math.max(0, index));
     }
 
-    function formatMissionTaskLabel(taskIndex) {
-      return `${getSubtaskLetter(taskIndex).toLowerCase()}.`;
+    function getRoadmapTaskOrdinal(stageIndex, taskIndex, stages = state.roadmapStages) {
+      let ordinal = 1;
+      for (let index = 0; index < stageIndex; index += 1) {
+        ordinal += (stages?.[index]?.tasks || []).filter((task) => !isPendingRoadmapTask(task)).length;
+      }
+      return ordinal + taskIndex;
+    }
+
+    function formatMissionTaskLabel(stageIndex, taskIndex) {
+      return `${getRoadmapTaskOrdinal(stageIndex, taskIndex)}.`;
     }
 
     function renderAlphabeticStepsHtml(steps, className = "task-alphabetic-steps") {
@@ -17667,6 +17676,28 @@
       if (!textCopy) return missionCopy;
       if (!missionCopy || textSimilarity(missionCopy, textCopy) >= 0.72) return textCopy;
       return missionCopy;
+    }
+
+    function getTaskNutshellTitle(normalized, mission, text) {
+      const missionCopy = stripEllipsisFromCopy(humanizeTaskText(mission || ""));
+      const actionCopy = stripEllipsisFromCopy(humanizeTaskText(text || normalized.text || ""));
+      const missionWords = missionCopy.split(/\s+/).filter(Boolean).length;
+      const vagueTitle = missionWords < 5
+        || /^(get|find|make|build|take|start|continue|review|check) (help|support|started|a plan|the next step|your next step|options?)\b/i.test(missionCopy)
+        || /^(next step|task|mission|step \d+)\b/i.test(missionCopy);
+      if (!vagueTitle && missionCopy.length <= 96) return missionCopy;
+
+      const firstAction = actionCopy.split(/(?<=[.!?])\s+/).find((sentence) => sentence.trim().length >= 24) || actionCopy;
+      let title = firstAction
+        .replace(/^(please\s+)?/i, "")
+        .replace(/\s+(?:and|then)\s+(?:write|record|save|note)\b.*$/i, "")
+        .replace(/[.;:]\s+.*$/, "")
+        .trim();
+      if (title.length > 96) {
+        const slice = title.slice(0, 96);
+        title = slice.slice(0, Math.max(48, slice.lastIndexOf(" "))).trim();
+      }
+      return title || missionCopy || "Complete the next specific task";
     }
 
     function shouldShowWhatToDoSection(text, normalized) {
@@ -21585,65 +21616,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function renderTaskOutcomeSectionHtml(taskId, normalized, outcome) {
-      const checklist = renderTaskOutcomeChecklistHtml(taskId, normalized);
-      if ((!outcome || isTaskRestatement(outcome, normalized)) && !checklist) return "";
-      if (!outcome || isTaskRestatement(outcome, normalized)) return checklist;
-      return `
-        <section class="task-mentor-section task-mentor-section--outcome">
-          <h4 class="task-mentor-label">Done when</h4>
-          <p class="task-mentor-copy">${escapeHtml(outcome)}</p>
-          ${checklist}
-        </section>`;
+      return "";
     }
 
     function renderTaskMentorMetaHtml(normalized) {
-      const duration = formatDisplayDuration(normalized.duration);
       const difficulty = normalizeTaskDifficulty(normalized.difficulty) || "Easy";
       const difficultyClass = `task-difficulty--${difficulty.toLowerCase()}`;
       return `
         <div class="task-mentor-meta">
-          ${duration ? `<span class="task-mentor-badge task-mentor-badge--time">${escapeHtml(duration)}</span>` : ""}
           <span class="task-mentor-badge task-mentor-badge--difficulty ${difficultyClass}">${escapeHtml(difficulty)}</span>
         </div>`;
     }
 
     function renderTaskBreakdownHtml(normalized, taskId = "") {
-      const steps = getTaskDisplaySteps(normalized);
-      if (steps.length < 2) return "";
-      const letters = ["A", "B", "C"];
-      return `
-        <div class="task-breakdown-steps">
-          <p class="task-breakdown-lead">Tap A, B, or C to expand each step</p>
-          ${steps.slice(0, 3).map((step, index) => {
-            const letter = letters[index] || String.fromCharCode(65 + index);
-            const preview = humanizeTaskText(step);
-            const short = preview.length > 52 ? `${preview.slice(0, 49)}…` : preview;
-            return `
-              <details class="task-breakdown-step" data-breakdown-index="${index}" data-task-id="${escapeHtml(taskId)}">
-                <summary>
-                  <span class="task-breakdown-letter">${letter}.</span>
-                  <span class="task-breakdown-preview">${escapeHtml(short)}</span>
-                  <span class="task-breakdown-expand-hint" aria-hidden="true">▼</span>
-                </summary>
-                <p class="task-breakdown-body">${escapeHtml(preview)}</p>
-              </details>`;
-          }).join("")}
-        </div>`;
+      return "";
     }
 
     function renderCompressedBreakdownHtml(steps, taskId) {
-      if (!steps || steps.length < 2) return "";
-      const letters = ["A", "B", "C"];
-      return `
-        <div class="task-breakdown-compact" aria-label="Mission steps — tap a letter to expand">
-          ${steps.slice(0, 3).map((step, index) => {
-            const letter = letters[index] || String.fromCharCode(65 + index);
-            return `
-              <button type="button" class="task-breakdown-compact-btn" data-task-expand="${escapeHtml(taskId)}" data-breakdown-index="${index}" aria-label="Expand step ${letter}">
-                <span class="task-breakdown-letter">${letter}.</span>
-              </button>`;
-          }).join("")}
-        </div>`;
+      return "";
     }
 
     function getTaskAiAssistActions(normalized) {
@@ -23756,14 +23746,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function renderMentorFindingsHtml(normalized, options = {}) {
-      const help = String(normalized.mentorHelp || normalized.mentorFindings || buildMentorFindingsText(normalized) || "").trim();
-      if (!help || help.length < 12 || isGenericMentorCopy(help, normalized)) return "";
-      if (options.simplified && isGenericMentorCopy(help, normalized)) return "";
-      return `
-        <section class="task-mentor-section task-mentor-section--findings">
-          <h4 class="task-mentor-label">What's prepared</h4>
-          <p class="task-mentor-copy task-mentor-copy--findings">${escapeHtml(help)}</p>
-        </section>`;
+      return "";
     }
 
     function renderMissionTalkingPointsHtml(normalized) {
@@ -24993,7 +24976,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const rows = [];
       if (normalized.why) rows.push(`<div><strong>Why:</strong> ${escapeHtml(normalized.why)}</div>`);
       if (normalized.outcome) rows.push(`<div><strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}</div>`);
-      if (normalized.duration) rows.push(`<div><strong>Time:</strong> ${escapeHtml(normalized.duration)}</div>`);
       if (normalized.cost) rows.push(`<div><strong>Cost:</strong> ${escapeHtml(normalized.cost)}</div>`);
       if (normalized.local) rows.push(`<div><strong>Local:</strong> ${escapeHtml(normalized.local)}</div>`);
       if (normalized.script) rows.push(`<div><strong>Script:</strong> ${escapeHtml(normalized.script.slice(0, 160))}${normalized.script.length > 160 ? "…" : ""}</div>`);
@@ -37901,13 +37883,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
-    function renderPendingTaskHtml(id, taskIndex) {
-      const missionNum = taskIndex + 1;
+    function renderPendingTaskHtml(id, stageIndex, taskIndex) {
+      const taskNum = getRoadmapTaskOrdinal(stageIndex, taskIndex);
       return (
         `<div class="task-item task-item--pending roadmap-task--pending" data-task-id="${id}" aria-busy="true">` +
         `<div class="task-item-head">` +
-        `<span class="task-num">${missionNum}</span>` +
-        `<span class="task-pending-label">Loading mission ${missionNum}…</span>` +
+        `<span class="task-num">${taskNum}</span>` +
+        `<span class="task-pending-label">Loading task ${taskNum}…</span>` +
         `</div>` +
         `<div class="roadmap-task-loading-progress site-loading-progress" aria-live="polite">` +
         `<div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="12">` +
@@ -39696,7 +39678,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   <span class="roadmap-glance-copy">
                     <span class="roadmap-glance-label">${escapeHtml(stage.label || `Phase ${stageIndex + 1}`)}</span>
                     ${descShort ? `<span class="roadmap-glance-desc">${escapeHtml(descShort)}</span>` : ""}
-                    <span class="roadmap-glance-count">${progress.done}/${progress.total} missions</span>
+                    <span class="roadmap-glance-count">${progress.done}/${progress.total} tasks</span>
                   </span>
                 </button>`;
             }).join("")}
@@ -40231,7 +40213,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const summaryEl = $("#roadmap-progress-summary");
       if (pctEl) pctEl.textContent = `${percent}%`;
       if (fillEl) fillEl.style.width = `${percent}%`;
-      if (summaryEl) summaryEl.textContent = `${done} of ${total} missions completed`;
+      if (summaryEl) summaryEl.textContent = `${done} of ${total} tasks completed`;
       updateRoadmapFloatProgress(percent);
 
       const badge = $("#roadmap-status-badge");
@@ -40240,7 +40222,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           badge.textContent = state.roadmapExhausted ? "Roadmap complete" : "Phase complete";
           badge.classList.add("is-complete");
         } else {
-          badge.textContent = roadmapAdaptInFlight ? "Updating your missions…" : "Active missions";
+          badge.textContent = roadmapAdaptInFlight ? "Updating your tasks…" : "Active tasks";
           badge.classList.remove("is-complete");
         }
       }
@@ -40313,48 +40295,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function renderTaskDetailSectionsHtml(normalized, showResources, taskId) {
-      const steps = getTaskDisplaySteps(normalized);
       const parts = [];
 
-      if (normalized.duration || normalized.cost) {
+      if (normalized.cost) {
         parts.push(`
           <div class="overview-task-meta-row">
-            ${normalized.duration ? `<span class="overview-task-meta-item"><strong>Time:</strong> ${escapeHtml(normalized.duration)}</span>` : ""}
-            ${normalized.cost ? `<span class="overview-task-meta-item"><strong>Cost:</strong> ${escapeHtml(normalized.cost)}</span>` : ""}
-          </div>`);
-      }
-
-      if (steps.length >= 2) {
-        parts.push(`
-          <div class="overview-task-detail-block">
-            <span class="overview-task-detail-label">Steps</span>
-            ${renderAlphabeticStepsHtml(steps, "overview-task-steps task-alphabetic-steps")}
+            <span class="overview-task-meta-item"><strong>Cost:</strong> ${escapeHtml(normalized.cost)}</span>
           </div>`);
       }
 
       const extraParts = [];
-      if (normalized.outcome) {
-        extraParts.push(`
-          <div class="overview-task-detail-block">
-            <span class="overview-task-detail-label">When you're done</span>
-            <p class="overview-task-detail-copy">${escapeHtml(humanizeTaskText(normalized.outcome))}</p>
-          </div>`);
-      }
-
-      if (taskId) {
-        const checklist = renderTaskOutcomeChecklistHtml(taskId, normalized);
-        if (checklist) extraParts.push(checklist);
-      }
-
       const inlineLinks = renderTaskInlineLinksHtml(normalized, showResources);
       if (inlineLinks) extraParts.push(inlineLinks);
 
       if (extraParts.length) {
         parts.push(`
-          <details class="task-extra-detail" open>
-            <summary>Why &amp; when done</summary>
-            <div class="task-extra-detail-body">${extraParts.join("")}</div>
-          </details>`);
+          <div class="task-extra-detail-body">${extraParts.join("")}</div>`);
       }
 
       if (!parts.length) return "";
@@ -40364,7 +40320,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function renderOverviewTaskHtml(task, stageIndex, taskIndex) {
       const id = `task-${stageIndex}-${taskIndex}`;
       if (isPendingRoadmapTask(task)) {
-        return renderPendingTaskHtml(id, taskIndex);
+        return renderPendingTaskHtml(id, stageIndex, taskIndex);
       }
       const normalized = normalizeRoadmapTask(task);
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "", tasks: [] };
@@ -40390,11 +40346,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           text = buildConcreteTaskAction(normalized);
         }
       }
-      const actionRestatesMission = textSimilarity(text, mission) >= 0.72;
+      const taskTitle = getTaskNutshellTitle(normalized, mission, text);
+      text = stripMissionTitleFromBody(text, taskTitle);
+      if (!text || isVagueWhatToDoText(text)) {
+        text = buildConcreteTaskAction(normalized);
+      }
       const showWhatToDo = shouldShowWhatToDoSection(text, normalized);
-      const showExpandedMissionTitle = !(actionRestatesMission && showWhatToDo)
-        && textSimilarity(mission, text) < 0.68;
-      const compressedLabel = stripEllipsisFromCopy(getTaskCompressedLabel(mission, text));
+      const compressedLabel = taskTitle;
       const howTo = stripMissionTitleFromBody(
         scrubVerboseLocationFromText(humanizeTaskText(normalized.howTo || inferHowTo(normalized))),
         mission
@@ -40404,28 +40362,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         scrubVerboseLocationFromText(humanizeTaskText(normalized.why || inferTaskWhy(normalized))),
         mission
       );
-      const outcome = stripMissionTitleFromBody(
-        scrubVerboseLocationFromText(humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized))),
-        mission
-      );
       const taskData = state.roadmapKey ? getRoadmapTaskData(id) : { checked: false };
       const isDone = Boolean(taskData.checked);
       const canExpand = canExpandTask(stageIndex, taskIndex);
       const draftSection = renderTaskDraftSectionHtml(id, normalized);
-      const displaySteps = getTaskDisplaySteps(normalized);
       const chips = [];
       if (showResources && normalized.local) {
         const localLabel = scrubVerboseLocationFromText(stripEllipsisFromCopy(normalized.local));
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(localLabel)}">${escapeHtml(localLabel.length > 42 ? localLabel.slice(0, 42).replace(/\s+\S*$/, "").trim() || localLabel.slice(0, 42) : localLabel)}</span>`);
       }
       const meta = renderTaskMentorMetaHtml(normalized);
-      const showBreakdown = displaySteps.length >= 2;
-      const breakdown = !simplified && showBreakdown ? renderTaskBreakdownHtml(normalized, id) : "";
-      const compressedBreakdown = showBreakdown ? renderCompressedBreakdownHtml(displaySteps, id) : "";
-      const mentorHelp = renderMentorFindingsHtml(normalized, { simplified });
       const contextNoteHtml = renderTaskContextNoteHtml(contextNote);
       const whyShownInContext = Boolean(contextNoteHtml.trim());
-      const outcomeChecklist = simplified ? "" : renderTaskOutcomeChecklistHtml(id, normalized);
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const taskDetailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
       const plainExplainHtml = renderTaskPlainExplainHtml(normalized, stageIndex, taskIndex);
@@ -40446,15 +40394,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const aiAssist = renderTaskAiAssistHtml(id, normalized);
       const roadblockSection = renderTaskRoadblockButtonsHtml(id, normalized, stage);
       const nextTaskId = getNextTaskId(stageIndex, taskIndex);
-      const taskLabel = formatMissionTaskLabel(taskIndex);
+      const taskLabel = formatMissionTaskLabel(stageIndex, taskIndex);
 
       const detailSections = simplified ? "" : `
                 <section class="task-mentor-section task-mentor-section--task">
                   <button type="button" class="task-mentor-label task-mentor-label--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">What to do</button>
                   <button type="button" class="task-text task-text--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">${linkifyTaskTextHtml(text)}</button>
-                  ${breakdown}
                 </section>
-                ${mentorHelp}
                 ${why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) ? `
                 <section class="task-mentor-section">
                   <h4 class="task-mentor-label">Why this step</h4>
@@ -40465,54 +40411,40 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   <h4 class="task-mentor-label">Next action</h4>
                   <p class="task-mentor-copy">${escapeHtml(howTo)}</p>
                 </section>` : ""}
-                ${outcome && !isTaskRestatement(outcome, normalized) ? `
-                <section class="task-mentor-section">
-                  <h4 class="task-mentor-label">Done when</h4>
-                  <p class="task-mentor-copy">${escapeHtml(outcome)}</p>
-                  ${outcomeChecklist}
-                </section>` : outcomeChecklist ? `
-                <section class="task-mentor-section">
-                  ${outcomeChecklist}
-                </section>` : ""}`;
+                `;
 
-      const simplifiedMissionMarkup = showExpandedMissionTitle
-        ? `<button type="button" class="task-mission-title task-mission-title--toggle" data-task-expand="${escapeHtml(id)}" id="${id}-label" aria-expanded="false">${linkifyTaskTextHtml(mission)}</button>`
-        : `<span class="visually-hidden" id="${id}-label">${escapeHtml(mission)}</span>`;
+      const simplifiedMissionMarkup =
+        `<button type="button" class="task-mission-title task-mission-title--toggle" data-task-expand="${escapeHtml(id)}" id="${id}-label" aria-expanded="false">${linkifyTaskTextHtml(taskTitle)}</button>`;
 
-      const outcomeSection = renderTaskOutcomeSectionHtml(id, normalized, outcome);
       const simplifiedWhatToDo = showWhatToDo ? `
                 ${contextNoteHtml}
                 ${plainExplainHtml}
                 <section class="task-mentor-section task-mentor-section--task">
                   <button type="button" class="task-mentor-label task-mentor-label--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">What to do</button>
                   <button type="button" class="task-text task-text--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">${linkifyTaskTextHtml(text)}</button>
-                  ${!simplified && breakdown ? breakdown : ""}
                 </section>
-                ${mentorHelp}
                 ${simplifiedWhyHow}
-                ${taskDetailBlock}
-                ${outcomeSection}` : `${contextNoteHtml}${plainExplainHtml}${mentorHelp}${simplifiedWhyHow}${taskDetailBlock}${outcomeSection}`;
+                ${taskDetailBlock}` : `${contextNoteHtml}${plainExplainHtml}${simplifiedWhyHow}${taskDetailBlock}`;
 
       return `
         <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
           <div class="task-compressed-row">
             <button type="button" class="task-expand-btn" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand task ${escapeHtml(taskLabel)}"${canExpand ? "" : " disabled"}>${escapeHtml(taskLabel)}</button>
             <div class="task-compressed-main-wrap">
-              <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand mission"${canExpand ? "" : " disabled"}>
+              <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand task"${canExpand ? "" : " disabled"}>
                 <span class="task-compressed-mission">${escapeHtml(compressedLabel)}</span>
                 ${taskData.draft?.trim() ? `<span class="task-compressed-draft-hint"><span aria-hidden="true">▼</span> Assets</span>` : ""}
                 ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
               </button>
-              ${compressedBreakdown}
             </div>
             <input class="task-check task-check--compressed" type="checkbox" id="${id}" aria-labelledby="${id}-label">
           </div>
           <div class="task-expanded-panel" aria-hidden="true">
-            <p class="task-progress-reminder">When you finish this mission, check the box above so your progress bar updates.</p>
+            <p class="task-progress-reminder">When you finish this task, check the box above so your progress bar updates.</p>
             <div class="overview-task-main">
               <div class="overview-task-content">
                 <section class="task-mentor-section task-mentor-section--mission${simplified ? " task-mentor-section--mission-compact" : ""}">
-                  ${simplified ? "" : `<h4 class="task-mentor-label">Your mission</h4>`}
+                  ${simplified ? "" : `<h4 class="task-mentor-label">Your task</h4>`}
                   ${simplifiedMissionMarkup}
                   ${meta}
                   ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
@@ -40543,7 +40475,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               </div>
             </div>
             <div class="task-mission-actions">
-              <button type="button" class="task-condense-btn" data-task-collapse="${escapeHtml(id)}">Condense Mission</button>
+              <button type="button" class="task-condense-btn" data-task-collapse="${escapeHtml(id)}">Condense Task</button>
               ${state.pathMode ? `<button type="button" class="task-condense-btn task-alter-path-btn" data-task-alter-path="${escapeHtml(id)}">Alter Path</button>` : ""}
             </div>
           </div>
@@ -40891,7 +40823,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         card.dataset.phaseIndex = String(stageIndex);
         card.innerHTML = `
           <button type="button" class="roadmap-phase-head stage-head">
-            <span class="roadmap-phase-num stage-num">${stageIndex + 1}</span>
             <span class="roadmap-phase-info">
               <span class="roadmap-phase-label stage-label">${escapeHtml(simplifyStageLabel(stage.label, state.currentIdea))}</span>
               <span class="roadmap-phase-count">${progress.done} / ${progress.total} tasks</span>
