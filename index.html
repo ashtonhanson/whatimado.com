@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-13-stability-id-intake-fix">
+  <meta name="whatimado-build" content="2026-07-15-housing-intake-stability-gate">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -547,24 +547,25 @@
       pointer-events: none;
     }
 
-    /* Delete confirm overlays directly on the roadmap / mission row */
+    /* Minimal delete actions slide directly over the roadmap / mission row */
     html[data-color-scheme="adult"] .roadmap-delete-popover,
     html[data-color-scheme="adult"] .sidebar-delete-strip {
       position: absolute;
       inset: 0;
       z-index: 6;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      align-items: center;
       justify-content: center;
-      gap: .4rem;
+      gap: .45rem;
       margin: 0;
-      padding: .7rem .75rem;
+      padding: .4rem .55rem;
       border: 1px solid rgba(120, 130, 200, .28);
       border-radius: 12px;
       background: rgba(255, 255, 255, .98);
       box-shadow: 0 10px 28px rgba(15, 23, 42, .14);
       opacity: 0;
-      transform: scale(.96);
+      transform: translateX(18px);
       pointer-events: none;
       transition: transform .18s ease, opacity .18s ease;
     }
@@ -572,7 +573,7 @@
     html[data-color-scheme="adult"] .roadmap-delete-popover.is-visible,
     html[data-color-scheme="adult"] .sidebar-delete-strip.is-visible {
       opacity: 1;
-      transform: scale(1);
+      transform: translateX(0);
       pointer-events: auto;
     }
 
@@ -582,11 +583,11 @@
       right: 0;
       left: auto;
       width: min(16rem, 92vw);
-      transform: translateY(-50%) scale(.96);
+      transform: translate(18px, -50%);
     }
 
     html[data-color-scheme="adult"] .roadmap-delete-popover--compact.is-visible {
-      transform: translateY(-50%) scale(1);
+      transform: translate(0, -50%);
     }
 
     html[data-color-scheme="adult"] .roadmap-delete-popover-title,
@@ -618,7 +619,8 @@
     html[data-color-scheme="adult"] .sidebar-delete-strip-actions {
       display: flex;
       gap: .45rem;
-      margin-top: .15rem;
+      width: 100%;
+      margin: 0;
     }
 
     html[data-color-scheme="adult"] .roadmap-delete-popover-btn,
@@ -6068,38 +6070,77 @@
 
     /* UX: context-aware roadblock buttons on each task */
     .task-roadblock-section {
-      margin-top: .65rem;
-      padding-top: .55rem;
+      margin-top: .85rem;
+      padding-top: .7rem;
       border-top: 1px solid rgba(120, 130, 200, .14);
+    }
+
+    .task-roadblock-section .task-mentor-label,
+    .task-roadblock-title {
+      margin: 0 0 .5rem;
+      color: var(--ink, rgba(36, 18, 53, .88));
+      font-size: .95rem;
+      font-weight: 700;
+      letter-spacing: .01em;
+      text-transform: none;
+      line-height: 1.3;
     }
 
     .task-roadblock-buttons {
       display: flex;
       flex-wrap: wrap;
-      gap: .4rem;
-      margin-top: .35rem;
+      gap: .45rem;
+      margin-top: .4rem;
     }
 
     .task-roadblock-btn {
-      font-size: .76rem;
-      line-height: 1.25;
-      padding: .38rem .62rem;
-      border-radius: 999px;
-      border: 1px solid rgba(120, 130, 200, .28);
-      background: rgba(255, 255, 255, .85);
-      color: var(--text);
+      font-size: .78rem;
+      line-height: 1.3;
+      font-weight: 600;
+      padding: .48rem .78rem;
+      border-radius: 10px;
+      border: none;
+      background: #29abe2;
+      color: #fff;
       cursor: pointer;
       text-align: left;
+      box-shadow: none;
+    }
+
+    .task-roadblock-btn:hover {
+      background: #1e8fc4;
+      color: #fff;
     }
 
     .task-roadblock-btn--ask {
-      border-style: dashed;
-      color: var(--purple);
-      font-weight: 600;
+      border: none;
+      color: #fff;
+      font-weight: 700;
     }
 
     .task-roadblock-btn:active {
       transform: scale(.98);
+    }
+
+    html[data-color-scheme="adult"] .task-roadblock-btn,
+    html[data-color-scheme="adult"] #screen-roadmap .task-roadblock-btn {
+      color: #fff;
+      background: #29abe2;
+    }
+
+    html[data-color-scheme="adult"] .task-roadblock-btn:hover,
+    html[data-color-scheme="adult"] #screen-roadmap .task-roadblock-btn:hover {
+      background: #1e8fc4;
+      color: #fff;
+    }
+
+    html[data-color-scheme="adult"] .task-roadblock-section .task-mentor-label,
+    html[data-color-scheme="adult"] .task-roadblock-title {
+      color: var(--ink);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: .01em;
+      text-transform: none;
     }
 
     .dashboard-path-mode-bar {
@@ -15762,7 +15803,47 @@
       }
     ];
 
+    const stabilityFallbackIdeas = [
+      {
+        title: "Find a Safe Place for This Week",
+        type: "Stability — housing",
+        tagline: "Contact shelter and housing programs, check bed availability, and make one safe backup plan.",
+        why: "A reliable place to sleep makes every document, benefit, and recovery step easier to manage.",
+        cost: "$0",
+        timeline: "Today",
+        income: "Stability first"
+      },
+      {
+        title: "Replace Your ID and Documents",
+        type: "Stability — documents",
+        tagline: "Confirm what you need for a birth certificate and state ID, then prepare the first request.",
+        why: "Valid ID opens access to housing programs, benefits, healthcare, and later employment.",
+        cost: "$0-50",
+        timeline: "Start this week",
+        income: "Unlocks later options"
+      },
+      {
+        title: "Set Up Mail and Basic Benefits",
+        type: "Stability — essentials",
+        tagline: "Secure a mailing address and apply for food, healthcare, and housing help you can use now.",
+        why: "A working address and basic support reduce immediate pressure while housing and ID are being sorted.",
+        cost: "$0",
+        timeline: "This week",
+        income: "Reduces immediate costs"
+      }
+    ];
+
+    function stabilityStatusIsUnconfirmed() {
+      const profile = normalizeUserProfile(state.userProfile);
+      return profile.idStatus !== "has" || profile.housingStatus !== "has";
+    }
+
     function getFallbackIdeas() {
+      if (stabilityStatusIsUnconfirmed() && (
+        userNeedsIdFirst()
+        || userNeedsHousingFirst()
+        || conversationMentionsStabilityRebuild(getConversationUserBlob())
+      )) return stabilityFallbackIdeas;
       if (isReentrySituation()) return reentryFallbackIdeas;
       if (isGroundedPractitioner()) return getGroundedFallbackIdeas();
       if (isMoneyMakingPrompt(getFirstUserMessage())) return pickRotatedMoneyFallbackIdeas();
@@ -16025,10 +16106,13 @@
     const MIN_CLARIFYING_QUESTIONS = 2;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What the USER does now — one small action after you did the work (review, send, call, book)","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line explaining why THIS step fits their situation when it might look surprising (e.g. workforce visit for a business owner = self-employment programs, not job listings). Empty only if obviously on-track.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What to do NOW in 1–3 short concrete sentences: who to contact, what to ask for, what to prepare. Must NOT restate the mission title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call 211 and ask for shelter beds and waitlists tonight. Write down 3 program names, phone numbers, and what ID each place needs.\\"","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line explaining why THIS step fits their situation when it might look surprising (e.g. workforce visit for a business owner = self-employment programs, not job listings). Empty only if obviously on-track.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
+      '- Inside each task body (text, why, howTo, mentorHelp, outcome), NEVER repeat the mission title — it already appears once at the top.\n' +
+      '- NEVER use ellipses (…) or "..." in titles or body text — rewrite so the line fits cleanly.\n' +
+      '- Location in user-facing text: shortest natural form only (e.g. "Austin" not "Austin, Texas, United States"). Omit location when obvious.\n' +
       '- Task text must NEVER repeat or quote the path title, tagline, or stage name — the user already sees those in the header. Name their specific service instead (e.g. "your Mobile Pet Grooming service" not "your goal" or "this path").\n' +
       '- For customer research: "Talk to 3 people who might be interested in your [specific service]. If they already use someone, ask what\'s missing." — NOT "Talk to 3 people in [city] who would buy or refer this."\n' +
       '- NEVER use vague "this" or "your goal" — name the specific service in plain words (e.g. "people who might book your mobile grooming service" not "people who care about this").\n' +
@@ -16043,7 +16127,8 @@
       '- NEVER assign: research, find, look up, write from scratch — put results in resources + script + talkingPoints + followUp.\n' +
       '- resources.local = 3-8 real named orgs with phones/emails/URLs. First contact in list = suggested first contact.\n' +
       '- Every mission must move the user measurably closer to their goal — they should never wonder what to do now.\n' +
-      'Write like a helpful mentor — plain English, middle-school reading level. No business jargon, no startup language.\n' +
+      '- Each task should feel like a small, doable action that respects limited energy and a hard situation.\n' +
+      'Write like a helpful mentor — warm, human, practical English at a middle-school reading level. No bureaucratic or "police report" phrasing. No filler like "complete the listed step".\n' +
       'Stage labels must be short steps a friend would say (under ~10 words) — e.g. "Find five people to try your site". NEVER quote the path title verbatim or write "Define \\"{title}\\" mission + who it serves".\n';
 
     const RESOURCE_CATEGORY_HINTS =
@@ -16398,12 +16483,13 @@
     }
 
     function buildReentryTaskSet(locRaw, parsed, region) {
-      const city = parsed.city || locRaw.split(",")[0]?.trim() || locRaw;
-      const country = parsed.country || locRaw;
+      const city = shortenLocationForSpeech(parsed.city || String(locRaw || "").split(",")[0]?.trim() || locRaw);
+      locRaw = city || "your area";
+      const country = parsed.country || "";
       if (region === "norway") {
         const kommuneUrl = normalizeCityKey(city) === "tromso" ? "tromso.kommune.no" : `${normalizeCityKey(city) || "kommune"}.kommune.no`;
         return {
-          housing: `Call NAV at 55 55 33 33 or visit nav.no — ask about housing support, emergency accommodation, and ID help in ${locRaw}. Also check ${city} kommune (${kommuneUrl}) — write down 3 program names and phone numbers`,
+          housing: `Call NAV at 55 55 33 33 or visit nav.no — ask about housing support, emergency accommodation, and ID help in ${locRaw}. Also check ${city || locRaw} kommune (${kommuneUrl}) — write down 3 program names and phone numbers`,
           id: `Visit politiet.no and skatteetaten.no to list documents needed for valid ID in Norway (passport, national ID, D-number, or bank ID) — note cost and the nearest office serving ${locRaw}`,
           workforce: `Call or visit NAV in ${locRaw} (55 55 33 33 or nav.no) for employment and reintegration help — book the earliest appointment and ask what ID to bring`,
           tempWork: `Register with 2 bemanningsbyrå in ${locRaw} via nav.no/arbeid or Finn.no — ask which employers hire people with employment gaps`,
@@ -16432,12 +16518,12 @@
       if (region === "canada") {
         return {
           housing: `Call 211 (where available) or visit canada.ca/en/employment-social-development — ask about housing and shelter help in ${locRaw}; write down 3 services`,
-          id: `Check canada.ca and your provincial service centre for ID documents needed in ${parsed.region || country} — note cost and nearest office`,
+          id: `Check canada.ca and your provincial service centre for ID documents needed in ${parsed.region || country || locRaw} — note cost and nearest office`,
           workforce: `Visit a Service Canada Centre or employment service in ${locRaw} — book an appointment for job placement help`,
           tempWork: `Register with 2 staffing agencies in ${locRaw} via Job Bank Canada (jobbank.gc.ca)`,
           jobSearch: `Search jobbank.gc.ca and Indeed for roles near ${locRaw}; save 5 listings with pay and how to apply`,
           employerList: `Ask your Service Canada contact for employers to target — apply to at least 2 this week`,
-          benefits: `Check canada.ca for EI, provincial social assistance, and other benefits in ${parsed.region || country}`,
+          benefits: `Check canada.ca for EI, provincial social assistance, and other benefits in ${parsed.region || country || locRaw}`,
           transport: `Map transit costs in ${locRaw} for 2 weeks of interviews and shifts`,
           compliance: `If you have parole or reporting requirements, confirm deadlines and write a weekly schedule`,
           training: `Ask Service Canada or provincial employment service about funded training for "{title}" in ${locRaw}`
@@ -16449,7 +16535,7 @@
           id: `Visit your county clerk or DMV website for ${locRaw} — list documents for state ID or driver's license (birth certificate, Social Security card, proof of address)`,
           workforce: `Call or visit your local American Job Center / workforce board in ${locRaw} for reentry employment help — book the earliest appointment`,
           tempWork: `Register with 2 temp or staffing agencies in ${locRaw} — ask which clients accept recent release backgrounds`,
-          jobSearch: `Search Indeed and Google Jobs for "second chance" or "background friendly" roles within 25 miles of ${locRaw}; save 5 listings`,
+          jobSearch: `Search Indeed and Google Jobs for "second chance" or "background friendly" roles near ${locRaw}; save 5 listings`,
           employerList: `Ask your workforce or reentry contact for employers they place people with — apply to at least 2 this week`,
           benefits: `Check SNAP and Medicaid eligibility for ${locRaw} on your state benefits portal`,
           transport: `Map transport (bus pass, rideshare, or bike) for 2 weeks — cost it and identify a backup plan`,
@@ -16458,15 +16544,15 @@
         };
       }
       return {
-        housing: `Contact official local social services or municipal housing office in ${locRaw}, ${country} — ask about shelter, housing support, and ID help; write down 3 program names and phone numbers`,
-        id: `Check official government ID requirements for ${country} — list documents needed and the nearest office serving ${locRaw}`,
-        workforce: `Contact the government employment service in ${country} for ${locRaw} — book an appointment for job placement and reintegration support`,
+        housing: `Contact official local social services or municipal housing office in ${locRaw}${country ? ` (${country})` : ""} — ask about shelter, housing support, and ID help; write down 3 program names and phone numbers`,
+        id: `Check official government ID requirements${country ? ` for ${country}` : ""} — list documents needed and the nearest office serving ${locRaw}`,
+        workforce: `Contact the government employment service${country ? ` in ${country}` : ""} for ${locRaw} — book an appointment for job placement and reintegration support`,
         tempWork: `Register with 2 staffing or recruitment agencies in ${locRaw} that place people into entry-level work`,
-        jobSearch: `Search official job boards for ${country} and local listings near ${locRaw}; save 5 roles with pay and how to apply`,
+        jobSearch: `Search official job boards${country ? ` for ${country}` : ""} and local listings near ${locRaw}; save 5 roles with pay and how to apply`,
         employerList: `Ask your employment contact from stage 1 for employers to target — apply to at least 2 this week`,
-        benefits: `Check official government benefits portals for ${country} — see what you qualify for in ${locRaw}`,
+        benefits: `Check official government benefits portals${country ? ` for ${country}` : ""} — see what you qualify for in ${locRaw}`,
         transport: `Map how you will get to interviews and shifts in ${locRaw} — cost travel for 2 weeks`,
-        compliance: `If you have any court, probation, or reporting requirements in ${country}, confirm deadlines and write a weekly schedule`,
+        compliance: `If you have any court, probation, or reporting requirements${country ? ` in ${country}` : ""}, confirm deadlines and write a weekly schedule`,
         training: `Ask the local employment service whether funded training for "{title}" exists in ${locRaw}`
       };
     }
@@ -16482,8 +16568,9 @@
 
     function getLocationPlaybook(parsed, locRaw) {
       const region = getLocationRegion(parsed);
-      const city = parsed.city || locRaw.split(",")[0]?.trim() || locRaw;
-      const country = parsed.country || locRaw;
+      const city = shortenLocationForSpeech(parsed.city || String(locRaw || "").split(",")[0]?.trim() || locRaw);
+      locRaw = city || "your area";
+      const country = parsed.country || "";
       const reentry = buildReentryTaskSet(locRaw, parsed, region === "international" ? "international" : region);
 
       if (region === "norway") {
@@ -16564,19 +16651,19 @@
       }
       return {
         region: "international",
-        countryLabel: country,
-        jobSearchRoles: `Search the main job boards and official employment website for ${country} for 10 roles matching "{title}" near ${locRaw}; save pay and requirements`,
-        employmentOffice: `Contact the official government employment service in ${country} for ${locRaw} and ask what training or placement programs fit "{title}"`,
+        countryLabel: country || "your country",
+        jobSearchRoles: `Search the main job boards and official employment website${country ? ` for ${country}` : ""} for 10 roles matching "{title}" near ${locRaw}; save pay and requirements`,
+        employmentOffice: `Contact the official government employment service${country ? ` in ${country}` : ""} for ${locRaw} and ask what training or placement programs fit "{title}"`,
         staffingList: `List 3 staffing or recruitment agencies in ${locRaw} that place people into work like "{title}" — note how to apply`,
         jobFair: `Attend one job fair, hiring event, or career workshop in ${locRaw} related to "{title}"`,
-        businessLicense: `Check official government business-registration sites for ${country} for rules applying to "{title}" in ${locRaw}`,
+        businessLicense: `Check official government business-registration sites${country ? ` for ${country}` : ""} for rules applying to "{title}" in ${locRaw}`,
         businessSupport: `Find a local small-business advice centre or chamber of commerce in ${locRaw} and book one session about "{title}"`,
         localMarketplace: `Post one personal offer for your {serviceLabel} on a local marketplace or community group — short story first, not a sales pitch.`,
         trainingCompare: `Compare 3 training routes for "{title}" — public college, nonprofit, online cert, or apprenticeship in ${locRaw}`,
         socialServicesLine: `Ask the local government employment or social services office in ${locRaw} about training funding and support`,
-        employmentGuide: `Use official ${country} employment services and local job boards — NOT US-specific agencies (211, American Job Center, SNAP)`,
-        businessGuide: `Use official ${country} business-registration and small-business support — NOT US SBDC/SCORE`,
-        learningGuide: `Use local colleges, apprenticeships, and government-funded training in ${country}`,
+        employmentGuide: `Use official ${country || "local"} employment services and local job boards — NOT US-specific agencies (211, American Job Center, SNAP)`,
+        businessGuide: `Use official ${country || "local"} business-registration and small-business support — NOT US SBDC/SCORE`,
+        learningGuide: `Use local colleges, apprenticeships, and government-funded training${country ? ` in ${country}` : ""}`,
         reentry
       };
     }
@@ -16618,10 +16705,14 @@
 
     const PLAIN_LANGUAGE_AI_RULES =
       'MENTOR VOICE (non-negotiable — every stage label, description, mission, why, and outcome):\n' +
-      '- Sound like a helpful mentor talking to a friend — NOT an AI, startup coach, MBA, or business consultant.\n' +
+      '- Sound like a helpful mentor talking to a friend — warm, human, practical. NOT an AI, startup coach, MBA, bureaucrat, or police-report voice.\n' +
       '- Assume the reader has ZERO business background. If your grandma would not understand it, rewrite it.\n' +
       '- Use short, concrete sentences. Say what to DO and WHO to talk to — not abstract strategy.\n' +
-      '- BANNED words/phrases: validate, validation, social validation, stakeholders, market fit, product-market fit, reentry ecosystem, sprint, deliverable, initiative, pilot, touchpoint, execute, framework, go-to-market, value proposition, user acquisition, MVP, iterate, friction point, feedback loop, traction, pivot, leverage, scalable, cohort, monetize, activation, optics, GTM, ICP, aligned with your mission, identify organizations aligned.\n' +
+      '- "What to do" (text field): 1–3 short concrete sentences with who to contact, what to ask for, and what to prepare. Never just restate the mission title. Never say "Do the next logical step forward" or "complete the listed step".\n' +
+      '- Never repeat the mission title inside the task body. Never use ellipses (…) — rewrite so the line fits.\n' +
+      '- Location: shortest natural form only ("Austin" not "Austin, Texas, United States"). Omit if obvious.\n' +
+      '- Each task = one small, doable action that respects limited energy.\n' +
+      '- BANNED words/phrases: validate, validation, social validation, stakeholders, market fit, product-market fit, reentry ecosystem, sprint, deliverable, initiative, pilot, touchpoint, execute, framework, go-to-market, value proposition, user acquisition, MVP, iterate, friction point, feedback loop, traction, pivot, leverage, scalable, cohort, monetize, activation, optics, GTM, ICP, aligned with your mission, identify organizations aligned, do the next logical step, complete the listed step, do the action described below.\n' +
       '- Say "people" not "users". Say "try" or "share" not "ship". Say "use" not "leverage". Say "change direction" not "pivot". Say "small test" not "pilot". Say "finished piece" not "deliverable". Say "do" not "execute". Say "simple plan" not "framework".\n' +
       '- BAD: "Validate local demand before investing."\n' +
       '- GOOD: "Before you spend more time or money, find out if people actually want this."\n' +
@@ -16630,7 +16721,8 @@
       '- BAD: "Run a validation sprint." / "Engage stakeholders." / "Execute the outreach framework."\n' +
       '- GOOD: "Spend two weeks sharing it with real people and listen to what they say." / "Talk to the people who make decisions at each org." / "Send the emails below — one org at a time."\n' +
       '- Stage labels must sound like a step a friend would say — e.g. "Find five people to try your site" or "Decide who you\'re helping". NEVER paste the path title in quotes, NEVER "Define \\"{title}\\" mission + who it serves".\n' +
-      '- Task text example (business): "Talk to 3 people who would potentially be interested in your Mobile Pet Grooming service. If they\'re already using someone, ask what\'s missing from that service." — NOT location-heavy generic phrasing.\n';
+      '- Task text example (business): "Talk to 3 people who would potentially be interested in your Mobile Pet Grooming service. If they\'re already using someone, ask what\'s missing from that service." — NOT location-heavy generic phrasing.\n' +
+      '- Task text example (stability): "Call 211 and ask about shelter beds and waitlists tonight. Write down 3 program names, phone numbers, and what ID each place needs."\n';
 
     function getActionableTaskRules(idea = state.currentIdea) {
       let base = isGroundedPractitioner(idea)
@@ -16906,6 +16998,10 @@
           const profile = normalizeUserProfile(state.userProfile);
           if (profileIntakeNeedsIdStep(profile)) {
             askProfileIdStatusStep();
+            return;
+          }
+          if (profileIntakeNeedsHousingStep(profile)) {
+            askProfileHousingStatusStep();
             return;
           }
           if (!profile.incomeUrgency) {
@@ -17591,14 +17687,88 @@
     function shortenLocationForSpeech(locRaw) {
       const parsed = parseLocationAnswer(String(locRaw || "").trim());
       const city = parsed.city || String(locRaw || "").split(",")[0]?.trim();
-      const region = parsed.region || "";
-      if (city && region) return `${city}, ${region}`;
       if (city) return city;
-      return String(locRaw || "").split(",").slice(0, 2).join(", ").trim() || "your area";
+      return String(locRaw || "").split(",")[0]?.trim() || "your area";
+    }
+
+    function scrubVerboseLocationFromText(text) {
+      let copy = String(text || "");
+      if (!copy) return copy;
+      // "Austin, Texas, United States" → "Austin"
+      copy = copy.replace(
+        /\b([A-ZÀ-ÿ][A-Za-zÀ-ÿ.'-]{1,40}(?:\s+[A-ZÀ-ÿ][A-Za-zÀ-ÿ.'-]{1,30}){0,2}),\s*[A-Za-zÀ-ÿ .'-]{2,40},\s*(?:United States|USA|U\.S\.A\.|Canada|United Kingdom|UK|Norway|Australia)\b/g,
+        "$1"
+      );
+      // "Austin, Texas" / "Austin, TX" → "Austin"
+      copy = copy.replace(
+        /\b([A-ZÀ-ÿ][A-Za-zÀ-ÿ.'-]{1,40}(?:\s+[A-ZÀ-ÿ][A-Za-zÀ-ÿ.'-]{1,30}){0,2}),\s*(?:AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|Texas|California|Florida|New York|Illinois|Pennsylvania|Ohio|Georgia|North Carolina|Michigan|New Jersey|Virginia|Washington|Arizona|Massachusetts|Tennessee|Indiana|Missouri|Maryland|Wisconsin|Colorado|Minnesota|South Carolina|Alabama|Louisiana|Kentucky|Oregon|Oklahoma|Connecticut|Utah|Iowa|Nevada|Arkansas|Mississippi|Kansas|New Mexico|Nebraska|Idaho|West Virginia|Hawaii|New Hampshire|Maine|Montana|Rhode Island|Delaware|South Dakota|North Dakota|Alaska|Vermont|Wyoming|Troms|Oslo)\b/gi,
+        "$1"
+      );
+      copy = copy.replace(/,\s*United States\b/gi, "");
+      copy = copy.replace(/,\s*USA\b/gi, "");
+      copy = copy.replace(/,\s*U\.S\.A\.\b/gi, "");
+      return copy;
+    }
+
+    function stripEllipsisFromCopy(text) {
+      let copy = String(text || "").trim();
+      if (!copy) return copy;
+      copy = copy.replace(/\u2026/g, "");
+      copy = copy.replace(/\.{3,}/g, ".");
+      copy = copy.replace(/\s+\./g, ".");
+      copy = copy.replace(/\.\.+/g, ".");
+      return copy.replace(/\s{2,}/g, " ").trim();
+    }
+
+    function stripMissionTitleFromBody(text, mission) {
+      let copy = String(text || "").trim();
+      const title = String(mission || "").trim();
+      if (!copy || !title || title.length < 8) return copy;
+      const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      copy = copy.replace(new RegExp(`^${escaped}[.:!?\\s—–-]*`, "i"), "");
+      copy = copy.replace(new RegExp(`["“”']${escaped}["“”']`, "gi"), "this step");
+      copy = copy.replace(new RegExp(`\\b${escaped}\\b`, "gi"), "");
+      copy = copy.replace(/\s{2,}/g, " ").replace(/\s+([,.;:])/g, "$1").trim();
+      copy = copy.replace(/^[—–.:;-]\s*/, "").trim();
+      if (copy && copy[0] === copy[0]?.toLowerCase() && /[a-z]/i.test(copy[0])) {
+        copy = copy.charAt(0).toUpperCase() + copy.slice(1);
+      }
+      return copy;
+    }
+
+    function isVagueWhatToDoText(text) {
+      const copy = String(text || "").trim().toLowerCase();
+      if (!copy) return true;
+      return /^(do the next logical step|complete the listed step|do the action described|take the next step|continue with this step|follow the steps below|do what(?:'s| is) listed)\b/.test(copy)
+        || /\b(do the next logical step forward|complete the listed step|do the action described below|take the next logical step)\b/.test(copy);
+    }
+
+    function buildConcreteTaskAction(normalized) {
+      const blob = getTaskContentBlob(normalized);
+      if (/\b(shelter|housing|211|safe place|place to stay|bed|waitlist)\b/.test(blob)) {
+        return "Call the first housing or shelter contact below. Ask about availability, the waitlist, intake time, and what ID they require; write down the answers.";
+      }
+      if (/\b(id|birth certificate|social security|dmv|county clerk|documents)\b/.test(blob)) {
+        return "Call the first ID office below. Confirm the documents, fee, office hours, and first form you need; write down anything you are missing.";
+      }
+      if (/\b(mail|general delivery|address)\b/.test(blob)) {
+        return "Call the first mail-service option below. Ask whether you can receive official mail there, what to bring, and when pickup is available.";
+      }
+      if (/\b(benefit|food|healthcare|medicaid|snap|voucher)\b/.test(blob)) {
+        return "Call the first benefits contact below. Ask what you qualify for, what documents they accept today, and how to start the application.";
+      }
+      if (/\b(call|contact|email|message|outreach)\b/.test(blob)) {
+        return "Use the first contact listed below. Send the prepared message or make the call, ask for the next available step, and save their answer.";
+      }
+      return "Gather the items listed below, complete the first concrete action today, and write down the result before moving on.";
     }
 
     function taskShouldHideOutreachDrafts(normalized) {
       const blob = getTaskContentBlob(normalized);
+      if (
+        requiresStabilityOnlyIdeas()
+        && /\b(shelter|housing|211|safe place|id\b|birth certificate|documents|mailing address|benefits|food|healthcare|voucher)\b/.test(blob)
+      ) return true;
       const isResumeEdit = /\b(rewrite|polish|update|revise|edit|tailor)\b/.test(blob)
         && /\b(resume|headline|summary|cv\b|curriculum vitae)\b/.test(blob);
       const isStoryPrep = /\b(prepare \d+ short stories|practice out loud|60 second)\b/.test(blob);
@@ -17782,6 +17952,13 @@ Practice each one out loud once and time yourself.`;
       copy = copy.replace(/\bmatching \{title\}/gi, (match) => `that fit ${humanizePathGoalForTasks(state.currentIdea?.title)}`);
       copy = copy.replace(/\bfor \{title\}/gi, (match) => `for ${humanizePathGoalForTasks(state.currentIdea?.title)}`);
       copy = copy.replace(/\b(Get back into [^.]+?)(?= using| within| near| in |;|,|$)/gi, (match, goal) => humanizePathGoalForTasks(goal));
+
+      copy = scrubVerboseLocationFromText(copy);
+      copy = stripEllipsisFromCopy(copy);
+      copy = copy.replace(/\bdo the next logical step(?: forward)?\b/gi, "call or visit the first resource below and ask what they need from you");
+      copy = copy.replace(/\bcomplete the listed step\b/gi, "finish the action in this step");
+      copy = copy.replace(/\bdo the action described below\b/gi, "follow the clear action in this step");
+      copy = copy.replace(/\btake the next logical step\b/gi, "take one small action from this step today");
 
       return repairStackedExpansions(copy);
     }
@@ -18431,6 +18608,18 @@ Practice each one out loud once and time yourself.`;
       const situation = getPathSituationType(idea);
       const blob = `${idea.title || ""} ${idea.type || ""} ${idea.tagline || ""} ${idea.why || ""} ${incomeRaw}`.toLowerCase();
 
+      if (ideaIsStabilityOnly(idea) || (
+        requiresStabilityOnlyIdeas()
+        && /\b(housing|shelter|safe place|id\b|birth certificate|documents|mail|benefits|healthcare|stability)\b/.test(blob)
+      )) {
+        return {
+          metricLabel: "",
+          metricValue: "",
+          downstream: "This path secures the basics needed before work or income steps are safe to add.",
+          note: ""
+        };
+      }
+
       if (incomeTextLooksFinancial(incomeRaw)) {
         return {
           metricLabel: inferPotentialOutcomeMetricLabel(blob, situation),
@@ -18946,15 +19135,21 @@ Practice each one out loud once and time yourself.`;
       normalized.text = personalizeTaskActionText(normalized.text, state.currentIdea);
       normalized.text = humanizeTaskText(normalized.text);
       normalized.text = stripRepeatedPathReferences(normalized.text, stripOpts);
+      normalized.text = scrubVerboseLocationFromText(normalized.text);
+      normalized.text = stripEllipsisFromCopy(normalized.text);
 
       normalized.why = stripRepeatedPathReferences(normalized.why, stripOpts);
       normalized.why = specifyVagueTaskReferences(normalized.why, state.currentIdea);
       normalized.why = personalizeTaskActionText(normalized.why, state.currentIdea);
       normalized.why = humanizeTaskText(normalized.why);
       normalized.why = stripRepeatedPathReferences(normalized.why, stripOpts);
+      normalized.why = scrubVerboseLocationFromText(normalized.why);
+      normalized.why = stripEllipsisFromCopy(normalized.why);
 
       normalized.outcome = personalizeTaskActionText(normalized.outcome, state.currentIdea);
       normalized.outcome = humanizeTaskText(normalized.outcome);
+      normalized.outcome = scrubVerboseLocationFromText(normalized.outcome);
+      normalized.outcome = stripEllipsisFromCopy(normalized.outcome);
       normalized.alternatives = personalizeTaskActionText(normalized.alternatives, state.currentIdea);
       normalized.alternatives = humanizeTaskText(normalized.alternatives);
       normalized.mission = personalizeTaskActionText(normalized.mission || "", state.currentIdea);
@@ -18965,12 +19160,15 @@ Practice each one out loud once and time yourself.`;
       if (normalized.mission) {
         normalized.mission = cleanMissionTitle(normalized.mission, normalized, state.currentIdea);
       }
+      normalized.mission = stripEllipsisFromCopy(scrubVerboseLocationFromText(normalized.mission || ""));
 
       normalized.howTo = stripRepeatedPathReferences(normalized.howTo, stripOpts);
       normalized.howTo = specifyVagueTaskReferences(normalized.howTo, state.currentIdea);
       normalized.howTo = personalizeTaskActionText(normalized.howTo, state.currentIdea);
       normalized.howTo = humanizeTaskText(normalized.howTo || "");
       normalized.howTo = stripRepeatedPathReferences(normalized.howTo, stripOpts);
+      normalized.howTo = scrubVerboseLocationFromText(normalized.howTo);
+      normalized.howTo = stripEllipsisFromCopy(normalized.howTo);
 
       normalized.mentorHelp = stripRepeatedPathReferences(normalized.mentorHelp, stripOpts);
       normalized.mentorHelp = personalizeTaskActionText(normalized.mentorHelp, state.currentIdea);
@@ -18979,10 +19177,30 @@ Practice each one out loud once and time yourself.`;
       normalized.mentorFindings = humanizeTaskText(normalized.mentorFindings || "");
       normalized.steps = (normalized.steps || []).map((step) => {
         const cleaned = stripRepeatedPathReferences(step, stripOpts);
-        return repairStackedExpansions(personalizeTaskActionText(humanizeTaskText(cleaned), state.currentIdea));
+        return stripEllipsisFromCopy(
+          scrubVerboseLocationFromText(
+            repairStackedExpansions(personalizeTaskActionText(humanizeTaskText(cleaned), state.currentIdea))
+          )
+        );
       });
       normalized.text = repairStackedExpansions(normalized.text);
       normalized.mission = repairStackedExpansions(normalized.mission || "");
+
+      if (normalized.mission) {
+        normalized.text = stripMissionTitleFromBody(normalized.text, normalized.mission);
+        normalized.why = stripMissionTitleFromBody(normalized.why, normalized.mission);
+        normalized.howTo = stripMissionTitleFromBody(normalized.howTo, normalized.mission);
+        normalized.outcome = stripMissionTitleFromBody(normalized.outcome, normalized.mission);
+        normalized.mentorHelp = stripMissionTitleFromBody(normalized.mentorHelp, normalized.mission);
+      }
+      if (isVagueWhatToDoText(normalized.text)) {
+        const fallback = buildMentorUserActionText(normalized);
+        if (fallback && !isVagueWhatToDoText(fallback)) {
+          normalized.text = humanizeTaskText(fallback);
+        } else {
+          normalized.text = buildConcreteTaskAction(normalized);
+        }
+      }
       return normalized;
     }
 
@@ -21678,8 +21896,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       /^move this phase forward$/i,
       /^make measurable progress$/i,
       /^complete one focused action$/i,
+      /^draft your next action$/i,
+      /^finish this week(?:'|’)s task$/i,
+      /^complete the listed step$/i,
+      /^do the action described below$/i,
       /^track who you(?:'|')?ve contacted$/i,
       /^organize your outreach list$/i,
+      /^organize your reaching out list$/i,
       /^log your conversations$/i,
       /^keep your pipeline tidy$/i,
       /^take the next step on (?:this path|your goal)/i,
@@ -22070,8 +22293,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       copy = copy.replace(/^(review|use|read|call|send|apply to|start with|search)\s+/i, "");
       const first = copy.split(/(?<=[.!?])\s+/).find((part) => part.trim().length > 12) || copy;
-      let trimmed = first.length > maxLength ? `${first.slice(0, maxLength - 1).trim()}…` : first.trim();
-      trimmed = trimmed.replace(/\s+[—–-]\s+.*$/, "").trim();
+      let trimmed = first.trim();
+      if (trimmed.length > maxLength) {
+        const slice = trimmed.slice(0, maxLength);
+        const lastSpace = slice.lastIndexOf(" ");
+        trimmed = (lastSpace > 24 ? slice.slice(0, lastSpace) : slice).trim();
+      }
+      trimmed = stripEllipsisFromCopy(trimmed.replace(/\s+[—–-]\s+.*$/, "").trim());
       if (!trimmed || isGenericOutcomeText(trimmed)) return "";
       return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
     }
@@ -22137,6 +22365,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(sbdc|score|small-business advisor|business advisor|office hours|growth hub|innovasjon norge|bdc|chamber of commerce)\b/.test(blob)) {
         return "business_advisor";
       }
+      if (/\b(shelter|housing|211|safe place|place to stay|bed availability|waitlist|housing navigator)\b/.test(blob)) return "housing_stability";
+      if (/\b(mailing address|general delivery|receive mail|official mail)\b/.test(blob)) return "mail_address";
+      if (/\b(snap|medicaid|food assistance|healthcare|housing voucher|basic benefits|benefits application)\b/.test(blob)) return "basic_benefits";
+      if (/\b(pack one bag|overnight bag|medications|phone charger|important papers)\b/.test(blob)) return "safety_prep";
       if (/\b(tracker|spreadsheet|comparison sheet|log each|contact tracking)\b/.test(blob)) return "track_outreach";
       if (isOrgListTask(normalized)) return "org_research";
       if (/\blist \d+ people\b/.test(blob) || /\bally\b/.test(blob)) return "ally_list";
@@ -22246,11 +22478,32 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           "Define your focus",
           "State what you're building toward"
         ],
+        housing_stability: [
+          "Check safe places available tonight",
+          "Talk to a housing navigator",
+          "Confirm a shelter backup",
+          "Write down the housing waitlist plan"
+        ],
+        mail_address: [
+          "Set up a reliable mailing address",
+          "Choose where official mail can reach you",
+          "Confirm general-delivery requirements"
+        ],
+        basic_benefits: [
+          "Check food and healthcare support",
+          "Start one basic-benefits application",
+          "Ask which benefits you qualify for"
+        ],
+        safety_prep: [
+          "Pack the essentials you need",
+          "Keep medications and papers together",
+          "Prepare one safe overnight bag"
+        ],
         general: [
-          "Draft your next action",
-          "Finish this week's task",
-          "Complete the listed step",
-          "Do the action described below"
+          "Make the first call",
+          "Prepare what the first contact needs",
+          "Confirm the next requirement",
+          "Write down the answer you receive"
         ]
       };
       return pools[angle] || pools.general;
@@ -22343,7 +22596,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const stageBit = simplifyStageLabel(stageLabel, idea);
       const actionBit = summarizeMissionTitle(getTaskDisplayActionText(normalized)) || "";
       const fallbacks = [
-        actionBit && stageBit ? `${actionBit.split("…")[0].trim()} (${stageBit})` : "",
+        actionBit && stageBit ? `${actionBit} (${stageBit})` : "",
         stageBit ? `Part ${stageIndex + 1}.${taskIndex + 1} — ${stageBit}` : "",
         `Step ${stageIndex + 1}.${taskIndex + 1} on this path`,
         `Focus ${usedTitles.length + 1} for this path`
@@ -22866,7 +23119,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         visibility: 2,
         first_client: 2,
         job_search: 1,
-        id_documents: 1
+        id_documents: 2,
+        housing_stability: 3,
+        mail_address: 2,
+        basic_benefits: 2,
+        safety_prep: 2
       };
       return limits[angle] ?? 3;
     }
@@ -22922,11 +23179,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         id_documents: [
           `List every document you still need for ID — mark which ones you can get this week vs. need help with`,
           `Call the office on your ID checklist — confirm walk-in hours, fees, and what to bring`
+        ],
+        housing_stability: [
+          `Call the first shelter or housing program below — ask about a bed tonight, the waitlist, and what ID they require`,
+          `Contact a housing navigator below — ask for coordinated entry, a safe backup for tonight, and the next intake time`,
+          `Write down two safe places you can use this week and one backup if the first option is full`
+        ],
+        mail_address: [
+          `Call the first shelter, library, or social-service office below — ask whether you can receive mail there and what to bring`,
+          `Choose the most reliable mail option below and write down its exact pickup hours and rules`
+        ],
+        basic_benefits: [
+          `Call the benefits office below — ask how to start food and healthcare applications without complete ID`,
+          `Gather the documents you already have and start the first benefits application listed below`
+        ],
+        safety_prep: [
+          `Pack medications, a phone charger, water, and the papers you already have in one bag you can keep with you`,
+          `Write one trusted contact and two safe locations on paper in case your phone dies`
         ]
       };
       const options = alts[angle] || [
-        `Take the next different action for your ${service} — pick something you have not done yet on this roadmap`,
-        `Review what already worked for your ${service} and do the next logical step forward`
+        `Call the first relevant contact below — ask what they need from you and write down the answer`,
+        `Gather the items named in the checklist below, then complete its first unfinished action today`
       ];
       const text = options[Math.min(repeatIndex, options.length - 1)];
       return normalizeRoadmapTask({ text, duration: "30 minutes", difficulty: "Medium" });
@@ -23640,8 +23914,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
         return mentorizeRoadmapStages([{
           ...stage,
-          label: simplifyStageLabel(stage.label || "", idea),
-          desc: personalizeTaskActionText(humanizeTaskText(stage.desc || ""), idea),
+          label: stripEllipsisFromCopy(scrubVerboseLocationFromText(simplifyStageLabel(stage.label || "", idea))),
+          desc: stripEllipsisFromCopy(scrubVerboseLocationFromText(personalizeTaskActionText(humanizeTaskText(stage.desc || ""), idea))),
           tasks: (stage.tasks || []).map((task) => (
             isPendingRoadmapTask(task) ? { _pendingTask: true } : normalizeRoadmapTask(task)
           ))
@@ -23706,16 +23980,67 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return /\b(no place to stay|nowhere to stay|no(?:where| )?(?:to )?(?:live|stay|sleep)|(?:don'?t|do not) have (?:a )?(?:place|home|housing|somewhere to stay)|homeless|unhoused|in a shelter|living in (?:a |my )?(?:car|motel|shelter|van)|no home|no housing|evict|between places|couch surf|couchsurf|staying with friends temporarily|no permanent address)\b/.test(blob);
     }
 
+    function conversationConfirmsHasHousing(text = "") {
+      const blob = String(text || "").toLowerCase();
+      if (conversationMentionsHousingInstability(blob)) return false;
+      return /\b(have (?:a |my )?(?:safe |stable )?(?:place|apartment|housing|home|room|lease)|stable housing|secure(?:d)? housing|i'?m housed|safe place (?:for|to stay)|reliable shelter|shelter bed (?:is )?(?:confirmed|available)|living (?:at|in) (?:my|an? |the )?(?:apartment|house|place|studio)|got (?:a )?(?:place|apartment|housing)|housing is (?:set|sorted|secure|stable))\b/.test(blob);
+    }
+
+    function parseHousingStatus(text) {
+      const q = String(text || "").toLowerCase().trim();
+      if (!q) return "";
+      if (
+        conversationMentionsHousingInstability(q)
+        || /\b(no|nope|not safe|not stable|temporary|only tonight|couch|car|motel|need (?:a )?(?:place|shelter|housing)|looking for (?:a )?(?:place|shelter|housing)|not sure where|nowhere)\b/.test(q)
+      ) return "needs";
+      if (
+        conversationConfirmsHasHousing(q)
+        || /\b(yes|yeah|yep)\b/.test(q) && /\b(safe|stable|housing|home|place|shelter)\b/.test(q)
+      ) return "has";
+      if (/^(yes|yeah|yep|i do|i have one)$/.test(q)) return "has";
+      if (/^(no|nope|not yet|unsure|not sure|maybe)$/.test(q)) return "needs";
+      return "";
+    }
+
+    function updateHousingStatusFromConversation() {
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.housingStatus === "has" || profile.housingStatus === "needs") return;
+      for (let i = state.history.length - 1; i >= 0; i -= 1) {
+        const entry = state.history[i];
+        if (entry.role !== "user") continue;
+        const priorAssistant = state.history.slice(0, i).reverse().find((item) => item.role === "assistant")?.content || "";
+        const answer = String(entry.content || "");
+        const housingContext = /\b(housing|shelter|safe place|place to stay|somewhere to sleep)\b/i.test(`${answer} ${priorAssistant}`);
+        if (!housingContext) continue;
+        const parsed = parseHousingStatus(answer);
+        if (!parsed) continue;
+        profile.housingStatus = parsed;
+        profile.updatedAt = Date.now();
+        state.userProfile = profile;
+        return;
+      }
+    }
+
     function conversationMentionsStabilityRebuild(text = "") {
       const blob = String(text || "").toLowerCase();
-      return /\b(\d+\s*days?\s*sober|sober from|in recovery|rebuild(?:ing)? (?:my )?life|starting over|fresh start)\b/.test(blob)
-        && /\b(no job|no id|no place|homeless|shelter|need a plan|nowhere|starting from nothing)\b/.test(blob);
+      return /\b(\d+\s*days?\s*sober|sober from|in recovery|out of (?:rehab|recovery)|just (?:left|finished) (?:rehab|treatment)|rebuild(?:ing)? (?:my )?life|starting over|fresh start|back on (?:my )?feet)\b/.test(blob)
+        && /\b(no job|no id|no place|homeless|shelter|need a plan|nowhere|starting from nothing|getting back|society|rebuild)\b/.test(blob);
     }
 
     function userNeedsHousingFirst(idea = null) {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.housingStatus === "needs") return true;
+      if (profile.housingStatus === "has") return false;
       const blob = getConversationUserBlob().toLowerCase();
+      if (conversationConfirmsHasHousing(blob) && !conversationMentionsHousingInstability(blob)) {
+        if (getPathSituationType(idea) !== "housing") return false;
+      }
       if (conversationMentionsHousingInstability(blob)) return true;
+      if (conversationMentionsStabilityRebuild(blob) && !conversationConfirmsHasHousing(blob)) return true;
+      if (/\b(sober|recovery|rehab|rebuild(?:ing)? (?:my )?life|back on (?:my )?feet|starting over)\b/.test(blob) && !conversationConfirmsHasHousing(blob)) {
+        return true;
+      }
       return getPathSituationType(idea) === "housing";
     }
 
@@ -23751,6 +24076,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || isReentrySituation()
         || conversationMentionsStabilityRebuild(blob)
         || /\b(sober|recovery|rebuild(?:ing)? (?:my )?life)\b/.test(blob);
+    }
+
+    function profileIntakeNeedsHousingStep(profile = normalizeUserProfile(state.userProfile)) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (profile.housingStatus === "has" || profile.housingStatus === "needs") return false;
+      const blob = getConversationUserBlob().toLowerCase();
+      return conversationMentionsHousingInstability(blob)
+        || conversationMentionsStabilityRebuild(blob)
+        || isReentrySituation()
+        || /\b(sober|recovery|rehab|starting over|back on (?:my )?feet|rebuild(?:ing)? (?:my )?life)\b/.test(blob);
     }
 
     function parseIdStatus(text) {
@@ -23795,57 +24130,67 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getIdPriorityPromptBlock(idea = state.currentIdea) {
       if (!userNeedsIdFirst(idea)) return "";
-      const loc = getUserLocation() || "their city";
-      const parsed = parseLocationAnswer(loc);
+      const loc = shortenLocationForSpeech(getUserLocation() || "their city");
+      const parsed = parseLocationAnswer(getUserLocation() || "");
       const idLine = isUSLocation(parsed)
         ? `Visit the county clerk or DMV site for ${loc} — list documents for state ID (birth certificate, Social Security card, proof of address)`
         : `Check official government ID requirements for ${parsed.country || "their country"} — list documents needed and the nearest office serving ${loc}`;
       return (
         `\nID / DOCUMENTS PRIORITY — user may NOT have valid ID yet. NON-NEGOTIABLE:\n` +
-        `- Stage 1 MUST include getting ID or documents sorted BEFORE job applications, Indeed searches, or long training.\n` +
+        `- STABILITY FIRST: Absolutely NO job hunting, Indeed/Google Jobs searches, resume-for-hire, business/client outreach, sales, or staffing signup until safe housing/shelter access is confirmed AND legal ID is obtained or fully ready to submit.\n` +
+        `- Stage 1–2 MUST cover ID/documents${userNeedsHousingFirst(idea) ? " AND shelter/housing" : ""} BEFORE any income or outreach tasks.\n` +
         `- First task example: ${idLine}\n` +
-        `- Do NOT open with "Search Indeed", resume rewrites for hiring managers, or certification programs until ID basics are underway.\n` +
-        `- Temp/day-labor paths that work without full ID may appear in stage 2 — not stage 1 unless ID task is also present.\n`
+        `- Do NOT open with "Search Indeed", client outreach, cold emails, or certification programs until ID basics are underway.\n` +
+        `- Temp/day-labor paths may appear only after the user's housing and ID statuses are confirmed — not merely because earlier stages mention them.\n` +
+        `- If unsure whether housing/ID are confirmed, ASSUME they are NOT and keep tasks on shelter, ID, mail address, benefits, and safety only.\n` +
+        `- Location in task text: use shortest city name only (e.g. "${loc}"), never "City, State, Country".\n`
       );
     }
 
     function getIdPriorityIdeasPromptBlock() {
-      if (!userNeedsIdFirst()) return "";
+      if (!userNeedsIdFirst() && !userNeedsHousingFirst()) return "";
       const housingNote = userNeedsHousingFirst()
-        ? `- At least ONE path must focus on shelter tonight + ID/documents — NOT three job-search paths.\n`
+        ? `- Housing is not confirmed. Every path must help secure shelter/housing, ID/documents, mail, benefits, or immediate safety.\n`
         : "";
       return (
-        `\nID / DOCUMENTS — user likely needs ID or a birth certificate before formal job searches.\n` +
+        `\nSTABILITY GATE — housing and legal ID must both be confirmed before job searches or outreach.\n` +
         housingNote +
-        `- At least ONE path must focus on getting ID/documents sorted OR income that does not require full ID yet (temp labor, day labor, reentry workforce help).\n` +
-        `- Taglines for other paths should say they come AFTER ID is handled when relevant.\n` +
-        `- Do NOT suggest three paths that all assume they can apply online today.\n`
+        `- Until BOTH valid ID and safe, reliable housing are confirmed, ALL three paths must be stability-only and meaningfully different: housing/shelter, ID/documents, and mail/benefits/safety.\n` +
+        `- Do NOT generate job, temp work, staffing, restaurant, warehouse, gig, business, sales, or client-outreach paths yet.\n` +
+        `- Do not merely say work comes later in a tagline; the path itself must contain no work or outreach action.\n`
       );
     }
 
     function getRecoveryStabilityPromptBlock(idea = state.currentIdea) {
       const blob = getConversationUserBlob().toLowerCase();
-      if (!/\b(sober|recovery|rehab|aa\b|rebuild(?:ing)? (?:my )?life)\b/.test(blob) && !ideaMentionsStabilityNeed(idea)) return "";
-      const loc = getUserLocation() || "their city";
+      if (!/\b(sober|recovery|rehab|rebuild(?:ing)? (?:my )?life|back on (?:my )?feet|starting over)\b/.test(blob) && !ideaMentionsStabilityNeed(idea)) return "";
+      const loc = shortenLocationForSpeech(getUserLocation() || "their city");
       return (
-        `\nRECOVERY / REBUILDING — stability before job boards:\n` +
-        `- User is rebuilding (sober/recovery/housing instability). Stage 1 MUST cover safe shelter + ID/documents in ${loc} BEFORE Indeed, Google Jobs, resume polish, or contact-tracking spreadsheets.\n` +
-        `- Name concrete steps: call 211 or local shelter, county clerk/DMV for ID requirements, mailing address through shelter or social service.\n` +
-        `- Day-labor or temp work may appear in stage 3 — NOT stage 1 unless shelter and ID tasks are already present in stages 1–2.\n` +
-        `- Path title "${idea?.title || "this path"}" must match the stage order — do not say "get ID sorted" in the title then open with job searches.\n`
+        `\nRECOVERY / REBUILDING — STABILITY FIRST (non-negotiable):\n` +
+        `- User is rebuilding (recovery, housing instability, or starting over). Treat them like someone getting back on their feet after a hard chapter.\n` +
+        `- Absolutely NO job hunting, staffing signup, business outreach, sales, or client outreach until BOTH (a) housing or safe shelter is secured/accessible AND (b) state ID (or equivalent) is obtained or ready to submit.\n` +
+        `- Before those are confirmed, stages may ONLY cover: shelter/housing, ID and documents, mail address, basic benefits (food, healthcare, vouchers), immediate safety and stability.\n` +
+        `- If unsure whether housing and ID are confirmed, ASSUME they are NOT.\n` +
+        `- Name concrete steps in ${loc}: call 211 or a local shelter, county clerk/DMV for ID requirements, mailing address through shelter or social service, apply for food/healthcare benefits.\n` +
+        `- Day-labor or temp work may appear only after shelter + ID stages — never earlier.\n` +
+        `- Path title "${idea?.title || "this path"}" must match the stage order — do not say "get ID sorted" then open with job searches.\n` +
+        `- "What to do" text: 1–3 short concrete sentences (who to contact, what to ask for, what to prepare). Never restate the mission title. Never use vague lines like "Do the next logical step forward." Never use ellipses (…).\n` +
+        `- Warm, human, practical language — no bureaucracy. Each task = one small doable action.\n`
       );
     }
 
     function getIdRoadmapCorrectionBlock(idea = state.currentIdea) {
-      const loc = getUserLocation() || "their city";
+      const loc = shortenLocationForSpeech(getUserLocation() || "their city");
       return (
-        `\nID / HOUSING CORRECTION — user needs shelter and/or ID before job-search homework.\n` +
-        `Regenerate stages 1–2 to cover:\n` +
+        `\nID / HOUSING CORRECTION — STABILITY FIRST. User needs shelter and/or ID before job-search or outreach.\n` +
+        `Regenerate stages 1–2 to cover ONLY stability:\n` +
         `- Stage 1: Safe place to stay tonight + this week in ${loc} (211, shelter intake, what ID they require).\n` +
-        `- Stage 2: Get ID sorted — birth certificate, Social Security card if needed, state ID at DMV/county clerk, mailing address for applications.\n` +
-        `- Stage 3+: Income (temp labor, staffing) and only then formal job board searches if ID is in progress.\n` +
-        `REMOVE "Search Indeed/Google Jobs" and "Contact Tracking Spreadsheet" from stage 1 entirely.\n` +
-        `Do NOT use Gumroad, digital product, or unrelated "why" text on employment tasks.\n`
+        `- Stage 2: Get ID sorted — birth certificate, Social Security card if needed, state ID at DMV/county clerk, mailing address, food/healthcare benefits.\n` +
+        `- Stage 3+: Income (temp labor, staffing) ONLY after housing and ID are in progress — never business/client outreach before that.\n` +
+        `REMOVE from stages 1–2 entirely: "Search Indeed/Google Jobs", "Contact Tracking Spreadsheet", client outreach, sales calls, cold emails.\n` +
+        `Do NOT use Gumroad, digital product, or unrelated "why" text on employment tasks.\n` +
+        `Never write full location strings like "Austin, Texas, United States" — use "${loc}" only.\n` +
+        `Never use ellipses (…) in titles or body text.\n`
       );
     }
 
@@ -23856,7 +24201,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         stage.desc,
         ...(stage.tasks || []).map((task) => getTaskText(task))
       ].join(" ").toLowerCase();
-      return /\b(indeed|google jobs|search .* jobs|job search|who'?s hiring|hiring lanes|scan .+ hiring|contact tracking spreadsheet|log each business you call)\b/.test(blob);
+      return /\b(indeed|google jobs|search .* jobs|job search|who'?s hiring|hiring lanes|scan .+ hiring|contact tracking spreadsheet|log each business you call|client outreach|sales call|cold email|find clients|land (?:a |your )?first (?:client|sale|customer)|pitch (?:your|to)|business outreach|staffing agenc|temp agenc|day[- ]?labor|apply to \d+ (?:temp|jobs|roles)|resume for hiring)\b/.test(blob);
     }
 
     function stageHasStabilityBasics(stage) {
@@ -23866,28 +24211,130 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         stage.desc,
         ...(stage.tasks || []).map((task) => getTaskText(task))
       ].join(" ").toLowerCase();
-      return /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed|shelter|housing|211|safe place|mailing address|social services|call or visit 2 shelter|secure tonight)\b/.test(blob);
+      return /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed|shelter|housing|211|safe place|mailing address|social services|call or visit 2 shelter|secure tonight|food|snap|medicaid|benefits|voucher)\b/.test(blob);
+    }
+
+    function stageHasHousingBasics(stage) {
+      if (!stage) return false;
+      const blob = [
+        stage.label,
+        stage.desc,
+        ...(stage.tasks || []).map((task) => getTaskText(task))
+      ].join(" ").toLowerCase();
+      return /\b(shelter|housing|211|safe place|bed|tonight|place to stay|mailing address)\b/.test(blob);
+    }
+
+    function stageHasIdBasics(stage) {
+      if (!stage) return false;
+      const blob = [
+        stage.label,
+        stage.desc,
+        ...(stage.tasks || []).map((task) => getTaskText(task))
+      ].join(" ").toLowerCase();
+      return /\b(id|identification|birth certificate|social security|ssn|driver'?s license|dmv|county clerk|documents needed|state id)\b/.test(blob);
     }
 
     function roadmapNeedsStabilityFirst(stages, idea = state.currentIdea) {
       if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return false;
       if (!Array.isArray(stages) || !stages.length) return true;
+      if (stabilityStatusIsUnconfirmed() && stages.some((stage) => stageHasJobSearchHomework(stage))) {
+        return true;
+      }
       const first = stages[0];
+      const second = stages[1];
       if (stageHasJobSearchHomework(first)) return true;
+      if (stageHasJobSearchHomework(second) && !(stageHasHousingBasics(first) || stageHasIdBasics(first))) return true;
+
+      const earlyStages = [first, second].filter(Boolean);
+      const earlyHasHousing = earlyStages.some((stage) => stageHasHousingBasics(stage));
+      const earlyHasId = earlyStages.some((stage) => stageHasIdBasics(stage));
+      if (userNeedsHousingFirst(idea) && !earlyHasHousing && !conversationConfirmsHasHousing(getConversationUserBlob())) return true;
+      if (userNeedsIdFirst(idea) && !earlyHasId) return true;
       if (stageHasStabilityBasics(first)) return false;
-      return stageHasJobSearchHomework(first) || /\b(resume for hiring|apply online|package your proof)\b/.test(
+      return stageHasJobSearchHomework(first) || /\b(resume for hiring|apply online|package your proof|outreach to clients)\b/.test(
         [first.label, first.desc].join(" ").toLowerCase()
       );
     }
 
     function getStabilityFirstRoadmapStages(idea = state.currentIdea) {
-      return personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea).slice(0, 4);
+      const stages = personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea).slice(0, 4);
+      const focus = `${idea?.title || ""} ${idea?.type || ""}`.toLowerCase();
+      const city = shortenLocationForSpeech(getUserLocation() || "your area");
+      if (!stages[0]?.tasks?.length) return stages;
+
+      if (/\b(id|document|birth certificate)\b/.test(focus)) {
+        stages[0] = {
+          ...stages[0],
+          label: `Confirm safe housing while replacing ID`,
+          desc: "Make sure there is a safe place for the next week before starting document requests.",
+          tasks: [
+            `Call a housing navigator or 211 in ${city} — ask for a safe place this week, coordinated entry, and what documents they accept`,
+            `Choose one shelter or housing backup from the contacts below — confirm intake time and bed availability`,
+            `Put every ID paper you already have, medications, and your phone charger in one bag`
+          ]
+        };
+      } else if (/\b(mail|benefit|essential)\b/.test(focus)) {
+        stages[0] = {
+          ...stages[0],
+          label: `Connect housing with basic support`,
+          desc: "Use one benefits or social-service contact to address shelter, food, healthcare, and mail together.",
+          tasks: [
+            `Call the first social-service office below in ${city} — ask for emergency shelter, food help, healthcare, and a housing navigator`,
+            `Ask which safe place can take you this week and whether it offers mail service`,
+            `Write down the intake time, address, required documents, and one backup contact`
+          ]
+        };
+      }
+      if (stabilityStatusIsUnconfirmed()) {
+        stages[2] = {
+          label: "Set up food and healthcare support",
+          desc: "Lower immediate pressure while housing and ID are still being secured.",
+          tasks: [
+            `Call the first benefits office below — ask how to apply for food and healthcare help with the documents you have`,
+            `Gather one proof of identity, any mail, and income information you already have for the application`,
+            `Ask whether transportation, fee waivers, or emergency vouchers are available`
+          ]
+        };
+        stages[3] = {
+          label: "Keep the stability plan moving",
+          desc: "Follow up on housing and ID without adding job or outreach pressure yet.",
+          tasks: [
+            `Call your first housing contact again — confirm your waitlist position, next intake time, and backup option`,
+            `Check the status of your first ID document request and write down the next required date or fee`,
+            `Choose one recovery support person or meeting to contact this week and put the time in your calendar`
+          ]
+        };
+      }
+      return stages;
+    }
+
+    function stabilityRoadmapRepeatsAnotherPath(stages, idea = state.currentIdea) {
+      if (!stabilityStatusIsUnconfirmed() || !Array.isArray(stages) || !stages[0]) return false;
+      const currentKey = slugify(idea?.title || "");
+      const firstStageText = [
+        stages[0].label,
+        ...(stages[0].tasks || []).map((task) => getTaskText(task))
+      ].join(" ");
+      if (!firstStageText.trim()) return false;
+      return Object.entries(state.allRoadmaps || {}).some(([key, roadmap]) => {
+        if (key === currentKey || !roadmap?.stages?.[0]) return false;
+        const otherFirstStage = [
+          roadmap.stages[0].label,
+          ...(roadmap.stages[0].tasks || []).map((task) => getTaskText(task))
+        ].join(" ");
+        return textSimilarity(firstStageText, otherFirstStage) >= 0.72;
+      });
     }
 
     function ensureStabilityFirstRoadmapStages(stages, idea = state.currentIdea) {
       if (isFounderRoadmapForIdea(idea)) return stages;
       if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return stages;
-      if (!Array.isArray(stages) || !stages.length || roadmapNeedsStabilityFirst(stages, idea)) {
+      if (
+        !Array.isArray(stages)
+        || !stages.length
+        || roadmapNeedsStabilityFirst(stages, idea)
+        || stabilityRoadmapRepeatsAnotherPath(stages, idea)
+      ) {
         return getStabilityFirstRoadmapStages(idea);
       }
       return stages;
@@ -23899,18 +24346,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getReentryPromptBlock(idea = state.currentIdea) {
       if (!isReentrySituation(idea)) return "";
-      const loc = getUserLocation() || "their city";
-      const parsed = parseLocationAnswer(loc);
+      const loc = shortenLocationForSpeech(getUserLocation() || "their city");
+      const parsed = parseLocationAnswer(getUserLocation() || "");
       const pathTitle = idea?.title || "their chosen path";
       const stability = getReentryStabilityGuidance(parsed, loc);
       return (
-        `\nREENTRY / RECENTLY RELEASED — NON-NEGOTIABLE ROADMAP ORDER:\n` +
-        `- This person is rebuilding after incarceration or similar disruption. Do NOT start with training, certifications, portfolios, or "compare 3 programs."\n` +
+        `\nREENTRY / RECENTLY RELEASED — NON-NEGOTIABLE ROADMAP ORDER (STABILITY FIRST):\n` +
+        `- This person is rebuilding after incarceration or similar disruption. Do NOT start with training, certifications, portfolios, job boards, business outreach, sales, or client outreach.\n` +
         `- Stage 1 MUST be stability in ${loc}: ${stability}.\n` +
-        `- Stage 2 MUST be fast, background-check-aware income: temp/staffing agencies, day-labor boards, reentry-friendly employers, or workforce placement — not long courses.\n` +
-        `- Stage 3: benefits eligibility (use country-appropriate programs — NOT US SNAP/Medicaid/211 outside the US), transportation, parole/probation compliance, and weekly routine.\n` +
-        `- Stage 4 ONLY: longer steps toward "${pathTitle}" (training, certification, or self-employment) — and only after stages 1–3 are underway.\n` +
+        `- Stage 2 MUST finish any remaining ID/mail/benefits basics before income work.\n` +
+        `- Stages 3–4 must remain on housing, ID, mail, benefits, healthcare, transportation, immediate safety, and recovery support unless housing is confirmed AND ID is obtained or fully ready to submit.\n` +
+        `- Only after both statuses are confirmed may a later roadmap add income steps toward "${pathTitle}". Mentioning housing or ID in an earlier stage is not confirmation.\n` +
+        `- If unsure housing/ID are confirmed, ASSUME they are NOT and keep every stage on stability only.\n` +
         `- NEVER reference 211.org, United Way 211, American Job Center, DMV, or SNAP unless the user is in the United States.\n` +
+        `- Use short place names only ("${loc}"), never full "City, State, Country". No ellipses (…).\n` +
         `- Every stage must reference constraints they stated (money, timeline, background checks, housing, parole).\n`
       );
     }
@@ -23919,9 +24368,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!isReentrySituation()) return "";
       return (
         `\nREENTRY SITUATION — this conversation is from someone rebuilding after incarceration or with background-check and stability constraints.\n` +
-        `- At least ONE path must focus on stability + income THIS WEEK (ID/housing basics, reentry workforce program, temp/staffing work) — NOT long training first.\n` +
-        `- Do NOT offer three paths that all start with certifications, college, or business building.\n` +
-        `- Longer skill or business paths are OK only if the tagline clearly says they come AFTER ID, housing, and first income are handled.\n` +
+        `- If safe housing and legal ID are not both confirmed, ALL paths must be stability-only: shelter/housing, ID/documents, mail, benefits, healthcare, transportation, and immediate safety.\n` +
+        `- Do NOT offer temp/staffing work, job searches, certifications, college, business building, sales, or client outreach while either status is unknown or incomplete.\n` +
+        `- A tagline saying work comes later does not make an employment path acceptable before both stability gates are confirmed.\n` +
         `- Reference background checks, parole/probation, and limited money explicitly when relevant.\n`
       );
     }
@@ -25115,7 +25564,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ).join("");
       return `
         <section class="task-roadblock-section" aria-label="Common roadblocks for this step">
-          <h4 class="task-mentor-label">Stuck on this step?</h4>
+          <h4 class="task-mentor-label task-roadblock-title">Stuck on this step?</h4>
           <div class="task-roadblock-buttons">
             ${buttons}
             <button type="button" class="task-roadblock-btn task-roadblock-btn--ask" data-task-id="${escapeHtml(taskId)}" data-roadblock="__ask__">Ask about a different issue</button>
@@ -26022,7 +26471,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!currentIntakeHasStatedSkills()) return false;
       if (isGigPlatformPath(idea)) return false;
       if (isIdeaEmploymentPath(idea)) return false;
-      if (isDigitalProductPath(idea)) return false;
+      // Avoid isDigitalProductPath() here: it consults getPathArchetype(),
+      // which consults this function and can recurse during intake.
+      if (isIdeaOnlineBusinessPath(idea)) return false;
       return getUserSituationProfile(idea).grounded;
     }
 
@@ -26598,7 +27049,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         housing: [
           {
             label: "Secure tonight + this week in {locRaw}",
-            desc: "Safety and a bed come before job training or business ideas.",
+            desc: "A safe place to sleep comes before job hunting or reaching out for paid work.",
             tasks: [
               "{social_services_line}",
               "Call or visit 2 shelter or housing programs in {locRaw} today — ask about beds, waitlists, and what ID you need",
@@ -26607,7 +27058,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           },
           {
             label: "ID, mail, and benefits basics",
-            desc: "Documents and a mailing address unlock work and housing programs.",
+            desc: "Documents, a mailing address, and basic benefits unlock everything else.",
             tasks: [
               "{reentry_id}",
               "Sign up for a free mailing address or general delivery through a shelter, library, or social service in {locRaw}",
@@ -26615,8 +27066,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             ]
           },
           {
-            label: "Income that fits your housing timeline",
-            desc: "Fast, flexible work while you stabilize.",
+            label: "Income after housing and ID are moving",
+            desc: "Only after shelter and ID are underway — flexible work that fits your timeline.",
             tasks: [
               "{emp_staffing}",
               "Apply to 3 temp, day-labor, or immediate-hire roles in {locRaw} — prioritize employers who pay weekly",
@@ -26760,9 +27211,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function personalizeFallbackStages(stages, idea) {
-      const locRaw = getUserLocation() || "your area";
-      const parsed = parseLocationAnswer(locRaw);
-      const city = getLocationCityLabel(parsed, locRaw);
+      const locFull = getUserLocation() || "your area";
+      const parsed = parseLocationAnswer(locFull);
+      const city = getLocationCityLabel(parsed, locFull);
+      // User-facing copy uses the shortest natural place name (city only).
+      const locRaw = city || shortenLocationForSpeech(locFull);
       const profile = getUserSituationProfile(idea);
       const replaceTokens = (text) => applyPlaybookTokens(text, idea, parsed, locRaw)
         .replaceAll("{city}", city)
@@ -30095,13 +30548,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (skipConfirm) return Promise.resolve(finishRemoval());
 
       const confirmOptions = {
-        title: "Remove this roadmap?",
-        messageHtml: `This deletes step-by-step progress, My Notes, and Ask history for <strong>${escapeHtml(ideaTitle)}</strong>.`,
-        detail: options.resetMapView
-          ? "The Possibility Maps page will reset to an empty view."
-          : "The path stays on your map — you can open a fresh roadmap anytime.",
-        confirmLabel: "Remove roadmap",
-        cancelLabel: "Keep it",
+        title: "Delete Map",
+        confirmLabel: "Delete Map",
+        cancelLabel: "Keep",
         tone: "danger",
         compact: Boolean(options.anchorButton?.closest(".opp-card-remove-wrap, .roadmap-remove-anchor"))
       };
@@ -30377,17 +30826,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const category = state.roadmapCategories.find((entry) => entry.id === categoryId);
       if (!category) return;
 
-      const itemCount = (category.items || []).length;
-      const title = category.title || "this group";
       const confirmOptions = {
-        title: category.mapId ? "Delete this map?" : "Remove group?",
-        message: category.mapId
-          ? `Delete "${title}" and all ${itemCount ? `${itemCount} roadmap${itemCount === 1 ? "" : "s"}` : "roadmaps"}?`
-          : `Remove "${title}" from Roadmaps?`,
-        detail: category.mapId
-          ? "This removes the exploration, paths, and roadmap progress for this situation."
-          : "Roadmap shortcuts in this group will disappear from the sidebar.",
-        confirmLabel: category.mapId ? "Delete map" : "Remove",
+        title: "Delete Map",
+        confirmLabel: "Delete Map",
         cancelLabel: "Keep",
         tone: "danger",
         compact: false
@@ -30744,11 +31185,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       showConfirmDialog({
-        title: "Delete this map?",
-        messageHtml: `<strong>${escapeHtml(entry.title)}</strong>`,
-        detail: getMapSummaryForMap(entry) || "This removes the map, all paths, and any roadmaps you started on it.",
-        confirmLabel: "Delete map",
-        cancelLabel: "Keep it",
+        title: "Delete Map",
+        confirmLabel: "Delete Map",
+        cancelLabel: "Keep",
         tone: "danger"
       }).then((ok) => {
         if (ok) runDelete();
@@ -31484,6 +31923,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       const parsers = {
         id_status: ["idStatus", parseIdStatus],
+        housing_status: ["housingStatus", parseHousingStatus],
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
@@ -31494,8 +31934,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
       const parser = parsers[meta.step];
       if (parser) {
-        const parsed = parser[1](entry.content) || (parser[0] === "idStatus" ? "needs" : entry.content.slice(0, 80));
-        profile[parser[0]] = parsed;
+        const parsed = parser[1](entry.content);
+        if (parsed) profile[parser[0]] = parsed;
       }
     }
 
@@ -31514,6 +31954,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           { field: "idStatus", value: "has", label: "Yes, I have valid ID" },
           { field: "idStatus", value: "needs", label: "No — I still need to get ID sorted" },
           { field: "idStatus", value: "needs", label: "Not sure / working on it" }
+        ]);
+        return;
+      }
+      if (step === "housing_status") {
+        renderProfileIntakeChips([
+          { field: "housingStatus", value: "has", label: "Yes — I have a safe, reliable place" },
+          { field: "housingStatus", value: "needs", label: "Only temporary / not reliable" },
+          { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
         ]);
         return;
       }
@@ -33389,6 +33837,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       idStatus: {
         has: "Has valid ID / documents",
         needs: "Still needs ID or birth certificate"
+      },
+      housingStatus: {
+        has: "Has safe housing or reliable shelter access",
+        needs: "Still needs safe, reliable housing or shelter"
       }
     };
 
@@ -33401,6 +33853,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         willingToRelocate: "",
         founderStage: "",
         idStatus: "",
+        housingStatus: "",
         skills: "",
         constraints: "",
         goals: "",
@@ -33636,6 +34089,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         willingToRelocate: String(source.willingToRelocate || "").trim(),
         founderStage: String(source.founderStage || "").trim(),
         idStatus: String(source.idStatus || "").trim(),
+        housingStatus: String(source.housingStatus || "").trim(),
         skills: String(source.skills || "").trim(),
         constraints: String(source.constraints || "").trim(),
         goals: String(source.goals || "").trim(),
@@ -33664,6 +34118,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       pushLabel("incomeUrgency");
       pushLabel("pathPreference");
       pushLabel("idStatus");
+      pushLabel("housingStatus");
       pushLabel("workMode");
       pushLabel("willingToRelocate");
       pushLabel("founderStage");
@@ -33704,6 +34159,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (profile.founderStage) lines.push(`Founder / product stage: ${USER_PROFILE_FIELD_LABELS.founderStage[profile.founderStage] || profile.founderStage}`);
       if (profile.idStatus === "needs") lines.push("ID/documents: still needs valid ID or birth certificate");
       if (profile.idStatus === "has") lines.push("ID/documents: has valid ID");
+      if (profile.housingStatus === "needs") lines.push("Housing: still needs a safe, reliably accessible place to stay");
+      if (profile.housingStatus === "has") lines.push("Housing: has safe housing or reliable shelter access");
       if (hasSkills && profile.skills) {
         lines.push(`Skills / strengths: ${profile.skills}`);
       } else if (unsure) {
@@ -33810,9 +34267,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         profile.constraints = "";
       } else if (!profile.skills) {
         const clarifyingAnswers = state.history
-          .filter((entry) => entry.role === "user")
-          .slice(1)
-          .map((entry) => entry.content)
+          .map((entry, index) => ({ entry, index }))
+          .filter(({ entry, index }) => {
+            if (entry.role !== "user" || index === 0) return false;
+            const answer = String(entry.content || "");
+            const priorAssistant = state.history.slice(0, index).reverse().find((item) => item.role === "assistant")?.content || "";
+            const askedAboutSkills = /\b(skill|strength|experience|good at|done for work|earn money)\b/i.test(priorAssistant);
+            const explicitlyStatesExperience = /\b(my skills?|i(?:'ve| have) worked|i(?:'m| am) good at|i know how to|years? (?:of )?experience|my experience)\b/i.test(answer);
+            const stabilityOnlyAnswer = /\b(id|license|birth certificate|social security|housing|shelter|safe place|place to stay|homeless|car|couch|motel)\b/i.test(answer)
+              && !explicitlyStatesExperience;
+            return !stabilityOnlyAnswer && (askedAboutSkills || explicitlyStatesExperience);
+          })
+          .map(({ entry }) => entry.content)
           .join("\n");
         if (clarifyingAnswers.length > 12 && !conversationLacksSkillSignal(clarifyingAnswers)) {
           profile.skills = abbreviateQuestion(clarifyingAnswers, 200);
@@ -33822,12 +34288,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         profile.goals = abbreviateQuestion(getFirstUserMessage(), 160);
       }
       updateIdStatusFromConversation();
+      updateHousingStatusFromConversation();
+      const stabilityProfile = normalizeUserProfile(state.userProfile);
+      profile.idStatus = stabilityProfile.idStatus;
+      profile.housingStatus = stabilityProfile.housingStatus;
       state.userProfile = profile;
       distillUserProfileSummary();
     }
 
     function profileIntakeIsComplete(founderMode = isFounderOrProjectPrompt(getFirstUserMessage())) {
       const profile = normalizeUserProfile(state.userProfile);
+      if (profileIntakeNeedsIdStep(profile) || profileIntakeNeedsHousingStep(profile)) return false;
       if (!profile.incomeUrgency || !profile.pathPreference) return false;
       if (founderMode) return Boolean(profile.founderStage);
       if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) return false;
@@ -33888,6 +34359,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         { field: "idStatus", value: "needs", label: "Not sure / working on it" }
       ]);
       trackEvent("profile_intake_step_shown", { step: "id_status" });
+    }
+
+    function askProfileHousingStatusStep(options = {}) {
+      state.profileIntakeStep = "housing_status";
+      pushProfileIntakeAssistantMessage(
+        options.clarify
+          ? "I want to make sure I understand before building your map. Do you have a safe place you can reliably stay for at least the next week?"
+          : "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?"
+      );
+      renderProfileIntakeChips([
+        { field: "housingStatus", value: "has", label: "Yes — I have a safe, reliable place" },
+        { field: "housingStatus", value: "needs", label: "Only temporary / not reliable" },
+        { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "housing_status" });
     }
 
     function askProfileIncomeStep() {
@@ -34046,6 +34532,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         incomeUrgency: "income",
         pathPreference: "path",
         idStatus: "id_status",
+        housingStatus: "housing_status",
         willingToRelocate: "relocate",
         founderStage: "founder_stage",
         skills: "skills"
@@ -34065,6 +34552,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (state.profileIntakeStep) return state.profileIntakeStep;
       const profile = normalizeUserProfile(state.userProfile);
       if (profileIntakeNeedsIdStep(profile)) return (state.profileIntakeStep = "id_status");
+      if (profileIntakeNeedsHousingStep(profile)) return (state.profileIntakeStep = "housing_status");
       if (!profile.incomeUrgency) return (state.profileIntakeStep = "income");
       if (!profile.pathPreference) return (state.profileIntakeStep = "path");
       const founder = isFounderOrProjectPrompt(getFirstUserMessage());
@@ -34094,6 +34582,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (step === "id_status") {
         if (profileIntakeNeedsIdStep(profile)) return askProfileIdStatusStep();
+        if (profileIntakeNeedsHousingStep(profile)) return askProfileHousingStatusStep();
+        askProfileIncomeStep();
+        return;
+      }
+      if (step === "housing_status") {
+        if (profileIntakeNeedsHousingStep(profile)) return askProfileHousingStatusStep();
         askProfileIncomeStep();
         return;
       }
@@ -34171,6 +34665,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         askProfileIdStatusStep();
         return;
       }
+      if (profileIntakeNeedsHousingStep(profile)) {
+        askProfileHousingStatusStep();
+        return;
+      }
       if (profileIntakeIsComplete(founder)) {
         finishProfileIntake();
         return;
@@ -34219,6 +34717,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const parsers = {
         id_status: ["idStatus", parseIdStatus],
+        housing_status: ["housingStatus", parseHousingStatus],
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
@@ -34229,8 +34728,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
       const parser = parsers[step];
       if (parser) {
-        const parsed = parser[1](trimmed) || (parser[0] === "idStatus" ? "needs" : trimmed.slice(0, 80));
-        if (!parsed) return;
+        const parsed = parser[1](trimmed);
+        if (!parsed) {
+          const clarificationByStep = {
+            id_status: "I did not catch whether you have usable ID. Do you have a valid driver's license or state ID right now?",
+            housing_status: "I did not catch whether your housing is safe and reliable. Do you have somewhere you can stay for at least the next week?",
+            income: "I did not catch the timing. Do you need income immediately, within three months, or is long-term okay?",
+            path: "I did not catch your preference. Would you rather get hired, start your own thing, or consider either?",
+            work_mode: "I did not catch the work setup. Do you prefer remote, hybrid, in-person, or flexible work?",
+            business_setup: "I did not catch how you would reach customers. Would you travel to them, use a fixed location, work online, or mix these?",
+            relocate: "I did not catch whether moving is possible. Would you relocate: yes, no, or maybe?",
+            founder_stage: "I did not catch the current stage. Are you testing, finding first users, running a partner test, or seeking growth funding?"
+          };
+          pushProfileIntakeAssistantMessage(clarificationByStep[step] || "Could you clarify that before I continue?");
+          renderProfileChipsForStep(step);
+          trackEvent("profile_intake_clarity_requested", { step });
+          return;
+        }
         setUserProfileField(parser[0], parsed);
       } else {
         return;
@@ -34306,13 +34820,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         );
       }
       const parsed = parseLocationAnswer(loc);
+      const cityShort = shortenLocationForSpeech(loc);
       return (
         `\nUser location: ${loc}\n` +
+        `For all user-facing task text (mission, text, why, howTo, labels): use ONLY the shortest place name "${cityShort}" — NEVER write full strings like "${loc}" or "City, State, Country". Omit the city if the local resources list already makes it obvious.\n` +
         getLocationCitizenRulesBlock(parsed, loc) +
         getResourceCategoryPromptBlock() +
         `For each relevant task include in JSON:\n` +
         `- resourceCategories[] tagging what kinds of help apply\n` +
-        `- resources.local[] — real orgs serving ${loc} (name + official url + phone/email only if published)\n` +
+        `- resources.local[] — real orgs serving ${cityShort} (name + official url + phone/email only if published)\n` +
         `- resources.national[] — country-wide portals when applicable\n` +
         `- resources.global[] — online options that work anywhere\n` +
         `- alternatives — another route if the main step doesn't apply there\n` +
@@ -34345,6 +34861,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function startPathGenerationAfterIntake() {
+      mergeUserProfileFromConversation();
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profileIntakeNeedsIdStep(profile)) {
+        askProfileIdStatusStep();
+        return;
+      }
+      if (profileIntakeNeedsHousingStep(profile)) {
+        askProfileHousingStatusStep();
+        return;
+      }
       showReplyBox(false);
       addTypingBubble(PATH_BUILDING_MSG);
       const founder = isFounderOrProjectPrompt(getFirstUserMessage());
@@ -34453,6 +34979,30 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         pushUnique(idea);
       });
       return out.slice(0, count);
+    }
+
+    function requiresStabilityOnlyIdeas() {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      const profile = normalizeUserProfile(state.userProfile);
+      const stabilitySituation = userNeedsIdFirst()
+        || userNeedsHousingFirst()
+        || conversationMentionsStabilityRebuild(getConversationUserBlob())
+        || /\b(sober|recovery|rehab|starting over|back on (?:my )?feet)\b/i.test(getConversationUserBlob());
+      return stabilitySituation && (profile.idStatus !== "has" || profile.housingStatus !== "has");
+    }
+
+    function ideaIsStabilityOnly(idea) {
+      const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      const actionBlob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""}`.toLowerCase();
+      const hasStability = /\b(housing|shelter|safe place|place to stay|id\b|identification|birth certificate|documents|mail(?:ing)? address|benefits|food|healthcare|voucher|stability|essentials)\b/.test(blob);
+      const hasPrematureWork = /\b(job|hired|hiring|employment|employer|income|paycheck|day[- ]?labor|temp work|staffing|client|customer|sales|business|outreach|freelance|gig|restaurant|warehouse|apply for work)\b/.test(actionBlob);
+      return hasStability && !hasPrematureWork;
+    }
+
+    function enforceStabilityFirstIdeas(ideas, count = 3) {
+      if (!requiresStabilityOnlyIdeas()) return ideas;
+      const safeIdeas = (ideas || []).filter(ideaIsStabilityOnly);
+      return ensureIdeaSet(safeIdeas, stabilityFallbackIdeas, count);
     }
 
     function repairMapIdeasIfNeeded() {
@@ -34689,7 +35239,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
         .join("\n\n");
       return (
-        "You are whatimado, an empathetic possibility advisor. The user already answered one follow-up question. Ask ONE more short clarifying question that goes deeper — a blocker, resource limit (time, money, transport, childcare, ID/documents), dealbreaker, or priority they have not spelled out yet. If ID/documents have not been discussed and they may need them, ask about that. Reference their latest answer. Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
+        "You are whatimado, an empathetic possibility advisor. The user already answered one follow-up question. Ask ONE more short clarifying question that goes deeper. For anyone rebuilding after recovery, release, homelessness, or a major disruption, you MUST establish BOTH ID status and whether they have a safe place they can reliably stay for at least the next week before discussing jobs. Ask about whichever stability fact is still missing. Otherwise ask about a blocker, resource limit, dealbreaker, or priority they have not spelled out. Reference their latest answer. Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
         transcript
       );
     }
@@ -34700,10 +35250,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
       }
       if (conversationMentionsIdNeed(blob) || userNeedsIdFirst()) {
+        if (!conversationConfirmsHasHousing(blob) && !conversationMentionsHousingInstability(blob)) {
+          return "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
+        }
         return "What documents do you still need for ID — and do you know where to go locally to get them?";
       }
       if (/recover|sober|aa|rehab/.test(blob)) {
-        return "What support or schedule do you need to keep stable while you build income — meetings, treatment, or something else?";
+        return "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
       }
       return "What's the main constraint right now — time, money, transportation, childcare, or something else you can't work around?";
     }
@@ -34716,13 +35269,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         let finalAnswer = answer || fallback;
         const blob = getConversationUserBlob().toLowerCase();
         const idAlreadyDiscussed = conversationMentionsIdNeed(blob) || conversationConfirmsHasId(blob);
+        const housingAlreadyDiscussed = conversationMentionsHousingInstability(blob) || conversationConfirmsHasHousing(blob);
+        const stabilityRebuild = conversationMentionsStabilityRebuild(blob)
+          || /\b(sober|recovery|rehab|rebuild(?:ing)? (?:my )?life|back on (?:my )?feet|starting over)\b/.test(blob);
         const needsIdQuestion = !idAlreadyDiscussed && (
           conversationMentionsHousingInstability(blob)
-          || conversationMentionsStabilityRebuild(blob)
-          || /\b(sober|recovery|rebuild(?:ing)? (?:my )?life)\b/.test(blob)
+          || stabilityRebuild
         );
         if (needsIdQuestion && !/\b(id|identification|birth certificate|driver'?s license|state id|documents)\b/i.test(finalAnswer || "")) {
           finalAnswer = "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
+        } else if (stabilityRebuild && idAlreadyDiscussed && !housingAlreadyDiscussed) {
+          finalAnswer = "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
         }
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
@@ -34809,12 +35366,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const ideaCount = 3;
       const founderMode = options.founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
       const recentTitles = getRecentIdeaTitlesForPrompt(getFirstUserMessage());
+      mergeUserProfileFromConversation();
       const fallbackIdeas = (founderMode ? getFounderFallbackIdeas() : getFallbackIdeas()).slice(0, 3);
       let ideas = fallbackIdeas;
       let usedFallback = false;
 
       try {
-        mergeUserProfileFromConversation();
         const summary = getAdvisorContext();
         const directNote = pathMode === "direct"
           ? "\n\nReturn exactly THREE distinct path options — different viable strategies for this person. They will pick ONE on the map, then choose a starting direction before following a full step-by-step direct roadmap."
@@ -34895,6 +35452,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } finally {
         completeChatPathBuildProgress();
       }
+
+      ideas = enforceStabilityFirstIdeas(ideas, ideaCount);
 
       try {
         state.ideas = ensureIdeaSet(ideas, fallbackIdeas, ideaCount);
@@ -36296,7 +36855,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           : " They chose a Flexible Roadmap — they will pick between options at every step.";
         const answer = await callAdvisor(buildClarifyingPrompt(userText) + pathModeNote, 450);
         const fallback = getClarifyingFallback(userText);
-        const finalAnswer = answer || fallback;
+        let finalAnswer = answer || fallback;
+        const stabilityRebuild = conversationMentionsStabilityRebuild(userText)
+          || /\b(sober|recovery|rehab|rebuild(?:ing)? (?:my )?life|back on (?:my )?feet|starting over)\b/i.test(userText);
+        if (stabilityRebuild) {
+          const idKnown = conversationMentionsIdNeed(userText) || conversationConfirmsHasId(userText);
+          const housingKnown = conversationMentionsHousingInstability(userText) || conversationConfirmsHasHousing(userText);
+          if (!idKnown) {
+            finalAnswer = "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
+          } else if (!housingKnown) {
+            finalAnswer = "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
+          }
+        }
 
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
@@ -36520,6 +37090,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           const profile = normalizeUserProfile(state.userProfile);
           if (profileIntakeNeedsIdStep(profile)) {
             askProfileIdStatusStep();
+            return;
+          }
+          if (profileIntakeNeedsHousingStep(profile)) {
+            askProfileHousingStatusStep();
             return;
           }
           if (!profileIntakeIsComplete(founder)) {
@@ -39184,13 +39758,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       };
 
-      setMeta($("#roadmap-meta-location"), getUserLocation());
+      const shortLocation = shortenLocationForSpeech(getUserLocation());
+      setMeta($("#roadmap-meta-location"), shortLocation);
       setMeta($("#roadmap-meta-type"), idea.type || "");
       setMeta($("#roadmap-meta-timeline"), idea.timeline || idea.income || "");
 
       const firstUser = getFirstUserMessage();
       const goal = idea.why || (firstUser.length > 120 ? `${firstUser.slice(0, 117)}…` : firstUser) || "—";
-      const details = [getUserLocation(), idea.type, idea.timeline || idea.income].filter(Boolean).join(" · ");
+      const details = [shortLocation, idea.type, idea.timeline || idea.income].filter(Boolean).join(" · ");
 
       const goalEl = $("#roadmap-footer-goal");
       const detailsEl = $("#roadmap-footer-details");
@@ -39622,19 +40197,40 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         normalized.mission
         || pickDistinctMissionTitle(normalized, { taskIndex, stageLabel: stage.label })
       );
-      const text = stripRepeatedPathReferences(
+      let text = stripRepeatedPathReferences(
         simplified ? getTaskDisplayActionText(normalized) : humanizeTaskText(normalized.text),
         { idea: state.currentIdea, stageLabel: stage.label }
       );
+      text = stripMissionTitleFromBody(scrubVerboseLocationFromText(stripEllipsisFromCopy(text)), mission);
+      if (isVagueWhatToDoText(text)) {
+        const concrete = stripMissionTitleFromBody(
+          scrubVerboseLocationFromText(humanizeTaskText(buildMentorUserActionText(normalized) || text)),
+          mission
+        );
+        if (concrete && !isVagueWhatToDoText(concrete)) {
+          text = concrete;
+        } else {
+          text = buildConcreteTaskAction(normalized);
+        }
+      }
       const actionRestatesMission = textSimilarity(text, mission) >= 0.72;
       const showWhatToDo = shouldShowWhatToDoSection(text, normalized);
       const showExpandedMissionTitle = !(actionRestatesMission && showWhatToDo)
         && textSimilarity(mission, text) < 0.68;
-      const compressedLabel = getTaskCompressedLabel(mission, text);
-      const howTo = humanizeTaskText(normalized.howTo || inferHowTo(normalized));
+      const compressedLabel = stripEllipsisFromCopy(getTaskCompressedLabel(mission, text));
+      const howTo = stripMissionTitleFromBody(
+        scrubVerboseLocationFromText(humanizeTaskText(normalized.howTo || inferHowTo(normalized))),
+        mission
+      );
       const contextNote = getTaskContextNote(normalized, stage);
-      const why = humanizeTaskText(normalized.why || inferTaskWhy(normalized));
-      const outcome = humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized));
+      const why = stripMissionTitleFromBody(
+        scrubVerboseLocationFromText(humanizeTaskText(normalized.why || inferTaskWhy(normalized))),
+        mission
+      );
+      const outcome = stripMissionTitleFromBody(
+        scrubVerboseLocationFromText(humanizeTaskText(normalized.outcome || inferTaskOutcome(normalized))),
+        mission
+      );
       const taskData = state.roadmapKey ? getRoadmapTaskData(id) : { checked: false };
       const isDone = Boolean(taskData.checked);
       const canExpand = canExpandTask(stageIndex, taskIndex);
@@ -39642,7 +40238,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const displaySteps = getTaskDisplaySteps(normalized);
       const chips = [];
       if (showResources && normalized.local) {
-        chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(normalized.local)}">${escapeHtml(normalized.local.length > 42 ? `${normalized.local.slice(0, 39)}…` : normalized.local)}</span>`);
+        const localLabel = scrubVerboseLocationFromText(stripEllipsisFromCopy(normalized.local));
+        chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(localLabel)}">${escapeHtml(localLabel.length > 42 ? localLabel.slice(0, 42).replace(/\s+\S*$/, "").trim() || localLabel.slice(0, 42) : localLabel)}</span>`);
       }
       const meta = renderTaskMentorMetaHtml(normalized);
       const showBreakdown = displaySteps.length >= 2;
@@ -42253,17 +42850,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const panel = document.createElement("div");
         panel.className = `roadmap-delete-popover${compact ? " roadmap-delete-popover--compact" : ""}`;
         panel.setAttribute("role", "alertdialog");
-        panel.setAttribute("aria-labelledby", "roadmap-delete-popover-title");
-        const messageMarkup = messageHtml
-          ? `<p class="roadmap-delete-popover-message">${messageHtml}</p>`
-          : message ? `<p class="roadmap-delete-popover-message">${escapeHtml(message)}</p>` : "";
+        panel.setAttribute("aria-label", title || "Delete Map");
         panel.innerHTML = `
-          <p class="roadmap-delete-popover-title" id="roadmap-delete-popover-title">${escapeHtml(title)}</p>
-          ${messageMarkup}
-          ${detail ? `<p class="roadmap-delete-popover-detail">${escapeHtml(detail)}</p>` : ""}
           <div class="roadmap-delete-popover-actions">
-            <button type="button" class="roadmap-delete-popover-btn roadmap-delete-popover-btn--cancel">${escapeHtml(cancelLabel)}</button>
             <button type="button" class="roadmap-delete-popover-btn ${tone === "danger" ? "roadmap-delete-popover-btn--danger" : "roadmap-delete-popover-btn--confirm"}">${escapeHtml(confirmLabel)}</button>
+            <button type="button" class="roadmap-delete-popover-btn roadmap-delete-popover-btn--cancel">${escapeHtml(cancelLabel)}</button>
           </div>
         `;
 
