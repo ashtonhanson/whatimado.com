@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-15-housing-intake-stability-gate">
+  <meta name="whatimado-build" content="2026-07-15-dependent-aware-task-resources">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -802,8 +802,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.65rem;
-      height: 1.65rem;
+      width: 2rem;
+      height: 2rem;
       padding: 0;
       border: 1px solid rgba(120, 130, 200, .24);
       border-radius: 999px;
@@ -814,10 +814,6 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-roadmap-category-delete:hover {
-      border-color: rgba(220, 38, 38, .32);
-      background: rgba(254, 242, 242, .95);
-      color: #b91c1c;
-    }
       border-color: rgba(220, 38, 38, .32);
       background: rgba(254, 242, 242, .95);
       color: #b91c1c;
@@ -11048,6 +11044,13 @@
       line-height: 1.35;
     }
 
+    html[data-color-scheme="adult"] .task-contact-details {
+      margin-top: .18rem;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
     html[data-color-scheme="adult"] .roadmap-local-meta {
       display: flex;
       flex-direction: column;
@@ -16106,7 +16109,7 @@
     const MIN_CLARIFYING_QUESTIONS = 2;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 missions each (JSON key remains "tasks" for compatibility).\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What to do NOW in 1–3 short concrete sentences: who to contact, what to ask for, what to prepare. Must NOT restate the mission title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call 211 and ask for shelter beds and waitlists tonight. Write down 3 program names, phone numbers, and what ID each place needs.\\"","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line explaining why THIS step fits their situation when it might look surprising (e.g. workforce visit for a business owner = self-employment programs, not job listings). Empty only if obviously on-track.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[{"name":"National portal","org":"Government program","phone":"","email":"","url":"https://..."}],"global":[{"name":"Online option","org":"Platform name","phone":"","email":"","url":"https://..."}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Plain-language goal — e.g. Get one local org to say yes to trying your idea (NOT Find 10 nonprofits)","text":"What to do NOW in 1–3 short concrete sentences: who to contact, what to ask for, what to prepare. Must NOT restate the mission title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call 211 and ask for shelter beds and waitlists tonight. Write down 3 program names, phone numbers, and what ID each place needs.\\"","mentorHelp":"Bullet list of prepared ASSETS only — e.g. 8 orgs ranked, draft email, phone script, tracker. NEVER restate the mission title or explain what contacting means.","howTo":"Max 2 short action lines pointing at assets below — e.g. Send the draft email to #1 on the list. NEVER paraphrase the mission or task title.","why":"One short line explaining why THIS step fits their situation when it might look surprising (e.g. workforce visit for a business owner = self-employment programs, not job listings). Empty only if obviously on-track.","outcome":"Measurable proof — e.g. 3 emails sent, tracker updated. NOT a restatement of the mission.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"10 minutes|30 minutes|1 hour|2 hours","difficulty":"Easy|Medium|Advanced","steps":["Optional — max 2 tiny follow-ups after the prepared assets exist"],"alternatives":"If this mission does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
@@ -16118,6 +16121,8 @@
       '- NEVER use vague "this" or "your goal" — name the specific service in plain words (e.g. "people who might book your mobile grooming service" not "people who care about this").\n' +
       '- NEVER write paragraphs explaining what the task means. script = ONE immediately usable document only (email, proposal, resume, cover letter, spreadsheet, cold message, survey, business plan, marketing post, flyer, presentation, checklist, calendar, phone script, meeting agenda). If none applies, leave script empty.\n' +
       '- Contact 5 orgs → resources (names, emails, phones) + script (draft + follow-up email + phone script + spreadsheet tracker).\n' +
+      '- Never assume the user has children or childcare duties. Mention children, childcare, dependents, or family-specific aid ONLY when the USER PROFILE explicitly says dependent support is needed.\n' +
+      '- When a step could be reduced by a real grant, voucher, benefit, fee waiver, scholarship, or assistance program, include the exact program in resources with its official application page and published contact details. Never invent funding or imply eligibility is guaranteed.\n' +
       '- Build a logo → script (logo brief + mood board keywords + color palette hex + typography + AI image prompts + SVG recommendations).\n' +
       '- Interview customers → script (interview questions + Google Form field list + short survey + call script + note template table).\n' +
       'MISSION PHILOSOPHY:\n' +
@@ -16125,7 +16130,7 @@
       '- BAD mission: "Find 10 nonprofits." GOOD mission: "Get one local org to say yes to trying your idea."\n' +
       '- YOU provide the work product. text = what they do with it (review, send, call).\n' +
       '- NEVER assign: research, find, look up, write from scratch — put results in resources + script + talkingPoints + followUp.\n' +
-      '- resources.local = 3-8 real named orgs with phones/emails/URLs. First contact in list = suggested first contact.\n' +
+      '- resources.local = 3-8 real named orgs with published address/phone/email/official URL when available. First contact in list = suggested first contact.\n' +
       '- Every mission must move the user measurably closer to their goal — they should never wonder what to do now.\n' +
       '- Each task should feel like a small, doable action that respects limited energy and a hard situation.\n' +
       'Write like a helpful mentor — warm, human, practical English at a middle-school reading level. No bureaucratic or "police report" phrasing. No filler like "complete the listed step".\n' +
@@ -16696,10 +16701,11 @@
         `\nRESOURCE DISCOVERY (think in categories, resolve to real orgs):\n` +
         `For THIS user, when a task needs help, look for categories like: ${RESOURCE_CATEGORY_HINTS}.\n` +
         `Fill three layers in resources{}:\n` +
-        `- local: city/region/municipal orgs with official URLs\n` +
-        `- national: country government portals, national grants, benefits\n` +
+        `- local: city/region/municipal orgs with official URLs and published phone, email, and service address when available\n` +
+        `- national: country government portals, national grants, benefits, vouchers, fee waivers, and assistance programs\n` +
         `- global: online options that work anywhere (Coursera, edX, Khan Academy, Google Career Certificates, remote job boards)\n` +
-        `Never assume a US organization applies outside the US. Never leave resources empty when the task clearly needs a local agency.\n`
+        `When financial help could make the step possible, include the exact relevant program and summarize what it provides, basic eligibility, and any published deadline in details. Use the official application page. Never promise eligibility or invent a grant.\n` +
+        `Never assume children, childcare, or dependent-care needs unless the USER PROFILE explicitly says support is needed. Never assume a US organization applies outside the US. Never leave resources empty when the task clearly needs a local agency.\n`
       );
     }
 
@@ -16711,6 +16717,8 @@
       '- "What to do" (text field): 1–3 short concrete sentences with who to contact, what to ask for, and what to prepare. Never just restate the mission title. Never say "Do the next logical step forward" or "complete the listed step".\n' +
       '- Never repeat the mission title inside the task body. Never use ellipses (…) — rewrite so the line fits.\n' +
       '- Location: shortest natural form only ("Austin" not "Austin, Texas, United States"). Omit if obvious.\n' +
+      '- Never mention children, childcare, daycare, or dependent-care help unless the USER PROFILE explicitly confirms that support is needed.\n' +
+      '- For calls, applications, housing, benefits, training, legal help, or funding: attach useful organization names plus published address, phone, email, official link, and relevant grant/benefit/assistance details when available.\n' +
       '- Each task = one small, doable action that respects limited energy.\n' +
       '- BANNED words/phrases: validate, validation, social validation, stakeholders, market fit, product-market fit, reentry ecosystem, sprint, deliverable, initiative, pilot, touchpoint, execute, framework, go-to-market, value proposition, user acquisition, MVP, iterate, friction point, feedback loop, traction, pivot, leverage, scalable, cohort, monetize, activation, optics, GTM, ICP, aligned with your mission, identify organizations aligned, do the next logical step, complete the listed step, do the action described below.\n' +
       '- Say "people" not "users". Say "try" or "share" not "ship". Say "use" not "leverage". Say "change direction" not "pivot". Say "small test" not "pilot". Say "finished piece" not "deliverable". Say "do" not "execute". Say "simple plan" not "framework".\n' +
@@ -17761,6 +17769,69 @@
         return "Use the first contact listed below. Send the prepared message or make the call, ask for the next available step, and save their answer.";
       }
       return "Gather the items listed below, complete the first concrete action today, and write down the result before moving on.";
+    }
+
+    function dependentSupportIsConfirmedNeeded() {
+      return normalizeUserProfile(state.userProfile).dependentSupport === "needs_help";
+    }
+
+    function stripUnsupportedDependentCopy(text) {
+      const dependentRx = /\b(child(?:ren|care)?|daycare|day care|kids?|dependent(?:s| care)?|family-care)\b/i;
+      return String(text || "")
+        .split(/\n+|(?<=[.!?])\s+/)
+        .filter((line) => !dependentRx.test(line))
+        .join(" ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+    }
+
+    function removeUnsupportedDependentAssumptions(normalized) {
+      if (!normalized || dependentSupportIsConfirmedNeeded()) return normalized;
+      const dependentRx = /\b(child(?:ren|care)?|daycare|day care|kids?|dependent(?:s| care)?|family-care)\b/i;
+      if (!dependentRx.test(getTaskContentBlob(normalized))) return normalized;
+
+      ["text", "why", "outcome", "alternatives", "howTo", "mentorHelp", "mentorFindings", "talkingPoints", "followUp", "script"]
+        .forEach((field) => {
+          normalized[field] = stripUnsupportedDependentCopy(normalized[field]);
+        });
+      normalized.steps = (normalized.steps || []).filter((step) => !dependentRx.test(step));
+      normalized.resourceCategories = (normalized.resourceCategories || [])
+        .filter((category) => !/\b(child|daycare|dependent)/i.test(category));
+
+      const keepContact = (contact) =>
+        !dependentRx.test(`${contact?.name || ""} ${contact?.org || ""} ${contact?.details || ""}`);
+      normalized.contacts = (normalized.contacts || []).filter(keepContact);
+      const layers = normalized.resourceLayers || { local: [], national: [], global: [] };
+      normalized.resourceLayers = {
+        local: (layers.local || []).filter(keepContact),
+        national: (layers.national || []).filter(keepContact),
+        global: (layers.global || []).filter(keepContact)
+      };
+      normalized.resourcesLocal = normalized.resourceLayers.local;
+      normalized.resourcesNational = normalized.resourceLayers.national;
+      normalized.resourcesGlobal = normalized.resourceLayers.global;
+
+      if (dependentRx.test(normalized.mission || "")) {
+        const blob = getTaskContentBlob(normalized);
+        normalized.mission = /\b(shelter|housing|safe place|bed|waitlist)\b/.test(blob)
+          ? "Call one housing resource"
+          : /\b(benefit|food|healthcare|voucher)\b/.test(blob)
+            ? "Check available benefits"
+            : /\b(training|course|certificate)\b/.test(blob)
+              ? "Ask about training support"
+              : "Confirm one practical support option";
+      }
+      if (!normalized.text || normalized.text.length < 12) {
+        normalized.text = buildConcreteTaskAction(normalized);
+      }
+      normalized._sourceText = [
+        normalized.text,
+        normalized.mission,
+        normalized.why,
+        normalized.outcome,
+        normalized.howTo
+      ].filter(Boolean).join(" ");
+      return normalized;
     }
 
     function taskShouldHideOutreachDrafts(normalized) {
@@ -19185,6 +19256,7 @@ Practice each one out loud once and time yourself.`;
       });
       normalized.text = repairStackedExpansions(normalized.text);
       normalized.mission = repairStackedExpansions(normalized.mission || "");
+      normalized = removeUnsupportedDependentAssumptions(normalized);
 
       if (normalized.mission) {
         normalized.text = stripMissionTitleFromBody(normalized.text, normalized.mission);
@@ -23471,16 +23543,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (typeof entry === "string") {
         const trimmed = entry.trim();
         if (!trimmed) return null;
-        return { name: "", org: trimmed, phone: "", email: "", url: "" };
+        return { name: "", org: trimmed, address: "", phone: "", email: "", url: "", details: "" };
       }
       const contact = {
         name: String(entry.name || entry.contact || "").trim(),
         org: String(entry.org || entry.organization || entry.place || "").trim(),
+        address: String(entry.address || entry.location || entry.serviceAddress || "").trim(),
         phone: String(entry.phone || entry.tel || entry.telephone || "").trim(),
         email: String(entry.email || "").trim(),
-        url: String(entry.url || entry.link || entry.website || "").trim()
+        url: String(entry.url || entry.link || entry.website || "").trim(),
+        details: String(entry.details || entry.description || entry.programDetails || "").trim()
       };
-      if (!contact.name && !contact.org && !contact.phone && !contact.email && !contact.url) return null;
+      if (!contact.name && !contact.org && !contact.address && !contact.phone && !contact.email && !contact.url && !contact.details) return null;
       return contact;
     }
 
@@ -23662,6 +23736,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return entries.map((contact, index) => {
         const title = [contact.org, contact.name].filter(Boolean).join(" — ") || "Resource";
         const meta = [];
+        if (contact.address) {
+          meta.push(`<span>${escapeHtml(contact.address)}</span>`);
+        }
         if (contact.url) {
           meta.push(`<a href="${escapeHtml(formatExternalUrl(contact.url))}" target="_blank" rel="noopener noreferrer">Website</a>`);
         }
@@ -23674,7 +23751,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const rankBadge = ranked && index < 3
           ? `<span class="task-contact-rank">#${index + 1} start here</span>`
           : "";
-        return `<div class="task-contact-card${ranked && index === 0 ? " task-contact-card--top" : ""}">${rankBadge}<div class="task-contact-title">${escapeHtml(title)}</div>${meta.length ? `<div class="task-contact-meta">${meta.join(" · ")}</div>` : ""}</div>`;
+        return `<div class="task-contact-card${ranked && index === 0 ? " task-contact-card--top" : ""}">${rankBadge}<div class="task-contact-title">${escapeHtml(title)}</div>${contact.details ? `<div class="task-contact-details">${escapeHtml(contact.details)}</div>` : ""}${meta.length ? `<div class="task-contact-meta">${meta.join(" · ")}</div>` : ""}</div>`;
       }).join("");
     }
 
@@ -24002,6 +24079,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
+    function parseDependentSupport(text) {
+      const q = String(text || "").toLowerCase().trim();
+      if (!q) return "";
+      if (/\b(no children|no child|don'?t have (?:any )?(?:children|kids|dependents)|do not have (?:any )?(?:children|kids|dependents)|no dependents|none)\b/.test(q)) {
+        return "none";
+      }
+      const hasDependents = /\b(have|with|raising|care for|responsible for|my)\b.*\b(children|kids|child|dependents)\b/.test(q)
+        || /\b(children|kids|child|dependents)\b.*\b(have|need|mine|my)\b/.test(q);
+      const needsHelp = /\b(need|want|could use|looking for|yes).*\b(help|support|assistance|childcare|daycare|transport|food|healthcare|school|housing)\b/.test(q)
+        || /\b(help|support|assistance|childcare|daycare)\b.*\b(need|yes|please)\b/.test(q);
+      const declinesHelp = /\b(no|don'?t|do not|not).*\b(help|support|assistance|childcare|anything)\b/.test(q)
+        || /\b(have (?:it|that) covered|already covered|no added assistance)\b/.test(q);
+      if ((hasDependents || /\byes\b/.test(q)) && needsHelp && !declinesHelp) return "needs_help";
+      if (hasDependents && declinesHelp) return "no_help";
+      return "";
+    }
+
     function updateHousingStatusFromConversation() {
       const profile = normalizeUserProfile(state.userProfile);
       if (profile.housingStatus === "has" || profile.housingStatus === "needs") return;
@@ -24086,6 +24180,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || conversationMentionsStabilityRebuild(blob)
         || isReentrySituation()
         || /\b(sober|recovery|rehab|starting over|back on (?:my )?feet|rebuild(?:ing)? (?:my )?life)\b/.test(blob);
+    }
+
+    function profileIntakeNeedsDependentStep(profile = normalizeUserProfile(state.userProfile)) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      return !["none", "no_help", "needs_help"].includes(profile.dependentSupport);
     }
 
     function parseIdStatus(text) {
@@ -24580,7 +24679,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function taskNeedsLocalContacts(task, stage, stageIndex, idea = state.currentIdea) {
       const normalized = normalizeRoadmapTask(task);
-      const taskText = normalized.text;
+      const taskText = getTaskContentBlob(normalized);
       if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
       if (taskIsBrowseOnlyTask(taskText)) return false;
       if (isGroundedPractitioner(idea)) {
@@ -24601,6 +24700,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(community college|trade school|apprenticeship|workforce board|american job center|job center|career center|re-?entry|second chance|background check|parole|probation|state id|id card|housing assistance|snap benefits|211|sbdc|score chapter|licensing office|temp agency|staffing agency)\b/i.test(taskText)) return true;
 
       if (/\b(compare|research|find|visit|call|apply|enroll|register|schedule)\b/i.test(taskText) && /\b(training|certif|program|college|workforce|job|employ|license|nonprofit|apprenticeship|credential)\b/i.test(taskText)) return true;
+      if (/\b(apply|call|contact|check|ask|request)\b/i.test(taskText) && /\b(grant|benefit|voucher|assistance program|fee waiver|scholarship|funding|legal aid|healthcare)\b/i.test(taskText)) return true;
 
       if (isReentryPath(idea) && /\b(id|housing|work|job|train|program|employ|income|resume|interview|background|record)\b/i.test(taskText)) return true;
 
@@ -24666,6 +24766,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(recovery|re-?entry|incarcerat|release|parole|second chance|background check)\b/.test(text) && /\b(recovery|re-?entry|caritas|front steps|lifeworks|nav)\b/.test(orgBlob)) score += 14;
       if (/\b(training|certif|college|apprenticeship|credential|program)\b/.test(text) && /\b(workforce|library|lifeworks|folkeuniversitet|nav)\b/.test(orgBlob)) score += 10;
       if (/\b(housing|shelter|rent|homeless)\b/.test(text) && /\b(shelter|housing|caritas|front steps|foundation communities)\b/.test(orgBlob)) score += 13;
+      if (/\b(benefit|voucher|assistance|food|healthcare|medicaid|snap|fee waiver|funding)\b/.test(text) && /\b(211|caritas|lifeworks|foundation communities|nav|kommune|municipal)\b/.test(orgBlob)) score += 12;
       if (/\b(youth|family)\b/.test(text) && /\b(lifeworks|youth|family)\b/.test(orgBlob)) score += 10;
       if (/\b(nonprofit|partner|pilot|community)\b/.test(text) && !/\b(shelter|library|workforce|nav)\b/.test(text)) score += 1;
       return score;
@@ -24716,22 +24817,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 if (contact.org) usedOrgKeys.add(contact.org);
               });
             } else {
-              const picks = pickResourcesForTask(normalized.text, resources, usedOrgKeys);
-              if (picks.length && scoreResourceForTask(picks[0], normalized.text) > 0) {
+              const taskContext = getTaskContentBlob(normalized);
+              const picks = pickResourcesForTask(taskContext, resources, usedOrgKeys);
+              if (picks.length && scoreResourceForTask(picks[0], taskContext) > 0) {
                 picks.forEach((entry) => usedOrgKeys.add(entry.org));
                 const injected = picks.map((entry) => ({
                   name: entry.name || "Program director",
                   org: entry.org,
+                  address: entry.address || "",
                   phone: entry.phone || "",
                   email: entry.email || "",
-                  url: entry.url || ""
+                  url: entry.url || "",
+                  details: entry.details || ""
                 }));
                 normalized.resourcesLocal = injected;
                 normalized.resourceLayers = { local: injected, national: [], global: [] };
                 normalized.contacts = injected;
                 normalized.links = picks.map((entry) => entry.url).filter(Boolean);
                 normalized.local = picks.length > 1 ? `${picks[0].org} · ${picks[1].org}` : picks[0].org;
-                normalized.script = buildLocalTaskScript(normalized.text, picks[0].org, loc);
+                normalized.script = buildLocalTaskScript(taskContext, picks[0].org, loc);
               }
             }
           } else if (taskNeedsTaskToolResources(normalized.text)) {
@@ -31155,22 +31259,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function deleteSavedMap(mapId, options = {}) {
       const entry = state.savedMaps.find((map) => map.id === mapId);
-      if (!entry) return;
+      const hasCategory = state.roadmapCategories.some((category) => category.mapId === mapId);
+      if (!entry && !hasCategory && state.activeMapId !== mapId) return;
 
       const runDelete = () => {
+        const wasActive = state.activeMapId === mapId;
         addDeletedMapId(mapId);
         addDismissedSidebarMapId(mapId);
-        if (state.activeMapId === mapId) {
-          state.activeMapId = null;
-          clearIntakeSession({ preserveLibrary: true });
-          resetPossibilityMapView();
-        }
         markAllRoadmapsRemovedOnMap(mapId);
         state.savedMaps = state.savedMaps.filter((map) => map.id !== mapId);
         cleanupRoadmapCategoriesForMap(mapId);
         pruneEmptyRoadmapCategories();
-        if (!state.activeMapId && !state.ideas.length) {
+        if (wasActive) {
+          state.activeMapId = null;
+          clearIntakeSession({ preserveLibrary: true });
+          resetPossibilityMapToEmpty();
           showScreen("main");
+          closeDashboardMobileNav();
         }
 
         trackEvent("saved_map_deleted", { saved_maps_count: state.savedMaps.length });
@@ -31924,6 +32029,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const parsers = {
         id_status: ["idStatus", parseIdStatus],
         housing_status: ["housingStatus", parseHousingStatus],
+        dependent_support: ["dependentSupport", parseDependentSupport],
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
@@ -31962,6 +32068,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           { field: "housingStatus", value: "has", label: "Yes — I have a safe, reliable place" },
           { field: "housingStatus", value: "needs", label: "Only temporary / not reliable" },
           { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
+        ]);
+        return;
+      }
+      if (step === "dependent_support") {
+        renderProfileIntakeChips([
+          { field: "dependentSupport", value: "none", label: "No children or dependents" },
+          { field: "dependentSupport", value: "needs_help", label: "Yes — include assistance for them" },
+          { field: "dependentSupport", value: "no_help", label: "Yes — no added assistance needed" }
         ]);
         return;
       }
@@ -33282,7 +33396,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
-    function resetPossibilityMapView() {
+    function resetPossibilityMapView(options = {}) {
       state.currentIdea = null;
       state.selectedPathIndexes = [];
       selectedMapPathIndex = null;
@@ -33291,7 +33405,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ctx.hidden = true;
         ctx.textContent = "";
       }
-      buildOpportunityMap(state.ideas || [], { skipPersist: true });
+      buildOpportunityMap(state.ideas || [], {
+        skipPersist: true,
+        allowEmpty: Boolean(options.allowEmpty)
+      });
       updateMapAuxiliaryPanels();
     }
 
@@ -33302,7 +33419,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.selectedPathIndexes = [];
       selectedMapPathIndex = null;
       setRoadmapNavVisible(false);
-      resetPossibilityMapView();
+      resetPossibilityMapView({ allowEmpty: true });
     }
 
     function prepareLeaveMapForConvo() {
@@ -33841,6 +33958,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       housingStatus: {
         has: "Has safe housing or reliable shelter access",
         needs: "Still needs safe, reliable housing or shelter"
+      },
+      dependentSupport: {
+        none: "No children or dependents to plan for",
+        no_help: "Has children or dependents; no added assistance requested",
+        needs_help: "Needs support for children or other dependents"
       }
     };
 
@@ -33854,6 +33976,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         founderStage: "",
         idStatus: "",
         housingStatus: "",
+        dependentSupport: "",
         skills: "",
         constraints: "",
         goals: "",
@@ -33929,6 +34052,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           workMode: pickProfileField("workMode"),
           willingToRelocate: pickProfileField("willingToRelocate"),
           founderStage: pickProfileField("founderStage"),
+          idStatus: pickProfileField("idStatus"),
+          housingStatus: pickProfileField("housingStatus"),
+          dependentSupport: pickProfileField("dependentSupport"),
           skills: pickProfileField("skills"),
           constraints: pickProfileField("constraints"),
           goals: pickProfileField("goals"),
@@ -33976,6 +34102,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           workMode: profile.workMode || existing.userProfile.workMode,
           willingToRelocate: profile.willingToRelocate || existing.userProfile.willingToRelocate,
           founderStage: profile.founderStage || existing.userProfile.founderStage,
+          idStatus: profile.idStatus || existing.userProfile.idStatus,
+          housingStatus: profile.housingStatus || existing.userProfile.housingStatus,
+          dependentSupport: profile.dependentSupport || existing.userProfile.dependentSupport,
           skills: profile.skills || (keepStoredSkills ? existing.userProfile.skills : ""),
           constraints: profile.constraints || (keepStoredSkills ? existing.userProfile.constraints : ""),
           goals: profile.goals || existing.userProfile.goals,
@@ -34007,6 +34136,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         workMode: incoming.workMode || profile.workMode,
         willingToRelocate: incoming.willingToRelocate || profile.willingToRelocate,
         founderStage: incoming.founderStage || profile.founderStage,
+        idStatus: incoming.idStatus || profile.idStatus,
+        housingStatus: incoming.housingStatus || profile.housingStatus,
+        dependentSupport: incoming.dependentSupport || profile.dependentSupport,
         skills: incoming.skills || profile.skills,
         constraints: incoming.constraints || profile.constraints,
         goals: incoming.goals || profile.goals,
@@ -34090,6 +34222,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         founderStage: String(source.founderStage || "").trim(),
         idStatus: String(source.idStatus || "").trim(),
         housingStatus: String(source.housingStatus || "").trim(),
+        dependentSupport: String(source.dependentSupport || "").trim(),
         skills: String(source.skills || "").trim(),
         constraints: String(source.constraints || "").trim(),
         goals: String(source.goals || "").trim(),
@@ -34119,6 +34252,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       pushLabel("pathPreference");
       pushLabel("idStatus");
       pushLabel("housingStatus");
+      pushLabel("dependentSupport");
       pushLabel("workMode");
       pushLabel("willingToRelocate");
       pushLabel("founderStage");
@@ -34161,6 +34295,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (profile.idStatus === "has") lines.push("ID/documents: has valid ID");
       if (profile.housingStatus === "needs") lines.push("Housing: still needs a safe, reliably accessible place to stay");
       if (profile.housingStatus === "has") lines.push("Housing: has safe housing or reliable shelter access");
+      if (profile.dependentSupport === "none") lines.push("Dependents: no children or other dependents to plan for; do not include childcare or family-specific aid");
+      if (profile.dependentSupport === "no_help") lines.push("Dependents: has children or dependents, but does not want added assistance included");
+      if (profile.dependentSupport === "needs_help") lines.push("Dependents: include relevant childcare, transportation, food, healthcare, school, housing, or other family assistance");
       if (hasSkills && profile.skills) {
         lines.push(`Skills / strengths: ${profile.skills}`);
       } else if (unsure) {
@@ -34262,6 +34399,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!profile.founderStage && isFounderOrProjectPrompt(getFirstUserMessage())) {
         profile.founderStage = parseFounderStage(blob);
       }
+      if (!profile.dependentSupport) {
+        profile.dependentSupport = parseDependentSupport(blob);
+      }
       if (conversationDeclaresSkillUncertainty()) {
         profile.skills = "";
         profile.constraints = "";
@@ -34299,6 +34439,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function profileIntakeIsComplete(founderMode = isFounderOrProjectPrompt(getFirstUserMessage())) {
       const profile = normalizeUserProfile(state.userProfile);
       if (profileIntakeNeedsIdStep(profile) || profileIntakeNeedsHousingStep(profile)) return false;
+      if (profileIntakeNeedsDependentStep(profile)) return false;
       if (!profile.incomeUrgency || !profile.pathPreference) return false;
       if (founderMode) return Boolean(profile.founderStage);
       if (profileIntakeNeedsSkillsStep(profile) && !profile.skills) return false;
@@ -34374,6 +34515,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
       ]);
       trackEvent("profile_intake_step_shown", { step: "housing_status" });
+    }
+
+    function askProfileDependentSupportStep() {
+      state.profileIntakeStep = "dependent_support";
+      pushProfileIntakeAssistantMessage(
+        "Do you have children or other dependents whose needs should be part of this map?"
+      );
+      renderProfileIntakeChips([
+        { field: "dependentSupport", value: "none", label: "No children or dependents" },
+        { field: "dependentSupport", value: "needs_help", label: "Yes — include assistance for them" },
+        { field: "dependentSupport", value: "no_help", label: "Yes — no added assistance needed" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "dependent_support" });
     }
 
     function askProfileIncomeStep() {
@@ -34533,6 +34687,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         pathPreference: "path",
         idStatus: "id_status",
         housingStatus: "housing_status",
+        dependentSupport: "dependent_support",
         willingToRelocate: "relocate",
         founderStage: "founder_stage",
         skills: "skills"
@@ -34553,6 +34708,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const profile = normalizeUserProfile(state.userProfile);
       if (profileIntakeNeedsIdStep(profile)) return (state.profileIntakeStep = "id_status");
       if (profileIntakeNeedsHousingStep(profile)) return (state.profileIntakeStep = "housing_status");
+      if (profileIntakeNeedsDependentStep(profile)) return (state.profileIntakeStep = "dependent_support");
       if (!profile.incomeUrgency) return (state.profileIntakeStep = "income");
       if (!profile.pathPreference) return (state.profileIntakeStep = "path");
       const founder = isFounderOrProjectPrompt(getFirstUserMessage());
@@ -34583,11 +34739,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (step === "id_status") {
         if (profileIntakeNeedsIdStep(profile)) return askProfileIdStatusStep();
         if (profileIntakeNeedsHousingStep(profile)) return askProfileHousingStatusStep();
+        if (profileIntakeNeedsDependentStep(profile)) return askProfileDependentSupportStep();
         askProfileIncomeStep();
         return;
       }
       if (step === "housing_status") {
         if (profileIntakeNeedsHousingStep(profile)) return askProfileHousingStatusStep();
+        if (profileIntakeNeedsDependentStep(profile)) return askProfileDependentSupportStep();
+        askProfileIncomeStep();
+        return;
+      }
+      if (step === "dependent_support") {
+        if (profileIntakeNeedsDependentStep(profile)) return askProfileDependentSupportStep();
         askProfileIncomeStep();
         return;
       }
@@ -34669,6 +34832,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         askProfileHousingStatusStep();
         return;
       }
+      if (profileIntakeNeedsDependentStep(profile)) {
+        askProfileDependentSupportStep();
+        return;
+      }
       if (profileIntakeIsComplete(founder)) {
         finishProfileIntake();
         return;
@@ -34718,6 +34885,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const parsers = {
         id_status: ["idStatus", parseIdStatus],
         housing_status: ["housingStatus", parseHousingStatus],
+        dependent_support: ["dependentSupport", parseDependentSupport],
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
         work_mode: ["workMode", parseWorkMode],
@@ -34733,6 +34901,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           const clarificationByStep = {
             id_status: "I did not catch whether you have usable ID. Do you have a valid driver's license or state ID right now?",
             housing_status: "I did not catch whether your housing is safe and reliable. Do you have somewhere you can stay for at least the next week?",
+            dependent_support: "I want to avoid making assumptions. Do you have children or dependents, and if so, should this map include assistance for them?",
             income: "I did not catch the timing. Do you need income immediately, within three months, or is long-term okay?",
             path: "I did not catch your preference. Would you rather get hired, start your own thing, or consider either?",
             work_mode: "I did not catch the work setup. Do you prefer remote, hybrid, in-person, or flexible work?",
@@ -34828,8 +34997,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getResourceCategoryPromptBlock() +
         `For each relevant task include in JSON:\n` +
         `- resourceCategories[] tagging what kinds of help apply\n` +
-        `- resources.local[] — real orgs serving ${cityShort} (name + official url + phone/email only if published)\n` +
-        `- resources.national[] — country-wide portals when applicable\n` +
+        `- resources.local[] — real orgs serving ${cityShort} (program name + official URL + published address/phone/email + useful program details)\n` +
+        `- resources.national[] — country-wide portals, grants, benefits, vouchers, fee waivers, and assistance programs when applicable\n` +
         `- resources.global[] — online options that work anywhere\n` +
         `- alternatives — another route if the main step doesn't apply there\n` +
         `- script only for outreach/calls when needed\n` +
@@ -34869,6 +35038,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (profileIntakeNeedsHousingStep(profile)) {
         askProfileHousingStatusStep();
+        return;
+      }
+      if (profileIntakeNeedsDependentStep(profile)) {
+        askProfileDependentSupportStep();
         return;
       }
       showReplyBox(false);
@@ -37322,7 +37495,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function buildOpportunityMap(ideas, options = {}) {
-      if (!hasValidIdeas(ideas, 1)) {
+      if (options.allowEmpty && (!Array.isArray(ideas) || ideas.length === 0)) {
+        ideas = [];
+      } else if (!hasValidIdeas(ideas, 1)) {
         ideas = ensureIdeaSet(ideas, getFallbackIdeas(), 3);
       } else {
         ideas = normalizeIdeasFromAdvisor(ideas);
@@ -39663,9 +39838,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               type: "contact",
               name: contact.name,
               org: contact.org,
+              address: contact.address,
               phone: contact.phone,
               email: contact.email,
-              url: contact.url
+              url: contact.url,
+              details: contact.details
             });
           };
 
