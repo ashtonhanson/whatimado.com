@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-15-flat-numbered-roadmap-tasks">
+  <meta name="whatimado-build" content="2026-07-15-persistent-menu-and-tweak-drafts">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1272,6 +1272,28 @@
       display: block;
       height: 48px;
       width: auto;
+    }
+
+    @media (min-width: 900px) {
+      html[data-color-scheme="adult"] .dashboard-sidebar,
+      html[data-color-scheme="adult"] .dashboard-sidebar.is-mobile-open {
+        transform: translateX(0);
+        box-shadow: none;
+      }
+
+      html[data-color-scheme="adult"] .dashboard-main {
+        margin-left: var(--sidebar-w);
+      }
+
+      html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
+        left: var(--sidebar-w);
+        width: calc(100% - var(--sidebar-w));
+      }
+
+      html[data-color-scheme="adult"] .minimal-topbar .dashboard-mobile-menu,
+      html[data-color-scheme="adult"] .dashboard-mobile-overlay {
+        display: none !important;
+      }
     }
 
     @media (min-width: 768px) {
@@ -3450,8 +3472,16 @@
       width: var(--orb-size, 18px);
       height: var(--orb-size, 18px);
       border-radius: 50%;
-      background: color-mix(in srgb, var(--orb-color, #bcc4ce) 52%, transparent);
-      box-shadow: none;
+      background: radial-gradient(
+        circle at 34% 30%,
+        color-mix(in srgb, var(--orb-color, #bcc4ce) 88%, white) 0%,
+        var(--orb-color, #bcc4ce) 38%,
+        color-mix(in srgb, var(--orb-color, #bcc4ce) 64%, transparent) 64%,
+        transparent 100%
+      );
+      box-shadow:
+        0 0 18px color-mix(in srgb, var(--orb-color, #bcc4ce) 34%, transparent),
+        inset -5px -6px 12px color-mix(in srgb, var(--orb-color, #bcc4ce) 46%, transparent);
       opacity: var(--orb-opacity, .34);
       will-change: transform;
       animation-name: ambient-orb-wander;
@@ -9584,6 +9614,18 @@
       text-overflow: clip;
     }
 
+    .task-mentor-section--task,
+    .task-mentor-section--task .task-text,
+    .task-mentor-section--task .task-text--toggle {
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+      white-space: normal !important;
+      text-overflow: clip !important;
+      -webkit-line-clamp: unset !important;
+      -webkit-box-orient: initial !important;
+    }
+
     button.task-mentor-label--toggle {
       display: block;
       width: 100%;
@@ -9829,6 +9871,44 @@
 
     .task-ai-assist-btn:active {
       transform: translateY(1px);
+    }
+
+    .task-tweak-draft-results {
+      display: grid;
+      gap: .65rem;
+      margin-top: .75rem;
+    }
+
+    .task-tweak-draft {
+      scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 18px);
+      padding: .8rem .9rem;
+      border: 1px solid rgba(37, 99, 235, .2);
+      border-radius: 12px;
+      background: rgba(37, 99, 235, .045);
+    }
+
+    .task-tweak-draft.is-generating {
+      opacity: .72;
+    }
+
+    .task-tweak-draft-label {
+      margin: 0 0 .4rem;
+      color: #1e8fc4;
+      font-size: .72rem;
+      font-weight: 800;
+    }
+
+    .task-tweak-draft-copy {
+      margin: 0;
+      color: var(--ink, #f4f0ff);
+      font-size: .8rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    html[data-color-scheme="adult"] .task-tweak-draft-copy {
+      color: var(--text, #241235);
     }
 
     html[data-color-scheme="adult"] .task-mentor-label {
@@ -21711,12 +21791,59 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const buttons = actions.map((entry) =>
         `<button type="button" class="task-ai-assist-btn" data-task-id="${escapeHtml(taskId)}" data-action="${escapeHtml(entry.id)}" title="${escapeHtml(entry.label)}">${escapeHtml(entry.label)}</button>`
       ).join("");
+      const results = renderTaskTweakDraftResultsHtml(taskId);
       return `
         <section class="task-mentor-section task-mentor-section--ai">
           <h4 class="task-mentor-label">Need a tweak?</h4>
-          <p class="task-mentor-hint">Your mentor already did the heavy lifting — ask for a shorter email, a different angle, or practice what to say.</p>
+          <p class="task-mentor-hint">Each button creates its own new draft below.</p>
           <div class="task-ai-assist-list">${buttons}</div>
+          <div class="task-tweak-draft-results" data-tweak-draft-results="${escapeHtml(taskId)}">${results}</div>
         </section>`;
+    }
+
+    function renderTaskTweakDraftResultsHtml(taskId) {
+      const drafts = getRoadmapTaskData(taskId).tweakDrafts || [];
+      return drafts.map((draft) => `
+        <article class="task-tweak-draft${draft.status === "generating" ? " is-generating" : ""}" id="${escapeHtml(draft.id)}">
+          <p class="task-tweak-draft-label">${escapeHtml(draft.label || "New draft")}</p>
+          <p class="task-tweak-draft-copy">${escapeHtml(draft.content || "Generating your new draft…")}</p>
+        </article>
+      `).join("");
+    }
+
+    function syncTaskTweakDraftResults(taskId, focusDraftId = "") {
+      const root = document.querySelector(`[data-tweak-draft-results="${taskId}"]`);
+      if (!root) return;
+      root.innerHTML = renderTaskTweakDraftResultsHtml(taskId);
+      if (!focusDraftId) return;
+      requestAnimationFrame(() => {
+        document.getElementById(focusDraftId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+
+    function createTaskTweakDraft(taskId, label) {
+      const data = getRoadmapTaskData(taskId);
+      const draft = {
+        id: `tweak-draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        label,
+        content: "",
+        status: "generating",
+        createdAt: Date.now()
+      };
+      data.tweakDrafts.push(draft);
+      schedulePersist();
+      syncTaskTweakDraftResults(taskId, draft.id);
+      return draft;
+    }
+
+    function finishTaskTweakDraft(taskId, draftId, content, status = "ready") {
+      const data = getRoadmapTaskData(taskId);
+      const draft = data.tweakDrafts.find((entry) => entry.id === draftId);
+      if (!draft) return;
+      draft.content = humanizeDraftFormatting(String(content || "").trim()) || "I couldn't create this draft. Please try that button again.";
+      draft.status = status;
+      schedulePersist();
+      syncTaskTweakDraftResults(taskId, draftId);
     }
 
     async function triggerTaskAiAssist(taskId, actionId) {
@@ -21730,31 +21857,63 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!action) return;
 
       trackEvent("task_ai_assist_clicked", { task_id: taskId, action: actionId });
+      const resultDraft = createTaskTweakDraft(taskId, action.label);
 
-      if (action.local === "checklist") {
-        const items = getOutcomeChecklistItems(normalized);
-        const lines = items.length >= 2
-          ? items.map((item) => `[ ] ${item}`)
-          : (normalized.steps.length ? normalized.steps : [normalized.text]).map((step) => `[ ] ${humanizeTaskText(step)}`);
-        insertDraftIntoNotes(
+      try {
+        if (action.local === "checklist") {
+          const items = getOutcomeChecklistItems(normalized);
+          const lines = items.length >= 2
+            ? items.map((item) => `[ ] ${item}`)
+            : (normalized.steps.length ? normalized.steps : [normalized.text]).map((step) => `[ ] ${humanizeTaskText(step)}`);
+          finishTaskTweakDraft(
+            taskId,
+            resultDraft.id,
+            `[Checklist for this task]\n\n${lines.join("\n")}\n\n[ ] Done — I can describe what I finished`
+          );
+          return;
+        }
+
+        if (action.local === "draft") {
+          const suggested = getTaskDraftSuggestions(normalized)[0];
+          const suggestion = suggested ? TASK_DRAFT_SUGGESTION_DEFS[suggested.id] : null;
+          let content = suggestion
+            ? extractDraftContentForSuggestion(normalized, suggestion) || buildLocalDraftForSuggestion(normalized, suggestion)
+            : "";
+          if ((!content || content.length < 40) && suggestion) {
+            content = await generateAiTaskDraft(taskId, normalized, {
+              draftType: resolveSuggestionDraftType(normalized, suggestion),
+              variant: suggestion.variant,
+              suggestion,
+              relaxDuplicates: true
+            });
+          }
+          if (!content || content.length < 40) {
+            const answer = await answerTaskQuestion(
+              taskId,
+              getTaskTextById(taskId),
+              { messages: [] },
+              "Create a fresh, ready-to-use draft for this exact task. Give me only the draft, with no explanation."
+            );
+            content = answer.text;
+          }
+          finishTaskTweakDraft(taskId, resultDraft.id, content);
+          return;
+        }
+
+        if (!action.question) {
+          finishTaskTweakDraft(taskId, resultDraft.id, "I couldn't create this draft. Please try another option.", "error");
+          return;
+        }
+        const answer = await answerTaskQuestion(
           taskId,
-          `[Checklist for this task]\n\n${lines.join("\n")}\n\n[ ] Done — I can describe what I finished`,
-          "append"
+          getTaskTextById(taskId),
+          { messages: [{ role: "user", content: action.question }] },
+          action.question
         );
-        return;
+        finishTaskTweakDraft(taskId, resultDraft.id, answer.text);
+      } catch (_) {
+        finishTaskTweakDraft(taskId, resultDraft.id, "I couldn't create this draft. Please try that button again.", "error");
       }
-
-      if (action.local === "draft") {
-        const data = getRoadmapTaskData(taskId);
-        data.draftGenerated = false;
-        await ensureTaskDraftInNotes(taskId, { force: true });
-        return;
-      }
-
-      const questionEl = $(`#question-${taskId}`);
-      if (!questionEl || !action.question) return;
-      questionEl.value = action.question;
-      await askTask(taskId, getTaskTextById(taskId));
     }
 
     function renderTaskNotesExtrasHtml(taskId, normalized) {
@@ -32694,13 +32853,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getRoadmapTaskData(taskId) {
-      if (!state.roadmapKey) return { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [], saveNotes: false };
+      if (!state.roadmapKey) return { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [], tweakDrafts: [], saveNotes: false };
       if (!state.allTaskChats[state.roadmapKey]) state.allTaskChats[state.roadmapKey] = {};
       if (!state.allTaskChats[state.roadmapKey][taskId]) {
-        state.allTaskChats[state.roadmapKey][taskId] = { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [], saveNotes: false };
+        state.allTaskChats[state.roadmapKey][taskId] = { notes: "", draft: "", checked: false, threads: [], outcomeChecks: [], tweakDrafts: [], saveNotes: false };
       }
       if (!Array.isArray(state.allTaskChats[state.roadmapKey][taskId].outcomeChecks)) {
         state.allTaskChats[state.roadmapKey][taskId].outcomeChecks = [];
+      }
+      if (!Array.isArray(state.allTaskChats[state.roadmapKey][taskId].tweakDrafts)) {
+        state.allTaskChats[state.roadmapKey][taskId].tweakDrafts = [];
       }
       if (state.allTaskChats[state.roadmapKey][taskId].draft === undefined) {
         state.allTaskChats[state.roadmapKey][taskId].draft = "";
@@ -40413,9 +40575,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 </section>` : ""}
                 `;
 
-      const simplifiedMissionMarkup =
-        `<button type="button" class="task-mission-title task-mission-title--toggle" data-task-expand="${escapeHtml(id)}" id="${id}-label" aria-expanded="false">${linkifyTaskTextHtml(taskTitle)}</button>`;
-
       const simplifiedWhatToDo = showWhatToDo ? `
                 ${contextNoteHtml}
                 ${plainExplainHtml}
@@ -40432,7 +40591,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             <button type="button" class="task-expand-btn" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand task ${escapeHtml(taskLabel)}"${canExpand ? "" : " disabled"}>${escapeHtml(taskLabel)}</button>
             <div class="task-compressed-main-wrap">
               <button type="button" class="task-compressed-main" data-task-expand="${escapeHtml(id)}" aria-expanded="false" aria-label="Expand task"${canExpand ? "" : " disabled"}>
-                <span class="task-compressed-mission">${escapeHtml(compressedLabel)}</span>
+                <span class="task-compressed-mission" id="${id}-label">${escapeHtml(compressedLabel)}</span>
                 ${taskData.draft?.trim() ? `<span class="task-compressed-draft-hint"><span aria-hidden="true">▼</span> Assets</span>` : ""}
                 ${isDone ? `<span class="task-compressed-done">Done</span>` : ""}
               </button>
@@ -40445,7 +40604,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               <div class="overview-task-content">
                 <section class="task-mentor-section task-mentor-section--mission${simplified ? " task-mentor-section--mission-compact" : ""}">
                   ${simplified ? "" : `<h4 class="task-mentor-label">Your task</h4>`}
-                  ${simplifiedMissionMarkup}
                   ${meta}
                   ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
                   ${simplified ? simplifiedWhatToDo : ""}
@@ -40900,8 +41058,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         normalized.text = text;
         state.roadmapStages[target.stageIndex].tasks[target.taskIndex] = normalized;
         const id = `task-${target.stageIndex}-${target.taskIndex}`;
-        const textEl = document.getElementById(`${id}-label`) || document.querySelector(`.task-item[data-task-id="${id}"] .task-text`);
+        const textEl = document.querySelector(`.task-item[data-task-id="${id}"] .task-text`);
         if (textEl) textEl.innerHTML = linkifyTaskTextHtml(humanizeTaskText(text));
+        const titleEl = document.getElementById(`${id}-label`);
+        if (titleEl) {
+          titleEl.textContent = getTaskNutshellTitle(normalized, normalized.mission, text);
+        }
       });
 
       if (state.roadmapKey) {
@@ -42121,8 +42283,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const spread = getAmbientOrbSpreadPosition(index, total);
       const left = spread.left;
       const top = spread.top;
-      const opacity = 0.26 + Math.random() * 0.16;
-      const palette = ["#29abe2", "#fbb03b", "#1fd358", "#9b8fe0", "#b8c5d6"];
+      const opacity = 0.3 + Math.random() * 0.18;
+      const palette = ["#969fa9", "#aab1b9", "#b9bec5", "#c7cbd0", "#d2d5d9", "#adb5be"];
       const color = palette[Math.floor(Math.random() * palette.length)];
       const driftScale = 0.9 + Math.random() * 0.75;
       const wanderX1 = `${((Math.random() - 0.5) * 28 * driftScale).toFixed(1)}vw`;
