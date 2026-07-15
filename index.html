@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-15-small-grey-orbs">
+  <meta name="whatimado-build" content="2026-07-15-centered-roadmap-progress">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -1798,7 +1798,7 @@
     /* Header controls scroll with the page so they never cover a hero/title section.
        Only the progress map is allowed to overlay content on scroll. */
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
-      padding-top: calc(1.35rem + var(--roadmap-header-gap, 1.5rem));
+      padding-top: calc(var(--topbar-h, 52px) + 1.35rem + var(--roadmap-header-gap, 1.5rem));
     }
 
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
@@ -10003,8 +10003,20 @@
     }
 
     @media (min-width: 961px) {
-      .roadmap-float-progress {
-        display: none !important;
+      html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: calc(var(--sidebar-w, 0px) + (100vw - var(--sidebar-w, 0px)) / 2);
+        z-index: 26;
+        width: min(44vw, 560px);
+        min-height: var(--topbar-h, 52px);
+        padding: .65rem 0;
+        flex-direction: column;
+        justify-content: center;
+        gap: .35rem;
+        transform: translateX(-50%);
+        pointer-events: none;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
@@ -10071,7 +10083,7 @@
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
-        padding-top: calc(1rem + var(--roadmap-header-gap, 1.5rem));
+        padding-top: calc(var(--topbar-h, 52px) + 1rem + var(--roadmap-header-gap, 1.5rem));
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-spacer {
@@ -14465,6 +14477,12 @@
 
     html.has-preview-banner .roadmap-float-progress:not([hidden]) {
       top: calc(var(--topbar-h, 64px) + var(--preview-banner-h));
+    }
+
+    @media (min-width: 961px) {
+      html.has-preview-banner[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
+        top: var(--preview-banner-h);
+      }
     }
 
     .preview-deploy-banner {
@@ -21174,28 +21192,29 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function shouldShowMobileRoadmapProgress() {
-      const mobile = window.matchMedia("(max-width: 960px)").matches && document.documentElement.dataset.colorScheme === "adult";
+      const adult = document.documentElement.dataset.colorScheme === "adult";
       const onRoadmap = $("#screen-roadmap")?.classList.contains("active") && !$("#screen-roadmap")?.classList.contains("is-loading");
-      return Boolean(mobile && onRoadmap && state.roadmapStages?.length);
+      return Boolean(adult && onRoadmap && state.roadmapStages?.length);
     }
 
     function syncRoadmapStickyOffset() {
       const bar = $("#roadmap-float-progress");
       const spacer = $("#roadmap-float-progress-spacer");
       const show = shouldShowMobileRoadmapProgress();
+      const mobile = window.matchMedia("(max-width: 960px)").matches;
       const collapsed = Boolean(bar?.classList.contains("is-collapsed"));
       if (bar) {
         bar.hidden = !show;
         bar.setAttribute("aria-hidden", show ? "false" : "true");
       }
       document.body.classList.toggle("is-roadmap-progress-visible", show && !collapsed);
-      const progressBarHeight = show && bar && !collapsed ? Math.ceil(bar.getBoundingClientRect().height) : 0;
+      const progressBarHeight = show && mobile && bar && !collapsed ? Math.ceil(bar.getBoundingClientRect().height) : 0;
       const progressH = progressBarHeight;
       const spacerHeight = progressBarHeight ? progressBarHeight + 14 : 0;
       document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
       if (spacer) {
         spacer.style.height = spacerHeight ? `${spacerHeight}px` : "0px";
-        spacer.hidden = !show;
+        spacer.hidden = !show || !mobile;
       }
       document.documentElement.style.setProperty(
         "--roadmap-sticky-offset",
@@ -21212,7 +21231,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function setRoadmapProgressCollapsed(collapsed) {
       const bar = $("#roadmap-float-progress");
-      if (!shouldShowMobileRoadmapProgress()) {
+      if (!shouldShowMobileRoadmapProgress() || !window.matchMedia("(max-width: 960px)").matches) {
         collapsed = false;
       }
       if (roadmapProgressScrollState.collapsed === collapsed) return;
@@ -21227,7 +21246,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function handleRoadmapProgressScroll() {
-      if (!shouldShowMobileRoadmapProgress()) {
+      if (!shouldShowMobileRoadmapProgress() || !window.matchMedia("(max-width: 960px)").matches) {
         setRoadmapProgressCollapsed(false);
         return;
       }
