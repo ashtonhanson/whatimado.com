@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-16-guaranteed-task-assistance">
+  <meta name="whatimado-build" content="2026-07-16-centered-secondary-pages">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -7371,6 +7371,17 @@
       padding: 1.25rem 1rem 3rem;
     }
 
+    html[data-color-scheme="adult"] #screen-notes.active,
+    html[data-color-scheme="adult"] #screen-settings.active,
+    html[data-color-scheme="adult"] #screen-stats.active {
+      position: fixed;
+      inset: 0;
+      width: auto;
+      height: 100dvh;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
     html[data-color-scheme="adult"] #screen-notes.active {
       display: flex;
       flex-direction: column;
@@ -7379,7 +7390,20 @@
       min-height: 100dvh;
       padding-top: 52px;
       padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
-      box-sizing: border-box;
+    }
+
+    html[data-color-scheme="adult"] #screen-settings.active,
+    html[data-color-scheme="adult"] #screen-stats.active {
+      display: block;
+      padding-top: 52px;
+    }
+
+    @media (min-width: 900px) {
+      html[data-color-scheme="adult"] #screen-notes.active,
+      html[data-color-scheme="adult"] #screen-settings.active,
+      html[data-color-scheme="adult"] #screen-stats.active {
+        left: var(--sidebar-w);
+      }
     }
 
     html[data-color-scheme="adult"] #screen-notes .notes-page {
