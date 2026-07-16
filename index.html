@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-15-centered-roadmap-progress">
+  <meta name="whatimado-build" content="2026-07-16-top-income-progress-and-tweak-collapse">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -211,6 +211,7 @@
       --topbar-h: 52px;
       --roadmap-header-gap: 1.5rem;
       --roadmap-progress-h: 0px;
+      --roadmap-menu-progress-h: 154px;
       --roadmap-sticky-offset: var(--topbar-h);
       --composer-browser-gap: 12px;
       --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
@@ -9892,11 +9893,31 @@
       opacity: .72;
     }
 
+    .task-tweak-draft-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      margin-bottom: .4rem;
+    }
+
     .task-tweak-draft-label {
-      margin: 0 0 .4rem;
+      margin: 0;
       color: #1e8fc4;
       font-size: .72rem;
       font-weight: 800;
+    }
+
+    .task-tweak-draft-toggle {
+      flex-shrink: 0;
+      padding: .28rem .55rem;
+      border: 1px solid rgba(37, 99, 235, .22);
+      border-radius: 999px;
+      background: #fff;
+      color: #1e8fc4;
+      font-size: .64rem;
+      font-weight: 800;
+      cursor: pointer;
     }
 
     .task-tweak-draft-copy {
@@ -9906,6 +9927,13 @@
       line-height: 1.55;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+    }
+
+    .task-tweak-draft.is-collapsed .task-tweak-draft-copy {
+      max-height: 3.1em;
+      overflow: hidden;
+      mask-image: linear-gradient(180deg, #000 55%, transparent);
+      -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent);
     }
 
     html[data-color-scheme="adult"] .task-tweak-draft-copy {
@@ -10003,24 +10031,100 @@
     }
 
     @media (min-width: 961px) {
+      html[data-color-scheme="adult"] body.is-roadmap-progress-visible .dashboard-topbar.minimal-topbar {
+        min-height: var(--roadmap-menu-progress-h);
+        align-items: flex-start;
+      }
+
+      html[data-color-scheme="adult"] body.is-roadmap-progress-visible #screen-roadmap.active .roadmap-page {
+        padding-top: calc(var(--roadmap-menu-progress-h) + 1.35rem + var(--roadmap-header-gap, 1.5rem));
+      }
+
       html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
         display: flex;
         position: fixed;
         top: 0;
         left: calc(var(--sidebar-w, 0px) + (100vw - var(--sidebar-w, 0px)) / 2);
         z-index: 26;
-        width: min(44vw, 560px);
-        min-height: var(--topbar-h, 52px);
-        padding: .65rem 0;
+        width: min(calc(100vw - var(--sidebar-w, 0px) - 2rem), 900px);
+        height: var(--roadmap-menu-progress-h);
+        padding: .5rem 0 .45rem;
         flex-direction: column;
         justify-content: center;
-        gap: .35rem;
+        gap: .25rem;
         transform: translateX(-50%);
-        pointer-events: none;
+        pointer-events: auto;
+        overflow: hidden;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
-        display: none !important;
+        display: block !important;
+        width: 100%;
+        margin: 0;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll {
+        width: 100%;
+        overflow: hidden;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-track {
+        padding: 0 1.8rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-rail {
+        gap: .45rem;
+        min-width: max(100%, calc(var(--glance-stops, 3) * 7.2rem));
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-stop {
+        flex: 0 0 6.75rem;
+        min-width: 6.75rem;
+        max-width: 6.75rem;
+        min-height: 5.55rem;
+        gap: .18rem;
+        padding: .32rem .45rem;
+        border-radius: 10px;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-stop:not(:last-child)::after {
+        top: 2.4rem;
+        right: calc(-.45rem - 2px);
+        width: calc(.45rem + 4px);
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-income-dot {
+        min-height: 1rem;
+        padding: .05rem .32rem;
+        font-size: .53rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-node {
+        width: 1.35rem;
+        height: 1.35rem;
+        border-width: 1px;
+        font-size: .6rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-copy {
+        gap: .1rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-label {
+        min-height: 0;
+        font-size: .58rem;
+        line-height: 1.15;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-desc {
+        display: none;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-count {
+        padding-top: 0;
+        font-size: .52rem;
       }
     }
 
@@ -15540,31 +15644,6 @@
         </div>
 
         <aside class="roadmap-side" id="roadmap-side">
-          <div class="roadmap-side-card roadmap-progress-map">
-            <div class="roadmap-side-card-head">
-              <h3 class="roadmap-side-card-title">Progress map</h3>
-              <span class="roadmap-side-progress-pct" id="roadmap-progress-pct">0%</span>
-            </div>
-            <div class="roadmap-progress-bar" aria-hidden="true">
-              <span class="roadmap-progress-bar-fill" id="roadmap-progress-bar-fill"></span>
-            </div>
-            <p class="roadmap-progress-summary" id="roadmap-progress-summary">0 of 0 tasks completed</p>
-            <div class="roadmap-progress-map-timeline roadmap-progress-map-timeline--sidebar" id="roadmap-progress-timeline" hidden>
-              <p class="roadmap-progress-map-lead">Dollar marks show only on phases where pay is realistically possible — prep steps stay blank.</p>
-              <div class="roadmap-progress-map-scroll" data-progress-map-scroll>
-                <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--prev" hidden aria-label="Scroll progress map left">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
-                </button>
-                <div class="roadmap-glance-track" id="roadmap-progress-timeline-track"></div>
-                <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--next" hidden aria-label="Scroll progress map right">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
-                </button>
-              </div>
-            </div>
-            <button type="button" class="roadmap-side-link" id="roadmap-view-progress-btn">Jump to current phase</button>
-            <button type="button" class="roadmap-glance-next-btn" id="roadmap-progress-next-btn" hidden>Jump to your next mission</button>
-          </div>
-
           <div class="roadmap-side-card" id="roadmap-side-local-card">
             <h3 class="roadmap-side-card-title">Local resources for you</h3>
             <ul class="roadmap-local-list" id="roadmap-local-list"></ul>
@@ -17858,6 +17937,25 @@
       return copy.replace(/\s{2,}/g, " ").trim();
     }
 
+    function finishIncompleteActionCopy(text, normalized = null) {
+      let copy = String(text || "").trim();
+      if (!copy) return copy;
+      const hasDanglingEnding = /[,;:—–-]\s*$/.test(copy)
+        || /\b(and|or|whether|because|with|for|to|about|if)\s*[,.]?\s*$/i.test(copy);
+      if (hasDanglingEnding) {
+        const completeSentenceEnds = [...copy.matchAll(/[.!?](?=\s|$)/g)];
+        const lastCompleteEnd = completeSentenceEnds.at(-1)?.index;
+        if (Number.isInteger(lastCompleteEnd) && lastCompleteEnd >= 36) {
+          copy = copy.slice(0, lastCompleteEnd + 1).trim();
+        } else {
+          copy = copy.replace(/\s*(?:[,;:—–-]|\b(?:and|or|whether|because|with|for|to|about|if))\s*[,.]?\s*$/i, "").trim();
+        }
+      }
+      if (copy && !/[.!?]$/.test(copy)) copy += ".";
+      if (copy.length < 32 && normalized) return buildConcreteTaskAction(normalized);
+      return copy;
+    }
+
     function stripMissionTitleFromBody(text, mission) {
       let copy = String(text || "").trim();
       const title = String(mission || "").trim();
@@ -19338,6 +19436,7 @@ Practice each one out loud once and time yourself.`;
       normalized.text = stripRepeatedPathReferences(normalized.text, stripOpts);
       normalized.text = scrubVerboseLocationFromText(normalized.text);
       normalized.text = stripEllipsisFromCopy(normalized.text);
+      normalized.text = finishIncompleteActionCopy(normalized.text, normalized);
 
       normalized.why = stripRepeatedPathReferences(normalized.why, stripOpts);
       normalized.why = specifyVagueTaskReferences(normalized.why, state.currentIdea);
@@ -21824,8 +21923,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function renderTaskTweakDraftResultsHtml(taskId) {
       const drafts = getRoadmapTaskData(taskId).tweakDrafts || [];
       return drafts.map((draft) => `
-        <article class="task-tweak-draft${draft.status === "generating" ? " is-generating" : ""}" id="${escapeHtml(draft.id)}">
-          <p class="task-tweak-draft-label">${escapeHtml(draft.label || "New draft")}</p>
+        <article class="task-tweak-draft${draft.status === "generating" ? " is-generating" : ""}${draft.collapsed ? " is-collapsed" : ""}" id="${escapeHtml(draft.id)}">
+          <div class="task-tweak-draft-head">
+            <p class="task-tweak-draft-label">${escapeHtml(draft.label || "New draft")}</p>
+            ${draft.status === "generating" ? "" : `<button type="button" class="task-tweak-draft-toggle" data-task-id="${escapeHtml(taskId)}" data-tweak-draft-id="${escapeHtml(draft.id)}" aria-expanded="${draft.collapsed ? "false" : "true"}">${draft.collapsed ? "Expand" : "Compress"}</button>`}
+          </div>
           <p class="task-tweak-draft-copy">${escapeHtml(draft.content || "Generating your new draft…")}</p>
         </article>
       `).join("");
@@ -21882,13 +21984,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       try {
         if (action.local === "checklist") {
           const items = getOutcomeChecklistItems(normalized);
-          const lines = items.length >= 2
-            ? items.map((item) => `[ ] ${item}`)
-            : (normalized.steps.length ? normalized.steps : [normalized.text]).map((step) => `[ ] ${humanizeTaskText(step)}`);
+          const checklistItems = items.length >= 2
+            ? items
+            : (normalized.steps.length ? normalized.steps : [normalized.text]);
+          const lines = checklistItems
+            .map((item) => finishIncompleteActionCopy(humanizeTaskText(item), normalized))
+            .filter(Boolean)
+            .map((item) => `• ${item}`);
           finishTaskTweakDraft(
             taskId,
             resultDraft.id,
-            `[Checklist for this task]\n\n${lines.join("\n")}\n\n[ ] Done — I can describe what I finished`
+            `Checklist for this task:\n\n${lines.join("\n")}\n\n• Done when you can describe what you finished.`
           );
           return;
         }
@@ -33138,6 +33244,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         handleTaskAssistClick(event);
         return;
       }
+      const tweakDraftToggle = event.target.closest(".task-tweak-draft-toggle");
+      if (tweakDraftToggle) {
+        event.preventDefault();
+        event.stopPropagation();
+        const taskId = tweakDraftToggle.dataset.taskId;
+        const data = getRoadmapTaskData(taskId);
+        const draft = data.tweakDrafts.find((entry) => entry.id === tweakDraftToggle.dataset.tweakDraftId);
+        if (!draft) return;
+        draft.collapsed = !draft.collapsed;
+        schedulePersist();
+        syncTaskTweakDraftResults(taskId);
+        return;
+      }
       const aiAssistBtn = event.target.closest(".task-ai-assist-btn");
       if (aiAssistBtn) {
         event.preventDefault();
@@ -39966,7 +40085,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (nextBtn) nextBtn.hidden = !getFirstIncompleteTaskPosition();
 
       scrollActiveProgressMapStop(
-        window.matchMedia("(max-width: 960px)").matches ? floatTrack : sidebarTrack
+        floatTrack || sidebarTrack
       );
       requestAnimationFrame(() => refreshAllProgressMapScrollControls());
       syncRoadmapStickyOffset();
@@ -40517,6 +40636,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         { idea: state.currentIdea, stageLabel: stage.label }
       );
       text = stripMissionTitleFromBody(scrubVerboseLocationFromText(stripEllipsisFromCopy(text)), mission);
+      text = finishIncompleteActionCopy(text, normalized);
       if (isVagueWhatToDoText(text)) {
         const concrete = stripMissionTitleFromBody(
           scrubVerboseLocationFromText(humanizeTaskText(buildMentorUserActionText(normalized) || text)),
@@ -40530,6 +40650,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       const taskTitle = getTaskNutshellTitle(normalized, mission, text);
       text = stripMissionTitleFromBody(text, taskTitle);
+      text = finishIncompleteActionCopy(text, normalized);
       if (!text || isVagueWhatToDoText(text)) {
         text = buildConcreteTaskAction(normalized);
       }
