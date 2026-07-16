@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-16-compact-top-progress">
+  <meta name="whatimado-build" content="2026-07-16-left-progress-with-continuation">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -10030,6 +10030,10 @@
       text-align: right;
     }
 
+    .roadmap-progress-continuation {
+      display: none;
+    }
+
     @media (min-width: 961px) {
       html[data-color-scheme="adult"] body.is-roadmap-progress-visible .dashboard-topbar.minimal-topbar {
         min-height: var(--roadmap-menu-progress-h);
@@ -10044,17 +10048,26 @@
         display: flex;
         position: fixed;
         top: 0;
-        left: calc(var(--sidebar-w, 0px) + (100vw - var(--sidebar-w, 0px)) / 2);
+        left: calc(var(--sidebar-w, 0px) + 1.5rem);
         z-index: 26;
-        width: min(calc(100vw - var(--sidebar-w, 0px) - 2rem), 900px);
+        width: min(
+          calc(100vw - var(--sidebar-w, 0px) - 2rem),
+          calc(max(260px, calc(var(--roadmap-progress-stops, 3) * 7.2rem + 1.5rem)) + 13rem)
+        );
         height: var(--roadmap-menu-progress-h);
         padding: .5rem 0 .45rem;
         flex-direction: column;
         justify-content: center;
+        align-items: flex-start;
         gap: .25rem;
-        transform: translateX(-50%);
         pointer-events: auto;
         overflow: hidden;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-progress-summary,
+      html[data-color-scheme="adult"] .roadmap-float-progress-bar-wrap,
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
+        width: min(100%, max(260px, calc(var(--roadmap-progress-stops, 3) * 7.2rem + 1.5rem)));
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
@@ -10071,13 +10084,13 @@
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-track {
-        padding: 0 1.8rem;
+        padding: 0 .75rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-rail {
         gap: .45rem;
-        justify-content: center;
-        min-width: max(100%, calc(var(--glance-stops, 3) * 7.2rem));
+        justify-content: flex-start;
+        min-width: calc(var(--glance-stops, 3) * 7.2rem);
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-stop {
@@ -10126,6 +10139,53 @@
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-count {
         padding-top: 0;
         font-size: .52rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-continuation {
+        display: flex;
+        position: absolute;
+        left: calc(max(260px, calc(var(--roadmap-progress-stops, 3) * 7.2rem + 1.5rem)) + .65rem);
+        right: 0;
+        bottom: .7rem;
+        align-items: center;
+        gap: .4rem;
+        min-width: 10rem;
+        color: #94a3b8;
+        opacity: .72;
+        pointer-events: none;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-continuation::before {
+        content: "";
+        flex: 0 0 1.15rem;
+        height: 1px;
+        background: repeating-linear-gradient(90deg, #cbd5e1 0 4px, transparent 4px 8px);
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-continuation-node {
+        display: grid;
+        place-items: center;
+        flex: 0 0 1.35rem;
+        width: 1.35rem;
+        height: 1.35rem;
+        border: 1px dashed #94a3b8;
+        border-radius: 50%;
+        background: rgba(248, 250, 252, .9);
+        font-size: .65rem;
+        font-weight: 800;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-continuation-copy {
+        display: grid;
+        gap: .05rem;
+        max-width: 8.5rem;
+        font-size: .55rem;
+        line-height: 1.2;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-progress-continuation-copy strong {
+        color: #64748b;
+        font-size: .58rem;
       }
     }
 
@@ -15181,6 +15241,13 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
             </button>
           </div>
+        </div>
+        <div class="roadmap-progress-continuation" aria-label="Possible future roadmap continuation">
+          <span class="roadmap-progress-continuation-node" aria-hidden="true">?</span>
+          <span class="roadmap-progress-continuation-copy">
+            <strong>Possible continuation</strong>
+            <span>Your roadmap can keep evolving from here.</span>
+          </span>
         </div>
       </div>
 
@@ -40060,10 +40127,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const sidebarTrack = $("#roadmap-progress-timeline-track");
       const floatTimeline = $("#roadmap-float-timeline");
       const floatTrack = $("#roadmap-float-timeline-track");
+      const floatProgress = $("#roadmap-float-progress");
       const nextBtn = $("#roadmap-progress-next-btn");
       const tracks = [sidebarTrack, floatTrack].filter(Boolean);
 
       if (!stages?.length) {
+        floatProgress?.style.removeProperty("--roadmap-progress-stops");
         if (sidebarTimeline) sidebarTimeline.hidden = true;
         if (floatTimeline) floatTimeline.hidden = true;
         tracks.forEach((track) => { track.innerHTML = ""; });
@@ -40073,6 +40142,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       const stopCount = String(Math.max(stages.length, 1));
+      floatProgress?.style.setProperty("--roadmap-progress-stops", stopCount);
       const timelineHtml = buildProgressMapTimelineHtml(stages);
       tracks.forEach((track) => {
         track.style.setProperty("--glance-stops", stopCount);
