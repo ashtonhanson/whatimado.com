@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-16-unclipped-top-progress">
+  <meta name="whatimado-build" content="2026-07-16-guaranteed-task-assistance">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -16368,6 +16368,7 @@
       '- NEVER use vague "this" or "your goal" — name the specific service in plain words (e.g. "people who might book your mobile grooming service" not "people who care about this").\n' +
       '- NEVER write paragraphs explaining what the task means. script = ONE immediately usable document only (email, proposal, resume, cover letter, spreadsheet, cold message, survey, business plan, marketing post, flyer, presentation, checklist, calendar, phone script, meeting agenda). If none applies, leave script empty.\n' +
       '- Contact 5 orgs → resources (names, emails, phones) + script (draft + follow-up email + phone script + spreadsheet tracker).\n' +
+      '- Never say "contact below", "listed below", "prepared message", "script below", or similar unless that exact contact, link, message, or script is included in the same task. A promised asset may never be empty, hidden, or deferred to a button.\n' +
       '- Never assume the user has children or childcare duties. Mention children, childcare, dependents, or family-specific aid ONLY when the USER PROFILE explicitly says dependent support is needed.\n' +
       '- When a step could be reduced by a real grant, voucher, benefit, fee waiver, scholarship, or assistance program, include the exact program in resources with its official application page and published contact details. Never invent funding or imply eligibility is guaranteed.\n' +
       '- Build a logo → script (logo brief + mood board keywords + color palette hex + typography + AI image prompts + SVG recommendations).\n' +
@@ -18047,24 +18048,95 @@
         || /\b(do the next logical step forward|complete the listed step|do the action described below|take the next logical step)\b/.test(copy);
     }
 
+    function taskCopyPromisesIncludedAssistance(text) {
+      return /\b(first|top)\s+(?:housing |shelter |benefits? |id |mail-service )?contact(?: listed)? below\b|\bcontacts? (?:listed |shown )?below\b|\bprepared (?:message|email|script|draft)\b|\b(?:script|draft|links?|resources?|assistance) below\b/i.test(String(text || ""));
+    }
+
+    function taskHasIncludedContact(normalized) {
+      return getFlatTaskResources(normalized || {}).length > 0;
+    }
+
+    function taskCopyHasUnavailableAssistance(text, normalized) {
+      const copy = String(text || "");
+      const task = normalized || {};
+      if (/\bprepared (?:message|email|script|draft)\b|\b(?:script|draft) below\b/i.test(copy)) return true;
+      if (/\b(?:first|top)\s+(?:housing |shelter |benefits? |id |mail-service )?contact(?: listed)? below\b|\bcontacts? (?:listed |shown )?below\b/i.test(copy)) {
+        return !taskHasIncludedContact(task);
+      }
+      if (/\b(?:links?|resources?) below\b/i.test(copy)) {
+        return !taskHasIncludedContact(task) && !(task.links || []).length;
+      }
+      return false;
+    }
+
+    function ensureTaskAssistanceAssets(task, stage, stageIndex, idea = state.currentIdea, displayText = "") {
+      let normalized = normalizeRoadmapTask(task);
+      if (taskHasIncludedContact(normalized)) return normalized;
+
+      const taskContext = `${getTaskContentBlob(normalized)} ${displayText}`.trim();
+      const promisesAssistance = taskCopyPromisesIncludedAssistance(taskContext);
+      const needsContact = promisesAssistance
+        || taskNeedsLocalContacts(normalized, stage, stageIndex, idea)
+        || (
+          requiresStabilityOnlyIdeas()
+          && /\b(call|contact|email|message|housing|shelter|id\b|documents?|benefits?|food|healthcare|voucher|assistance)\b/i.test(taskContext)
+        );
+      if (!needsContact || !getUserLocation()) return normalized;
+
+      const available = getKnownLocalResourcesForPath(idea);
+      const picks = pickResourcesForTask(taskContext, available);
+      if (!picks.length) return normalized;
+      if (!promisesAssistance && scoreResourceForTask(picks[0], taskContext) <= 0) return normalized;
+
+      const included = picks.map((entry) => ({
+        name: entry.name || "Support program",
+        org: entry.org || "",
+        address: entry.address || "",
+        phone: entry.phone || "",
+        email: entry.email || "",
+        url: entry.url || "",
+        details: entry.details || ""
+      }));
+      normalized = applyResourceLayers(normalized, {
+        local: included,
+        national: [],
+        global: []
+      });
+      normalized.contacts = included;
+      normalized.links = included.map((entry) => entry.url).filter(Boolean);
+      normalized.local = included.map((entry) => entry.org).filter(Boolean).join(" · ");
+      return normalized;
+    }
+
     function buildConcreteTaskAction(normalized) {
       const blob = getTaskContentBlob(normalized);
+      const hasContact = taskHasIncludedContact(normalized);
       if (/\b(shelter|housing|211|safe place|place to stay|bed|waitlist)\b/.test(blob)) {
-        return "Call the first housing or shelter contact below. Ask about availability, the waitlist, intake time, and what ID they require; write down the answers.";
+        return hasContact
+          ? "Call the first housing or shelter contact below. Ask about availability, the waitlist, intake time, and what ID they require; write down the answers."
+          : "Open your city or county's official housing-services directory. Call one verified shelter and ask about availability, waitlist timing, intake hours, and required ID.";
       }
       if (/\b(id|birth certificate|social security|dmv|county clerk|documents)\b/.test(blob)) {
-        return "Call the first ID office below. Confirm the documents, fee, office hours, and first form you need; write down anything you are missing.";
+        return hasContact
+          ? "Call the first ID office below. Confirm the documents, fee, office hours, and first form you need; write down anything you are missing."
+          : "Open your state or local government's official ID page. Confirm the required documents, fee, office hours, and first form you need; write down anything you are missing.";
       }
       if (/\b(mail|general delivery|address)\b/.test(blob)) {
-        return "Call the first mail-service option below. Ask whether you can receive official mail there, what to bring, and when pickup is available.";
+        return hasContact
+          ? "Call the first mail-service option below. Ask whether you can receive official mail there, what to bring, and when pickup is available."
+          : "Call a nearby post office or verified community mail program. Ask whether you can receive official mail there, what to bring, and when pickup is available.";
       }
       if (/\b(benefit|food|healthcare|medicaid|snap|voucher)\b/.test(blob)) {
-        return "Call the first benefits contact below. Ask what you qualify for, what documents they accept today, and how to start the application.";
+        return hasContact
+          ? "Call the first benefits contact below. Ask what you may qualify for, what documents they accept today, and how to start the application."
+          : "Open your local government's official benefits page. Call the published number and ask what you may qualify for, which documents they accept today, and how to apply.";
       }
       if (/\b(call|contact|email|message|outreach)\b/.test(blob)) {
-        return "Use the first contact listed below. Send the prepared message or make the call, ask for the next available step, and save their answer.";
+        return hasContact
+          ? "Call or email the first contact listed below. Ask for the next available step, what you need to prepare, and who to follow up with; save their answer."
+          : "Find the official website for the service this task needs. Use its published phone number or email to ask for the next available step, what to prepare, and who to follow up with.";
       }
-      return "Gather the items listed below, complete the first concrete action today, and write down the result before moving on.";
+      return "Gather the documents or details named in this task, complete its first concrete action today, and write down the result before moving on.";
     }
 
     function dependentSupportIsConfirmedNeeded() {
@@ -25018,6 +25090,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const taskText = getTaskContentBlob(normalized);
       if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
       if (taskIsBrowseOnlyTask(taskText)) return false;
+      if (taskCopyPromisesIncludedAssistance(taskText)) return true;
+      if (
+        requiresStabilityOnlyIdeas()
+        && /\b(call|contact|email|message|housing|shelter|id\b|documents?|benefits?|food|healthcare|voucher|assistance)\b/i.test(taskText)
+      ) return true;
       if (isGroundedPractitioner(idea)) {
         if (/\b(workforce|american job center|211|staffing agenc|job center|community college|training route|temp firm|union hall|workforce board)\b/i.test(taskText)) return false;
         if (/\b(behance|dribbble|upwork|99design|contra|fiverr|linkedin|portfolio|freelance|platform|pitch|online|logo|brand identity|case study)\b/i.test(taskText)) return false;
@@ -40694,9 +40771,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (isPendingRoadmapTask(task)) {
         return renderPendingTaskHtml(id, stageIndex, taskIndex);
       }
-      const normalized = normalizeRoadmapTask(task);
       const stage = state.roadmapStages?.[stageIndex] || { label: "", desc: "", tasks: [] };
-      const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
+      let normalized = ensureTaskAssistanceAssets(task, stage, stageIndex);
       const simplified = true;
       const mission = humanizeTaskText(
         normalized.mission
@@ -40725,6 +40801,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!text || isVagueWhatToDoText(text)) {
         text = buildConcreteTaskAction(normalized);
       }
+      normalized = ensureTaskAssistanceAssets(normalized, stage, stageIndex, state.currentIdea, text);
+      if (taskCopyHasUnavailableAssistance(text, normalized)) {
+        text = buildConcreteTaskAction(normalized);
+      }
+      const showResources = shouldShowTaskResources(normalized, stage, stageIndex);
       const showWhatToDo = shouldShowWhatToDoSection(text, normalized);
       const compressedLabel = taskTitle;
       const howTo = stripMissionTitleFromBody(
