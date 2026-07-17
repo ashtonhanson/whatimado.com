@@ -40,7 +40,7 @@
     })();
   </script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="whatimado-build" content="2026-07-16-centered-secondary-pages">
+  <meta name="whatimado-build" content="2026-07-16-restored-chat-frame">
   <title>Free career path map &amp; roadmaps when you're stuck | whatimado.com</title>
   <meta name="description" content="whatimado.com helps when you feel stuck on what's next: a free visual map of paths, mission-by-mission roadmaps with contacts and drafts ready — not another chat wall.">
   <link rel="canonical" href="https://whatimado.com/">
@@ -32691,9 +32691,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function restoreLastScreenFromSession() {
       const target = resolveRestoreScreen();
       state.lastScreen = target;
-      if (target === "main" || !canRestoreScreen(target)) return false;
-
       const restoreOptions = { skipPersist: true, skipNavHistory: true };
+      if (target === "main") {
+        showScreen("main", { ...restoreOptions, skipScrollTop: true });
+        if (state.history.length) {
+          requestAnimationFrame(() => scrollMinimalChatToBottom("auto"));
+        }
+        return true;
+      }
+      if (!canRestoreScreen(target)) return false;
       if (target === "roadmap") {
         return restoreRoadmapScreenFromSession();
       }
