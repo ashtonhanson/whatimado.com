@@ -16393,7 +16393,7 @@
       '- NEVER write paragraphs explaining what the task means. script = ONE immediately usable document only (email, proposal, resume, cover letter, spreadsheet, cold message, survey, business plan, marketing post, flyer, presentation, checklist, calendar, phone script, meeting agenda). If none applies, leave script empty.\n' +
       '- Contact 5 orgs → resources (names, emails, phones) + script (draft + follow-up email + phone script + spreadsheet tracker).\n' +
       '- Never say "contact below", "listed below", "prepared message", "script below", or similar unless that exact contact, link, message, or script is included in the same task. A promised asset may never be empty, hidden, or deferred to a button.\n' +
-      '- Never assume the user has children or childcare duties. Mention children, childcare, dependents, or family-specific aid ONLY when the USER PROFILE explicitly says dependent support is needed.\n' +
+      '- Never assume the user has children. Mention children, childcare, dependents, or family-specific aid ONLY when the USER PROFILE confirms dependents (needs_help or no_help). When they DO have children, bake in realistic scheduling flexibility, school-hour constraints, and stability — and include childcare assistance resources only when dependent support is needs_help.\n' +
       '- When a step could be reduced by a real grant, voucher, benefit, fee waiver, scholarship, or assistance program, include the exact program in resources with its official application page and published contact details. Never invent funding or imply eligibility is guaranteed.\n' +
       '- Build a logo → script (logo brief + mood board keywords + color palette hex + typography + AI image prompts + SVG recommendations).\n' +
       '- Interview customers → script (interview questions + Google Form field list + short survey + call script + note template table).\n' +
@@ -16962,7 +16962,7 @@
         `- national: country government portals, national grants, benefits, vouchers, fee waivers, and assistance programs\n` +
         `- global: online options that work anywhere (Coursera, edX, Khan Academy, Google Career Certificates, remote job boards)\n` +
         `When financial help could make the step possible, include the exact relevant program and summarize what it provides, basic eligibility, and any published deadline in details. Use the official application page. Never promise eligibility or invent a grant.\n` +
-        `Never assume children, childcare, or dependent-care needs unless the USER PROFILE explicitly says support is needed. Never assume a US organization applies outside the US. Never leave resources empty when the task clearly needs a local agency.\n`
+        `Never invent children or childcare needs. When USER PROFILE confirms dependents (needs_help or no_help), plan around school schedules and flexibility; include childcare-aid resources only when dependent support is needs_help. Never assume a US organization applies outside the US. Never leave resources empty when the task clearly needs a local agency.\n`
       );
     }
 
@@ -16974,7 +16974,7 @@
       '- "What to do" (text field): 1–3 short concrete sentences with who to contact, what to ask for, and what to prepare. Never just restate the mission title. Never say "Do the next logical step forward" or "complete the listed step".\n' +
       '- Never repeat the mission title inside the task body. Never use ellipses (…) — rewrite so the line fits.\n' +
       '- Location: shortest natural form only ("Austin" not "Austin, Texas, United States"). Omit if obvious.\n' +
-      '- Never mention children, childcare, daycare, or dependent-care help unless the USER PROFILE explicitly confirms that support is needed.\n' +
+      '- Never invent children or childcare needs. When USER PROFILE confirms dependents, respect school-hour logistics and flexibility; include childcare-aid programs only when dependent support is needs_help.\n' +
       '- For calls, applications, housing, benefits, training, legal help, or funding: attach useful organization names plus published address, phone, email, official link, and relevant grant/benefit/assistance details when available.\n' +
       '- Each task = one small, doable action that respects limited energy.\n' +
       '- BANNED words/phrases: validate, validation, social validation, stakeholders, market fit, product-market fit, reentry ecosystem, sprint, deliverable, initiative, pilot, touchpoint, execute, framework, go-to-market, value proposition, user acquisition, MVP, iterate, friction point, feedback loop, traction, pivot, leverage, scalable, cohort, monetize, activation, optics, GTM, ICP, aligned with your mission, identify organizations aligned, do the next logical step, complete the listed step, do the action described below.\n' +
@@ -22126,6 +22126,47 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return !/\b(skill|experience|good at|background|resume|certif|trained|worked as|years? (?:of )?experience|typing|customer service|sales|coding|design|writing|admin|trade|electrician|nurse|teacher|driver|manager|bartend|retail|warehouse|hospitality|data entry|support rep|onboard|communicat|organiz|detail-oriented|creative|hands[- ]on|learn|pick up|comfortable with)\b/.test(text);
     }
 
+    function conversationMentionsInterestsOrEnjoyedWork(text = "") {
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      return /\b(hobby|hobbies|interest(?:s|ed)?|passion|enjoy(?:ed|s|ing)?|love(?:d|s| to)?|like(?:d|s)? (?:to |doing )?|hands[- ]on|creative|craft|art|music|draw|paint|write|writing|cook(?:ing)?|garden(?:ing)?|fix|build(?:ing)?|fixing|outdoors|gaming|photo(?:graphy)?|design|diy|volunteer(?:ing)?|side (?:project|hustle)|free time|outside of work|when i(?:'|')?m not|used to (?:love|enjoy|like)|miss(?:ed)? (?:doing|being)|good with (?:my )?hands|naturally good|favorite part of|parts? i (?:liked|loved|enjoyed))\b/.test(blob);
+    }
+
+    function conversationMentionsChildrenOrDependents(text = "") {
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      return /\b(children|child|kids?|son|daughter|parent|parenting|stay[- ]at[- ]home|single parent|dependents?|childcare|daycare|school pickup|no (?:kids|children|dependents)|don'?t have (?:any )?(?:kids|children)|do not have (?:any )?(?:kids|children))\b/.test(blob);
+    }
+
+    function explorationPhaseNeedsInterestQuestion(text = "") {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      return !conversationMentionsInterestsOrEnjoyedWork(text || getConversationUserBlob());
+    }
+
+    function explorationPhaseNeedsDependentQuestion(text = "") {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      const profile = normalizeUserProfile(state.userProfile);
+      if (["none", "no_help", "needs_help"].includes(profile.dependentSupport)) return false;
+      return !conversationMentionsChildrenOrDependents(text || getConversationUserBlob());
+    }
+
+    function getExplorationFitPromptBlock() {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return "";
+      const profile = normalizeUserProfile(state.userProfile);
+      const hasKids = profile.dependentSupport === "needs_help" || profile.dependentSupport === "no_help"
+        || conversationMentionsChildrenOrDependents();
+      const kidsLine = profile.dependentSupport === "needs_help"
+        ? `- They have children/dependents and want support included: prioritize flexible hours, school-compatible schedules, remote/hybrid when realistic, and real childcare/transport assistance resources.\n`
+        : hasKids
+          ? `- They have children/dependents: every path must respect school-hour logistics, limited evening bandwidth, and scheduling flexibility. Do NOT push long unpaid training that ignores caregiving. Only include childcare-aid programs if they asked for assistance.\n`
+          : `- Do not invent children or childcare constraints.\n`;
+      return (
+        `\nHOLISTIC PATH FIT (non-negotiable):\n` +
+        `- Tie every path to (a) past work they said they enjoyed, (b) current interests/hobbies/hands-on or creative outlets they named, and (c) practical life constraints from this conversation.\n` +
+        `- In each idea's "why", explicitly connect the path to something THEY said they like, enjoyed, or are good at — not generic career advice.\n` +
+        kidsLine +
+        `- If interests are still thin, keep paths exploratory and label them as experiments — do not invent hobbies they never mentioned.\n`
+      );
+    }
+
     function userExplicitlyUnsureAboutSkills(text) {
       const blob = String(text || "").toLowerCase();
       return /\b(not (?:really )?sure|don'?t know|no idea|unsure|just give me|give me (?:some )?ideas|help me figure|not sure yet|no clue|whatever you think)\b/.test(blob);
@@ -22149,9 +22190,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function profileIntakeNeedsSkillsStep(profile = normalizeUserProfile(state.userProfile)) {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
-      if (!isMoneyMakingPrompt(getFirstUserMessage())) return false;
       if (conversationDeclaresSkillUncertainty()) return false;
-      return conversationLacksSkillSignal(getCurrentIntakeUserBlob());
+      if (profile.skills && !userExplicitlyUnsureAboutSkills(profile.skills)) return false;
+      // Ask when money-urgency prompts lack skills, OR exploration still lacks interests/enjoyed-work signals.
+      if (isMoneyMakingPrompt(getFirstUserMessage()) && conversationLacksSkillSignal(getCurrentIntakeUserBlob())) {
+        return true;
+      }
+      return explorationPhaseNeedsInterestQuestion();
     }
 
     function getEmploymentRoleShortLabel(idea = state.currentIdea) {
@@ -24215,17 +24260,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function parseDependentSupport(text) {
       const q = String(text || "").toLowerCase().trim();
       if (!q) return "";
-      if (/\b(no children|no child|don'?t have (?:any )?(?:children|kids|dependents)|do not have (?:any )?(?:children|kids|dependents)|no dependents|none)\b/.test(q)) {
+      if (/\b(no children|no child|don'?t have (?:any )?(?:children|kids|dependents)|do not have (?:any )?(?:children|kids|dependents)|no kids|no dependents|none|just me|only myself)\b/.test(q)) {
         return "none";
       }
-      const hasDependents = /\b(have|with|raising|care for|responsible for|my)\b.*\b(children|kids|child|dependents)\b/.test(q)
-        || /\b(children|kids|child|dependents)\b.*\b(have|need|mine|my)\b/.test(q);
+      const hasDependents = /\b(have|with|raising|care for|responsible for|my|two|three|\d+)\b.*\b(children|kids|child|son|daughter|dependents)\b/.test(q)
+        || /\b(children|kids|child|son|daughter|dependents)\b.*\b(have|need|mine|my)\b/.test(q)
+        || /\b(stay[- ]at[- ]home (?:parent|mom|dad)|single parent|parenting|school pickup|childcare|daycare)\b/.test(q);
       const needsHelp = /\b(need|want|could use|looking for|yes).*\b(help|support|assistance|childcare|daycare|transport|food|healthcare|school|housing)\b/.test(q)
         || /\b(help|support|assistance|childcare|daycare)\b.*\b(need|yes|please)\b/.test(q);
       const declinesHelp = /\b(no|don'?t|do not|not).*\b(help|support|assistance|childcare|anything)\b/.test(q)
-        || /\b(have (?:it|that) covered|already covered|no added assistance)\b/.test(q);
+        || /\b(have (?:it|that) covered|already covered|no added assistance|we(?:'|')?re fine|manage (?:on )?our own)\b/.test(q);
       if ((hasDependents || /\byes\b/.test(q)) && needsHelp && !declinesHelp) return "needs_help";
       if (hasDependents && declinesHelp) return "no_help";
+      // They have kids but didn't ask for aid programs — still flag dependents for scheduling fit.
+      if (hasDependents) return "no_help";
       return "";
     }
 
@@ -27780,6 +27828,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         refreshBlock +
         getLocationContextBlock() +
         getUserStatedCraftBlock(idea) +
+        getExplorationFitPromptBlock() +
         getReentryPromptBlock(idea) +
         getRecoveryStabilityPromptBlock(idea) +
         getIdPriorityPromptBlock(idea) +
@@ -27795,7 +27844,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `- mission = plain-language goal. mentorHelp = what you prepared. howTo = next small action. text = what they do now. outcome = how they'll know it's done.\n` +
         `- script + talkingPoints + followUp required for reaching-out missions. resources.* = 3-8 real orgs with URLs.\n` +
         `- NEVER assign homework: research, find, look up, write from scratch.\n` +
-        `- Reference their actual situation (skills, location, constraints, goals).\n` +
+        `- Reference their actual situation (enjoyed past work, interests/hobbies, skills, location, caregiving/scheduling constraints, goals).\n` +
+        `- If they have children/dependents, schedule missions around realistic weekly bandwidth — prefer flexible, local, or remote-friendly steps when honest.\n` +
         `- Do NOT mention whatimado.com unless this is a founder growth path.\n` +
         `- NEVER repeat the same sentence in mission, text, why, and outcome — each field must add new detail.\n` +
         `- why must NOT copy the stage description verbatim.\n` +
@@ -34364,8 +34414,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (profile.housingStatus === "needs") lines.push("Housing: still needs a safe, reliably accessible place to stay");
       if (profile.housingStatus === "has") lines.push("Housing: has safe housing or reliable shelter access");
       if (profile.dependentSupport === "none") lines.push("Dependents: no children or other dependents to plan for; do not include childcare or family-specific aid");
-      if (profile.dependentSupport === "no_help") lines.push("Dependents: has children or dependents, but does not want added assistance included");
-      if (profile.dependentSupport === "needs_help") lines.push("Dependents: include relevant childcare, transportation, food, healthcare, school, housing, or other family assistance");
+      if (profile.dependentSupport === "no_help") lines.push("Dependents: has children or dependents — design for school-hour logistics and scheduling flexibility; do not push aid programs they did not ask for");
+      if (profile.dependentSupport === "needs_help") lines.push("Dependents: has children or dependents — include childcare, transportation, food, healthcare, school, housing, or other family assistance, plus flexible scheduling");
       if (hasSkills && profile.skills) {
         lines.push(`Skills / strengths: ${profile.skills}`);
       } else if (unsure) {
@@ -34585,12 +34635,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function askProfileDependentSupportStep() {
       state.profileIntakeStep = "dependent_support";
       pushProfileIntakeAssistantMessage(
-        "Do you have children or other dependents whose needs should be part of this map?"
+        "One more practical detail before we map options — do you have kids or others you're responsible for day to day? That keeps schedules and logistics honest."
       );
       renderProfileIntakeChips([
         { field: "dependentSupport", value: "none", label: "No children or dependents" },
-        { field: "dependentSupport", value: "needs_help", label: "Yes — include assistance for them" },
-        { field: "dependentSupport", value: "no_help", label: "Yes — no added assistance needed" }
+        { field: "dependentSupport", value: "needs_help", label: "Yes — include help/resources for them" },
+        { field: "dependentSupport", value: "no_help", label: "Yes — just plan around my schedule" }
       ]);
       trackEvent("profile_intake_step_shown", { step: "dependent_support" });
     }
@@ -34673,12 +34723,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function askProfileSkillsStep() {
       state.profileIntakeStep = "skills";
       pushProfileIntakeAssistantMessage(
-        "What could you realistically use to earn money soon — skills you already have, or something you'd learn in 2–4 weeks?"
+        explorationPhaseNeedsInterestQuestion()
+          ? "What do you enjoy or feel naturally good at — hobbies, creative outlets, hands-on skills, or parts of past jobs you actually liked?"
+          : "What could you realistically use to earn money soon — skills you already have, or something you'd learn in 2–4 weeks?"
       );
       renderProfileIntakeChips([
         { field: "skills", value: "customer service, typing, and clear communication", label: "Customer service / admin" },
         { field: "skills", value: "writing, organizing, spreadsheets, and research", label: "Writing / organizing" },
         { field: "skills", value: "hands-on work, fixing things, and physical tasks", label: "Hands-on / trade-adjacent" },
+        { field: "skills", value: "creative work, design, music, or making things", label: "Creative / making" },
         { field: "skills", value: "teaching, coaching, or explaining things clearly", label: "Teaching / coaching" },
         { field: "skills", value: "computers, troubleshooting, and learning new software fast", label: "Tech-comfortable" },
         { field: "skills", value: "not sure yet — help me figure out what I can sell or apply with", label: "Not sure yet" }
@@ -35412,19 +35465,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Do you have your ID and birth certificate lined up, or is getting those settled the most urgent thing this week?";
       }
       if (
-        conversationMentionsIdNeed(userText)
-        || conversationMentionsHousingInstability(userText)
-        || /\b(homeless|shelter|just got out|getting out|sober|recovery|rebuild(?:ing)? (?:my )?life)\b/i.test(userText)
+        !conversationLooksLikeCareerPivot(userText)
+        && (
+          conversationMentionsIdNeed(userText)
+          || conversationMentionsHousingInstability(userText)
+          || conversationMentionsRecoveryTreatment(userText)
+          || conversationMentionsStabilityRebuild(userText)
+        )
       ) {
         return "Do you have a valid ID right now, or is getting that sorted the first thing you need to tackle?";
       }
-      if (isDetailedPrompt(userText)) {
-        return "What's the single most important outcome you want in the next 30 days?";
+      if (explorationPhaseNeedsInterestQuestion(userText)) {
+        return "Outside of work, what do you actually enjoy doing with your hands or mind — hobbies, creative stuff, fixing things, helping people — and was there any past job you liked parts of?";
       }
-      if (isMoneyMakingPrompt(userText) && conversationLacksSkillSignal(userText)) {
-        return "What skills or strengths could you use to earn money soon — or what would you realistically learn in the next 2–4 weeks?";
+      if (explorationPhaseNeedsDependentQuestion(userText)) {
+        return "Do you have kids or others you're responsible for day to day? That helps me keep schedules and logistics realistic.";
       }
-      return "What are you naturally good at, and would you rather get hired, learn a new skill, or build your own thing?";
+      return "What parts of past work did you actually enjoy, and what do you like doing in your free time?";
     }
 
     function buildClarifyingPrompt(userText) {
@@ -35442,29 +35499,44 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         );
       }
 
-      if (conversationMentionsIdNeed(userText) || conversationMentionsHousingInstability(userText) || /\b(homeless|shelter|evict|just got out|getting out|sober|recovery|rebuild(?:ing)? (?:my )?life)\b/i.test(userText)) {
+      if (
+        !conversationLooksLikeCareerPivot(userText)
+        && (
+          conversationMentionsIdNeed(userText)
+          || conversationMentionsHousingInstability(userText)
+          || conversationMentionsRecoveryTreatment(userText)
+          || conversationMentionsStabilityRebuild(userText)
+        )
+      ) {
         return (
           "You are whatimado, an empathetic advisor. This person may need ID, documents, or stable housing before they can work or apply for programs. Ask ONE short question about whether they have valid ID now or need to get that sorted first — reference something specific they said. Do not ask where they live. Plain text only.\n\nUser: " +
           userText
         );
       }
 
-      if (isDetailedPrompt(userText)) {
+      // Exploration phase: learn the human before any map/roadmap.
+      if (explorationPhaseNeedsInterestQuestion(userText)) {
         return (
-          "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Even though they gave a lot of detail, ask ONE short clarifying question that references something specific they mentioned and helps you prioritize the best paths for them. Do not ask where they live — the app asks that separately next. Plain text only.\n\nUser: " +
+          "You are whatimado in an EXPLORATION PHASE. Do NOT jump to career prescriptions, path lists, or roadmap talk yet.\n" +
+          "Ask ONE warm, organic follow-up question that uncovers their personal interests, hobbies, hands-on skills, creative outlets, AND/OR past work they actually enjoyed.\n" +
+          "Reference something specific they already said. Sound like a thoughtful friend, not a form.\n" +
+          "Do not ask where they live. Do not ask about children yet unless they already brought kids up. Plain text only.\n\nUser: " +
           userText
         );
       }
 
-      if (isMoneyMakingPrompt(userText) && conversationLacksSkillSignal(userText)) {
+      if (explorationPhaseNeedsDependentQuestion(userText)) {
         return (
-          "You are whatimado, a practical possibility advisor. This person needs income soon but has not named concrete skills yet. Ask ONE short question about what they could realistically offer employers or buyers THIS WEEK — skills they already have OR something they would learn in 2–4 weeks (examples: customer service, organizing, writing, hands-on work, tech troubleshooting). Do not ask where they live — the app asks that separately next. Do not invent projects, partners, or pilots they never mentioned. Plain text only.\n\nUser: " +
+          "You are whatimado in an EXPLORATION PHASE. Do NOT jump to generating paths or a roadmap yet.\n" +
+          "Ask ONE short, natural question about whether they have children or other people they care for day to day — so schedules, childcare, and logistics can stay realistic.\n" +
+          "Reference something specific from their message. Do not ask where they live. Plain text only.\n\nUser: " +
           userText
         );
       }
 
       return (
-        "You are whatimado, an empathetic possibility advisor. Read what this person shared carefully. Ask ONE short clarifying question that references something specific they mentioned — their situation, skills, constraints, or goals. Do not ask where they live — the app asks that separately next. Do not ask generic questions like 'what are you good at?' unless they gave you almost nothing to work with. Your question should uncover whether they want to get hired, learn something new, or build their own thing, and what resources (time, money, skills) they actually have. Plain text only.\n\nUser: " +
+        "You are whatimado in an EXPLORATION PHASE. Ask ONE short clarifying question that deepens what they enjoy — past work they liked, hobbies, hands-on skills, or creative outlets — so paths can match the real person.\n" +
+        "Reference something specific they mentioned. Do not ask where they live. Do not list career options yet. Plain text only.\n\nUser: " +
         userText
       );
     }
@@ -35473,27 +35545,57 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const transcript = state.history
         .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
         .join("\n\n");
+      const blob = getConversationUserBlob();
+      const needsKids = explorationPhaseNeedsDependentQuestion(blob);
+      const needsInterests = explorationPhaseNeedsInterestQuestion(blob);
+      const stabilityPriority = !conversationLooksLikeCareerPivot(blob) && (
+        conversationMentionsStabilityRebuild(blob)
+        || conversationMentionsRecoveryTreatment(blob)
+        || conversationMentionsHousingInstability(blob)
+        || conversationMentionsIdNeed(blob)
+        || isReentrySituation()
+      );
+
+      let focus;
+      if (stabilityPriority) {
+        focus = "For anyone rebuilding after recovery, release, homelessness, or a major disruption, establish whichever stability fact is still missing: valid ID, or a safe place they can reliably stay for at least the next week. Do not jump to job hunting.";
+      } else if (needsKids) {
+        focus = "EXPLORATION PHASE — ask whether they have children or other dependents they care for day to day, so roadmaps can respect school schedules, childcare, and flexibility. Keep it natural and brief.";
+      } else if (needsInterests) {
+        focus = "EXPLORATION PHASE — ask about hobbies, creative outlets, hands-on skills, or past work they actually enjoyed. Paths must later connect to what they like, not generic advice.";
+      } else {
+        focus = "Ask one short question that ties their interests to practical constraints (time, money, scheduling) so the map can stay realistic. Do not start listing career options.";
+      }
+
       return (
-        "You are whatimado, an empathetic possibility advisor. The user already answered one follow-up question. Ask ONE more short clarifying question that goes deeper. For anyone rebuilding after recovery, release, homelessness, or a major disruption, you MUST establish BOTH ID status and whether they have a safe place they can reliably stay for at least the next week before discussing jobs. Ask about whichever stability fact is still missing. Otherwise ask about a blocker, resource limit, dealbreaker, or priority they have not spelled out. Reference their latest answer. Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
+        "You are whatimado, an empathetic possibility advisor still in EXPLORATION — do not generate a summary, path list, or roadmap yet.\n" +
+        "The user already answered one follow-up. Ask ONE more short clarifying question. " + focus + "\n" +
+        "Reference their latest answer. Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
         transcript
       );
     }
 
     function getSecondClarifyingFallback() {
-      const blob = `${getFirstUserMessage()} ${state.history.filter((entry) => entry.role === "user").map((entry) => entry.content).join(" ")}`.toLowerCase();
-      if (/housing|homeless|shelter|evict|no place to stay|nowhere to stay/.test(blob)) {
+      const blob = getConversationUserBlob().toLowerCase();
+      if (
+        !conversationLooksLikeCareerPivot(blob)
+        && (/housing|homeless|shelter|evict|no place to stay|nowhere to stay/.test(blob) || conversationMentionsRecoveryTreatment(blob))
+      ) {
         return "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
       }
-      if (conversationMentionsIdNeed(blob) || userNeedsIdFirst()) {
+      if (!conversationLooksLikeCareerPivot(blob) && (conversationMentionsIdNeed(blob) || userNeedsIdFirst())) {
         if (!conversationConfirmsHasHousing(blob) && !conversationMentionsHousingInstability(blob)) {
           return "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
         }
         return "What documents do you still need for ID — and do you know where to go locally to get them?";
       }
-      if (/recover|sober|aa|rehab/.test(blob)) {
-        return "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
+      if (explorationPhaseNeedsDependentQuestion(blob)) {
+        return "Do you have kids or anyone else you're responsible for day to day? I want to keep schedules and logistics realistic.";
       }
-      return "What's the main constraint right now — time, money, transportation, childcare, or something else you can't work around?";
+      if (explorationPhaseNeedsInterestQuestion(blob)) {
+        return "What do you enjoy doing when work isn't dictating your day — hobbies, creative projects, hands-on stuff — and was there any past job you actually liked parts of?";
+      }
+      return "When you picture a week that feels workable, what matters more — flexible hours, steadier pay, or work that uses something you already enjoy?";
     }
 
     async function askFollowUpClarifyingQuestion() {
@@ -35505,8 +35607,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const blob = getConversationUserBlob().toLowerCase();
         const idAlreadyDiscussed = conversationMentionsIdNeed(blob) || conversationConfirmsHasId(blob);
         const housingAlreadyDiscussed = conversationMentionsHousingInstability(blob) || conversationConfirmsHasHousing(blob);
-        const stabilityRebuild = conversationMentionsStabilityRebuild(blob)
-          || conversationMentionsRecoveryTreatment(blob);
+        const stabilityRebuild = !conversationLooksLikeCareerPivot(blob) && (
+          conversationMentionsStabilityRebuild(blob)
+          || conversationMentionsRecoveryTreatment(blob)
+        );
         const needsIdQuestion = !idAlreadyDiscussed && !conversationLooksLikeCareerPivot(blob) && (
           conversationMentionsHousingInstability(blob)
           || stabilityRebuild
@@ -35515,6 +35619,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           finalAnswer = "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
         } else if (stabilityRebuild && idAlreadyDiscussed && !housingAlreadyDiscussed) {
           finalAnswer = "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
+        } else if (
+          !needsIdQuestion
+          && !stabilityRebuild
+          && explorationPhaseNeedsDependentQuestion(blob)
+          && !/\b(kid|child|children|dependent|parent)\b/i.test(finalAnswer || "")
+        ) {
+          finalAnswer = getSecondClarifyingFallback();
+        } else if (
+          !needsIdQuestion
+          && !stabilityRebuild
+          && explorationPhaseNeedsInterestQuestion(blob)
+          && !explorationPhaseNeedsDependentQuestion(blob)
+          && !/\b(enjoy|hobby|interest|creative|hands[- ]on|liked|loved)\b/i.test(finalAnswer || "")
+        ) {
+          finalAnswer = getSecondClarifyingFallback();
         }
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
@@ -35524,7 +35643,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           prompt_length: getFirstUserMessage().length,
           intake_mode: state.intakeMode || "standard",
           path_mode: state.pathMode || null,
-          clarifying_round: 2
+          clarifying_round: 2,
+          exploration_phase: true
         });
         showReplyBox(true);
         updateSaveButtonVisibility();
@@ -35879,10 +35999,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getCareerPivotIdeasPromptBlock() +
         getReentryIdeasPromptBlock() +
         getIdPriorityIdeasPromptBlock() +
+        getExplorationFitPromptBlock() +
         excludeBlock +
         moneyUrgencyNote +
         skillsGapNote +
-        " — reference their actual skills, interests, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\n" +
+        " — reference their actual skills, interests, enjoyed past work, constraints, and situation by name. Do NOT suggest generic paths like \"start a business\" or \"learn to code\" unless you tie them directly to what they said.\n\n" +
         groundedIdeasNote +
         "Each idea must use a DIFFERENT primary strategy (for example: direct employment, self-employment, short training/certification, gig work, creative portfolio, or community-based route). Do NOT copy-paste structure between ideas — titles, taglines, first steps, and income models should feel distinct.\n" +
         `When location is known, at least one idea should reference resources they could use (${resourceHint}).\n\n` +
