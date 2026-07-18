@@ -24456,6 +24456,42 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return !needsAny || hasAny;
     }
 
+    function conversationMentionsReentryHardship(text = "") {
+      const blob = String(text || "").toLowerCase();
+      return /\b(re-?enter(?:ing)?|reentry|incarcerat|jail|prison|parole|probation|second chance|record expung|just got out|just getting out|(?:got|getting) out of (?:jail|prison)|after incarceration|formerly incarcerat|rebuilding after release|criminal record|felony(?: conviction)?|(?:recently|newly) released)\b/.test(blob)
+        || /\b(background check).{0,48}\b(record|felony|conviction|jail|prison)\b/.test(blob)
+        || /\b(record|felony|conviction|jail|prison).{0,48}\b(background check)\b/.test(blob);
+    }
+
+    function getCareerPivotIdeasPromptBlock() {
+      if (!conversationLooksLikeCareerPivot()) return "";
+      return (
+        `\nCAREER PIVOT — this person is employed or recently employed and exploring a next chapter. They are NOT in recovery, reentry, homelessness, or document crisis unless they explicitly said so.\n` +
+        `- Do NOT suggest shelter, 211, ID replacement, parole/probation, day labor, or "stability first" paths.\n` +
+        `- Focus on transferable skills, low-risk experiments, informational conversations, skill gaps, and realistic next roles or side paths.\n` +
+        `- Keep tone curious and practical — stuck in a job is different from rebuilding after incarceration or rehab.\n`
+      );
+    }
+
+    function conversationMentionsRecoveryTreatment(text = "") {
+      const blob = String(text || "").toLowerCase();
+      return /\b(\d+\s*days?\s*sober|sober from|getting sober|staying sober|in recovery|out of (?:rehab|recovery)|just (?:left|finished) (?:rehab|treatment)|rehab(?:ilitation)?|recovery (?:program|center|house|housing)|substance(?: abuse)?|addiction|detox)\b/.test(blob);
+    }
+
+    function conversationLooksLikeCareerPivot(text = "") {
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      if (!blob.trim()) return false;
+      if (
+        conversationMentionsRecoveryTreatment(blob)
+        || conversationMentionsHousingInstability(blob)
+        || conversationMentionsIdNeed(blob)
+        || conversationMentionsReentryHardship(blob)
+      ) {
+        return false;
+      }
+      return /\b(corporate|office job|9\s*[- ]?\s*to\s*[- ]?\s*5|desk job|career change|changing careers|switch careers|new career|second career|pivot(?:ing)?(?: careers)?|burned? out|burnout|tired of (?:my )?(?:job|work|career|role)|stuck in (?:my )?(?:job|career|role|corporate)|hate my job|leave (?:my )?(?:job|career)|what else (?:can|should) i (?:do|be)|not sure what (?:else |i )?(?:want|to do)|unsure what (?:else )?(?:to do|i want)|want something different|find (?:a )?new (?:path|direction|career)|mid[- ]?career)\b/.test(blob);
+    }
+
     function isReentrySituation(idea = null) {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
       if (idea && isFounderRoadmapForIdea(idea)) return false;
@@ -24471,7 +24507,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ) {
         return false;
       }
-      return /\b(re-?enter(?:ing)?|reentry|incarcerat|jail|prison|release|released|parole|probation|second chance|background check|record expung|just got out|getting out|after incarceration|formerly incarcerat|rebuilding after release)\b/.test(blob);
+      if (conversationLooksLikeCareerPivot(blob)) return false;
+      return conversationMentionsReentryHardship(blob);
     }
 
     function isReentryPath(idea = state.currentIdea) {
@@ -24548,13 +24585,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function conversationMentionsStabilityRebuild(text = "") {
-      const blob = String(text || "").toLowerCase();
-      return /\b(\d+\s*days?\s*sober|sober from|in recovery|out of (?:rehab|recovery)|just (?:left|finished) (?:rehab|treatment)|rebuild(?:ing)? (?:my )?life|starting over|fresh start|back on (?:my )?feet)\b/.test(blob)
-        && /\b(no job|no id|no place|homeless|shelter|need a plan|nowhere|starting from nothing|getting back|society|rebuild)\b/.test(blob);
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      if (!blob.trim()) return false;
+      // Soft career language ("starting over", "need a plan") must NOT alone
+      // trigger jail/recovery/housing gates.
+      if (conversationLooksLikeCareerPivot(blob)) return false;
+      if (conversationMentionsRecoveryTreatment(blob)) return true;
+      if (conversationMentionsHousingInstability(blob)) return true;
+      if (conversationMentionsReentryHardship(blob)) return true;
+      const softRebuild = /\b(rebuild(?:ing)? (?:my )?life|starting over|fresh start|back on (?:my )?feet)\b/.test(blob);
+      if (!softRebuild) return false;
+      return conversationMentionsIdNeed(blob)
+        || conversationMentionsHousingInstability(blob)
+        || conversationMentionsRecoveryTreatment(blob)
+        || conversationMentionsReentryHardship(blob)
+        || /\b(no place|homeless|shelter|nowhere to stay|starting from nothing|no (?:valid )?id)\b/.test(blob);
     }
 
     function userNeedsHousingFirst(idea = null) {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (conversationLooksLikeCareerPivot()) return false;
       const profile = normalizeUserProfile(state.userProfile);
       if (profile.housingStatus === "needs") return true;
       if (profile.housingStatus === "has") return false;
@@ -24564,7 +24614,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (conversationMentionsHousingInstability(blob)) return true;
       if (conversationMentionsStabilityRebuild(blob) && !conversationConfirmsHasHousing(blob)) return true;
-      if (/\b(sober|recovery|rehab|rebuild(?:ing)? (?:my )?life|back on (?:my )?feet|starting over)\b/.test(blob) && !conversationConfirmsHasHousing(blob)) {
+      if (conversationMentionsRecoveryTreatment(blob) && !conversationConfirmsHasHousing(blob)) {
         return true;
       }
       return getPathSituationType(idea) === "housing";
@@ -24585,9 +24635,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (conversationConfirmsHasId(blob)) {
         state.userProfile.idStatus = "has";
       } else if (
-        conversationMentionsIdNeed(blob)
-        || conversationMentionsStabilityRebuild(blob)
-        || (isReentrySituation() && !conversationConfirmsHasId(blob))
+        !conversationLooksLikeCareerPivot(blob)
+        && (
+          conversationMentionsIdNeed(blob)
+          || conversationMentionsStabilityRebuild(blob)
+          || (isReentrySituation() && !conversationConfirmsHasId(blob))
+        )
       ) {
         state.userProfile.idStatus = "needs";
       }
@@ -24597,21 +24650,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function profileIntakeNeedsIdStep(profile = normalizeUserProfile(state.userProfile)) {
       if (profile.idStatus === "has" || profile.idStatus === "needs") return false;
       if (conversationConfirmsHasId(getConversationUserBlob())) return false;
+      if (conversationLooksLikeCareerPivot()) return false;
       const blob = getConversationUserBlob().toLowerCase();
       return conversationMentionsHousingInstability(blob)
         || isReentrySituation()
         || conversationMentionsStabilityRebuild(blob)
-        || /\b(sober|recovery|rebuild(?:ing)? (?:my )?life)\b/.test(blob);
+        || conversationMentionsRecoveryTreatment(blob);
     }
 
     function profileIntakeNeedsHousingStep(profile = normalizeUserProfile(state.userProfile)) {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (conversationLooksLikeCareerPivot()) return false;
       if (profile.housingStatus === "has" || profile.housingStatus === "needs") return false;
       const blob = getConversationUserBlob().toLowerCase();
       return conversationMentionsHousingInstability(blob)
         || conversationMentionsStabilityRebuild(blob)
         || isReentrySituation()
-        || /\b(sober|recovery|rehab|starting over|back on (?:my )?feet|rebuild(?:ing)? (?:my )?life)\b/.test(blob);
+        || conversationMentionsRecoveryTreatment(blob);
     }
 
     function profileIntakeNeedsDependentStep(profile = normalizeUserProfile(state.userProfile)) {
@@ -24639,6 +24694,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function userNeedsIdFirst(idea = null) {
+      if (conversationLooksLikeCareerPivot()) return false;
       const profile = normalizeUserProfile(state.userProfile);
       if (profile.idStatus === "has") return false;
       if (profile.idStatus === "needs") return true;
@@ -24653,7 +24709,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (conversationMentionsStabilityRebuild(blob)) return true;
       if (conversationMentionsHousingInstability(blob) && !conversationConfirmsHasId(blob)) return true;
       if (isReentrySituation(idea)) return true;
-      if (/\b(homeless|shelter|re-?enter|getting out|just got out|parole|probation|sober from|in recovery|rebuild(?:ing)? (?:my )?life)\b/.test(blob) && !conversationConfirmsHasId(blob)) {
+      if (
+        (conversationMentionsRecoveryTreatment(blob) || conversationMentionsReentryHardship(blob) || /\b(homeless|shelter)\b/.test(blob))
+        && !conversationConfirmsHasId(blob)
+      ) {
         return true;
       }
       return false;
@@ -24694,11 +24753,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getRecoveryStabilityPromptBlock(idea = state.currentIdea) {
       const blob = getConversationUserBlob().toLowerCase();
-      if (!/\b(sober|recovery|rehab|rebuild(?:ing)? (?:my )?life|back on (?:my )?feet|starting over)\b/.test(blob) && !ideaMentionsStabilityNeed(idea)) return "";
+      if (conversationLooksLikeCareerPivot(blob)) return "";
+      const hardStability = conversationMentionsRecoveryTreatment(blob)
+        || conversationMentionsStabilityRebuild(blob)
+        || conversationMentionsHousingInstability(blob)
+        || conversationMentionsReentryHardship(blob)
+        || ideaMentionsStabilityNeed(idea);
+      if (!hardStability) return "";
       const loc = shortenLocationForSpeech(getUserLocation() || "their city");
       return (
         `\nRECOVERY / REBUILDING — STABILITY FIRST (non-negotiable):\n` +
-        `- User is rebuilding (recovery, housing instability, or starting over). Treat them like someone getting back on their feet after a hard chapter.\n` +
+        `- User is rebuilding after recovery, reentry, or housing instability — not a normal career pivot.\n` +
         `- Absolutely NO job hunting, staffing signup, business outreach, sales, or client outreach until BOTH (a) housing or safe shelter is secured/accessible AND (b) state ID (or equivalent) is obtained or ready to submit.\n` +
         `- Before those are confirmed, stages may ONLY cover: shelter/housing, ID and documents, mail address, basic benefits (food, healthcare, vouchers), immediate safety and stability.\n` +
         `- If unsure whether housing and ID are confirmed, ASSUME they are NOT.\n` +
@@ -25443,9 +25508,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const combined = `${blob} ${ideaBlob}`;
       if (/\b(nonprofit|non-profit|501\s*\(?\s*c\s*\)?\s*3|charity|foundation|mutual aid org|start a nonprofit|launch a nonprofit)\b/.test(combined)) return "nonprofit";
       if (/\b(homeless|unhoused|housing instability|in a shelter|living in (?:a )?(?:car|motel|shelter)|rebuilding after homelessness|no permanent address|no place to stay|nowhere to stay|no home|no housing|(?:don'?t|do not) have (?:a )?(?:place|home|housing|somewhere))\b/.test(combined)) return "housing";
+      if (conversationLooksLikeCareerPivot(combined)
+        || /\b(career change|changing careers|switch careers|new career|second career|pivot careers|different field|corporate job|stuck in (?:my )?(?:job|career)|tired of (?:my )?job)\b/.test(combined)) {
+        return "career_change";
+      }
       if (/\b(remote customer support|virtual assistant|staffing agenc|customer service rep|customer success|onboarding specialist|call center|data entry clerk|admin assistant|inbound chat support|get hired|hourly wage|apply for (?:paid )?remote)\b/.test(combined)) return "employment";
       if (/\b(electrician|plumber|hvac|welder|apprenticeship|skilled trade|carpenter|union trade|journeyman|pipefitter|roofer|mason|mechanic trade)\b/.test(combined)) return "skilled_trade";
-      if (/\b(career change|changing careers|switch careers|new career|second career|pivot careers|different field)\b/.test(combined)) return "career_change";
       if (/\b(digital product|template|checklist|guide|toolkit|gumroad|etsy shop|sell online|pay[- ]what[- ]you[- ]want|buy while you sleep|notion template|downloadable)\b/.test(combined)) return "online_business";
       if (isGroundedPractitioner(idea)) return "grounded";
       if (isExplicitJobSeeker(blob)) return "employment";
@@ -35614,11 +35682,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function requiresStabilityOnlyIdeas() {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (conversationLooksLikeCareerPivot()) return false;
       const profile = normalizeUserProfile(state.userProfile);
       const stabilitySituation = userNeedsIdFirst()
         || userNeedsHousingFirst()
         || conversationMentionsStabilityRebuild(getConversationUserBlob())
-        || /\b(sober|recovery|rehab|starting over|back on (?:my )?feet)\b/i.test(getConversationUserBlob());
+        || conversationMentionsRecoveryTreatment(getConversationUserBlob());
       return stabilitySituation && (profile.idStatus !== "has" || profile.housingStatus !== "has");
     }
 
@@ -35902,8 +35971,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const idAlreadyDiscussed = conversationMentionsIdNeed(blob) || conversationConfirmsHasId(blob);
         const housingAlreadyDiscussed = conversationMentionsHousingInstability(blob) || conversationConfirmsHasHousing(blob);
         const stabilityRebuild = conversationMentionsStabilityRebuild(blob)
-          || /\b(sober|recovery|rehab|rebuild(?:ing)? (?:my )?life|back on (?:my )?feet|starting over)\b/.test(blob);
-        const needsIdQuestion = !idAlreadyDiscussed && (
+          || conversationMentionsRecoveryTreatment(blob);
+        const needsIdQuestion = !idAlreadyDiscussed && !conversationLooksLikeCareerPivot(blob) && (
           conversationMentionsHousingInstability(blob)
           || stabilityRebuild
         );
@@ -36272,6 +36341,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         summary +
         getLocationContextBlock() +
         getUserStatedCraftBlock() +
+        getCareerPivotIdeasPromptBlock() +
         getReentryIdeasPromptBlock() +
         getIdPriorityIdeasPromptBlock() +
         excludeBlock +
@@ -37487,8 +37557,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const answer = await callAdvisor(buildClarifyingPrompt(userText) + pathModeNote, 450);
         const fallback = getClarifyingFallback(userText);
         let finalAnswer = answer || fallback;
-        const stabilityRebuild = conversationMentionsStabilityRebuild(userText)
-          || /\b(sober|recovery|rehab|rebuild(?:ing)? (?:my )?life|back on (?:my )?feet|starting over)\b/i.test(userText);
+        const stabilityRebuild = !conversationLooksLikeCareerPivot(userText) && (
+          conversationMentionsStabilityRebuild(userText)
+          || conversationMentionsRecoveryTreatment(userText)
+        );
         if (stabilityRebuild) {
           const idKnown = conversationMentionsIdNeed(userText) || conversationConfirmsHasId(userText);
           const housingKnown = conversationMentionsHousingInstability(userText) || conversationConfirmsHasHousing(userText);
