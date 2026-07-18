@@ -16709,13 +16709,6 @@
       return KNOWN_CITY_LOCATIONS[normalizeCityKey(text)] || null;
     }
 
-    function locationNeedsCountryFollowUp(text) {
-      const parsed = parseLocationAnswer(text);
-      if (parsed.country || parsed.region) return false;
-      if (!parsed.city || parsed.city.length < 2) return false;
-      return !lookupKnownCity(parsed.city);
-    }
-
     function isUSLocation(parsed = normalizeUserLocation(state.userLocation)) {
       const country = normalizeCountryKey(parsed.country || "");
       if (country && (country === "united states" || country === "usa" || country === "us" || country === "u s a")) return true;
@@ -16943,14 +16936,6 @@
         learningGuide: `Use local colleges, apprenticeships, and government-funded training${country ? ` in ${country}` : ""}`,
         reentry
       };
-    }
-
-    function getReentryLocalizedTasks(locRaw, parsed = parseLocationAnswer(locRaw)) {
-      return getLocationPlaybook(parsed, locRaw).reentry;
-    }
-
-    function getSocialServicesLine(parsed, locRaw) {
-      return getLocationPlaybook(parsed, locRaw).socialServicesLine;
     }
 
     function getLocationCitizenRulesBlock(parsed = parseLocationAnswer(getUserLocation() || ""), locRaw = formatUserLocation(parsed)) {
@@ -17834,15 +17819,6 @@
       return [];
     }
 
-    function getTaskDisplaySteps(normalized) {
-      const fromTask = normalized.steps?.length ? normalized.steps : inferTaskStepsFromText(normalized.text);
-      let steps = dedupeTaskSteps(normalized.text, fromTask);
-      if (steps.length < 2) {
-        steps = dedupeTaskSteps(normalized.text, getTemplateTaskSteps(normalized));
-      }
-      return steps;
-    }
-
     function getSubtaskLetter(index) {
       return String.fromCharCode(65 + Math.max(0, index));
     }
@@ -17939,14 +17915,6 @@
       copy = copy.replace(/(\(a general AI chat tool\)(?:\s*\(a general AI chat tool\))+)/gi, "(a general AI chat tool)");
       copy = copy.replace(/(\([^)]{8,140}\))(?:\s*\1)+/g, "$1");
       return copy.replace(/\s{2,}/g, " ").trim();
-    }
-
-    function getTaskCompressedLabel(mission, text) {
-      const missionCopy = String(mission || "").trim();
-      const textCopy = String(text || "").trim();
-      if (!textCopy) return missionCopy;
-      if (!missionCopy || textSimilarity(missionCopy, textCopy) >= 0.72) return textCopy;
-      return missionCopy;
     }
 
     function getTaskNutshellTitle(normalized, mission, text) {
@@ -18954,13 +18922,6 @@ Practice each one out loud once and time yourself.`;
 
     function incomeTextLooksFinancial(income) {
       return /\$\s?\d/.test(String(income || ""));
-    }
-
-    function incomeTextIsNonFinancial(income) {
-      const norm = normalizeRoadmapText(income);
-      if (!norm) return true;
-      if (incomeTextLooksFinancial(income)) return false;
-      return /learning|impact|donation|grant|sponsor|signups|feedback|bug|partnership|exposure|network|experience|credential|certification|long-term|varies|hourly|project|tip|pay-what|free|donations \+/.test(norm);
     }
 
     function inferPotentialOutcomeMetricLabel(blob, situation) {
@@ -20270,17 +20231,6 @@ If recording answers:
       return `<div class="task-draft-suggestions" data-draft-suggestions>${buttons}</div>`;
     }
 
-    function renderTaskInlineDraftButtonsHtml(taskId, normalized) {
-      const items = getTaskDraftSuggestions(normalized).slice(0, 3);
-      if (!items.length) return "";
-      const buttons = items.map((entry) =>
-        `<button type="button" class="task-draft-suggestion-btn" data-task-id="${escapeHtml(taskId)}" data-suggestion-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.desc)}">
-          <span class="task-draft-suggestion-label">${escapeHtml(entry.label)}</span>
-        </button>`
-      ).join("");
-      return `<div class="task-inline-draft-actions"><span class="task-action-label">Create or open</span>${buttons}</div>`;
-    }
-
     async function generateDraftFromSuggestion(taskId, suggestionId, options = {}) {
       const match = taskId?.match(/^task-(\d+)-(\d+)$/);
       if (!match || !suggestionId) return;
@@ -21001,127 +20951,6 @@ If this resonates or you know someone who might be interested, I'd love a commen
       }
     }
 
-    function buildLocalTaskAssetPack(normalized) {
-      const profile = inferTaskAssetProfile(normalized);
-      const typed = getWritingDeliverableType(normalized);
-      if (typed && typed !== "general_writing") {
-        const draft = buildLocalDeliverableDraft(typed, normalized);
-        if (draft) return draft;
-      }
-
-      const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
-      const resources = getFlatTaskResources(normalized);
-      const script = String(normalized.script || "").trim();
-      const followUp = String(normalized.followUp || "").trim();
-      const sections = [];
-
-      if (profile === "outreach" || (resources.length >= 1 && /\b(contact|outreach|email|call|organi)/i.test(normalized.text))) {
-        if (resources.length) {
-          sections.push("ORGANIZATION LIST (start at #1)");
-          resources.slice(0, 8).forEach((entry, index) => {
-            const label = [entry.org, entry.name].filter(Boolean).join(" — ") || `Organization ${index + 1}`;
-            const bits = [`${index + 1}. ${label}`];
-            if (entry.name && entry.org) bits.push(`Contact: ${entry.name}`);
-            if (entry.phone) bits.push(`Phone: ${entry.phone}`);
-            if (entry.email) bits.push(`Email: ${entry.email}`);
-            if (entry.url) bits.push(`Web: ${entry.url}`);
-            sections.push(bits.join("\n   "));
-          });
-          sections.push("");
-        }
-        if (script.length > 40 && !isExplanatoryTaskCopy(script)) {
-          sections.push("DRAFT EMAIL", script, "");
-        } else {
-          sections.push("DRAFT EMAIL", buildLocalDeliverableDraft("email", normalized) || "", "");
-        }
-        if (followUp) {
-          sections.push("FOLLOW-UP EMAIL (3–5 days later)", followUp, "");
-        } else {
-          sections.push(
-            "FOLLOW-UP EMAIL (3–5 days later)",
-            `Subject: Re: Quick question — following up\n\nHi [Name],\n\nI wanted to follow up on my note from [day]. Still hoping for 10 minutes of guidance on ${pathTitle.toLowerCase()}.\n\nThank you,\n[Your name]`,
-            ""
-          );
-        }
-        sections.push("PHONE SCRIPT", buildLocalDeliverableDraft("phone_script", normalized) || "", "");
-        sections.push("OUTREACH TRACKER", buildLocalDeliverableDraft("spreadsheet", normalized) || "");
-        return sections.filter(Boolean).join("\n").trim();
-      }
-
-      if (profile === "logo") {
-        return `LOGO BRIEF
-Project: ${pathTitle}
-Audience: [Who sees this logo first]
-Personality: [3 adjectives — e.g. warm, practical, trustworthy]
-Must include: [Name/wordmark/icon requirements]
-Must avoid: [Colors, styles, clichés to skip]
-
-MOOD BOARD KEYWORDS
-• [Keyword 1 — e.g. hand-drawn]
-• [Keyword 2 — e.g. community]
-• [Keyword 3 — e.g. sunrise / fresh start]
-Search Pinterest or Google Images with these + "${pathTitle.toLowerCase()}"
-
-COLOR PALETTE
-Primary:   #______  [Name — e.g. deep teal]
-Secondary: #______  [Name — e.g. warm sand]
-Accent:    #______  [Name — e.g. coral]
-Neutral:   #______  [Background/text gray]
-
-TYPOGRAPHY
-Headlines: [Font name — e.g. DM Sans Bold] — free at fonts.google.com
-Body:      [Font name — e.g. Source Sans 3]
-
-AI IMAGE PROMPTS (paste into Midjourney, DALL·E, or Ideogram)
-1. "Minimal flat logo for ${pathTitle.toLowerCase()}, [mood keyword], simple icon + wordmark, white background, vector style"
-2. "Icon-only mark for ${pathTitle.toLowerCase()}, [shape metaphor], two-color, scalable"
-
-SVG RECOMMENDATIONS
-• Keep paths simple — under 12 anchor points for the icon
-• Export at 512×512 and 64×64 to test readability
-• Use SVGOMG (jakearchibald.github.io/svgomg/) to shrink file size
-• Save wordmark and icon as separate SVG files`;
-      }
-
-      if (profile === "interview") {
-        return `INTERVIEW QUESTIONS
-1. Walk me through the last time you [problem this path solves]. What happened?
-2. What have you already tried? What worked or didn't?
-3. If you could fix one thing about [topic], what would it be?
-4. What would make you trust a new [service/product/approach]?
-5. What would you pay for — or what would need to be free?
-6. Who else should I talk to?
-
-GOOGLE FORM FIELDS (create at forms.google.com)
-• Name (short answer, optional)
-• Email (short answer, optional)
-• Q1: [Paste question 1] — Paragraph
-• Q2: [Paste question 2] — Paragraph
-• Q3: [Paste question 3] — Multiple choice
-• Q4: Anything else we should know? — Paragraph
-
-SHORT SURVEY (5 questions max — Typeform or Google Form)
-1. How often does [problem] affect you? (Never / Sometimes / Often)
-2. What do you use today? (Open text)
-3. Biggest frustration? (Open text)
-4. Would you try [${pathTitle}] if it were free? (Yes / Maybe / No)
-5. Best way to reach you? (Email / Phone / Don't contact)
-
-CALL / VIDEO SCRIPT
-"Hi, I'm [name]. I'm in ${location} researching ${pathTitle.toLowerCase()}. I'm not selling anything — I want to learn from people who've lived this. Do you have 15 minutes this week? I can do phone or video."
-
-NOTE TEMPLATE
-| Date | Name | Key quote | Pain point | Idea mentioned | Follow-up? |
-|------|------|-----------|------------|----------------|------------|
-|      |      |           |            |                |            |`;
-      }
-
-      if (script.length > 80 && !isExplanatoryTaskCopy(script) && !isTaskRestatement(script, normalized)) {
-        return script;
-      }
-      return null;
-    }
-
     function buildUsableDraftPrompt(normalized, draftType, options = {}) {
       const { location, situation, pathTitle, contactLine } = getTaskDraftContext(normalized);
       const resources = getFlatTaskResources(normalized);
@@ -21265,14 +21094,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     let deferredDraftGenerationTimer = null;
-
-    function deferTaskDraftGeneration() {
-      /* No-op — replaced by on-demand draft suggestions. */
-    }
-
-    function queueDeferredFirstMissionDrafts() {
-      /* No-op — replaced by on-demand draft suggestions. */
-    }
 
     function renderTaskWritingAssistHtml() {
       return "";
@@ -21960,28 +21781,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return [];
     }
 
-    function renderTaskOutcomeChecklistHtml(taskId, normalized) {
-      const items = getOutcomeChecklistItems(normalized);
-      if (items.length < 2) return "";
-      const data = getRoadmapTaskData(taskId);
-      if (!Array.isArray(data.outcomeChecks)) data.outcomeChecks = [];
-
-      return `
-        <ul class="task-mentor-checklist">
-            ${items.map((item, index) => `
-              <li>
-                <label>
-                  <input type="checkbox" class="task-outcome-check" data-task-id="${escapeHtml(taskId)}" data-check-index="${index}"${data.outcomeChecks[index] ? " checked" : ""}>
-                  <span>${escapeHtml(item)}</span>
-                </label>
-              </li>`).join("")}
-          </ul>`;
-    }
-
-    function renderTaskOutcomeSectionHtml(taskId, normalized, outcome) {
-      return "";
-    }
-
     function renderTaskMentorMetaHtml(normalized) {
       const difficulty = normalizeTaskDifficulty(normalized.difficulty) || "Easy";
       const difficultyClass = `task-difficulty--${difficulty.toLowerCase()}`;
@@ -21989,14 +21788,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         <div class="task-mentor-meta">
           <span class="task-mentor-badge task-mentor-badge--difficulty ${difficultyClass}">${escapeHtml(difficulty)}</span>
         </div>`;
-    }
-
-    function renderTaskBreakdownHtml(normalized, taskId = "") {
-      return "";
-    }
-
-    function renderCompressedBreakdownHtml(steps, taskId) {
-      return "";
     }
 
     function getTaskAiAssistActions(normalized) {
@@ -23159,33 +22950,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
-    function inferInterviewAudience(normalized, idea = state.currentIdea) {
-      const situation = `${getFirstUserMessage()} ${idea?.why || ""} ${idea?.title || ""} ${idea?.tagline || ""}`.toLowerCase();
-      const shortGoal = getShortPathLabel(idea);
-
-      if (/\bwhatimado|possibility map|what am i gonna do|stuck (on|choosing)|next step\b/.test(situation)) {
-        return "people who've felt stuck choosing their next step";
-      }
-      if (/\breentry|incarcerat|released from|coming home\b/.test(situation)) {
-        return "people rebuilding after incarceration";
-      }
-      if (/\bfounder|startup|launching\b/.test(situation) && isFounderRoadmapForIdea(idea)) {
-        return `people who might use ${shortGoal.toLowerCase()}`;
-      }
-      if (shouldUseBusinessRoadmapTasks(idea)) {
-        const service = getServiceLabel(idea);
-        return `people who might be interested in your ${service}`;
-      }
-      if (shortGoal && shortGoal !== "your project" && !/take the next step/i.test(shortGoal)) {
-        return `people who might be interested in your ${getServiceLabel(idea)}`;
-      }
-      const problem = summarizeMissionTitle(normalized.why || normalized.text);
-      if (problem && problem.length <= 72) {
-        return `people affected by ${problem.charAt(0).toLowerCase()}${problem.slice(1)}`;
-      }
-      return "people who've lived this problem";
-    }
-
     function inferMissionTitle(normalized, context = {}) {
       const existing = String(normalized.mission || "").trim();
       if (existing && !isGenericOutcomeText(existing) && !isGenericMissionTitle(existing) && !missionTitleLooksLikeHomework(existing, normalized)) {
@@ -23371,19 +23135,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && /\b(search|roles matching|\d+\s*roles?)\b/i.test(copy);
     }
 
-    function shouldUseSimplifiedMissionLayout(normalized) {
-      const text = String(normalized.text || "").trim();
-      if (isJobSearchHomeworkText(text)) return true;
-      if (isHomeworkTaskText(text) && taskLooksLikeHomework(normalized)) return true;
-      const why = String(normalized.why || inferTaskWhy(normalized)).trim();
-      const howTo = String(normalized.howTo || inferHowTo(normalized)).trim();
-      if (text && (text === why || text === howTo || why === howTo)) return true;
-      if (isTaskRestatement(why, normalized) || isTaskRestatement(howTo, normalized)) return true;
-      if (!why && !howTo) return true;
-      if (isGenericMentorCopy(why, normalized) && isGenericMentorCopy(String(normalized.outcome || inferTaskOutcome(normalized)), normalized)) return true;
-      return false;
-    }
-
     function getFlatTaskResources(normalized) {
       const layers = normalized.resourceLayers || { local: [], national: [], global: [] };
       const merged = [...layers.local, ...layers.national, ...layers.global, ...(normalized.contacts || [])];
@@ -23407,11 +23158,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const copy = String(text || "").trim();
       if (!copy) return false;
       return HOMEWORK_TASK_PATTERNS.some((pattern) => pattern.test(copy));
-    }
-
-    function taskLooksLikeHomework(normalized) {
-      if (!isHomeworkTaskText(normalized.text)) return false;
-      return !taskHasMentorDeliverable(normalized);
     }
 
     function buildMentorFindingsText(normalized) {
@@ -23849,56 +23595,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return homework / total > 0.35;
     }
 
-    function buildMentorBriefForNotes(normalized) {
-      const resources = getFlatTaskResources(normalized);
-      const script = String(normalized.script || "").trim();
-      const lines = ["[Your prepared assets]", ""];
-
-      if (resources.length) {
-        lines.push("ORGANIZATIONS & CONTACTS (best first):");
-        resources.slice(0, 8).forEach((entry, index) => {
-          const label = [entry.org, entry.name].filter(Boolean).join(" — ") || `Option ${index + 1}`;
-          const bits = [`${index + 1}. ${label}`];
-          if (entry.phone) bits.push(entry.phone);
-          if (entry.email) bits.push(entry.email);
-          if (entry.url) bits.push(entry.url);
-          lines.push(bits.join(" · "));
-        });
-        lines.push("");
-      }
-
-      if (script.length > 40 && !isExplanatoryTaskCopy(script) && !isTaskRestatement(script, normalized)) {
-        lines.push(script, "");
-      } else {
-        const pack = buildLocalTaskAssetPack(normalized);
-        if (pack) lines.push(pack, "");
-      }
-
-      if (normalized.talkingPoints) {
-        lines.push("TALKING POINTS", normalized.talkingPoints, "");
-      }
-      if (normalized.followUp) {
-        lines.push("FOLLOW-UP IF NO REPLY", normalized.followUp, "");
-      }
-
-      const brief = lines.join("\n").trim();
-      if (brief.length < 80) return "";
-      return humanizeDraftFormatting(brief);
-    }
-
-    async function ensureMentorBriefInNotes() {
-      return;
-    }
-
-    function queueMentorBriefsForVisibleTasks() {
-      $$(".task-item").forEach((item) => {
-        const taskId = item.dataset.taskId;
-        const phase = item.closest(".roadmap-phase, .stage-card");
-        if (phase && !phase.classList.contains("is-open") && !phase.classList.contains("open")) return;
-        void ensureMentorBriefInNotes(taskId);
-      });
-    }
-
     function normalizeRoadmapTask(task, fallback = {}) {
       if (task && typeof task === "object" && task._pendingTask) {
         return { _pendingTask: true };
@@ -24049,34 +23745,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
-    function updateRoadmapShellStatus(message) {
-      const sub = $("#roadmap-sub");
-      const shellStatus = $("#roadmap-shell-status");
-      if (sub) {
-        sub.hidden = false;
-        sub.textContent = message;
-      }
-      if (shellStatus) shellStatus.textContent = message;
-    }
-
-    function startRoadmapShellWait({ founderMode = false, isRevealed = () => false } = {}) {
-      stopRoadmapShellWait();
-      const startedAt = Date.now();
-      const tick = () => {
-        if (isRevealed()) return;
-        const elapsed = Math.round((Date.now() - startedAt) / 1000);
-        if (elapsed < 12) {
-          updateRoadmapShellStatus(
-            founderMode ? "Building your whatimado.com launch roadmap…" : "Preparing your first mission…"
-          );
-          return;
-        }
-        updateRoadmapShellStatus(`Building your roadmap… (${elapsed}s)`);
-      };
-      tick();
-      roadmapShellWaitTimer = setInterval(tick, 1000);
-    }
-
     function capAdvisorTokens(requested) {
       return Math.min(8192, Math.max(256, requested || 700));
     }
@@ -24192,10 +23860,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           : "";
         return `<div class="task-contact-card${ranked && index === 0 ? " task-contact-card--top" : ""}">${rankBadge}<div class="task-contact-title">${escapeHtml(title)}</div>${contact.details ? `<div class="task-contact-details">${escapeHtml(contact.details)}</div>` : ""}${meta.length ? `<div class="task-contact-meta">${meta.join(" · ")}</div>` : ""}</div>`;
       }).join("");
-    }
-
-    function renderMentorFindingsHtml(normalized, options = {}) {
-      return "";
     }
 
     function renderMissionTalkingPointsHtml(normalized) {
@@ -24627,10 +24291,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function updateIdStatusFromConversation() {
-      const blob = [
-        getFirstUserMessage(),
-        ...state.history.filter((entry) => entry.role === "user").map((entry) => entry.content)
-      ].join(" ").toLowerCase();
+      const blob = getConversationUserBlob().toLowerCase();
       state.userProfile = normalizeUserProfile(state.userProfile);
       if (conversationConfirmsHasId(blob)) {
         state.userProfile.idStatus = "has";
@@ -24699,10 +24360,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (profile.idStatus === "has") return false;
       if (profile.idStatus === "needs") return true;
       if (ideaMentionsStabilityNeed(idea)) return true;
-      const blob = [
-        getFirstUserMessage(),
-        ...state.history.filter((entry) => entry.role === "user").map((entry) => entry.content)
-      ].join(" ").toLowerCase();
+      const blob = getConversationUserBlob().toLowerCase();
       if (conversationConfirmsHasId(blob)) return false;
       if (conversationMentionsIdNeed(blob)) return true;
       if (/\bno job or id\b|\bno id or job\b/.test(blob)) return true;
@@ -25490,17 +25148,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return injectLocalContactsIntoRoadmap(cleaned, resources, loc, state.currentIdea);
     }
 
-    function renderTaskMetaHtml(task) {
-      const normalized = normalizeRoadmapTask(task);
-      const rows = [];
-      if (normalized.why) rows.push(`<div><strong>Why:</strong> ${escapeHtml(normalized.why)}</div>`);
-      if (normalized.outcome) rows.push(`<div><strong>Outcome:</strong> ${escapeHtml(normalized.outcome)}</div>`);
-      if (normalized.cost) rows.push(`<div><strong>Cost:</strong> ${escapeHtml(normalized.cost)}</div>`);
-      if (normalized.local) rows.push(`<div><strong>Local:</strong> ${escapeHtml(normalized.local)}</div>`);
-      if (normalized.script) rows.push(`<div><strong>Script:</strong> ${escapeHtml(normalized.script.slice(0, 160))}${normalized.script.length > 160 ? "…" : ""}</div>`);
-      return rows.length ? `<div class="task-meta">${rows.join("")}</div>` : "";
-    }
-
     function getPathSituationType(idea) {
       if (isReentrySituation(idea)) return "reentry";
       const blob = getConversationCareerBlob(idea);
@@ -25904,14 +25551,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `- 3 to 7 bullets.\n` +
         `- Simple, scannable language — no jargon.\n` +
         `- Stability-first when user lacks housing, ID, or documents.\n`
-      );
-    }
-
-    function buildRoadmapPlanRevisionPrompt(idea, userFeedback) {
-      return (
-        `${buildRoadmapPlanSummaryPrompt(idea)}\n\n` +
-        `The user wants changes before we build the full roadmap:\n"${String(userFeedback || "").slice(0, 600)}"\n\n` +
-        `Regenerate the JSON summary reflecting their feedback. Keep 3-7 bullets.`
       );
     }
 
@@ -27085,18 +26724,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return getUserSituationProfile(idea).grounded;
     }
 
-    function isPremiumLogoDesigner(idea = null) {
-      const profile = getUserSituationProfile(idea);
-      return profile.grounded && profile.craftKey === "logo_design";
-    }
-
     function hasExistingCreativeSkill(idea = null) {
       const profile = getUserSituationProfile(idea);
       return profile.grounded && /^(logo_design|creative_design|photography)$/.test(profile.craftKey);
-    }
-
-    function isOnlineFirstCreativePath(idea = null) {
-      return isGroundedPractitioner(idea);
     }
 
     function getGroundedBusinessBlock(idea = null) {
@@ -27120,10 +26750,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `- After each project: ask for Google review, showcase permission, short testimonial.\n` +
         `- Tasks must be SPECIFIC with dollar amounts, niche names, scripts, and deliverables — reference THEIR craft and ${city}.\n`
       );
-    }
-
-    function getPremiumLogoBusinessBlock(idea = null) {
-      return isPremiumLogoDesigner(idea) ? getGroundedBusinessBlock(idea) : "";
     }
 
     function getUserStatedCraftBlock(idea = null) {
@@ -27258,10 +26884,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           })
         };
       });
-    }
-
-    function getPremiumLogoSidebarResources() {
-      return getGroundedSidebarResources();
     }
 
     function getCreativeGlobalResources() {
@@ -27938,11 +27560,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return pickUniqueStandardFallbackStages(idea);
     }
 
-    function isFounderRoadmap(stages) {
-      const blob = (stages || []).flatMap((stage) => stage.tasks || []).join(" ").toLowerCase();
-      return /whatimado|stripe|supabase|reddit|r\/|donation|nonprofit|pilot|site_events|suggestions/.test(blob);
-    }
-
     function isGenericFallbackRoadmap(stages) {
       return Boolean(
         stages?.[0]?.tasks?.some((task) => getTaskText(task).includes(GENERIC_FALLBACK_SIGNATURE))
@@ -28314,12 +27931,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         });
       });
       return items;
-    }
-
-    function getTasksInStage(stageIndex) {
-      const stage = state.roadmapStages[stageIndex];
-      if (!stage) return [];
-      return (stage.tasks || []).map((text, taskIndex) => ({ stageIndex, taskIndex, text: getTaskText(text) }));
     }
 
     function isTaskResourceRequest(question) {
@@ -30451,13 +30062,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
-    function getCategorySummary(category) {
-      if (!category) return "";
-      if (category.summary) return category.summary;
-      if (category.mapId) return getMapSummaryForMap(getSavedMapById(category.mapId));
-      return "";
-    }
-
     function syncCategoryFromMap(category) {
       if (!category?.mapId) return category;
       const map = getSavedMapById(category.mapId);
@@ -30571,10 +30175,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ...category,
         items: Array.isArray(category.items) ? [...category.items] : []
       }));
-    }
-
-    function mergeRoadmapCategories(local = [], cloud = [], localTime = 0, cloudTime = 0) {
-      return pickRoadmapCategories(local, cloud, localTime, cloudTime);
     }
 
     function getMapRemovedRoadmapKeys(mapId = state.activeMapId) {
@@ -30713,41 +30313,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       map.currentIdea = null;
       map.roadmapStages = [];
       map.updatedAt = Date.now();
-    }
-
-    function dismissRoadmapCategoryFromSidebar(categoryId) {
-      const category = state.roadmapCategories.find((entry) => entry.id === categoryId);
-      if (!category) return;
-
-      const mapId = category.mapId || state.activeMapId;
-      const items = [...(category.items || [])];
-
-      items.forEach((item) => {
-        clearRoadmapSessionForPath(item.ideaTitle);
-        markRoadmapRemovedInLibrary(item.ideaTitle, item.mapId || mapId);
-      });
-
-      if (mapId) {
-        addDismissedSidebarMapId(mapId);
-        markAllRoadmapsRemovedOnMap(mapId);
-        if (state.activeMapId === mapId) {
-          state.allRoadmaps = {};
-          state.allTaskChats = {};
-          state.roadmapKey = null;
-          state.currentIdea = null;
-          state.roadmapStages = [];
-        }
-      }
-
-      state.roadmapCategories = state.roadmapCategories.filter((entry) => entry.id !== categoryId);
-      if (state.activeRoadmapCategoryId === categoryId) {
-        state.activeRoadmapCategoryId = null;
-      }
-
-      applyRemovedRoadmapGuards(mapId);
-      renderSidebarRoadmaps();
-      void flushPersist();
-      trackEvent("roadmap_category_dismissed", { map_id: mapId || null, item_count: items.length });
     }
 
     function migrateRoadmapCategoriesFromLibrary() {
@@ -30984,24 +30549,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } else {
         schedulePersist();
       }
-    }
-
-    function createManualRoadmapCategory() {
-      const title = prompt("Name this roadmap group (e.g. Side projects, Career change):");
-      if (!title?.trim()) return;
-      const category = {
-        id: createRoadmapCategoryId(),
-        title: title.trim(),
-        mapId: null,
-        manual: true,
-        createdAt: Date.now(),
-        items: []
-      };
-      state.roadmapCategories.unshift(category);
-      state.activeRoadmapCategoryId = category.id;
-      state.sidebarRoadmapsExpanded = true;
-      renderSidebarRoadmaps();
-      schedulePersist();
     }
 
     function isActiveRoadmapSidebarItem(item) {
@@ -34131,11 +33678,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
-    function openSettingsScreen() {
-      populateAccountPrefsForm();
-      showScreen("settings");
-    }
-
     function scrollToSiteSuggestions(source = "nav_drawer") {
       showScreen("main", { skipScrollTop: true });
       requestAnimationFrame(() => {
@@ -34907,10 +34449,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function mergeUserProfileFromConversation() {
-      const blob = [
-        getFirstUserMessage(),
-        ...state.history.filter((entry) => entry.role === "user").map((entry) => entry.content)
-      ].join("\n");
+      const blob = getConversationUserBlob();
       const profile = normalizeUserProfile(state.userProfile);
       if (!profile.incomeUrgency) profile.incomeUrgency = parseIncomeUrgency(blob);
       if (!profile.pathPreference) profile.pathPreference = parsePathPreference(blob);
@@ -35499,10 +35038,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (formatted && (state.locationConfirmed || looksLikeRealLocation(formatted))) return formatted;
       const inferred = formatUserLocation(inferLocationFromConversation());
       return inferred && looksLikeRealLocation(inferred) ? inferred : "";
-    }
-
-    function locationMentionedInConversation() {
-      return hasSavedUserLocation() || Boolean(getUserLocation());
     }
 
     function getLocationContextBlock() {
@@ -38454,21 +37989,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (banner) banner.hidden = !refining;
     }
 
-    function renderRoadmapSkeleton(phaseCount = 3) {
-      const list = $("#stage-list");
-      if (!list) return;
-      list.innerHTML = Array.from({ length: phaseCount }, (_, index) => (
-        `<article class="roadmap-phase stage-card roadmap-phase--skeleton" aria-hidden="true">` +
-        `<div class="roadmap-phase-head stage-head">` +
-        `<span class="roadmap-phase-num stage-num">${index + 1}</span>` +
-        `<span class="roadmap-phase-info">` +
-        `<span class="roadmap-skeleton-line roadmap-skeleton-line--title"></span>` +
-        `<span class="roadmap-skeleton-line roadmap-skeleton-line--meta"></span>` +
-        `</span></div></article>`
-      )).join("") +
-        `<p class="roadmap-shell-status" id="roadmap-shell-status" role="status" aria-live="polite"></p>`;
-    }
-
     function clearProgressMap() {
       const chain = $("#progress-chain");
       if (chain) chain.innerHTML = "";
@@ -38700,14 +38220,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         stages: ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
         roadmapSource: source
       };
-    }
-
-    function firstMissionIsReady(stages = state.roadmapStages) {
-      const first = stages?.[0];
-      if (!first?.label?.trim()) return false;
-      const tasks = Array.isArray(first.tasks) ? first.tasks : [];
-      if (!tasks.length) return false;
-      return tasks.every((task) => Boolean(getTaskText(task)?.trim()));
     }
 
     function stageOneHasRevealableMission(stages = state.roadmapStages) {
@@ -39045,15 +38557,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.expandedRoadmapPhases = new Set([0]);
       state.expandedRoadmapTasks = new Set(["task-0-0"]);
       return true;
-    }
-
-    function getRevealCandidateStages(response, stages, idea) {
-      const resolved = resolveEarlyRevealStages(response, idea);
-      if (resolved.stages) return resolved.stages;
-      if (stages && stageOneHasRevealableMission(stages)) return stages;
-      const preview = parseRoadmapPreviewResponse(response, idea);
-      if (preview && stageOneHasRevealableMission(preview)) return preview;
-      return null;
     }
 
     function publishRoadmapToUi(idea, ideaIndex, stages, roadmapSource, founderMode, { isFinal = true, initialReveal = false, refineUpdate = false, progressive = false } = {}) {
@@ -40001,13 +39504,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       else state.expandedRoadmapPhases.add(stageIndex);
     }
 
-    function getRoadmapTaskTotals(stages = state.roadmapStages) {
-      const safeStages = Array.isArray(stages) ? stages : [];
-      const phaseCount = safeStages.length;
-      const taskCount = safeStages.reduce((total, stage) => total + (stage.tasks?.length || 0), 0);
-      return { phaseCount, taskCount };
-    }
-
     function jumpToRoadmapTask(stageIndex, taskIndex) {
       if (!Number.isInteger(stageIndex) || stageIndex < 0) return;
       if (!Number.isInteger(taskIndex) || taskIndex < 0) return;
@@ -40021,14 +39517,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       scrollRoadmapTargetIntoView(item || phase?.querySelector(".roadmap-phase-head") || phase, { extraOffset: 16 });
-    }
-
-    function getTaskGlanceStatus(stageIndex, taskIndex) {
-      const data = getRoadmapTaskData(`task-${stageIndex}-${taskIndex}`);
-      if (data?.checked) return "is-complete";
-      const pos = getFirstIncompleteTaskPosition();
-      if (pos && pos.stageIndex === stageIndex && pos.taskIndex === taskIndex) return "is-in-progress";
-      return "is-upcoming";
     }
 
     function jumpToRoadmapPhase(stageIndex) {
@@ -40063,25 +39551,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           window.scrollTo({ top: Math.max(0, top), behavior });
         });
       });
-    }
-
-    function scrollRoadmapToOverviewHeader(options = {}) {
-      const header = $("#roadmap-overview-header") || $("#roadmap-status-badge");
-      if (!header) {
-        window.scrollTo({ top: 0, behavior: options.behavior ?? "smooth" });
-        return;
-      }
-      scrollRoadmapTargetIntoView(header, {
-        behavior: options.behavior ?? "smooth",
-        extraOffset: options.extraOffset ?? 10
-      });
-      if (options.delayMs === 0) return;
-      window.setTimeout(() => {
-        scrollRoadmapTargetIntoView(header, {
-          behavior: "auto",
-          extraOffset: options.extraOffset ?? 10
-        });
-      }, options.delayMs ?? 220);
     }
 
     function ensureRoadmapOpensAtTop(options = {}) {
@@ -41069,142 +40538,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "Ask a question or request a change (e.g. how do I start this, or make it fit my situation?)...";
     }
 
-    function getTaskAskSuggestions(taskText) {
-      const task = String(taskText || "").toLowerCase();
-      const suggestions = [];
-      const add = (label, question) => {
-        if (suggestions.length >= 4) return;
-        if (suggestions.some((entry) => entry.label === label || entry.question === question)) return;
-        suggestions.push({ label, question });
-      };
-
-      if (/\b(deck|sponsor(?:ship)?|sponsorship)\b/.test(task)) {
-        add("Presentation outline", "Help me outline each section of this sponsor presentation — who it helps, signs people are interested, what a sponsor gets, and what I'm asking for?");
-        add("Mission copy", "Help me write the section explaining who this helps and why sponsors should care.");
-        add("Proof ideas", "What should I include as proof if I'm early — people who finished maps, testimonials, screenshots?");
-        add("Word the ask", "How do I phrase the sponsor amount without sounding pushy?");
-      }
-      if (/\b(metrics|baseline|30-day plan|scorecard|track|measure|numbers to track)\b/.test(task)) {
-        add("Plain English", "Explain this task in plain English — what am I actually doing?");
-        add("Simple version", "What's the simplest version of this tracking plan I can finish today?");
-        add("Example numbers", "Give me an example of what the three numbers might look like for my path.");
-        add("Too technical", "This sounds too technical — rewrite what I should do in everyday language.");
-      }
-      if (/\b(write|draft|story|post|notes doc|120-word|founder story|pitch|caption)\b/.test(task)) {
-        add("Draft for me", "Can you write a first draft I can edit for this task?");
-        add("Shorten it", "Help me shorten this so it sounds natural and not salesy.");
-        add("Tone check", "How do I say this without sounding pushy or desperate?");
-        add("Hook ideas", "Give me 3 opening lines that would grab the right reader.");
-      }
-      if (/\b(email|call|meet|demo|workshop|pilot|director|outreach|reach out)\b/.test(task)) {
-        add("Draft opener", "Help me draft the opening lines for this outreach.");
-        add("Subject line", "Suggest 2–3 email subject lines for this message.");
-        add("Follow-up", "What should I say if they don't reply in a week?");
-        add("Who to contact", "How do I find the right person to send this to?");
-      }
-      if (/\b(pilot outline|1-page pilot|pilot doc|closed beta)\b/.test(task)) {
-        add("Pilot outline", "Help me draft a pilot outline I can copy into Notes.");
-        add("Too big?", "Is 15–30 users too much if I'm still testing if it works?");
-        add("Closed beta", "Rewrite this as a 3–5 user closed beta test instead.");
-        add("Email invite", "Draft a short email I can send to recruit beta testers.");
-      }
-      if (/\b(reddit|facebook|social|post in|community|group|outreach|subreddit)\b/.test(task)) {
-        add("Which group?", "Which platform or group fits this task best for my situation?");
-        add("Post title", "Suggest a post title that follows community rules and gets attention.");
-        add("Comment vs post", "Should I put the link in the post or the first comment — and why?");
-        add("Tone for groups", "How do I share this without looking spammy?");
-      }
-      if (/\b(donat|stripe|grant|pay-what|tip jar|checkout)\b/.test(task)) {
-        add("Soft ask copy", "Help me word the donation ask so it feels mission-first, not pushy.");
-        add("Example line", "Give me one sentence I can paste near the donate button.");
-        add("Explain the why", "How do I explain why optional tips matter without guilt?");
-      }
-      if (/\b(screenshot|photo|capture|screenshots|before\/after)\b/.test(task)) {
-        add("What to capture", "What exactly should I screenshot or photograph for this task?");
-        add("How many", "How many examples do I need, and what should each one show?");
-        add("Crop & caption", "How should I crop and caption these so they look credible?");
-      }
-      if (/\b(interview|job|hired|resume|apply|career|employ)\b/.test(task)) {
-        add("No experience yet", "What if I don't have much experience yet — how should I approach this?");
-        add("What to highlight", "Which parts of my background should I emphasize for this task?");
-        add("Answer template", "Help me draft a short answer I could use in an application or interview.");
-      }
-      if (/\b(bookkeep|business|client|customer|offer|service|freelance|gig|accounting|package|pricing)\b/.test(task)) {
-        add("First client", "How do I land my first client for this with no budget?");
-        add("Price it", "Help me pick a believable price for this offer.");
-        add("Simple offer", "Help me write a one-paragraph offer I can send today.");
-      }
-      if (/\b(portfolio|case study|proof|testimonial|showcase|behance|dribbble)\b/.test(task)) {
-        add("What to show", "Which 3 pieces of work best prove I'm ready for this?");
-        add("Case study", "Help me write a short case study caption for one project.");
-        add("Ask for proof", "How do I ask a past client for a testimonial or permission to show their work?");
-      }
-      if (/\b(google business|local seo|review|nextdoor|maps)\b/.test(task)) {
-        add("Profile copy", "Help me write the business description and service headings for local search.");
-        add("Review ask", "How do I ask for a Google review without awkwardness?");
-        add("Local keywords", "Which search phrases should I target for my city and craft?");
-      }
-      if (/\b(list \d|find \d|name \d|identify \d|communities|people, groups|20 .*(business|local))\b/.test(task)) {
-        add("Where to start", "I don't know anyone yet — where should I start finding names for this list?");
-        add("Research tips", "What's the fastest way to build this list in one sitting?");
-        add("Qualify leads", "How do I tell which names on my list are worth contacting first?");
-      }
-      if (/\b(compare|research|training|certif|program|college|apprenticeship|workforce)\b/.test(task)) {
-        add("Pick one path", "Help me compare my options and pick the fastest credible route.");
-        add("Questions to ask", "What questions should I ask before enrolling or applying?");
-        add("If none fit", "What should I do if none of these programs fit my situation?");
-      }
-      if (/\b(license|permit|register|incorporat|llc|insurance)\b/.test(task)) {
-        add("Do I need this?", "Do I actually need this license or registration for my situation?");
-        add("First step", "What's the first official step, and where do I do it locally?");
-        add("Cost & timeline", "What should I expect for cost and how long it takes?");
-      }
-      if (/\b(30.?min|45.?min|hour|today|this week|daily|weekly)\b/.test(task)) {
-        add("Break it down", "Break this task into smaller steps I can finish in one sitting.");
-        add("Time box", "What can I realistically finish in 30 minutes vs. this whole week?");
-      }
-
-      if (suggestions.length < 3) {
-        add("Where to start", "What's the very first thing I should do for this task?");
-        add("Fit my situation", "How should I adapt this step for my situation and location?");
-        add("Example", "Can you give me a concrete example of what done looks like?");
-        add("Stuck", "I'm stuck on this step — what's the simplest way forward?");
-      }
-
-      return suggestions.slice(0, 4);
-    }
-
-    function renderTaskAskSuggestionsHtml(taskId, taskText) {
-      const suggestions = getTaskAskSuggestions(taskText);
-      if (!suggestions.length) return "";
-      const buttons = suggestions.map((entry) =>
-        `<button type="button" class="task-ask-suggest-btn" data-task-id="${escapeHtml(taskId)}" data-question="${escapeHtml(entry.question)}" title="${escapeHtml(entry.question)}">${escapeHtml(entry.label)}</button>`
-      ).join("");
-      return `
-        <div class="task-ask-suggestions" data-task-id="${escapeHtml(taskId)}">
-          <span class="task-ask-suggestions-label">Try asking</span>
-          <div class="task-ask-suggestions-list">${buttons}</div>
-        </div>`;
-    }
-
-    function bindTaskAskSuggestions() {
-      $$(".task-ask-suggest-btn").forEach((button) => {
-        button.addEventListener("click", () => {
-          const taskId = button.dataset.taskId;
-          const question = button.dataset.question || "";
-          const questionEl = $(`#question-${taskId}`);
-          if (!questionEl || !question) return;
-          questionEl.value = question;
-          questionEl.focus();
-          questionEl.setSelectionRange(question.length, question.length);
-          trackEvent("task_ask_suggestion_clicked", {
-            task_id: taskId,
-            suggestion_label: button.textContent?.trim() || ""
-          });
-        });
-      });
-    }
-
     function recoverEmptyRoadmapStages(idea = state.currentIdea, ideaIndex = getCurrentIdeaIndex(), options = {}) {
       if (!idea) return false;
       if (!options.force && isFirstMissionPickerActive()) return false;
@@ -41659,10 +40992,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
         updateMomentum();
       }
-    }
-
-    function initProgressMap(stages) {
-      updateRoadmapOverviewChrome();
     }
 
     function updateProgressMap() {
@@ -43275,17 +42604,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         /* ignore */
       }
       updateJingleReplayVisibility();
-    }
-
-    function muteJinglePermanently() {
-      try {
-        localStorage.setItem(JINGLE_MUTE_KEY, "1");
-      } catch {
-        /* ignore */
-      }
-      markJingleHandled();
-      updateJingleReplayVisibility();
-      trackEvent("jingle_muted");
     }
 
     function setJingleButtonMessage(button, message) {
