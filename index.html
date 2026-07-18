@@ -24628,8 +24628,50 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    function situationRequiresHardStabilityFirst(idea = null) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (isFounderRoadmapForIdea(idea)) return false;
+      // Career pivots must never be rewritten into housing/ID templates.
+      if (conversationLooksLikeCareerPivot()) return false;
+      const situation = getPathSituationType(idea);
+      if (situation === "career_change" || situation === "employment" || situation === "exploring") {
+        // Only force stability when the conversation itself has hard crisis signals.
+        return conversationMentionsRecoveryTreatment()
+          || conversationMentionsHousingInstability()
+          || conversationMentionsReentryHardship()
+          || isReentrySituation(idea);
+      }
+      return userNeedsIdFirst(idea) || userNeedsHousingFirst(idea) || isReentrySituation(idea);
+    }
+
+    function alignStageSummariesWithMissions(stages, idea = state.currentIdea) {
+      if (!Array.isArray(stages) || !stages.length) return stages || [];
+      return stages.map((stage) => {
+        const tasks = Array.isArray(stage.tasks) ? stage.tasks : [];
+        const firstMission = tasks
+          .map((task) => String(getMissionTitle(task) || getTaskText(task) || "").trim())
+          .find(Boolean) || "";
+        if (!firstMission) return stage;
+        const desc = String(stage.desc || "").trim();
+        const descBlob = desc.toLowerCase();
+        const missionBlob = firstMission.toLowerCase();
+        const stabilityRe = /\b(shelter|housing|211|birth certificate|state id|documents first|mailing address)\b/;
+        const descIsStability = stabilityRe.test(descBlob);
+        const missionIsStability = stabilityRe.test(missionBlob);
+        // Keep progress-map blurb in sync with the first real mission when they disagree.
+        if (!desc || (descIsStability !== missionIsStability) || textSimilarity(desc, firstMission) < 0.28) {
+          return {
+            ...stage,
+            desc: firstMission.length > 96 ? `${firstMission.slice(0, 93)}…` : firstMission
+          };
+        }
+        return stage;
+      });
+    }
+
     function ensureStabilityFirstRoadmapStages(stages, idea = state.currentIdea) {
       if (isFounderRoadmapForIdea(idea)) return stages;
+      if (!situationRequiresHardStabilityFirst(idea)) return stages;
       if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return stages;
       if (
         !Array.isArray(stages)
@@ -27602,7 +27644,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (isFounderRoadmapForIdea(idea)) {
         return getFounderFallbackStages(idea);
       }
-      if (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea)) {
+      if (
+        situationRequiresHardStabilityFirst(idea)
+        && (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea))
+      ) {
         return personalizeFallbackStages(buildStandardFallbackTemplates().housing, idea);
       }
       return pickUniqueStandardFallbackStages(idea);
@@ -27656,13 +27701,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         idea.tagline ? `Tagline: ${idea.tagline}` : "",
         idea.why ? `Why it fits: ${idea.why}` : ""
       ].filter(Boolean).join("\n");
-      const contextTail = String(context || "").slice(-1800);
+      // Keep enough conversation that the first mission matches the full roadmap (not a generic template).
+      const contextTail = String(context || "").slice(-4200);
       return (
         `You are whatimado — a practical mentor. Return ONLY the first roadmap stage as JSON (one stage, 2 missions). The user sees this immediately while the full roadmap loads.\n\n` +
         `Path:\n${ideaBlock}\n\n` +
         `Conversation (recent):\n${contextTail}\n` +
         getLocationContextBlock() +
+        getUserStatedCraftBlock(idea) +
+        (founderMode ? "" : getExplorationFitPromptBlock()) +
+        (founderMode ? "" : getCareerPivotIdeasPromptBlock()) +
+        (founderMode ? "" : getReentryPromptBlock(idea)) +
+        (founderMode ? "" : getRecoveryStabilityPromptBlock(idea)) +
+        (founderMode ? "" : getIdPriorityPromptBlock(idea)) +
         `\n${getActionableTaskRules()}\n` +
+        `CRITICAL: Stage label, stage desc, and both missions must describe the SAME next step for THIS path ("${idea.title}"). Do not mix in unrelated housing/ID advice unless the conversation clearly requires stability first.\n` +
         `Return exactly 1 stage with 2 missions (JSON key: tasks). Include mission, text, mentorHelp, howTo, outcome, and resources when relevant.\n` +
         `NEVER say contacts are "loading" or mention draft buttons — list concrete prepared assets in mentorHelp now.\n` +
         ROADMAP_JSON_SCHEMA_TAIL
@@ -38250,97 +38303,90 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function applyStabilityFirstRoadmapFixes(stages, idea, founderMode = false) {
       if (founderMode || isFounderRoadmapForIdea(idea)) return stages;
+      if (!situationRequiresHardStabilityFirst(idea)) return stages;
       if (!userNeedsIdFirst(idea) && !userNeedsHousingFirst(idea)) return stages;
       return ensureStabilityFirstRoadmapStages(stages, idea);
     }
 
     function finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource = "ai", lenient = false } = {}) {
-      if (lenient && stages?.length) {
-        const normalized = normalizeRoadmapStages(stages);
-        if (stageOneHasRevealableMission(normalized)) {
-          let fixed = applyLocalResourceFixesIfPossible(normalized, idea);
-          fixed = applyStabilityFirstRoadmapFixes(fixed, idea, founderMode);
-          return {
-            stages: ensureRoadmapLocalContacts(normalizeRoadmapStages(fixed), idea),
-            roadmapSource
-          };
-        }
-      }
-
+      const hardStability = !founderMode && situationRequiresHardStabilityFirst(idea);
+      let working = Array.isArray(stages) ? normalizeRoadmapStages(stages) : null;
       let source = roadmapSource;
 
-      if (stages && founderMode && roadmapLooksLikeEndUserReentry(stages)) {
-        stages = getFounderFallbackStages(idea);
+      const finish = (nextStages, nextSource) => {
+        let fixed = applyLocalResourceFixesIfPossible(normalizeRoadmapStages(nextStages || []), idea);
+        if (hardStability) {
+          fixed = applyStabilityFirstRoadmapFixes(fixed, idea, founderMode);
+        } else {
+          fixed = alignStageSummariesWithMissions(fixed, idea);
+        }
+        return {
+          stages: ensureRoadmapLocalContacts(normalizeRoadmapStages(fixed), idea),
+          roadmapSource: nextSource
+        };
+      };
+
+      // Prefer keeping a usable AI draft instead of silently swapping in a template.
+      if (lenient && working?.length && stageOneHasRevealableMission(working)) {
+        return finish(working, source);
+      }
+
+      if (working && founderMode && roadmapLooksLikeEndUserReentry(working)) {
+        working = getFounderFallbackStages(idea);
         source = "fallback";
         trackEvent("roadmap_founder_reentry_mismatch_fallback", { idea_index: ideaIndex });
-      } else if (stages && roadmapHasFounderMismatch(stages, idea)) {
-        stages = getFallbackStages(idea);
+      } else if (working && roadmapHasFounderMismatch(working, idea)) {
+        working = getFallbackStages(idea);
         source = "fallback";
         trackEvent("roadmap_founder_mismatch_fallback", { idea_index: ideaIndex });
       }
 
-      if (
-        !stages ||
-        roadmapHasGenericStages(stages, idea) ||
-        (
-          roadmapOverlapsSibling(stages, idea) &&
-          !(isReentrySituation(idea) && !roadmapSkipsReentryStability(stages))
-        )
-      ) {
-        stages = getFallbackStages(idea);
+      const usableAi = Boolean(working && stageOneHasRevealableMission(working));
+
+      if (!usableAi) {
+        working = normalizeRoadmapStages(getFallbackStages(idea));
         source = "fallback";
         trackEvent("roadmap_used_fallback", {
           idea_index: ideaIndex,
           founder_mode: founderMode,
-          reason: stages ? "deduped" : "empty_or_generic"
+          reason: "empty_or_unusable"
         });
-      }
-
-      if (stages && !founderMode && isReentrySituation(idea) && roadmapSkipsReentryStability(stages)) {
-        stages = getFallbackStages(idea);
-        source = "fallback";
-        trackEvent("roadmap_reentry_fallback", { idea_index: ideaIndex });
-      }
-
-      if (stages && roadmapHasEmploymentMismatch(stages, idea)) {
-        stages = rewriteBusinessOwnerMisalignedTasks(stages, idea);
-        if (roadmapHasEmploymentMismatch(stages, idea)) {
-          stages = getFallbackStages(idea);
-          source = "fallback";
-          trackEvent("roadmap_business_employment_mismatch_fallback", { idea_index: ideaIndex });
-        } else {
+      } else {
+        // Soft in-place repairs only — do not discard the whole AI roadmap for "generic" labels.
+        if (roadmapHasGenericStages(working, idea) || roadmapHasGenericMissionTitles(working)) {
+          working = mentorizeRoadmapStages(working);
+          trackEvent("roadmap_soft_mentorize", { idea_index: ideaIndex });
+        }
+        if (roadmapOverlapsSibling(working, idea) && !(isReentrySituation(idea) && !roadmapSkipsReentryStability(working))) {
+          working = mentorizeRoadmapStages(working);
+          trackEvent("roadmap_soft_dedupe", { idea_index: ideaIndex });
+        }
+        if (roadmapHasEmploymentMismatch(working, idea)) {
+          working = rewriteBusinessOwnerMisalignedTasks(working, idea);
           trackEvent("roadmap_business_tasks_realigned", { idea_index: ideaIndex });
         }
-      }
-
-      if (stages && roadmapHasCareerChangeOnEmploymentPath(stages, idea)) {
-        stages = rewriteEmploymentMisalignedTasks(stages, idea);
-        if (roadmapHasCareerChangeOnEmploymentPath(stages, idea)) {
-          stages = getFallbackStages(idea);
-          source = "fallback";
-          trackEvent("roadmap_employment_career_change_fallback", { idea_index: ideaIndex });
-        } else {
+        if (roadmapHasCareerChangeOnEmploymentPath(working, idea)) {
+          working = rewriteEmploymentMisalignedTasks(working, idea);
           trackEvent("roadmap_employment_tasks_realigned", { idea_index: ideaIndex });
         }
-      }
-
-      if (stages && roadmapHasGenericMissionTitles(stages)) {
-        stages = mentorizeRoadmapStages(stages);
-        if (roadmapHasGenericMissionTitles(stages)) {
-          stages = getFallbackStages(idea);
+        if (hardStability && isReentrySituation(idea) && roadmapSkipsReentryStability(working)) {
+          working = normalizeRoadmapStages(getFallbackStages(idea));
           source = "fallback";
-          trackEvent("roadmap_generic_mission_fallback", { idea_index: ideaIndex });
+          trackEvent("roadmap_reentry_fallback", { idea_index: ideaIndex });
+        }
+        // Absolute last resort: still unusable after soft fixes.
+        if (!stageOneHasRevealableMission(working)) {
+          working = normalizeRoadmapStages(getFallbackStages(idea));
+          source = "fallback";
+          trackEvent("roadmap_used_fallback", {
+            idea_index: ideaIndex,
+            founder_mode: founderMode,
+            reason: "soft_fix_failed"
+          });
         }
       }
 
-      if (stages && !founderMode && (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea))) {
-        stages = applyStabilityFirstRoadmapFixes(stages, idea, founderMode);
-      }
-
-      return {
-        stages: ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea),
-        roadmapSource: source
-      };
+      return finish(working, source);
     }
 
     function stageOneHasRevealableMission(stages = state.roadmapStages) {
@@ -38439,6 +38485,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       let ready = normalizeRoadmapStages(stages);
       ready = applyLocalResourceFixesIfPossible(ready, idea);
       ready = applyStabilityFirstRoadmapFixes(ready, idea, isFounderRoadmapForIdea(idea));
+      if (!situationRequiresHardStabilityFirst(idea)) {
+        ready = alignStageSummariesWithMissions(ready, idea);
+      }
       return ready;
     }
 
@@ -38689,6 +38738,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         : null;
 
       stages = applyStabilityFirstRoadmapFixes(normalizeRoadmapStages(stages || []), idea, founderMode);
+      if (!situationRequiresHardStabilityFirst(idea)) {
+        stages = alignStageSummariesWithMissions(stages, idea);
+      }
 
       let renderStagesPayload = (!isFinal && (progressive || !refineUpdate))
         ? expandStagesForProgressiveReveal(stages, founderMode, { isFinal: false })
@@ -39814,7 +39866,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                     : `<span class="roadmap-glance-income-dot roadmap-glance-income-dot--empty" aria-hidden="true">—</span>`}
                   <span class="roadmap-glance-node" aria-hidden="true">${nodeLabel}</span>
                   <span class="roadmap-glance-copy">
-                    <span class="roadmap-glance-label">${escapeHtml(stage.label || `Phase ${stageIndex + 1}`)}</span>
+                    <span class="roadmap-glance-label">${escapeHtml(simplifyStageLabel(stage.label, state.currentIdea) || stage.label || `Phase ${stageIndex + 1}`)}</span>
                     ${descShort ? `<span class="roadmap-glance-desc">${escapeHtml(descShort)}</span>` : ""}
                     <span class="roadmap-glance-count">${progress.done}/${progress.total} tasks</span>
                   </span>
