@@ -11509,11 +11509,9 @@
       padding: 0;
       display: grid;
       gap: .15rem;
-      max-height: min(18rem, 42vh);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      padding-right: .2rem;
-      scrollbar-gutter: stable;
+      /* Scroll lives on .roadmap-side-scroll — nested list overflow was trapping the panel. */
+      max-height: none;
+      overflow: visible;
     }
 
     html[data-color-scheme="adult"] .roadmap-local-list::-webkit-scrollbar {
@@ -11704,7 +11702,8 @@
       }
 
       html[data-color-scheme="adult"] .roadmap-main,
-      html[data-color-scheme="adult"] .roadmap-side {
+      html[data-color-scheme="adult"] .roadmap-side,
+      html[data-color-scheme="adult"] .roadmap-side-scroll {
         display: contents;
       }
 
@@ -11755,14 +11754,15 @@
       html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
       html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
       html[data-color-scheme="adult"] .roadmap-content { display: contents; }
-      html[data-color-scheme="adult"] .roadmap-side > #roadmap-side-local-card { order: 50; }
+      html[data-color-scheme="adult"] .roadmap-side #roadmap-side-local-card { order: 50; }
       html[data-color-scheme="adult"] .roadmap-phases,
       html[data-color-scheme="adult"] .roadmap-refining-banner,
       html[data-color-scheme="adult"] .roadmap-branch-picker,
       html[data-color-scheme="adult"] .roadmap-load-phases-btn,
       html[data-color-scheme="adult"] .roadmap-complete-card--footer,
       html[data-color-scheme="adult"] .roadmap-post-mission-picker { order: 65; width: 100%; }
-      html[data-color-scheme="adult"] .roadmap-side > .roadmap-side-card:nth-child(3) { order: 70; }
+      html[data-color-scheme="adult"] .roadmap-side .roadmap-side-card:nth-child(3),
+      html[data-color-scheme="adult"] .roadmap-side-scroll > .roadmap-side-card:nth-child(2) { order: 70; }
       html[data-color-scheme="adult"] .roadmap-side-help { order: 80; }
       html[data-color-scheme="adult"] .roadmap-overview-footer { order: 90; }
 
@@ -11783,24 +11783,36 @@
 
     .roadmap-side {
       position: sticky;
-      top: calc(var(--topbar-h, 64px) + 20px);
+      top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 12px);
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      max-width: 100%;
+      /* Keep overflow off the sticky element — scrolling the sticky node itself traps nested scroll. */
+      overflow: visible;
+      max-height: none;
+    }
+
+    .roadmap-side-scroll {
       display: flex;
       flex-direction: column;
       gap: 1rem;
       min-width: 0;
-      max-width: 100%;
-      max-height: calc(100dvh - 96px);
+      max-height: calc(100dvh - var(--roadmap-sticky-offset, 64px) - 28px);
+      overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       padding-right: .2rem;
       scrollbar-gutter: stable;
     }
 
-    html[data-color-scheme="adult"] .roadmap-side::-webkit-scrollbar {
+    html[data-color-scheme="adult"] .roadmap-side-scroll::-webkit-scrollbar {
       width: 7px;
     }
 
-    html[data-color-scheme="adult"] .roadmap-side::-webkit-scrollbar-thumb {
+    html[data-color-scheme="adult"] .roadmap-side-scroll::-webkit-scrollbar-thumb {
       border-radius: 999px;
       background: rgba(15, 23, 42, .16);
     }
@@ -14519,6 +14531,12 @@
         padding-right: 0;
       }
 
+      .roadmap-side-scroll {
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+      }
+
       html[data-color-scheme="adult"] .roadmap-local-list {
         max-height: none;
         overflow: visible;
@@ -15736,33 +15754,35 @@
         </div>
 
         <aside class="roadmap-side" id="roadmap-side">
-          <div class="roadmap-side-card" id="roadmap-side-local-card">
-            <h3 class="roadmap-side-card-title">Local resources for you</h3>
-            <ul class="roadmap-local-list" id="roadmap-local-list"></ul>
-            <div class="roadmap-location-add" id="roadmap-location-add">
-              <p class="roadmap-side-copy" id="roadmap-location-empty-msg">Add where you're based to unlock local employment, training, and support resources for your area.</p>
-              <label class="roadmap-location-label" for="roadmap-location-input">City, state, country</label>
-              <input class="roadmap-location-input" id="roadmap-location-input" type="text" placeholder="e.g. Austin, Texas, USA" autocomplete="address-level2">
-              <button type="button" class="roadmap-location-save" id="roadmap-location-save">Save location</button>
+          <div class="roadmap-side-scroll" id="roadmap-side-scroll">
+            <div class="roadmap-side-card" id="roadmap-side-local-card">
+              <h3 class="roadmap-side-card-title">Local resources for you</h3>
+              <ul class="roadmap-local-list" id="roadmap-local-list"></ul>
+              <div class="roadmap-location-add" id="roadmap-location-add">
+                <p class="roadmap-side-copy" id="roadmap-location-empty-msg">Add where you're based to unlock local employment, training, and support resources for your area.</p>
+                <label class="roadmap-location-label" for="roadmap-location-input">City, state, country</label>
+                <input class="roadmap-location-input" id="roadmap-location-input" type="text" placeholder="e.g. Austin, Texas, USA" autocomplete="address-level2">
+                <button type="button" class="roadmap-location-save" id="roadmap-location-save">Save location</button>
+              </div>
+              <button type="button" class="roadmap-side-link" id="roadmap-more-resources-btn" hidden>View more resources</button>
             </div>
-            <button type="button" class="roadmap-side-link" id="roadmap-more-resources-btn" hidden>View more resources</button>
-          </div>
 
-          <div class="roadmap-side-card">
-            <h3 class="roadmap-side-card-title">Why these tasks?</h3>
-            <p class="roadmap-side-copy" id="roadmap-side-why">Each step includes why it matters, what you'll have when it's done, time, cost, and local help when relevant.</p>
-          </div>
+            <div class="roadmap-side-card">
+              <h3 class="roadmap-side-card-title">Why these tasks?</h3>
+              <p class="roadmap-side-copy" id="roadmap-side-why">Each step includes why it matters, what you'll have when it's done, time, cost, and local help when relevant.</p>
+            </div>
 
-          <div class="roadmap-side-card roadmap-side-help">
-            <h3 class="roadmap-side-card-title">Need help or want to change direction?</h3>
-            <p class="roadmap-side-copy">Stuck on a step? Ask below any task, or jump to your next open step.</p>
-            <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-ask-assistant-btn">
-              <span aria-hidden="true">💬</span> Ask AI assistant
-            </button>
-          </div>
+            <div class="roadmap-side-card roadmap-side-help">
+              <h3 class="roadmap-side-card-title">Need help or want to change direction?</h3>
+              <p class="roadmap-side-copy">Stuck on a step? Ask below any task, or jump to your next open step.</p>
+              <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-ask-assistant-btn">
+                <span aria-hidden="true">💬</span> Ask AI assistant
+              </button>
+            </div>
 
-          <span id="progress-pct" hidden>0%</span>
-          <div id="progress-chain" hidden></div>
+            <span id="progress-pct" hidden>0%</span>
+            <div id="progress-chain" hidden></div>
+          </div>
         </aside>
       </div>
     </section>
@@ -26964,7 +26984,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         craftLabel: "design services",
         craftTitle: "Design Studio",
         serviceType: "graphic and visual design",
-        detect: /\b(graphic design|illustrat|designer|visual design|brand designer|layout design|print design)\b/,
+        detect: /\b(graphic design|illustrat(?:ion|or)?|graphic designer|visual design|brand designer|layout design|print design|design services)\b/,
         niches: "restaurants, retail shops, nonprofits, startups, event promoters, local brands",
         pricingBasic: "$350-750",
         pricingPremium: "$900-2000",
@@ -27163,6 +27183,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function isGroundedPractitioner(idea = null) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (idea && isFounderRoadmapForIdea(idea)) return false;
       if (!currentIntakeHasStatedSkills()) return false;
       if (isGigPlatformPath(idea)) return false;
       if (isIdeaEmploymentPath(idea)) return false;
@@ -27231,13 +27253,128 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getGroundedSidebarResources(idea = null) {
-      return (getUserSituationProfile(idea).sidebarTools || []).map((entry) => ({
-        name: entry.name,
-        org: entry.org,
-        url: entry.url,
-        phone: "",
-        email: ""
-      }));
+      const profile = getUserSituationProfile(idea);
+      const city = profile.city && profile.city !== "your city" ? profile.city : "";
+      const craft = profile.craftLabel || "your services";
+      const resources = [];
+      const seen = new Set();
+      const add = (entry) => {
+        const org = String(entry?.org || entry?.name || "").trim();
+        const url = String(entry?.url || "").trim();
+        const key = `${org}|${url}`.toLowerCase();
+        if (!org && !url) return;
+        if (seen.has(key)) return;
+        seen.add(key);
+        resources.push({
+          name: String(entry.name || "").trim(),
+          org: org || String(entry.name || "Resource").trim(),
+          url,
+          phone: String(entry.phone || "").trim(),
+          email: String(entry.email || "").trim()
+        });
+      };
+
+      (profile.sidebarTools || []).forEach((tool) => {
+        const name = city && tool.name && !tool.name.toLowerCase().includes(city.toLowerCase())
+          ? `${tool.name} · ${city}`
+          : (tool.name || "");
+        add({
+          name,
+          org: tool.org,
+          url: tool.url
+        });
+      });
+
+      if (city) {
+        add({
+          name: `${craft} clients near ${city}`,
+          org: `Google search — ${craft} ${city}`,
+          url: `https://www.google.com/search?q=${encodeURIComponent(`${craft} ${city}`)}`
+        });
+        add({
+          name: `Free small-business advising near ${city}`,
+          org: "SBA Local Assistance",
+          url: "https://www.sba.gov/local-assistance"
+        });
+        getKnownLocalResources(getUserLocation())
+          .filter((entry) => /\b(sbdc|score|chamber|small business|library|economic development)\b/i.test(`${entry.org || ""} ${entry.name || ""}`))
+          .slice(0, 3)
+          .forEach(add);
+      } else {
+        add({
+          name: "Free small-business advising",
+          org: "SBA Local Assistance",
+          url: "https://www.sba.gov/local-assistance"
+        });
+      }
+
+      if (/\b(logo|design|photo|creative)\b/i.test(craft)) {
+        add({
+          name: city ? `Portfolio visibility in ${city}` : "Portfolio visibility",
+          org: "Behance",
+          url: "https://www.behance.net/"
+        });
+      }
+
+      return resources.slice(0, 8);
+    }
+
+    function getFounderSidebarResources(idea = null) {
+      const product = getFounderProductLabel();
+      const city = getLocationCityLabel(parseLocationAnswer(getUserLocation() || ""));
+      const cityLabel = city && city !== "your city" ? city : "";
+      const template = getFounderPathTemplate(idea || state.currentIdea);
+      const resources = [];
+      const seen = new Set();
+      const add = (entry) => {
+        const org = String(entry?.org || entry?.name || "").trim();
+        const url = String(entry?.url || "").trim();
+        const key = `${org}|${url}`.toLowerCase();
+        if (!org && !url) return;
+        if (seen.has(key)) return;
+        seen.add(key);
+        resources.push({
+          name: String(entry.name || "").trim(),
+          org,
+          url,
+          phone: String(entry.phone || "").trim(),
+          email: String(entry.email || "").trim()
+        });
+      };
+
+      add({
+        name: `${product} research notes`,
+        org: "Google Docs",
+        url: "https://docs.google.com/"
+      });
+      if (template === "launch" || template === "partnership" || /campus|founding|university/i.test(`${idea?.title || ""} ${idea?.tagline || ""}`)) {
+        add({
+          name: cityLabel ? `Campus / student orgs near ${cityLabel}` : "Campus / student org search",
+          org: cityLabel ? `Google search — ${product} ${cityLabel} campus` : `Google search — ${product} university`,
+          url: `https://www.google.com/search?q=${encodeURIComponent(
+            cityLabel ? `${product} ${cityLabel} university campus student organization` : `${product} university campus founding users`
+          )}`
+        });
+      }
+      if (template === "donation" || template === "sponsorship" || /\b(business plan|monetiz|funding)\b/i.test(`${idea?.title || ""} ${idea?.type || ""}`)) {
+        add({
+          name: "Business plan structure",
+          org: "SBA Write your business plan",
+          url: "https://www.sba.gov/business-guide/plan-your-business/write-your-business-plan"
+        });
+      }
+      add({
+        name: cityLabel ? `Startup advising near ${cityLabel}` : "Startup advising",
+        org: "SBA Local Assistance",
+        url: "https://www.sba.gov/local-assistance"
+      });
+      if (cityLabel) {
+        getKnownLocalResources(getUserLocation())
+          .filter((entry) => /\b(sbdc|score|chamber|library|incubator|accelerator|workforce)\b/i.test(`${entry.org || ""} ${entry.name || ""}`))
+          .slice(0, 3)
+          .forEach(add);
+      }
+      return resources.slice(0, 8);
     }
 
     function taskNeedsPractitionerResources(task, stage, stageIndex, idea = state.currentIdea) {
@@ -40657,29 +40794,53 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getSidebarLocalResources() {
-      const fromTasks = collectLocalResourcesFromRoadmap();
-      if (fromTasks.length) return fromTasks;
-      if (isGroundedPractitioner(state.currentIdea)) {
-        return getGroundedSidebarResources(state.currentIdea).map((entry) => ({
-          type: "contact",
-          key: entry.org || entry.url,
-          name: entry.name,
-          org: entry.org,
-          phone: entry.phone || "",
-          email: entry.email || "",
-          url: entry.url
-        }));
-      }
-      if (!getUserLocation() || !pathNeedsLocalResources()) return [];
-      return getKnownLocalResourcesForPath().map((entry) => ({
+      const toContact = (entry) => ({
         type: "contact",
-        key: entry.org || entry.url,
+        key: entry.org || entry.url || entry.name,
         name: entry.name,
         org: entry.org,
-        phone: entry.phone,
-        email: entry.email,
+        phone: entry.phone || "",
+        email: entry.email || "",
         url: entry.url
-      }));
+      });
+
+      if (isFounderRoadmapForIdea(state.currentIdea)) {
+        const founderTools = getFounderSidebarResources(state.currentIdea).map(toContact);
+        const fromTasks = collectLocalResourcesFromRoadmap();
+        if (!fromTasks.length) return founderTools;
+        // Prefer path-specific task contacts, then fill with founder tools.
+        const merged = [...fromTasks];
+        const seen = new Set(fromTasks.map((entry) => `${entry.org || ""}|${entry.url || ""}`.toLowerCase()));
+        founderTools.forEach((entry) => {
+          const key = `${entry.org || ""}|${entry.url || ""}`.toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          merged.push(entry);
+        });
+        return merged.slice(0, 8);
+      }
+
+      if (isGroundedPractitioner(state.currentIdea)) {
+        const groundedTools = getGroundedSidebarResources(state.currentIdea).map(toContact);
+        const fromTasks = collectLocalResourcesFromRoadmap().filter((entry) =>
+          !/\b(american job center|united way 211|\b211\b|staffing agenc|indeed|google jobs)\b/i.test(`${entry.org || ""} ${entry.name || ""} ${entry.text || ""}`)
+        );
+        if (!fromTasks.length) return groundedTools;
+        const merged = [...groundedTools];
+        const seen = new Set(groundedTools.map((entry) => `${entry.org || ""}|${entry.url || ""}`.toLowerCase()));
+        fromTasks.forEach((entry) => {
+          const key = `${entry.org || ""}|${entry.url || ""}`.toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          merged.push(entry);
+        });
+        return merged.slice(0, 8);
+      }
+
+      const fromTasks = collectLocalResourcesFromRoadmap();
+      if (fromTasks.length) return fromTasks;
+      if (!getUserLocation() || !pathNeedsLocalResources()) return [];
+      return getKnownLocalResourcesForPath().map(toContact);
     }
 
     function renderLocalResourceItem(resource) {
@@ -40752,15 +40913,44 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const moreBtn = $("#roadmap-more-resources-btn");
       const locationAdd = $("#roadmap-location-add");
       const locationInput = $("#roadmap-location-input");
+      const emptyMsg = $("#roadmap-location-empty-msg");
       const cardTitle = card?.querySelector(".roadmap-side-card-title");
       if (!list) return;
 
-      const grounded = isGroundedPractitioner(state.currentIdea);
-      const profile = grounded ? getUserSituationProfile(state.currentIdea) : null;
+      const idea = state.currentIdea;
+      const founder = isFounderRoadmapForIdea(idea);
+      const grounded = !founder && isGroundedPractitioner(idea);
+      const profile = grounded ? getUserSituationProfile(idea) : null;
+      const city = getLocationCityLabel(parseLocationAnswer(getUserLocation() || ""));
+      const cityLabel = city && city !== "your city" ? city : "";
+
       if (cardTitle) {
-        cardTitle.textContent = grounded
-          ? `Tools for your ${profile.craftLabel} business`
-          : "Local resources for you";
+        if (founder) {
+          const product = getFounderProductLabel();
+          cardTitle.textContent = cityLabel
+            ? `Tools for ${product} · ${cityLabel}`
+            : `Tools for ${product}`;
+        } else if (grounded && profile) {
+          cardTitle.textContent = cityLabel
+            ? `Tools for your ${profile.craftLabel} business in ${cityLabel}`
+            : `Tools for your ${profile.craftLabel} business`;
+        } else {
+          cardTitle.textContent = cityLabel
+            ? `Local resources in ${cityLabel}`
+            : "Local resources for you";
+        }
+      }
+
+      if (emptyMsg) {
+        if (founder) {
+          emptyMsg.textContent = cityLabel
+            ? `Add or confirm your location so ${getFounderProductLabel()} tools can include ${cityLabel} partners and advising.`
+            : `Add where you're based so ${getFounderProductLabel()} tools can include local partners and advising.`;
+        } else if (grounded && profile) {
+          emptyMsg.textContent = `Add where you're based to tailor ${profile.craftLabel} client-finding and advising links to your area.`;
+        } else {
+          emptyMsg.textContent = "Add where you're based to unlock local employment, training, and support resources for your area.";
+        }
       }
 
       const hasLocation = Boolean(getUserLocation());
@@ -40768,7 +40958,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (locationInput && hasLocation) locationInput.value = getUserLocation();
 
       const resources = getSidebarLocalResources();
-      if (!hasLocation && !grounded) {
+      if (!hasLocation && !grounded && !founder) {
         list.innerHTML = "";
         if (card) card.hidden = false;
         if (moreBtn) moreBtn.hidden = true;
@@ -40794,13 +40984,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             `Use <strong>Change this path</strong> for a fresh roadmap, or check the tasks below.</p>` +
             `<button type="button" class="roadmap-side-link" id="roadmap-refresh-local-btn">Try again</button>` +
             `</li>`;
-        } else if (grounded) {
-          list.innerHTML = getGroundedSidebarResources(state.currentIdea)
+        } else if (founder) {
+          list.innerHTML = getFounderSidebarResources(idea)
             .map((entry) => renderLocalResourceItem({
               type: "contact",
               org: entry.org,
               name: entry.name,
-              url: entry.url
+              url: entry.url,
+              phone: entry.phone,
+              email: entry.email
+            }))
+            .join("");
+        } else if (grounded) {
+          list.innerHTML = getGroundedSidebarResources(idea)
+            .map((entry) => renderLocalResourceItem({
+              type: "contact",
+              org: entry.org,
+              name: entry.name,
+              url: entry.url,
+              phone: entry.phone,
+              email: entry.email
             }))
             .join("");
         } else {
