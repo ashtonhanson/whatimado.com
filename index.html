@@ -17147,6 +17147,9 @@
     // one personal interest/hobby — and never during the first N conversational turns.
     const IDENTITY_ASSETS_MIN_SKILLS = 2;
     const IDENTITY_ASSETS_MIN_TURNS = 3;
+    // Safety valve: once exploration reaches this many turns (or the user repeatedly signals
+    // they're stuck) without meeting the baseline, unlock and route to Discovery & Clarity.
+    const IDENTITY_ASSETS_SAFETY_VALVE_TURNS = 5;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each. Tasks are numbered in one continuous sequence across the roadmap; never create lettered subtasks.\n' +
       'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Specific nutshell task title, 6–14 words, naming the action and target/result — e.g. Call a housing navigator about beds, waitlists, and required ID","text":"Detailed What to do instructions in 2–3 short concrete sentences: who to contact, what to ask, what to prepare, and what answer to record. Must NOT restate the task title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call the first housing contact below and ask about beds available tonight, waitlist timing, intake hours, and required ID. Write down the contact name, the earliest opening, and any documents you need to bring.\\"","mentorHelp":"Internal asset context only; do not rely on this field for user instructions.","howTo":"One concrete next action only when it adds information not already in text.","why":"One short line explaining why THIS task fits their situation when it might look surprising. Empty only if obviously on-track.","outcome":"Internal progress proof only; do not rely on this field for user instructions.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"","difficulty":"Easy|Medium|Advanced","steps":[],"alternatives":"If this task does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
@@ -17768,6 +17771,16 @@
       "Alongside what feels alive, actively hunt for HARD ASSETS: existing skills and strengths (even ones they're not excited about), dormant or underused abilities, degrees/certifications/formal training, technical knowledge and domain expertise, professional frameworks/methodologies/playbooks they know, and past roles/projects/responsibilities that built real competence.\n" +
       "Self-correct: if the exchange has only been about feelings, meaning, or inspiration, your next question MUST probe concrete skills, training, experience, or frameworks. If it has only been about skills, reconnect to what actually feels alive. Always be doing BOTH.\n" +
       "Reflect back BOTH their energetic preferences AND their concrete toolkit, so later paths are emotionally resonant AND practically grounded in what they already know or can quickly leverage.\n";
+
+    // Conversational pacing: keep intake feeling like a relaxed chat with a friend, not a
+    // multi-part deposition. The dual mandate above is a goal for the WHOLE conversation, not
+    // a single turn — surface one thing at a time.
+    const SINGLE_QUESTION_PACING =
+      "PACING & TONE (critical — this person may be burnt out and low on energy):\n" +
+      "- Ask EXACTLY ONE question. Your entire message must contain only a single question mark.\n" +
+      "- One idea per turn. Do NOT stack multiple asks, and do NOT cram a menu of examples/options into the question (avoid \"A, B, or C?\" and \"X and also Y?\"). Pick the single most natural thing to ask about right now and save the rest for later turns.\n" +
+      "- Talk like a warm, curious peer — the way you'd text a friend who's going through it. Relaxed and human, never an interviewer working through a checklist.\n" +
+      "- Keep it short: at most one brief acknowledging sentence, then one simple, open question. No stacked preamble, no compound clauses, no bulleted asks.\n";
 
     function getActionableTaskRules(idea = state.currentIdea) {
       let base = isGroundedPractitioner(idea)
@@ -22991,18 +23004,53 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && conversationMentionsHobbyOrInterest(blob);
     }
 
+    // How many times the user has signalled they're stuck / don't know (excludes the
+    // opening prompt so the very first "I'm not sure what I want" doesn't over-count).
+    function countStuckOrUnsureExpressions() {
+      return state.history
+        .filter((entry) => entry.role === "user")
+        .slice(1)
+        .filter((entry) => {
+          const content = String(entry.content || "");
+          return userExplicitlyUnsureAboutSkills(content)
+            || /\b(i'?m stuck|feel(?:ing)? stuck|don'?t know|dunno|no idea|not sure|drawing a blank|blank|can'?t think|nothing comes to mind|lost|overwhelmed|this is hard)\b/i.test(content);
+        })
+        .length;
+    }
+
+    // Safety valve: after enough turns without a baseline, OR after repeated stuck/unsure
+    // signals, gracefully release the lock and route to the Discovery & Clarity path.
+    function identityAssetsSafetyValveTriggered(text = "") {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (identityAssetsPhaseSatisfied(text)) return false;
+      if (explorationTurnCount() >= IDENTITY_ASSETS_SAFETY_VALVE_TURNS) return true;
+      if (explorationTurnCount() >= IDENTITY_ASSETS_MIN_TURNS && countStuckOrUnsureExpressions() >= 2) return true;
+      return false;
+    }
+
     // True while the user is still locked in the Identity & Assets phase: either not enough
-    // conversational turns yet, or the skills + interest baseline has not been met.
+    // conversational turns yet, or the skills + interest baseline has not been met — unless
+    // the safety valve has fired, which gracefully unlocks toward a Discovery & Clarity path.
     function withinIdentityAssetsLock(text = "") {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (identityAssetsSafetyValveTriggered(text)) return false;
       if (explorationTurnCount() < IDENTITY_ASSETS_MIN_TURNS) return true;
       return !identityAssetsPhaseSatisfied(text);
+    }
+
+    // Should the unlocked user be routed to the specialized Discovery & Clarity path?
+    // True when we let them through via the safety valve rather than a met baseline.
+    function shouldRouteToDiscoveryClarity(text = "") {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (state.discoveryClarityMode) return true;
+      return identityAssetsSafetyValveTriggered(text) && !identityAssetsPhaseSatisfied(text);
     }
 
     function explorationReadyForRoadmapCheckIn(text = "") {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return true;
       // Hard lock: no roadmap options during the first three conversational turns, and not
-      // until the user has explicitly shared >= 2 concrete skills AND >= 1 interest/hobby.
+      // until the user has explicitly shared >= 2 concrete skills AND >= 1 interest/hobby —
+      // unless the safety valve fires (then we unlock toward Discovery & Clarity).
       return !withinIdentityAssetsLock(text);
     }
 
@@ -26398,6 +26446,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ],
           bad: ["Scan hiring lanes", "Apply to jobs", "Call workforce", "Launch first test", "Gather feedback", "Repeat"]
         },
+        discovery: {
+          good: [
+            `"Catch yourself in a flow moment this week"`,
+            `"Mine your past for problems you've solved"`,
+            `"Run two tiny real-world experiments"`,
+            `"Name your top skills + one interest"`
+          ],
+          bad: ["Scan hiring lanes", "Apply to jobs", "Launch first test", "Validate demand", "Gather feedback", "Repeat"]
+        },
         nonprofit: {
           good: [
             `"Decide who you're helping"`,
@@ -26472,7 +26529,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       };
       const archetype = getPathArchetype(idea);
-      const key = archetype === "exploration" ? "exploring" : situation;
+      const key = archetype === "exploration" ? "exploring" : archetype === "discovery" ? "discovery" : situation;
       const block = examples[key] || examples[situation] || examples.business;
       return (
         `\nMILESTONE UNIQUENESS (required for "${title}"):\n` +
@@ -26492,6 +26549,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         reentry: `Reentry / recently released in ${pb.countryLabel} — Stage 1–3 MUST be stability before career building: ID and documents per local rules, housing via ${pb.region === "norway" ? "NAV/kommune" : pb.region === "us" ? "211/shelter (US only)" : "official social services"}, ${pb.employmentGuide}, background-check-aware temp income, local benefits, compliance. Stage 4 may connect to the chosen path title. NEVER open with training first. Stage names example: "ID + shelter in ${locRaw}", "First paycheck work", "Benefits week" — NOT "Launch first test".`,
         employment: `Employment path "${idea?.title || "role"}" in ${pb.countryLabel} — ${pb.employmentGuide}. Name specific job titles (chat support, email support, VA, data entry), staffing agencies or job boards in ${locRaw}, and application steps. Tailored CV/resume, interviews. NEVER use business validation tasks ("talk to 3 potential clients", "post in Facebook groups"). Stage names reference the role and city — e.g. "Apply to ${locRaw} staffing for chat support", "Resume + typing test week". Do NOT use generic US startup language or wrong-country agencies.`,
         career_change: `Career change toward "${idea?.title || "new field"}" in ${pb.countryLabel} — map transferable skills, talk to people already in the field, close specific skill gaps, then interviews/trial work. Stage names must reflect the NEW field and transition — NOT generic test/feedback/repeat.`,
+        discovery: `Discovery & Clarity path — this person has NOT been able to name a clear skills/interest baseline yet, so DO NOT push a career, business, or job-hunt plan. Build 3-4 stages of small, concrete, real-world exercises that surface their hidden assets: (1) NOTICE ENERGY — for a few days, catch the moments they lose track of time, feel useful, or get pulled in; (2) MINE THEIR HISTORY — list problems they've actually solved and ask 2-3 people what they come to this person for; (3) RUN TWO TINY EXPERIMENTS from different domains (a hands-on task, a helping/teaching task, an organizing/analyzing task) and note what felt alive; (4) NAME 2-3 emerging skills + one interest and choose a direction to explore next. Every task is a short, low-stakes action they can finish this week — no workforce agencies, no job applications, no product launches. Tone: warm, curious, and pressure-free; this is about relief and momentum, not another test they can fail.`,
         exploration: `Self-directed exploration toward "${idea?.title || "a life that fits them"}" — this person is figuring out who they are beyond their old role, so build a series of small, real EXPERIMENTS, not a job hunt. Missions should: (1) map a real-world system or problem they care about and inventory their own "fixer" track record; (2) interview or shadow 2-3 people in adjacent fields that match their story (city planning, community development, service/product design, operations, policy — use THEIR domains); (3) prototype one tiny real experiment in their own neighborhood, workplace, or network. Every stage ties back to their stated impulse and desired future (e.g. "design systems that make real people's lives easier"). NEVER assign workforce agencies, American Job Center, 211, community college, or temp/staffing lists unless they explicitly asked to get hired. Stage names reference their identity and the systems/people they care about — never "apply to jobs" or "scan hiring lanes".`,
         nonprofit: `Starting or growing a nonprofit for "${idea?.title || "mission"}" in ${pb.countryLabel} — get clear on your cause, handle legal setup (501c3 or local equivalent), find advisors, run one small program with real people. Stage names reference the cause and community — plain language only, no business jargon.`,
         housing: `Rebuilding after homelessness or housing instability in ${pb.countryLabel} — Stage 1: safe place tonight + this week. Stage 2: ID, mail, benefits. Stage 3: income that fits housing timeline. Stage 4: first step on "${idea?.title || "longer path"}". NEVER open with business launches or online stores.`,
@@ -28383,7 +28441,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return conversationLooksLikeCareerPivot(blob) || getPathSituationType(idea) === "exploring";
     }
 
+    // Discovery & Clarity path (safety-valve route): surfaces assets via small real exercises.
+    function isDiscoveryClarityIdea(idea) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      const blob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""}`.toLowerCase();
+      if (/\b(discovery (?:& |and )?clarity|discovery clarity|self[- ]discovery|strengths field test|curiosity trail|clarity sprint)\b/.test(blob)) {
+        return true;
+      }
+      // In safety-valve mode every generated path is a discovery path.
+      return Boolean(state.discoveryClarityMode) && /\bself[- ]?discovery\b/.test(blob);
+    }
+
     function getPathArchetype(idea) {
+      if (isDiscoveryClarityIdea(idea)) return "discovery";
       if (isIdeaEmploymentPath(idea)) return "employment";
       if (isGroundedPractitioner(idea)) return "grounded";
       if (personaWantsExploration(idea)) return "exploration";
@@ -28686,6 +28756,44 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               "Follow up on every application and conversation from the past 14 days with a short, specific note",
               "Set one 30-day goal: first interview, enrolled program, or paid trial in \"{title}\"",
               "Write keep / adjust target / pause — and the one action that makes the next step obvious"
+            ]
+          }
+        ],
+        discovery: [
+          {
+            label: "Notice where your energy shows up",
+            desc: "Before naming anything, catch your strengths happening in real life this week.",
+            tasks: [
+              "For the next 5 days, jot a one-line note each time you lose track of time, feel useful, or get pulled into something — no judging, just capture it",
+              "At the end of the week, circle the 3 moments that felt most alive and write what you were actually doing in each",
+              "Text or ask 2 people who know you: \"What do people usually come to you for?\" — write down their exact words"
+            ]
+          },
+          {
+            label: "Mine your history for real proof",
+            desc: "You've already solved problems — we just haven't named them yet.",
+            tasks: [
+              "List 5 problems you've solved (at work, at home, for friends) — one sentence each on what changed because of you",
+              "For each one, underline the single verb that best describes what you did (fixed, organized, calmed, taught, built, figured out…)",
+              "Pick the 2 verbs that show up most or feel most like you — those are your first named skills"
+            ]
+          },
+          {
+            label: "Run two tiny real-world experiments",
+            desc: "Test your hunches with small, low-stakes tries from different worlds.",
+            tasks: [
+              "Choose two 30–60 minute experiments from different areas (one hands-on, one helping/teaching, one organizing/analyzing) and put them on your calendar",
+              "Do both for real this week — keep them small enough to finish and involve at least one other person if you can",
+              "Right after each, note: energizing or draining? what surprised you? would you do more of it?"
+            ]
+          },
+          {
+            label: "Name your assets and pick a direction",
+            desc: "Turn what you noticed into a short, honest shortlist you can build on.",
+            tasks: [
+              "Write your 2–3 clearest skills and 1 real interest, each with one line of evidence from this week",
+              "Pick the one you'd most like to explore further and name why it pulls you",
+              "Decide the single next step — a conversation, a class, or another experiment — that moves toward it without burning you out"
             ]
           }
         ],
@@ -30105,6 +30213,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       clarifyingQuestionsAsked: 0,
       roadmapCheckIn: null,
       roadmapAnalysis: null,
+      discoveryClarityMode: false,
       roadmapViewport: null,
       accountPrefs: null,
       guestSessionToken: null,
@@ -36576,6 +36685,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         skillsNamed: countConcreteSkillSignals(blob),
         hasHobbyOrInterest: conversationMentionsHobbyOrInterest(blob),
         identityAssetsLocked: withinIdentityAssetsLock(blob),
+        stuckSignals: countStuckOrUnsureExpressions(),
+        safetyValveTriggered: identityAssetsSafetyValveTriggered(blob),
+        discoveryClarity: shouldRouteToDiscoveryClarity(blob),
         updatedAt: Date.now()
       };
       state.roadmapAnalysis = analysis;
@@ -36663,7 +36775,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           offeredAt: Date.now()
         };
 
-        const message = afterMoreShare
+        const discovery = shouldRouteToDiscoveryClarity();
+        const message = discovery
+          ? "We've circled this a few times, and that's genuinely okay — figuring out what you're great at is its own kind of work, and it rarely shows up on demand. So instead of forcing a generic plan, I'd like to build you a short Discovery & Clarity path: a few small, real-world exercises designed to surface your skills and interests in the wild, where they're easier to spot. Want me to sketch that now, or is there more you'd like to say first?"
+          : afterMoreShare
           ? "Thanks for sharing more — I'm keeping that in mind. I feel like I have enough context to start sketching out a roadmap for you, but I want to make sure we haven't missed anything. Would you like to see a preliminary path now, or is there more you'd like to share first?"
           : "I feel like I have enough context to start sketching out a roadmap for you, but I want to make sure we haven't missed anything. Would you like to see a preliminary path now, or is there more you'd like to share first?";
 
@@ -36675,6 +36790,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           career_pivot: Boolean(analysis.careerPivot),
           emotional_context: Boolean(analysis.emotionalContext),
           has_ability_baseline: Boolean(analysis.hasAbilityBaseline),
+          discovery_clarity: discovery,
           after_more_share: afterMoreShare
         });
         schedulePersist();
@@ -37408,6 +37524,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return `${ack}. ${rest.charAt(0).toUpperCase()}${rest.slice(1)}`;
     }
 
+    // Guarantees one focused ask per turn: keep any leading acknowledgment/context, but drop
+    // everything after the first question so the user never faces a stacked, multi-part prompt.
+    function enforceSingleClarifyingQuestion(text) {
+      const raw = String(text || "").trim();
+      if (!raw) return raw;
+      const questionCount = (raw.match(/\?/g) || []).length;
+      if (questionCount <= 1) return raw;
+      const firstQ = raw.indexOf("?");
+      const kept = raw.slice(0, firstQ + 1).trim();
+      return kept || raw;
+    }
+
     function ensureExplorationAcknowledgesLatest(response, fallbackQuestion, latestUserText = getLatestUserMessage()) {
       const reply = String(response || "").trim();
       const fallback = String(fallbackQuestion || "").trim();
@@ -37454,7 +37582,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (explorationPhaseNeedsInterestQuestion(userText)) {
         return withExplorationAcknowledgment(
-          "Outside of work, what do you actually enjoy doing with your hands or mind — hobbies, creative stuff, fixing things, helping people — and was there any past job you liked parts of?",
+          "When you've got a free hour and nobody needs anything from you, what do you find yourself drifting toward?",
           userText
         );
       }
@@ -37462,7 +37590,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return withExplorationAcknowledgment(getDependentLogisticsQuestion(), userText);
       }
       return withExplorationAcknowledgment(
-        "What parts of past work did you actually enjoy, and what do you like doing in your free time?",
+        "What's one part of any past job that you genuinely didn't mind doing?",
         userText
       );
     }
@@ -37511,7 +37639,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return (
           "You are whatimado in an EXPLORATION PHASE. Do NOT jump to career prescriptions, path lists, or roadmap talk yet.\n" +
           EXPLORATION_DUAL_MANDATE +
-          "Ask ONE warm, organic follow-up question. It can uncover what feels alive (interests, hobbies, hands-on or creative outlets, past work they enjoyed) OR surface a concrete asset (a skill, degree/certification, technical or domain expertise, framework, or a past role that built real competence) — choose whichever this conversation is currently missing.\n" +
+          SINGLE_QUESTION_PACING +
+          "Ask ONE warm, organic follow-up question. Aim it at whatever this conversation is currently missing — either what feels alive to them, or a concrete asset they have — but ask about just ONE of those, not both.\n" +
           "Reference something specific they already said. Sound like a thoughtful friend, not a form.\n" +
           "Do not ask where they live. Do not ask about children yet unless they already brought kids up. Plain text only.\n\nUser: " +
           userText
@@ -37521,7 +37650,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (explorationPhaseNeedsDependentQuestion(userText)) {
         return (
           "You are whatimado in an EXPLORATION PHASE. Do NOT jump to generating paths or a roadmap yet.\n" +
-          "Ask ONE short, natural question about whether they have children or other people they care for day to day — so schedules, childcare, and logistics can stay realistic.\n" +
+          SINGLE_QUESTION_PACING +
+          "Ask ONE short, natural question about whether they have children or other people they care for day to day — so schedules and logistics can stay realistic.\n" +
           "Reference something specific from their message. Do not ask where they live. Plain text only.\n\nUser: " +
           userText
         );
@@ -37530,7 +37660,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return (
         "You are whatimado in an EXPLORATION PHASE.\n" +
         EXPLORATION_DUAL_MANDATE +
-        "Ask ONE short clarifying question that deepens EITHER what they enjoy (past work they liked, hobbies, hands-on skills, creative outlets) OR their concrete toolkit (skills, training, certifications, domain expertise, frameworks, past roles) — whichever the conversation still lacks — so paths can match the real, fully-equipped person.\n" +
+        SINGLE_QUESTION_PACING +
+        "Ask ONE short clarifying question that deepens whichever side the conversation still lacks — either something they enjoy, or one concrete skill/experience they have — so paths can match the real person. Ask about only one of those this turn.\n" +
         "Reference something specific they mentioned. Do not ask where they live. Do not list career options yet. Plain text only.\n\nUser: " +
         userText
       );
@@ -37577,6 +37708,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return (
         "You are whatimado, an empathetic possibility advisor still in EXPLORATION — do not generate a summary, path list, or roadmap yet.\n" +
         EXPLORATION_DUAL_MANDATE +
+        SINGLE_QUESTION_PACING +
         "CRITICAL: Your first sentence MUST acknowledge a concrete detail from their LATEST message (paraphrase a specific phrase — hobby, feeling, constraint, story, skill, or credential). Never open with a bare logistics checklist question.\n" +
         "Then ask ONE more short clarifying question. " + focus + "\n" +
         "Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
@@ -37626,12 +37758,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (explorationPhaseNeedsInterestQuestion(blob)) {
         return withExplorationAcknowledgment(
-          "What do you enjoy doing when work isn't dictating your day — hobbies, creative projects, hands-on stuff — and was there any past job you actually liked parts of?",
+          "What's something you find yourself doing when the day is finally yours?",
           latest
         );
       }
       return withExplorationAcknowledgment(
-        "When you picture a week that feels workable, what matters more — flexible hours, steadier pay, or work that uses something you already enjoy?",
+        "When you picture a week that actually feels workable, what's the first thing that would need to be true?",
         latest
       );
     }
@@ -37641,11 +37773,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
         .join("\n\n");
       const forceNote = force
-        ? "They've shared a lot emotionally already. First acknowledge a concrete detail from their latest message, then ask ONE direct question that inventories a HARD ASSET — a skill, degree, certification, technical/domain expertise, framework/methodology they know, or a past role that built real competence — even if it's something they're not currently excited about. Invite them to say \"I'm not sure\" if they want help figuring that out."
-        : "First acknowledge a concrete detail from their latest message (one short sentence). Then ask ONE concrete question that surfaces their toolkit — skills, training, certifications, domain expertise, frameworks, or responsibilities from past roles — as well as what they enjoyed doing. Do NOT offer a roadmap yet. Do NOT ask about customers, business setup, or logistics.";
+        ? "They've shared a lot emotionally already. First acknowledge a concrete detail from their latest message (one short sentence), then ask ONE simple question that surfaces a single hard asset — one skill, one credential, or one past role that built real competence — even something they're not currently excited about. Keep it light and let them know it's fine to say \"I'm not sure\" if they'd rather figure it out together."
+        : "First acknowledge a concrete detail from their latest message (one short sentence). Then ask ONE simple question that surfaces just one thing they can do or have done — don't rattle off a list of asset types. Keep it casual. Do NOT offer a roadmap yet, and do NOT ask about customers, business setup, or logistics.";
       return (
         "You are whatimado, still in EXPLORATION. Emotional context alone is not enough to map a path — you still need a baseline of what this person can DO, not just what excites them.\n" +
         EXPLORATION_DUAL_MANDATE +
+        SINGLE_QUESTION_PACING +
         "CRITICAL: Never ignore their latest answer. No emotional voids — acknowledge before you ask.\n" +
         forceNote + "\n" +
         "Plain text only. One question only.\n\nConversation so far:\n" +
@@ -37657,12 +37790,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const latest = getLatestUserMessage();
       if (force) {
         return withExplorationAcknowledgment(
-          "Before I sketch any path, I need a baseline of what you can draw on — skills you've used at work, things you're naturally good at, or interests you'd actually want time for. What comes to mind, or are you not sure yet?",
+          "No pressure to have it all figured out — what's one thing people tend to count on you for?",
           latest
         );
       }
       return withExplorationAcknowledgment(
-        "Before we sketch any path, I want to know what tools you actually have in your kit. What are you good at, what have you enjoyed in past work, or what do you miss doing when work isn't dictating everything?",
+        "What's something you're actually good at, even if it feels ordinary to you?",
         latest
       );
     }
@@ -37681,6 +37814,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           finalAnswer = getAbilityBaselineFallback(force);
         }
         finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getAbilityBaselineFallback(force), latest);
+        finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
         if (!resolveTyping(finalAnswer)) appendAssistantBubble(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
@@ -37718,6 +37852,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             finalAnswer = getAbilityBaselineFallback(force);
           }
           finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getAbilityBaselineFallback(force), latest);
+          finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
           resolveTyping(finalAnswer);
           state.history.push({ role: "assistant", content: finalAnswer });
           state.step = 2;
@@ -37783,6 +37918,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getSecondClarifyingFallback(), latest);
         }
         finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, fallback, latest);
+        finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
@@ -37917,18 +38053,61 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ];
     }
 
+    // Specialized "Discovery & Clarity" paths for users the safety valve unlocked without a
+    // clear skills/interest baseline. Every path surfaces assets through small real exercises.
+    function getDiscoveryClarityIdeas() {
+      return [
+        {
+          title: "Discovery & Clarity Sprint",
+          type: "Self-discovery",
+          tagline: "Surface your real skills and interests through a handful of small, real-world experiments — not more questions.",
+          why: "You're not stuck, we just haven't named your assets yet. This finds them through action.",
+          cost: "$0",
+          timeline: "1-2 weeks",
+          income: "Clarity + a shortlist of strengths"
+        },
+        {
+          title: "Strengths Field Test",
+          type: "Self-discovery",
+          tagline: "Try a few short, low-stakes tasks from different worlds and notice which ones you lose yourself in.",
+          why: "The fastest way to spot a strength is to catch it happening in real life.",
+          cost: "$0",
+          timeline: "1-2 weeks",
+          income: "A map of what energizes you"
+        },
+        {
+          title: "Curiosity Trail",
+          type: "Self-discovery",
+          tagline: "Follow one small curiosity into a real conversation or hands-on try, and see where the energy leads.",
+          why: "Interests you can't name yet still show up in what you click on, save, and talk about.",
+          cost: "$0",
+          timeline: "1-2 weeks",
+          income: "A clearer sense of direction"
+        }
+      ];
+    }
+
     async function generateAndShowMap(options = {}) {
       const pathMode = options.pathMode || state.pathMode || "flexible";
       state.pathMode = pathMode;
       const ideaCount = 3;
       const founderMode = options.founderMode || isFounderOrProjectPrompt(getFirstUserMessage());
+      const discoveryMode = Boolean(state.discoveryClarityMode) && !founderMode;
       const recentTitles = getRecentIdeaTitlesForPrompt(getFirstUserMessage());
       mergeUserProfileFromConversation();
-      const fallbackIdeas = (founderMode ? getFounderFallbackIdeas() : getFallbackIdeas()).slice(0, 3);
+      const fallbackIdeas = (founderMode
+        ? getFounderFallbackIdeas()
+        : discoveryMode
+          ? getDiscoveryClarityIdeas()
+          : getFallbackIdeas()).slice(0, 3);
       let ideas = fallbackIdeas;
       let usedFallback = false;
 
       try {
+        if (discoveryMode) {
+          // The Discovery & Clarity path is fixed by design — skip AI idea generation.
+          ideas = getDiscoveryClarityIdeas();
+        } else {
         const summary = getAdvisorContext();
         const directNote = pathMode === "direct"
           ? "\n\nReturn exactly THREE distinct path options — different viable strategies for this person. They will pick ONE on the map, then choose a starting direction before following a full step-by-step direct roadmap."
@@ -38013,10 +38192,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
           usedFallback = true;
         }
+        }
       } catch (error) {
         console.error("[whatimado] generateAndShowMap failed:", error);
-        ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
-        usedFallback = true;
+        ideas = discoveryMode ? getDiscoveryClarityIdeas() : ensureIdeaSet([], fallbackIdeas, ideaCount);
+        usedFallback = !discoveryMode;
         trackEvent("map_generation_failed", {
           error: lastAdvisorError || error?.message || "unknown",
           intake_mode: options.intakeMode || state.intakeMode || "standard"
@@ -38025,8 +38205,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         completeChatPathBuildProgress();
       }
 
-      ideas = enforceStabilityFirstIdeas(ideas, ideaCount);
-      {
+      // Discovery & Clarity paths are fixed by design — never re-align or swap them.
+      if (!discoveryMode) {
+        ideas = enforceStabilityFirstIdeas(ideas, ideaCount);
         const aligned = alignIdeasToKnownSituation(ideas, fallbackIdeas, ideaCount);
         ideas = aligned.ideas;
         if (aligned.usedFallback) usedFallback = true;
@@ -38043,7 +38224,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           : (founderMode
             ? `Here are paths for ${founderProductLabel}. Tap any option to open a step-by-step roadmap.`
             : "Here are your paths. Tap any opportunity to see your full roadmap.");
-        const closing = usedFallback && lastAdvisorError
+        const closing = discoveryMode
+          ? "Here's your Discovery & Clarity path — a few small, real-world experiments to surface what you're genuinely good at and drawn to. Tap it to open your roadmap, and we'll build a fuller plan once your assets are on the table."
+          : usedFallback && lastAdvisorError
           ? `Here are starter paths to get you moving. (${lastAdvisorError})`
           : defaultClosing;
         if (!resolveTyping(closing)) appendAssistantBubble(closing);
@@ -39471,6 +39654,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           }
         }
         finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, fallback, userText);
+        finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
 
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
@@ -39682,6 +39866,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             force: (state.clarifyingQuestionsAsked || 0) >= MAX_CLARIFYING_QUESTIONS
           });
           return;
+        }
+        // Unlocked via the safety valve rather than a met baseline → Discovery & Clarity.
+        if (shouldRouteToDiscoveryClarity()) {
+          state.discoveryClarityMode = true;
+          trackEvent("identity_assets_safety_valve", {
+            turns: explorationTurnCount(),
+            stuck_signals: countStuckOrUnsureExpressions(),
+            skills_named: countConcreteSkillSignals()
+          });
         }
         await offerRoadmapCheckIn({ afterMoreShare: Boolean(state.roadmapCheckIn?.deferred) });
         return;
@@ -43708,6 +43901,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.clarifyingQuestionsAsked = 0;
       state.roadmapCheckIn = null;
       state.roadmapAnalysis = null;
+      state.discoveryClarityMode = false;
       hideProfileIntakeChips();
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
