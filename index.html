@@ -27696,7 +27696,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const experienced = hasExperienceSignals(blob);
       const jobSeeker = isExplicitJobSeeker(blob);
       const reentry = isReentrySituation(idea);
-      const selfEmployed = /\b(freelanc|my own|self[- ]?employ|run my|own business|my clients|keep (?:the|my) business|consult|contractor|studio)\b/.test(blob);
+      const selfEmployed = /\b(freelanc|my own (?:business|thing|company|venture|practice|studio)|self[- ]?employ|run my(?: own)? business|own business|my clients|keep (?:the|my) business|consult|contractor|studio)\b/.test(blob);
       const craftMatched = playbook.craftKey !== "default";
       const grounded = experienced && !jobSeeker && !reentry && (craftMatched || selfEmployed);
       return {
@@ -29735,6 +29735,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       userProfile: emptyUserProfile(),
       profileIntakeStep: null,
       clarifyingQuestionsAsked: 0,
+      roadmapCheckIn: null,
+      roadmapAnalysis: null,
       roadmapViewport: null,
       accountPrefs: null,
       guestSessionToken: null,
@@ -31025,6 +31027,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         userProfile: normalizeUserProfile(state.userProfile),
         profileIntakeStep: state.profileIntakeStep || null,
         clarifyingQuestionsAsked: Number(state.clarifyingQuestionsAsked) || 0,
+        roadmapCheckIn: state.roadmapCheckIn || null,
+        roadmapAnalysis: state.roadmapAnalysis || null,
         roadmapCategories: state.roadmapCategories,
         activeRoadmapCategoryId: state.activeRoadmapCategoryId,
         dismissedRoadmapSidebarMapIds: state.dismissedRoadmapSidebarMapIds,
@@ -31065,6 +31069,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         userProfile: normalizeUserProfile(source.userProfile),
         profileIntakeStep: source.profileIntakeStep || null,
         clarifyingQuestionsAsked: Number(source.clarifyingQuestionsAsked) || 0,
+        roadmapCheckIn: source.roadmapCheckIn || null,
+        roadmapAnalysis: source.roadmapAnalysis || null,
         removedRoadmapKeys: Array.isArray(source.removedRoadmapKeys) ? source.removedRoadmapKeys : []
       };
     }
@@ -31142,6 +31148,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.userProfile = normalizeUserProfile(data.userProfile);
       state.profileIntakeStep = data.profileIntakeStep || null;
       state.clarifyingQuestionsAsked = Number(data.clarifyingQuestionsAsked) || 0;
+      state.roadmapCheckIn = data.roadmapCheckIn && typeof data.roadmapCheckIn === "object"
+        ? data.roadmapCheckIn
+        : null;
+      state.roadmapAnalysis = data.roadmapAnalysis && typeof data.roadmapAnalysis === "object"
+        ? data.roadmapAnalysis
+        : null;
       if (!hasSavedUserLocation()) {
         const inferred = inferLocationFromConversation();
         if (formatUserLocation(inferred) && looksLikeRealLocation(formatUserLocation(inferred))) {
@@ -31169,6 +31181,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (state.profileIntakeStep && state.ideas.length) {
         state.profileIntakeStep = null;
         hideProfileIntakeChips();
+      }
+      if (state.roadmapCheckIn?.awaiting && state.step === 2 && !state.ideas.length) {
+        renderRoadmapCheckInChips();
       }
     }
 
@@ -33426,6 +33441,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.locationConfirmed = false;
       state.userLocation = emptyUserLocation();
       state.profileIntakeStep = null;
+      state.roadmapCheckIn = null;
       hideProfileIntakeChips();
 
       const profile = emptyUserProfile();
@@ -33444,6 +33460,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (editingMeta.kind === "clarifying") {
         state.step = 2;
+        return;
+      }
+      if (editingMeta.kind === "roadmap_check_in") {
+        state.step = 2;
+        void offerRoadmapCheckIn();
         return;
       }
       if (editingMeta.kind === "profile") {
@@ -33562,7 +33583,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function restoreSessionUI() {
       purgeOverlappingRoadmapCaches();
       if (state.history.length) restoreConversationBubbles();
-      if (state.profileIntakeStep && !state.ideas.length) {
+      if (state.roadmapCheckIn?.awaiting && !state.ideas.length) {
+        renderRoadmapCheckInChips();
+      } else if (state.profileIntakeStep && !state.ideas.length) {
         renderProfileChipsForStep(state.profileIntakeStep);
       }
       if (state.ideas.length) {
@@ -35620,9 +35643,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function parsePathPreference(text) {
       const q = String(text || "").toLowerCase();
       if (/\b(either|both|open to|not sure|either works)\b/.test(q)) return "either";
-      if (/\b(business|own thing|self[- ]?employ|freelance|startup|entrepreneur|my own)\b/.test(q)) return "business";
+      // Require explicit self-employment intent — bare "my own" matches phrases like "my own house".
+      if (/\b(start(?:ing)? my own(?: thing| business| company| venture| practice| studio)?|my own (?:thing|business|company|venture|practice|studio)|own thing|self[- ]?employ|freelance|startup|entrepreneur|\bbusiness\b)\b/.test(q)) {
+        return "business";
+      }
       if (/\b(hired|job|employ|work for someone|get a job)\b/.test(q)) return "employment";
       return "";
+    }
+
+    function conversationHasExplicitBusinessIntent(text = "") {
+      const q = String(text || getConversationUserBlob()).toLowerCase();
+      return Boolean(parsePathPreference(q) === "business");
     }
 
     function parseWorkMode(text) {
@@ -36114,6 +36145,195 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       beginProfileIntake();
     }
 
+    function refreshBackgroundRoadmapAnalysis() {
+      mergeUserProfileFromConversation();
+      const blob = getConversationUserBlob();
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.pathPreference === "business" && !conversationHasExplicitBusinessIntent(blob)) {
+        profile.pathPreference = conversationLooksLikeCareerPivot(blob) ? "either" : "";
+        state.userProfile = profile;
+      }
+      const situationType = getPathSituationType(null);
+      const situationProfile = getUserSituationProfile();
+      const analysis = {
+        situationType,
+        situation: situationProfile.situation || "exploring",
+        craftLabel: situationProfile.craftLabel || "",
+        careerPivot: conversationLooksLikeCareerPivot(blob),
+        hasDependents: Boolean(profile.dependentSupport && profile.dependentSupport !== "none")
+          || /\b(kid|child|children|daughter|son|partner|family)\b/i.test(blob),
+        skillsHint: String(profile.skills || "").slice(0, 160),
+        pathPreference: profile.pathPreference || "",
+        incomeUrgency: profile.incomeUrgency || "",
+        emotionalContext: conversationLooksLikeCareerPivot(blob) || /\b(burn(?:ed)? out|exhausted|ghost|mental load|disconnected)\b/i.test(blob),
+        updatedAt: Date.now()
+      };
+      state.roadmapAnalysis = analysis;
+      return analysis;
+    }
+
+    function applySoftProfileForPreliminaryPath() {
+      refreshBackgroundRoadmapAnalysis();
+      const blob = getConversationUserBlob();
+      const profile = normalizeUserProfile(state.userProfile);
+      const pivot = conversationLooksLikeCareerPivot(blob) || Boolean(state.roadmapAnalysis?.emotionalContext);
+
+      if (profile.pathPreference === "business" && !conversationHasExplicitBusinessIntent(blob)) {
+        profile.pathPreference = pivot ? "either" : profile.pathPreference;
+      }
+      if (!profile.pathPreference) {
+        profile.pathPreference = parsePathPreference(blob) || (pivot ? "either" : "either");
+      }
+      if (!profile.incomeUrgency) {
+        profile.incomeUrgency = parseIncomeUrgency(blob) || (pivot ? "long_term" : "three_months");
+      }
+      if (!profile.workMode) {
+        // Never force customer-reach logistics — flexible is enough for preliminary maps.
+        profile.workMode = parseWorkMode(blob) || parseBusinessSetup(blob) || "flexible";
+      }
+      if (isFounderOrProjectPrompt(getFirstUserMessage()) && !profile.founderStage) {
+        profile.founderStage = parseFounderStage(blob) || "validation";
+      }
+      if (!profile.skills && profileIntakeNeedsSkillsStep(profile)) {
+        const interest = blob.match(/\b(?:enjoy|love|like|into|good at|passionate about)\s+([^.\n?]{3,80})/i);
+        if (interest?.[1]) {
+          profile.skills = interest[1].trim().slice(0, 160);
+        }
+      }
+      state.userProfile = normalizeUserProfile(profile);
+      distillUserProfileSummary();
+      return state.userProfile;
+    }
+
+    function renderRoadmapCheckInChips() {
+      const container = $("#profile-intake-chips");
+      const chain = $("#bubble-chain");
+      if (!container) return;
+      container.hidden = false;
+      container.innerHTML = `<div class="profile-intake-chips-list">
+        <button type="button" class="profile-intake-chip" data-profile-field="roadmapCheckIn" data-profile-value="show_path">Show a preliminary path</button>
+        <button type="button" class="profile-intake-chip" data-profile-field="roadmapCheckIn" data-profile-value="share_more">I have more to share first</button>
+      </div>`;
+      chain?.appendChild(container);
+      showReplyBox(true);
+      $("#reply-box")?.classList.add("has-intake-chips");
+      requestAnimationFrame(() => scrollMinimalChatToBottom("smooth"));
+    }
+
+    function parseRoadmapCheckInChoice(text) {
+      const q = String(text || "").toLowerCase().trim();
+      if (!q) return "";
+      if (/\b(preliminary|show (me )?(a )?(path|roadmap|map)|see (a )?(path|roadmap)|ready|let'?s go|go ahead|sketch|build (a |the )?path|path now|roadmap now)\b/.test(q)) {
+        return "show_path";
+      }
+      if (/\b(more to share|not yet|not ready|keep talking|more first|something else|wait|not quite|keep going)\b/.test(q)) {
+        return "share_more";
+      }
+      return "";
+    }
+
+    async function offerRoadmapCheckIn(options = {}) {
+      const afterMoreShare = Boolean(options.afterMoreShare);
+      intakeInProgress = true;
+      try {
+        state.profileIntakeStep = null;
+        const analysis = refreshBackgroundRoadmapAnalysis();
+        state.roadmapCheckIn = {
+          awaiting: true,
+          deferred: false,
+          accepted: false,
+          analysis,
+          offeredAt: Date.now()
+        };
+
+        const message = afterMoreShare
+          ? "Thanks for sharing more — I'm keeping that in mind. I feel like I have enough context to start sketching out a roadmap for you, but I want to make sure we haven't missed anything. Would you like to see a preliminary path now, or is there more you'd like to share first?"
+          : "I feel like I have enough context to start sketching out a roadmap for you, but I want to make sure we haven't missed anything. Would you like to see a preliminary path now, or is there more you'd like to share first?";
+
+        if (!resolveTyping(message)) appendAssistantBubble(message);
+        state.history.push({ role: "assistant", content: message });
+        renderRoadmapCheckInChips();
+        trackEvent("roadmap_check_in_shown", {
+          situation_type: analysis.situationType || "",
+          career_pivot: Boolean(analysis.careerPivot),
+          emotional_context: Boolean(analysis.emotionalContext),
+          after_more_share: afterMoreShare
+        });
+        schedulePersist();
+      } finally {
+        intakeInProgress = false;
+      }
+    }
+
+    function deferRoadmapCheckIn() {
+      hideProfileIntakeChips();
+      const analysis = state.roadmapAnalysis || refreshBackgroundRoadmapAnalysis();
+      state.roadmapCheckIn = {
+        awaiting: false,
+        deferred: true,
+        accepted: false,
+        analysis,
+        deferredAt: Date.now()
+      };
+      const message = "I'm listening — share whatever still feels important before we sketch a path.";
+      if (!resolveTyping(message)) appendAssistantBubble(message);
+      state.history.push({ role: "assistant", content: message });
+      showReplyBox(true);
+      trackEvent("roadmap_check_in_deferred", {
+        situation_type: analysis.situationType || ""
+      });
+      schedulePersist();
+    }
+
+    async function proceedFromRoadmapCheckIn() {
+      hideProfileIntakeChips();
+      applySoftProfileForPreliminaryPath();
+      const analysis = state.roadmapAnalysis || refreshBackgroundRoadmapAnalysis();
+      state.roadmapCheckIn = {
+        awaiting: false,
+        deferred: false,
+        accepted: true,
+        analysis,
+        acceptedAt: Date.now()
+      };
+      state.profileIntakeStep = null;
+      trackEvent("roadmap_check_in_accepted", {
+        situation_type: analysis.situationType || "",
+        career_pivot: Boolean(analysis.careerPivot),
+        path_preference: state.userProfile?.pathPreference || "",
+        work_mode: state.userProfile?.workMode || ""
+      });
+      const bridge = "Got it — I'll sketch a preliminary path from everything you've shared so far.";
+      if (!resolveTyping(bridge)) appendAssistantBubble(bridge);
+      state.history.push({ role: "assistant", content: bridge });
+      schedulePersist();
+      await finishProfileIntake();
+    }
+
+    async function handleRoadmapCheckInReply(text) {
+      const choice = parseRoadmapCheckInChoice(text);
+      if (choice === "show_path") {
+        addTypingBubble();
+        await proceedFromRoadmapCheckIn();
+        return;
+      }
+      if (choice === "share_more") {
+        deferRoadmapCheckIn();
+        return;
+      }
+      // Freeform while check-in is open: treat as more context, then re-offer.
+      hideProfileIntakeChips();
+      state.roadmapCheckIn = {
+        awaiting: false,
+        deferred: true,
+        accepted: false,
+        analysis: state.roadmapAnalysis || null,
+        deferredAt: Date.now()
+      };
+      addTypingBubble();
+      await offerRoadmapCheckIn({ afterMoreShare: true });
+    }
+
     function beginProfileIntake() {
       ensureKnownUserLocationRestored({ schedulePersist: false });
       mergeUserProfileFromConversation();
@@ -36224,6 +36444,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const value = button.getAttribute("data-profile-value") || button.dataset.profileValue;
       const label = button.textContent?.trim() || value;
       if (!field || value == null || value === "") return;
+
+      if (field === "roadmapCheckIn") {
+        button.disabled = true;
+        hideProfileIntakeChips();
+        pushUserMessage(
+          label,
+          intakeEditAllowed() ? { kind: "roadmap_check_in", value } : null
+        );
+        if (value === "show_path") {
+          addTypingBubble();
+          void proceedFromRoadmapCheckIn();
+        } else {
+          deferRoadmapCheckIn();
+        }
+        schedulePersist();
+        return;
+      }
 
       const step = ensureProfileIntakeStep(profileFieldToIntakeStep(field));
       button.disabled = true;
@@ -38703,6 +38940,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (intakeEditAllowed()) {
         if (state.profileIntakeStep) {
           intakeMeta = { kind: "profile", step: state.profileIntakeStep };
+        } else if (state.roadmapCheckIn?.awaiting) {
+          intakeMeta = { kind: "roadmap_check_in" };
         } else if (state.step === 2) {
           intakeMeta = { kind: "clarifying" };
         } else if (state.step === 3 && state.locationIntakeStep) {
@@ -38756,6 +38995,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (state.step === 2) {
+        if (state.roadmapCheckIn?.awaiting) {
+          await handleRoadmapCheckInReply(text);
+          return;
+        }
         trackEvent("clarifying_answer_submitted", {
           reply_length: text.length,
           intake_mode: state.intakeMode || "standard",
@@ -38766,8 +39009,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           await askFollowUpClarifyingQuestion();
           return;
         }
+        // Transition layer: keep analyzing in the background, never auto-jump into
+        // business/logistics intake after emotional exploration.
+        refreshBackgroundRoadmapAnalysis();
         addTypingBubble();
-        beginProfileIntake();
+        await offerRoadmapCheckIn({ afterMoreShare: Boolean(state.roadmapCheckIn?.deferred) });
         return;
       }
 
@@ -42777,6 +43023,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.userProfile = emptyUserProfile();
       state.profileIntakeStep = null;
       state.clarifyingQuestionsAsked = 0;
+      state.roadmapCheckIn = null;
+      state.roadmapAnalysis = null;
       hideProfileIntakeChips();
       state.roadmapExhausted = false;
       state.roadmapAutoContinuePending = false;
