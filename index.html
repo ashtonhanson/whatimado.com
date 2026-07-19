@@ -16111,7 +16111,148 @@
       return profile.idStatus !== "has" || profile.housingStatus !== "has";
     }
 
+    function getCareerChangeFallbackIdeas() {
+      return [
+        {
+          title: "Skills-to-Next-Role Map",
+          type: "Career change",
+          tagline: "List what you already do well and match it to three realistic next roles — then talk to one person in each.",
+          why: "You're exploring a next chapter from experience you already have, not starting from zero with odd jobs.",
+          cost: "$0",
+          timeline: "1-2 weeks",
+          income: "Clarity + interviews"
+        },
+        {
+          title: "Low-Risk Pivot Experiment",
+          type: "Career change",
+          tagline: "Run one small test this month that proves whether a new direction fits — without quitting your current path yet.",
+          why: "Career pivots work best as evidence, not leaps — a short experiment beats a generic side hustle.",
+          cost: "$0-50",
+          timeline: "2-4 weeks",
+          income: "Signal before a jump"
+        },
+        {
+          title: "Bridge Role Sprint",
+          type: "Employment",
+          tagline: "Target roles that use your current skills while moving closer to the field you want next.",
+          why: "A bridge role keeps income and learning moving while you change direction.",
+          cost: "$0",
+          timeline: "2-6 weeks",
+          income: "W-2 / contract"
+        }
+      ];
+    }
+
+    function getEmploymentFallbackIdeas() {
+      return [
+        {
+          title: "Targeted Application Sprint",
+          type: "Employment",
+          tagline: "Pick one job type, tailor your resume once, and apply to five real openings this week.",
+          why: "You need paid work — focused applications beat scattered side-hustle experiments.",
+          cost: "$0",
+          timeline: "This week",
+          income: "W-2 paycheck"
+        },
+        {
+          title: "Staffing + Temp Bridge",
+          type: "Employment",
+          tagline: "Contact two staffing agencies and one direct employer that hire quickly for your area.",
+          why: "Temp and staffing lanes often get people working faster while a longer search continues.",
+          cost: "$0",
+          timeline: "1-2 weeks",
+          income: "Near-term wages"
+        },
+        {
+          title: "Proof Pack for Hiring Managers",
+          type: "Employment",
+          tagline: "Build a one-page proof pack (resume headline, 3 stories, availability) matched to one role family.",
+          why: "Clear proof shortens time-to-interview when employers are screening fast.",
+          cost: "$0",
+          timeline: "3-7 days",
+          income: "More callbacks"
+        }
+      ];
+    }
+
+    function getNonprofitFallbackIdeas() {
+      return [
+        {
+          title: "Cause Clarity + One Program Test",
+          type: "Nonprofit",
+          tagline: "Write a one-page cause statement and run one tiny program with real people before formal filing.",
+          why: "Nonprofits fail when paperwork comes before proof people want the help.",
+          cost: "$0-100",
+          timeline: "2-4 weeks",
+          income: "Mission proof"
+        },
+        {
+          title: "Advisor + Legal Setup Lane",
+          type: "Nonprofit",
+          tagline: "Talk to two nonprofit mentors and outline 501(c)(3) or local equivalent steps for your area.",
+          why: "Legal structure matters — but only after you know the program you'll run.",
+          cost: "$0-300",
+          timeline: "3-6 weeks",
+          income: "Structure ready"
+        },
+        {
+          title: "Partner-Hosted Pilot",
+          type: "Nonprofit",
+          tagline: "Ask an existing org to host a small pilot of your program instead of building everything alone.",
+          why: "Borrowing trust and space gets your mission in front of people faster than starting cold.",
+          cost: "$0",
+          timeline: "2-6 weeks",
+          income: "Reach + feedback"
+        }
+      ];
+    }
+
+    function getSkilledTradeFallbackIdeas() {
+      return [
+        {
+          title: "Apprenticeship / Entry Trade Route",
+          type: "Skilled trade",
+          tagline: "Compare three local training routes — apprenticeship, trade school, and helper roles — and apply to one this week.",
+          why: "Trades reward credentialed hours more than generic micro-business tests.",
+          cost: "$0-200",
+          timeline: "1-4 weeks",
+          income: "Training + wages"
+        },
+        {
+          title: "Helper / Shop Floor Bridge",
+          type: "Skilled trade",
+          tagline: "Find helper or shop roles near you that get you on job sites while you train.",
+          why: "Real hours beside experienced techs beat waiting for a perfect program seat.",
+          cost: "$0",
+          timeline: "1-3 weeks",
+          income: "Hourly bridge"
+        },
+        {
+          title: "Tools + License Checklist",
+          type: "Skilled trade",
+          tagline: "List the licenses, tools, and safety requirements for your trade — then knock out the first requirement.",
+          why: "Clear credential steps keep trade paths from stalling into vague side gigs.",
+          cost: "$0-150",
+          timeline: "2 weeks",
+          income: "Qualification progress"
+        }
+      ];
+    }
+
+    function ideaLooksLikeDefaultHustleTemplate(idea) {
+      const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      return /\b(local help-for-hire|help-for-hire|help for hire|skill-building portfolio|skill sprint portfolio|micro business test|neighborhood (?:jobs?|gigs?)|paid jobs in your neighborhood|turn useful everyday skills)\b/.test(blob);
+    }
+
+    function ideasDominatedByDefaultHustles(ideas) {
+      const list = ideas || [];
+      if (!list.length) return false;
+      const hustleCount = list.filter(ideaLooksLikeDefaultHustleTemplate).length;
+      return hustleCount >= Math.ceil(list.length * 0.67);
+    }
+
     function getFallbackIdeas() {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return getFounderFallbackIdeas();
       if (stabilityStatusIsUnconfirmed() && (
         userNeedsIdFirst()
         || userNeedsHousingFirst()
@@ -16119,8 +16260,71 @@
       )) return stabilityFallbackIdeas;
       if (isReentrySituation()) return reentryFallbackIdeas;
       if (isGroundedPractitioner()) return getGroundedFallbackIdeas();
-      if (isMoneyMakingPrompt(getFirstUserMessage())) return pickRotatedMoneyFallbackIdeas();
+      if (isMoneyMakingPrompt(getFirstUserMessage()) || isMoneyMakingPrompt(getConversationUserBlob())) {
+        return pickRotatedMoneyFallbackIdeas();
+      }
+
+      const situation = getPathSituationType(null);
+      if (situation === "career_change" || conversationLooksLikeCareerPivot()) return getCareerChangeFallbackIdeas();
+      if (situation === "employment" || isExplicitJobSeeker()) return getEmploymentFallbackIdeas();
+      if (situation === "nonprofit") return getNonprofitFallbackIdeas();
+      if (situation === "skilled_trade") return getSkilledTradeFallbackIdeas();
+      if (situation === "online_business") return pickRotatedMoneyFallbackIdeas();
       return fallbackIdeas;
+    }
+
+    function alignIdeasToKnownSituation(ideas, fallbackIdeas, count = 3) {
+      const list = Array.isArray(ideas) ? ideas.slice() : [];
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) {
+        const product = extractNamedProductFromPrompt();
+        const productAware = list.filter((idea) => {
+          if (!isPersonalCareerPath(idea)) return true;
+          if (!product) return false;
+          const blob = `${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+          return blob.includes(product.toLowerCase().replace(/\.com$/, ""));
+        });
+        if (productAware.length < count) {
+          return {
+            ideas: ensureIdeaSet(productAware, fallbackIdeas, count),
+            usedFallback: productAware.length === 0
+          };
+        }
+        return { ideas: productAware.slice(0, count), usedFallback: false };
+      }
+
+      const situation = getPathSituationType(null);
+      const pivot = conversationLooksLikeCareerPivot();
+      const jobSeeker = isExplicitJobSeeker();
+      const hardLane = pivot
+        || jobSeeker
+        || ["career_change", "employment", "nonprofit", "skilled_trade", "housing", "reentry", "grounded"].includes(situation)
+        || isGroundedPractitioner()
+        || isReentrySituation()
+        || situationRequiresHardStabilityFirst();
+
+      if (!hardLane) {
+        return { ideas: ensureIdeaSet(list, fallbackIdeas, count), usedFallback: false };
+      }
+
+      // Drop default hustle cards when we already know a clearer lane.
+      let kept = list.filter((idea) => !ideaLooksLikeDefaultHustleTemplate(idea));
+      if (pivot || situation === "career_change") {
+        kept = kept.filter((idea) => !/\b(nextdoor|neighborhood odd jobs?|help-for-hire)\b/i.test(`${idea.title} ${idea.tagline}`));
+      }
+      if (jobSeeker || situation === "employment") {
+        kept = kept.filter((idea) => !/\b(micro business|start a business|sell on (gumroad|etsy))\b/i.test(`${idea.title} ${idea.tagline}`)
+          || /\b(job|hir|employ|staffing|apply|w-?2|shift)\b/i.test(`${idea.title} ${idea.type} ${idea.tagline}`));
+      }
+      if (ideasDominatedByDefaultHustles(list) || kept.length < Math.min(2, count)) {
+        return {
+          ideas: ensureIdeaSet(kept, fallbackIdeas, count),
+          usedFallback: true
+        };
+      }
+      return {
+        ideas: ensureIdeaSet(kept, fallbackIdeas, count),
+        usedFallback: kept.length < list.length
+      };
     }
 
     const MONEY_FALLBACK_IDEA_SETS = [
@@ -16536,17 +16740,17 @@
       const meta = `${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
       const blob = `${title} ${meta}`;
 
-      if (/\bclosed beta|functional test|3.?5 test|bug watch/.test(title)) return "beta";
+      if (/\bclosed beta|functional test|3.?5 test|bug watch|core loop/.test(title)) return "beta";
       if (/social proof|sponsorship deck|sponsor deck|sponsor-ready|sponsor read/.test(title)) return "sponsorship";
-      if (/quiet launch|community launch|validation sprint|5 communit|feedback-first|reddit launch|facebook launch/.test(title)) return "launch";
-      if (/donation-first|pay-what|supporter loop|sustainability loop/.test(title)) return "donation";
+      if (/campus seed|founding users|go-to-market|gtm|university|quiet launch|community launch|validation sprint|5 communit|feedback-first|reddit launch|facebook launch/.test(title)) return "launch";
+      if (/business plan|monetization|financial projection|funding|donation-first|pay-what|supporter loop|sustainability loop/.test(title)) return "donation";
       if (/grant|nonprofit partnership|partnership pipeline|workforce program|library pilot/.test(title)) return "partnership";
 
-      if (/\bclosed beta|functional test|3.?5 test/.test(blob)) return "beta";
+      if (/\bclosed beta|functional test|3.?5 test|core loop|mvp test/.test(blob)) return "beta";
       if (/social proof|sponsorship deck|sponsor deck/.test(blob)) return "sponsorship";
-      if (/quiet launch|validation sprint|feedback-first|5 communit|community sprint|first users/.test(blob)) return "launch";
+      if (/campus seed|founding users|go-to-market|university|quiet launch|validation sprint|feedback-first|5 communit|community sprint|first users/.test(blob)) return "launch";
       if (/launch|valid/.test(blob) && !/partnership pipeline|nonprofit partner|grant pipeline|help-for-hire|help for hire|local service|paid jobs|neighborhood/.test(blob)) return "launch";
-      if (/donat|pay-what|supporter tier|stripe checkout|tip jar/.test(blob)) return "donation";
+      if (/business plan|monetiz|financial projection|funding|donat|pay-what|supporter tier|stripe checkout|tip jar/.test(blob)) return "donation";
       if (/partner|nonprofit|grant|library|shelter|workforce|pilot org|partnership/.test(blob)) return "partnership";
       return "general";
     }
@@ -16577,13 +16781,14 @@
     }
 
     function getRoadmapSubtitle(founderMode, source = "ai") {
+      const product = founderMode ? getFounderProductLabel() : "";
       if (source === "fallback") {
         return founderMode
-          ? "Using a detailed backup roadmap for whatimado.com — drafts, contacts, and outreach are ready to use."
+          ? `Using a detailed backup roadmap for ${product} — drafts, contacts, and outreach are ready to use.`
           : "Using a backup roadmap — your mentor prepared starter steps; run through again for a fully custom plan.";
       }
       return founderMode
-        ? "Your mentor prepared concrete steps for whatimado.com — drafts, channels, and templates are ready to use."
+        ? `Your mentor prepared concrete steps for ${product} — drafts, channels, and templates are ready to use.`
         : "Your mentor did the legwork — each step moves you closer. Review what's ready, then act.";
     }
 
@@ -17285,7 +17490,10 @@
           intake_mode: "quick",
           has_location: true
         });
-        await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
+        await generateAndShowMap({
+          founderMode: isFounderOrProjectPrompt(getFirstUserMessage()),
+          intakeMode: "quick"
+        });
         return;
       }
       addTypingBubble();
@@ -18699,6 +18907,12 @@ Practice each one out loud once and time yourself.`;
 
     function getServiceLabel(idea = state.currentIdea) {
       if (!idea) return "service";
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) {
+        const product = extractNamedProductFromPrompt();
+        if (product) return product;
+        const titled = String(idea.title || "").trim();
+        if (titled) return titled;
+      }
       if (isDigitalProductPath(idea)) {
         return getDigitalProductPlan(idea).productName;
       }
@@ -22106,7 +22320,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function isMoneyMakingPrompt(text) {
-      return /\b(make more money|need (?:more )?money|income fast|need income|money soon|realistic paths)\b/i.test(String(text || ""));
+      return /\b(make more money|need (?:more )?money|income fast|need income|money soon|realistic paths|need (?:to )?(?:pay|cover) (?:rent|bills?|utilities)|behind on (?:rent|bills?)|broke|can'?t afford|urgent(?:ly)? (?:need )?(?:cash|money|income)|cash (?:fast|soon|now)|paid (?:work|job) (?:soon|fast|this week)|need work (?:soon|fast|now)|short on (?:cash|money))\b/i.test(String(text || ""));
     }
 
     function getConversationUserBlob() {
@@ -24198,7 +24412,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ) {
         return false;
       }
-      return /\b(corporate|office job|9\s*[- ]?\s*to\s*[- ]?\s*5|desk job|career change|changing careers|switch careers|new career|second career|pivot(?:ing)?(?: careers)?|burned? out|burnout|tired of (?:my )?(?:job|work|career|role)|stuck in (?:my )?(?:job|career|role|corporate)|hate my job|leave (?:my )?(?:job|career)|what else (?:can|should) i (?:do|be)|not sure what (?:else |i )?(?:want|to do)|unsure what (?:else )?(?:to do|i want)|want something different|find (?:a )?new (?:path|direction|career)|mid[- ]?career)\b/.test(blob);
+      return /\b(corporate|office job|9\s*[- ]?\s*to\s*[- ]?\s*5|desk job|career change|changing careers|switch careers|new career|second career|pivot(?:ing)?(?: careers)?|burned? out|burnout|tired of (?:my )?(?:job|work|career|role)|stuck in (?:my )?(?:job|career|role|corporate)|hate my job|leave (?:my )?(?:job|career)|what else (?:can|should) i (?:do|be)|not sure what (?:else |i )?(?:want|to do)|unsure what (?:else )?(?:to do|i want)|want something different|find (?:a )?new (?:path|direction|career)|mid[- ]?career|next chapter|ready for (?:a )?change|outgrow(?:n|ing) (?:my )?(?:job|role)|looking for (?:a )?new (?:field|industry)|switch(?:ing)? (?:fields?|industries)|reinvent(?:ing)? my career)\b/.test(blob);
     }
 
     function isReentrySituation(idea = null) {
@@ -25746,6 +25960,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     async function beginRoadmapConfirmGate(idea, ideaIndex, viewOptions = {}) {
       state.currentIdea = idea;
       state.roadmapKey = slugify(idea.title);
+      setRoadmapLoading(false);
       setRoadmapNavVisible(true);
       showScreen("convo");
       addTypingBubble("Reviewing your situation…");
@@ -25790,6 +26005,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const extraRefreshBlock = gate.bullets?.length
         ? `\nUSER-CONFIRMED HIGH-LEVEL PLAN:\n${gate.bullets.map((bullet) => `- ${bullet}`).join("\n")}\n`
         : "";
+      showScreen("roadmap");
+      setRoadmapLoading(true, {
+        ideaTitle: gate.idea.title,
+        progressDurationMs: isFounderRoadmapForIdea(gate.idea) ? 22000 : undefined
+      });
       await viewRoadmap(gate.idea, gate.ideaIndex, {
         ...gate.viewOptions,
         skipConfirmGate: true,
@@ -26296,7 +26516,145 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (changed) schedulePersist();
     }
 
+    function getNamedProductFounderFallbackStages(idea) {
+      const product = getFounderProductLabel();
+      const title = idea?.title || `${product} plan`;
+      const template = getFounderPathTemplate(idea);
+      const templates = {
+        beta: [
+          {
+            label: `Test the ${product} core loop`,
+            desc: `Prove the main ${product} experience with real target users before writing more of the plan.`,
+            tasks: [
+              `Write a 5-bullet script of the ${product} first-session flow using features from your brief (mood check-in → map cloud → match/message or stories).`,
+              `Recruit 5 people from your target audience (university students / ages 18–28) and watch 3 of them try that flow — note the exact step where they hesitate.`,
+              `Log every stuck point in Notes: date, person type, step stuck, fix idea — then decide one product change for this week.`
+            ]
+          },
+          {
+            label: "Capture what people actually want",
+            desc: `Turn ${product} feedback into plan-ready evidence, not opinions.`,
+            tasks: [
+              `Ask each tester: "When you felt [mood], what would make you open ${product} again tomorrow?" — write answers verbatim.`,
+              `Summarize the top 3 jobs-to-be-done for ${product} in one page of your business plan (problem/solution section).`,
+              `Rewrite your one-sentence pitch for ${product} based only on what testers said — not what you hoped they would say.`
+            ]
+          }
+        ],
+        launch: [
+          {
+            label: `Seed one campus for ${product}`,
+            desc: `Run the campus-first go-to-market from your brief — founding users first, city-wide later.`,
+            tasks: [
+              `Pick ONE university campus and list 20 candidate founding users (RA networks, student orgs, friends-of-friends) for ${product}.`,
+              `Message 10 of them with a concrete ask: "Be a ${product} founding user for 14 days — update mood daily, invite 2 friends, join one campus activation."`,
+              `Schedule one 60-minute campus activation (table, club meetup, or dorm night) with a simple goal: 15–30 founding users checking in.`
+            ]
+          },
+          {
+            label: "Reach critical mass on campus",
+            desc: `Push toward 200+ active users on one campus before expanding ${product}.`,
+            tasks: [
+              `Define "active" for ${product} (e.g. mood update + 1 social action per week) and track it in a simple spreadsheet.`,
+              `Run two invite loops this week: each founding user invites 2 classmates; reward the top inviters with a small campus perk.`,
+              `Write a one-page campus scorecard: users, daily mood check-ins, matches started, stories posted — decide whether to deepen this campus or pause.`
+            ]
+          }
+        ],
+        donation: [
+          {
+            label: `Finish the ${product} business plan`,
+            desc: `Turn your brief into the sections you asked for — monetization, projections, funding.`,
+            tasks: [
+              `Draft the executive summary for ${product} in 8 sentences covering problem, solution, campus GTM, and funding ask.`,
+              `Write the monetization model section with 2–3 revenue options that fit a campus social app (ads, premium boosts, campus partnerships) and pick a primary test.`,
+              `Build a 3-year projection table (users, campus count, revenue, burn) with conservative / base / upside rows — keep assumptions visible.`
+            ]
+          },
+          {
+            label: "Make the funding ask concrete",
+            desc: `Package ${product} for the next real conversation with a funder or advisor.`,
+            tasks: [
+              `List key risks and mitigations for ${product} (safety, cold-start, content moderation, retention) in one page.`,
+              `Write team requirements: who you need in the next 90 days (build, design, campus ops) and what you will do yourself.`,
+              `Prepare a one-page funding ask: amount, runway months, milestones unlocked (e.g. one campus at 200 actives).`
+            ]
+          }
+        ],
+        partnership: [
+          {
+            label: `Find campus partners for ${product}`,
+            desc: `Use student orgs and campus programs as distribution — not generic local gigs.`,
+            tasks: [
+              `List 8 campus partners (mental-health clubs, student government, orientation leaders, dorm RAs) relevant to ${product}.`,
+              `Send 4 short partner emails with a clear ask: host a founding-user activation for ${product} this month.`,
+              `Book one partner meeting and bring a one-pager: what students get, what you need, and success metrics.`
+            ]
+          },
+          {
+            label: "Run one partner activation",
+            desc: `Convert partnership interest into real ${product} usage.`,
+            tasks: [
+              `Co-host one event with a campus partner and get 20+ mood check-ins during the event window.`,
+              `Collect 10 short testimonials about why students would reopen ${product}.`,
+              `Decide the next campus or the next partner based on activation data — write the decision in Notes.`
+            ]
+          }
+        ],
+        sponsorship: [
+          {
+            label: `Package ${product} for campus sponsors`,
+            desc: `Turn campus traction into a sponsor-ready story without changing the product's emotional core.`,
+            tasks: [
+              `Write a 1-page sponsor one-pager for ${product}: audience, campus reach, brand-safe placements, and what you will never sell (private mood data).`,
+              `List 10 local or student-brand sponsors that fit ${product}'s audience.`,
+              `Send 5 outreach notes with a soft ask for a campus pilot sponsorship tied to one activation event.`
+            ]
+          },
+          {
+            label: "Close one soft sponsor yes",
+            desc: `Get a real commitment that funds the next ${product} campus push.`,
+            tasks: [
+              `Hold two sponsor conversations using your one-pager and campus scorecard.`,
+              `Negotiate one small pilot (even in-kind) that funds founding-user incentives.`,
+              `Document terms and how they stay compatible with user trust on ${product}.`
+            ]
+          }
+        ],
+        general: [
+          {
+            label: `Define the next ${product} milestone`,
+            desc: `Start from the exact point in your brief — not a generic side hustle.`,
+            tasks: [
+              `Re-read your ${product} brief and write the single next milestone for the next 14 days (users, feature, or plan section).`,
+              `List 5 actions that only make sense for ${product} (not neighborhood gigs) and pick the top 3.`,
+              `Block calendar time this week for those 3 actions and a Friday review of what moved.`
+            ]
+          },
+          {
+            label: `Ship proof for ${product}`,
+            desc: `Leave this week with evidence someone else can react to.`,
+            tasks: [
+              `Produce one shareable artifact for ${product}: campus pitch, clickable prototype notes, or monetization one-pager.`,
+              `Show it to 3 people in the target audience and capture feedback verbatim.`,
+              `Update your business plan with what changed based on that feedback.`
+            ]
+          }
+        ]
+      };
+
+      return pickUniqueFounderFallbackStages(idea, templates, template).map((stage) => ({
+        ...stage,
+        label: String(stage.label || "").replace(/\{title\}/g, title),
+        desc: String(stage.desc || "").replace(/\{title\}/g, title),
+        tasks: (stage.tasks || []).map((task) => String(task).replace(/\{title\}/g, title))
+      }));
+    }
+
     function getFounderFallbackStages(idea) {
+      if (!isWhatimadoFounderPrompt()) {
+        return getNamedProductFounderFallbackStages(idea);
+      }
       const title = idea?.title || "whatimado.com growth";
       const template = getFounderPathTemplate(idea);
 
@@ -26745,7 +27103,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function isExplicitJobSeeker(blob = getConversationCareerBlob()) {
-      return /\b(need a job|need employment|looking for (?:a )?job|job search|unemployed|laid off|fired|between jobs|want to be hired|need work|need income fast|can't find work)\b/.test(blob);
+      return /\b(need a job|need employment|looking for (?:a )?job|job search|unemployed|laid off|fired|between jobs|want to be hired|need work|need income fast|can'?t find work|apply(?:ing)? for jobs?|hire me|get hired|w-?2|full[- ]time job|part[- ]time job|need (?:a )?paycheck)\b/.test(blob);
     }
 
     function hasExperienceSignals(blob = getConversationCareerBlob()) {
@@ -26850,6 +27208,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const profile = getUserSituationProfile(idea);
       const pb = profile.playbook;
       const city = profile.city;
+      if (profile.craftKey === "logo_design" || /logo/i.test(pb.craftLabel || "")) {
+        return logoDesignerFallbackIdeas.map((entry) => ({ ...entry }));
+      }
       const replace = (text) => String(text || "")
         .replaceAll("{craftTitle}", pb.craftTitle)
         .replaceAll("{craftLabel}", pb.craftLabel)
@@ -27665,13 +28026,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = String(context || "").toLowerCase();
       if (
         /\b(still (building|testing|fixing)|closed beta|functional test|test if it (works|functions)|just testing|bug|doesn'?t work|core feature|see if it functions)\b/.test(blob) &&
-        !/\b(impact data|grant funder|15.?30|formal pilot|partnership pilot)\b/.test(blob)
+        !/\b(impact data|grant funder|15.?30|formal pilot|partnership pilot|campus[- ]first|founding users)\b/.test(blob)
       ) {
         return "beta";
       }
       if (/\b(first (real )?strangers|early users|validation sprint|community launch|5 communit)\b/.test(blob)) return "validation";
-      if (/\b(grant|sponsor|impact data|funder|15.?30|workforce program|library pilot|nonprofit partner)\b/.test(blob)) return "pilot";
-      if (/\b(scale|sustain|revenue|donation|monthly)\b/.test(blob)) return "growth";
+      if (/\b(campus[- ]first|founding users|critical mass|university campus|grant|sponsor|impact data|funder|15.?30|workforce program|library pilot|nonprofit partner)\b/.test(blob)) return "pilot";
+      if (/\b(scale|sustain|revenue|donation|monthly|monetization|funding)\b/.test(blob)) return "growth";
       return "unknown";
     }
 
@@ -27748,6 +28109,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function buildFounderRoadmapPrompt(idea, context, { phase = "initial", dedupe = false, refreshBlock = "" } = {}) {
+      const product = getFounderProductLabel();
+      const isWhatimado = isWhatimadoFounderPrompt();
       const ideaBlock = [
         `Title: ${idea.title}`,
         idea.type ? `Type: ${idea.type}` : "",
@@ -27759,31 +28122,85 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ].filter(Boolean).join("\n");
 
       const phaseNote = phase === "adapt"
-        ? "The user is IN PROGRESS. REPLACE only what comes AFTER their current position with the fastest realistic route to success. Do not repeat completed work. If they skipped a step, route around it. If they hit an obstacle, swap in alternatives. If they found an opportunity or shortcut, accelerate."
+        ? `The user is IN PROGRESS. REPLACE only what comes AFTER their current position with the fastest realistic route for ${product}. Do not repeat completed work. If they skipped a step, route around it. If they hit an obstacle, swap in alternatives. If they found an opportunity or shortcut, accelerate.`
         : phase === "continue"
-        ? "Generate the NEXT 2 stages after their completed roadmap for growing whatimado.com. Do not repeat completed tasks."
-        : "Generate the FIRST 2 stages only — the immediate next 2-4 weeks for this founder path. Do not pack the entire 30-90 day journey into one roadmap.";
+        ? `Generate the NEXT 2 stages after their completed roadmap for growing ${product}. Do not repeat completed tasks.`
+        : `Generate the FIRST 2 stages only — the immediate next 2-4 weeks for this ${product} path. Do not pack the entire 30-90 day journey into one roadmap.`;
 
-      const pathFocus = {
-        beta: "closed beta with 3-5 trusted testers, live watch sessions, noting where people get stuck, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 person groups",
-        launch: "sharing in communities, Reddit/Facebook posts, first real strangers, simple usage numbers, suggestions box feedback",
-        donation: "Stripe donation copy, pay-what-you-can framing, soft asks without paywalls, repeat supporters, cost-per-session math",
-        sponsorship: "testimonials, 1-page sponsor presentation, local business outreach, quotes from real people, ethical sponsor tiers that keep end people free",
-        partnership: "nonprofit/library/workforce/shelter pilot outreach, email templates, demo script, grant paths that keep end people free",
-        general: "low-cost 30-90 day founder milestones mixing real-world tests, listening to feedback, donations, and partnerships"
-      }[getFounderPathTemplate(idea)];
+      const pathFocus = isWhatimado
+        ? {
+          beta: "closed beta with 3-5 trusted testers, live watch sessions, noting where people get stuck, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 person groups",
+          launch: "sharing in communities, Reddit/Facebook posts, first real strangers, simple usage numbers, suggestions box feedback",
+          donation: "Stripe donation copy, pay-what-you-can framing, soft asks without paywalls, repeat supporters, cost-per-session math",
+          sponsorship: "testimonials, 1-page sponsor presentation, local business outreach, quotes from real people, ethical sponsor tiers that keep end people free",
+          partnership: "nonprofit/library/workforce/shelter pilot outreach, email templates, demo script, grant paths that keep end people free",
+          general: "low-cost 30-90 day founder milestones mixing real-world tests, listening to feedback, donations, and partnerships"
+        }[getFounderPathTemplate(idea)]
+        : {
+          beta: `test the ${product} core product loop with real target users, watch sessions, stuck-point notes, and one product fix — NOT neighborhood gig work`,
+          launch: `campus-first / founding-user activation for ${product}, daily active use, invite loops, and a campus scorecard toward critical mass`,
+          donation: `finish business-plan sections for ${product} (monetization, projections, funding ask) using details from THEIR brief`,
+          sponsorship: `sponsor or brand packaging for ${product} that fits the stated audience without selling private emotional data`,
+          partnership: `campus org / university partner outreach that seeds ${product} usage`,
+          general: `concrete next milestones for ${product} drawn only from their product brief and chosen path`
+        }[getFounderPathTemplate(idea)];
       const founderStage = inferFounderProductStage(context);
-      const stageAwareFocus =
-        founderStage === "beta"
-          ? "closed beta with 3-5 trusted testers, live watch sessions, noting where people get stuck, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 person groups"
-          : founderStage === "validation"
-            ? "small test groups (5-15), community posts, first strangers, listening to what people say — not grant-grade impact pilots yet"
-            : pathFocus;
+      const stageAwareFocus = isWhatimado
+        ? (
+          founderStage === "beta"
+            ? "closed beta with 3-5 trusted testers, live watch sessions, noting where people get stuck, quick bug fixes, and a simple feedback form — NOT formal nonprofit pilots, grant impact studies, or 15-30 person groups"
+            : founderStage === "validation"
+              ? "small test groups (5-15), community posts, first strangers, listening to what people say — not grant-grade impact pilots yet"
+              : pathFocus
+        )
+        : (
+          founderStage === "beta"
+            ? `prototype / core-loop tests for ${product} with a handful of target users`
+            : founderStage === "validation"
+              ? `first stranger / early campus users trying ${product} and giving feedback`
+              : pathFocus
+        );
 
       const siblingBlock = getSiblingRoadmapContext(idea);
       const dedupeNote = dedupe
         ? "\nYour last draft repeated stages or tasks from another path on this map. Rewrite with completely different stage names and tasks.\n"
         : "";
+
+      if (!isWhatimado) {
+        return (
+          `You are whatimado — a practical mentor helping someone execute a real plan for "${product}" based on the business plan / product brief THEY wrote. Talk like a normal person, not a startup coach.\n\n` +
+          `${phaseNote}\n\n` +
+          `CRITICAL PRODUCT CONTEXT:\n` +
+          `- The product is "${product}". Every mission/task must name ${product} or a specific feature/audience/GTM tactic from their brief.\n` +
+          `- Do NOT invent neighborhood help-for-hire, Nextdoor gigs, generic side hustles, or unrelated local services.\n` +
+          `- If they described campus-first launch, founding users, mood/map/social features, monetization, or funding — use THOSE details as the next steps.\n` +
+          `- Start from the exact point they are at in the conversation (building themselves, hiring help, writing the plan, recruiting campus users, etc.).\n\n` +
+          `Chosen path:\n${ideaBlock}\n\n` +
+          `Founder conversation / brief:\n${context}\n` +
+          getFounderStageBlock(context) +
+          siblingBlock +
+          dedupeNote +
+          refreshBlock +
+          getLocationContextBlock() +
+          `\n${getActionableTaskRules()}\n` +
+          `\nFocus this roadmap ONLY on: ${stageAwareFocus}.\n` +
+          `This path must feel different from the other paths on the map — use stage labels and tasks that match "${idea.title}" specifically for ${product}.\n\n` +
+          `CRITICAL RULES FOR MISSIONS:\n` +
+          `- Outcome-focused missions that move ${product} forward — not homework filler.\n` +
+          `- Every mission needs: mission, mentorHelp, howTo, text, why, outcome, talkingPoints, followUp (when outreach), resources, script.\n` +
+          `- Include ready-to-use scripts/templates naming ${product}.\n` +
+          `- Each task doable in one sitting (30–90 min) or one week max.\n\n` +
+          `BAD MISSIONS:\n` +
+          `- "Talk to neighbors about odd jobs on Nextdoor"\n` +
+          `- "Shape a tiny local offer for $200/mo"\n` +
+          `- "Validate demand before scaling" (with no product specifics)\n\n` +
+          `GOOD MISSIONS:\n` +
+          `- mission: "Recruit 10 ${product} founding users on one campus" + outreach script\n` +
+          `- mission: "Draft the ${product} monetization section" + outline from their brief\n` +
+          `- mission: "Run one campus mood-check-in activation" + event checklist\n\n` +
+          getRoadmapJsonInstruction({ founderMode: true, context, phase })
+        );
+      }
 
       return (
         `You are whatimado — a practical mentor helping the FOUNDER of whatimado.com (a free possibility map for people stuck on what's next). Talk like a normal person, not a startup coach.\n\n` +
@@ -35467,34 +35884,83 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return state.history.find((entry) => entry.role === "user")?.content?.trim() || "";
     }
 
+    function extractNamedProductFromPrompt(text = getFirstUserMessage()) {
+      const raw = String(text || "").trim();
+      if (!raw) return "";
+      if (/\bwhatimado(?:\.com)?\b/i.test(raw)) return "whatimado.com";
+      const patterns = [
+        /(?:mobile\s+)?(?:application|app|product|platform|startup|tool|website|site)\s+called\s+["']?([A-Z][A-Za-z0-9]+(?:[ -][A-Z][A-Za-z0-9]+){0,3})/i,
+        /(?:called|named)\s+["']([A-Za-z0-9][A-Za-z0-9 .'-]{1,40})["']/,
+        /\b([A-Z][a-zA-Z0-9]{2,})\s+is\s+a\s+(?:real-time|location-based|mobile|social|web|new)/
+      ];
+      for (const pattern of patterns) {
+        const match = raw.match(pattern);
+        const name = String(match?.[1] || "").trim().replace(/[.,;:]+$/, "");
+        if (
+          name.length >= 2
+          && name.length <= 40
+          && !/^(Please|Here|The|This|That|Your|Our|Full|Product|Business)$/i.test(name)
+        ) {
+          return name;
+        }
+      }
+      return "";
+    }
+
+    function getFounderProductLabel(text = getFirstUserMessage()) {
+      return extractNamedProductFromPrompt(text) || "their product";
+    }
+
+    function isWhatimadoFounderPrompt(text = getFirstUserMessage()) {
+      return /\bwhatimado(?:\.com)?\b/i.test(String(text || ""));
+    }
+
     function isFounderOrProjectPrompt(text) {
-      const q = String(text || "").toLowerCase();
+      const raw = String(text || "");
+      const q = raw.toLowerCase();
+      const productName = extractNamedProductFromPrompt(raw);
       const score = [
         /\bwhatimado\b/,
         /\bbuilding\b.*\b(site|app|product|platform|project|business)\b/,
         /\bbusiness plan\b/,
+        /\bproduct description\b/,
+        /\b(executive summary|go[- ]to[- ]market|monetization|competitive landscape|funding requirements?|financial projections?|user personas?)\b/,
+        /\b(mobile )?(application|app|platform|startup)\b/,
+        /\bfounding users?\b/,
+        /\bcampus[- ]first\b/,
+        /\btarget (?:audience|market)\b/,
         /\bmission[- ]driven\b/,
         /\bsustainabl(e|ity)\b/,
         /\b(stripe|supabase|donation|sponsor|grant|nonprofit|workforce program)\b/,
         /\bearly users\b/,
-        /\bsocial (media|launch)\b/,
+        /\bsocial (media|launch|app)\b/,
         /\bfree for everyone\b/,
         /\broadmap(s)? with tasks\b/,
         /\bpossibility map\b/
       ].filter((pattern) => pattern.test(q)).length;
 
-      return score >= 2 || (/\bwhatimado\b/.test(q) && text.length > 350);
+      if (productName && (/\bbusiness plan\b/.test(q) || /\b(app|application|product|platform|startup)\b/.test(q))) {
+        return true;
+      }
+      if (/\bbusiness plan\b/.test(q) && /\b(app|application|product|platform|startup|monetization|go[- ]to[- ]market)\b/.test(q)) {
+        return true;
+      }
+      return score >= 2 || (/\bwhatimado\b/.test(q) && raw.length > 350);
     }
 
     function isPersonalCareerPath(idea = state.currentIdea) {
       const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
+      const product = extractNamedProductFromPrompt().toLowerCase();
+      if (product && blob.includes(product.replace(/\.com$/, ""))) return false;
       if (/\bwhatimado\.com\b/.test(blob)) return false;
-      if (/\b(site growth|launch whatimado|sponsor deck|donation-first|partnership pipeline|grant pipeline|community validation sprint)\b/.test(blob)) return false;
+      if (/\b(site growth|launch whatimado|sponsor deck|donation-first|partnership pipeline|grant pipeline|community validation sprint|campus seed|founding users|go-to-market)\b/.test(blob)) return false;
       return /\b(help-for-hire|help for hire|local service|neighborhood|gig work|get hired|job search|employ|hire|income|freelance|cleaning|tutor|trade|electric|plumb|logo|design|career|training|certif|reentry|side gig|handyman|pet sit|dog walk|photograph|consult|account|bookkeep|immediate income|paid jobs|skills into|landscap|moving help|childcare|caregiv)\b/.test(blob);
     }
 
     function isFounderRoadmapForIdea(idea = state.currentIdea) {
       if (!isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      // Product/business-plan prompts stay in founder mode even if a generic hustle idea slipped through.
+      if (extractNamedProductFromPrompt()) return true;
       if (isPersonalCareerPath(idea)) return false;
       return true;
     }
@@ -35512,6 +35978,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getClarifyingFallback(userText) {
       if (isFounderOrProjectPrompt(userText)) {
+        const product = getFounderProductLabel(userText);
+        if (!isWhatimadoFounderPrompt(userText)) {
+          return `For ${product}, are you still shaping the product, recruiting first campus / founding users, finishing the business plan, or ready to talk funding?`;
+        }
         return "Are you still testing if the site works with a few people, getting your first strangers to try it, or ready to run a formal pilot with a partner for grant/sponsor data?";
       }
       if (isReentrySituation({ title: userText })) {
@@ -35539,6 +36009,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function buildClarifyingPrompt(userText) {
       if (isFounderOrProjectPrompt(userText)) {
+        const product = getFounderProductLabel(userText);
+        if (!isWhatimadoFounderPrompt(userText)) {
+          return (
+            `You are whatimado, a practical advisor helping someone plan "${product}" from a product / business-plan brief. They are NOT asking for a personal side hustle or neighborhood gig path.\n` +
+            `Ask ONE short follow-up question about the NEXT stage for ${product}: still shaping the product, recruiting campus / founding users, finishing the written business plan, or preparing a funding ask.\n` +
+            "Reference something specific they said (features, audience, GTM, monetization). Plain text only.\n\nFounder message:\n" +
+            userText
+          );
+        }
         return (
           "You are whatimado, a practical advisor to the founder of whatimado.com. They are NOT asking for a personal job path — they are planning how to grow the site itself. Read their message carefully. Ask ONE short follow-up question to learn what STAGE they are at: still testing if the app works (closed beta with a few people), getting first strangers to try it, running a structured pilot with a partner, or seeking grants/sponsors. Reference something specific they said. Plain text only.\n\nFounder message:\n" +
           userText
@@ -35599,6 +36078,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
         .join("\n\n");
       const blob = getConversationUserBlob();
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) {
+        const product = getFounderProductLabel();
+        const focus = isWhatimadoFounderPrompt()
+          ? "Ask what stage they are at for growing whatimado.com: closed beta, first strangers, partner pilot, or grants/sponsors."
+          : `Ask one short stage question for ${product}: product readiness, campus/founding-user recruitment, finishing the business plan, or funding — not personal job/side-hustle questions.`;
+        return (
+          `You are whatimado advising on "${product}". Do not ask about children, personal income hustles, or generic career exploration.\n` +
+          "The user already answered one follow-up. Ask ONE more short clarifying question. " + focus + "\n" +
+          "Reference their latest answer. Plain text only.\n\nConversation so far:\n" +
+          transcript
+        );
+      }
       const needsKids = explorationPhaseNeedsDependentQuestion(blob);
       const needsInterests = explorationPhaseNeedsInterestQuestion(blob);
       const stabilityPriority = !conversationLooksLikeCareerPivot(blob) && (
@@ -35630,6 +36121,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getSecondClarifyingFallback() {
       const blob = getConversationUserBlob().toLowerCase();
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) {
+        const product = getFounderProductLabel();
+        if (!isWhatimadoFounderPrompt()) {
+          return `For ${product}, is the next priority finishing the written plan, recruiting founding users, or testing the core product with real people?`;
+        }
+        return "Are you still testing if the site works with a few people, getting your first strangers to try it, or ready for a formal pilot / grant conversation?";
+      }
       if (
         !conversationLooksLikeCareerPivot(blob)
         && (/housing|homeless|shelter|evict|no place to stay|nowhere to stay/.test(blob) || conversationMentionsRecoveryTreatment(blob))
@@ -35708,6 +36206,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function buildFounderIdeasPrompt(summary, count = 3) {
+      const product = getFounderProductLabel();
+      if (!isWhatimadoFounderPrompt()) {
+        return (
+          `You are whatimado, a practical advisor helping someone plan and execute "${product}" from the product / business-plan brief they wrote.\n\n` +
+          getFounderStageBlock(summary) +
+          PLAIN_LANGUAGE_AI_RULES +
+          "Conversation / brief:\n" +
+          summary +
+          `\n\nGenerate exactly ${count} realistic path option${count === 1 ? "" : "s"} for advancing ${product} over the next 30-90 days.\n` +
+          `Every path MUST be about ${product} specifically — features, audience, campus/GTM, monetization, funding, or team from THEIR brief.\n` +
+          "FORBIDDEN: Local Help-for-Hire, neighborhood gigs, generic skill portfolios, Nextdoor odd jobs, or any side hustle unrelated to this product.\n" +
+          "Each path must use a DIFFERENT primary strategy — for example: (1) campus founding-user seed / go-to-market, (2) product core-loop validation with target users, (3) business-plan / monetization / funding sprint.\n" +
+          "Reference concrete details they named (mood map, stories, university students, founding users, critical mass, etc. when present).\n" +
+          "Use plain language in titles and taglines — no empty startup jargon.\n\n" +
+          `BAD: "Immediate Income: Local Help-for-Hire Service" or "Skill-Building Portfolio"\n` +
+          `GOOD: "${product} Campus Seed Pilot — recruit 15–30 founding users on one campus and drive daily mood check-ins"\n\n` +
+          "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence in plain English\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. validation / early revenue / funding-ready plan\"}]"
+        );
+      }
       return (
         "You are whatimado, a practical advisor helping the FOUNDER grow whatimado.com into a sustainable mission-driven project without paywalling regular users.\n\n" +
         getFounderStageBlock(summary) +
@@ -35728,6 +36245,38 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getFounderFallbackIdeas() {
+      if (!isWhatimadoFounderPrompt()) {
+        const product = getFounderProductLabel();
+        return [
+          {
+            title: `${product} Campus Seed Pilot`,
+            type: "Go-to-market",
+            tagline: `Recruit founding users on one campus and drive daily active use of ${product} before expanding.`,
+            why: `Their plan starts with a campus-first critical mass for ${product}.`,
+            cost: "$0-500",
+            timeline: "2-6 weeks",
+            income: "Validation + early traction"
+          },
+          {
+            title: `${product} Core Loop Test`,
+            type: "Product",
+            tagline: `Prove the main ${product} experience with real target users this week, then capture what to change.`,
+            why: `A business plan for ${product} only works if the core product moment is tested with the audience they named.`,
+            cost: "$0-100",
+            timeline: "1-3 weeks",
+            income: "Learning"
+          },
+          {
+            title: `${product} Business Plan Sprint`,
+            type: "Business plan",
+            tagline: `Finish monetization, GTM, and 3-year projection sections using the details already in their brief.`,
+            why: `They asked for a comprehensive business plan for ${product} — this path completes the document with a concrete funding ask.`,
+            cost: "$0",
+            timeline: "1-2 weeks",
+            income: "Funding-ready draft"
+          }
+        ];
+      }
       return [
         {
           title: "Closed Beta Test",
@@ -35798,6 +36347,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           fallbackIdeas,
           ideaCount
         );
+        {
+          const aligned = alignIdeasToKnownSituation(ideas, fallbackIdeas, ideaCount);
+          ideas = aligned.ideas;
+          if (aligned.usedFallback) usedFallback = true;
+        }
         if (!response?.trim() || !hasValidIdeas(ideas, 1)) {
           ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
           usedFallback = true;
@@ -35828,6 +36382,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             ideas = ensureIdeaSet([], fallbackIdeas, ideaCount);
             usedFallback = true;
           }
+          {
+            const aligned = alignIdeasToKnownSituation(ideas, fallbackIdeas, ideaCount);
+            ideas = aligned.ideas;
+            if (aligned.usedFallback) usedFallback = true;
+          }
         } else if (pathMode !== "direct" && !founderMode && ideasAreTooSimilar(ideas)) {
           response = await callAdvisor(
             `${ideasPrompt(3, capExcludeTitles([...recentTitles, ...ideas.map((idea) => idea.title).filter(Boolean)]))}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps. Do NOT invent partners, pilots, or projects they never mentioned. Each object MUST include a non-empty title and tagline.`,
@@ -35843,6 +36402,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           else {
             ideas = ensureIdeaSet(ideas, fallbackIdeas, ideaCount);
             usedFallback = true;
+          }
+          {
+            const aligned = alignIdeasToKnownSituation(ideas, fallbackIdeas, ideaCount);
+            ideas = aligned.ideas;
+            if (aligned.usedFallback) usedFallback = true;
           }
         }
         if (!hasValidIdeas(ideas, 1)) {
@@ -35862,16 +36426,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       ideas = enforceStabilityFirstIdeas(ideas, ideaCount);
+      {
+        const aligned = alignIdeasToKnownSituation(ideas, fallbackIdeas, ideaCount);
+        ideas = aligned.ideas;
+        if (aligned.usedFallback) usedFallback = true;
+      }
 
       try {
         state.ideas = ensureIdeaSet(ideas, fallbackIdeas, ideaCount);
         state.ideaBatches = [state.ideas.length];
+        const founderProductLabel = founderMode ? getFounderProductLabel() : "";
         const defaultClosing = pathMode === "direct"
           ? (founderMode
-            ? "Here are three focused directions for whatimado.com — open the one that fits you best."
+            ? `Here are three focused directions for ${founderProductLabel} — open the one that fits you best.`
             : "Here are three paths to choose from — open the one that fits you best for your full step-by-step roadmap.")
           : (founderMode
-            ? "Here are mission-driven paths for whatimado.com. Tap any option to open a step-by-step roadmap."
+            ? `Here are paths for ${founderProductLabel}. Tap any option to open a step-by-step roadmap.`
             : "Here are your paths. Tap any opportunity to see your full roadmap.");
         const closing = usedFallback && lastAdvisorError
           ? `Here are starter paths to get you moving. (${lastAdvisorError})`
@@ -36042,6 +36612,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ? `\nTheir stated skills/strengths: ${profile.skills}\nEach idea must tie to these skills or a realistic 2–4 week skill they could learn.\n`
           : "";
 
+      const situation = getPathSituationType(null);
+      const situationGuard = situation === "career_change" || conversationLooksLikeCareerPivot()
+        ? `\nSITUATION GUARD: This is a CAREER PIVOT. Do NOT suggest Local Help-for-Hire, neighborhood odd jobs, Nextdoor gigs, or generic micro-business tests unless they explicitly asked for side income. Paths must use their experience and explore next roles or low-risk experiments.\n`
+        : situation === "employment" || isExplicitJobSeeker()
+          ? `\nSITUATION GUARD: This person needs EMPLOYMENT. Prioritize get-hired paths (applications, staffing, resume proof). Do NOT lead with Help-for-Hire or Micro Business Test.\n`
+          : situation === "nonprofit"
+            ? `\nSITUATION GUARD: This is a NONPROFIT / mission path. Paths must advance their cause, program test, legal setup, or partner pilot — not neighborhood side hustles.\n`
+            : situation === "skilled_trade"
+              ? `\nSITUATION GUARD: This is a SKILLED TRADE path. Focus on apprenticeships, helper roles, licenses, and trade schools — not generic Help-for-Hire templates.\n`
+              : `\nSITUATION GUARD: Every path must reference something specific they said (skills, interests, constraints, goals). Forbidden as a default trio: "Local Help-for-Hire Service", "Skill-Building Portfolio", "Micro Business Test" unless those truly match their words.\n`;
+
       return (
         "You are whatimado, a practical possibility advisor. Read this entire conversation carefully.\n\n" +
         PLAIN_LANGUAGE_AI_RULES +
@@ -36053,6 +36634,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getReentryIdeasPromptBlock() +
         getIdPriorityIdeasPromptBlock() +
         getExplorationFitPromptBlock() +
+        situationGuard +
         excludeBlock +
         moneyUrgencyNote +
         skillsGapNote +
@@ -37139,6 +37721,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function shouldOfferFirstMissionPicker() {
       syncFlexibleFirstMissionStateFromRoadmap();
+      // Product/founder roadmaps skip the generic first-mission picker and build missions under a loading screen.
+      if (isFounderRoadmapForIdea(state.currentIdea)) return false;
       return (isFlexiblePathMode() || isDirectPathMode())
         && !state.flexibleFirstMissionPicked
         && !hasAnyCompletedRoadmapTasks()
@@ -37392,7 +37976,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       schedulePersist();
 
       try {
-        await generateAndShowMap({ founderMode: false, intakeMode: "quick" });
+        await generateAndShowMap({
+          founderMode: isFounderOrProjectPrompt(getFirstUserMessage()),
+          intakeMode: "quick"
+        });
       } finally {
         intakeInProgress = false;
       }
@@ -37651,9 +38238,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
       const roadmapKey = slugify(idea.title);
+      const cached = state.allRoadmaps?.[roadmapKey];
+      const alreadyBuilt = roadmapHasVisibleMissionCards(cached?.stages)
+        || (cached?.flexibleFirstMissionPicked && roadmapHasVisibleMissionCards(state.roadmapStages));
+      // Show the site-style loader immediately so path selection never looks frozen while missions calculate.
+      if (!alreadyBuilt || options.force) {
+        showScreen("roadmap");
+        setRoadmapLoading(true, {
+          ideaTitle: idea.title,
+          progressDurationMs: isFounderRoadmapForIdea(idea) ? 22000 : undefined
+        });
+      }
       try {
         await viewRoadmap(idea, index, {
-          reopen: options.reopen ?? (hasRoadmapProgress(idea.title) || Boolean(state.allRoadmaps[roadmapKey])),
+          reopen: options.reopen ?? (hasRoadmapProgress(idea.title) || Boolean(cached)),
           ...options
         });
         if ($("#screen-roadmap")?.classList.contains("active")) {
@@ -37662,6 +38260,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       } catch (error) {
         console.error("[whatimado] openPathRoadmap failed:", error);
+        setRoadmapLoading(false);
         flashSaveToast("Couldn't open that roadmap — try again.");
       }
     }
@@ -37886,7 +38485,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           stopSiteLoadingProgress($("#roadmap-loader-progress"));
         } else {
           const tagline = $("#roadmap-loading .loader-tagline");
-          if (tagline) tagline.textContent = "Building your first mission…";
+          const pathTitle = String(options.ideaTitle || state.currentIdea?.title || "").trim();
+          const product = isFounderOrProjectPrompt(getFirstUserMessage()) ? getFounderProductLabel() : "";
+          if (tagline) {
+            if (pathTitle) {
+              tagline.textContent = `Building missions for ${pathTitle}…`;
+            } else if (product && product !== "their product") {
+              tagline.textContent = `Building your ${product} roadmap…`;
+            } else {
+              tagline.textContent = "Building your first mission…";
+            }
+          }
           startLoadingQuips("#roadmap-loading .loader-tagline");
           startSiteLoadingProgress($("#roadmap-loader-progress"), {
             durationMs: options.progressDurationMs || ROADMAP_FIRST_MISSION_PROGRESS_MS,
@@ -39171,8 +39780,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setRoadmapRefining(false);
       cancelDeferredRoadmapPhaseReveal();
       const founderModeForGen = isFounderRoadmapForIdea(idea);
-      $("#roadmap-sub").textContent = founderMode
-        ? "Building your whatimado.com launch roadmap..."
+      $("#roadmap-sub").textContent = founderModeForGen
+        ? `Building your ${getFounderProductLabel()} roadmap…`
         : "Preparing your first mission…";
       const completeCard = $("#roadmap-complete-card");
       if (completeCard) {
@@ -39180,7 +39789,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         completeCard.classList.remove("visible");
       }
       showScreen("roadmap");
-      setRoadmapLoading(true);
+      setRoadmapLoading(true, {
+        ideaTitle: idea.title,
+        progressDurationMs: founderModeForGen ? 22000 : undefined
+      });
 
       if (!cachedHasMissions && recoverEmptyRoadmapStages(idea, ideaIndex, { force: true })) {
         setRoadmapLoading(false);
