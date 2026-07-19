@@ -23996,6 +23996,67 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    // True when a task actually renders something the copy can point at ("below"):
+    // attached contacts/resources/links, a usable script, steps, or a draft button.
+    function taskHasWiredSupport(task) {
+      if (!task || typeof task !== "object") return false;
+      if (getFlatTaskResources(task).length) return true;
+      if (Array.isArray(task.links) && task.links.length) return true;
+      if (String(task.script || "").trim().length > 40) return true;
+      if (Array.isArray(task.steps) && task.steps.length) return true;
+      try {
+        if (getTaskDraftSuggestions(task).length) return true;
+      } catch (_) {
+        /* draft lookup best-effort */
+      }
+      return false;
+    }
+
+    function rewriteUnbackedUiReference(value) {
+      let text = String(value || "");
+      if (!/\bbelow\b/i.test(text)) return text;
+      text = text
+        .replace(/\b(?:the\s+)?contact tracking spreadsheet below\b/gi, "a simple contact list you keep")
+        .replace(/\b(?:the\s+)?comparison spreadsheet below\b/gi, "a simple comparison list you make")
+        .replace(/\b(?:the\s+)?org comparison sheet below\b/gi, "a simple comparison list you make")
+        .replace(/\b(?:the\s+)?ally ranking sheet below\b/gi, "your own ranked list")
+        .replace(/\b(?:the\s+)?interview guide below\b/gi, "a short list of questions you prepare")
+        .replace(/\b(?:the\s+)?one-page mission below\b/gi, "your own one-page summary")
+        .replace(/\b(?:the\s+)?grant shortlist below\b/gi, "a shortlist you build")
+        .replace(/\b(?:the\s+)?phone script below\b/gi, "a short script you write")
+        .replace(/\b(?:the\s+)?outreach email below\b/gi, "a short email you draft")
+        .replace(/\bthe (draft|email|script|list|options|shortlist|number|guide|sheet|tracker|spreadsheet|resources|contacts|documents) below\b/gi, "your own $1")
+        .replace(/\b(draft|email|script|list|options|shortlist|guide|sheet|tracker|spreadsheet|resources|contacts|documents) below\b/gi, "$1 you prepare")
+        .replace(/\s+below\b/gi, "");
+      return text.replace(/\s{2,}/g, " ").replace(/\s+([.,;:])/g, "$1").trim();
+    }
+
+    // Removes phantom "…below" references from user-facing task copy when nothing is
+    // actually attached to that task. Keeps wired tasks (real contacts/drafts) untouched.
+    function stripUnbackedUiReferences(stages) {
+      if (!Array.isArray(stages)) return stages;
+      return stages.map((stage) => {
+        if (!stage || !Array.isArray(stage.tasks)) return stage;
+        return {
+          ...stage,
+          tasks: stage.tasks.map((task) => {
+            if (typeof task === "string") {
+              return /\bbelow\b/i.test(task) ? rewriteUnbackedUiReference(task) : task;
+            }
+            if (!task || typeof task !== "object") return task;
+            if (taskHasWiredSupport(task)) return task;
+            const next = { ...task };
+            ["text", "howTo", "outcome", "mission"].forEach((field) => {
+              if (next[field] && /\bbelow\b/i.test(next[field])) {
+                next[field] = rewriteUnbackedUiReference(next[field]);
+              }
+            });
+            return next;
+          })
+        };
+      });
+    }
+
     function taskHasMentorDeliverable(normalized) {
       const scriptLen = String(normalized.script || "").trim().length;
       const resources = getFlatTaskResources(normalized);
@@ -26042,6 +26103,58 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return injectLocalContactsIntoRoadmap(cleaned, resources, loc, state.currentIdea);
     }
 
+    const PERSONA_ASSET_SIGNALS = [
+      { label: "systems thinking", rx: /\b(systems? think|systems? design|how systems (?:work|connect)|connect the dots|big[- ]picture|root cause|process(?:es)? (?:design|improv)|feedback loops?|whole system)\b/ },
+      { label: "urban planning & cities", rx: /\b(urban plan|city plan(?:ning|ner)?|zoning|transit|public space|walkab|urbanism|built environment|land use|municipal|smart cit)\b/ },
+      { label: "human-centered / service design", rx: /\b(human[- ]cent(?:er|re)|human[- ]centric|service design|design thinking|user research|ux\b|user experience|empath(?:y|ize))\b/ },
+      { label: "crisis leadership", rx: /\b(crisis (?:lead|manage|response)|led (?:a |the )?team through|incident command|high[- ]pressure|emergency response|turnaround|under fire|kept (?:everything|things) (?:running|from collapsing))\b/ },
+      { label: "leadership & people management", rx: /\b(led (?:a |the )?team|managed (?:a |the )?team|team lead|director|senior manager|supervis|mentored|built (?:a|the) team|cross[- ]functional|people manage)\b/ },
+      { label: "program & project management", rx: /\b(program manage|project manage|\bpmp\b|stakeholder|delivered (?:a )?project|ran (?:a )?program|portfolio manage|operations lead)\b/ },
+      { label: "fixer / problem solver", rx: /\b(fixer|fix(?:ing)? (?:broken|problems|things|what'?s broken)|problem[- ]solv|troubleshoot|figure (?:things|it) out|make (?:it|things) work|the one who fixes)\b/ },
+      { label: "research & analysis", rx: /\b(research|data analysis|analytic|synthes|evaluat|measure impact|metrics|assess(?:ment|ing)?)\b/ },
+      { label: "community development", rx: /\b(community develop|community organiz|neighborhood|civic|public sector|local government|coalition|grassroots)\b/ },
+      { label: "teaching & facilitation", rx: /\b(teach|facilitat|train(?:ed|ing)? (?:others|staff|people)|coach|curriculum|workshop|explain complex)\b/ },
+      { label: "writing & communication", rx: /\b(writ(?:e|ing)|communicat|storytell|present(?:ation|ing)?|public speak|memo|report)\b/ },
+      { label: "engineering / technical depth", rx: /\b(engineer|software|develop(?:er|ment)|architect|technical|infrastructure|build systems)\b/ },
+      { label: "hands-on making & restoration", rx: /\b(restor(?:e|ing)|refinish|woodwork|hands[- ]on|craft(?:ing)?|repair|maker|build with (?:my )?hands)\b/ }
+    ];
+
+    const PERSONA_DESIRE_SIGNALS = [
+      { label: "make real people's lives easier", rx: /\b(make (?:real )?people'?s lives (?:easier|better)|help real people|improve (?:people'?s )?lives|impact on (?:real )?people|serve people)\b/ },
+      { label: "design systems that actually work for humans", rx: /\b(systems? that (?:work|serve|help|make)|design better systems|human[- ]cent(?:er|re)|fix broken systems)\b/ },
+      { label: "reconnect with who they really are", rx: /\b(reconnect|who i (?:really )?am|feel like me|feel like myself|authentic|true self|outside of (?:my|the) job)\b/ },
+      { label: "set real boundaries and stop burning out", rx: /\b(boundaries|burn(?:ed|ing)? out|not burn myself|sustainable|work[- ]life|stop performing)\b/ },
+      { label: "do work that feels meaningful, not just successful", rx: /\b(meaning(?:ful)?|matters|purpose|feel(?:s)? empty|more than (?:a )?(?:title|salary)|actually living)\b/ },
+      { label: "model something different for their family", rx: /\b(my (?:kid|child|daughter|son|family)|for (?:my|the) kids|role model|what they see)\b/ }
+    ];
+
+    function getPersonaSignals(idea = null) {
+      const blob = getConversationCareerBlob(idea);
+      if (!blob || !blob.trim()) return { assets: [], desires: [] };
+      const assets = PERSONA_ASSET_SIGNALS.filter((sig) => sig.rx.test(blob)).map((sig) => sig.label);
+      const desires = PERSONA_DESIRE_SIGNALS.filter((sig) => sig.rx.test(blob)).map((sig) => sig.label);
+      return { assets, desires };
+    }
+
+    // Read the person's story as the specification for the plan. Surfaces concrete
+    // strengths/desires so missions are conditioned on identity, not a generic template.
+    function getPersonaSpecBlock(idea = null) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return "";
+      const { assets, desires } = getPersonaSignals(idea);
+      if (!assets.length && !desires.length) return "";
+      let block = "\nPERSONA SPEC (treat the person's story as the primary data source for this plan):\n";
+      block += "- Build missions FROM their identity, skills, and goals — never a one-size-fits-all template pasted on top of the conversation.\n";
+      if (assets.length) {
+        block += `- Concrete strengths / toolkit they revealed: ${assets.join("; ")}. Use these to shape the TYPE of missions — e.g. mapping real-world systems they care about, interviewing or shadowing people in adjacent fields (city planning, community development, service/product design, operations), and prototyping small real experiments in their own neighborhood, workplace, or network.\n`;
+      }
+      if (desires.length) {
+        block += `- What they're reaching for: ${desires.join("; ")}. Tie each mission back to this original impulse so the roadmap feels like a series of meaningful experiments in alignment with who they are — not a compliance checklist.\n`;
+      }
+      block += "- Every task must be specific, testable, and guided: answer what exactly to do, with what, and why now. Replace vague directives like \"gather documents\" with concrete steps grounded in their story (e.g. \"draft a 1-page summary of your three strongest 'fixer' projects and what changed because of you\").\n";
+      block += "- Do NOT default to generic job-search boilerplate: no auto-inserting workforce agencies, American Job Center, community-college advice, or temp/staffing lists unless their story explicitly points to getting hired. If uncertain, prefer an experiment or a clarifying step over a government-pamphlet template.\n";
+      return block;
+    }
+
     function getPathSituationType(idea) {
       if (isReentrySituation(idea)) return "reentry";
       const blob = getConversationCareerBlob(idea);
@@ -26126,6 +26239,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           ],
           bad: ["Launch first test", "Gather feedback", "Build a repeatable rhythm"]
         },
+        exploring: {
+          good: [
+            `"Map the real-world system behind \\"${title}\\""`,
+            `"Interview 3 people doing \\"${title}\\"-adjacent work"`,
+            `"Run one small real experiment in ${locRaw}"`,
+            `"Reflect: what felt alive, what to try next"`
+          ],
+          bad: ["Scan hiring lanes", "Apply to jobs", "Call workforce", "Launch first test", "Gather feedback", "Repeat"]
+        },
         nonprofit: {
           good: [
             `"Decide who you're helping"`,
@@ -26199,10 +26321,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           bad: ["Launch first test", "Gather feedback", "Repeat"]
         }
       };
-      const block = examples[situation] || examples.business;
+      const archetype = getPathArchetype(idea);
+      const key = archetype === "exploration" ? "exploring" : situation;
+      const block = examples[key] || examples[situation] || examples.business;
       return (
         `\nMILESTONE UNIQUENESS (required for "${title}"):\n` +
-        `- This person's situation: ${situation.replace(/_/g, " ")}. Stage labels must read like a plan for THEM — not a reusable startup template.\n` +
+        `- This person's situation: ${key.replace(/_/g, " ")}. Stage labels must read like a plan for THEM — not a reusable startup template.\n` +
         `- GOOD stage names for this path type:\n  ${block.good.join("\n  ")}\n` +
         `- NEVER use these generic labels (or close variants): ${block.bad.join(", ")}.\n` +
         `- Every stage label must mention something concrete: the path title, their city, their trade, their mission, or their constraint.\n`
@@ -26218,6 +26342,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         reentry: `Reentry / recently released in ${pb.countryLabel} — Stage 1–3 MUST be stability before career building: ID and documents per local rules, housing via ${pb.region === "norway" ? "NAV/kommune" : pb.region === "us" ? "211/shelter (US only)" : "official social services"}, ${pb.employmentGuide}, background-check-aware temp income, local benefits, compliance. Stage 4 may connect to the chosen path title. NEVER open with training first. Stage names example: "ID + shelter in ${locRaw}", "First paycheck work", "Benefits week" — NOT "Launch first test".`,
         employment: `Employment path "${idea?.title || "role"}" in ${pb.countryLabel} — ${pb.employmentGuide}. Name specific job titles (chat support, email support, VA, data entry), staffing agencies or job boards in ${locRaw}, and application steps. Tailored CV/resume, interviews. NEVER use business validation tasks ("talk to 3 potential clients", "post in Facebook groups"). Stage names reference the role and city — e.g. "Apply to ${locRaw} staffing for chat support", "Resume + typing test week". Do NOT use generic US startup language or wrong-country agencies.`,
         career_change: `Career change toward "${idea?.title || "new field"}" in ${pb.countryLabel} — map transferable skills, talk to people already in the field, close specific skill gaps, then interviews/trial work. Stage names must reflect the NEW field and transition — NOT generic test/feedback/repeat.`,
+        exploration: `Self-directed exploration toward "${idea?.title || "a life that fits them"}" — this person is figuring out who they are beyond their old role, so build a series of small, real EXPERIMENTS, not a job hunt. Missions should: (1) map a real-world system or problem they care about and inventory their own "fixer" track record; (2) interview or shadow 2-3 people in adjacent fields that match their story (city planning, community development, service/product design, operations, policy — use THEIR domains); (3) prototype one tiny real experiment in their own neighborhood, workplace, or network. Every stage ties back to their stated impulse and desired future (e.g. "design systems that make real people's lives easier"). NEVER assign workforce agencies, American Job Center, 211, community college, or temp/staffing lists unless they explicitly asked to get hired. Stage names reference their identity and the systems/people they care about — never "apply to jobs" or "scan hiring lanes".`,
         nonprofit: `Starting or growing a nonprofit for "${idea?.title || "mission"}" in ${pb.countryLabel} — get clear on your cause, handle legal setup (501c3 or local equivalent), find advisors, run one small program with real people. Stage names reference the cause and community — plain language only, no business jargon.`,
         housing: `Rebuilding after homelessness or housing instability in ${pb.countryLabel} — Stage 1: safe place tonight + this week. Stage 2: ID, mail, benefits. Stage 3: income that fits housing timeline. Stage 4: first step on "${idea?.title || "longer path"}". NEVER open with business launches or online stores.`,
         skilled_trade: `Skilled trade path "${idea?.title || "trade"}" in ${pb.countryLabel} — license/insurance verification, apprenticeship or journeyman route, first paid jobs/service calls, repeat customers. Reference the trade by name and local licensing rules — NOT generic freelance or gig economy stages.`,
@@ -28095,9 +28220,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       };
     }
 
+    // Rich self-discovery persona: pivoting/exploring, not explicitly job-hunting, and
+    // revealing real high-level strengths or desires — deserves bespoke experiments.
+    function personaWantsExploration(idea) {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (isIdeaEmploymentPath(idea)) return false;
+      const blob = getConversationCareerBlob(idea);
+      if (isExplicitJobSeeker(blob)) return false;
+      if (profilePathIsOwnBusiness() || userIsBusinessOwner(idea)) return false;
+      const { assets, desires } = getPersonaSignals(idea);
+      if (!assets.length && !desires.length) return false;
+      return conversationLooksLikeCareerPivot(blob) || getPathSituationType(idea) === "exploring";
+    }
+
     function getPathArchetype(idea) {
       if (isIdeaEmploymentPath(idea)) return "employment";
       if (isGroundedPractitioner(idea)) return "grounded";
+      if (personaWantsExploration(idea)) return "exploration";
       const situation = getPathSituationType(idea);
       const situationMap = {
         reentry: "reentry",
@@ -28107,7 +28246,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         career_change: "career_change",
         online_business: "online_business",
         grounded: "grounded",
-        employment: "employment"
+        employment: "employment",
+        exploring: "exploration"
       };
       if (situationMap[situation]) return situationMap[situation];
       if (isReentrySituation(idea)) return "reentry";
@@ -28124,8 +28264,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/business|freelance|client|startup|sell|shop|service|gig|contractor|mobile groom|grooming|first \d+ clients/.test(ideaBlob)) return "business";
       if (/job|employ|hire|career|income|work for|staff|shift|union/.test(ideaBlob)) return "employment";
       if (/creative|design|art|content|music|write|maker|logo|brand/.test(ideaBlob)) return "creative";
+      // A career pivot / self-discovery persona with no explicit job-hunt should get
+      // bespoke experiments, not a default employment/workforce template.
+      if (conversationLooksLikeCareerPivot(blob) && !isExplicitJobSeeker(blob)) return "exploration";
       const idx = Math.max(0, state.ideas.findIndex((entry) => entry.title === idea?.title));
-      return ["employment", "business", "learning", "creative"][idx % 4];
+      return ["exploration", "business", "learning", "creative"][idx % 4];
     }
 
     function buildStandardFallbackTemplates() {
@@ -28396,6 +28539,44 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             ]
           }
         ],
+        exploration: [
+          {
+            label: "Map the system behind \"{title}\"",
+            desc: "Turn your instinct into something concrete you can point at.",
+            tasks: [
+              "Draft a one-page map of the real-world system or problem behind \"{title}\" — who's involved, where it breaks, and where you'd want to step in",
+              "Write your 3 strongest \"fixer\" moments from past work and what actually changed because of you — one short paragraph each",
+              "Write one honest sentence naming the impact you want (\"{title}\") that you'd be proud to say out loud"
+            ]
+          },
+          {
+            label: "Learn from people already in \"{title}\"",
+            desc: "Borrow real experience before committing to a direction.",
+            tasks: [
+              "List 5 people whose work touches \"{title}\" (city planning, community work, service or product design, operations) — former colleagues count",
+              "Message 3 of them asking for 20 minutes to hear how they got in and what a normal week really looks like",
+              "After each talk, write one thing that excited you and one thing that gave you pause"
+            ]
+          },
+          {
+            label: "Run one small real experiment",
+            desc: "Test the work in real life before betting your whole path on it.",
+            tasks: [
+              "Pick one tiny experiment for \"{title}\" you can run in your own neighborhood, workplace, or network within two weeks",
+              "Do it for real with at least one actual person involved — keep it small enough to finish",
+              "Write what happened, how it felt, and whether you want more of it"
+            ]
+          },
+          {
+            label: "Choose your next real move toward \"{title}\"",
+            desc: "Turn what you learned into a clear, honest next step.",
+            tasks: [
+              "Compare your experiments and conversations — note which direction toward \"{title}\" felt most like you",
+              "Set one 30-day goal that moves you toward \"{title}\" without burning yourself out",
+              "Write a keep / adjust / pause decision and the single next action that makes it obvious"
+            ]
+          }
+        ],
         nonprofit: [
           {
             label: "Decide who you're helping",
@@ -28643,7 +28824,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             ? ["groundedPractitioner", "business", "skilled_trade", "creative", "employment", "learning"]
             : businessOwner
               ? ["business", "online_business", "groundedPractitioner", "skilled_trade", "creative", "career_change", "nonprofit", "learning"]
-              : ["employment", "career_change", "nonprofit", "skilled_trade", "online_business", "business", "learning", "creative", "housing"];
+              : (getPathSituationType(idea) === "exploring" || getPathArchetype(idea) === "exploration"
+                  || (conversationLooksLikeCareerPivot() && !isExplicitJobSeeker(getConversationCareerBlob(idea))))
+                ? ["exploration", "career_change", "creative", "learning", "nonprofit", "business", "online_business", "skilled_trade", "employment"]
+                : ["employment", "career_change", "nonprofit", "skilled_trade", "online_business", "business", "learning", "creative", "housing"];
       const preferred = isGroundedPractitioner(idea)
         ? "groundedPractitioner"
         : businessOwner && getPathArchetype(idea) !== "employment"
@@ -28777,6 +28961,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `Conversation (recent):\n${contextTail}\n` +
         getLocationContextBlock() +
         getUserStatedCraftBlock(idea) +
+        (founderMode ? "" : getPersonaSpecBlock(idea)) +
         (founderMode ? "" : getExplorationFitPromptBlock()) +
         (founderMode ? "" : getCareerPivotIdeasPromptBlock()) +
         (founderMode ? "" : getReentryPromptBlock(idea)) +
@@ -29005,6 +29190,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         refreshBlock +
         getLocationContextBlock() +
         getUserStatedCraftBlock(idea) +
+        getPersonaSpecBlock(idea) +
         getExplorationFitPromptBlock() +
         getReentryPromptBlock(idea) +
         getRecoveryStabilityPromptBlock(idea) +
@@ -29026,8 +29212,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `- Do NOT mention whatimado.com unless this is a founder growth path.\n` +
         `- NEVER repeat the same sentence in mission, text, why, and outcome — each field must add new detail.\n` +
         `- why must NOT copy the stage description verbatim.\n` +
-        `- For digital products (Notion templates, PDFs, Gumroad listings): tasks must name the product, tool (Notion/Canva/Gumroad), and concrete build steps — NOT contact spreadsheets or local business outreach.\n\n` +
-        `BAD MISSIONS: "Validate local demand" / "Identify organizations aligned with your mission" / "Execute outreach framework"\n` +
+        `- For digital products (Notion templates, PDFs, Gumroad listings): tasks must name the product, tool (Notion/Canva/Gumroad), and concrete build steps — NOT contact spreadsheets or local business outreach.\n` +
+        `- Do NOT reference "documents", "spreadsheets", "the list below", "resources below", or "contacts below" unless that task actually includes real attached contacts/resources or a draft to open. If nothing is attached, write a fully self-contained instruction instead.\n` +
+        `- Do NOT auto-insert workforce agencies, American Job Center, 211, community-college advice, or temp/staffing lists unless the person explicitly asked to get hired or find a job. When their story points elsewhere, build experiments grounded in their identity instead.\n\n` +
+        `BAD MISSIONS: "Validate local demand" / "Identify organizations aligned with your mission" / "Execute outreach framework" / "Call Workforce Solutions" (when they never asked to job-hunt)\n` +
         `GOOD MISSIONS: "Find out if people actually want this before you spend more" / "Find local orgs that already help your kind of person" / mission + contacts + draft email + follow-up — user only reviews and sends.\n\n` +
         getRoadmapJsonInstruction({ founderMode: false, context, phase })
       );
@@ -37854,6 +38042,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getCareerPivotIdeasPromptBlock() +
         getReentryIdeasPromptBlock() +
         getIdPriorityIdeasPromptBlock() +
+        getPersonaSpecBlock() +
         getExplorationFitPromptBlock() +
         situationGuard +
         excludeBlock +
@@ -40172,8 +40361,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         } else {
           fixed = alignStageSummariesWithMissions(fixed, idea);
         }
+        const finalized = ensureRoadmapLocalContacts(normalizeRoadmapStages(fixed), idea);
         return {
-          stages: ensureRoadmapLocalContacts(normalizeRoadmapStages(fixed), idea),
+          // Runs last, after contacts/resources are attached, so we only rewrite
+          // "…below" phrasing on tasks that truly have nothing wired up.
+          stages: stripUnbackedUiReferences(finalized),
           roadmapSource: nextSource
         };
       };
