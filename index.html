@@ -36950,6 +36950,92 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return value.length > 520 || (value.split(/\n+/).filter(Boolean).length >= 3 && value.length > 280);
     }
 
+    function getLatestUserMessage() {
+      for (let i = state.history.length - 1; i >= 0; i -= 1) {
+        if (state.history[i]?.role === "user") return String(state.history[i].content || "").trim();
+      }
+      return "";
+    }
+
+    function extractExplorationHook(text = "") {
+      const raw = String(text || "").trim().replace(/\s+/g, " ");
+      if (!raw) return "";
+      const activity = raw.match(
+        /\b((?:restor(?:e|ing)|refinish(?:ing)?|sanding|woodwork(?:ing)?|furniture(?: restoration)?|cook(?:ing)?|garden(?:ing)?|paint(?:ing)?|draw(?:ing)?|writ(?:e|ing)|photo(?:graphy)?|music|design(?:ing)?|coding|build(?:ing)?|fix(?:ing)?)(?:\s+(?:old\s+)?(?:furniture|wood|pieces?|projects?))?)/i
+      );
+      if (activity?.[1]) return abbreviateQuestion(activity[1], 48);
+      const usedTo = raw.match(/\b(?:used to|i(?:'|')?d spend|spend my weekends?|weekends?)\s+([^.\n?]{8,90})/i);
+      if (usedTo?.[1]) return abbreviateQuestion(usedTo[1], 56);
+      const enjoyed = raw.match(/\b(?:enjoy(?:ed)?|love(?:d)?|liked|miss(?:ed)?)\s+([^.\n?]{8,70})/i);
+      if (enjoyed?.[1] && !/\b(?:my (?:kids?|family|daughter|son|partner)|them)\b/i.test(enjoyed[1])) {
+        return abbreviateQuestion(enjoyed[1], 56);
+      }
+      const sentence = raw.split(/(?<=[.!?])\s+/)[0] || raw;
+      return abbreviateQuestion(sentence, 72);
+    }
+
+    function responseAcknowledgesLatestInput(response, latestUserText = getLatestUserMessage()) {
+      const reply = String(response || "").toLowerCase();
+      const latest = String(latestUserText || "").toLowerCase();
+      if (!reply.trim() || !latest.trim()) return false;
+      const hook = extractExplorationHook(latest).toLowerCase();
+      if (hook) {
+        const hookTokens = hook.match(/[a-z]{4,}/g) || [];
+        if (hookTokens.some((token) => reply.includes(token))) return true;
+      }
+      const stop = new Set([
+        "about", "there", "something", "everything", "actually", "instead", "because",
+        "really", "being", "doing", "having", "would", "could", "should", "their",
+        "boardroom", "weekends", "creating", "managing", "digital", "ghosts", "forgotten",
+        "bringing", "quieted", "performing", "checking", "boxes", "family", "failing"
+      ]);
+      const tokens = (latest.match(/[a-z]{5,}/g) || []).filter((token) => !stop.has(token));
+      const hits = tokens.filter((token) => reply.includes(token));
+      return hits.length >= 1;
+    }
+
+    function buildExplorationAcknowledgment(latestUserText = getLatestUserMessage()) {
+      const latest = String(latestUserText || "").trim();
+      if (!latest) return "Thanks for sharing that —";
+      const hook = extractExplorationHook(latest);
+      const lower = latest.toLowerCase();
+      if (/\b(furniture|restor|sanding|refinish|woodwork)\b/.test(lower)) {
+        return "Restoring old furniture — that tactile, bring-something-back-to-life energy really stands out.";
+      }
+      if (hook && hook.length >= 8) {
+        const clean = hook.replace(/[.?!…]+$/g, "").trim();
+        return `What you shared about ${clean.charAt(0).toLowerCase()}${clean.slice(1)} really stands out.`;
+      }
+      return "Thanks for trusting me with that —";
+    }
+
+    function withExplorationAcknowledgment(question, latestUserText = getLatestUserMessage()) {
+      const q = String(question || "").trim();
+      if (!q) return q;
+      if (responseAcknowledgesLatestInput(q, latestUserText)) return q;
+      const ack = buildExplorationAcknowledgment(latestUserText).replace(/[.]+$/g, "");
+      const rest = q.charAt(0).toLowerCase() === q.charAt(0)
+        ? q
+        : q.charAt(0).toLowerCase() + q.slice(1);
+      return `${ack}. ${rest.charAt(0).toUpperCase()}${rest.slice(1)}`;
+    }
+
+    function ensureExplorationAcknowledgesLatest(response, fallbackQuestion, latestUserText = getLatestUserMessage()) {
+      const reply = String(response || "").trim();
+      const fallback = String(fallbackQuestion || "").trim();
+      if (reply && responseAcknowledgesLatestInput(reply, latestUserText)) return reply;
+      if (fallback) return withExplorationAcknowledgment(fallback, latestUserText);
+      if (reply) return withExplorationAcknowledgment(reply, latestUserText);
+      return withExplorationAcknowledgment(
+        "What else feels important for me to understand before we sketch a path?",
+        latestUserText
+      );
+    }
+
+    function getDependentLogisticsQuestion() {
+      return "Do you have kids or anyone else you're responsible for day to day? I want to keep schedules and logistics realistic.";
+    }
+
     function getClarifyingFallback(userText) {
       if (isFounderOrProjectPrompt(userText)) {
         const product = getFounderProductLabel(userText);
@@ -36959,7 +37045,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return "Are you still testing if the site works with a few people, getting your first strangers to try it, or ready to run a formal pilot with a partner for grant/sponsor data?";
       }
       if (isReentrySituation({ title: userText })) {
-        return "Do you have your ID and birth certificate lined up, or is getting those settled the most urgent thing this week?";
+        return withExplorationAcknowledgment(
+          "Do you have your ID and birth certificate lined up, or is getting those settled the most urgent thing this week?",
+          userText
+        );
       }
       if (
         !conversationLooksLikeCareerPivot(userText)
@@ -36970,15 +37059,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           || conversationMentionsStabilityRebuild(userText)
         )
       ) {
-        return "Do you have a valid ID right now, or is getting that sorted the first thing you need to tackle?";
+        return withExplorationAcknowledgment(
+          "Do you have a valid ID right now, or is getting that sorted the first thing you need to tackle?",
+          userText
+        );
       }
       if (explorationPhaseNeedsInterestQuestion(userText)) {
-        return "Outside of work, what do you actually enjoy doing with your hands or mind — hobbies, creative stuff, fixing things, helping people — and was there any past job you liked parts of?";
+        return withExplorationAcknowledgment(
+          "Outside of work, what do you actually enjoy doing with your hands or mind — hobbies, creative stuff, fixing things, helping people — and was there any past job you liked parts of?",
+          userText
+        );
       }
       if (explorationPhaseNeedsDependentQuestion(userText)) {
-        return "Do you have kids or others you're responsible for day to day? That helps me keep schedules and logistics realistic.";
+        return withExplorationAcknowledgment(getDependentLogisticsQuestion(), userText);
       }
-      return "What parts of past work did you actually enjoy, and what do you like doing in your free time?";
+      return withExplorationAcknowledgment(
+        "What parts of past work did you actually enjoy, and what do you like doing in your free time?",
+        userText
+      );
     }
 
     function buildClarifyingPrompt(userText) {
@@ -37078,7 +37176,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (stabilityPriority) {
         focus = "For anyone rebuilding after recovery, release, homelessness, or a major disruption, establish whichever stability fact is still missing: valid ID, or a safe place they can reliably stay for at least the next week. Do not jump to job hunting.";
       } else if (needsKids) {
-        focus = "EXPLORATION PHASE — ask whether they have children or other dependents they care for day to day, so roadmaps can respect school schedules, childcare, and flexibility. Keep it natural and brief.";
+        focus = "EXPLORATION PHASE — after acknowledging their latest answer, ask whether they have children or other dependents they care for day to day, so roadmaps can respect school schedules, childcare, and flexibility. Keep it natural and brief.";
       } else if (needsInterests) {
         focus = "EXPLORATION PHASE — ask about hobbies, creative outlets, hands-on skills, or past work they actually enjoyed. Paths must later connect to what they like, not generic advice.";
       } else {
@@ -37087,40 +37185,63 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       return (
         "You are whatimado, an empathetic possibility advisor still in EXPLORATION — do not generate a summary, path list, or roadmap yet.\n" +
-        "The user already answered one follow-up. Ask ONE more short clarifying question. " + focus + "\n" +
-        "Reference their latest answer. Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
+        "CRITICAL: Your first sentence MUST acknowledge a concrete detail from their LATEST message (paraphrase a specific phrase — hobby, feeling, constraint, or story). Never open with a bare logistics checklist question.\n" +
+        "Then ask ONE more short clarifying question. " + focus + "\n" +
+        "Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
         transcript
       );
     }
 
     function getSecondClarifyingFallback() {
+      const latest = getLatestUserMessage();
       const blob = getConversationUserBlob().toLowerCase();
       if (isFounderOrProjectPrompt(getFirstUserMessage())) {
         const product = getFounderProductLabel();
         if (!isWhatimadoFounderPrompt()) {
-          return `For ${product}, is the next priority finishing the written plan, recruiting founding users, or testing the core product with real people?`;
+          return withExplorationAcknowledgment(
+            `For ${product}, is the next priority finishing the written plan, recruiting founding users, or testing the core product with real people?`,
+            latest
+          );
         }
-        return "Are you still testing if the site works with a few people, getting your first strangers to try it, or ready for a formal pilot / grant conversation?";
+        return withExplorationAcknowledgment(
+          "Are you still testing if the site works with a few people, getting your first strangers to try it, or ready for a formal pilot / grant conversation?",
+          latest
+        );
       }
       if (
         !conversationLooksLikeCareerPivot(blob)
         && (/housing|homeless|shelter|evict|no place to stay|nowhere to stay/.test(blob) || conversationMentionsRecoveryTreatment(blob))
       ) {
-        return "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
+        return withExplorationAcknowledgment(
+          "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
+          latest
+        );
       }
       if (!conversationLooksLikeCareerPivot(blob) && (conversationMentionsIdNeed(blob) || userNeedsIdFirst())) {
         if (!conversationConfirmsHasHousing(blob) && !conversationMentionsHousingInstability(blob)) {
-          return "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
+          return withExplorationAcknowledgment(
+            "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+            latest
+          );
         }
-        return "What documents do you still need for ID — and do you know where to go locally to get them?";
+        return withExplorationAcknowledgment(
+          "What documents do you still need for ID — and do you know where to go locally to get them?",
+          latest
+        );
       }
       if (explorationPhaseNeedsDependentQuestion(blob)) {
-        return "Do you have kids or anyone else you're responsible for day to day? I want to keep schedules and logistics realistic.";
+        return withExplorationAcknowledgment(getDependentLogisticsQuestion(), latest);
       }
       if (explorationPhaseNeedsInterestQuestion(blob)) {
-        return "What do you enjoy doing when work isn't dictating your day — hobbies, creative projects, hands-on stuff — and was there any past job you actually liked parts of?";
+        return withExplorationAcknowledgment(
+          "What do you enjoy doing when work isn't dictating your day — hobbies, creative projects, hands-on stuff — and was there any past job you actually liked parts of?",
+          latest
+        );
       }
-      return "When you picture a week that feels workable, what matters more — flexible hours, steadier pay, or work that uses something you already enjoy?";
+      return withExplorationAcknowledgment(
+        "When you picture a week that feels workable, what matters more — flexible hours, steadier pay, or work that uses something you already enjoy?",
+        latest
+      );
     }
 
     function buildAbilityBaselinePrompt(force = false) {
@@ -37128,21 +37249,29 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
         .join("\n\n");
       const forceNote = force
-        ? "They've shared a lot emotionally already. Ask ONE direct question about skills, past work they were good at, or interests — and invite them to say \"I'm not sure\" if they want help figuring that out."
-        : "Acknowledge the emotional weight briefly (one short clause), then ask ONE concrete question about abilities or interests — hobbies, creative outlets, hands-on skills, or parts of past work they were good at or enjoyed. Do NOT offer a roadmap yet. Do NOT ask about customers, business setup, or logistics.";
+        ? "They've shared a lot emotionally already. First acknowledge a concrete detail from their latest message, then ask ONE direct question about skills, past work they were good at, or interests — and invite them to say \"I'm not sure\" if they want help figuring that out."
+        : "First acknowledge a concrete detail from their latest message (one short sentence). Then ask ONE concrete question about abilities or interests — hobbies, creative outlets, hands-on skills, or parts of past work they were good at or enjoyed. Do NOT offer a roadmap yet. Do NOT ask about customers, business setup, or logistics.";
       return (
         "You are whatimado, still in EXPLORATION. Emotional context alone is not enough to map a path — you still need a baseline of what this person can do or cares about doing.\n" +
+        "CRITICAL: Never ignore their latest answer. No emotional voids — acknowledge before you ask.\n" +
         forceNote + "\n" +
-        "Reference something specific they said. Plain text only. One question only.\n\nConversation so far:\n" +
+        "Plain text only. One question only.\n\nConversation so far:\n" +
         transcript
       );
     }
 
     function getAbilityBaselineFallback(force = false) {
+      const latest = getLatestUserMessage();
       if (force) {
-        return "Before I sketch any path, I need a baseline of what you can draw on — skills you've used at work, things you're naturally good at, or interests you'd actually want time for. What comes to mind, or are you not sure yet?";
+        return withExplorationAcknowledgment(
+          "Before I sketch any path, I need a baseline of what you can draw on — skills you've used at work, things you're naturally good at, or interests you'd actually want time for. What comes to mind, or are you not sure yet?",
+          latest
+        );
       }
-      return "That paradox makes sense — and before we sketch any path, I want to know what tools you actually have in your kit. What are you good at, what have you enjoyed in past work, or what do you miss doing when work isn't dictating everything?";
+      return withExplorationAcknowledgment(
+        "Before we sketch any path, I want to know what tools you actually have in your kit. What are you good at, what have you enjoyed in past work, or what do you miss doing when work isn't dictating everything?",
+        latest
+      );
     }
 
     async function askAbilityBaselineClarifyingQuestion(options = {}) {
@@ -37152,11 +37281,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         hideProfileIntakeChips();
         state.roadmapCheckIn = null;
         state.profileIntakeStep = null;
+        const latest = getLatestUserMessage();
         const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450);
         let finalAnswer = answer || getAbilityBaselineFallback(force);
         if (!/\b(good at|skill|enjoy|hobby|interest|liked|loved|miss|kit|not sure|unsure)\b/i.test(finalAnswer || "")) {
           finalAnswer = getAbilityBaselineFallback(force);
         }
+        finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getAbilityBaselineFallback(force), latest);
         if (!resolveTyping(finalAnswer)) appendAssistantBubble(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
@@ -37184,6 +37315,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     async function askFollowUpClarifyingQuestion() {
       intakeInProgress = true;
       try {
+        const latest = getLatestUserMessage();
         // Prefer ability/interest discovery whenever the kit baseline is still missing.
         if (!explorationReadyForRoadmapCheckIn() && !explorationPhaseNeedsDependentQuestion()) {
           const force = (state.clarifyingQuestionsAsked || 0) + 1 >= MAX_CLARIFYING_QUESTIONS;
@@ -37192,6 +37324,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           if (!/\b(good at|skill|enjoy|hobby|interest|liked|loved|miss|kit|not sure|unsure)\b/i.test(finalAnswer || "")) {
             finalAnswer = getAbilityBaselineFallback(force);
           }
+          finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getAbilityBaselineFallback(force), latest);
           resolveTyping(finalAnswer);
           state.history.push({ role: "assistant", content: finalAnswer });
           state.step = 2;
@@ -37228,16 +37361,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           || stabilityRebuild
         );
         if (needsIdQuestion && !/\b(id|identification|birth certificate|driver'?s license|state id|documents)\b/i.test(finalAnswer || "")) {
-          finalAnswer = "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
+          finalAnswer = withExplorationAcknowledgment(
+            "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
+            latest
+          );
         } else if (stabilityRebuild && idAlreadyDiscussed && !housingAlreadyDiscussed) {
-          finalAnswer = "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
+          finalAnswer = withExplorationAcknowledgment(
+            "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+            latest
+          );
         } else if (
           !needsIdQuestion
           && !stabilityRebuild
           && explorationPhaseNeedsDependentQuestion(blob)
           && !/\b(kid|child|children|dependent|parent)\b/i.test(finalAnswer || "")
         ) {
-          finalAnswer = getSecondClarifyingFallback();
+          // Keep any good acknowledgment; only supply the logistics ask with a bridge.
+          finalAnswer = responseAcknowledgesLatestInput(finalAnswer, latest)
+            ? `${String(finalAnswer).trim().replace(/[.?!]+$/g, "")}. ${getDependentLogisticsQuestion()}`
+            : withExplorationAcknowledgment(getDependentLogisticsQuestion(), latest);
         } else if (
           !needsIdQuestion
           && !stabilityRebuild
@@ -37245,8 +37387,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           && !explorationPhaseNeedsDependentQuestion(blob)
           && !/\b(enjoy|hobby|interest|creative|hands[- ]on|liked|loved|good at|skill)\b/i.test(finalAnswer || "")
         ) {
-          finalAnswer = getSecondClarifyingFallback();
+          finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getSecondClarifyingFallback(), latest);
         }
+        finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, fallback, latest);
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
@@ -38922,11 +39065,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           const idKnown = conversationMentionsIdNeed(userText) || conversationConfirmsHasId(userText);
           const housingKnown = conversationMentionsHousingInstability(userText) || conversationConfirmsHasHousing(userText);
           if (!idKnown) {
-            finalAnswer = "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?";
+            finalAnswer = withExplorationAcknowledgment(
+              "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
+              userText
+            );
           } else if (!housingKnown) {
-            finalAnswer = "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?";
+            finalAnswer = withExplorationAcknowledgment(
+              "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+              userText
+            );
           }
         }
+        finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, fallback, userText);
 
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
