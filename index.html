@@ -17755,6 +17755,15 @@
       '- Task text example (business): "Talk to 3 people who would potentially be interested in your Mobile Pet Grooming service. If they\'re already using someone, ask what\'s missing from that service." — NOT location-heavy generic phrasing.\n' +
       '- Task text example (stability): "Call 211 and ask about shelter beds and waitlists tonight. Write down 3 program names, phone numbers, and what ID each place needs."\n';
 
+    // Dual-mandate exploration guidance: never graze the surface on feelings alone —
+    // systematically surface the person's concrete toolkit alongside emotional sparks.
+    const EXPLORATION_DUAL_MANDATE =
+      "DUAL MANDATE (non-negotiable): You are not just building rapport or chasing \"pockets of aliveness.\" You are also mapping this person's actual toolkit.\n" +
+      "Treat flow states and aliveness as ONE input, not the whole picture. A person can have deep, valuable skills they are not currently excited about but that are crucial for a realistic roadmap.\n" +
+      "Alongside what feels alive, actively hunt for HARD ASSETS: existing skills and strengths (even ones they're not excited about), dormant or underused abilities, degrees/certifications/formal training, technical knowledge and domain expertise, professional frameworks/methodologies/playbooks they know, and past roles/projects/responsibilities that built real competence.\n" +
+      "Self-correct: if the exchange has only been about feelings, meaning, or inspiration, your next question MUST probe concrete skills, training, experience, or frameworks. If it has only been about skills, reconnect to what actually feels alive. Always be doing BOTH.\n" +
+      "Reflect back BOTH their energetic preferences AND their concrete toolkit, so later paths are emotionally resonant AND practically grounded in what they already know or can quickly leverage.\n";
+
     function getActionableTaskRules(idea = state.currentIdea) {
       let base = isGroundedPractitioner(idea)
         ? `${ACTIONABLE_TASK_RULES}\n${GROUNDED_UNIVERSAL_RULES}`
@@ -37122,7 +37131,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (explorationPhaseNeedsInterestQuestion(userText)) {
         return (
           "You are whatimado in an EXPLORATION PHASE. Do NOT jump to career prescriptions, path lists, or roadmap talk yet.\n" +
-          "Ask ONE warm, organic follow-up question that uncovers their personal interests, hobbies, hands-on skills, creative outlets, AND/OR past work they actually enjoyed.\n" +
+          EXPLORATION_DUAL_MANDATE +
+          "Ask ONE warm, organic follow-up question. It can uncover what feels alive (interests, hobbies, hands-on or creative outlets, past work they enjoyed) OR surface a concrete asset (a skill, degree/certification, technical or domain expertise, framework, or a past role that built real competence) — choose whichever this conversation is currently missing.\n" +
           "Reference something specific they already said. Sound like a thoughtful friend, not a form.\n" +
           "Do not ask where they live. Do not ask about children yet unless they already brought kids up. Plain text only.\n\nUser: " +
           userText
@@ -37139,7 +37149,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       return (
-        "You are whatimado in an EXPLORATION PHASE. Ask ONE short clarifying question that deepens what they enjoy — past work they liked, hobbies, hands-on skills, or creative outlets — so paths can match the real person.\n" +
+        "You are whatimado in an EXPLORATION PHASE.\n" +
+        EXPLORATION_DUAL_MANDATE +
+        "Ask ONE short clarifying question that deepens EITHER what they enjoy (past work they liked, hobbies, hands-on skills, creative outlets) OR their concrete toolkit (skills, training, certifications, domain expertise, frameworks, past roles) — whichever the conversation still lacks — so paths can match the real, fully-equipped person.\n" +
         "Reference something specific they mentioned. Do not ask where they live. Do not list career options yet. Plain text only.\n\nUser: " +
         userText
       );
@@ -37178,14 +37190,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } else if (needsKids) {
         focus = "EXPLORATION PHASE — after acknowledging their latest answer, ask whether they have children or other dependents they care for day to day, so roadmaps can respect school schedules, childcare, and flexibility. Keep it natural and brief.";
       } else if (needsInterests) {
-        focus = "EXPLORATION PHASE — ask about hobbies, creative outlets, hands-on skills, or past work they actually enjoyed. Paths must later connect to what they like, not generic advice.";
+        focus = "EXPLORATION PHASE — surface whichever side is thin so far: either what they enjoy (hobbies, creative outlets, hands-on skills, past work they liked) OR their concrete toolkit (skills, degrees, certifications, technical/domain expertise, professional frameworks, past roles that built competence). Paths must later connect to BOTH what they like and what they can already do — not generic advice.";
       } else {
-        focus = "Ask one short question that ties their interests to practical constraints (time, money, scheduling) so the map can stay realistic. Do not start listing career options.";
+        focus = "Ask one short question that ties their interests AND their existing skills/experience to practical constraints (time, money, scheduling) so the map can stay realistic. Do not start listing career options.";
       }
 
       return (
         "You are whatimado, an empathetic possibility advisor still in EXPLORATION — do not generate a summary, path list, or roadmap yet.\n" +
-        "CRITICAL: Your first sentence MUST acknowledge a concrete detail from their LATEST message (paraphrase a specific phrase — hobby, feeling, constraint, or story). Never open with a bare logistics checklist question.\n" +
+        EXPLORATION_DUAL_MANDATE +
+        "CRITICAL: Your first sentence MUST acknowledge a concrete detail from their LATEST message (paraphrase a specific phrase — hobby, feeling, constraint, story, skill, or credential). Never open with a bare logistics checklist question.\n" +
         "Then ask ONE more short clarifying question. " + focus + "\n" +
         "Do not repeat the first question. Do not ask where they live. Plain text only.\n\nConversation so far:\n" +
         transcript
@@ -37249,10 +37262,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
         .join("\n\n");
       const forceNote = force
-        ? "They've shared a lot emotionally already. First acknowledge a concrete detail from their latest message, then ask ONE direct question about skills, past work they were good at, or interests — and invite them to say \"I'm not sure\" if they want help figuring that out."
-        : "First acknowledge a concrete detail from their latest message (one short sentence). Then ask ONE concrete question about abilities or interests — hobbies, creative outlets, hands-on skills, or parts of past work they were good at or enjoyed. Do NOT offer a roadmap yet. Do NOT ask about customers, business setup, or logistics.";
+        ? "They've shared a lot emotionally already. First acknowledge a concrete detail from their latest message, then ask ONE direct question that inventories a HARD ASSET — a skill, degree, certification, technical/domain expertise, framework/methodology they know, or a past role that built real competence — even if it's something they're not currently excited about. Invite them to say \"I'm not sure\" if they want help figuring that out."
+        : "First acknowledge a concrete detail from their latest message (one short sentence). Then ask ONE concrete question that surfaces their toolkit — skills, training, certifications, domain expertise, frameworks, or responsibilities from past roles — as well as what they enjoyed doing. Do NOT offer a roadmap yet. Do NOT ask about customers, business setup, or logistics.";
       return (
-        "You are whatimado, still in EXPLORATION. Emotional context alone is not enough to map a path — you still need a baseline of what this person can do or cares about doing.\n" +
+        "You are whatimado, still in EXPLORATION. Emotional context alone is not enough to map a path — you still need a baseline of what this person can DO, not just what excites them.\n" +
+        EXPLORATION_DUAL_MANDATE +
         "CRITICAL: Never ignore their latest answer. No emotional voids — acknowledge before you ask.\n" +
         forceNote + "\n" +
         "Plain text only. One question only.\n\nConversation so far:\n" +
