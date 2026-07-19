@@ -26138,14 +26138,93 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     // Read the person's story as the specification for the plan. Surfaces concrete
     // strengths/desires so missions are conditioned on identity, not a generic template.
+    // "Invisible assets" = hobbies, unconventional skills, quirks, interests, and
+    // personality traits that shape HOW someone works — as important as work history.
+    // Each entry can surface an evidence phrase when its regex hits the conversation.
+    const INVISIBLE_ASSET_SIGNALS = [
+      { id: "curious-tinkerer", label: "Curious tinkerer", type: "trait", phrase: "tinkerer's curiosity",
+        description: "You learn by poking at things, taking them apart, and trying stuff yourself.",
+        rx: /\b(tinker|experiment|side project|hack(?:ing)? (?:on|around)|take (?:it|things) apart|figure out how (?:it|things) work|mess around with|play with (?:the )?tools?)\b/,
+        evidence: "Mentioned tinkering, side projects, or learning by trying things hands-on" },
+      { id: "hands-on-maker", label: "Hands-on maker", type: "skill", phrase: "hands-on instincts",
+        description: "You think with your hands — building, fixing, and restoring real things.",
+        rx: /\b(restor(?:e|ing)|refinish|woodwork|build(?:ing)? (?:furniture|things|with my hands)|repair|fix(?:ing)? (?:up )?(?:things|stuff|cars|bikes)|garden|cook(?:ing)?|craft(?:ing)?|hands[- ]on)\b/,
+        evidence: "Talked about hands-on making, repairing, or restoring things" },
+      { id: "community-builder", label: "Community builder", type: "social-skill", phrase: "knack for bringing people together",
+        description: "You naturally connect people and create small communities around shared interests.",
+        rx: /\b(bring people together|connect people|host|organiz(?:e|ing) (?:a |the )?(?:group|meetup|event)|run(?:ning)? (?:a |an )?(?:group|club|community|server)|people come to me|go[- ]to person|friends ask me)\b/,
+        evidence: "Brings people together or runs a group/community around a shared interest" },
+      { id: "systems-mapper", label: "Systems mapper", type: "trait", phrase: "systems-thinking",
+        description: "You see how the parts connect and where a system quietly breaks.",
+        rx: /\b(systems? think|how (?:it all|things) (?:connect|fit)|big[- ]picture|see the whole|root cause|where it breaks|map (?:out )?(?:the|a) (?:process|system))\b/,
+        evidence: "Naturally maps how systems connect and where they break down" },
+      { id: "quiet-fixer", label: "Quiet fixer", type: "trait", phrase: "calm-in-a-crisis steadiness",
+        description: "When things go sideways, you're the one who calmly makes them work again.",
+        rx: /\b(fixer|the one who fixes|keep(?:s|ing)? (?:everything|things) (?:running|together)|calm under|crisis|put out fires|people rely on me|hold(?:s|ing)? it together)\b/,
+        evidence: "Is the person others rely on to steady and fix things under pressure" },
+      { id: "storyteller", label: "Storyteller / explainer", type: "skill", phrase: "gift for making things click",
+        description: "You make complicated things make sense to other people.",
+        rx: /\b(explain(?:ing)? (?:complex|hard|complicated)|make (?:it|things) make sense|teach|write|storytell|good with words|break (?:it|things) down)\b/,
+        evidence: "Makes complex things clear for others through explaining, teaching, or writing" },
+      { id: "deep-focus-learner", label: "Deep-focus learner", type: "trait", phrase: "deep-focus learning",
+        description: "You go all-in on a topic and self-teach until you get it.",
+        rx: /\b(self[- ]?taught|deep dive|obsess|lose track of time|rabbit hole|hyperfocus|read everything about|go all in)\b/,
+        evidence: "Self-teaches by diving deep and losing track of time in a topic" },
+      { id: "aesthetic-eye", label: "Aesthetic eye", type: "interest", phrase: "eye for design",
+        description: "You notice design, beauty, and detail others walk past.",
+        rx: /\b(design|aesthetic|beautiful|notice (?:the )?details?|visual|style|make (?:it|things) (?:look|feel) (?:good|right)|photograph|art\b)\b/,
+        evidence: "Notices design and detail; cares how things look and feel" },
+      { id: "nature-restorer", label: "Nature / calm seeker", type: "interest", phrase: "pull toward real, outdoor space",
+        description: "You recharge outdoors and around living, growing things.",
+        rx: /\b(hik(?:e|ing)|outdoors|nature|garden|plant|animals|trail|camp(?:ing)?|being outside)\b/,
+        evidence: "Recharges outdoors or around nature, plants, or animals" }
+    ];
+
+    // Returns up to `max` structured invisible assets inferred from the conversation.
+    function getInvisibleAssets(idea = null, max = 7) {
+      const blob = getConversationCareerBlob(idea);
+      if (!blob || !blob.trim()) return [];
+      const out = [];
+      for (const sig of INVISIBLE_ASSET_SIGNALS) {
+        if (out.length >= max) break;
+        if (sig.rx.test(blob)) {
+          out.push({ id: sig.id, label: sig.label, type: sig.type, phrase: sig.phrase, description: sig.description, evidence: [sig.evidence] });
+        }
+      }
+      return out;
+    }
+
+    // Single source for the Path Tagline: derived at render time from the same idea +
+    // conversation, and blended with a key invisible asset so it reflects goal AND person.
+    // Result is written back to idea.tagline so every consumer reads one value.
+    function getRoadmapPathTagline(idea = state.currentIdea) {
+      if (!idea) return "";
+      const base = String(idea.tagline || "").trim();
+      const goal = String(idea.title || "").trim();
+      if (!goal || isFounderOrProjectPrompt(getFirstUserMessage())) return base;
+      const asset = getInvisibleAssets(idea)[0];
+      if (!asset) return base;
+      const phrase = String(asset.phrase || asset.label || "").toLowerCase();
+      if (!phrase) return base;
+      // If the current tagline already nods to this asset, leave it untouched (idempotent).
+      const assetWords = phrase.split(/[^a-z]+/).filter((w) => w.length > 3);
+      if (base && assetWords.some((w) => base.toLowerCase().includes(w))) return base;
+      return `Turning your ${phrase} into a real path toward ${goal}.`;
+    }
+
     function getPersonaSpecBlock(idea = null) {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return "";
       const { assets, desires } = getPersonaSignals(idea);
-      if (!assets.length && !desires.length) return "";
+      const invisible = getInvisibleAssets(idea);
+      if (!assets.length && !desires.length && !invisible.length) return "";
       let block = "\nPERSONA SPEC (treat the person's story as the primary data source for this plan):\n";
       block += "- Build missions FROM their identity, skills, and goals — never a one-size-fits-all template pasted on top of the conversation.\n";
       if (assets.length) {
         block += `- Concrete strengths / toolkit they revealed: ${assets.join("; ")}. Use these to shape the TYPE of missions — e.g. mapping real-world systems they care about, interviewing or shadowing people in adjacent fields (city planning, community development, service/product design, operations), and prototyping small real experiments in their own neighborhood, workplace, or network.\n`;
+      }
+      if (invisible.length) {
+        block += `- INVISIBLE ASSETS (hobbies, quirks, and traits that shape HOW they work — treat these as first-class, not decoration): ${invisible.map((a) => `${a.label} (${a.description})`).join("; ")}.\n`;
+        block += "- Lean tasks on these invisible assets so the plan feels natural to how they already move through the world (e.g. a hands-on maker prototypes physically; a community-builder does outreach by hosting; a deep-focus learner gets a focused solo sprint). In each task's \"why\", name the asset it draws on.\n";
       }
       if (desires.length) {
         block += `- What they're reaching for: ${desires.join("; ")}. Tie each mission back to this original impulse so the roadmap feels like a series of meaningful experiments in alignment with who they are — not a compliance checklist.\n`;
@@ -29995,6 +30074,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     let loadingQuipIndex = 0;
     const siteLoadingProgressControllers = new Map();
 
+    // Conceptual phases for the roadmap loading state. The whole roadmap arrives in one
+    // response, so these drive a *simulated* progress bar + phase microcopy (percentComplete
+    // = conceptual completion once the phase is done) to avoid a blank/frozen feel.
+    const ROADMAP_GENERATION_PHASES = [
+      { id: "collecting-signals", label: "Collecting your inputs", percentComplete: 25, expectedDurationSeconds: 4,
+        description: "Reading your history, goals, and the quirks that make you you." },
+      { id: "surfacing-assets", label: "Spotting your hidden strengths", percentComplete: 48, expectedDurationSeconds: 6,
+        description: "Pulling out the invisible assets most plans miss." },
+      { id: "designing-roadmap", label: "Designing your path", percentComplete: 80, expectedDurationSeconds: 9,
+        description: "Turning your profile and assets into a roadmap built around you." },
+      { id: "finalizing-details", label: "Polishing your roadmap", percentComplete: 100, expectedDurationSeconds: 5,
+        description: "Tightening milestones, tasks, and wording so it all fits together." }
+    ];
+
+    function getRoadmapGenerationPhaseForPercent(pct) {
+      for (const phase of ROADMAP_GENERATION_PHASES) {
+        if (pct <= phase.percentComplete) return phase;
+      }
+      return ROADMAP_GENERATION_PHASES[ROADMAP_GENERATION_PHASES.length - 1];
+    }
+
     function formatLoadingEta(remainingMs) {
       const sec = Math.ceil(remainingMs / 1000);
       if (sec <= 3) return "Almost there…";
@@ -30029,6 +30129,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const durationMs = options.durationMs || 50000;
       let cap = options.cap ?? 94;
       const formatRemaining = options.formatRemaining || formatLoadingEta;
+      const phases = Array.isArray(options.phases) ? options.phases : null;
+      const onPhaseChange = typeof options.onPhaseChange === "function" ? options.onPhaseChange : null;
+      let lastPhaseId = null;
       const startedAt = Date.now();
       let percent = 0;
       const tick = () => {
@@ -30036,6 +30139,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const target = Math.min(cap, (elapsed / durationMs) * cap);
         percent = Math.max(percent, target);
         updateSiteLoadingProgressUi(root, percent, Math.max(0, durationMs - elapsed), formatRemaining);
+        if (phases && onPhaseChange) {
+          let active = phases[phases.length - 1];
+          for (const phase of phases) {
+            if (percent <= phase.percentComplete) { active = phase; break; }
+          }
+          if (active && active.id !== lastPhaseId) {
+            lastPhaseId = active.id;
+            onPhaseChange(active, percent);
+          }
+        }
       };
       tick();
       const timer = setInterval(tick, 220);
@@ -35842,6 +35955,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (hasSkills && profile.constraints) lines.push(`Constraints: ${profile.constraints}`);
       if (profile.goals) lines.push(`Primary goal: ${profile.goals}`);
       if (hasSkills && profile.summary) lines.push(`Profile summary: ${profile.summary}`);
+      const invisible = getInvisibleAssets();
+      if (invisible.length) {
+        lines.push(`Invisible assets (hobbies/quirks/traits that shape how they work — weave into the plan, don't just list): ${invisible.map((a) => a.label).join(", ")}`);
+      }
       if (!lines.length) return "";
       return `\nUSER PROFILE (authoritative for THIS conversation only — use what they said below; ignore any skills not stated here):\n${lines.join("\n")}\n`;
     }
@@ -39928,11 +40045,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               tagline.textContent = "Building your first mission…";
             }
           }
-          startLoadingQuips("#roadmap-loading .loader-tagline");
+          // Phase-aware microcopy replaces the generic quip rotator here: it gives the
+          // user a sense of forward motion mapped to the progress bar (avoids frozen feel).
+          stopLoadingQuips();
           startSiteLoadingProgress($("#roadmap-loader-progress"), {
             durationMs: options.progressDurationMs || ROADMAP_FIRST_MISSION_PROGRESS_MS,
             cap: options.progressCap || 94,
-            formatRemaining: formatRoadmapFirstMissionEta
+            formatRemaining: formatRoadmapFirstMissionEta,
+            phases: ROADMAP_GENERATION_PHASES,
+            onPhaseChange: (phase) => {
+              if (tagline && phase?.description) tagline.textContent = phase.description;
+            }
           });
         }
         syncRoadmapStickyOffset();
@@ -42167,7 +42290,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const desc = $("#roadmap-overview-desc");
       if (desc) {
-        desc.textContent = idea.tagline && idea.tagline !== idea.why ? idea.tagline : "";
+        // Single source of truth: reconcile the tagline from the live idea + invisible
+        // assets so it can't diverge from the stages after a fallback swap.
+        const reconciledTagline = getRoadmapPathTagline(idea);
+        if (reconciledTagline) idea.tagline = reconciledTagline;
+        desc.textContent = reconciledTagline && reconciledTagline !== idea.why ? reconciledTagline : "";
         desc.hidden = !desc.textContent;
       }
 
