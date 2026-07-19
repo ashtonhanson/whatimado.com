@@ -1156,14 +1156,23 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-profile {
+      position: relative;
       display: flex;
       align-items: center;
       gap: .75rem;
+      width: 100%;
       padding: .75rem;
       border: 1px solid var(--line);
       border-radius: 14px;
       background: #fff;
       cursor: pointer;
+      text-align: left;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-profile:hover,
+    html[data-color-scheme="adult"] .dashboard-profile[aria-expanded="true"] {
+      border-color: rgba(41, 171, 226, .45);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, .06);
     }
 
     html[data-color-scheme="adult"] .dashboard-profile-avatar {
@@ -1172,17 +1181,185 @@
       border-radius: 50%;
       object-fit: cover;
       background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-profile-copy {
+      min-width: 0;
+      flex: 1;
     }
 
     html[data-color-scheme="adult"] .dashboard-profile-copy strong {
       display: block;
       font-size: .88rem;
       color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     html[data-color-scheme="adult"] .dashboard-profile-copy span {
       font-size: .76rem;
       color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .dashboard-profile-chevron {
+      width: 16px;
+      height: 16px;
+      color: var(--ink-muted);
+      flex-shrink: 0;
+    }
+
+    html[data-color-scheme="adult"] .dashboard-profile-chevron path {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .profile-menu {
+      position: fixed;
+      z-index: 80;
+      width: min(280px, calc(100vw - 1.5rem));
+      display: none;
+      flex-direction: column;
+      padding: .45rem;
+      border-radius: 18px;
+      background: #2f2f2f;
+      color: #f5f5f5;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, .38);
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .profile-menu.open {
+      display: flex;
+    }
+
+    .profile-menu-section {
+      display: grid;
+      gap: .15rem;
+      padding: .2rem 0;
+    }
+
+    .profile-menu-section + .profile-menu-section {
+      border-top: 1px solid rgba(255, 255, 255, .1);
+      margin-top: .15rem;
+      padding-top: .35rem;
+    }
+
+    .profile-menu-account {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      width: 100%;
+      padding: .55rem .65rem;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .profile-menu-account:hover {
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .profile-menu-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #4b5563;
+    }
+
+    .profile-menu-account-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .profile-menu-account-copy strong {
+      display: block;
+      font-size: .9rem;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .profile-menu-account-copy span {
+      display: block;
+      margin-top: .1rem;
+      font-size: .72rem;
+      color: rgba(245, 245, 245, .62);
+    }
+
+    .profile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      width: 100%;
+      min-height: 40px;
+      padding: .55rem .7rem;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: #f5f5f5;
+      font-size: .9rem;
+      font-weight: 550;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .profile-menu-item:hover {
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .profile-menu-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      opacity: .92;
+    }
+
+    .profile-menu-item svg path,
+    .profile-menu-item svg circle,
+    .profile-menu-item svg rect {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .profile-menu-item .profile-menu-chevron {
+      margin-left: auto;
+      width: 14px;
+      height: 14px;
+      opacity: .55;
+    }
+
+    .profile-menu-item--primary {
+      background: rgba(41, 171, 226, .18);
+      color: #dff4ff;
+    }
+
+    .profile-menu-item--primary:hover {
+      background: rgba(41, 171, 226, .28);
+    }
+
+    .profile-menu-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      background: transparent;
+    }
+
+    .profile-menu-backdrop.open {
+      display: block;
     }
 
     html[data-color-scheme="adult"] .dashboard-main {
@@ -13388,7 +13565,7 @@
     .auth-overlay {
       position: fixed;
       inset: 0;
-      z-index: 50;
+      z-index: 90;
       display: none;
       align-items: center;
       justify-content: center;
@@ -13402,11 +13579,13 @@
     }
 
     .auth-modal {
-      width: min(100%, 380px);
+      width: min(100%, 420px);
+      max-height: min(92vh, 720px);
+      overflow: auto;
       position: relative;
       border: 1px solid var(--line);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1.55rem 1.5rem 1.35rem;
       background: var(--surface);
       box-shadow: var(--shadow);
     }
@@ -13418,7 +13597,40 @@
       border: 0;
       color: var(--muted);
       background: transparent;
-      font-size: 1rem;
+      font-size: 1.15rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .auth-brand {
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+      margin: 0 1.5rem .95rem 0;
+    }
+
+    .auth-brand-kicker {
+      margin: 0;
+      color: var(--brand-blue, #29abe2);
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .auth-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: 1.35rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .auth-sub {
+      margin: .15rem 0 0;
+      color: var(--ink-muted);
+      font-size: .84rem;
+      line-height: 1.4;
     }
 
     .auth-tabs {
@@ -13438,6 +13650,7 @@
       color: var(--muted);
       background: transparent;
       font-weight: 700;
+      cursor: pointer;
     }
 
     .auth-tab.active {
@@ -13454,7 +13667,18 @@
       background: var(--surface-2);
     }
 
+    .auth-msg.is-error {
+      background: rgba(239, 68, 68, .1);
+      color: #b91c1c;
+    }
+
+    .auth-msg.is-ok {
+      background: rgba(34, 197, 94, .12);
+      color: #15803d;
+    }
+
     .auth-label {
+      display: block;
       margin: .8rem 0 .3rem;
       color: var(--muted);
       font-size: .7rem;
@@ -13463,15 +13687,111 @@
       text-transform: uppercase;
     }
 
+    .auth-input-wrap {
+      position: relative;
+    }
+
     .auth-input {
-      min-height: 42px;
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 44px;
       padding: .65rem .75rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .auth-input-wrap .auth-input {
+      padding-right: 4.2rem;
+    }
+
+    .auth-input:focus {
+      outline: 2px solid rgba(41, 171, 226, .35);
+      border-color: rgba(41, 171, 226, .55);
+    }
+
+    .auth-toggle-pass {
+      position: absolute;
+      top: 50%;
+      right: .45rem;
+      transform: translateY(-50%);
+      border: 0;
+      border-radius: 8px;
+      padding: .35rem .55rem;
+      background: transparent;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .auth-toggle-pass:hover {
+      color: var(--ink);
+      background: var(--surface-2);
+    }
+
+    .auth-hint {
+      margin: .35rem 0 0;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      line-height: 1.35;
+    }
+
+    .auth-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      margin-top: .55rem;
+    }
+
+    .auth-check {
+      display: flex;
+      align-items: flex-start;
+      gap: .45rem;
+      margin-top: .85rem;
+      color: var(--ink-muted);
+      font-size: .76rem;
+      line-height: 1.35;
+    }
+
+    .auth-check input {
+      margin-top: .15rem;
+    }
+
+    .auth-link-btn {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--brand-blue, #29abe2);
+      font: inherit;
+      font-size: .78rem;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .auth-submit {
       width: 100%;
-      min-height: 42px;
+      min-height: 44px;
       margin-top: 1rem;
+      border: 0;
+      border-radius: 12px;
+      background: #29abe2;
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .auth-submit:hover {
+      background: #1e8fc4;
+    }
+
+    .auth-submit:disabled {
+      opacity: .55;
+      cursor: not-allowed;
     }
 
     .auth-footer {
@@ -13483,9 +13803,10 @@
 
     .auth-footer button {
       border: 0;
-      color: var(--purple-2);
+      color: var(--brand-blue, #29abe2);
       background: transparent;
       font-weight: 800;
+      cursor: pointer;
     }
 
     .donate-overlay {
@@ -15237,15 +15558,65 @@
         <p class="dashboard-sync-note" id="dashboard-sync-note">Maps auto-save on this device. Sync to back up to your account.</p>
         <button type="button" class="dashboard-sync-btn" id="dashboard-sync-btn" hidden>Sync progress</button>
         <div class="dashboard-theme-note" aria-hidden="true">☀ Clean theme</div>
-        <button type="button" class="dashboard-profile" id="dashboard-profile-btn">
+        <button type="button" class="dashboard-profile" id="dashboard-profile-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-menu">
           <img class="dashboard-profile-avatar" id="dashboard-profile-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect fill='%23dbeafe' width='80' height='80'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%2393c5fd'/%3E%3Cpath d='M16 68c4-14 16-22 24-22s20 8 24 22' fill='%2393c5fd'/%3E%3C/svg%3E" alt="">
           <span class="dashboard-profile-copy">
             <strong id="dashboard-profile-name">Guest</strong>
-            <span>View profile</span>
+            <span id="dashboard-profile-meta">Sign in</span>
           </span>
+          <svg class="dashboard-profile-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
         </button>
       </div>
     </aside>
+
+    <div class="profile-menu-backdrop" id="profile-menu-backdrop" hidden></div>
+    <div class="profile-menu" id="profile-menu" role="menu" aria-label="Account menu" hidden>
+      <div class="profile-menu-section">
+        <button type="button" class="profile-menu-account" id="profile-menu-account-btn" role="menuitem">
+          <img class="profile-menu-avatar" id="profile-menu-avatar" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect fill='%234b5563' width='80' height='80'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 68c4-14 16-22 24-22s20 8 24 22' fill='%239ca3af'/%3E%3C/svg%3E">
+          <span class="profile-menu-account-copy">
+            <strong id="profile-menu-name">Guest</strong>
+            <span id="profile-menu-plan">Sign in to sync progress</span>
+          </span>
+          <svg class="profile-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+        </button>
+      </div>
+      <div class="profile-menu-section" id="profile-menu-guest-actions">
+        <button type="button" class="profile-menu-item profile-menu-item--primary" data-profile-action="signin" role="menuitem">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"></path></svg>
+          Sign in
+        </button>
+        <button type="button" class="profile-menu-item" data-profile-action="signup" role="menuitem">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          Sign up
+        </button>
+      </div>
+      <div class="profile-menu-section">
+        <button type="button" class="profile-menu-item" data-profile-action="profile" role="menuitem">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c2.5-4 13.5-4 16 0"></path></svg>
+          Profile
+        </button>
+        <button type="button" class="profile-menu-item" data-profile-action="settings" role="menuitem">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
+          Settings
+        </button>
+        <button type="button" class="profile-menu-item" data-profile-action="help" role="menuitem">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 1 1 3.8 2.1c-.8.5-1.3 1-1.3 2v.4M12 17h.01"></path></svg>
+          Help
+          <svg class="profile-menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+        </button>
+      </div>
+      <div class="profile-menu-section" id="profile-menu-signed-actions" hidden>
+        <button type="button" class="profile-menu-item" data-profile-action="sync" role="menuitem">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.3M21 3v6h-6"></path></svg>
+          Sync progress
+        </button>
+        <button type="button" class="profile-menu-item" data-profile-action="signout" role="menuitem">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>
+          Log out
+        </button>
+      </div>
+    </div>
 
     <button type="button" class="dashboard-mobile-overlay" id="dashboard-mobile-overlay" hidden aria-label="Close menu"></button>
 
@@ -15851,33 +16222,66 @@
   </div>
 
   <div class="auth-overlay" id="auth-overlay">
-    <div class="auth-modal" role="dialog" aria-modal="true" aria-label="Authentication">
-      <button class="auth-close" id="auth-close-btn" aria-label="Close">x</button>
-      <div class="auth-tabs">
-        <button class="auth-tab active" data-auth-tab="signin" id="tab-signin">Sign in</button>
-        <button class="auth-tab" data-auth-tab="signup" id="tab-signup">Sign up</button>
+    <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" aria-describedby="auth-sub">
+      <button class="auth-close" id="auth-close-btn" aria-label="Close">×</button>
+      <div class="auth-brand">
+        <p class="auth-brand-kicker">whatimado</p>
+        <h2 class="auth-title" id="auth-title">Welcome back</h2>
+        <p class="auth-sub" id="auth-sub">Sign in to sync maps, roadmaps, and progress across devices.</p>
       </div>
-      <div class="auth-msg" id="auth-msg"></div>
+      <div class="auth-tabs" id="auth-tabs">
+        <button class="auth-tab active" data-auth-tab="signin" id="tab-signin" type="button">Sign in</button>
+        <button class="auth-tab" data-auth-tab="signup" id="tab-signup" type="button">Sign up</button>
+      </div>
+      <div class="auth-msg" id="auth-msg" role="status" aria-live="polite"></div>
 
-      <form id="signin-form">
+      <form id="signin-form" novalidate>
         <label class="auth-label" for="si-email">Email</label>
-        <input class="auth-input" type="email" id="si-email" autocomplete="email" placeholder="you@email.com">
+        <input class="auth-input" type="email" id="si-email" autocomplete="email" inputmode="email" required placeholder="you@email.com">
         <label class="auth-label" for="si-pass">Password</label>
-        <input class="auth-input" type="password" id="si-pass" autocomplete="current-password" placeholder="Password">
-        <button class="auth-submit" type="submit">Sign in</button>
+        <div class="auth-input-wrap">
+          <input class="auth-input" type="password" id="si-pass" autocomplete="current-password" required minlength="6" placeholder="Password">
+          <button type="button" class="auth-toggle-pass" data-toggle-pass="si-pass">Show</button>
+        </div>
+        <div class="auth-row">
+          <span></span>
+          <button type="button" class="auth-link-btn" id="forgot-password-btn">Forgot password?</button>
+        </div>
+        <button class="auth-submit" type="submit" id="signin-submit-btn">Sign in</button>
         <p class="auth-footer">Don't have an account? <button type="button" data-auth-tab="signup">Sign up</button></p>
       </form>
 
-      <form id="signup-form" hidden>
+      <form id="signup-form" hidden novalidate>
         <label class="auth-label" for="su-name">Name</label>
-        <input class="auth-input" type="text" id="su-name" autocomplete="name" placeholder="First name">
+        <input class="auth-input" type="text" id="su-name" autocomplete="name" required maxlength="80" placeholder="First name or preferred name">
         <label class="auth-label" for="su-email">Email</label>
-        <input class="auth-input" type="email" id="su-email" autocomplete="email" placeholder="you@email.com">
+        <input class="auth-input" type="email" id="su-email" autocomplete="email" inputmode="email" required placeholder="you@email.com">
         <label class="auth-label" for="su-pass">Password</label>
-        <input class="auth-input" type="password" id="su-pass" autocomplete="new-password" placeholder="Create a password">
-        <button class="auth-submit" type="submit">Create account</button>
+        <div class="auth-input-wrap">
+          <input class="auth-input" type="password" id="su-pass" autocomplete="new-password" required minlength="8" placeholder="Create a password">
+          <button type="button" class="auth-toggle-pass" data-toggle-pass="su-pass">Show</button>
+        </div>
+        <p class="auth-hint">Use at least 8 characters. A mix of letters and numbers is stronger.</p>
+        <label class="auth-label" for="su-pass-confirm">Confirm password</label>
+        <div class="auth-input-wrap">
+          <input class="auth-input" type="password" id="su-pass-confirm" autocomplete="new-password" required minlength="8" placeholder="Re-enter password">
+          <button type="button" class="auth-toggle-pass" data-toggle-pass="su-pass-confirm">Show</button>
+        </div>
+        <label class="auth-check" for="su-terms">
+          <input type="checkbox" id="su-terms" required>
+          <span>I agree to create an account so my maps and progress can sync securely.</span>
+        </label>
+        <button class="auth-submit" type="submit" id="signup-submit-btn">Create account</button>
         <p class="auth-footer">Already have an account? <button type="button" data-auth-tab="signin">Sign in</button></p>
         <p class="auth-footer"><button type="button" id="resend-confirm-btn">Resend confirmation email</button></p>
+      </form>
+
+      <form id="reset-form" hidden novalidate>
+        <label class="auth-label" for="rp-email">Email</label>
+        <input class="auth-input" type="email" id="rp-email" autocomplete="email" inputmode="email" required placeholder="you@email.com">
+        <p class="auth-hint">We'll email a secure link to reset your password. Check spam if it doesn't arrive in a few minutes.</p>
+        <button class="auth-submit" type="submit" id="reset-submit-btn">Send reset link</button>
+        <p class="auth-footer"><button type="button" data-auth-tab="signin">Back to sign in</button></p>
       </form>
     </div>
   </div>
@@ -29483,6 +29887,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .catch(() => {});
     }
 
+    function getAccountDisplayName(user = state.currentUser) {
+      const prefsName = normalizeUserProfile(state.userProfile).name;
+      if (user) {
+        return prefsName || user.user_metadata?.full_name || String(user.email || "").split("@")[0] || "Account";
+      }
+      return prefsName || "Guest";
+    }
+
     function updateAuthNavUI(user = state.currentUser) {
       const signedIn = Boolean(user);
       const signinBtn = $("#nav-signin-btn");
@@ -29494,18 +29906,38 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         navUser.hidden = !signedIn;
         navUser.classList.toggle("is-visible", signedIn);
       }
+
+      const displayName = getAccountDisplayName(user);
+      const profileName = $("#dashboard-profile-name");
+      const profileMeta = $("#dashboard-profile-meta");
+      const menuName = $("#profile-menu-name");
+      const menuPlan = $("#profile-menu-plan");
+      const guestActions = $("#profile-menu-guest-actions");
+      const signedActions = $("#profile-menu-signed-actions");
+      const sideAvatar = $("#dashboard-profile-avatar");
+      const menuAvatar = $("#profile-menu-avatar");
+
       if (signedIn) {
-        const prefsName = normalizeUserProfile(state.userProfile).name;
-        const displayName = prefsName || user.user_metadata?.full_name || user.email.split("@")[0];
-        $("#nav-username").textContent = displayName;
-        const profileName = $("#dashboard-profile-name");
-        if (profileName) profileName.textContent = displayName;
-      } else {
-        const prefsName = normalizeUserProfile(state.userProfile).name;
-        const profileName = $("#dashboard-profile-name");
-        if (profileName) profileName.textContent = prefsName || "Guest";
+        const usernameEl = $("#nav-username");
+        if (usernameEl) usernameEl.textContent = displayName;
+      }
+      if (profileName) profileName.textContent = displayName;
+      if (profileMeta) profileMeta.textContent = signedIn ? "Free" : "Sign in";
+      if (menuName) menuName.textContent = displayName;
+      if (menuPlan) {
+        menuPlan.textContent = signedIn
+          ? (user?.email || "Free plan")
+          : "Sign in to sync progress";
+      }
+      if (guestActions) guestActions.hidden = signedIn;
+      if (signedActions) signedActions.hidden = !signedIn;
+      if (sideAvatar && menuAvatar && sideAvatar.src) {
+        menuAvatar.src = sideAvatar.src;
       }
       updateNavSyncStatus();
+      if ($("#profile-menu")?.classList.contains("open")) {
+        positionProfileMenu();
+      }
     }
 
     function formatCloudSyncError(error) {
@@ -42384,23 +42816,71 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       showScreen("main", { skipPersist: true });
     }
 
-    function showAuth(tab) {
+    function showAuth(tab = "signin") {
+      closeProfileMenu();
       $("#auth-overlay").classList.add("open");
       trackEvent("auth_modal_opened", { tab });
       switchAuthTab(tab);
+      requestAnimationFrame(() => {
+        const focusId = tab === "signup" ? "su-name" : tab === "reset" ? "rp-email" : "si-email";
+        $(`#${focusId}`)?.focus();
+      });
     }
 
     function closeAuth() {
       $("#auth-overlay").classList.remove("open");
+      const msg = $("#auth-msg");
+      if (msg) {
+        msg.style.display = "none";
+        msg.textContent = "";
+        msg.classList.remove("is-error", "is-ok");
+      }
     }
 
     function switchAuthTab(tab) {
-      const isSignin = tab === "signin";
-      $("#signin-form").hidden = !isSignin;
-      $("#signup-form").hidden = isSignin;
-      $("#tab-signin").classList.toggle("active", isSignin);
-      $("#tab-signup").classList.toggle("active", !isSignin);
-      $("#auth-msg").style.display = "none";
+      const mode = tab === "signup" || tab === "reset" ? tab : "signin";
+      const isSignin = mode === "signin";
+      const isSignup = mode === "signup";
+      const isReset = mode === "reset";
+      const signinForm = $("#signin-form");
+      const signupForm = $("#signup-form");
+      const resetForm = $("#reset-form");
+      const tabs = $("#auth-tabs");
+      const title = $("#auth-title");
+      const sub = $("#auth-sub");
+
+      if (signinForm) signinForm.hidden = !isSignin;
+      if (signupForm) signupForm.hidden = !isSignup;
+      if (resetForm) resetForm.hidden = !isReset;
+      if (tabs) tabs.hidden = isReset;
+      $("#tab-signin")?.classList.toggle("active", isSignin);
+      $("#tab-signup")?.classList.toggle("active", isSignup);
+
+      if (title && sub) {
+        if (isSignup) {
+          title.textContent = "Create your account";
+          sub.textContent = "Save maps and roadmaps to your account so you can continue on any device.";
+        } else if (isReset) {
+          title.textContent = "Reset your password";
+          sub.textContent = "Enter the email on your account and we'll send a reset link.";
+        } else {
+          title.textContent = "Welcome back";
+          sub.textContent = "Sign in to sync maps, roadmaps, and progress across devices.";
+        }
+      }
+
+      const msg = $("#auth-msg");
+      if (msg) {
+        msg.style.display = "none";
+        msg.textContent = "";
+        msg.classList.remove("is-error", "is-ok");
+      }
+
+      if (isReset) {
+        const email = $("#si-email")?.value.trim() || $("#su-email")?.value.trim() || "";
+        const resetEmail = $("#rp-email");
+        if (resetEmail && email) resetEmail.value = email;
+      }
     }
 
     function getDonationCart() {
@@ -42744,10 +43224,41 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function showAuthMessage(message, isError = false) {
       const element = $("#auth-msg");
+      if (!element) return;
       element.textContent = message;
       element.style.display = "block";
-      element.style.color = isError ? "var(--rose)" : "var(--teal)";
-      element.style.background = isError ? "rgba(224, 108, 117, .1)" : "rgba(78, 205, 196, .1)";
+      element.classList.toggle("is-error", Boolean(isError));
+      element.classList.toggle("is-ok", !isError);
+      element.style.color = "";
+      element.style.background = "";
+    }
+
+    function toggleAuthPasswordVisibility(button) {
+      const inputId = button?.dataset?.togglePass;
+      const input = inputId ? document.getElementById(inputId) : null;
+      if (!input) return;
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      button.textContent = show ? "Hide" : "Show";
+    }
+
+    async function requestPasswordReset(event) {
+      event.preventDefault();
+      if (!ensureSupabaseClient()) return showAuthMessage("Supabase is not available.", true);
+      const email = $("#rp-email")?.value.trim();
+      if (!email) return showAuthMessage("Enter your email address.", true);
+      const submit = $("#reset-submit-btn");
+      if (submit) submit.disabled = true;
+      try {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: getAuthRedirectUrl()
+        });
+        if (error) return showAuthMessage(error.message, true);
+        trackEvent("auth_password_reset_requested");
+        showAuthMessage("If an account exists for that email, a reset link is on the way. Check inbox and spam.");
+      } finally {
+        if (submit) submit.disabled = false;
+      }
     }
 
     async function mergeGuestSessionIntoAccount() {
@@ -42850,35 +43361,53 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const name = $("#su-name").value.trim();
       const email = $("#su-email").value.trim();
       const password = $("#su-pass").value;
-      if (!email || !password) return showAuthMessage("Please fill in all fields.", true);
+      const confirm = $("#su-pass-confirm")?.value || "";
+      const accepted = Boolean($("#su-terms")?.checked);
+      if (!name || !email || !password) return showAuthMessage("Please fill in all fields.", true);
+      if (password.length < 8) return showAuthMessage("Password must be at least 8 characters.", true);
+      if (password !== confirm) return showAuthMessage("Passwords do not match.", true);
+      if (!accepted) return showAuthMessage("Please confirm you want to create an account.", true);
 
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: name },
-          emailRedirectTo: getAuthRedirectUrl()
+      const submit = $("#signup-submit-btn");
+      if (submit) submit.disabled = true;
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: name },
+            emailRedirectTo: getAuthRedirectUrl()
+          }
+        });
+        if (error) {
+          trackEvent("auth_signup_failed");
+          return showAuthMessage(error.message, true);
         }
-      });
-      if (error) {
-        trackEvent("auth_signup_failed");
-        return showAuthMessage(error.message, true);
-      }
 
-      if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-        trackEvent("auth_signup_duplicate");
-        return showAuthMessage("An account with this email may already exist. Try signing in instead.", true);
-      }
+        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+          trackEvent("auth_signup_duplicate");
+          return showAuthMessage("An account with this email may already exist. Try signing in instead.", true);
+        }
 
-      if (data.session) {
-        trackEvent("auth_signup_completed", { immediate_session: true });
-        setUser(data.session.user);
-        closeAuth();
-        return;
-      }
+        if (name) {
+          state.userProfile = normalizeUserProfile({
+            ...state.userProfile,
+            name
+          });
+        }
 
-      trackEvent("auth_signup_completed", { immediate_session: false });
-      showAuthMessage("Account created. If you don't see a confirmation email within a few minutes, check spam — or ask the site owner to enable email delivery in Supabase.");
+        if (data.session) {
+          trackEvent("auth_signup_completed", { immediate_session: true });
+          await setUser(data.session.user, { reload: true });
+          closeAuth();
+          return;
+        }
+
+        trackEvent("auth_signup_completed", { immediate_session: false });
+        showAuthMessage("Account created. Check your email to confirm, then sign in. If nothing arrives, check spam or use Resend confirmation email.");
+      } finally {
+        if (submit) submit.disabled = false;
+      }
     }
 
     async function resendConfirmation() {
@@ -42901,16 +43430,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const email = $("#si-email").value.trim();
       const password = $("#si-pass").value;
       if (!email || !password) return showAuthMessage("Please fill in all fields.", true);
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        trackEvent("auth_signin_failed");
-        return showAuthMessage(error.message, true);
+      const submit = $("#signin-submit-btn");
+      if (submit) submit.disabled = true;
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          trackEvent("auth_signin_failed");
+          return showAuthMessage(error.message, true);
+        }
+        if (data.session?.user) {
+          await setUser(data.session.user, { reload: true });
+        }
+        trackEvent("auth_signin_completed");
+        closeAuth();
+        closeProfileMenu();
+      } finally {
+        if (submit) submit.disabled = false;
       }
-      if (data.session?.user) {
-        await setUser(data.session.user, { reload: true });
-      }
-      trackEvent("auth_signin_completed");
-      closeAuth();
     }
 
     async function signOut() {
@@ -43984,8 +44520,99 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       else openDashboardMobileNav();
     }
 
-    function handleDashboardProfileClick() {
-      openProfileScreen();
+    function isProfileMenuOpen() {
+      return Boolean($("#profile-menu")?.classList.contains("open"));
+    }
+
+    function positionProfileMenu() {
+      const menu = $("#profile-menu");
+      const trigger = $("#dashboard-profile-btn");
+      if (!menu || !trigger || !menu.classList.contains("open")) return;
+      const rect = trigger.getBoundingClientRect();
+      const menuWidth = Math.min(280, window.innerWidth - 24);
+      const gap = 10;
+      menu.style.width = `${menuWidth}px`;
+      const menuHeight = menu.getBoundingClientRect().height || 280;
+
+      let left = rect.left;
+      if (left + menuWidth > window.innerWidth - 12) {
+        left = Math.max(12, window.innerWidth - menuWidth - 12);
+      }
+      let top = rect.top - menuHeight - gap;
+      if (top < 12) {
+        top = Math.min(window.innerHeight - menuHeight - 12, rect.bottom + gap);
+      }
+      menu.style.left = `${Math.round(left)}px`;
+      menu.style.top = `${Math.round(top)}px`;
+    }
+
+    function openProfileMenu() {
+      const menu = $("#profile-menu");
+      const backdrop = $("#profile-menu-backdrop");
+      const trigger = $("#dashboard-profile-btn");
+      if (!menu || !trigger) return;
+      updateAuthNavUI(state.currentUser);
+      menu.hidden = false;
+      menu.classList.add("open");
+      if (backdrop) {
+        backdrop.hidden = false;
+        backdrop.classList.add("open");
+      }
+      trigger.setAttribute("aria-expanded", "true");
+      positionProfileMenu();
+      trackEvent("profile_menu_opened", { signed_in: Boolean(state.currentUser) });
+    }
+
+    function closeProfileMenu() {
+      const menu = $("#profile-menu");
+      const backdrop = $("#profile-menu-backdrop");
+      const trigger = $("#dashboard-profile-btn");
+      if (menu) {
+        menu.classList.remove("open");
+        menu.hidden = true;
+      }
+      if (backdrop) {
+        backdrop.classList.remove("open");
+        backdrop.hidden = true;
+      }
+      trigger?.setAttribute("aria-expanded", "false");
+    }
+
+    function handleDashboardProfileClick(event) {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      if (isProfileMenuOpen()) closeProfileMenu();
+      else openProfileMenu();
+    }
+
+    async function handleProfileMenuAction(action) {
+      closeProfileMenu();
+      if (action === "signin") {
+        showAuth("signin");
+        return;
+      }
+      if (action === "signup") {
+        showAuth("signup");
+        return;
+      }
+      if (action === "profile" || action === "settings" || action === "account") {
+        openProfileScreen();
+        return;
+      }
+      if (action === "help") {
+        openProfileScreen();
+        requestAnimationFrame(() => {
+          $("#site-suggestions")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        return;
+      }
+      if (action === "sync") {
+        await manualSave();
+        return;
+      }
+      if (action === "signout") {
+        await signOut();
+      }
     }
 
     function handleDashboardNotifyClick() {
@@ -44010,6 +44637,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#dashboard-sync-btn")?.addEventListener("click", manualSave);
       $("#dashboard-profile-btn")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-top-avatar")?.addEventListener("click", handleDashboardProfileClick);
+      $("#profile-menu-backdrop")?.addEventListener("click", closeProfileMenu);
+      $("#profile-menu")?.addEventListener("click", (event) => {
+        const actionBtn = event.target.closest("[data-profile-action]");
+        if (actionBtn) {
+          event.preventDefault();
+          void handleProfileMenuAction(actionBtn.dataset.profileAction);
+          return;
+        }
+        if (event.target.closest("#profile-menu-account-btn")) {
+          event.preventDefault();
+          void handleProfileMenuAction(state.currentUser ? "profile" : "signin");
+        }
+      });
+      window.addEventListener("resize", () => {
+        if (isProfileMenuOpen()) positionProfileMenu();
+      });
+      window.addEventListener("scroll", () => {
+        if (isProfileMenuOpen()) positionProfileMenu();
+      }, true);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && isProfileMenuOpen()) closeProfileMenu();
+      });
       $("#dashboard-notify-btn")?.addEventListener("click", handleDashboardNotifyClick);
       $("#sidebar-roadmaps-btn")?.addEventListener("click", toggleSidebarRoadmapsPanel);
       $("#dashboard-roadmap-categories")?.addEventListener("click", (event) => {
@@ -44288,10 +44937,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       $$("[data-auth-open]").forEach((button) => button.addEventListener("click", () => showAuth(button.dataset.authOpen)));
       $$("[data-auth-tab]").forEach((button) => button.addEventListener("click", () => switchAuthTab(button.dataset.authTab)));
-      $("#signin-form").addEventListener("submit", signIn);
-      $("#signup-form").addEventListener("submit", signUp);
-      $("#resend-confirm-btn").addEventListener("click", resendConfirmation);
-      $("#signout-btn").addEventListener("click", signOut);
+      $("#signin-form")?.addEventListener("submit", signIn);
+      $("#signup-form")?.addEventListener("submit", signUp);
+      $("#reset-form")?.addEventListener("submit", requestPasswordReset);
+      $("#forgot-password-btn")?.addEventListener("click", () => switchAuthTab("reset"));
+      $("#resend-confirm-btn")?.addEventListener("click", resendConfirmation);
+      $$("[data-toggle-pass]").forEach((button) => {
+        button.addEventListener("click", () => toggleAuthPasswordVisibility(button));
+      });
+      $("#signout-btn")?.addEventListener("click", signOut);
       $$(".stats-period-btn").forEach((button) => {
         button.addEventListener("click", () => setLaunchStatsPeriod(button.dataset.statsPeriod));
       });
