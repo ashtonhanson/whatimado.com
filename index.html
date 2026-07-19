@@ -17142,6 +17142,11 @@
     const ROADMAP_DELETE_TRASH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>';
     const MIN_CLARIFYING_QUESTIONS = 2;
     const MAX_CLARIFYING_QUESTIONS = 6;
+    // "Identity & Assets" lock: no roadmap options, fallback routing, or quick-jumps may
+    // fire until the user has explicitly shared >= this many concrete skills AND at least
+    // one personal interest/hobby — and never during the first N conversational turns.
+    const IDENTITY_ASSETS_MIN_SKILLS = 2;
+    const IDENTITY_ASSETS_MIN_TURNS = 3;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each. Tasks are numbered in one continuous sequence across the roadmap; never create lettered subtasks.\n' +
       'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Specific nutshell task title, 6–14 words, naming the action and target/result — e.g. Call a housing navigator about beds, waitlists, and required ID","text":"Detailed What to do instructions in 2–3 short concrete sentences: who to contact, what to ask, what to prepare, and what answer to record. Must NOT restate the task title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call the first housing contact below and ask about beds available tonight, waitlist timing, intake hours, and required ID. Write down the contact name, the earliest opening, and any documents you need to bring.\\"","mentorHelp":"Internal asset context only; do not rely on this field for user instructions.","howTo":"One concrete next action only when it adds information not already in text.","why":"One short line explaining why THIS task fits their situation when it might look surprising. Empty only if obviously on-track.","outcome":"Internal progress proof only; do not rely on this field for user instructions.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"","difficulty":"Easy|Medium|Advanced","steps":[],"alternatives":"If this task does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
@@ -22930,9 +22935,75 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return /\b(background in|experience (?:with|in|as)|worked as|years? (?:of )?experience|certified|trained (?:in|as)|skill(?:s|ed)? (?:in|at|with)|strong (?:at|in|with)|i(?:'|')?m (?:good|strong|skilled) (?:at|with|in)|photoshop|illustrat|premiere|figma|excel|spreadsheet|coding|programming|javascript|python|sales|customer service|teaching|coaching|woodwork|mechanic|electrician|nurs(?:e|ing)|bartender|warehouse|data entry)\b/.test(blob);
     }
 
+    // Distinct concrete skill categories (traditional OR non-traditional) the user has
+    // actually named. Used to enforce the "at least two concrete skills" requirement.
+    const CONCRETE_SKILL_PATTERNS = [
+      /\b(sales|selling|business development|account manage)\b/,
+      /\b(customer service|support rep|call center|client success|help desk)\b/,
+      /\b(project manage|program manage|operations|logistics|coordinat|scheduling|process improv)\b/,
+      /\b(financial model|finance|accounting|bookkeep|budget|analyst|analytics|data analysis)\b/,
+      /\b(strateg(?:y|ic)|consult(?:ing|ant)?)\b/,
+      /\b(people (?:lead|manage)|team lead|leadership|managed (?:a |the )?team|supervis|mentor(?:ed|ing)?)\b/,
+      /\b(market(?:ing)?|seo|social media|content|copywrit|brand)\b/,
+      /\b(writ(?:e|ing|er)|editor|storytell|communicat(?:e|ion)|present(?:ation|ing)?)\b/,
+      /\b(design|figma|photoshop|illustrat|premiere|canva|ux|graphic)\b/,
+      /\b(cod(?:e|ing)|program(?:ming)?|software|javascript|python|sql|engineer|developer|technical|it support)\b/,
+      /\b(teach(?:ing)?|coach(?:ing)?|train(?:ing|er)|curriculum|facilitat)\b/,
+      /\b(nurs(?:e|ing)|medical|healthcare|caregiv|therapy|counsel)\b/,
+      /\b(electric(?:al|ian)|plumb|hvac|weld|carpent|mechanic|machin(?:e|ist|ing)|construct|trade)\b/,
+      /\b(woodwork|refinish|restor(?:e|ing)|repair(?:ing)?|rebuild(?:ing)? (?:an? )?(?:engine|motor)|fix(?:ing)? (?:up )?(?:engines?|cars?|bikes?|things|stuff)|hands[- ]on)\b/,
+      /\b(cook(?:ing)?|chef|bak(?:e|ing)|culinary)\b/,
+      /\b(driv(?:e|ing|er)|cdl|delivery)\b/,
+      /\b(photograph|videograph|film|video edit)\b/,
+      /\b(garden(?:ing)?|landscap|farm(?:ing)?|horticultur)\b/,
+      /\b(organiz(?:e|ing|ed)|detail[- ]oriented|problem[- ]solv|troubleshoot)\b/,
+      /\b(spreadsheet|excel|admin(?:istrative)?|data entry|typing)\b/,
+      /\b(negotiat|public speak|event plan|fundrais)\b/
+    ];
+
+    function countConcreteSkillSignals(text = "") {
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      if (!blob.trim()) return 0;
+      let count = 0;
+      for (const rx of CONCRETE_SKILL_PATTERNS) {
+        if (rx.test(blob)) count += 1;
+      }
+      return count;
+    }
+
+    // Narrower than conversationMentionsInterestsOrEnjoyedWork: a real hobby / personal
+    // interest signal, not just "I'm good at…" phrasing (which is a skill, not an interest).
+    function conversationMentionsHobbyOrInterest(text = "") {
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      return /\b(hobby|hobbies|for fun|in my (?:free|spare) time|outside of work|when i(?:'|')?m not (?:at )?work|passion(?:ate)?|interested in|my interests?|enjoy (?:doing|making|building|playing|working on|being|the)|love (?:to|doing|making|building|playing|being)|used to (?:love|enjoy|like)|miss(?:ed)? (?:doing|being)|side (?:project|hustle)|creative outlet|tinker|garden(?:ing)?|paint(?:ing)?|draw(?:ing)?|music|guitar|photo(?:graphy)?|gaming|video games|cook(?:ing)?|bak(?:e|ing)|hik(?:e|ing)|camp(?:ing)?|fishing|woodwork|restor(?:e|ing)|rebuild(?:ing)? (?:an? )?(?:engine|motor)|diy|volunteer(?:ing)?|read(?:ing)? for (?:fun|pleasure)|collect(?:ing)?|build(?:ing)? (?:things|models|furniture))\b/.test(blob);
+    }
+
+    function explorationTurnCount() {
+      return Number(state.clarifyingQuestionsAsked) || 0;
+    }
+
+    // Strict "Identity & Assets" gate: >= 2 concrete skills AND >= 1 personal interest/hobby.
+    function identityAssetsPhaseSatisfied(text = "") {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return true;
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      if (!blob.trim()) return false;
+      return countConcreteSkillSignals(blob) >= IDENTITY_ASSETS_MIN_SKILLS
+        && conversationMentionsHobbyOrInterest(blob);
+    }
+
+    // True while the user is still locked in the Identity & Assets phase: either not enough
+    // conversational turns yet, or the skills + interest baseline has not been met.
+    function withinIdentityAssetsLock(text = "") {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (explorationTurnCount() < IDENTITY_ASSETS_MIN_TURNS) return true;
+      return !identityAssetsPhaseSatisfied(text);
+    }
+
     function explorationReadyForRoadmapCheckIn(text = "") {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return true;
-      return conversationHasAbilityOrInterestBaseline(text);
+      // Hard lock: no roadmap options during the first three conversational turns, and not
+      // until the user has explicitly shared >= 2 concrete skills AND >= 1 interest/hobby.
+      return !withinIdentityAssetsLock(text);
     }
 
     function conversationMentionsChildrenOrDependents(text = "") {
@@ -36501,7 +36572,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         pathPreference: profile.pathPreference || "",
         incomeUrgency: profile.incomeUrgency || "",
         emotionalContext: conversationLooksLikeCareerPivot(blob) || /\b(burn(?:ed)? out|exhausted|ghost|mental load|disconnected)\b/i.test(blob),
-        hasAbilityBaseline: conversationHasAbilityOrInterestBaseline(blob),
+        hasAbilityBaseline: identityAssetsPhaseSatisfied(blob),
+        skillsNamed: countConcreteSkillSignals(blob),
+        hasHobbyOrInterest: conversationMentionsHobbyOrInterest(blob),
+        identityAssetsLocked: withinIdentityAssetsLock(blob),
         updatedAt: Date.now()
       };
       state.roadmapAnalysis = analysis;
