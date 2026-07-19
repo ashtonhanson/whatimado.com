@@ -17141,6 +17141,7 @@
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_DELETE_TRASH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>';
     const MIN_CLARIFYING_QUESTIONS = 2;
+    const MAX_CLARIFYING_QUESTIONS = 6;
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each. Tasks are numbered in one continuous sequence across the roadmap; never create lettered subtasks.\n' +
       'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Specific nutshell task title, 6–14 words, naming the action and target/result — e.g. Call a housing navigator about beds, waitlists, and required ID","text":"Detailed What to do instructions in 2–3 short concrete sentences: who to contact, what to ask, what to prepare, and what answer to record. Must NOT restate the task title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call the first housing contact below and ask about beds available tonight, waitlist timing, intake hours, and required ID. Write down the contact name, the earliest opening, and any documents you need to bring.\\"","mentorHelp":"Internal asset context only; do not rely on this field for user instructions.","howTo":"One concrete next action only when it adds information not already in text.","why":"One short line explaining why THIS task fits their situation when it might look surprising. Empty only if obviously on-track.","outcome":"Internal progress proof only; do not rely on this field for user instructions.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"","difficulty":"Easy|Medium|Advanced","steps":[],"alternatives":"If this task does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
@@ -22902,7 +22903,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function conversationMentionsInterestsOrEnjoyedWork(text = "") {
       const blob = String(text || getConversationUserBlob()).toLowerCase();
-      return /\b(hobby|hobbies|interest(?:s|ed)?|passion|enjoy(?:ed|s|ing)?|love(?:d|s| to)?|like(?:d|s)? (?:to |doing )?|hands[- ]on|creative|craft|art|music|draw|paint|write|writing|cook(?:ing)?|garden(?:ing)?|fix|build(?:ing)?|fixing|outdoors|gaming|photo(?:graphy)?|design|diy|volunteer(?:ing)?|side (?:project|hustle)|free time|outside of work|when i(?:'|')?m not|used to (?:love|enjoy|like)|miss(?:ed)? (?:doing|being)|good with (?:my )?hands|naturally good|favorite part of|parts? i (?:liked|loved|enjoyed))\b/.test(blob);
+      // Avoid false positives from emotional phrasing like "I feel like…" / "I'd love my kids to…".
+      return /\b(hobby|hobbies|interested in|my interests?|passion(?:ate about)?|enjoy(?:ed|s|ing)?|love(?:d)? to|love (?:doing|making|building|writing|cooking|designing|creating)|i (?:really |also )?like (?:to |doing )|liked (?:to |doing )|hands[- ]on|creative outlet|creative (?:work|projects?)|craft(?:ing|s)?|art|music|draw(?:ing)?|paint(?:ing)?|writ(?:e|ing)|cook(?:ing)?|garden(?:ing)?|fix(?:ing)?|build(?:ing)?|outdoors|gaming|photo(?:graphy)?|design(?:ing)?|diy|volunteer(?:ing)?|side (?:project|hustle)|free time|outside of work|when i(?:'|')?m not (?:at )?work|used to (?:love|enjoy|like)|miss(?:ed)? (?:doing|being)|good with (?:my )?hands|naturally good|good at|favorite part of|parts? i (?:liked|loved|enjoyed))\b/.test(blob);
+    }
+
+    function conversationHasAbilityOrInterestBaseline(text = "") {
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      if (!blob.trim()) return false;
+      if (conversationDeclaresSkillUncertainty()) return true;
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.skills && !userExplicitlyUnsureAboutSkills(profile.skills) && !conversationLacksSkillSignal(profile.skills)) {
+        return true;
+      }
+      if (currentIntakeHasStatedSkills()) return true;
+      if (conversationMentionsInterestsOrEnjoyedWork(blob)) return true;
+      // Concrete ability / domain signals even without "I enjoy…" framing.
+      return /\b(background in|experience (?:with|in|as)|worked as|years? (?:of )?experience|certified|trained (?:in|as)|skill(?:s|ed)? (?:in|at|with)|strong (?:at|in|with)|i(?:'|')?m (?:good|strong|skilled) (?:at|with|in)|photoshop|illustrat|premiere|figma|excel|spreadsheet|coding|programming|javascript|python|sales|customer service|teaching|coaching|woodwork|mechanic|electrician|nurs(?:e|ing)|bartender|warehouse|data entry)\b/.test(blob);
+    }
+
+    function explorationReadyForRoadmapCheckIn(text = "") {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return true;
+      return conversationHasAbilityOrInterestBaseline(text);
     }
 
     function conversationMentionsChildrenOrDependents(text = "") {
@@ -36166,6 +36187,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         pathPreference: profile.pathPreference || "",
         incomeUrgency: profile.incomeUrgency || "",
         emotionalContext: conversationLooksLikeCareerPivot(blob) || /\b(burn(?:ed)? out|exhausted|ghost|mental load|disconnected)\b/i.test(blob),
+        hasAbilityBaseline: conversationHasAbilityOrInterestBaseline(blob),
         updatedAt: Date.now()
       };
       state.roadmapAnalysis = analysis;
@@ -36238,6 +36260,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       try {
         state.profileIntakeStep = null;
         const analysis = refreshBackgroundRoadmapAnalysis();
+        // Never offer a roadmap check-in on emotional rapport alone.
+        if (!explorationReadyForRoadmapCheckIn()) {
+          await askAbilityBaselineClarifyingQuestion({
+            force: (state.clarifyingQuestionsAsked || 0) >= MAX_CLARIFYING_QUESTIONS
+          });
+          return;
+        }
         state.roadmapCheckIn = {
           awaiting: true,
           deferred: false,
@@ -36257,6 +36286,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           situation_type: analysis.situationType || "",
           career_pivot: Boolean(analysis.careerPivot),
           emotional_context: Boolean(analysis.emotionalContext),
+          has_ability_baseline: Boolean(analysis.hasAbilityBaseline),
           after_more_share: afterMoreShare
         });
         schedulePersist();
@@ -37093,9 +37123,96 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "When you picture a week that feels workable, what matters more — flexible hours, steadier pay, or work that uses something you already enjoy?";
     }
 
+    function buildAbilityBaselinePrompt(force = false) {
+      const transcript = state.history
+        .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
+        .join("\n\n");
+      const forceNote = force
+        ? "They've shared a lot emotionally already. Ask ONE direct question about skills, past work they were good at, or interests — and invite them to say \"I'm not sure\" if they want help figuring that out."
+        : "Acknowledge the emotional weight briefly (one short clause), then ask ONE concrete question about abilities or interests — hobbies, creative outlets, hands-on skills, or parts of past work they were good at or enjoyed. Do NOT offer a roadmap yet. Do NOT ask about customers, business setup, or logistics.";
+      return (
+        "You are whatimado, still in EXPLORATION. Emotional context alone is not enough to map a path — you still need a baseline of what this person can do or cares about doing.\n" +
+        forceNote + "\n" +
+        "Reference something specific they said. Plain text only. One question only.\n\nConversation so far:\n" +
+        transcript
+      );
+    }
+
+    function getAbilityBaselineFallback(force = false) {
+      if (force) {
+        return "Before I sketch any path, I need a baseline of what you can draw on — skills you've used at work, things you're naturally good at, or interests you'd actually want time for. What comes to mind, or are you not sure yet?";
+      }
+      return "That paradox makes sense — and before we sketch any path, I want to know what tools you actually have in your kit. What are you good at, what have you enjoyed in past work, or what do you miss doing when work isn't dictating everything?";
+    }
+
+    async function askAbilityBaselineClarifyingQuestion(options = {}) {
+      const force = Boolean(options.force);
+      intakeInProgress = true;
+      try {
+        hideProfileIntakeChips();
+        state.roadmapCheckIn = null;
+        state.profileIntakeStep = null;
+        const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450);
+        let finalAnswer = answer || getAbilityBaselineFallback(force);
+        if (!/\b(good at|skill|enjoy|hobby|interest|liked|loved|miss|kit|not sure|unsure)\b/i.test(finalAnswer || "")) {
+          finalAnswer = getAbilityBaselineFallback(force);
+        }
+        if (!resolveTyping(finalAnswer)) appendAssistantBubble(finalAnswer);
+        state.history.push({ role: "assistant", content: finalAnswer });
+        state.step = 2;
+        state.clarifyingQuestionsAsked = Math.max(
+          MIN_CLARIFYING_QUESTIONS,
+          (Number(state.clarifyingQuestionsAsked) || 0) + 1
+        );
+        trackEvent("clarifying_question_shown", {
+          prompt_length: getFirstUserMessage().length,
+          intake_mode: state.intakeMode || "standard",
+          path_mode: state.pathMode || null,
+          clarifying_round: state.clarifyingQuestionsAsked,
+          exploration_phase: true,
+          ability_baseline: true,
+          force_baseline: force
+        });
+        showReplyBox(true);
+        updateSaveButtonVisibility();
+        schedulePersist();
+      } finally {
+        intakeInProgress = false;
+      }
+    }
+
     async function askFollowUpClarifyingQuestion() {
       intakeInProgress = true;
       try {
+        // Prefer ability/interest discovery whenever the kit baseline is still missing.
+        if (!explorationReadyForRoadmapCheckIn() && !explorationPhaseNeedsDependentQuestion()) {
+          const force = (state.clarifyingQuestionsAsked || 0) + 1 >= MAX_CLARIFYING_QUESTIONS;
+          const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450);
+          let finalAnswer = answer || getAbilityBaselineFallback(force);
+          if (!/\b(good at|skill|enjoy|hobby|interest|liked|loved|miss|kit|not sure|unsure)\b/i.test(finalAnswer || "")) {
+            finalAnswer = getAbilityBaselineFallback(force);
+          }
+          resolveTyping(finalAnswer);
+          state.history.push({ role: "assistant", content: finalAnswer });
+          state.step = 2;
+          state.clarifyingQuestionsAsked = Math.max(
+            MIN_CLARIFYING_QUESTIONS,
+            (Number(state.clarifyingQuestionsAsked) || 0) + 1
+          );
+          trackEvent("clarifying_question_shown", {
+            prompt_length: getFirstUserMessage().length,
+            intake_mode: state.intakeMode || "standard",
+            path_mode: state.pathMode || null,
+            clarifying_round: state.clarifyingQuestionsAsked,
+            exploration_phase: true,
+            ability_baseline: true
+          });
+          showReplyBox(true);
+          updateSaveButtonVisibility();
+          schedulePersist();
+          return;
+        }
+
         const answer = await callAdvisor(buildSecondClarifyingPrompt(), 450);
         const fallback = getSecondClarifyingFallback();
         let finalAnswer = answer || fallback;
@@ -37126,19 +37243,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           && !stabilityRebuild
           && explorationPhaseNeedsInterestQuestion(blob)
           && !explorationPhaseNeedsDependentQuestion(blob)
-          && !/\b(enjoy|hobby|interest|creative|hands[- ]on|liked|loved)\b/i.test(finalAnswer || "")
+          && !/\b(enjoy|hobby|interest|creative|hands[- ]on|liked|loved|good at|skill)\b/i.test(finalAnswer || "")
         ) {
           finalAnswer = getSecondClarifyingFallback();
         }
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
-        state.clarifyingQuestionsAsked = MIN_CLARIFYING_QUESTIONS;
+        state.clarifyingQuestionsAsked = Math.max(
+          MIN_CLARIFYING_QUESTIONS,
+          (Number(state.clarifyingQuestionsAsked) || 0) + 1
+        );
         trackEvent("clarifying_question_shown", {
           prompt_length: getFirstUserMessage().length,
           intake_mode: state.intakeMode || "standard",
           path_mode: state.pathMode || null,
-          clarifying_round: 2,
+          clarifying_round: state.clarifyingQuestionsAsked,
           exploration_phase: true
         });
         showReplyBox(true);
@@ -39009,10 +39129,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           await askFollowUpClarifyingQuestion();
           return;
         }
-        // Transition layer: keep analyzing in the background, never auto-jump into
-        // business/logistics intake after emotional exploration.
+        // Keep analyzing in the background, but only offer a roadmap check-in once
+        // we have an abilities/interests baseline — not emotional rapport alone.
         refreshBackgroundRoadmapAnalysis();
         addTypingBubble();
+        if (!explorationReadyForRoadmapCheckIn()) {
+          await askAbilityBaselineClarifyingQuestion({
+            force: (state.clarifyingQuestionsAsked || 0) >= MAX_CLARIFYING_QUESTIONS
+          });
+          return;
+        }
         await offerRoadmapCheckIn({ afterMoreShare: Boolean(state.roadmapCheckIn?.deferred) });
         return;
       }
