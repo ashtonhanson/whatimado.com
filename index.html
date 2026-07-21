@@ -146,6 +146,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    /* ===== STYLES: whatimado UI ===== */
     *, *::before, *::after {
       box-sizing: border-box;
     }
@@ -15319,6 +15320,7 @@
       }
     }
   </style>
+  <!-- ===== HTML: whatimado shell ===== -->
 </head>
 <body>
   <div class="preview-deploy-banner" id="preview-deploy-banner" hidden>
@@ -16486,6 +16488,19 @@
   <div class="save-toast" id="save-toast" aria-live="polite">Progress saved</div>
 
   <script>
+    /*
+     * whatimado — main application script (section index)
+     * Search for "===== SECTION:" to jump between subsystems.
+     *
+     * Config · Supabase & auth · Donations & Stripe · Theme
+     * Ideas · Fallback paths · Money templates · Path alignment
+     * Intake · Constants · Identity & assets gates · Clarifying Qs · Check-in
+     * Roadmap · Schema & resources · HPE · Founder templates · Prompts
+     * Roadmap · Generation · Finalization · Task normalize · Render
+     * State · Application state · Analytics · Session persistence
+     * UI · Screens · Maps · Advisor API · Event bindings · Bootstrap
+     */
+    /* ===== SECTION: Config — Supabase & auth ===== */
     const SUPABASE_URL = "https://acgjcnhcjgtpoztntcyb.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjZ2pjbmhjamd0cG96dG50Y3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMDU1MTgsImV4cCI6MjA5Njg4MTUxOH0.gEJfMFWjmsLTw2aKbjQhYDlPl_zvpjfxP8QskAN6ghQ";
     let supabaseClient = null;
@@ -16505,6 +16520,7 @@
     let launchStatsDayOrder = "newest";
     let lastLaunchStatsData = null;
 
+    /* ===== SECTION: Donations & Stripe ===== */
     // Stripe setup:
     // 1. Add STRIPE_SECRET_KEY to your host env (same place as ANTHROPIC_API_KEY).
     // 2. Deploy stripe-checkout.js as /api/stripe-checkout (same pattern as claude.js).
@@ -16559,6 +16575,7 @@
 
     const DONATION_CART_KEY = "whatimado_donation_cart";
 
+    /* ===== SECTION: Theme & appearance ===== */
     const COLOR_SCHEME_KEY = "whatimado_color_scheme";
     const COLOR_SCHEMES = ["adult", "midnight", "ocean", "sunset", "mario"];
     const OPPORTUNITY_COLOR_VARS = ["--rose", "--teal", "--gold", "--green", "--purple-2"];
@@ -16688,6 +16705,7 @@
       return profile.idStatus !== "has" || profile.housingStatus !== "has";
     }
 
+    /* ===== SECTION: Fallback path ideas ===== */
     function getCareerChangeFallbackIdeas() {
       return [
         {
@@ -17155,6 +17173,7 @@
       /^launch$/,
       /^feedback$/
     ];
+    /* ===== SECTION: Intake constants ===== */
     const INTAKE_STEP_MAP = 5;
     const ROADMAP_DELETE_TRASH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg>';
     const MIN_CLARIFYING_QUESTIONS = 2;
@@ -17167,6 +17186,7 @@
     // Safety valve: once exploration reaches this many turns (or the user repeatedly signals
     // they're stuck) without meeting the baseline, unlock and route to Discovery & Clarity.
     const IDENTITY_ASSETS_SAFETY_VALVE_TURNS = 5;
+    /* ===== SECTION: Roadmap schema & local resources ===== */
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each. Tasks are numbered in one continuous sequence across the roadmap; never create lettered subtasks.\n' +
       'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Specific nutshell task title, 6–14 words, naming the action and target/result — e.g. Call a housing navigator about beds, waitlists, and required ID","text":"Detailed What to do instructions in 2–3 short concrete sentences: who to contact, what to ask, what to prepare, and what answer to record. Must NOT restate the task title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call the first housing contact below and ask about beds available tonight, waitlist timing, intake hours, and required ID. Write down the contact name, the earliest opening, and any documents you need to bring.\\"","mentorHelp":"Internal asset context only; do not rely on this field for user instructions.","howTo":"One concrete next action only when it adds information not already in text.","why":"One short line explaining why THIS task fits their situation when it might look surprising. Empty only if obviously on-track.","outcome":"Internal progress proof only; do not rely on this field for user instructions.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"","difficulty":"Easy|Medium|Advanced","steps":[],"alternatives":"If this task does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
@@ -17309,7 +17329,7 @@
       '- Write like a helpful mentor — plain English, no business jargon, no startup language.\n' +
       '- Never invent fake grants or personal @gmail addresses.\n';
 
-    /* ===== HPE: Human Progress Engine ===== */
+    /* ===== SECTION: Human Progress Engine (HPE) ===== */
     const HPE_CONFIG = {
       enabled: true,
       lifecycle: "beta",
@@ -17601,8 +17621,9 @@
       if (!chips.length) return "";
       return `<div class="roadmap-context-hints" role="note">${chips.join("")}</div>`;
     }
-    /* ===== /HPE ===== */
+    /* ===== /SECTION: Human Progress Engine (HPE) ===== */
 
+    /* ===== SECTION: Roadmap timing & founder path templates ===== */
     let roadmapAutoContinueTimer = null;
     let roadmapShellWaitTimer = null;
     const ROADMAP_ADVISOR_TIMEOUT_MS = 90000;
@@ -18052,6 +18073,7 @@
       );
     }
 
+    /* ===== SECTION: Plain language & exploration prompt rules ===== */
     const PLAIN_LANGUAGE_AI_RULES =
       'MENTOR VOICE (non-negotiable — every stage label, description, mission, why, and outcome):\n' +
       '- Sound like a helpful mentor talking to a friend — warm, human, practical. NOT an AI, startup coach, MBA, bureaucrat, or police-report voice.\n' +
@@ -23262,6 +23284,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     // Distinct concrete skill categories (traditional OR non-traditional) the user has
     // actually named. Used to enforce the "at least two concrete skills" requirement.
+    /* ===== SECTION: Identity & assets gates ===== */
     const CONCRETE_SKILL_PATTERNS = [
       /\b(sales|selling|business development|account manage)\b/,
       /\b(customer service|support rep|call center|client success|help desk)\b/,
@@ -24464,6 +24487,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     // Removes phantom "…below" references from user-facing task copy when nothing is
     // actually attached to that task. Keeps wired tasks (real contacts/drafts) untouched.
+    /* ===== SECTION: Task copy sanitizers ===== */
     function stripUnbackedUiReferences(stages) {
       if (!Array.isArray(stages)) return stages;
       return stages.map((stage) => {
@@ -24939,6 +24963,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return homework / total > 0.35;
     }
 
+    /* ===== SECTION: Task normalization ===== */
     function normalizeRoadmapTask(task, fallback = {}) {
       if (task && typeof task === "object" && task._pendingTask) {
         return { _pendingTask: true };
@@ -26480,6 +26505,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    /* ===== SECTION: Local resources injection ===== */
     function ensureRoadmapLocalContacts(stages, idea = state.currentIdea, options = {}) {
       try {
         const { force = false } = options;
@@ -26552,6 +26578,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return injectLocalContactsIntoRoadmap(cleaned, resources, loc, state.currentIdea);
     }
 
+    /* ===== SECTION: Persona & invisible assets ===== */
     const PERSONA_ASSET_SIGNALS = [
       { label: "systems thinking", rx: /\b(systems? think|systems? design|how systems (?:work|connect)|connect the dots|big[- ]picture|root cause|process(?:es)? (?:design|improv)|feedback loops?|whole system)\b/ },
       { label: "urban planning & cities", rx: /\b(urban plan|city plan(?:ning|ner)?|zoning|transit|public space|walkab|urbanism|built environment|land use|municipal|smart cit)\b/ },
@@ -26683,6 +26710,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return block;
     }
 
+    /* ===== SECTION: Situation detection & path archetypes ===== */
     function getPathSituationType(idea) {
       if (isReentrySituation(idea)) return "reentry";
       const blob = getConversationCareerBlob(idea);
@@ -27904,6 +27932,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }));
     }
 
+    /* ===== SECTION: Founder fallback stages ===== */
     function getFounderFallbackStages(idea) {
       if (!isWhatimadoFounderPrompt()) {
         return getNamedProductFounderFallbackStages(idea);
@@ -28821,6 +28850,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return ["exploration", "business", "learning", "creative"][idx % 4];
     }
 
+    /* ===== SECTION: Roadmap fallback templates ===== */
     function buildStandardFallbackTemplates() {
       return {
         employment: [
@@ -29589,6 +29619,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return `${header}\n${ROADMAP_JSON_SCHEMA_TAIL}`;
     }
 
+    /* ===== SECTION: Roadmap prompt builders ===== */
     function buildFounderRoadmapPrompt(idea, context, { phase = "initial", dedupe = false, refreshBlock = "" } = {}) {
       const product = getFounderProductLabel();
       const isWhatimado = isWhatimadoFounderPrompt();
@@ -30490,6 +30521,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    /* ===== SECTION: Application state ===== */
     const state = {
       step: 1,
       history: [],
@@ -30851,6 +30883,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    /* ===== SECTION: Analytics & telemetry ===== */
     function trackEvent(eventName, metadata = {}) {
       if (!supabaseClient) return;
       const payload = {
@@ -33320,6 +33353,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return false;
     }
 
+    /* ===== SECTION: Intake flow ===== */
     function beginNewIntake(options = {}) {
       syncActiveMapIntoLibrary();
       state.activeMapId = null;
@@ -33891,6 +33925,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     /** Local + cloud save entry point — always merges before write (see CLOUD SESSION PERSIST PIPELINE). */
+    /* ===== SECTION: Session persistence ===== */
     async function persistSession(options = {}) {
       const { manual = false, silent = false, force = false } = options;
       if (!force && !hasSavableProgress()) return { ok: false };
@@ -35663,6 +35698,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    /* ===== SECTION: Screens & navigation ===== */
     function showScreen(name, options = {}) {
       const isConvo = name === "convo";
       const resolvedName = isConvo ? "main" : name;
@@ -35927,6 +35963,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .trim();
     }
 
+    /* ===== SECTION: Advisor API (Claude) ===== */
     async function callAdvisor(prompt, maxTokens = 700, { timeoutMs = 0 } = {}) {
       lastAdvisorError = "";
       const controller = timeoutMs > 0 ? new AbortController() : null;
@@ -36557,6 +36594,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
+    /* ===== SECTION: User profile & context ===== */
     function mergeUserProfileFromConversation() {
       const blob = getConversationUserBlob();
       const profile = normalizeUserProfile(state.userProfile);
@@ -37091,6 +37129,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
+    /* ===== SECTION: Roadmap check-in transition ===== */
     async function offerRoadmapCheckIn(options = {}) {
       const afterMoreShare = Boolean(options.afterMoreShare);
       intakeInProgress = true;
@@ -37932,6 +37971,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    /* ===== SECTION: Clarifying questions & exploration prompts ===== */
     function buildClarifyingPrompt(userText) {
       if (isFounderOrProjectPrompt(userText)) {
         const product = getFounderProductLabel(userText);
@@ -38440,6 +38480,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       ];
     }
 
+    /* ===== SECTION: Map generation (possibility paths) ===== */
     async function generateAndShowMap(options = {}) {
       const pathMode = options.pathMode || state.pathMode || "flexible";
       state.pathMode = pathMode;
@@ -40134,6 +40175,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    /* ===== SECTION: Reply handler & intake state machine ===== */
     async function submitReply() {
       const textarea = $("#reply-textarea");
       const text = textarea.value.trim();
@@ -40505,6 +40547,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return card;
     }
 
+    /* ===== SECTION: Opportunity map UI ===== */
     function buildOpportunityMap(ideas, options = {}) {
       if (options.allowEmpty && (!Array.isArray(ideas) || ideas.length === 0)) {
         ideas = [];
@@ -41096,6 +41139,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return ensureStabilityFirstRoadmapStages(stages, idea);
     }
 
+    /* ===== SECTION: Roadmap finalization & post-processors ===== */
     function finalizeRoadmapStages(stages, idea, founderMode, ideaIndex, { roadmapSource = "ai", lenient = false } = {}) {
       const hardStability = !founderMode && situationRequiresHardStabilityFirst(idea);
       let working = Array.isArray(stages) ? normalizeRoadmapStages(stages) : null;
@@ -41598,6 +41642,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    /* ===== SECTION: Roadmap AI generation ===== */
     async function generateRoadmapStagesFromAi(idea, ideaIndex, options = {}, callbacks = {}) {
       const founderMode = isFounderRoadmapForIdea(idea);
       if (HPE_CONFIG.enabled) refreshProgressContext(idea);
@@ -43375,6 +43420,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return `<div class="overview-task-details">${parts.join("")}</div>`;
     }
 
+    /* ===== SECTION: Roadmap task rendering ===== */
     function renderOverviewTaskHtml(task, stageIndex, taskIndex) {
       const id = `task-${stageIndex}-${taskIndex}`;
       if (isPendingRoadmapTask(task)) {
@@ -43672,6 +43718,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setTaskExpanded(taskId, true);
     }
 
+    /* ===== SECTION: Roadmap stage rendering ===== */
     function renderStages(stages, options = {}) {
       const list = $("#stage-list");
       if (!list) return;
@@ -46345,6 +46392,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       syncHeaderHeight();
     }
 
+    /* ===== SECTION: Event bindings ===== */
     function bindEvents() {
       initPreviewDeployBanner();
       syncHeaderHeight();
@@ -46595,6 +46643,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    /* ===== SECTION: App bootstrap (window load) ===== */
     window.addEventListener("load", async () => {
       startLoadingQuips("#loader .loader-tagline");
       startSiteLoadingProgress($("#loader-progress"), { durationMs: 10000, cap: 88 });
