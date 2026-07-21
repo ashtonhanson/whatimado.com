@@ -9686,6 +9686,23 @@
       color: #1e8fc4;
     }
 
+    html[data-color-scheme="adult"] .task-chip--context {
+      background: rgba(124, 58, 237, .1);
+      color: #6d28d9;
+      max-width: 100%;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-context-hints {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
+      margin: 0 0 .85rem;
+      padding: .55rem .65rem;
+      border-radius: 10px;
+      background: rgba(124, 58, 237, .06);
+      border: 1px solid rgba(124, 58, 237, .12);
+    }
+
     html[data-color-scheme="adult"] .overview-task-why {
       margin: .55rem 0 0;
       color: var(--ink-muted);
@@ -17199,12 +17216,12 @@
 
     const KNOWN_LOCAL_RESOURCE_PACKS = {
       austin: [
+        { name: "Startup advising", org: "SBA Local Assistance — Austin", url: "https://www.sba.gov/local-assistance", phone: "", email: "" },
+        { name: "Social impact grants", org: "Austin Community Foundation", url: "https://www.austincf.org/", phone: "512-472-4486", email: "" },
+        { name: "Nonprofit fiscal sponsorship", org: "Mission Capital", url: "https://www.missioncapital.org/", phone: "512-477-5955", email: "" },
+        { name: "Library community programs", org: "Austin Public Library", url: "https://library.austintexas.gov/", phone: "512-974-7400", email: "" },
         { name: "Workforce programs", org: "Workforce Solutions Capital Area", url: "https://www.wfscapitalarea.com/", phone: "512-530-1050", email: "" },
-        { name: "Re-entry & housing", org: "Caritas of Austin", url: "https://www.caritasofaustin.org/", phone: "512-479-4610", email: "info@caritasofaustin.org" },
-        { name: "Job search help", org: "Austin Public Library Job Search Help", url: "https://library.austintexas.gov/job-search-help", phone: "512-974-7400", email: "" },
-        { name: "Shelter services", org: "Front Steps", url: "https://frontsteps.org/", phone: "512-305-4100", email: "" },
-        { name: "Youth & family services", org: "LifeWorks Austin", url: "https://www.lifeworksaustin.org/", phone: "512-735-2400", email: "" },
-        { name: "Affordable housing & support", org: "Foundation Communities", url: "https://foundcom.org/", phone: "512-447-2026", email: "" }
+        { name: "Re-entry & housing", org: "Caritas of Austin", url: "https://www.caritasofaustin.org/", phone: "512-479-4610", email: "info@caritasofaustin.org" }
       ],
       tromso: [
         { name: "Employment & benefits", org: "NAV Troms og Finnmark", url: "https://www.nav.no/", phone: "55 55 33 33", email: "" },
@@ -17291,6 +17308,301 @@
       '- outcome = measurable proof only. why = one line explaining why this step fits their goal when it might look surprising, or empty if obvious.\n' +
       '- Write like a helpful mentor — plain English, no business jargon, no startup language.\n' +
       '- Never invent fake grants or personal @gmail addresses.\n';
+
+    /* ===== HPE: Human Progress Engine ===== */
+    const HPE_CONFIG = {
+      enabled: true,
+      lifecycle: "beta",
+      allowMonetization: false
+    };
+
+    (function initHpeConfigFromQuery() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("hpe") === "0") HPE_CONFIG.enabled = false;
+        if (params.get("hpe") === "1") HPE_CONFIG.enabled = true;
+        if (params.get("monetize") === "1") HPE_CONFIG.allowMonetization = true;
+        if (params.get("lifecycle") === "production") HPE_CONFIG.lifecycle = "production";
+      } catch { /* ignore */ }
+    })();
+
+    function monetizationAllowed() {
+      return HPE_CONFIG.allowMonetization === true || HPE_CONFIG.lifecycle === "production";
+    }
+
+    function ideaAsksForMoney(idea) {
+      const blob = `${idea?.title || ""} ${idea?.type || ""} ${idea?.tagline || ""} ${idea?.why || ""} ${idea?.income || ""}`;
+      return /\b(tip|donation|donate|pay[- ]what|ask for \$|supporter tier|stripe checkout|patreon|optional tips|revenue)\b/i.test(blob)
+        && /\b(\$\d|tips?|donat)/i.test(blob);
+    }
+
+    function taskAsksForMoney(task) {
+      const normalized = typeof task === "object" ? task : { text: String(task || "") };
+      const blob = `${getTaskText(normalized)} ${normalized.script || ""} ${normalized.mentorHelp || ""} ${normalized.howTo || ""}`;
+      return /\b(tip|donation|donate|pay[- ]what|ask for \$|supporter tier|stripe checkout|patreon|optional tips)\b/i.test(blob);
+    }
+
+    function getBetaMonetizationPromptRule() {
+      if (monetizationAllowed()) return "";
+      return (
+        "BETA MONETIZATION POLICY (non-negotiable):\n" +
+        "- Do NOT generate tasks or paths that ask users to collect tips, donations, pay-what-you-can payments, or Stripe checkout during beta.\n" +
+        "- Focus on proving real value first: watch sessions, feedback, testimonials, usage proof, partner interest.\n" +
+        "- Grants and sponsorship OUTREACH is allowed when the user explicitly asked for funding — but not \"ask strangers for $3 tips\".\n"
+      );
+    }
+
+    function filterIdeasForMonetizationPolicy(ideas) {
+      if (monetizationAllowed()) return ideas || [];
+      return (ideas || []).filter((idea) => !ideaAsksForMoney(idea));
+    }
+
+    function rewriteMonetizationTask(task, ctx) {
+      const normalized = normalizeRoadmapTask(task);
+      const text = getTaskText(normalized);
+      if (/\b(share|post|communit)/i.test(text)) {
+        return {
+          ...normalized,
+          text: "Share with 5 people who fit your target audience and ask what actually helped — not for money, just to learn if it works.",
+          howTo: "Send a short message with the link; note who replied and what they said.",
+          script: "",
+          contextTags: [...(normalized.contextTags || []), "value-first", "no-monetization"]
+        };
+      }
+      return {
+        ...normalized,
+        text: "Collect one sentence of proof from someone your tool actually helped this week.",
+        howTo: "Ask: \"Did this help? What would you change?\" — write down their exact words.",
+        script: "",
+        contextTags: [...(normalized.contextTags || []), "value-proof", "no-monetization"]
+      };
+    }
+
+    function applyBetaMonetizationPolicy(stages, ctx) {
+      if (!HPE_CONFIG.enabled || monetizationAllowed()) return stages;
+      return (stages || []).map((stage) => ({
+        ...stage,
+        tasks: (stage.tasks || []).map((t) => {
+          const normalized = normalizeRoadmapTask(t);
+          return taskAsksForMoney(normalized) ? rewriteMonetizationTask(normalized, ctx) : normalized;
+        })
+      }));
+    }
+
+    function extractProgressContext(idea = state.currentIdea) {
+      const blob = getConversationUserBlob();
+      const latest = getLatestUserMessage();
+      const combined = `${blob} ${latest}`.toLowerCase();
+
+      const prefersEmail = /\b(rather email|prefer email|email instead|not (?:on )?the phone|hate calling|anxious.*call|freeze.*phone|nervous.*call|don't like calling)\b/i.test(combined);
+      const prefersPhone = /\b(prefer (?:to )?call|phone is fine|happy to call)\b/i.test(combined) && !prefersEmail;
+      const preferredChannel = prefersEmail ? "email" : prefersPhone ? "phone" : /\b(in person|meet face|walk in)\b/i.test(combined) ? "in_person" : "unknown";
+
+      const anxietyLevel = /\b(anxious|freeze|terrified|panic|scared|nervous|dread)\b/i.test(combined) ? "high"
+        : /\b(unsure|uncertain|a little nervous|bit nervous)\b/i.test(combined) ? "medium" : "low";
+
+      const moneyConstraint = /\b(no money|money'?s tight|can't afford|broke|tight budget|zero budget|\$0)\b/i.test(combined) ? "tight"
+        : /\b(budget|afford|cost)\b/i.test(combined) ? "ok" : "unknown";
+
+      const timeConstraint = /\b(no time|busy|full[- ]time|two jobs|kids|single parent|limited hours)\b/i.test(combined) ? "scarce"
+        : /\b(flexible|free time|evenings|weekends)\b/i.test(combined) ? "abundant" : "unknown";
+
+      const fears = [];
+      if (/\b(anxious|nervous|freeze|dread).{0,20}call/i.test(combined)) fears.push("phone calls");
+      if (/\b(imposter|not (?:a |really )?founder|who am i)\b/i.test(combined)) fears.push("imposter syndrome");
+      if (/\b(burn(?:ed|out)|exhausted|overwhelmed)\b/i.test(combined)) fears.push("burnout");
+
+      const preferences = [];
+      if (prefersEmail) preferences.push("email over calls");
+      if (/\b(remote|from home|online)\b/i.test(combined)) preferences.push("remote-friendly");
+      if (/\b(small steps|one at a time|low pressure)\b/i.test(combined)) preferences.push("low-pressure pacing");
+
+      const keyPhrases = [];
+      const phrasePatterns = [
+        /\b(i(?:'|')?m the founder of whatimado[^.!?]{0,80})/i,
+        /\b((?:really|genuinely) (?:anxious|nervous)[^.!?]{0,60})/i,
+        /\b(money'?s tight[^.!?]{0,40})/i,
+        /\b(not sure i(?:'|')?m a founder[^.!?]{0,40})/i,
+        /\b(changing the site almost daily[^.!?]{0,60})/i,
+        /\b(grants?|sponsor(?:ship)?|funding)[^.!?]{0,80}/i,
+        /\b(closed beta[^.!?]{0,60})/i,
+        /\b(some friends like it[^.!?]{0,60})/i
+      ];
+      for (const rx of phrasePatterns) {
+        const m = blob.match(rx);
+        if (m?.[1]) keyPhrases.push(m[1].trim().slice(0, 120));
+      }
+      if (!keyPhrases.length && latest) keyPhrases.push(latest.slice(0, 100));
+
+      let statedGoal = "";
+      const goalMatch = blob.match(/\b(i (?:want|need) to[^.!?]{8,120})/i)
+        || blob.match(/\b(my goal is[^.!?]{8,120})/i)
+        || blob.match(/\b(focus on[^.!?]{8,120})/i);
+      if (goalMatch?.[1]) statedGoal = goalMatch[1].trim();
+      else if (idea?.tagline) statedGoal = String(idea.tagline).trim();
+
+      return {
+        preferredChannel,
+        anxietyLevel,
+        moneyConstraint,
+        timeConstraint,
+        statedGoal,
+        fears,
+        preferences,
+        keyPhrases: [...new Set(keyPhrases)].slice(0, 6),
+        lifecycle: HPE_CONFIG.lifecycle
+      };
+    }
+
+    function refreshProgressContext(idea = state.currentIdea) {
+      state.progressContext = extractProgressContext(idea);
+      return state.progressContext;
+    }
+
+    function getProgressContextBlock(ctx = state.progressContext) {
+      if (!HPE_CONFIG.enabled || !ctx) return "";
+      const lines = [
+        "HUMAN PROGRESS CONTEXT (weave into every task — this is a direct continuation of their chat, not a generic checklist):"
+      ];
+      if (ctx.statedGoal) lines.push(`- Stated goal: ${ctx.statedGoal}`);
+      if (ctx.preferredChannel && ctx.preferredChannel !== "unknown") {
+        lines.push(`- Preferred channel: ${ctx.preferredChannel}${ctx.preferredChannel === "email" ? " — avoid cold-calling tasks in early stages" : ""}`);
+      }
+      if (ctx.anxietyLevel === "high") lines.push("- High anxiety — keep steps small, optional, and never stack multiple asks in one task.");
+      if (ctx.moneyConstraint === "tight") lines.push("- Money is tight — zero-cost steps only unless a free program exists.");
+      if (ctx.timeConstraint === "scarce") lines.push("- Time is scarce — tasks must fit in 30–60 minutes or one evening.");
+      if (ctx.fears?.length) lines.push(`- Fears to respect: ${ctx.fears.join(", ")}`);
+      if (ctx.preferences?.length) lines.push(`- Preferences: ${ctx.preferences.join("; ")}`);
+      if (ctx.keyPhrases?.length) {
+        lines.push(`- Echo their words where natural: ${ctx.keyPhrases.map((p) => `"${p}"`).join("; ")}`);
+      }
+      lines.push("- Every task needs: what to do, how to do it (howTo), and when outreach is involved a ready example in script/talkingPoints.");
+      return `\n${lines.join("\n")}\n`;
+    }
+
+    const HOW_NOT_WHAT_RULES =
+      "HOW-NOT-WHAT RULE (Human Progress Engine):\n" +
+      "- Never assign skeleton homework like \"call each business and log results\" without a script, example opening line, and clear done criteria.\n" +
+      "- text = what they do now (2–3 concrete sentences). howTo = the very next physical action. script = ready-to-use copy (email, post, call opener, checklist).\n" +
+      "- For outreach: include interactionStructure mentally as open → middle → close inside script/talkingPoints.\n" +
+      "- Tag tasks with contextTags when they honor a chat preference (e.g. email-first, zero-cost, value-proof).\n" +
+      "- Founder/software paths: recruit beta testers, watch sessions, fix bugs, gather proof — NOT generic local business sales spreadsheets.\n";
+
+    function getHumanProgressPromptBlock(idea = state.currentIdea) {
+      if (!HPE_CONFIG.enabled) return "";
+      refreshProgressContext(idea);
+      return getProgressContextBlock(state.progressContext)
+        + HOW_NOT_WHAT_RULES
+        + getBetaMonetizationPromptRule();
+    }
+
+    function normalizeInteractionStructure(value, fallbackScript = "") {
+      if (value && typeof value === "object") {
+        return {
+          open: String(value.open || "").trim(),
+          middle: String(value.middle || "").trim(),
+          close: String(value.close || "").trim()
+        };
+      }
+      return { open: "", middle: "", close: "" };
+    }
+
+    function buildExampleScriptFromTask(normalized) {
+      const text = getTaskText(normalized);
+      const script = String(normalized.script || "").trim();
+      if (script.length > 40) return script;
+      if (/\b(email|message|dm|reach out)\b/i.test(text)) {
+        return "Subject: Quick question\n\nHi [name] — [one sentence why you're reaching out]. [One sentence what you'd like]. Would [specific small ask] work this week?\n\nThanks,\n[you]";
+      }
+      if (/\b(watch|session|beta|tester)\b/i.test(text)) {
+        return "Open: \"Mind if I watch you try this for 5 minutes? I'm looking for where it confuses people — no wrong answers.\"\nMiddle: Stay quiet; note every pause, back-button, or confused look.\nClose: \"What felt helpful? What would you change?\"";
+      }
+      if (/\b(call|phone)\b/i.test(text)) {
+        return "Open: \"Hi, this is [you] — do you have two minutes?\"\nMiddle: [state your one question clearly]\nClose: \"Thanks — I'll follow up by email with what I heard.\"";
+      }
+      return "";
+    }
+
+    function enforceTaskHowTo(stages, idea, ctx) {
+      return (stages || []).map((stage) => ({
+        ...stage,
+        tasks: (stage.tasks || []).map((task) => {
+          const normalized = normalizeRoadmapTask(task);
+          let next = { ...normalized };
+          if (!String(next.howTo || "").trim() && String(next.text || "").trim()) {
+            const firstSentence = String(next.text).split(/(?<=[.!?])\s+/)[0] || next.text;
+            next.howTo = firstSentence.slice(0, 160);
+          }
+          if (!String(next.script || "").trim()) {
+            const built = buildExampleScriptFromTask(next);
+            if (built) next.script = built;
+          }
+          if (!next.contextTags?.length && ctx?.keyPhrases?.length) {
+            next.contextTags = ["chat-continuity"];
+          }
+          return next;
+        })
+      }));
+    }
+
+    function weaveContextIntoTasks(stages, ctx) {
+      if (!ctx) return stages;
+      return (stages || []).map((stage) => ({
+        ...stage,
+        tasks: (stage.tasks || []).map((task) => {
+          const normalized = normalizeRoadmapTask(task);
+          let text = getTaskText(normalized);
+          let why = String(normalized.why || "").trim();
+          const tags = [...(normalized.contextTags || [])];
+
+          if (ctx.preferredChannel === "email" && /\b(call each|phone every|cold call)\b/i.test(text)) {
+            text = text.replace(/\bcall\b/gi, "email");
+            tags.push("email-first");
+          }
+          if (ctx.moneyConstraint === "tight" && /\b(paid|purchase|\$\d{2,})\b/i.test(text)) {
+            tags.push("zero-cost");
+          }
+          if (ctx.keyPhrases?.[0] && !why) {
+            why = `This connects to what you shared: ${abbreviateQuestion(ctx.keyPhrases[0], 90)}`;
+          }
+          return { ...normalized, text, why, contextTags: [...new Set(tags)] };
+        })
+      }));
+    }
+
+    function applyHumanProgressPostProcessors(stages, idea) {
+      if (!HPE_CONFIG.enabled) return stages;
+      const ctx = state.progressContext || refreshProgressContext(idea);
+      let working = stages;
+      working = enforceTaskHowTo(working, idea, ctx);
+      working = weaveContextIntoTasks(working, ctx);
+      working = applyBetaMonetizationPolicy(working, ctx);
+      return working;
+    }
+
+    function isProductBuilderPath(idea = state.currentIdea) {
+      if (isFounderRoadmapForIdea(idea)) return true;
+      const blob = `${idea?.title || ""} ${idea?.tagline || ""} ${getFirstUserMessage()}`.toLowerCase();
+      if (/\b(whatimado|my (?:site|app|product|tool|platform)|founder|closed beta|beta test)\b/.test(blob)) return true;
+      return isIdeaOnlineBusinessPath(idea) || getPathArchetype(idea) === "online_business";
+    }
+
+    function renderProgressContextHintsHtml() {
+      if (!HPE_CONFIG.enabled) return "";
+      const ctx = state.progressContext;
+      if (!ctx?.keyPhrases?.length && !ctx?.preferences?.length) return "";
+      const chips = [];
+      (ctx.preferences || []).slice(0, 2).forEach((pref) => {
+        chips.push(`<span class="task-chip task-chip--context">${escapeHtml(pref)}</span>`);
+      });
+      (ctx.keyPhrases || []).slice(0, 2).forEach((phrase) => {
+        chips.push(`<span class="task-chip task-chip--context" title="${escapeHtml(phrase)}">Because you said: ${escapeHtml(abbreviateQuestion(phrase, 48))}</span>`);
+      });
+      if (!chips.length) return "";
+      return `<div class="roadmap-context-hints" role="note">${chips.join("")}</div>`;
+    }
+    /* ===== /HPE ===== */
+
     let roadmapAutoContinueTimer = null;
     let roadmapShellWaitTimer = null;
     const ROADMAP_ADVISOR_TIMEOUT_MS = 90000;
@@ -23208,7 +23520,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function isDigitalProductPath(idea = state.currentIdea) {
-      return isIdeaOnlineBusinessPath(idea) || getPathArchetype(idea) === "online_business";
+      return isProductBuilderPath(idea) || isIdeaOnlineBusinessPath(idea) || getPathArchetype(idea) === "online_business";
     }
 
     function getDigitalProductPlan(idea = state.currentIdea) {
@@ -24237,13 +24549,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = getTaskContentBlob(normalized);
       const mentionedDrafts = getMentionedDraftSuggestionIds(normalized);
 
-      if ((isDigitalProductPath(state.currentIdea) || isDigitalProductTask(normalized))
+      if ((isProductBuilderPath(state.currentIdea) || isDigitalProductTask(normalized))
         && text
         && !/\b(call each business|visit, who you spoke|contact tracking spreadsheet|log each business)\b/i.test(text)) {
         return personalizeTaskActionText(humanizeTaskText(text), state.currentIdea);
       }
 
       if (mentionedDrafts.includes("contact_tracker") && !isDigitalProductPath(state.currentIdea) && !isDigitalProductTask(normalized)) {
+        if (isProductBuilderPath(state.currentIdea)) {
+          return humanizeTaskText(text || "List each beta tester you invited: name, how you know them, whether they agreed, and when they'll try the site.");
+        }
         if (
           (userNeedsIdFirst() || userNeedsHousingFirst())
           && (isJobSearchHomeworkText(text) || taskTextIsEmploymentFocused(blob) || stageHasJobSearchHomework({ tasks: [normalized] }))
@@ -24649,7 +24964,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           mentorFindings: fallback.mentorFindings || fallback.mentorHelp || "",
           talkingPoints: fallback.talkingPoints || "",
           followUp: fallback.followUp || "",
-          resourceCategories: fallback.resourceCategories || []
+          resourceCategories: fallback.resourceCategories || [],
+          exampleScript: fallback.exampleScript || fallback.script || "",
+          interactionStructure: normalizeInteractionStructure(fallback.interactionStructure, fallback.script),
+          contextTags: Array.isArray(fallback.contextTags) ? fallback.contextTags : []
         };
       } else if (task && typeof task === "object") {
         normalized = {
@@ -24671,7 +24989,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           mentorFindings: String(task.mentorFindings || task.mentorHelp || task.mentorBrief || task.findings || fallback.mentorFindings || fallback.mentorHelp || "").trim(),
           talkingPoints: normalizeTalkingPoints(task.talkingPoints ?? task.talking_points ?? fallback.talkingPoints),
           followUp: String(task.followUp || task.follow_up || task.followup || fallback.followUp || "").trim(),
-          resourceCategories: Array.isArray(task.resourceCategories) ? task.resourceCategories : (fallback.resourceCategories || [])
+          resourceCategories: Array.isArray(task.resourceCategories) ? task.resourceCategories : (fallback.resourceCategories || []),
+          exampleScript: String(task.exampleScript || task.script || fallback.exampleScript || "").trim(),
+          interactionStructure: normalizeInteractionStructure(task.interactionStructure ?? task.interaction_structure, task.script || fallback.script),
+          contextTags: Array.isArray(task.contextTags) ? task.contextTags : (Array.isArray(task.context_tags) ? task.context_tags : (fallback.contextTags || []))
         };
       } else {
         normalized = {
@@ -24693,7 +25014,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           mentorFindings: "",
           talkingPoints: "",
           followUp: "",
-          resourceCategories: []
+          resourceCategories: [],
+          exampleScript: "",
+          interactionStructure: normalizeInteractionStructure(null),
+          contextTags: []
         };
       }
       attachResourceLayers(normalized, typeof task === "object" && task ? task : fallback);
@@ -25739,6 +26063,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getKnownLocalResourcesForPath(idea = state.currentIdea, loc = getUserLocation()) {
       const all = getKnownLocalResources(loc);
+      if (isFounderRoadmapForIdea(idea)) {
+        const founderMatch = /\b(startup|grant|foundation|sba|nonprofit|library|fiscal|sponsor|incubator|mission capital|community foundation)\b/i;
+        const prioritized = all.filter((entry) => founderMatch.test(`${entry.name || ""} ${entry.org || ""}`));
+        const rest = all.filter((entry) => !founderMatch.test(`${entry.name || ""} ${entry.org || ""}`));
+        return [...prioritized, ...rest].slice(0, 6);
+      }
       if (!isReentryPath(idea)) return all.slice(0, 6);
       const reentryMatch = /\b(re-?entry|housing|shelter|workforce|library|caritas|front steps|lifeworks|foundation communities|second chance)\b/i;
       const prioritized = all.filter((entry) => reentryMatch.test(`${entry.name || ""} ${entry.org || ""}`));
@@ -29219,6 +29549,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `Conversation (recent):\n${contextTail}\n` +
         getLocationContextBlock() +
         getUserStatedCraftBlock(idea) +
+        getHumanProgressPromptBlock(idea) +
         (founderMode ? "" : getPersonaSpecBlock(idea)) +
         (founderMode ? "" : getExplorationFitPromptBlock()) +
         (founderMode ? "" : getCareerPivotIdeasPromptBlock()) +
@@ -29332,6 +29663,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           dedupeNote +
           refreshBlock +
           getLocationContextBlock() +
+          getHumanProgressPromptBlock(idea) +
           `\n${getActionableTaskRules()}\n` +
           `\nFocus this roadmap ONLY on: ${stageAwareFocus}.\n` +
           `This path must feel different from the other paths on the map — use stage labels and tasks that match "${idea.title}" specifically for ${product}.\n\n` +
@@ -29368,6 +29700,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         dedupeNote +
         refreshBlock +
         getLocationContextBlock() +
+        getHumanProgressPromptBlock(idea) +
         `\n${getActionableTaskRules()}\n` +
         `\nFocus this roadmap ONLY on: ${stageAwareFocus}.\n` +
         `This path must feel different from the other paths on the map — use stage labels and tasks that match "${idea.title}" specifically.\n` +
@@ -29379,6 +29712,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `- Name real platforms (r/Findapath, r/careerchange, r/Unemployed, Facebook job-search groups), real finished pieces, and copy snippets.\n` +
         `- Include ready-to-use templates in script — do NOT tell the founder to invent emails, posts, or outlines from scratch.\n` +
         `- Reference Stripe, Supabase analytics/suggestions, and social launch — not generic "build an audience" advice.\n` +
+        `- Beta/founder paths: recruit 3-5 testers, watch live sessions, note confusion points, fix bugs, collect proof quotes — NOT "call each business" sales spreadsheets or workforce job-search resources.\n` +
         `- Each task doable in one sitting (30–90 min) or one week max.\n` +
         `- Never suggest paywalling personal users or $9+/mo individual subscriptions.\n\n` +
         `BAD MISSIONS:\n` +
@@ -29449,6 +29783,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getLocationContextBlock() +
         getUserStatedCraftBlock(idea) +
         getPersonaSpecBlock(idea) +
+        getHumanProgressPromptBlock(idea) +
         getExplorationFitPromptBlock() +
         getReentryPromptBlock(idea) +
         getRecoveryStabilityPromptBlock(idea) +
@@ -30213,6 +30548,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       clarifyingQuestionsAsked: 0,
       roadmapCheckIn: null,
       roadmapAnalysis: null,
+      progressContext: null,
       discoveryClarityMode: false,
       roadmapViewport: null,
       accountPrefs: null,
@@ -36691,6 +37027,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         updatedAt: Date.now()
       };
       state.roadmapAnalysis = analysis;
+      if (HPE_CONFIG.enabled) refreshProgressContext();
       return analysis;
     }
 
@@ -37965,17 +38302,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         "You are whatimado, a practical advisor helping the FOUNDER grow whatimado.com into a sustainable mission-driven project without paywalling regular users.\n\n" +
         getFounderStageBlock(summary) +
         PLAIN_LANGUAGE_AI_RULES +
+        getBetaMonetizationPromptRule() +
         "Conversation:\n" +
         summary +
         `\n\nGenerate exactly ${count} realistic path option${count === 1 ? "" : "s"} for whatimado.com over the next 30-90 days and beyond.\n` +
-        "Each path must use a DIFFERENT primary strategy — for example: (1) closed beta / functionality test OR sharing in communities, (2) donation or pay-what-you-can sustainability, (3) sponsor pitch OR nonprofit/grant partnership pipeline. Do not give three variations of the same tactic.\n" +
+        (monetizationAllowed()
+          ? "Each path must use a DIFFERENT primary strategy — for example: (1) closed beta / functionality test OR sharing in communities, (2) donation or pay-what-you-can sustainability, (3) sponsor pitch OR nonprofit/grant partnership pipeline. Do not give three variations of the same tactic.\n"
+          : "Each path must use a DIFFERENT primary strategy — for example: (1) closed beta / functionality test, (2) community sharing for feedback (NOT tips or donations), (3) sponsor pitch OR nonprofit/grant partnership pipeline. Do NOT suggest asking for tips, donations, or Stripe payments during beta.\n") +
         "If they are still testing whether the site works, one path MUST be a closed beta with 3-8 testers — NOT a 15-30 person impact pilot.\n" +
+        "If they explicitly asked for grants, sponsors, or funding, one path MUST focus on grant/sponsor outreach and impact proof — not duplicate beta paths.\n" +
         "Only suggest formal workforce/library pilots with impact data when the conversation shows they are past basic functionality testing.\n" +
-        "Focus on low-cost tests with real people, sharing in communities, donations (Stripe is already set up), sponsors/grants, nonprofit/community partnerships, listening to feedback, and simple usage numbers.\n" +
+        (monetizationAllowed()
+          ? "Focus on low-cost tests with real people, sharing in communities, donations (Stripe is already set up), sponsors/grants, nonprofit/community partnerships, listening to feedback, and simple usage numbers.\n"
+          : "Focus on proving value first: watch sessions, testimonials, usage proof, partner interest, grant-fit research. No tip jars or donation asks yet.\n") +
         "Personal pricing must stay free, donation-based, pay-what-you-can, or very low — never premium SaaS tiers for individuals.\n" +
         "Each idea must be specific to whatimado.com and reference details from what they said. Use plain language in titles and taglines — no startup jargon.\n\n" +
         "BAD: \"Start a business\" or \"Build an audience\" or three paths that all focus on Reddit posts\n" +
-        "GOOD: \"30 days sharing on Reddit + Facebook — post in 5 career-change communities, collect 100 emails, ask for $1-3 optional tips via Stripe\"\n\n" +
+        (monetizationAllowed()
+          ? "GOOD: \"30 days sharing on Reddit + Facebook — post in 5 career-change communities, collect 100 emails, ask for $1-3 optional tips via Stripe\"\n\n"
+          : "GOOD: \"Grant-fit sprint — research 5 foundations that fund workforce/mental-health tools, draft a 1-page impact story from beta feedback\"\n\n") +
         "Respond only with a raw JSON array: [{\"title\":\"...\",\"type\":\"...\",\"tagline\":\"one specific sentence in plain English\",\"why\":\"one sentence referencing what THEY said\",\"cost\":\"e.g. $0\",\"timeline\":\"e.g. 2-4 weeks\",\"income\":\"e.g. donations / grants / sponsorship\"}]"
       );
     }
@@ -38026,13 +38371,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         {
           title: "30-Day Community Share",
           type: "Testing",
-          tagline: "Share whatimado.com with real stuck people before scaling anything.",
-          why: "You already have a working app — the next step is seeing whether strangers find it useful enough to return or donate.",
+          tagline: "Share whatimado.com with real stuck people and collect honest feedback — not money yet.",
+          why: "You already have a working app — the next step is seeing whether strangers find it useful enough to return.",
           cost: "$0-50",
           timeline: "30 days",
-          income: "Donations + feedback"
+          income: "Feedback + usage proof"
         },
-        {
+        ...(monetizationAllowed() ? [{
           title: "Optional Tips Test",
           type: "Revenue",
           tagline: "Use the existing Stripe setup to learn what supporters will actually pay.",
@@ -38040,7 +38385,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           cost: "$0",
           timeline: "2-6 weeks",
           income: "$100-1000/mo early"
-        },
+        }] : [{
+          title: "Grant & Sponsor Fit Sprint",
+          type: "Funding",
+          tagline: "Research which grants and sponsors fit a free workforce/mental-health tool, and draft your first 1-page impact story.",
+          why: "You asked for outside funding — this builds the proof packet funders expect before you pitch.",
+          cost: "$0",
+          timeline: "2-4 weeks",
+          income: "Grant / sponsor pipeline"
+        }]),
         {
           title: "Partnership Pilot Outreach",
           type: "Partnerships",
@@ -38214,7 +38567,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       try {
-        state.ideas = ensureIdeaSet(ideas, fallbackIdeas, ideaCount);
+        ideas = filterIdeasForMonetizationPolicy(ideas);
+        if (!hasValidIdeas(ideas, 1)) {
+          ideas = filterIdeasForMonetizationPolicy(fallbackIdeas);
+        }
+        state.ideas = ensureIdeaSet(ideas, filterIdeasForMonetizationPolicy(fallbackIdeas), ideaCount);
         state.ideaBatches = [state.ideas.length];
         const founderProductLabel = founderMode ? getFounderProductLabel() : "";
         const defaultClosing = pathMode === "direct"
@@ -40755,7 +41112,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return {
           // Runs last, after contacts/resources are attached, so we only rewrite
           // "…below" phrasing on tasks that truly have nothing wired up.
-          stages: stripUnbackedUiReferences(finalized),
+          stages: stripUnbackedUiReferences(applyHumanProgressPostProcessors(finalized)),
           roadmapSource: nextSource
         };
       };
@@ -41243,6 +41600,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     async function generateRoadmapStagesFromAi(idea, ideaIndex, options = {}, callbacks = {}) {
       const founderMode = isFounderRoadmapForIdea(idea);
+      if (HPE_CONFIG.enabled) refreshProgressContext(idea);
       const context = getAdvisorContext();
       const refreshBlock = [
         options.previousStages?.length ? buildRoadmapRefreshBlock(options.previousStages) : "",
@@ -43318,6 +43676,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const list = $("#stage-list");
       if (!list) return;
       list.innerHTML = "";
+      const contextHints = renderProgressContextHintsHtml();
+      if (contextHints) list.insertAdjacentHTML("afterbegin", contextHints);
 
       let payload = Array.isArray(stages) ? stages : [];
       if (payload.length && !stageOneHasRevealableMission(payload) && state.roadmapKey) {
@@ -43901,6 +44261,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.clarifyingQuestionsAsked = 0;
       state.roadmapCheckIn = null;
       state.roadmapAnalysis = null;
+      state.progressContext = null;
       state.discoveryClarityMode = false;
       hideProfileIntakeChips();
       state.roadmapExhausted = false;
