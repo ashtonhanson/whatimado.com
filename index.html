@@ -1460,27 +1460,7 @@
       width: auto;
     }
 
-    @media (min-width: 900px) {
-      html[data-color-scheme="adult"] .dashboard-sidebar,
-      html[data-color-scheme="adult"] .dashboard-sidebar.is-mobile-open {
-        transform: translateX(0);
-        box-shadow: none;
-      }
-
-      html[data-color-scheme="adult"] .dashboard-main {
-        margin-left: var(--sidebar-w);
-      }
-
-      html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
-        left: var(--sidebar-w);
-        width: calc(100% - var(--sidebar-w));
-      }
-
-      html[data-color-scheme="adult"] .minimal-topbar .dashboard-mobile-menu,
-      html[data-color-scheme="adult"] .dashboard-mobile-overlay {
-        display: none !important;
-      }
-    }
+    /* Sidebar stays a slide-in drawer at every breakpoint — full-width main content */
 
     @media (min-width: 768px) {
       html[data-color-scheme="adult"] .topbar-logo img {
@@ -8612,7 +8592,7 @@
 
     .roadmap-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+      grid-template-columns: minmax(0, 1fr);
       gap: 1.25rem;
       align-items: start;
     }
@@ -8674,10 +8654,11 @@
 
     html[data-color-scheme="adult"] .roadmap-purpose-card {
       margin: 0 0 1rem;
-      padding: .95rem 1rem;
-      border-radius: 14px;
-      border: 1px solid rgba(37, 99, 235, .16);
-      background: rgba(37, 99, 235, .05);
+      padding: .85rem 0;
+      border-radius: 0;
+      border: 0;
+      border-bottom: 1px solid rgba(37, 99, 235, .12);
+      background: transparent;
     }
 
     html[data-color-scheme="adult"] .roadmap-purpose-label {
@@ -9448,12 +9429,13 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-phase {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, .88);
-      overflow: hidden;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      overflow: visible;
+      box-shadow: none;
       scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 12px);
+      border-bottom: 1px solid rgba(15, 23, 42, .07);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase-head {
@@ -9461,8 +9443,7 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-in-progress {
-      border-color: rgba(37, 99, 235, .35);
-      box-shadow: 0 10px 28px rgba(37, 99, 235, .08);
+      border-bottom-color: rgba(37, 99, 235, .22);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-complete {
@@ -9581,21 +9562,28 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: #fff;
-      box-shadow: 0 4px 16px rgba(15, 23, 42, .04);
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
       scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 12px);
-      padding: 1rem 1.05rem;
+      padding: 1rem 0;
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task:first-child {
-      padding-top: 1rem;
+    html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task + .task-item.overview-task {
+      border-top: 1px solid rgba(15, 23, 42, .07);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task.is-expanded {
+      padding-bottom: 1.35rem;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task:focus-within {
-      border-color: rgba(37, 99, 235, .32);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, .08);
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-phases:has(.task-item.is-expanded) .task-item:not(.is-expanded) {
+      opacity: .58;
     }
 
     html[data-color-scheme="adult"] .overview-task-main {
@@ -10538,8 +10526,8 @@
 
       html[data-color-scheme="adult"] .overview-task-tools {
         margin: .75rem 0 0;
-        padding: .9rem .95rem .95rem;
-        gap: .7rem;
+        padding: 0;
+        gap: .65rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-phase-body {
@@ -11581,13 +11569,13 @@
     }
 
     html[data-color-scheme="adult"] .overview-task-tools {
-      margin: .9rem 0 0;
-      padding: .95rem 1rem 1rem;
-      border-radius: 12px;
-      background: rgba(15, 23, 42, .025);
-      border: 1px solid rgba(15, 23, 42, .06);
+      margin: .85rem 0 0;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
       display: grid;
-      gap: .75rem;
+      gap: .65rem;
     }
 
     html[data-color-scheme="adult"] .roadmap-load-phases-btn {
@@ -11610,11 +11598,12 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-overview-footer {
-      margin-top: .5rem;
-      padding: 1.1rem 1.15rem;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, .82);
+      margin-top: 1.25rem;
+      padding: 1rem 0 0;
+      border: 0;
+      border-top: 1px solid rgba(15, 23, 42, .07);
+      border-radius: 0;
+      background: transparent;
     }
 
     html[data-color-scheme="adult"] .roadmap-footer-grid {
@@ -11639,11 +11628,12 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-side-card {
-      padding: 1.15rem 1.25rem;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, .92);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+      padding: 1rem 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      border-bottom: 1px solid rgba(15, 23, 42, .07);
     }
 
     html[data-color-scheme="adult"] .roadmap-side-card + .roadmap-side-card {
@@ -12017,6 +12007,190 @@
     html[data-color-scheme="adult"] .roadmap-side-scroll::-webkit-scrollbar-thumb {
       border-radius: 999px;
       background: rgba(15, 23, 42, .16);
+    }
+
+    /* Focus mode — roadmap resources drawer (desktop) */
+    html[data-color-scheme="adult"] .roadmap-side-toggle {
+      margin-left: auto;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 34;
+      border: 0;
+      padding: 0;
+      background: rgba(17, 24, 39, .28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+      cursor: pointer;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-overlay.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] .roadmap-side-toggle,
+      html[data-color-scheme="adult"] .roadmap-side-overlay {
+        display: none !important;
+      }
+    }
+
+    @media (min-width: 961px) {
+      html[data-color-scheme="adult"] .roadmap-side {
+        position: fixed;
+        top: calc(var(--topbar-h, 64px) + env(safe-area-inset-top, 0px));
+        right: 0;
+        bottom: 0;
+        z-index: 35;
+        width: min(92vw, 320px);
+        max-height: none;
+        padding: 1rem 1.1rem 1.25rem;
+        background: var(--bg-soft, #fff);
+        border-left: 1px solid var(--line);
+        box-shadow: -8px 0 32px rgba(15, 23, 42, .08);
+        transform: translateX(calc(100% + 12px));
+        transition: transform .24s ease;
+        overflow: hidden;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-layout.is-side-open .roadmap-side {
+        transform: translateX(0);
+      }
+
+      html[data-color-scheme="adult"] .roadmap-side-scroll {
+        max-height: calc(100dvh - var(--topbar-h, 64px) - 2rem);
+        padding-right: .35rem;
+      }
+    }
+
+    /* Unified task actions menu */
+    .task-actions-menu {
+      margin: 0;
+    }
+
+    .task-actions-menu-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .48rem .85rem;
+      border: 1px solid rgba(37, 99, 235, .24);
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .04);
+      color: #1e8fc4;
+      font: inherit;
+      font-size: .76rem;
+      font-weight: 700;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .task-actions-menu-trigger::-webkit-details-marker {
+      display: none;
+    }
+
+    .task-actions-menu[open] .task-actions-menu-trigger {
+      background: rgba(37, 99, 235, .1);
+      border-color: rgba(37, 99, 235, .34);
+    }
+
+    .task-actions-menu-panel {
+      margin-top: .55rem;
+      padding: .35rem 0;
+      display: grid;
+      gap: .2rem;
+      min-width: min(100%, 22rem);
+    }
+
+    .task-actions-menu-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .12rem;
+      width: 100%;
+      padding: .55rem .7rem;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: .78rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .task-actions-menu-item:hover:not(:disabled) {
+      background: rgba(37, 99, 235, .06);
+    }
+
+    .task-actions-menu-item-desc {
+      color: var(--ink-muted);
+      font-size: .68rem;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+
+    .task-actions-menu-item.is-generating {
+      opacity: .65;
+      pointer-events: none;
+    }
+
+    /* Progressive disclosure drawers inside task tools */
+    .task-tools-drawer {
+      margin: 0;
+      border-top: 1px solid rgba(15, 23, 42, .06);
+      padding-top: .55rem;
+    }
+
+    .task-tools-drawer-trigger {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .35rem 0;
+      color: var(--ink-muted);
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .task-tools-drawer-trigger::-webkit-details-marker {
+      display: none;
+    }
+
+    .task-tools-drawer-trigger::before {
+      content: "▸";
+      font-size: .62rem;
+      transition: transform .16s ease;
+    }
+
+    .task-tools-drawer[open] .task-tools-drawer-trigger::before {
+      transform: rotate(90deg);
+    }
+
+    .task-tools-drawer-body {
+      padding: .55rem 0 .15rem;
+      display: grid;
+      gap: .55rem;
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-card .task-mentor-section + .task-mentor-section {
+      margin-top: .75rem;
+      padding-top: .75rem;
+      border-top: 1px solid rgba(15, 23, 42, .06);
+    }
+
+    html[data-color-scheme="adult"] .task-progress-reminder {
+      margin: 0 0 .65rem;
+      color: var(--ink-muted);
+      font-size: .68rem;
+      line-height: 1.4;
     }
 
     .roadmap-type {
@@ -15304,8 +15478,8 @@
       }
 
       html[data-color-scheme="adult"] .overview-task-tools {
-        padding-left: .85rem;
-        padding-right: .85rem;
+        padding-left: 0;
+        padding-right: 0;
       }
 
       html[data-color-scheme="adult"] .task-textarea,
@@ -15763,6 +15937,7 @@
     </div>
 
     <button type="button" class="dashboard-mobile-overlay" id="dashboard-mobile-overlay" hidden aria-label="Close menu"></button>
+    <button type="button" class="roadmap-side-overlay" id="roadmap-side-overlay" hidden aria-label="Close resources panel"></button>
 
     <div class="dashboard-main">
       <header class="dashboard-topbar minimal-topbar">
@@ -16173,6 +16348,7 @@
             </button>
             <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
             <span class="roadmap-remove-anchor"><button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button></span>
+            <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">Resources</button>
             <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Refresh next steps</button>
           </div>
 
@@ -22305,9 +22481,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function setTaskExpanded(taskId, expanded) {
       if (!state.expandedRoadmapTasks) resetRoadmapExpandedTasks();
       if (expanded) {
+        [...state.expandedRoadmapTasks].forEach((otherId) => {
+          if (otherId !== taskId) {
+            state.expandedRoadmapTasks.delete(otherId);
+            syncTaskExpandUi(otherId);
+          }
+        });
         state.expandedRoadmapTasks.add(taskId);
+        document.body.classList.add("roadmap-task-focus");
       } else {
         state.expandedRoadmapTasks.delete(taskId);
+        if (!state.expandedRoadmapTasks.size) {
+          document.body.classList.remove("roadmap-task-focus");
+        }
       }
       syncTaskExpandUi(taskId);
       queueWritingDraftsForVisibleTasks();
@@ -25353,17 +25539,65 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return `<div class="task-draft-suggestions task-draft-suggestions--flexible" data-draft-suggestions>${buttons}</div>`;
     }
 
-    function renderTaskDraftSectionHtml(taskId, normalized) {
-      if (isFlexiblePathMode()) {
-        const suggestionsHtml = renderFlexibleDraftButtonsHtml(taskId, normalized);
-        if (!suggestionsHtml) return "";
-        return `
-              <section class="task-mentor-section task-mentor-section--draft">
-                <h4 class="task-mentor-label">Need words ready to send?</h4>
-                <p class="task-draft-hint">Tap a button when you want it — nothing generates until you click.</p>
-                ${suggestionsHtml}
+    function getTaskUnifiedActions(normalized) {
+      const actions = [];
+      const seen = new Set();
+
+      const draftItems = isFlexiblePathMode()
+        ? getFlexibleDraftActionSuggestions(normalized)
+        : (getTaskDraftSuggestions(normalized, { forDisplay: true }) || []);
+
+      draftItems.forEach((entry) => {
+        const key = entry.id || entry.label;
+        if (seen.has(key)) return;
+        seen.add(key);
+        actions.push({
+          kind: "draft",
+          id: entry.id,
+          label: entry.covered ? `Open ${entry.label}` : entry.label,
+          desc: entry.covered ? "Use the draft we already prepared for this step" : (entry.desc || "")
+        });
+      });
+
+      getTaskAiAssistActions(normalized).forEach((entry) => {
+        if (seen.has(entry.id)) return;
+        seen.add(entry.id);
+        actions.push({
+          kind: "ai",
+          id: entry.id,
+          label: entry.label,
+          desc: ""
+        });
+      });
+
+      return actions;
+    }
+
+    function renderTaskActionsMenuHtml(taskId, normalized) {
+      const actions = getTaskUnifiedActions(normalized);
+      if (!actions.length) return "";
+      const items = actions.map((entry) => {
+        if (entry.kind === "draft") {
+          return `<button type="button" class="task-actions-menu-item task-draft-suggestion-btn" data-task-id="${escapeHtml(taskId)}" data-suggestion-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.desc || entry.label)}">
+            <span class="task-actions-menu-item-label">${escapeHtml(entry.label)}</span>
+            ${entry.desc ? `<span class="task-actions-menu-item-desc">${escapeHtml(entry.desc)}</span>` : ""}
+          </button>`;
+        }
+        return `<button type="button" class="task-actions-menu-item task-ai-assist-btn" data-task-id="${escapeHtml(taskId)}" data-action="${escapeHtml(entry.id)}" title="${escapeHtml(entry.label)}">
+          <span class="task-actions-menu-item-label">${escapeHtml(entry.label)}</span>
+        </button>`;
+      }).join("");
+      return `
+        <details class="task-actions-menu">
+          <summary class="task-actions-menu-trigger">Get words ready</summary>
+          <div class="task-actions-menu-panel">${items}</div>
+        </details>`;
+    }
+
+    function renderTaskDraftPanelInnerHtml(taskId) {
+      return `
                 <div class="task-draft-panel" data-draft-panel>
-                  <p class="task-draft-expand-hint">Your draft appears here after you pick a button above.</p>
+                  <p class="task-draft-expand-hint">Your draft appears here after you pick an action above.</p>
                   <div class="task-draft-generating" hidden aria-live="polite">
                     <span class="task-draft-progress-status">Generating draft…</span>
                     <div class="task-draft-progress">
@@ -25385,7 +25619,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   </div>
                   <div class="task-draft-body" hidden>
                     <div class="task-draft-textarea-wrap">
-                      <textarea class="task-draft-textarea" placeholder="Your draft will appear here after you tap a button…"></textarea>
+                      <textarea class="task-draft-textarea" placeholder="Your draft will appear here after you pick an action…"></textarea>
                     </div>
                     <div class="task-draft-toolbar">
                       <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(taskId)}">Copy draft</button>
@@ -25396,59 +25630,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                       <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(taskId)}">Delete draft</button>
                     </div>
                   </div>
-                </div>
-              </section>`;
-      }
+                </div>`;
+    }
 
-      const suggestions = getTaskDraftSuggestions(normalized, { forDisplay: true });
-      const suggestionsHtml = renderTaskDraftSuggestionsHtml(taskId, normalized, suggestions);
+    function renderTaskDraftSectionHtml(taskId, normalized) {
+      const actionsMenu = renderTaskActionsMenuHtml(taskId, normalized);
       const hasPreparedAssets = taskHasPreparedAssets(normalized) || getFlatTaskResources(normalized).length > 0;
       const hasMentionedDrafts = getMentionedDraftSuggestionIds(normalized).length > 0;
+      const needsDraft = taskNeedsUsableDraft(normalized);
+      const tweakResults = renderTaskTweakDraftResultsHtml(taskId);
+      const hasTweakDrafts = (getRoadmapTaskData(taskId).tweakDrafts || []).length > 0;
 
-      if (!suggestionsHtml && !hasPreparedAssets && !taskNeedsUsableDraft(normalized) && !hasMentionedDrafts) {
+      if (!actionsMenu && !needsDraft && !hasPreparedAssets && !hasMentionedDrafts && !hasTweakDrafts) {
         return "";
       }
 
       return `
-              <section class="task-mentor-section task-mentor-section--draft">
-                <h4 class="task-mentor-label">Quick help for this step</h4>
-                <p class="task-draft-hint">Tap a button below — your draft appears in the box underneath.</p>
-                ${suggestionsHtml}
-                <div class="task-draft-panel" data-draft-panel>
-                  <p class="task-draft-expand-hint">Your draft appears here after you tap a button above.</p>
-                  <div class="task-draft-generating" hidden aria-live="polite">
-                    <span class="task-draft-progress-status">Generating draft…</span>
-                    <div class="task-draft-progress">
-                      <div class="task-draft-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Draft generation progress">
-                        <span class="task-draft-progress-fill"></span>
-                      </div>
-                      <span class="task-draft-progress-label">0%</span>
-                    </div>
-                  </div>
-                  <div class="task-draft-collapsed-view" data-draft-collapsed hidden>
-                    <p class="task-draft-collapsed-preview" data-draft-preview hidden role="button" tabindex="0"></p>
-                    <div class="task-draft-actions">
-                      <button type="button" class="task-draft-toggle-btn task-draft-expand-btn" data-draft-expand="${escapeHtml(taskId)}">
-                        <span class="task-draft-chevron" aria-hidden="true">▼</span>
-                        <span>Expand draft</span>
-                      </button>
-                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(taskId)}" hidden>Delete draft</button>
-                    </div>
-                  </div>
-                  <div class="task-draft-body" hidden>
-                    <div class="task-draft-textarea-wrap">
-                      <textarea class="task-draft-textarea" placeholder="Your prepared draft will appear here…"></textarea>
-                    </div>
-                    <div class="task-draft-toolbar">
-                      <button type="button" class="task-copy-draft-btn" data-copy-draft="${escapeHtml(taskId)}">Copy draft</button>
-                      <button type="button" class="task-draft-toggle-btn task-draft-compress-btn" data-draft-compress="${escapeHtml(taskId)}">
-                        <span class="task-draft-chevron" aria-hidden="true">▲</span>
-                        <span>Collapse draft</span>
-                      </button>
-                      <button type="button" class="task-delete-draft-btn" data-delete-draft="${escapeHtml(taskId)}">Delete draft</button>
-                    </div>
-                  </div>
-                </div>
+              <section class="task-mentor-section task-mentor-section--actions">
+                ${actionsMenu}
+                ${renderTaskDraftPanelInnerHtml(taskId)}
+                <div class="task-tweak-draft-results" data-tweak-draft-results="${escapeHtml(taskId)}">${tweakResults}</div>
               </section>`;
     }
 
@@ -35149,6 +35350,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         event.preventDefault();
         event.stopPropagation();
         if (suggestionBtn.disabled || suggestionBtn.classList.contains("is-generating")) return;
+        suggestionBtn.closest(".task-actions-menu")?.removeAttribute("open");
         void generateDraftFromSuggestion(suggestionBtn.dataset.taskId, suggestionBtn.dataset.suggestionId);
         return;
       }
@@ -35182,6 +35384,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         event.preventDefault();
         event.stopPropagation();
         if (aiAssistBtn.disabled) return;
+        aiAssistBtn.closest(".task-actions-menu")?.removeAttribute("open");
         void triggerTaskAiAssist(aiAssistBtn.dataset.taskId, aiAssistBtn.dataset.action);
         return;
       }
@@ -35706,6 +35909,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (previousScreen === "roadmap" && name !== "roadmap") {
         rememberRoadmapViewport();
         resetRoadmapProgressScrollState();
+        closeRoadmapSidePanel();
       }
       if (
         !options.skipNavHistory
@@ -42513,8 +42717,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function togglePhaseExpanded(stageIndex) {
       if (!state.expandedRoadmapPhases) resetRoadmapExpandedPhases();
-      if (state.expandedRoadmapPhases.has(stageIndex)) state.expandedRoadmapPhases.delete(stageIndex);
-      else state.expandedRoadmapPhases.add(stageIndex);
+      if (state.expandedRoadmapPhases.has(stageIndex)) {
+        state.expandedRoadmapPhases.delete(stageIndex);
+      } else {
+        state.expandedRoadmapPhases.clear();
+        state.expandedRoadmapPhases.add(stageIndex);
+      }
     }
 
     function jumpToRoadmapTask(stageIndex, taskIndex) {
@@ -43501,7 +43709,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 </section>` : ""
       ].join("");
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
-      const aiAssist = renderTaskAiAssistHtml(id, normalized);
       const roadblockSection = renderTaskRoadblockButtonsHtml(id, normalized, stage);
       const nextTaskId = getNextTaskId(stageIndex, taskIndex);
       const taskLabel = formatMissionTaskLabel(stageIndex, taskIndex);
@@ -43562,23 +43769,33 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             </div>
             <div class="overview-task-tools">
               ${draftSection}
-              <section class="task-mentor-section task-mentor-section--notes">
-                <h4 class="task-mentor-label">My Notes</h4>
-                <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>
-                <label class="task-save-notes-label">
-                  <input type="checkbox" class="task-save-notes-check" aria-label="Save my notes to My Notes library">
-                  <span>Save my notes</span>
-                </label>
-                ${renderTaskWritingAssistHtml(id, normalized)}
-                ${notesExtras}
-              </section>
-              ${aiAssist}
-              ${roadblockSection}
-              <div class="task-threads" id="threads-${id}"></div>
-              <div class="task-ask-row">
-                <textarea class="task-question" id="question-${id}" rows="4" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
-                <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
-              </div>
+              <details class="task-tools-drawer">
+                <summary class="task-tools-drawer-trigger">My Notes</summary>
+                <div class="task-tools-drawer-body">
+                  <textarea class="task-textarea" placeholder="${escapeHtml(getTaskWritingNotesPlaceholder(normalized))}"></textarea>
+                  <label class="task-save-notes-label">
+                    <input type="checkbox" class="task-save-notes-check" aria-label="Save my notes to My Notes library">
+                    <span>Save my notes</span>
+                  </label>
+                  ${renderTaskWritingAssistHtml(id, normalized)}
+                  ${notesExtras}
+                </div>
+              </details>
+              ${roadblockSection ? `
+              <details class="task-tools-drawer">
+                <summary class="task-tools-drawer-trigger">Need help?</summary>
+                <div class="task-tools-drawer-body">${roadblockSection}</div>
+              </details>` : ""}
+              <details class="task-tools-drawer">
+                <summary class="task-tools-drawer-trigger">Ask about this step</summary>
+                <div class="task-tools-drawer-body">
+                  <div class="task-threads" id="threads-${id}"></div>
+                  <div class="task-ask-row">
+                    <textarea class="task-question" id="question-${id}" rows="4" placeholder="${escapeHtml(getTaskAskPlaceholder(text))}"></textarea>
+                    <button class="task-ask-btn" type="button" data-task-id="${id}">Ask</button>
+                  </div>
+                </div>
+              </details>
             </div>
             <div class="task-mission-actions">
               <button type="button" class="task-condense-btn" data-task-collapse="${escapeHtml(id)}">Condense Task</button>
@@ -43809,8 +44026,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         card.querySelector(".roadmap-phase-head")?.addEventListener("click", (event) => {
           if (event.target.closest(".task-item")) return;
           togglePhaseExpanded(stageIndex);
-          card.classList.toggle("is-open");
-          card.classList.toggle("open");
+          list.querySelectorAll(".roadmap-phase").forEach((phaseEl) => {
+            const idx = Number(phaseEl.dataset.phaseIndex);
+            const open = isPhaseExpanded(idx);
+            phaseEl.classList.toggle("is-open", open);
+            phaseEl.classList.toggle("open", open);
+          });
           queueWritingDraftsForVisibleTasks();
         });
 
@@ -46179,6 +46400,48 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    let roadmapSideOpen = false;
+
+    function isRoadmapSideDrawerMode() {
+      return window.matchMedia("(min-width: 961px)").matches;
+    }
+
+    function closeRoadmapSidePanel() {
+      roadmapSideOpen = false;
+      document.querySelector(".roadmap-layout")?.classList.remove("is-side-open");
+      const side = $("#roadmap-side");
+      const toggle = $("#roadmap-side-toggle");
+      const overlay = $("#roadmap-side-overlay");
+      if (side && isRoadmapSideDrawerMode()) {
+        side.setAttribute("aria-hidden", "true");
+      }
+      toggle?.setAttribute("aria-expanded", "false");
+      if (overlay) {
+        overlay.classList.remove("is-visible");
+        overlay.hidden = true;
+      }
+    }
+
+    function openRoadmapSidePanel() {
+      if (!isRoadmapSideDrawerMode()) return;
+      roadmapSideOpen = true;
+      document.querySelector(".roadmap-layout")?.classList.add("is-side-open");
+      const side = $("#roadmap-side");
+      const toggle = $("#roadmap-side-toggle");
+      const overlay = $("#roadmap-side-overlay");
+      side?.setAttribute("aria-hidden", "false");
+      toggle?.setAttribute("aria-expanded", "true");
+      if (overlay) {
+        overlay.hidden = false;
+        requestAnimationFrame(() => overlay.classList.add("is-visible"));
+      }
+    }
+
+    function toggleRoadmapSidePanel() {
+      if (roadmapSideOpen) closeRoadmapSidePanel();
+      else openRoadmapSidePanel();
+    }
+
     function toggleDashboardMobileNav() {
       if (dashboardMobileNavOpen) closeDashboardMobileNav();
       else openDashboardMobileNav();
@@ -46298,6 +46561,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#dashboard-search-go")?.addEventListener("click", () => submitInitialPrompt());
       $("#dashboard-mobile-menu")?.addEventListener("click", toggleDashboardMobileNav);
       $("#dashboard-mobile-overlay")?.addEventListener("click", closeDashboardMobileNav);
+      $("#roadmap-side-toggle")?.addEventListener("click", toggleRoadmapSidePanel);
+      $("#roadmap-side-overlay")?.addEventListener("click", closeRoadmapSidePanel);
+      if (isRoadmapSideDrawerMode()) {
+        $("#roadmap-side")?.setAttribute("aria-hidden", "true");
+      }
       $("#dashboard-sync-btn")?.addEventListener("click", manualSave);
       $("#dashboard-profile-btn")?.addEventListener("click", handleDashboardProfileClick);
       $("#dashboard-top-avatar")?.addEventListener("click", handleDashboardProfileClick);
@@ -46316,12 +46584,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       window.addEventListener("resize", () => {
         if (isProfileMenuOpen()) positionProfileMenu();
+        if (!isRoadmapSideDrawerMode()) closeRoadmapSidePanel();
       });
       window.addEventListener("scroll", () => {
         if (isProfileMenuOpen()) positionProfileMenu();
       }, true);
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && isProfileMenuOpen()) closeProfileMenu();
+        if (event.key === "Escape" && roadmapSideOpen) closeRoadmapSidePanel();
       });
       $("#dashboard-notify-btn")?.addEventListener("click", handleDashboardNotifyClick);
       $("#sidebar-roadmaps-btn")?.addEventListener("click", toggleSidebarRoadmapsPanel);
