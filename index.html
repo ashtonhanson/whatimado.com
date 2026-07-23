@@ -1539,8 +1539,8 @@
     html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-start-zone::before {
       content: "";
       position: absolute;
-      inset: -5rem -3rem -3rem;
-      background: radial-gradient(ellipse 72% 58% at 50% 48%, rgba(255, 255, 255, .045) 0%, transparent 68%);
+      inset: -8rem -6rem -6rem;
+      background: radial-gradient(ellipse 95% 82% at 50% 46%, rgba(255, 255, 255, .055) 0%, rgba(255, 255, 255, .02) 42%, transparent 78%);
       pointer-events: none;
       z-index: -1;
     }
@@ -3680,8 +3680,8 @@
     html[data-color-scheme="adult"] #mario-clouds.is-orbs {
       inset: 0;
       overflow: hidden;
-      -webkit-mask-image: radial-gradient(ellipse 68% 52% at 50% 44%, #000 18%, transparent 72%);
-      mask-image: radial-gradient(ellipse 68% 52% at 50% 44%, #000 18%, transparent 72%);
+      -webkit-mask-image: radial-gradient(ellipse 92% 78% at 50% 44%, #000 10%, rgba(0, 0, 0, .55) 48%, transparent 88%);
+      mask-image: radial-gradient(ellipse 92% 78% at 50% 44%, #000 10%, rgba(0, 0, 0, .55) 48%, transparent 88%);
     }
 
     html[data-color-scheme="adult"] #mario-clouds.is-orbs .ambient-orb {
@@ -3693,15 +3693,16 @@
       border-radius: 50%;
       background: radial-gradient(
         circle at 38% 32%,
-        color-mix(in srgb, var(--orb-color, #ffffff) 88%, white) 0%,
-        color-mix(in srgb, var(--orb-color, #ffffff) 42%, transparent) 42%,
-        transparent 72%
+        color-mix(in srgb, var(--orb-color, #ffffff) 82%, white) 0%,
+        color-mix(in srgb, var(--orb-color, #ffffff) 32%, transparent) 38%,
+        transparent 82%
       );
       box-shadow:
-        0 0 14px color-mix(in srgb, var(--orb-color, #ffffff) 48%, transparent),
-        0 0 28px color-mix(in srgb, var(--orb-color, #ffffff) 22%, transparent);
+        0 0 22px color-mix(in srgb, var(--orb-color, #ffffff) 42%, transparent),
+        0 0 44px color-mix(in srgb, var(--orb-color, #ffffff) 18%, transparent),
+        0 0 72px color-mix(in srgb, var(--orb-color, #ffffff) 8%, transparent);
       opacity: var(--orb-opacity, .12);
-      filter: blur(12px);
+      filter: blur(16px);
       will-change: transform, opacity;
       animation-name: ambient-orb-think-drift, ambient-orb-think-pulse;
       animation-duration: var(--orb-duration, 90s), var(--orb-pulse-duration, 5.5s);
@@ -46043,15 +46044,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function getThinkingOrbSpreadPosition(index, total) {
       const golden = (index + 1) * 2.399963;
       const ring = index / Math.max(total - 1, 1);
-      const radiusX = 6 + ring * 14 + (Math.random() - 0.5) * 4;
-      const radiusY = 4 + ring * 9 + (Math.random() - 0.5) * 3;
+      const radiusX = 10 + ring * 20 + (Math.random() - 0.5) * 5;
+      const radiusY = 7 + ring * 14 + (Math.random() - 0.5) * 4;
       const centerLeft = 50;
       const centerTop = 44;
       const left = centerLeft + Math.cos(golden) * radiusX;
       const top = centerTop + Math.sin(golden) * radiusY;
       return {
-        left: Math.max(32, Math.min(68, left)),
-        top: Math.max(34, Math.min(54, top))
+        left: Math.max(24, Math.min(76, left)),
+        top: Math.max(28, Math.min(60, top))
       };
     }
 
