@@ -3338,6 +3338,18 @@
       color: #9eb0ff;
     }
 
+    html[data-color-scheme="adult"] #screen-map .map-feedback-btn {
+      color: var(--ink);
+      background: rgba(23, 31, 45, .78);
+      border: 1px solid rgba(90, 125, 255, .28);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .map-feedback-btn:hover {
+      color: #9eb0ff;
+      background: rgba(23, 31, 45, .92);
+      border-color: rgba(90, 125, 255, .42);
+    }
+
     html[data-color-scheme="adult"] .roadmap-save-bar {
       display: grid;
       gap: .45rem;
@@ -8979,21 +8991,24 @@
       width: 100%;
       text-align: left;
       padding: .55rem .7rem;
-      border: 1px solid var(--line);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 10px;
-      background: #fff;
+      background: rgba(17, 23, 34, .62);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       color: var(--ink);
       font: inherit;
       font-size: .78rem;
       font-weight: 600;
       line-height: 1.35;
       cursor: pointer;
-      transition: border-color .15s ease, background .15s ease;
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-task:hover {
-      border-color: rgba(37, 99, 235, .28);
-      background: rgba(248, 250, 252, .95);
+      border-color: rgba(90, 125, 255, .28);
+      background: rgba(17, 23, 34, .78);
+      box-shadow: 0 0 18px rgba(90, 125, 255, .1);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-task.is-complete {
@@ -9003,8 +9018,8 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-task.is-in-progress {
-      border-color: rgba(37, 99, 235, .35);
-      background: rgba(37, 99, 235, .06);
+      border-color: rgba(90, 125, 255, .35);
+      background: rgba(90, 125, 255, .08);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase {
@@ -9015,23 +9030,29 @@
       min-width: 0;
       width: 100%;
       padding: .8rem .85rem;
-      border: 1px solid var(--line);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 14px;
-      background: #fff;
+      background: rgba(17, 23, 34, .62);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
       text-align: left;
       cursor: pointer;
-      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease, background .15s ease;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase:hover {
-      border-color: rgba(37, 99, 235, .28);
-      box-shadow: 0 8px 20px rgba(37, 99, 235, .08);
+      border-color: rgba(90, 125, 255, .28);
+      box-shadow: 0 0 22px rgba(90, 125, 255, .12);
       transform: translateY(-1px);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase.is-in-progress {
-      border-color: rgba(37, 99, 235, .42);
-      box-shadow: 0 8px 22px rgba(37, 99, 235, .1);
+      border-color: rgba(90, 125, 255, .42);
+      background: rgba(17, 23, 34, .78);
+      box-shadow:
+        0 0 0 1px rgba(90, 125, 255, .12),
+        0 0 22px rgba(90, 125, 255, .14);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase.is-complete:not(.roadmap-glance-timeline-stop) {
@@ -9049,9 +9070,9 @@
       width: 1.65rem;
       height: 1.65rem;
       border-radius: 999px;
-      border: 2px solid #93c5fd;
-      background: #eff6ff;
-      color: #1e8fc4;
+      border: 2px solid rgba(90, 125, 255, .45);
+      background: rgba(17, 23, 34, .9);
+      color: #9eb0ff;
       font-size: .72rem;
       font-weight: 800;
       line-height: 1;
@@ -9059,23 +9080,23 @@
 
     html[data-color-scheme="adult"] .roadmap-glance-phase.is-complete .roadmap-glance-node,
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-complete .roadmap-glance-node {
-      border-color: #86efac;
-      background: #dcfce7;
-      color: #15803d;
+      border-color: #1fd358;
+      background: rgba(31, 211, 88, .18);
+      color: #6ee7a8;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase.is-in-progress .roadmap-glance-node,
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-in-progress .roadmap-glance-node {
-      border-color: #60a5fa;
-      background: #dbeafe;
-      color: #1e8fc4;
+      border-color: #5A7DFF;
+      background: #5A7DFF;
+      color: #fff;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase.is-upcoming .roadmap-glance-node,
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-upcoming .roadmap-glance-node {
-      border-color: #cbd5e1;
-      background: #f8fafc;
-      color: #64748b;
+      border-color: rgba(255, 255, 255, .14);
+      background: rgba(255, 255, 255, .04);
+      color: var(--ink-muted);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-label {
@@ -9099,7 +9120,7 @@
     html[data-color-scheme="adult"] .roadmap-glance-count {
       display: block;
       margin-top: .35rem;
-      color: #29abe2;
+      color: #9eb0ff;
       font-size: .66rem;
       font-weight: 700;
     }
@@ -9125,7 +9146,7 @@
       left: calc(50% / var(--glance-stops, 1));
       right: calc(50% / var(--glance-stops, 1));
       height: 2px;
-      background: linear-gradient(90deg, rgba(37, 99, 235, .18), rgba(37, 99, 235, .42), rgba(37, 99, 235, .18));
+      background: linear-gradient(90deg, rgba(90, 125, 255, .12), rgba(90, 125, 255, .32), rgba(90, 125, 255, .12));
       pointer-events: none;
       z-index: 0;
     }
@@ -9154,9 +9175,9 @@
       min-height: 1.35rem;
       padding: .12rem .45rem;
       border-radius: 999px;
-      border: 1px solid #86efac;
-      background: #ecfdf3;
-      color: #15803d;
+      border: 1px solid rgba(31, 211, 88, .35);
+      background: rgba(31, 211, 88, .12);
+      color: #6ee7a8;
       font-size: .62rem;
       font-weight: 800;
       letter-spacing: .01em;
@@ -9167,32 +9188,32 @@
       text-overflow: ellipsis;
       position: relative;
       z-index: 2;
-      box-shadow: 0 0 0 2px #fff;
+      box-shadow: 0 0 0 2px rgba(17, 23, 34, .9);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-in-progress .roadmap-glance-income-dot {
-      border-color: #93c5fd;
-      background: #eff6ff;
-      color: #1e8fc4;
+      border-color: rgba(90, 125, 255, .35);
+      background: rgba(90, 125, 255, .12);
+      color: #9eb0ff;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-complete .roadmap-glance-income-dot {
-      border-color: #86efac;
-      background: #dcfce7;
-      color: #15803d;
+      border-color: rgba(31, 211, 88, .35);
+      background: rgba(31, 211, 88, .12);
+      color: #6ee7a8;
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop.is-upcoming .roadmap-glance-income-dot {
-      border-color: #cbd5e1;
-      background: #f8fafc;
-      color: #64748b;
+      border-color: rgba(255, 255, 255, .12);
+      background: rgba(255, 255, 255, .04);
+      color: var(--ink-muted);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-phase .roadmap-glance-node,
     html[data-color-scheme="adult"] .roadmap-glance-timeline-stop .roadmap-glance-node {
       position: relative;
       z-index: 2;
-      box-shadow: 0 0 0 3px #fff;
+      box-shadow: 0 0 0 3px rgba(17, 23, 34, .9);
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-copy {
@@ -9343,10 +9364,12 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-picker {
-      border: 1px solid var(--line);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 16px;
-      background: linear-gradient(180deg, rgba(248, 250, 252, .95) 0%, #fff 100%);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+      background: rgba(17, 23, 34, .62);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-head {
@@ -9362,42 +9385,47 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card {
-      border: 1px solid var(--line);
-      background: #fff;
+      border: 1px solid rgba(90, 125, 255, .32);
+      background: linear-gradient(145deg, rgba(90, 125, 255, .22) 0%, rgba(61, 95, 217, .32) 100%);
       color: var(--ink);
-      box-shadow: 0 4px 14px rgba(15, 23, 42, .04);
+      box-shadow:
+        0 0 0 1px rgba(90, 125, 255, .08),
+        0 8px 24px rgba(0, 0, 0, .28);
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-save-label {
-      color: var(--ink-muted);
+      color: rgba(255, 255, 255, .82);
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-save-input {
-      accent-color: var(--purple);
+      accent-color: #fff;
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-open:hover:not(:disabled) {
-      background: rgba(37, 99, 235, .04);
+      background: rgba(255, 255, 255, .06);
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card-title {
-      color: var(--ink);
+      color: #fff;
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card-tagline {
-      color: var(--ink-muted);
+      color: rgba(255, 255, 255, .88);
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card-why {
-      color: var(--ink-muted);
+      color: rgba(255, 255, 255, .72);
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card-meta {
-      color: #1e8fc4;
+      color: rgba(255, 255, 255, .62);
     }
 
     html[data-color-scheme="adult"] .roadmap-post-mission-card.is-saved {
-      border-color: color-mix(in srgb, var(--purple) 42%, var(--line));
+      border-color: rgba(255, 255, 255, .35);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .1),
+        0 0 22px rgba(90, 125, 255, .14);
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop {
@@ -9429,12 +9457,12 @@
 
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll::before {
       left: 0;
-      background: linear-gradient(90deg, #fff 30%, rgba(255, 255, 255, 0));
+      background: linear-gradient(90deg, rgba(10, 13, 20, .95) 30%, rgba(10, 13, 20, 0));
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll::after {
       right: 0;
-      background: linear-gradient(270deg, #fff 30%, rgba(255, 255, 255, 0));
+      background: linear-gradient(270deg, rgba(10, 13, 20, .95) 30%, rgba(10, 13, 20, 0));
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll.can-scroll-left::before,
@@ -9452,11 +9480,11 @@
       width: 1.7rem;
       height: 1.7rem;
       padding: 0;
-      border: 1px solid rgba(37, 99, 235, .16);
+      border: 1px solid rgba(255, 255, 255, .1);
       border-radius: 999px;
-      background: #fff;
-      color: #29abe2;
-      box-shadow: 0 2px 10px rgba(15, 23, 42, .08);
+      background: rgba(23, 31, 45, .92);
+      color: #9eb0ff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, .28);
       cursor: pointer;
       transform: translateY(-50%);
       transition: opacity .15s ease, box-shadow .15s ease, border-color .15s ease;
@@ -9479,8 +9507,8 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn:hover {
-      border-color: rgba(37, 99, 235, .3);
-      box-shadow: 0 4px 14px rgba(37, 99, 235, .14);
+      border-color: rgba(90, 125, 255, .32);
+      box-shadow: 0 4px 14px rgba(90, 125, 255, .18);
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn[hidden] {
@@ -9532,13 +9560,25 @@
       justify-content: flex-start;
       gap: .5rem;
       padding: .85rem .8rem;
-      border: 1px solid var(--line);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 16px;
-      background: #fff;
-      box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+      background: rgba(17, 23, 34, .62);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, .03),
+        0 8px 24px rgba(0, 0, 0, .28);
       text-align: center;
       scroll-snap-align: none;
-      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease, background .15s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop.is-in-progress {
+      border-color: rgba(90, 125, 255, .42);
+      background: rgba(17, 23, 34, .78);
+      box-shadow:
+        0 0 0 1px rgba(90, 125, 255, .12),
+        0 0 22px rgba(90, 125, 255, .14);
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop:not(:last-child)::after {
@@ -9550,7 +9590,7 @@
       height: 2px;
       transform: translateY(-50%);
       border-radius: 999px;
-      background: rgba(37, 99, 235, .22);
+      background: rgba(90, 125, 255, .22);
       pointer-events: none;
       z-index: 0;
     }
@@ -9636,10 +9676,10 @@
     html[data-color-scheme="adult"] .roadmap-glance-next-btn {
       margin-top: .85rem;
       padding: .62rem .9rem;
-      border: 1px solid rgba(37, 99, 235, .22);
+      border: 1px solid rgba(90, 125, 255, .28);
       border-radius: 12px;
-      background: rgba(37, 99, 235, .06);
-      color: #1e8fc4;
+      background: rgba(23, 31, 45, .78);
+      color: #9eb0ff;
       font: inherit;
       font-size: .76rem;
       font-weight: 700;
@@ -9647,18 +9687,17 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-glance-next-btn:hover {
-      background: rgba(37, 99, 235, .1);
-      border-color: rgba(37, 99, 235, .34);
+      background: rgba(23, 31, 45, .92);
+      border-color: rgba(90, 125, 255, .42);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase {
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      overflow: visible;
+      border: 1px solid rgba(255, 255, 255, .06);
+      border-radius: 14px;
+      background: rgba(17, 23, 34, .45);
+      overflow: hidden;
       box-shadow: none;
       scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 12px);
-      border-bottom: 1px solid rgba(15, 23, 42, .07);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase-head {
@@ -9666,7 +9705,8 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-in-progress {
-      border-bottom-color: rgba(37, 99, 235, .22);
+      border-color: rgba(90, 125, 255, .22);
+      background: rgba(17, 23, 34, .62);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-complete {
@@ -9705,8 +9745,8 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-in-progress .roadmap-phase-num {
-      border-color: #29abe2;
-      background: #29abe2;
+      border-color: #5A7DFF;
+      background: #5A7DFF;
       color: #fff;
     }
 
@@ -10086,7 +10126,7 @@
     }
 
     html[data-color-scheme="adult"] .task-mission-title {
-      color: var(--text, #241235);
+      color: var(--ink);
     }
 
     .task-mentor-copy--findings {
@@ -10136,22 +10176,22 @@
       box-shadow: 0 0 0 1px rgba(99, 102, 241, .08);
     }
 
-    html[data-color-scheme="adult"] .task-mentor-section--findings {
-      background: rgba(36, 18, 53, .04);
-      border-color: rgba(36, 18, 53, .08);
-    }
-
-    html[data-color-scheme="adult"] .task-mentor-section--context {
-      background: rgba(36, 18, 53, .04);
-      border-color: rgba(78, 205, 196, .22);
-    }
-
     html[data-color-scheme="adult"] .task-mentor-copy--context {
-      color: var(--text, #241235);
+      color: var(--ink-muted);
     }
 
     html[data-color-scheme="adult"] .task-mentor-copy--findings {
-      color: var(--text, #241235);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-section--findings {
+      background: rgba(90, 125, 255, .06);
+      border-color: rgba(90, 125, 255, .14);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-section--context {
+      background: rgba(31, 211, 88, .06);
+      border-color: rgba(31, 211, 88, .18);
     }
 
     html[data-color-scheme="adult"] .task-contact-rank {
@@ -10378,27 +10418,12 @@
     }
 
     html[data-color-scheme="adult"] .task-mentor-label {
-      color: rgba(15, 23, 42, .52);
+      color: var(--ink-muted);
     }
 
     html[data-color-scheme="adult"] .task-mentor-copy,
     html[data-color-scheme="adult"] .task-mentor-hint {
       color: var(--ink-muted);
-    }
-
-    html[data-color-scheme="adult"] .task-question {
-      border: 2px solid rgba(37, 99, 235, .42);
-      background: #fff;
-    }
-
-    html[data-color-scheme="adult"] .task-question:focus {
-      outline: none;
-      border-color: #29abe2;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
-    }
-
-    html[data-color-scheme="adult"] .task-ask-btn {
-      background: #29abe2;
     }
 
     .roadmap-float-progress {
@@ -12798,12 +12823,13 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-potential-outcome {
-      border-color: rgba(37, 99, 235, .18);
-      background: rgba(37, 99, 235, .05);
+      border-color: rgba(90, 125, 255, .28);
+      background: rgba(90, 125, 255, .08);
+      box-shadow: inset 0 0 28px rgba(90, 125, 255, .04);
     }
 
     html[data-color-scheme="adult"] .roadmap-potential-outcome-kicker {
-      color: var(--ink-muted);
+      color: #9eb0ff;
     }
 
     html[data-color-scheme="adult"] .roadmap-potential-outcome-metric-label {
@@ -13288,6 +13314,182 @@
 
     #screen-roadmap .stage-body {
       border-top-color: rgba(36, 18, 53, .12);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item + .task-item.overview-task {
+      border-top-color: rgba(255, 255, 255, .08);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item.overview-task + .task-item.overview-task {
+      border-top: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item:not(.overview-task) {
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(17, 23, 34, .62);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, .03),
+        0 8px 24px rgba(0, 0, 0, .28);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item:not(.overview-task):hover,
+    html[data-color-scheme="adult"] #screen-roadmap .task-item:not(.overview-task):focus-within {
+      border-color: rgba(90, 125, 255, .32);
+      box-shadow: 0 0 22px rgba(90, 125, 255, .12);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-text,
+    html[data-color-scheme="adult"] #screen-roadmap .task-label,
+    html[data-color-scheme="adult"] .task-compressed-mission {
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-text-link {
+      color: #9eb0ff;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-item.is-done .task-text,
+    html[data-color-scheme="adult"] .task-item.is-done .task-compressed-mission {
+      color: var(--ink-muted);
+      text-decoration-color: rgba(255, 255, 255, .22);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-textarea,
+    html[data-color-scheme="adult"] #screen-roadmap .task-question {
+      color: var(--ink);
+      background: rgba(23, 31, 45, .78);
+      border-color: rgba(255, 255, 255, .1);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-textarea::placeholder,
+    html[data-color-scheme="adult"] #screen-roadmap .task-question::placeholder {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-ask-btn {
+      color: #fff;
+      background: linear-gradient(135deg, #5A7DFF 0%, #3d5fd9 100%);
+      box-shadow: 0 0 18px rgba(90, 125, 255, .18);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-ask-btn:hover {
+      background: linear-gradient(135deg, #6d8dff 0%, #5A7DFF 100%);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-thread-collapsed,
+    html[data-color-scheme="adult"] #screen-roadmap .task-thread-expanded {
+      color: var(--ink-muted);
+      border-color: rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .03);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-thread-title {
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .task-expand-btn {
+      border-color: rgba(90, 125, 255, .35);
+      background: rgba(17, 23, 34, .9);
+      color: #9eb0ff;
+    }
+
+    html[data-color-scheme="adult"] .task-item.is-expanded .task-expand-btn {
+      background: #5A7DFF;
+      color: #fff;
+      border-color: #5A7DFF;
+    }
+
+    html[data-color-scheme="adult"] .task-compressed-draft-hint {
+      background: rgba(90, 125, 255, .12);
+      color: #9eb0ff;
+    }
+
+    html[data-color-scheme="adult"] .task-breakdown-compact-btn {
+      border-color: rgba(90, 125, 255, .28);
+      background: rgba(90, 125, 255, .08);
+      color: #9eb0ff;
+    }
+
+    html[data-color-scheme="adult"] .task-breakdown-step {
+      border-color: rgba(90, 125, 255, .16);
+      background: rgba(90, 125, 255, .04);
+    }
+
+    html[data-color-scheme="adult"] .task-condense-btn,
+    html[data-color-scheme="adult"] .task-alter-path-btn {
+      border-color: rgba(255, 255, 255, .1);
+      background: rgba(23, 31, 45, .78);
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .task-condense-btn:hover,
+    html[data-color-scheme="adult"] .task-alter-path-btn:hover:not(:disabled) {
+      border-color: rgba(90, 125, 255, .32);
+      color: var(--ink);
+      background: rgba(23, 31, 45, .92);
+    }
+
+    html[data-color-scheme="adult"] .overview-task-why,
+    html[data-color-scheme="adult"] .overview-task-detail-block {
+      background: rgba(90, 125, 255, .06);
+      border-color: rgba(90, 125, 255, .14);
+    }
+
+    html[data-color-scheme="adult"] .overview-task-inline-links a {
+      color: #9eb0ff;
+    }
+
+    html[data-color-scheme="adult"] .task-chip--local {
+      background: rgba(90, 125, 255, .12);
+      color: #9eb0ff;
+    }
+
+    html[data-color-scheme="adult"] .task-chip--context {
+      background: rgba(255, 255, 255, .05);
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-context-hints {
+      background: rgba(90, 125, 255, .06);
+      border-color: rgba(90, 125, 255, .14);
+    }
+
+    html[data-color-scheme="adult"] .task-question {
+      border: 2px solid rgba(90, 125, 255, .28);
+      background: rgba(23, 31, 45, .78);
+    }
+
+    html[data-color-scheme="adult"] .task-question:focus {
+      outline: none;
+      border-color: rgba(90, 125, 255, .42);
+      box-shadow: 0 0 0 3px rgba(90, 125, 255, .12);
+    }
+
+    html[data-color-scheme="adult"] .task-ask-btn {
+      background: linear-gradient(135deg, #5A7DFF 0%, #3d5fd9 100%);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-float-progress-label {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-float-progress-track {
+      background: rgba(255, 255, 255, .06);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-float-progress-fill {
+      background: linear-gradient(90deg, #5A7DFF, #1fd358);
+      box-shadow: 0 0 12px rgba(90, 125, 255, .35);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-float-progress-text {
+      color: #9eb0ff;
+    }
+
+    html[data-color-scheme="adult"] .task-alphabetic-letter {
+      color: #9eb0ff;
     }
 
     #screen-roadmap .task-item {
