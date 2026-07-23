@@ -1499,7 +1499,7 @@
     }
 
     html[data-color-scheme="adult"] .minimal-kicker {
-      margin: .35rem 0 0;
+      margin: .15rem 0 .1rem;
       text-align: center;
     }
 
@@ -1508,27 +1508,41 @@
       align-items: baseline;
       flex-wrap: wrap;
       justify-content: center;
-      font-size: clamp(1.75rem, 5vw, 2.55rem);
-      font-weight: 800;
-      letter-spacing: -.03em;
-      line-height: 1.05;
+      gap: 0;
+      font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      line-height: 1.35;
+      text-transform: uppercase;
     }
 
-    html[data-color-scheme="adult"] .minimal-kicker-brand .brand-what {
-      color: var(--brand-blue);
-    }
-
-    html[data-color-scheme="adult"] .minimal-kicker-brand .brand-ima {
-      color: var(--brand-orange);
-    }
-
+    html[data-color-scheme="adult"] .minimal-kicker-brand .brand-what,
+    html[data-color-scheme="adult"] .minimal-kicker-brand .brand-ima,
     html[data-color-scheme="adult"] .minimal-kicker-brand .brand-do {
-      color: var(--brand-green);
+      background: linear-gradient(180deg, #F4F6F9 0%, #9AA3B5 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 500;
     }
 
     html[data-color-scheme="adult"] .minimal-kicker-space {
       display: inline-block;
-      width: .28em;
+      width: 0.22em;
+    }
+
+    html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-start-zone {
+      position: relative;
+      z-index: 1;
+    }
+
+    html[data-color-scheme="adult"] #screen-main:not(.is-chat-active) .minimal-start-zone::before {
+      content: "";
+      position: absolute;
+      inset: -5rem -3rem -3rem;
+      background: radial-gradient(ellipse 72% 58% at 50% 48%, rgba(255, 255, 255, .045) 0%, transparent 68%);
+      pointer-events: none;
+      z-index: -1;
     }
 
     html[data-color-scheme="adult"] .minimal-prompt.dashboard-search {
@@ -1536,8 +1550,10 @@
       max-width: none;
       flex-shrink: 0;
       margin: 0;
+      position: relative;
+      z-index: 1;
       --dashboard-send-size: 48px;
-      --dashboard-prompt-inset: 12px;
+      --dashboard-prompt-inset: 14px;
       --dashboard-prompt-radius: 32px;
     }
 
@@ -2288,13 +2304,15 @@
       padding: var(--dashboard-prompt-inset);
       min-height: calc(var(--dashboard-send-size) + var(--dashboard-prompt-inset) * 2);
       border-radius: var(--dashboard-prompt-radius);
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      background: #fff;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(23, 31, 45, .78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 0.03),
-        0 1px 2px rgba(15, 23, 42, 0.04),
-        0 8px 24px rgba(15, 23, 42, 0.06);
-      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        0 0 0 1px rgba(255, 255, 255, .03),
+        0 12px 40px rgba(0, 0, 0, .42),
+        0 0 56px rgba(90, 125, 255, .07);
+      transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
     }
 
     html[data-color-scheme="adult"] .dashboard-prompt-ghost {
@@ -2304,13 +2322,13 @@
       top: 50%;
       transform: translateY(-50%);
       pointer-events: none;
-      color: rgba(15, 23, 42, 0.42);
+      color: var(--ink-muted);
       font-size: 1rem;
       line-height: 1.5;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.45s ease;
     }
 
     html[data-color-scheme="adult"] .dashboard-search-field:focus-within .dashboard-prompt-ghost,
@@ -2319,11 +2337,12 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-search-field:focus-within {
-      border-color: rgba(37, 99, 235, 0.28);
+      border-color: rgba(90, 125, 255, .32);
+      background: rgba(23, 31, 45, .92);
       box-shadow:
-        0 0 0 1px rgba(37, 99, 235, 0.12),
-        0 1px 2px rgba(15, 23, 42, 0.04),
-        0 10px 28px rgba(37, 99, 235, 0.1);
+        0 0 0 1px rgba(90, 125, 255, .14),
+        0 16px 48px rgba(0, 0, 0, .48),
+        0 0 72px rgba(90, 125, 255, .12);
     }
 
     html[data-color-scheme="adult"] .dashboard-search .prompt-textarea {
@@ -2343,6 +2362,8 @@
       line-height: 1.5;
       text-align: left;
       box-sizing: border-box;
+      color: var(--ink);
+      caret-color: #5A7DFF;
     }
 
     html[data-color-scheme="adult"] .dashboard-search-field.is-expanded .prompt-textarea {
@@ -2385,13 +2406,13 @@
       height: var(--dashboard-send-size);
       border: 0;
       border-radius: 50%;
-      background: #29abe2;
+      background: linear-gradient(145deg, #6B8FFF 0%, #5A7DFF 100%);
       color: #fff;
       display: grid;
       place-items: center;
       cursor: pointer;
       transform: translateY(-50%);
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 4px 16px rgba(90, 125, 255, .35);
       transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     }
 
@@ -2401,8 +2422,8 @@
     }
 
     html[data-color-scheme="adult"] .dashboard-search-go:hover {
-      background: #1e8fc4;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      background: linear-gradient(145deg, #7A9AFF 0%, #6888FF 100%);
+      box-shadow: 0 6px 20px rgba(90, 125, 255, .42);
     }
 
     html[data-color-scheme="adult"] .dashboard-search-go:active {
@@ -3656,32 +3677,63 @@
       z-index: 0;
     }
 
+    html[data-color-scheme="adult"] #mario-clouds.is-orbs {
+      inset: 0;
+      overflow: hidden;
+      -webkit-mask-image: radial-gradient(ellipse 68% 52% at 50% 44%, #000 18%, transparent 72%);
+      mask-image: radial-gradient(ellipse 68% 52% at 50% 44%, #000 18%, transparent 72%);
+    }
+
     html[data-color-scheme="adult"] #mario-clouds.is-orbs .ambient-orb {
       position: absolute;
-      left: var(--orb-left, 8vw);
-      top: var(--orb-top, 20%);
+      left: var(--orb-left, 50%);
+      top: var(--orb-top, 44%);
       width: var(--orb-size, 18px);
       height: var(--orb-size, 18px);
       border-radius: 50%;
       background: radial-gradient(
-        circle at 34% 30%,
-        color-mix(in srgb, var(--orb-color, #8fd4f5) 92%, white) 0%,
-        var(--orb-color, #8fd4f5) 38%,
-        color-mix(in srgb, var(--orb-color, #8fd4f5) 58%, transparent) 64%,
-        transparent 100%
+        circle at 38% 32%,
+        color-mix(in srgb, var(--orb-color, #ffffff) 88%, white) 0%,
+        color-mix(in srgb, var(--orb-color, #ffffff) 42%, transparent) 42%,
+        transparent 72%
       );
       box-shadow:
-        0 0 18px color-mix(in srgb, var(--orb-color, #ffffff) 55%, transparent),
-        0 0 36px color-mix(in srgb, var(--orb-color, #ffffff) 28%, transparent),
-        0 0 56px color-mix(in srgb, var(--orb-color, #ffffff) 14%, transparent);
-      opacity: var(--orb-opacity, .14);
-      filter: blur(14px);
-      will-change: transform;
-      animation-name: ambient-orb-wander;
-      animation-duration: var(--orb-duration, 72s);
-      animation-timing-function: ease-in-out;
-      animation-iteration-count: infinite;
-      animation-delay: var(--orb-delay, 0s);
+        0 0 14px color-mix(in srgb, var(--orb-color, #ffffff) 48%, transparent),
+        0 0 28px color-mix(in srgb, var(--orb-color, #ffffff) 22%, transparent);
+      opacity: var(--orb-opacity, .12);
+      filter: blur(12px);
+      will-change: transform, opacity;
+      animation-name: ambient-orb-think-drift, ambient-orb-think-pulse;
+      animation-duration: var(--orb-duration, 90s), var(--orb-pulse-duration, 5.5s);
+      animation-timing-function: ease-in-out, ease-in-out;
+      animation-iteration-count: infinite, infinite;
+      animation-delay: var(--orb-delay, 0s), var(--orb-pulse-delay, 0s);
+    }
+
+    @keyframes ambient-orb-think-drift {
+      0%,
+      100% {
+        transform: translate3d(0, 0, 0);
+      }
+
+      33% {
+        transform: translate3d(var(--orb-dx1, 6px), var(--orb-dy1, -4px), 0);
+      }
+
+      66% {
+        transform: translate3d(var(--orb-dx2, -5px), var(--orb-dy2, 5px), 0);
+      }
+    }
+
+    @keyframes ambient-orb-think-pulse {
+      0%,
+      100% {
+        opacity: var(--orb-opacity, .12);
+      }
+
+      50% {
+        opacity: calc(var(--orb-opacity, .12) * 1.45);
+      }
     }
 
     @keyframes ambient-orb-wander {
@@ -3707,6 +3759,13 @@
       animation: none !important;
       opacity: var(--orb-opacity, .12) !important;
       transform: translate3d(var(--orb-static-x, 20vw), var(--orb-static-y, 0), 0) !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html[data-color-scheme="adult"] #mario-clouds.is-orbs .ambient-orb {
+        animation: none !important;
+        opacity: var(--orb-opacity, .1) !important;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -45981,47 +46040,65 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return { left, top };
     }
 
+    function getThinkingOrbSpreadPosition(index, total) {
+      const golden = (index + 1) * 2.399963;
+      const ring = index / Math.max(total - 1, 1);
+      const radiusX = 6 + ring * 14 + (Math.random() - 0.5) * 4;
+      const radiusY = 4 + ring * 9 + (Math.random() - 0.5) * 3;
+      const centerLeft = 50;
+      const centerTop = 44;
+      const left = centerLeft + Math.cos(golden) * radiusX;
+      const top = centerTop + Math.sin(golden) * radiusY;
+      return {
+        left: Math.max(32, Math.min(68, left)),
+        top: Math.max(34, Math.min(54, top))
+      };
+    }
+
     function buildAmbientOrbElement(index, options = {}) {
       const staticOrbs = options.staticOrbs === true;
+      const thinkingCluster = options.thinkingCluster === true;
       const total = options.totalOrbs || 12;
       const orb = document.createElement("div");
       orb.className = "ambient-orb";
-      const duration = 72 + Math.random() * 68;
+      const duration = 84 + Math.random() * 56;
       const delay = -(Math.random() * duration);
       const sizeRoll = Math.random();
-      const size = sizeRoll < 0.35
-        ? 6 + Math.random() * 10
-        : sizeRoll < 0.75
-          ? 14 + Math.random() * 12
-          : 24 + Math.random() * 12;
-      const spread = getAmbientOrbSpreadPosition(index, total);
+      const size = sizeRoll < 0.4
+        ? 6 + Math.random() * 8
+        : sizeRoll < 0.78
+          ? 12 + Math.random() * 10
+          : 20 + Math.random() * 10;
+      const spread = thinkingCluster
+        ? getThinkingOrbSpreadPosition(index, total)
+        : getAmbientOrbSpreadPosition(index, total);
       const left = spread.left;
       const top = spread.top;
-      const opacity = 0.05 + Math.random() * 0.13;
-      const palette = ["#ffffff", "#f4f7ff", "#eef3ff", "#e3ebff", "#f8fbff", "#dfe8ff"];
+      const opacity = 0.06 + Math.random() * 0.1;
+      const palette = ["#ffffff", "#f4f7ff", "#eef3ff", "#e8f0ff", "#f8fbff"];
       const color = palette[Math.floor(Math.random() * palette.length)];
-      const driftScale = 0.9 + Math.random() * 0.75;
-      const wanderX1 = `${((Math.random() - 0.5) * 28 * driftScale).toFixed(1)}vw`;
-      const wanderY1 = `${((Math.random() - 0.5) * 22 * driftScale).toFixed(1)}vh`;
-      const wanderX2 = `${((Math.random() - 0.5) * 34 * driftScale).toFixed(1)}vw`;
-      const wanderY2 = `${((Math.random() - 0.5) * 26 * driftScale).toFixed(1)}vh`;
-      const wanderX3 = `${((Math.random() - 0.5) * 24 * driftScale).toFixed(1)}vw`;
-      const wanderY3 = `${((Math.random() - 0.5) * 20 * driftScale).toFixed(1)}vh`;
-      const staticX = `${left}vw`;
-      const staticY = `${(Math.random() - 0.5) * 30}px`;
+      const driftScale = 0.55 + Math.random() * 0.45;
+      const wanderX1 = `${((Math.random() - 0.5) * 14 * driftScale).toFixed(1)}px`;
+      const wanderY1 = `${((Math.random() - 0.5) * 10 * driftScale).toFixed(1)}px`;
+      const wanderX2 = `${((Math.random() - 0.5) * 16 * driftScale).toFixed(1)}px`;
+      const wanderY2 = `${((Math.random() - 0.5) * 12 * driftScale).toFixed(1)}px`;
+      const staticX = `${left}%`;
+      const staticY = `${(Math.random() - 0.5) * 12}px`;
+      const pulseDuration = (4.8 + Math.random() * 3.6).toFixed(1);
+      const pulseDelay = (-(Math.random() * Number(pulseDuration))).toFixed(1);
 
-      orb.style.setProperty("--orb-left", `${left.toFixed(1)}vw`);
+      orb.style.setProperty("--orb-left", `${left.toFixed(1)}%`);
       orb.style.setProperty("--orb-top", `${top.toFixed(1)}%`);
       orb.style.setProperty("--orb-size", `${size.toFixed(1)}px`);
       orb.style.setProperty("--orb-duration", `${duration.toFixed(1)}s`);
       orb.style.setProperty("--orb-delay", `${delay.toFixed(1)}s`);
       orb.style.setProperty("--orb-opacity", opacity.toFixed(2));
+      orb.style.setProperty("--orb-pulse-duration", `${pulseDuration}s`);
+      orb.style.setProperty("--orb-pulse-delay", `${pulseDelay}s`);
       orb.style.setProperty("--orb-dx1", wanderX1);
       orb.style.setProperty("--orb-dy1", wanderY1);
       orb.style.setProperty("--orb-dx2", wanderX2);
       orb.style.setProperty("--orb-dy2", wanderY2);
-      orb.style.setProperty("--orb-dx3", wanderX3);
-      orb.style.setProperty("--orb-dy3", wanderY3);
       orb.style.setProperty("--orb-static-x", staticX);
       orb.style.setProperty("--orb-static-y", staticY);
       orb.style.setProperty("--orb-color", color);
@@ -46120,9 +46197,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       container.replaceChildren();
 
       if (ambient) {
-        const count = layout === "mobile" ? 7 : 10;
+        const count = layout === "mobile" ? 6 : 8;
         for (let i = 0; i < count; i += 1) {
-          container.appendChild(buildAmbientOrbElement(i, { staticOrbs: staticClouds, totalOrbs: count }));
+          container.appendChild(buildAmbientOrbElement(i, { staticOrbs: staticClouds, totalOrbs: count, thinkingCluster: true }));
         }
         return;
       }
