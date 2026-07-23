@@ -205,7 +205,7 @@
     }
 
     [data-color-scheme="adult"] {
-      color-scheme: light;
+      color-scheme: dark;
       scrollbar-width: none;
       -ms-overflow-style: none;
       --sidebar-w: 248px;
@@ -220,52 +220,52 @@
       --brand-blue: #29abe2;
       --brand-orange: #fbb03b;
       --brand-green: #1fd358;
-      --bg: #ffffff;
-      --bg-soft: #f9fafb;
-      --surface: #ffffff;
-      --surface-2: #f3f4f6;
-      --surface-3: #e5e7eb;
-      --ink: #111827;
-      --ink-muted: #6b7280;
-      --muted: #9ca3af;
-      --line: #e5e7eb;
+      --bg: #0A0D14;
+      --bg-soft: #111722;
+      --surface: #111722;
+      --surface-2: #171F2D;
+      --surface-3: #1E2736;
+      --ink: #F4F6F9;
+      --ink-muted: #8D95A5;
+      --muted: #6B7384;
+      --line: rgba(255, 255, 255, .06);
       --purple: #29abe2;
       --purple-2: #5ec4ef;
       --teal: #1fd358;
       --gold: #fbb03b;
       --green: #1fd358;
       --rose: #ef4444;
-      --html-bg: #ffffff;
-      --bg-gradient: #ffffff;
-      --header-bg: #ffffff;
-      --header-border: #e5e7eb;
+      --html-bg: #0A0D14;
+      --bg-gradient: radial-gradient(120% 90% at 50% -10%, #171F2D 0%, #111722 45%, #0A0D14 100%);
+      --header-bg: transparent;
+      --header-border: rgba(255, 255, 255, .06);
       --header-shadow: none;
       --logo-gradient: linear-gradient(135deg, #29abe2 0%, #1fd358 100%);
-      --network-line-rgb: 209, 213, 219;
-      --browser-theme-color: #29abe2;
+      --network-line-rgb: 141, 149, 165;
+      --browser-theme-color: #0A0D14;
       --theme-active-bg: rgba(41, 171, 226, .12);
       --theme-active-border: rgba(41, 171, 226, .24);
-      --brand-purple-dark: #111827;
-      --pastel-yellow-bg: #ffffff;
-      --pastel-yellow-bg-hover: #f9fafb;
-      --pastel-yellow-border: #e5e7eb;
-      --light-blue-bg: #ffffff;
-      --light-blue-bg-hover: #f9fafb;
-      --light-blue-border: #e5e7eb;
-      --plan-card-bg: #ffffff;
-      --plan-card-bg-hover: #f9fafb;
-      --plan-card-border: #e5e7eb;
-      --plan-card-shadow: 0 1px 2px rgba(0, 0, 0, .04);
-      --plan-card-ink: #111827;
-      --plan-card-muted: #6b7280;
-      --plan-card-soft: #9ca3af;
-      --plan-card-chip-bg: #f3f4f6;
-      --plan-card-note-bg: #f9fafb;
-      --map-control-bg: #ffffff;
-      --map-control-border: #e5e7eb;
+      --brand-purple-dark: #F4F6F9;
+      --pastel-yellow-bg: var(--surface);
+      --pastel-yellow-bg-hover: var(--surface-2);
+      --pastel-yellow-border: var(--line);
+      --light-blue-bg: var(--surface);
+      --light-blue-bg-hover: var(--surface-2);
+      --light-blue-border: var(--line);
+      --plan-card-bg: var(--surface);
+      --plan-card-bg-hover: var(--surface-2);
+      --plan-card-border: var(--line);
+      --plan-card-shadow: 0 18px 48px rgba(0, 0, 0, .35);
+      --plan-card-ink: var(--ink);
+      --plan-card-muted: var(--ink-muted);
+      --plan-card-soft: var(--muted);
+      --plan-card-chip-bg: rgba(255, 255, 255, .05);
+      --plan-card-note-bg: rgba(255, 255, 255, .03);
+      --map-control-bg: var(--surface);
+      --map-control-border: var(--line);
       --map-node-royal: #29abe2;
       --map-node-royal-strong: #1e8fc4;
-      --shadow: 0 1px 3px rgba(0, 0, 0, .06);
+      --shadow: 0 24px 60px rgba(0, 0, 0, .45);
       --header-h: var(--topbar-h);
     }
 
@@ -291,7 +291,8 @@
     }
 
     html[data-color-scheme="adult"] body {
-      background: var(--bg);
+      background: var(--bg-gradient);
+      background-color: var(--html-bg);
       color: var(--ink);
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -3670,11 +3671,11 @@
         transparent 100%
       );
       box-shadow:
-        0 0 22px color-mix(in srgb, var(--orb-color, #7ec8f0) 72%, transparent),
-        0 0 44px color-mix(in srgb, var(--orb-color, #7ec8f0) 42%, transparent),
-        0 0 72px color-mix(in srgb, var(--orb-color, #7ec8f0) 22%, transparent),
-        inset -4px -5px 10px color-mix(in srgb, var(--orb-color, #8fd4f5) 38%, transparent);
-      opacity: var(--orb-opacity, .38);
+        0 0 18px color-mix(in srgb, var(--orb-color, #ffffff) 55%, transparent),
+        0 0 36px color-mix(in srgb, var(--orb-color, #ffffff) 28%, transparent),
+        0 0 56px color-mix(in srgb, var(--orb-color, #ffffff) 14%, transparent);
+      opacity: var(--orb-opacity, .14);
+      filter: blur(14px);
       will-change: transform;
       animation-name: ambient-orb-wander;
       animation-duration: var(--orb-duration, 72s);
@@ -3704,7 +3705,7 @@
 
     html[data-color-scheme="adult"] #mario-clouds.is-static .ambient-orb {
       animation: none !important;
-      opacity: var(--orb-opacity, .32) !important;
+      opacity: var(--orb-opacity, .12) !important;
       transform: translate3d(var(--orb-static-x, 20vw), var(--orb-static-y, 0), 0) !important;
     }
 
@@ -45985,19 +45986,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const total = options.totalOrbs || 12;
       const orb = document.createElement("div");
       orb.className = "ambient-orb";
-      const duration = 48 + Math.random() * 52;
+      const duration = 72 + Math.random() * 68;
       const delay = -(Math.random() * duration);
       const sizeRoll = Math.random();
-      const size = sizeRoll < 0.4
-        ? 10 + Math.random() * 8
-        : sizeRoll < 0.8
-          ? 16 + Math.random() * 10
+      const size = sizeRoll < 0.35
+        ? 6 + Math.random() * 10
+        : sizeRoll < 0.75
+          ? 14 + Math.random() * 12
           : 24 + Math.random() * 12;
       const spread = getAmbientOrbSpreadPosition(index, total);
       const left = spread.left;
       const top = spread.top;
-      const opacity = 0.32 + Math.random() * 0.2;
-      const palette = ["#6ec5ef", "#7ec8f0", "#8fd4f5", "#9ddaf7", "#abe0f8", "#b8e8fb"];
+      const opacity = 0.05 + Math.random() * 0.13;
+      const palette = ["#ffffff", "#f4f7ff", "#eef3ff", "#e3ebff", "#f8fbff", "#dfe8ff"];
       const color = palette[Math.floor(Math.random() * palette.length)];
       const driftScale = 0.9 + Math.random() * 0.75;
       const wanderX1 = `${((Math.random() - 0.5) * 28 * driftScale).toFixed(1)}vw`;
@@ -46119,7 +46120,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       container.replaceChildren();
 
       if (ambient) {
-        const count = layout === "mobile" ? 10 : 14;
+        const count = layout === "mobile" ? 7 : 10;
         for (let i = 0; i < count; i += 1) {
           container.appendChild(buildAmbientOrbElement(i, { staticOrbs: staticClouds, totalOrbs: count }));
         }
