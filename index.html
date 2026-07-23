@@ -83,9 +83,9 @@
       const schemes = ["adult", "midnight", "ocean", "sunset", "mario"];
       const shells = {
         adult: {
-          html: "#ffffff",
-          loader: "linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%)",
-          theme: "#29abe2"
+          html: "#0A0D14",
+          loader: "radial-gradient(120% 90% at 50% -10%, #171F2D 0%, #111722 45%, #0A0D14 100%)",
+          theme: "#0A0D14"
         },
         midnight: {
           html: "#07111f",
@@ -118,7 +118,7 @@
       document.documentElement.dataset.colorScheme = scheme;
       const shell = shells[scheme] || shells.adult;
       document.documentElement.style.background = shell.html;
-      document.documentElement.style.colorScheme = (scheme === "mario" || scheme === "adult") ? "light" : "dark";
+      document.documentElement.style.colorScheme = scheme === "mario" ? "light" : "dark";
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", shell.theme);
       const critical = document.createElement("style");
@@ -3482,14 +3482,39 @@
       transform: translate(-50%, 0);
     }
 
+    html[data-color-scheme="adult"] .loader,
+    html[data-color-scheme="adult"] .roadmap-loading {
+      background: var(--bg-gradient);
+      color: var(--ink);
+    }
+
     html[data-color-scheme="adult"] .loader-quote,
     html[data-color-scheme="adult"] .loader-tagline {
-      color: var(--ink);
       text-shadow: none;
     }
 
+    html[data-color-scheme="adult"] .loader-quote {
+      color: var(--ink-muted);
+    }
+
+    html[data-color-scheme="adult"] .loader-tagline {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
     html[data-color-scheme="adult"] .loader-logo {
-      filter: none;
+      height: 52px;
+      max-width: min(88vw, 240px);
+      object-fit: contain;
+      object-position: center;
+      filter: drop-shadow(0 0 24px rgba(90, 125, 255, .18));
+    }
+
+    @media (max-width: 600px) {
+      html[data-color-scheme="adult"] .loader-logo,
+      html[data-color-scheme="adult"] .roadmap-loading .loader-logo {
+        height: 44px;
+      }
     }
 
     html:not([data-color-scheme="adult"]) .dashboard-shell {
@@ -12629,15 +12654,17 @@
     }
 
     html[data-color-scheme="adult"] .site-loading-progress-track {
-      background: rgba(15, 23, 42, .1);
+      background: rgba(255, 255, 255, .06);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
     }
 
     html[data-color-scheme="adult"] .site-loading-progress-fill {
-      background: linear-gradient(90deg, #29abe2, #1fd358);
+      background: linear-gradient(90deg, #5A7DFF, #1fd358);
+      box-shadow: 0 0 12px rgba(90, 125, 255, .35);
     }
 
     html[data-color-scheme="adult"] .site-loading-progress-pct {
-      color: var(--text, #241235);
+      color: #9eb0ff;
     }
 
     html[data-color-scheme="adult"] .site-loading-progress-meta {
@@ -15693,7 +15720,7 @@
   </div>
   <div class="loader" id="loader">
     <div class="loader-inner">
-      <img class="loader-logo" src="/logo.png" alt="whatimado" width="1921" height="819">
+      <img class="loader-logo" src="/whatimado-logo.svg" alt="whatimado" width="1366" height="664">
       <p class="loader-quote">"The two most important days in your life are the day you are born and the day you find out why."</p>
       <small class="loader-tagline">Let us help you figure out what you're gonna do.</small>
       <div class="site-loading-progress" id="loader-progress" aria-live="polite">
@@ -16512,7 +16539,7 @@
     <section class="screen" id="screen-roadmap">
       <div class="roadmap-loading" id="roadmap-loading" hidden>
         <div class="loader-inner">
-          <img class="loader-logo" src="/logo.png" alt="whatimado" width="1921" height="819">
+          <img class="loader-logo" src="/whatimado-logo.svg" alt="whatimado" width="1366" height="664">
           <p class="loader-tagline">Preparing your first mission…</p>
           <div class="site-loading-progress" id="roadmap-loader-progress" aria-live="polite">
             <div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
