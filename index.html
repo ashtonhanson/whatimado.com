@@ -2812,6 +2812,30 @@
       }
     }
 
+    @media (max-width: 900px) {
+      html[data-color-scheme="adult"] #screen-map .opp-plans-section,
+      html[data-color-scheme="adult"] #screen-map .opp-batch {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+
+      html[data-color-scheme="adult"] #screen-map .opp-grid {
+        display: flex;
+        flex-direction: column;
+        gap: .85rem;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+
+      html[data-color-scheme="adult"] #screen-map .opp-card {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+      }
+    }
+
     html[data-color-scheme="adult"] #screen-map .map-paths-actions {
       justify-content: center;
       width: 100%;
@@ -3640,16 +3664,17 @@
       border-radius: 50%;
       background: radial-gradient(
         circle at 34% 30%,
-        color-mix(in srgb, var(--orb-color, #bcc4ce) 88%, white) 0%,
-        var(--orb-color, #bcc4ce) 38%,
-        color-mix(in srgb, var(--orb-color, #bcc4ce) 64%, transparent) 64%,
+        color-mix(in srgb, var(--orb-color, #8fd4f5) 92%, white) 0%,
+        var(--orb-color, #8fd4f5) 38%,
+        color-mix(in srgb, var(--orb-color, #8fd4f5) 58%, transparent) 64%,
         transparent 100%
       );
       box-shadow:
-        0 0 26px color-mix(in srgb, var(--orb-color, #bcc4ce) 56%, transparent),
-        0 0 48px color-mix(in srgb, var(--orb-color, #bcc4ce) 28%, transparent),
-        inset -5px -6px 12px color-mix(in srgb, var(--orb-color, #bcc4ce) 46%, transparent);
-      opacity: var(--orb-opacity, .34);
+        0 0 22px color-mix(in srgb, var(--orb-color, #7ec8f0) 72%, transparent),
+        0 0 44px color-mix(in srgb, var(--orb-color, #7ec8f0) 42%, transparent),
+        0 0 72px color-mix(in srgb, var(--orb-color, #7ec8f0) 22%, transparent),
+        inset -4px -5px 10px color-mix(in srgb, var(--orb-color, #8fd4f5) 38%, transparent);
+      opacity: var(--orb-opacity, .38);
       will-change: transform;
       animation-name: ambient-orb-wander;
       animation-duration: var(--orb-duration, 72s);
@@ -12193,6 +12218,34 @@
       line-height: 1.4;
     }
 
+    .task-mentor-section--goal-bridge {
+      margin-top: .55rem;
+      padding: .72rem .85rem;
+      border-radius: 10px;
+      background: rgba(37, 99, 235, .035);
+      border-left: 3px solid rgba(37, 99, 235, .28);
+    }
+
+    html[data-color-scheme="adult"] .task-mentor-section--goal-bridge {
+      background: rgba(37, 99, 235, .04);
+      border-left-color: rgba(37, 99, 235, .32);
+    }
+
+    .task-goal-bridge-copy {
+      margin: 0;
+      color: var(--ink);
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+
+    html[data-color-scheme="adult"] .task-goal-bridge-copy {
+      color: var(--ink-muted);
+    }
+
+    .task-draft-panel[hidden] {
+      display: none !important;
+    }
+
     .roadmap-type {
       color: var(--purple-2);
       font-size: .68rem;
@@ -17365,11 +17418,11 @@
     /* ===== SECTION: Roadmap schema & local resources ===== */
     const ROADMAP_JSON_INSTRUCTION =
       'Return exactly 4 stages with 3 tasks each. Tasks are numbered in one continuous sequence across the roadmap; never create lettered subtasks.\n' +
-      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Specific nutshell task title, 6–14 words, naming the action and target/result — e.g. Call a housing navigator about beds, waitlists, and required ID","text":"Detailed What to do instructions in 2–3 short concrete sentences: who to contact, what to ask, what to prepare, and what answer to record. Must NOT restate the task title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call the first housing contact below and ask about beds available tonight, waitlist timing, intake hours, and required ID. Write down the contact name, the earliest opening, and any documents you need to bring.\\"","mentorHelp":"Internal asset context only; do not rely on this field for user instructions.","howTo":"One concrete next action only when it adds information not already in text.","why":"One short line explaining why THIS task fits their situation when it might look surprising. Empty only if obviously on-track.","outcome":"Internal progress proof only; do not rely on this field for user instructions.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"","difficulty":"Easy|Medium|Advanced","steps":[],"alternatives":"If this task does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
+      'Respond only with a raw JSON array: [{"label":"Unique stage name for THIS path only","desc":"2 sentences: what this phase achieves and measurable progress toward their goal","tasks":[{"mission":"Specific nutshell task title, 6–14 words, naming the action and target/result — e.g. Call a housing navigator about beds, waitlists, and required ID","text":"Detailed What to do instructions in 2–3 short concrete sentences: who to contact, what to ask, what to prepare, and what answer to record. Must NOT restate the task title. Must NOT be vague (forbidden: \\"Do the next logical step forward\\", \\"complete the listed step\\"). Example: \\"Call the first housing contact below and ask about beds available tonight, waitlist timing, intake hours, and required ID. Write down the contact name, the earliest opening, and any documents you need to bring.\\"","mentorHelp":"Internal asset context only; do not rely on this field for user instructions.","howTo":"One concrete next action only when it adds information not already in text.","why":"One short line explaining why THIS task fits their situation when it might look surprising. Empty only if obviously on-track.","goalBridge":"One sentence linking THIS micro-task to their macro-goal: what asset, metric, or proof completing it unlocks (e.g. named contacts for funding, a sent message for credibility, a logged application for grant proof).","outcome":"Internal progress proof only; do not rely on this field for user instructions.","talkingPoints":"3-5 bullet lines they can say on a call — ready to read","followUp":"Short follow-up email or text if they do not hear back in 3-5 days","duration":"","difficulty":"Easy|Medium|Advanced","steps":[],"alternatives":"If this task does not apply in their country, name a different route","cost":"Free or estimated cost in local currency","resourceCategories":["employment_agency","small_business_advisor"],"resources":{"local":[{"name":"Program or role label","org":"Real organization","address":"published service address or empty","phone":"published line or empty","email":"published email or empty","url":"https://official-page","details":"What the program provides, basic eligibility, and deadline if published"}],"national":[{"name":"National portal or assistance program","org":"Government program","address":"","phone":"","email":"","url":"https://...","details":"Benefit, grant, voucher, fee waiver, or application detail"}],"global":[{"name":"Online option","org":"Platform name","address":"","phone":"","email":"","url":"https://...","details":"What this option helps with"}]},"links":["https://exact-page"],"contacts":[],"script":"REQUIRED ready-to-use asset pack — not explanation. Outreach: org list + draft email + follow-up + phone script + tracker table. Logo: brief + mood keywords + hex palette + fonts + AI prompts + SVG tips. Interviews: questions + Google Form fields + survey + script + note template. Grant/resume/post: full ready-to-edit draft."}]}]\n' +
       'ASSET-FIRST RULE (non-negotiable):\n' +
       '- Every field must answer: "What would genuinely help the user complete THIS exact task?"\n' +
       '- NEVER restate mission, text, or task title in why, howTo, mentorHelp, script, or outcome.\n' +
-      '- Every task title must be a clear 6–14 word nutshell naming the action plus its target or result. Avoid vague titles such as "Take the next step", "Get support", or "Make a plan".\n' +
+      '- Every task title must be a clear 6–14 word nutshell naming the action plus its target or result. Avoid vague titles such as "Take the next step", "Get support", or "Make a plan". NEVER use shorthand placeholders like "Same rule", "As above", "Continue", or "Step 2".\n' +
       '- Inside each task body (text, why, howTo, mentorHelp, outcome), NEVER repeat the task title — it already appears once at the top.\n' +
       '- NEVER use ellipses (…) or "..." in titles or body text — rewrite so the line fits cleanly.\n' +
       '- Location in user-facing text: shortest natural form only (e.g. "Austin" not "Austin, Texas, United States"). Omit location when obvious.\n' +
@@ -18317,7 +18370,7 @@
 
     const FLEXIBLE_MISSION_JSON_INSTRUCTION =
       'Respond only with a raw JSON array of exactly 1 stage with exactly 1 task:\n' +
-      '[{"label":"Short plain-language phase name","desc":"One sentence on what this task achieves","tasks":[{"mission":"Specific 6–14 word nutshell title naming the action and target/result","text":"Detailed instructions in 2–3 short sentences: who to contact, what to ask, what to prepare, and what to record","mentorHelp":"","howTo":"One concrete next action only when it adds new information","why":"One short line explaining why this task fits their goal when it might look surprising","outcome":"","script":"","talkingPoints":"","followUp":"","duration":"","difficulty":"Easy","steps":[],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[],"global":[]},"links":[],"contacts":[]}]}]\n';
+      '[{"label":"Short plain-language phase name","desc":"One sentence on what this task achieves","tasks":[{"mission":"Specific 6–14 word nutshell title naming the action and target/result — never shorthand like Same rule or As above","text":"Detailed instructions in 2–3 short sentences: who to contact, what to ask, what to prepare, and what to record","mentorHelp":"","howTo":"One concrete next action only when it adds new information","why":"One short line explaining why this task fits their goal when it might look surprising","goalBridge":"One sentence on what asset, metric, or proof this step unlocks toward their macro-goal","outcome":"","script":"","talkingPoints":"","followUp":"","duration":"","difficulty":"Easy","steps":[],"resources":{"local":[{"name":"Role label","org":"Real organization","phone":"published line or empty","email":"published email or empty","url":"https://official-page"}],"national":[],"global":[]},"links":[],"contacts":[]}]}]\n';
 
     function stripFlexibleMissionDrafts(normalized) {
       if (!normalized || !isFlexiblePathMode()) return normalized;
@@ -19064,7 +19117,7 @@
 
     function sanitizeTaskMentorFields(normalized) {
       if (!normalized || typeof normalized !== "object") return normalized;
-      ["why", "howTo", "mentorHelp", "mentorFindings", "outcome"].forEach((field) => {
+      ["why", "goalBridge", "howTo", "mentorHelp", "mentorFindings", "outcome"].forEach((field) => {
         normalized[field] = sanitizeMentorFieldText(normalized[field], normalized);
       });
       const script = String(normalized.script || "").trim();
@@ -19227,7 +19280,8 @@
       const missionCopy = stripEllipsisFromCopy(humanizeTaskText(mission || ""));
       const actionCopy = stripEllipsisFromCopy(humanizeTaskText(text || normalized.text || ""));
       const missionWords = missionCopy.split(/\s+/).filter(Boolean).length;
-      const vagueTitle = missionWords < 5
+      const vagueTitle = missionTitleLooksAmbiguous(missionCopy)
+        || missionWords < 5
         || /^(get|find|make|build|take|start|continue|review|check) (help|support|started|a plan|the next step|your next step|options?)\b/i.test(missionCopy)
         || /^(next step|task|mission|step \d+)\b/i.test(missionCopy);
       if (!vagueTitle && missionCopy.length <= 96) return missionCopy;
@@ -20147,8 +20201,54 @@ Practice each one out loud once and time yourself.`;
     function missionTitleLooksIncomplete(title) {
       const copy = String(title || "").trim();
       if (!copy) return true;
+      if (missionTitleLooksAmbiguous(copy)) return true;
       if (/\b(toward|for|with|into|about|to|on|in|at)\s*$/i.test(copy)) return true;
       if (/\bLand your first foothold\b/i.test(copy) && copy.length < 48) return true;
+      return false;
+    }
+
+    function missionTitleLooksAmbiguous(title) {
+      const copy = String(title || "").trim();
+      if (!copy) return true;
+      const lower = copy.toLowerCase();
+      const ambiguousPatterns = [
+        /^same rule$/i,
+        /^same (?:as|thing|step|task|approach|process|format|way|here|above)$/i,
+        /^as above$/i,
+        /^see above$/i,
+        /^per above$/i,
+        /^as noted$/i,
+        /^like before$/i,
+        /^do this$/i,
+        /^do that$/i,
+        /^do the same$/i,
+        /^follow (?:the )?(?:same|above|prior)/i,
+        /^use (?:the )?same/i,
+        /^repeat(?:\s+this)?$/i,
+        /^continue$/i,
+        /^again$/i,
+        /^ditto$/i,
+        /^etc\.?$/i,
+        /^tbd$/i,
+        /^n\/a$/i,
+        /^placeholder$/i,
+        /^next step$/i,
+        /^this step$/i,
+        /^that step$/i,
+        /^the step$/i,
+        /^task \d+(?:\.\d+)?$/i,
+        /^step \d+(?:\.\d+)?$/i,
+        /^mission \d+(?:\.\d+)?$/i,
+        /^option [a-d]$/i,
+        /^part \d+$/i,
+        /^item \d+$/i,
+        /^# \d+$/i
+      ];
+      if (ambiguousPatterns.some((pattern) => pattern.test(copy))) return true;
+      if (/^(same|repeat|continue|again|also|plus|and|then)\b/i.test(copy) && copy.split(/\s+/).length <= 4) return true;
+      if (copy.split(/\s+/).filter(Boolean).length <= 2 && !/\b(call|email|send|write|build|create|apply|schedule|talk|reach|draft|list|record|log|update|review|submit|contact|meet|post|share|practice|complete|finish|register|open|save|track|upload|download|copy|pack|gather|book|visit|ask|offer|pitch|launch|sign|file|prepare|confirm|check|name|map|rank|compare|choose|pick|select|start|set up)\b/i.test(lower)) {
+        return true;
+      }
       return false;
     }
 
@@ -20218,7 +20318,16 @@ Practice each one out loud once and time yourself.`;
         if (fromTask) return fromTask;
       }
 
-      return repairIncompleteMissionTitle(copy.trim(), normalized, idea);
+      copy = repairIncompleteMissionTitle(copy.trim(), normalized, idea);
+      if (missionTitleLooksAmbiguous(copy)) {
+        const fromTask = summarizeMissionTitle(buildMentorUserActionText(normalized) || normalized.text);
+        if (fromTask && !missionTitleLooksAmbiguous(fromTask)) return fromTask;
+        const fallback = summarizeMissionTitle(preserveTaskSourceText(normalized) || normalized.text);
+        return fallback && !missionTitleLooksAmbiguous(fallback)
+          ? fallback
+          : "Take your next specific step";
+      }
+      return copy;
     }
 
     function formatPotentialMetricValue(raw) {
@@ -21573,6 +21682,7 @@ If recording answers:
       }
 
       taskDraftGenerationInFlight.add(taskId);
+      revealTaskDraftPanel(taskId);
       suggestionBtn?.classList.add("is-generating");
       draftEl.placeholder = `Generating ${suggestion.label.toLowerCase()}…`;
       draftEl.classList.add("is-generating-draft");
@@ -22768,6 +22878,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       draftProgressControllers.delete(taskId);
     }
 
+    function revealTaskDraftPanel(taskId) {
+      const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (item) item.dataset.draftPanelRevealed = "true";
+      syncDraftPanelUi(taskId);
+    }
+
+    function shouldShowTaskDraftPanel(taskId, item, panel) {
+      const data = getRoadmapTaskData(taskId);
+      const hasDraft = Boolean(data.draft?.trim());
+      const isGenerating = Boolean(panel?.querySelector(".task-draft-generating:not([hidden])"));
+      const revealed = item?.dataset.draftPanelRevealed === "true";
+      return hasDraft || isGenerating || revealed;
+    }
+
     function syncDraftPanelUi(taskId) {
       const item = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
       if (!item) return;
@@ -22781,6 +22905,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const draftText = data.draft?.trim() || draftEl?.value.trim() || "";
       const hasDraft = Boolean(draftText);
       const isGenerating = Boolean(panel?.querySelector(".task-draft-generating:not([hidden])"));
+      const showPanel = shouldShowTaskDraftPanel(taskId, item, panel);
+
+      if (panel) panel.hidden = !showPanel;
+      panel?.classList.toggle("is-visible", showPanel);
 
       panel?.classList.toggle("has-draft", hasDraft);
       panel?.classList.toggle("is-generating", isGenerating);
@@ -22857,7 +22985,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const draftEl = getTaskDraftTextarea(item);
         if (draftEl) draftEl.value = "";
         item?.classList.remove("has-draft");
+        if (item) item.dataset.draftPanelRevealed = "false";
         setDraftPanelExpanded(taskId, false);
+        syncDraftPanelUi(taskId);
         updateTaskWritingAssistButtons(taskId);
         schedulePersist();
         trackEvent("task_draft_deleted", { task_id: taskId });
@@ -23423,6 +23553,70 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
+    function inferTaskGoalBridge(normalized, stage = {}, idea = state.currentIdea) {
+      const existing = sanitizeMentorFieldText(String(normalized.goalBridge || "").trim(), normalized);
+      if (existing && !isGenericMentorCopy(existing, normalized) && !isTaskRestatement(existing, normalized)) {
+        return existing;
+      }
+
+      const pathGoal = humanizePathGoalForTasks(idea?.title || idea?.tagline || "", idea);
+      const macroOutcome = deriveRoadmapPotentialOutcome(idea);
+      const proof = sanitizeMentorFieldText(String(normalized.outcome || inferTaskOutcome(normalized) || "").trim(), normalized);
+      const angle = extractTaskAngle(normalized);
+      const blob = getTaskContentBlob(normalized).toLowerCase();
+      const metricHint = macroOutcome?.metricValue
+        ? ` (${macroOutcome.metricLabel ? `${macroOutcome.metricLabel}: ` : ""}${macroOutcome.metricValue})`
+        : "";
+
+      if (/\b(grant|funding|scholarship|sponsor|donor)\b/.test(blob) || angle === "funding") {
+        return `Each application or sponsor conversation you finish adds grant proof and budget credibility${metricHint} — required before ${pathGoal} can get real funding.`;
+      }
+      if (/\b(interview|survey|talk to \d|customer|feedback)\b/.test(blob) || angle === "interviews") {
+        return `These conversations become quotes, patterns, and demand signals you can cite when pitching ${pathGoal} — the proof that strangers actually want this.`;
+      }
+      if (/\b(email|outreach|call|contact|director|partner|pitch)\b/.test(blob) || angle === "outreach") {
+        return `A sent message plus a logged reply gives you named contacts and traction metrics — the assets partners and funders expect before they take ${pathGoal} seriously.`;
+      }
+      if (/\b(client|customer|booking|first sale|paying)\b/.test(blob) || angle === "first_client") {
+        return `A booked client or signed offer is income proof that ${pathGoal} can pay — the metric that turns an idea into a viable path${metricHint ? metricHint : ""}.`;
+      }
+      if (/\b(logo|brand|website|landing page|screenshot)\b/.test(blob)) {
+        return `A finished brand or live page becomes shareable proof that ${pathGoal} is real — something you can show in outreach instead of only describing it.`;
+      }
+      if (/\b(resume|headline|profile|linkedin|apply)\b/.test(blob) || angle === "job_search") {
+        return `Each polished application or profile update adds verifiable work history and skills proof — what hiring managers need to say yes to ${pathGoal}.`;
+      }
+      if (/\b(list|tracker|spreadsheet|log|record|name \d)\b/.test(blob)) {
+        return `A filled tracker turns vague effort into countable progress — the numbers and names you'll need to show momentum on ${pathGoal}.`;
+      }
+      if (/\b(post|share|launch|reddit|facebook|community)\b/.test(blob) || angle === "social_post") {
+        return `A published post creates public proof that ${pathGoal} exists — replies and saves become the signal that real people noticed.`;
+      }
+      if (proof) {
+        return `Finishing this leaves you with ${proof.charAt(0).toLowerCase()}${proof.slice(1).replace(/\.$/, "")} — concrete progress toward ${pathGoal}.`;
+      }
+      if (stage?.desc) {
+        const stageDesc = sanitizeMentorFieldText(String(stage.desc).trim(), normalized);
+        if (stageDesc && !isGenericMentorCopy(stageDesc, normalized)) {
+          return `This step moves ${stageDesc.charAt(0).toLowerCase()}${stageDesc.slice(1).replace(/\.$/, "")} — one layer closer to ${pathGoal}.`;
+        }
+      }
+      if (macroOutcome?.downstream) {
+        return `Completing this unlocks progress toward ${macroOutcome.downstream.charAt(0).toLowerCase()}${macroOutcome.downstream.slice(1).replace(/\.$/, "")}.`;
+      }
+      return `Finishing this gives you something concrete to point to — proof that ${pathGoal} is moving from idea to real progress.`;
+    }
+
+    function renderTaskGoalBridgeHtml(normalized, stage) {
+      const bridge = inferTaskGoalBridge(normalized, stage);
+      if (!bridge || isGenericMentorCopy(bridge, normalized)) return "";
+      return `
+                <section class="task-mentor-section task-mentor-section--goal-bridge">
+                  <h4 class="task-mentor-label">Feeds your goal</h4>
+                  <p class="task-goal-bridge-copy">${escapeHtml(bridge)}</p>
+                </section>`;
+    }
+
     function getIdeaSignalBlob(idea = state.currentIdea) {
       return `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
     }
@@ -23699,7 +23893,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       /^take the next step on (?:this path|your goal)/i,
       /^pitch your run a small test/i,
       /^step \d+ toward your goal$/i,
-      /^mission \d+\.\d+$/i
+      /^mission \d+\.\d+$/i,
+      /^same rule$/i,
+      /^as above$/i,
+      /^see above$/i,
+      /^continue$/i,
+      /^repeat$/i,
+      /^do this$/i
     ];
 
     function isGenericMissionTitle(title) {
@@ -24365,6 +24565,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       for (const candidate of rotated) {
         const title = cleanMissionTitle(String(candidate || "").trim(), normalized, idea);
         if (!title || missionTitleLooksIncomplete(title)) continue;
+        if (missionTitleLooksAmbiguous(title)) continue;
         if (isGenericMissionTitle(title)) continue;
         if (missionTitleTooCloseToTask(title, normalized)) continue;
         if (!missionTitleAlignsWithTask(title, normalized)) continue;
@@ -24441,7 +24642,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function inferMissionTitle(normalized, context = {}) {
       const existing = String(normalized.mission || "").trim();
-      if (existing && !isGenericOutcomeText(existing) && !isGenericMissionTitle(existing) && !missionTitleLooksLikeHomework(existing, normalized)) {
+      if (existing && !isGenericOutcomeText(existing) && !isGenericMissionTitle(existing) && !missionTitleLooksLikeHomework(existing, normalized) && !missionTitleLooksAmbiguous(existing)) {
         return cleanMissionTitle(existing, normalized, state.currentIdea);
       }
       const taskIndex = Number.isInteger(context.taskIndex) ? context.taskIndex : 0;
@@ -24584,6 +24785,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       normalized.duration = inferTaskDuration(normalized);
       normalized.difficulty = inferTaskDifficulty(normalized);
       if (!normalized.why) normalized.why = inferTaskWhy(normalized);
+      if (!normalized.goalBridge) normalized.goalBridge = inferTaskGoalBridge(normalized, context.stage, state.currentIdea);
       if (!normalized.outcome) normalized.outcome = inferTaskOutcome(normalized);
       if (!normalized.mentorFindings) normalized.mentorFindings = buildMentorFindingsText(normalized);
       normalized.text = buildMentorUserActionText(normalized);
@@ -25160,6 +25362,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           text: task.trim(),
           steps: normalizeTaskSteps(fallback.steps),
           why: fallback.why || "",
+          goalBridge: fallback.goalBridge || "",
           alternatives: fallback.alternatives || "",
           outcome: fallback.outcome || "",
           duration: fallback.duration || "",
@@ -25185,6 +25388,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           text: getTaskText(task),
           steps: normalizeTaskSteps(task.steps ?? task.substeps ?? task.checklist ?? fallback.steps),
           why: String(task.why || fallback.why || "").trim(),
+          goalBridge: String(task.goalBridge || task.goal_bridge || fallback.goalBridge || "").trim(),
           alternatives: String(task.alternatives || fallback.alternatives || "").trim(),
           outcome: String(task.outcome || fallback.outcome || "").trim(),
           duration: String(task.duration || fallback.duration || "").trim(),
@@ -25210,6 +25414,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           text: String(task ?? "").trim(),
           steps: [],
           why: "",
+          goalBridge: "",
           alternatives: "",
           outcome: "",
           duration: "",
@@ -25596,8 +25801,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function renderTaskDraftPanelInnerHtml(taskId) {
       return `
-                <div class="task-draft-panel" data-draft-panel>
-                  <p class="task-draft-expand-hint">Your draft appears here after you pick an action above.</p>
+                <div class="task-draft-panel" data-draft-panel hidden>
                   <div class="task-draft-generating" hidden aria-live="polite">
                     <span class="task-draft-progress-status">Generating draft…</span>
                     <div class="task-draft-progress">
@@ -35351,6 +35555,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         event.stopPropagation();
         if (suggestionBtn.disabled || suggestionBtn.classList.contains("is-generating")) return;
         suggestionBtn.closest(".task-actions-menu")?.removeAttribute("open");
+        revealTaskDraftPanel(suggestionBtn.dataset.taskId);
         void generateDraftFromSuggestion(suggestionBtn.dataset.taskId, suggestionBtn.dataset.suggestionId);
         return;
       }
@@ -42565,6 +42770,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           event.preventDefault();
           event.stopPropagation();
           if (button.disabled || button.classList.contains("is-generating")) return;
+          revealTaskDraftPanel(button.dataset.taskId);
           void generateDraftFromSuggestion(button.dataset.taskId, button.dataset.suggestionId);
         });
       });
@@ -42595,9 +42801,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (draftEl) draftEl.value = data.draft || "";
         item.classList.toggle("has-draft", Boolean(data.draft?.trim()));
         if (data.draft?.trim()) {
+          item.dataset.draftPanelRevealed = "true";
           setDraftPanelExpanded(taskId, item.dataset.draftExpanded === "true");
         } else {
           item.dataset.draftExpanded = "false";
+          item.dataset.draftPanelRevealed = "false";
           syncDraftPanelUi(taskId);
         }
         updateTaskWritingAssistButtons(taskId);
@@ -43696,12 +43904,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const taskDetailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
       const plainExplainHtml = renderTaskPlainExplainHtml(normalized, stageIndex, taskIndex);
       const howToRestatesAction = howTo && textSimilarity(howTo, text) >= 0.72;
+      const goalBridgeHtml = renderTaskGoalBridgeHtml(normalized, stage);
       const simplifiedWhyHow = [
         !whyShownInContext && why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) && textSimilarity(why, text) < 0.72 ? `
                 <section class="task-mentor-section">
                   <h4 class="task-mentor-label">Why this step</h4>
                   <p class="task-mentor-copy">${escapeHtml(why)}</p>
                 </section>` : "",
+        goalBridgeHtml,
         howTo && !howToRestatesAction && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
                 <section class="task-mentor-section">
                   <h4 class="task-mentor-label">Next action</h4>
@@ -43723,6 +43933,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   <h4 class="task-mentor-label">Why this step</h4>
                   <p class="task-mentor-copy">${escapeHtml(why)}</p>
                 </section>` : ""}
+                ${renderTaskGoalBridgeHtml(normalized, stage)}
                 ${howTo && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
                 <section class="task-mentor-section">
                   <h4 class="task-mentor-label">Next action</h4>
@@ -45416,8 +45627,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const spread = getAmbientOrbSpreadPosition(index, total);
       const left = spread.left;
       const top = spread.top;
-      const opacity = 0.3 + Math.random() * 0.18;
-      const palette = ["#969fa9", "#aab1b9", "#b9bec5", "#c7cbd0", "#d2d5d9", "#adb5be"];
+      const opacity = 0.32 + Math.random() * 0.2;
+      const palette = ["#6ec5ef", "#7ec8f0", "#8fd4f5", "#9ddaf7", "#abe0f8", "#b8e8fb"];
       const color = palette[Math.floor(Math.random() * palette.length)];
       const driftScale = 0.9 + Math.random() * 0.75;
       const wanderX1 = `${((Math.random() - 0.5) * 28 * driftScale).toFixed(1)}vw`;
