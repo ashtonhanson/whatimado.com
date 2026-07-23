@@ -16402,6 +16402,8 @@
             <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
             <span class="roadmap-remove-anchor"><button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button></span>
             <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">Resources</button>
+            <button class="back-btn" id="roadmap-copy-markdown-btn" type="button">Copy Markdown</button>
+            <button class="back-btn" id="roadmap-download-markdown-btn" type="button">Download .md</button>
             <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Refresh next steps</button>
           </div>
 
@@ -23091,6 +23093,247 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return false;
     }
 
+    function sanitizeMarkdownFilename(name) {
+      return String(name || "export")
+        .trim()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .slice(0, 72) || "export";
+    }
+
+    function downloadTextFile(filename, content, mimeType = "text/markdown;charset=utf-8") {
+      const text = String(content || "").trim();
+      if (!text) return false;
+      const blob = new Blob([text], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.rel = "noopener";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      return true;
+    }
+
+    function buildTaskMarkdownExport(taskId, options = {}) {
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      if (!match) return "";
+      const stageIndex = Number(match[1]);
+      const taskIndex = Number(match[2]);
+      const stage = state.roadmapStages?.[stageIndex];
+      const task = stage?.tasks?.[taskIndex];
+      if (!task || isPendingRoadmapTask(task)) return "";
+
+      const normalized = normalizeRoadmapTask(task);
+      const data = getRoadmapTaskData(taskId);
+      const nested = options.nested === true;
+      const titlePrefix = nested ? "###" : "#";
+      const sectionPrefix = nested ? "####" : "##";
+      const mission = cleanMissionTitle(
+        normalized.mission || getTaskNutshellTitle(normalized, normalized.mission, normalized.text),
+        normalized
+      ) || formatMissionTaskLabel(stageIndex, taskIndex);
+      const label = formatMissionTaskLabel(stageIndex, taskIndex);
+      const why = inferTaskWhy(normalized);
+      const goalBridge = inferTaskGoalBridge(normalized, stage);
+      const howTo = normalized.howTo || inferHowTo(normalized);
+      const text = humanizeTaskText(getTaskDisplayActionText(normalized) || normalized.text || "");
+      const isDone = Boolean(data.checked);
+      const lines = [];
+
+      lines.push(`${titlePrefix} ${mission}`);
+      lines.push("");
+      if (!nested) {
+        lines.push(`**Task:** ${label}${isDone ? " ✓" : ""}`);
+        if (state.currentIdea?.title) lines.push(`**Path:** ${state.currentIdea.title}`);
+        lines.push("");
+      } else {
+        lines.push(`_${label}${isDone ? " · Done" : ""}_`);
+        lines.push("");
+      }
+
+      if (text.trim()) {
+        lines.push(`${sectionPrefix} What to do`);
+        lines.push("");
+        lines.push(text.trim());
+        lines.push("");
+      }
+      if (why && !isGenericMentorCopy(why, normalized)) {
+        lines.push(`${sectionPrefix} Why this step`);
+        lines.push("");
+        lines.push(why.trim());
+        lines.push("");
+      }
+      if (goalBridge && !isGenericMentorCopy(goalBridge, normalized)) {
+        lines.push(`${sectionPrefix} Feeds your goal`);
+        lines.push("");
+        lines.push(goalBridge.trim());
+        lines.push("");
+      }
+      if (howTo && howTo.trim() && textSimilarity(howTo, text) < 0.72 && !isGenericMentorCopy(howTo, normalized)) {
+        lines.push(`${sectionPrefix} Next action`);
+        lines.push("");
+        lines.push(howTo.trim());
+        lines.push("");
+      }
+      if (data.draft?.trim()) {
+        lines.push(`${sectionPrefix} Draft`);
+        lines.push("");
+        lines.push("```");
+        lines.push(data.draft.trim());
+        lines.push("```");
+        lines.push("");
+      }
+      if (data.notes?.trim()) {
+        lines.push(`${sectionPrefix} My Notes`);
+        lines.push("");
+        lines.push(data.notes.trim());
+        lines.push("");
+      }
+      (data.tweakDrafts || []).forEach((draft) => {
+        const content = String(draft.content || "").trim();
+        if (!content || draft.status === "generating") return;
+        lines.push(`${sectionPrefix} ${draft.label || "Generated draft"}`);
+        lines.push("");
+        lines.push(content);
+        lines.push("");
+      });
+
+      return lines.join("\n").trim();
+    }
+
+    function buildRoadmapMarkdownExport() {
+      const idea = state.currentIdea;
+      const title = $("#roadmap-title")?.textContent?.trim() || idea?.title || "Roadmap";
+      const desc = $("#roadmap-overview-desc")?.textContent?.trim() || idea?.tagline || idea?.why || "";
+      const location = getUserLocation();
+      let done = 0;
+      let total = 0;
+      const lines = [];
+
+      lines.push(`# ${title}`);
+      lines.push("");
+      if (desc) {
+        lines.push(desc.trim());
+        lines.push("");
+      }
+      if (idea?.title) lines.push(`**Path:** ${idea.title}`);
+      if (location) lines.push(`**Location:** ${location}`);
+      lines.push(`**Exported:** ${new Date().toLocaleString()}`);
+      lines.push("");
+      lines.push("_Exported from [whatimado.com](https://whatimado.com)_");
+      lines.push("");
+
+      (state.roadmapStages || []).forEach((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return;
+        (stage.tasks || []).forEach((task, taskIndex) => {
+          if (isPendingRoadmapTask(task)) return;
+          total += 1;
+          if (getRoadmapTaskData(`task-${stageIndex}-${taskIndex}`).checked) done += 1;
+        });
+      });
+
+      if (total) {
+        lines.push(`**Progress:** ${done}/${total} tasks complete`);
+        lines.push("");
+      }
+
+      (state.roadmapStages || []).forEach((stage, stageIndex) => {
+        if (isPendingRoadmapStage(stage)) return;
+        const stageLabel = simplifyStageLabel(stage.label, idea) || `Phase ${stageIndex + 1}`;
+        lines.push(`## ${stageLabel}`);
+        lines.push("");
+        if (stage.desc?.trim()) {
+          lines.push(stage.desc.trim());
+          lines.push("");
+        }
+        (stage.tasks || []).forEach((task, taskIndex) => {
+          if (isPendingRoadmapTask(task)) return;
+          const block = buildTaskMarkdownExport(`task-${stageIndex}-${taskIndex}`, { nested: true });
+          if (block) {
+            lines.push(block);
+            lines.push("");
+          }
+        });
+      });
+
+      return lines.join("\n").trim();
+    }
+
+    async function copyTaskMarkdownExport(taskId, triggerBtn = null) {
+      const markdown = buildTaskMarkdownExport(taskId);
+      if (!markdown) {
+        flashSaveToast("Nothing to export for this task yet.");
+        return false;
+      }
+      const ok = await copyTextToClipboard(markdown);
+      if (ok && triggerBtn) {
+        const original = triggerBtn.textContent;
+        triggerBtn.textContent = "Copied!";
+        window.setTimeout(() => {
+          triggerBtn.textContent = original;
+        }, 1400);
+      } else if (!ok) {
+        flashSaveToast("Couldn't copy — try Download .md instead.");
+      }
+      if (ok) trackEvent("task_markdown_copied", { task_id: taskId });
+      return ok;
+    }
+
+    function downloadTaskMarkdownExport(taskId) {
+      const markdown = buildTaskMarkdownExport(taskId);
+      if (!markdown) {
+        flashSaveToast("Nothing to export for this task yet.");
+        return false;
+      }
+      const match = taskId?.match(/^task-(\d+)-(\d+)$/);
+      const stageIndex = match ? Number(match[1]) : 0;
+      const taskIndex = match ? Number(match[2]) : 0;
+      const task = state.roadmapStages?.[stageIndex]?.tasks?.[taskIndex];
+      const normalized = normalizeRoadmapTask(task);
+      const mission = cleanMissionTitle(normalized?.mission || "task", normalized) || "task";
+      const filename = `${sanitizeMarkdownFilename(mission)}.md`;
+      const ok = downloadTextFile(filename, markdown);
+      if (ok) trackEvent("task_markdown_downloaded", { task_id: taskId });
+      return ok;
+    }
+
+    async function copyRoadmapMarkdownExport(triggerBtn = null) {
+      const markdown = buildRoadmapMarkdownExport();
+      if (!markdown) {
+        flashSaveToast("No roadmap to export yet.");
+        return false;
+      }
+      const ok = await copyTextToClipboard(markdown);
+      if (ok && triggerBtn) {
+        const original = triggerBtn.textContent;
+        triggerBtn.textContent = "Copied!";
+        window.setTimeout(() => {
+          triggerBtn.textContent = original;
+        }, 1400);
+      } else if (!ok) {
+        flashSaveToast("Couldn't copy — try Download .md instead.");
+      }
+      if (ok) trackEvent("roadmap_markdown_copied", { roadmap_key: state.roadmapKey || "" });
+      return ok;
+    }
+
+    function downloadRoadmapMarkdownExport() {
+      const markdown = buildRoadmapMarkdownExport();
+      if (!markdown) {
+        flashSaveToast("No roadmap to export yet.");
+        return false;
+      }
+      const title = $("#roadmap-title")?.textContent?.trim() || state.currentIdea?.title || "roadmap";
+      const filename = `${sanitizeMarkdownFilename(title)}-roadmap.md`;
+      const ok = downloadTextFile(filename, markdown);
+      if (ok) trackEvent("roadmap_markdown_downloaded", { roadmap_key: state.roadmapKey || "" });
+      return ok;
+    }
+
     function handleTaskAssistClick(event) {
       const btn = event.target.closest(".task-writing-assist-btn, .task-notes-action-btn");
       if (!btn) return;
@@ -23152,6 +23395,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             btn.textContent = "Copy all";
           }, 1400);
         });
+        return;
+      }
+
+      if (action === "copy-task-markdown") {
+        void copyTaskMarkdownExport(taskId, btn);
+        return;
+      }
+
+      if (action === "download-task-markdown") {
+        downloadTaskMarkdownExport(taskId);
         return;
       }
 
@@ -23454,13 +23707,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (isFounderStoryTask(normalized)) {
         parts.push(`<div class="task-notes-wordcount" data-task-id="${escapeHtml(taskId)}">0 words</div>`);
       }
-      if (isFounderStoryTask(normalized) || taskNeedsUsableDraft(normalized)) {
-        parts.push(`
+      parts.push(`
           <div class="task-notes-actions">
+            <button type="button" class="task-notes-action-btn" data-action="copy-task-markdown" data-task-id="${escapeHtml(taskId)}">Copy as Markdown</button>
+            <button type="button" class="task-notes-action-btn" data-action="download-task-markdown" data-task-id="${escapeHtml(taskId)}">Download .md</button>
+            ${isFounderStoryTask(normalized) || taskNeedsUsableDraft(normalized) ? `
             <button type="button" class="task-notes-action-btn" data-action="copy-notes" data-task-id="${escapeHtml(taskId)}">Copy all</button>
-            <button type="button" class="task-notes-action-btn" data-action="copy-title" data-task-id="${escapeHtml(taskId)}">Copy title</button>
+            <button type="button" class="task-notes-action-btn" data-action="copy-title" data-task-id="${escapeHtml(taskId)}">Copy title</button>` : ""}
           </div>`);
-      }
       return parts.join("");
     }
 
@@ -47050,6 +47304,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#roadmap-load-phases-btn")?.addEventListener("click", () => continueCompletedPlan());
       $("#roadmap-more-resources-btn")?.addEventListener("click", scrollToActivePhase);
       $("#roadmap-change-path-btn")?.addEventListener("click", changeCurrentPath);
+      $("#roadmap-copy-markdown-btn")?.addEventListener("click", (event) => {
+        void copyRoadmapMarkdownExport(event.currentTarget);
+      });
+      $("#roadmap-download-markdown-btn")?.addEventListener("click", () => {
+        downloadRoadmapMarkdownExport();
+      });
       $("#roadmap-remove-btn")?.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
