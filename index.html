@@ -16282,7 +16282,7 @@
 
         <section class="site-suggestions dashboard-settings-panel settings-panel" id="site-suggestions" aria-label="Suggest a site improvement">
           <h3 class="site-suggestions-title">Suggest an improvement</h3>
-          <p class="site-suggestions-copy">Features, fixes, or changes for whatimado — add your name if you'd like credit when we ship it.</p>
+          <p class="site-suggestions-copy">Features, fixes, or changes for whatimado — product feedback only. Do not include personal, medical, or health details.</p>
           <label class="site-suggestions-field" for="site-suggestion-name">
             <span class="site-suggestions-field-label">Your name (for credit)</span>
             <input class="site-suggestions-input site-suggestions-name" id="site-suggestion-name" type="text" maxlength="80" autocomplete="name" placeholder="How you'd like to be credited">
@@ -16292,7 +16292,7 @@
             <textarea class="site-suggestions-input" id="site-suggestion-input" rows="2" placeholder="e.g. Add a way to save multiple maps, or make pricing suggestions more realistic…"></textarea>
           </label>
           <div class="site-suggestions-footer">
-            <span class="site-suggestions-hint">Sent to the whatimado team. Sign in to attach your account (optional).</span>
+            <span class="site-suggestions-hint">Product feedback only — no personal or health details. Sign in to attach your account (optional).</span>
             <button class="back-btn" id="site-suggestion-submit" type="button">Send suggestion</button>
           </div>
           <p class="site-suggestions-msg" id="site-suggestion-msg" hidden aria-live="polite"></p>
@@ -16355,7 +16355,7 @@
             <button type="button" class="map-feedback-btn" id="map-feedback-no">Not really yet</button>
           </div>
           <div class="map-feedback-followup" id="map-feedback-followup" hidden>
-            <textarea class="map-feedback-input" id="map-feedback-input" rows="2" placeholder="Optional: what would make this more useful for you?"></textarea>
+            <textarea class="map-feedback-input" id="map-feedback-input" rows="2" placeholder="Optional: product feedback only (no personal or health details)…"></textarea>
             <button type="button" class="map-feedback-send" id="map-feedback-send">Send feedback</button>
           </div>
           <p class="map-feedback-thanks" id="map-feedback-thanks" hidden>Thanks. That helps us improve.</p>
@@ -16906,7 +16906,7 @@
         title: "Find a Safe Place for This Week",
         type: "Stability — housing",
         tagline: "Contact shelter and housing programs, check bed availability, and make one safe backup plan.",
-        why: "A reliable place to sleep makes every document, benefit, and recovery step easier to manage.",
+        why: "A reliable place to sleep makes every document, benefit, and next step easier to manage.",
         cost: "$0",
         timeline: "Today",
         income: "Stability first"
@@ -17649,8 +17649,7 @@
       const prefersPhone = /\b(prefer (?:to )?call|phone is fine|happy to call)\b/i.test(combined) && !prefersEmail;
       const preferredChannel = prefersEmail ? "email" : prefersPhone ? "phone" : /\b(in person|meet face|walk in)\b/i.test(combined) ? "in_person" : "unknown";
 
-      const anxietyLevel = /\b(anxious|freeze|terrified|panic|scared|nervous|dread)\b/i.test(combined) ? "high"
-        : /\b(unsure|uncertain|a little nervous|bit nervous)\b/i.test(combined) ? "medium" : "low";
+      const anxietyLevel = "low";
 
       const moneyConstraint = /\b(no money|money'?s tight|can't afford|broke|tight budget|zero budget|\$0)\b/i.test(combined) ? "tight"
         : /\b(budget|afford|cost)\b/i.test(combined) ? "ok" : "unknown";
@@ -17659,7 +17658,7 @@
         : /\b(flexible|free time|evenings|weekends)\b/i.test(combined) ? "abundant" : "unknown";
 
       const fears = [];
-      if (/\b(anxious|nervous|freeze|dread).{0,20}call/i.test(combined)) fears.push("phone calls");
+      if (/\b(prefer not to|rather not|rather email|not (?:on )?the phone|hate calling|don't like calling).{0,20}call/i.test(combined)) fears.push("phone calls");
       if (/\b(imposter|not (?:a |really )?founder|who am i)\b/i.test(combined)) fears.push("imposter syndrome");
       if (/\b(burn(?:ed|out)|exhausted|overwhelmed)\b/i.test(combined)) fears.push("burnout");
 
@@ -17671,9 +17670,7 @@
       const keyPhrases = [];
       const phrasePatterns = [
         /\b(i(?:'|')?m the founder of whatimado[^.!?]{0,80})/i,
-        /\b((?:really|genuinely) (?:anxious|nervous)[^.!?]{0,60})/i,
         /\b(money'?s tight[^.!?]{0,40})/i,
-        /\b(not sure i(?:'|')?m a founder[^.!?]{0,40})/i,
         /\b(changing the site almost daily[^.!?]{0,60})/i,
         /\b(grants?|sponsor(?:ship)?|funding)[^.!?]{0,80}/i,
         /\b(closed beta[^.!?]{0,60})/i,
@@ -17681,16 +17678,19 @@
       ];
       for (const rx of phrasePatterns) {
         const m = blob.match(rx);
-        if (m?.[1]) keyPhrases.push(m[1].trim().slice(0, 120));
+        if (m?.[1]) keyPhrases.push(stripHealthAdjacentContent(m[1].trim(), 120));
       }
-      if (!keyPhrases.length && latest) keyPhrases.push(latest.slice(0, 100));
+      if (!keyPhrases.length && latest) {
+        const sanitizedLatest = stripHealthAdjacentContent(latest, 100);
+        if (sanitizedLatest) keyPhrases.push(sanitizedLatest);
+      }
 
       let statedGoal = "";
       const goalMatch = blob.match(/\b(i (?:want|need) to[^.!?]{8,120})/i)
         || blob.match(/\b(my goal is[^.!?]{8,120})/i)
         || blob.match(/\b(focus on[^.!?]{8,120})/i);
-      if (goalMatch?.[1]) statedGoal = goalMatch[1].trim();
-      else if (idea?.tagline) statedGoal = String(idea.tagline).trim();
+      if (goalMatch?.[1]) statedGoal = stripHealthAdjacentContent(goalMatch[1].trim(), 160);
+      else if (idea?.tagline) statedGoal = stripHealthAdjacentContent(String(idea.tagline).trim(), 160);
 
       return {
         preferredChannel,
@@ -17719,13 +17719,15 @@
       if (ctx.preferredChannel && ctx.preferredChannel !== "unknown") {
         lines.push(`- Preferred channel: ${ctx.preferredChannel}${ctx.preferredChannel === "email" ? " — avoid cold-calling tasks in early stages" : ""}`);
       }
-      if (ctx.anxietyLevel === "high") lines.push("- High anxiety — keep steps small, optional, and never stack multiple asks in one task.");
       if (ctx.moneyConstraint === "tight") lines.push("- Money is tight — zero-cost steps only unless a free program exists.");
       if (ctx.timeConstraint === "scarce") lines.push("- Time is scarce — tasks must fit in 30–60 minutes or one evening.");
       if (ctx.fears?.length) lines.push(`- Fears to respect: ${ctx.fears.join(", ")}`);
       if (ctx.preferences?.length) lines.push(`- Preferences: ${ctx.preferences.join("; ")}`);
       if (ctx.keyPhrases?.length) {
-        lines.push(`- Echo their words where natural: ${ctx.keyPhrases.map((p) => `"${p}"`).join("; ")}`);
+        const safePhrases = ctx.keyPhrases.map((p) => stripHealthAdjacentContent(p, 120)).filter(Boolean);
+        if (safePhrases.length) {
+          lines.push(`- Echo their words where natural: ${safePhrases.map((p) => `"${p}"`).join("; ")}`);
+        }
       }
       lines.push("- Every task needs: what to do, how to do it (howTo), and when outreach is involved a ready example in script/talkingPoints.");
       return `\n${lines.join("\n")}\n`;
@@ -26167,24 +26169,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function getCareerPivotIdeasPromptBlock() {
       if (!conversationLooksLikeCareerPivot()) return "";
       return (
-        `\nCAREER PIVOT — this person is employed or recently employed and exploring a next chapter. They are NOT in recovery, reentry, homelessness, or document crisis unless they explicitly said so.\n` +
+        `\nCAREER PIVOT — this person is employed or recently employed and exploring a next chapter. They are NOT in reentry, homelessness, or document crisis unless they explicitly said so.\n` +
         `- Do NOT suggest shelter, 211, ID replacement, parole/probation, day labor, or "stability first" paths.\n` +
         `- Focus on transferable skills, low-risk experiments, informational conversations, skill gaps, and realistic next roles or side paths.\n` +
         `- Keep tone curious and practical — stuck in a job is different from rebuilding after incarceration or rehab.\n`
       );
     }
 
-    function conversationMentionsRecoveryTreatment(text = "") {
-      const blob = String(text || "").toLowerCase();
-      return /\b(\d+\s*days?\s*sober|sober from|getting sober|staying sober|in recovery|out of (?:rehab|recovery)|just (?:left|finished) (?:rehab|treatment)|rehab(?:ilitation)?|recovery (?:program|center|house|housing)|substance(?: abuse)?|addiction|detox)\b/.test(blob);
-    }
-
     function conversationLooksLikeCareerPivot(text = "") {
       const blob = String(text || getConversationUserBlob()).toLowerCase();
       if (!blob.trim()) return false;
       if (
-        conversationMentionsRecoveryTreatment(blob)
-        || conversationMentionsHousingInstability(blob)
+        conversationMentionsHousingInstability(blob)
         || conversationMentionsIdNeed(blob)
         || conversationMentionsReentryHardship(blob)
       ) {
@@ -26292,16 +26288,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = String(text || getConversationUserBlob()).toLowerCase();
       if (!blob.trim()) return false;
       // Soft career language ("starting over", "need a plan") must NOT alone
-      // trigger jail/recovery/housing gates.
+      // trigger jail/housing gates.
       if (conversationLooksLikeCareerPivot(blob)) return false;
-      if (conversationMentionsRecoveryTreatment(blob)) return true;
       if (conversationMentionsHousingInstability(blob)) return true;
       if (conversationMentionsReentryHardship(blob)) return true;
       const softRebuild = /\b(rebuild(?:ing)? (?:my )?life|starting over|fresh start|back on (?:my )?feet)\b/.test(blob);
       if (!softRebuild) return false;
       return conversationMentionsIdNeed(blob)
         || conversationMentionsHousingInstability(blob)
-        || conversationMentionsRecoveryTreatment(blob)
         || conversationMentionsReentryHardship(blob)
         || /\b(no place|homeless|shelter|nowhere to stay|starting from nothing|no (?:valid )?id)\b/.test(blob);
     }
@@ -26318,9 +26312,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (conversationMentionsHousingInstability(blob)) return true;
       if (conversationMentionsStabilityRebuild(blob) && !conversationConfirmsHasHousing(blob)) return true;
-      if (conversationMentionsRecoveryTreatment(blob) && !conversationConfirmsHasHousing(blob)) {
-        return true;
-      }
       return getPathSituationType(idea) === "housing";
     }
 
@@ -26355,8 +26346,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = getConversationUserBlob().toLowerCase();
       return conversationMentionsHousingInstability(blob)
         || isReentrySituation()
-        || conversationMentionsStabilityRebuild(blob)
-        || conversationMentionsRecoveryTreatment(blob);
+        || conversationMentionsStabilityRebuild(blob);
     }
 
     function profileIntakeNeedsHousingStep(profile = normalizeUserProfile(state.userProfile)) {
@@ -26366,8 +26356,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = getConversationUserBlob().toLowerCase();
       return conversationMentionsHousingInstability(blob)
         || conversationMentionsStabilityRebuild(blob)
-        || isReentrySituation()
-        || conversationMentionsRecoveryTreatment(blob);
+        || isReentrySituation();
     }
 
     function profileIntakeNeedsDependentStep(profile = normalizeUserProfile(state.userProfile)) {
@@ -26408,7 +26397,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (conversationMentionsHousingInstability(blob) && !conversationConfirmsHasId(blob)) return true;
       if (isReentrySituation(idea)) return true;
       if (
-        (conversationMentionsRecoveryTreatment(blob) || conversationMentionsReentryHardship(blob) || /\b(homeless|shelter)\b/.test(blob))
+        (conversationMentionsReentryHardship(blob) || /\b(homeless|shelter)\b/.test(blob))
         && !conversationConfirmsHasId(blob)
       ) {
         return true;
@@ -26446,30 +26435,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `- Until BOTH valid ID and safe, reliable housing are confirmed, ALL three paths must be stability-only and meaningfully different: housing/shelter, ID/documents, and mail/benefits/safety.\n` +
         `- Do NOT generate job, temp work, staffing, restaurant, warehouse, gig, business, sales, or client-outreach paths yet.\n` +
         `- Do not merely say work comes later in a tagline; the path itself must contain no work or outreach action.\n`
-      );
-    }
-
-    function getRecoveryStabilityPromptBlock(idea = state.currentIdea) {
-      const blob = getConversationUserBlob().toLowerCase();
-      if (conversationLooksLikeCareerPivot(blob)) return "";
-      const hardStability = conversationMentionsRecoveryTreatment(blob)
-        || conversationMentionsStabilityRebuild(blob)
-        || conversationMentionsHousingInstability(blob)
-        || conversationMentionsReentryHardship(blob)
-        || ideaMentionsStabilityNeed(idea);
-      if (!hardStability) return "";
-      const loc = shortenLocationForSpeech(getUserLocation() || "their city");
-      return (
-        `\nRECOVERY / REBUILDING — STABILITY FIRST (non-negotiable):\n` +
-        `- User is rebuilding after recovery, reentry, or housing instability — not a normal career pivot.\n` +
-        `- Absolutely NO job hunting, staffing signup, business outreach, sales, or client outreach until BOTH (a) housing or safe shelter is secured/accessible AND (b) state ID (or equivalent) is obtained or ready to submit.\n` +
-        `- Before those are confirmed, stages may ONLY cover: shelter/housing, ID and documents, mail address, basic benefits (food, healthcare, vouchers), immediate safety and stability.\n` +
-        `- If unsure whether housing and ID are confirmed, ASSUME they are NOT.\n` +
-        `- Name concrete steps in ${loc}: call 211 or a local shelter, county clerk/DMV for ID requirements, mailing address through shelter or social service, apply for food/healthcare benefits.\n` +
-        `- Day-labor or temp work may appear only after shelter + ID stages — never earlier.\n` +
-        `- Path title "${idea?.title || "this path"}" must match the stage order — do not say "get ID sorted" then open with job searches.\n` +
-        `- "What to do" text: 1–3 short concrete sentences (who to contact, what to ask for, what to prepare). Never restate the mission title. Never use vague lines like "Do the next logical step forward." Never use ellipses (…).\n` +
-        `- Warm, human, practical language — no bureaucracy. Each task = one small doable action.\n`
       );
     }
 
@@ -26595,7 +26560,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           tasks: [
             `Call your first housing contact again — confirm your waitlist position, next intake time, and backup option`,
             `Check the status of your first ID document request and write down the next required date or fee`,
-            `Choose one recovery support person or meeting to contact this week and put the time in your calendar`
+            `Choose one trusted person or community group to check in with this week and put the time in your calendar`
           ]
         };
       }
@@ -26628,8 +26593,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const situation = getPathSituationType(idea);
       if (situation === "career_change" || situation === "employment" || situation === "exploring") {
         // Only force stability when the conversation itself has hard crisis signals.
-        return conversationMentionsRecoveryTreatment()
-          || conversationMentionsHousingInstability()
+        return conversationMentionsHousingInstability()
           || conversationMentionsReentryHardship()
           || isReentrySituation(idea);
       }
@@ -26691,7 +26655,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         `- This person is rebuilding after incarceration or similar disruption. Do NOT start with training, certifications, portfolios, job boards, business outreach, sales, or client outreach.\n` +
         `- Stage 1 MUST be stability in ${loc}: ${stability}.\n` +
         `- Stage 2 MUST finish any remaining ID/mail/benefits basics before income work.\n` +
-        `- Stages 3–4 must remain on housing, ID, mail, benefits, healthcare, transportation, immediate safety, and recovery support unless housing is confirmed AND ID is obtained or fully ready to submit.\n` +
+        `- Stages 3–4 must remain on housing, ID, mail, benefits, transportation, immediate safety, and community support unless housing is confirmed AND ID is obtained or fully ready to submit.\n` +
         `- Only after both statuses are confirmed may a later roadmap add income steps toward "${pathTitle}". Mentioning housing or ID in an earlier stage is not confirmation.\n` +
         `- If unsure housing/ID are confirmed, ASSUME they are NOT and keep every stage on stability only.\n` +
         `- NEVER reference 211.org, United Way 211, American Job Center, DMV, or SNAP unless the user is in the United States.\n` +
@@ -26767,7 +26731,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return template === "partnership" || template === "launch" || template === "sponsorship";
       }
       const blob = `${getFirstUserMessage()} ${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""} ${idea?.why || ""}`.toLowerCase();
-      return /\b(local|shelter|recovery|workforce|partner|outreach|nonprofit|library|re-?entry|incarcerat|jail|prison|parole|community|employ|job|train|license|sbdc|score|housing|background check|second chance|certif|apprenticeship|college|credential|id card|211)\b/.test(blob);
+      return /\b(local|shelter|workforce|partner|outreach|nonprofit|library|re-?entry|incarcerat|jail|prison|parole|community|employ|job|train|license|sbdc|score|housing|background check|second chance|certif|apprenticeship|college|credential|id card|211)\b/.test(blob);
     }
 
     function roadmapLooksLikeEndUserReentry(stages) {
@@ -26936,13 +26900,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       const outreachAction = /\b(email|e-mail|call|phone|visit|meet with|reach out|contact|outreach|pitch to|schedule a (?:call|meeting|demo)|set up a (?:call|meeting|demo)|send (?:an )?email|introduce yourself|ask (?:the|a) director|partner with|pilot with|demo (?:at|for|to)|organizational accounts|offer free (?:organizational )?accounts|live demos?|structured feedback)\b/i.test(taskText);
-      const orgTarget = /\b(shelters?|recovery centers?|workforce programs?|libraries?|nonprofits?|non-profits?|community foundations?|homeless|re-?entry|partner orgs?|local orgs?|programs? to (?:offer|reach|contact)|organizations? to (?:offer|reach|contact)|name \d|list \d|identify \d|find \d|research \d|3-5|5-10|\d+ homeless|\d+ (?:shelters?|libraries?|programs?|centers?|organizations?))\b/i.test(taskText);
+      const orgTarget = /\b(shelters?|workforce programs?|libraries?|nonprofits?|non-profits?|community foundations?|homeless|re-?entry|partner orgs?|local orgs?|programs? to (?:offer|reach|contact)|organizations? to (?:offer|reach|contact)|name \d|list \d|identify \d|find \d|research \d|3-5|5-10|\d+ homeless|\d+ (?:shelters?|libraries?|programs?|centers?|organizations?))\b/i.test(taskText);
 
       if (outreachAction && orgTarget) return true;
       if (/\b(reach out to \d|contact \d|email \d|visit \d|partner with \d+)\b/i.test(taskText)) return true;
       if (/\b(homeless shelters?|workforce programs?|libraries?)\b/i.test(taskText) && /\b(reach out|offer free|organizational accounts|testimonials|referrals)\b/i.test(taskText)) return true;
-      if (/\b(shelters?, recovery centers?, and workforce|austin shelters?)\b/i.test(taskText)) return true;
-      if (/\b(get \d+ real users|live demos|structured feedback)\b/i.test(taskText) && /\b(shelter|recovery|workforce|programs?|centers?)\b/i.test(taskText)) return true;
+      if (/\b(shelters?, workforce programs?, and community orgs|austin shelters?)\b/i.test(taskText)) return true;
+      if (/\b(get \d+ real users|live demos|structured feedback)\b/i.test(taskText) && /\b(shelter|workforce|programs?|centers?)\b/i.test(taskText)) return true;
       if (/\b(list|find|identify|name|research|compare|visit|call|apply to|enroll in|sign up for)\b/i.test(taskText) && /\b(\d+\s*(?:local )?(?:shelters?|orgs?|programs?|centers?|libraries?|nonprofits?)|local organizations?|training routes?|community college|trade school|apprenticeship|workforce|job center|career center|nonprofit program)\b/i.test(taskText)) return true;
 
       if (/\b(community college|trade school|apprenticeship|workforce board|american job center|job center|career center|re-?entry|second chance|background check|parole|probation|state id|id card|housing assistance|snap benefits|211|sbdc|score chapter|licensing office|temp agency|staffing agency)\b/i.test(taskText)) return true;
@@ -27011,7 +26975,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (/\b(shelter|homeless|housing)\b/.test(text) && /\b(shelter|front steps|caritas|housing|lifeworks|foundation communities|kommune)\b/.test(orgBlob)) score += 12;
       if (/\b(workforce|job|employment|career)\b/.test(text) && /\b(workforce|wfscapital|job|nav)\b/.test(orgBlob)) score += 12;
       if (/\b(library|libraries)\b/.test(text) && /\b(library)\b/.test(orgBlob)) score += 12;
-      if (/\b(recovery|re-?entry|incarcerat|release|parole|second chance|background check)\b/.test(text) && /\b(recovery|re-?entry|caritas|front steps|lifeworks|nav)\b/.test(orgBlob)) score += 14;
+      if (/\b(re-?entry|incarcerat|release|parole|second chance|background check)\b/.test(text) && /\b(re-?entry|caritas|front steps|lifeworks|nav)\b/.test(orgBlob)) score += 14;
       if (/\b(training|certif|college|apprenticeship|credential|program)\b/.test(text) && /\b(workforce|library|lifeworks|folkeuniversitet|nav)\b/.test(orgBlob)) score += 10;
       if (/\b(housing|shelter|rent|homeless)\b/.test(text) && /\b(shelter|housing|caritas|front steps|foundation communities)\b/.test(orgBlob)) score += 13;
       if (/\b(benefit|voucher|assistance|food|healthcare|medicaid|snap|fee waiver|funding)\b/.test(text) && /\b(211|caritas|lifeworks|foundation communities|nav|kommune|municipal)\b/.test(orgBlob)) score += 12;
@@ -27208,7 +27172,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function buildCompactLocalEnrichPrompt(idea, loc, founderMode) {
       const focus = founderMode
-        ? "whatimado.com founder partnership with shelters, recovery centers, and workforce programs"
+        ? "whatimado.com founder partnership with shelters, community support programs, and workforce programs"
         : isReentryPath(idea)
           ? `${idea.title} — reentry, employment, housing, and ID basics`
           : isGroundedPractitioner(idea)
@@ -28044,9 +28008,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         add("I don't have documents to apply");
         add("I can't get to an office");
       }
-      if (/\b(sober|recovery|aa|meeting|treatment)\b/.test(userBlob) || /\b(recover|sober)\b/.test(blob)) {
-        add("I'm worried about staying sober through this step");
-      }
       if (options.length < 2) {
         add("I don't know where to start");
         add("I can't afford this step");
@@ -28181,7 +28142,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         clarifyCount: 0
       };
       showReplyBox(false);
-      trackEvent("task_roadblock_clicked", { task_id: taskId, roadblock: roadblockLabel.slice(0, 80) });
+      trackEvent("task_roadblock_clicked", { task_id: taskId, roadblock_code: roadblockLabelToCode(roadblockLabel) });
       void respondToRoadblockSession();
     }
 
@@ -30243,7 +30204,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         (founderMode ? "" : getExplorationFitPromptBlock()) +
         (founderMode ? "" : getCareerPivotIdeasPromptBlock()) +
         (founderMode ? "" : getReentryPromptBlock(idea)) +
-        (founderMode ? "" : getRecoveryStabilityPromptBlock(idea)) +
         (founderMode ? "" : getIdPriorityPromptBlock(idea)) +
         `\n${getActionableTaskRules()}\n` +
         `CRITICAL: Stage label, stage desc, and both missions must describe the SAME next step for THIS path ("${idea.title}"). Do not mix in unrelated housing/ID advice unless the conversation clearly requires stability first.\n` +
@@ -30476,7 +30436,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         getHumanProgressPromptBlock(idea) +
         getExplorationFitPromptBlock() +
         getReentryPromptBlock(idea) +
-        getRecoveryStabilityPromptBlock(idea) +
         getIdPriorityPromptBlock(idea) +
         getPathSpecificMilestoneBlock(idea) +
         getIncomePathSpecificityBlock(idea) +
@@ -31512,6 +31471,133 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
     }
 
+    /* ===== SECTION: Privacy / PHI-safe text handling ===== */
+    const PHI_HEALTH_TERM_RE = /\b(\d+\s*days?\s*sober|sober from|getting sober|staying sober|in recovery|out of (?:rehab|recovery)|just (?:left|finished) (?:rehab|treatment)|rehab(?:ilitation)?|recovery (?:program|center|house|housing)|substance(?: abuse)?|addiction|detox|\baa\b|narcotics anonymous|mental health|therapy|therapist|counsel(?:ing|or)|psychiatr|diagnos(?:is|ed|tic)|medication|prescription|bipolar|schizo|ptsd|depress(?:ion|ed)?|anxiety disorder|suicid|self[- ]?harm|overdose|withdrawal|opioid|methadone|suboxone|alcoholic|alcoholism|relapse|inpatient|outpatient treatment|dual diagnosis|eating disorder|panic attack|trauma therapy)\b/i;
+
+    function stripHealthAdjacentContent(text = "", maxLen = 2000) {
+      const raw = String(text || "").trim();
+      if (!raw) return "";
+      const parts = raw.split(/(?<=[.!?])\s+|\n+/).filter(Boolean);
+      const kept = parts.filter((part) => !PHI_HEALTH_TERM_RE.test(part));
+      let result = kept.join(" ").replace(/\s+/g, " ").trim();
+      if (!result && raw) return "";
+      if (maxLen > 0 && result.length > maxLen) result = `${result.slice(0, maxLen - 1)}…`;
+      return result;
+    }
+
+    function sanitizeCareerProfileText(text = "", maxLen = 200) {
+      return stripHealthAdjacentContent(text, maxLen);
+    }
+
+    function sanitizeUserProfileForPersist(profile = {}) {
+      const source = normalizeUserProfile(profile);
+      return {
+        ...source,
+        skills: sanitizeCareerProfileText(source.skills, 200),
+        goals: sanitizeCareerProfileText(source.goals, 160),
+        constraints: sanitizeCareerProfileText(source.constraints, 160),
+        summary: sanitizeCareerProfileText(source.summary, 240)
+      };
+    }
+
+    function sanitizeFreeTextForStorage(text = "", maxLen = 1200) {
+      const stripped = stripHealthAdjacentContent(text, maxLen);
+      return stripped.replace(/\s+/g, " ").trim().slice(0, maxLen);
+    }
+
+    function getSanitizedConversationSummary() {
+      return state.history
+        .map((entry) => {
+          const text = stripHealthAdjacentContent(entry.content || "", 1200);
+          if (!text.trim()) return "";
+          return `${entry.role === "user" ? "User" : "Advisor"}: ${text}`;
+        })
+        .filter(Boolean)
+        .join("\n");
+    }
+
+    function sanitizeAdvisorPromptText(prompt = "") {
+      return String(prompt || "").split("\n").map((line) => {
+        const match = line.match(/^((?:User|Founder message|Conversation \(recent\)):\s*)(.*)$/i);
+        if (!match) return line;
+        const sanitized = stripHealthAdjacentContent(match[2], 4000);
+        return sanitized ? `${match[1]}${sanitized}` : `${match[1]}[details omitted — career focus only]`;
+      }).join("\n");
+    }
+
+    function getPhiGuardrailPromptBlock() {
+      return (
+        `\nPRIVACY & SCOPE (non-negotiable — career/productivity tool, NOT healthcare):\n` +
+        `- Do NOT collect, infer, store, label, or reference medical conditions, substance use, sobriety, recovery status, mental health diagnoses, medications, or treatment history.\n` +
+        `- If the user shares health details, acknowledge briefly without repeating specifics, redirect to career/skills/logistics, and do NOT build a health profile.\n` +
+        `- Focus on employment, skills, housing/logistics (non-clinical), documents, and forward-looking goals only.\n`
+      );
+    }
+
+    function wrapAdvisorPromptWithGuardrails(prompt = "") {
+      const body = String(prompt || "");
+      if (/PRIVACY & SCOPE \(non-negotiable/i.test(body)) return body;
+      return `${getPhiGuardrailPromptBlock()}${body}`;
+    }
+
+    function stripTranscriptsFromCloudPayload(payload) {
+      if (!payload || typeof payload !== "object") return payload;
+      const stripped = { ...payload };
+      stripped.history = [];
+      stripped.allTaskChats = {};
+      if (Array.isArray(stripped.savedMaps)) {
+        stripped.savedMaps = stripped.savedMaps.map((map) => ({
+          ...map,
+          history: [],
+          allTaskChats: {}
+        }));
+      }
+      if (stripped.userProfile) {
+        stripped.userProfile = sanitizeUserProfileForPersist(stripped.userProfile);
+      }
+      if (stripped.accountPrefs?.userProfile) {
+        stripped.accountPrefs = {
+          ...stripped.accountPrefs,
+          userProfile: sanitizeUserProfileForPersist(stripped.accountPrefs.userProfile)
+        };
+      }
+      stripped.transcriptsLocalOnly = true;
+      return stripped;
+    }
+
+    function prepareCloudPersistPayload(payload) {
+      const copy = JSON.parse(JSON.stringify(payload));
+      const stripped = stripTranscriptsFromCloudPayload(copy);
+      return sealCloudPersistPayload(markScrubbedPersistPayload(stripped));
+    }
+
+    const ROADBLOCK_LABEL_TO_CODE = {
+      "I don't have my birth certificate": "no_birth_cert",
+      "I don't have a mailing address": "no_mail_address",
+      "I lost my Social Security card": "no_ssn_card",
+      "I can't pay the ID fee": "cant_pay_id_fee",
+      "Shelters are full near me": "shelters_full",
+      "I don't have transportation to get there": "no_transport",
+      "I'm not sure what ID I need": "unsure_id_needed",
+      "I have pets and can't leave them": "has_pets",
+      "I don't have ID yet": "no_id_yet",
+      "I don't have a resume": "no_resume",
+      "I don't have reliable transportation": "no_reliable_transport",
+      "I'm worried about background checks": "background_check_worry",
+      "I don't have a phone or email": "no_contact_info",
+      "I don't know if I qualify": "benefits_unsure_qualify",
+      "I don't have documents to apply": "benefits_no_docs",
+      "I can't get to an office": "benefits_cant_reach_office",
+      "I don't know where to start": "dont_know_start",
+      "I can't afford this step": "cant_afford_step",
+      "I have a different issue with this step": "other_issue"
+    };
+
+    function roadblockLabelToCode(label = "") {
+      const key = String(label || "").trim();
+      return ROADBLOCK_LABEL_TO_CODE[key] || "other";
+    }
+
     function getAnalyticsSessionId() {
       try {
         let id = sessionStorage.getItem(ANALYTICS_SESSION_KEY);
@@ -31530,15 +31616,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function cleanAnalyticsMetadata(metadata = {}) {
+      const ALLOWED_STRING_KEYS = new Set(["roadblock_code", "scheme", "screen", "from", "action", "sentiment", "mode", "step", "build"]);
       return Object.fromEntries(
         Object.entries(metadata)
           .filter(([, value]) => value !== undefined && value !== null)
           .map(([key, value]) => {
-            if (typeof value === "string") return [key, value.slice(0, 160)];
+            if (typeof value === "string") {
+              if (ALLOWED_STRING_KEYS.has(key)) return [key, value.slice(0, 48)];
+              if (value.length > 48) return [key, "[redacted]"];
+              return [key, value];
+            }
             if (typeof value === "number" || typeof value === "boolean") return [key, value];
             if (Array.isArray(value)) return [key, value.slice(0, 12)];
-            return [key, value];
+            return null;
           })
+          .filter(Boolean)
       );
     }
 
@@ -32389,6 +32481,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return { payload: sealCloudPersistPayload(payload), localPayload, journeyId };
     }
 
+    function preserveLocalTranscriptsOnMerge(winner, loser) {
+      if (!winner || !loser) return winner;
+      const next = { ...winner };
+      if ((!Array.isArray(next.history) || !next.history.length) && Array.isArray(loser.history) && loser.history.length) {
+        next.history = loser.history;
+      }
+      const winnerChats = next.allTaskChats && typeof next.allTaskChats === "object" ? next.allTaskChats : {};
+      const loserChats = loser.allTaskChats && typeof loser.allTaskChats === "object" ? loser.allTaskChats : {};
+      if (!Object.keys(winnerChats).length && Object.keys(loserChats).length) {
+        next.allTaskChats = { ...loserChats };
+      }
+      return next;
+    }
+
     function mergeSessionPayloads(local, cloud) {
       const localPayload = normalizeSessionPayload(local);
       const cloudPayload = normalizeSessionPayload(cloud);
@@ -32418,7 +32524,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             ...(winner.removedRoadmapKeys || []),
             ...(loser.removedRoadmapKeys || [])
           ])];
-          mapById.set(map.id, scrubMapRemovedRoadmaps(winner));
+          mapById.set(map.id, scrubMapRemovedRoadmaps(preserveLocalTranscriptsOnMerge(winner, loser)));
         }
       }
 
@@ -32465,6 +32571,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         savedMaps,
         deletedMapIds
       );
+
+      if (Array.isArray(localPayload.history) && localPayload.history.length) {
+        merged.history = localPayload.history;
+      }
+      if (localPayload.allTaskChats && Object.keys(localPayload.allTaskChats).length) {
+        merged.allTaskChats = localPayload.allTaskChats;
+      }
+      if (localPayload.userProfile) {
+        merged.userProfile = sanitizeUserProfileForPersist(localPayload.userProfile);
+      }
 
       const activeEntry = activeMapId ? mapById.get(activeMapId) : null;
       if (activeEntry) {
@@ -32563,7 +32679,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         locationConfirmed: Boolean(state.locationConfirmed),
         locationIntakeStep: state.locationIntakeStep || null,
         locationDraft: state.locationDraft || emptyLocationDraft(),
-        userProfile: normalizeUserProfile(state.userProfile),
+        userProfile: sanitizeUserProfileForPersist(state.userProfile),
         profileIntakeStep: state.profileIntakeStep || null,
         clarifyingQuestionsAsked: Number(state.clarifyingQuestionsAsked) || 0,
         roadmapCheckIn: state.roadmapCheckIn || null,
@@ -34616,7 +34732,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       let cloudError = false;
       let cloudResult = null;
       if (state.currentUser && supabaseClient) {
-        cloudResult = await writeCloudSession(payload);
+        cloudResult = await writeCloudSession(prepareCloudPersistPayload(payload));
         cloudOk = cloudResult.ok;
         cloudError = !cloudResult.ok;
         if (cloudResult.error) console.error("Cloud sync failed:", cloudResult.error);
@@ -36641,7 +36757,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           body: JSON.stringify({
             model: "claude-sonnet-4-5",
             max_tokens: capAdvisorTokens(maxTokens),
-            messages: [{ role: "user", content: truncateAdvisorPrompt(prompt) }]
+            messages: [{ role: "user", content: truncateAdvisorPrompt(wrapAdvisorPromptWithGuardrails(sanitizeAdvisorPromptText(prompt))) }]
           })
         });
         let data;
@@ -36781,7 +36897,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getConversationSummary() {
-      return state.history.map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`).join("\n");
+      return getSanitizedConversationSummary();
     }
 
     const USER_PROFILE_FIELD_LABELS = {
@@ -36910,7 +37026,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         savedAt: Math.max(a.savedAt || 0, b.savedAt || 0),
         locationConfirmed: Boolean(a.locationConfirmed || b.locationConfirmed),
         userLocation: locationFrom.userLocation,
-        userProfile: {
+        userProfile: sanitizeUserProfileForPersist({
           name: pickProfileField("name"),
           incomeUrgency: pickProfileField("incomeUrgency"),
           pathPreference: pickProfileField("pathPreference"),
@@ -36925,7 +37041,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           goals: pickProfileField("goals"),
           summary: pickProfileField("summary"),
           updatedAt: Math.max(a.userProfile.updatedAt || 0, b.userProfile.updatedAt || 0)
-        }
+        })
       });
     }
 
@@ -37105,7 +37221,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function distillUserProfileSummary() {
-      const profile = normalizeUserProfile(state.userProfile);
+      const profile = sanitizeUserProfileForPersist(state.userProfile);
       const hasSkills = currentIntakeHasStatedSkills();
       const parts = [];
       const pushLabel = (field) => {
@@ -37145,7 +37261,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getUserProfileBlock() {
-      const profile = normalizeUserProfile(state.userProfile);
+      const profile = sanitizeUserProfileForPersist(state.userProfile);
       const hasSkills = currentIntakeHasStatedSkills();
       const unsure = conversationDeclaresSkillUncertainty();
       const lines = [];
@@ -37296,11 +37412,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           .map(({ entry }) => entry.content)
           .join("\n");
         if (clarifyingAnswers.length > 12 && !conversationLacksSkillSignal(clarifyingAnswers)) {
-          profile.skills = abbreviateQuestion(clarifyingAnswers, 200);
+          profile.skills = sanitizeCareerProfileText(abbreviateQuestion(clarifyingAnswers, 200), 200);
         }
       }
       if (!profile.goals && getFirstUserMessage()) {
-        profile.goals = abbreviateQuestion(getFirstUserMessage(), 160);
+        profile.goals = sanitizeCareerProfileText(abbreviateQuestion(getFirstUserMessage(), 160), 160);
       }
       updateIdStatusFromConversation();
       updateHousingStatusFromConversation();
@@ -37757,7 +37873,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!profile.skills && profileIntakeNeedsSkillsStep(profile)) {
         const interest = blob.match(/\b(?:enjoy|love|like|into|good at|passionate about)\s+([^.\n?]{3,80})/i);
         if (interest?.[1]) {
-          profile.skills = interest[1].trim().slice(0, 160);
+          profile.skills = sanitizeCareerProfileText(interest[1].trim(), 160);
         }
       }
       state.userProfile = normalizeUserProfile(profile);
@@ -38261,8 +38377,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const profile = normalizeUserProfile(state.userProfile);
       const stabilitySituation = userNeedsIdFirst()
         || userNeedsHousingFirst()
-        || conversationMentionsStabilityRebuild(getConversationUserBlob())
-        || conversationMentionsRecoveryTreatment(getConversationUserBlob());
+        || conversationMentionsStabilityRebuild(getConversationUserBlob());
       return stabilitySituation && (profile.idStatus !== "has" || profile.housingStatus !== "has");
     }
 
@@ -38610,7 +38725,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && (
           conversationMentionsIdNeed(userText)
           || conversationMentionsHousingInstability(userText)
-          || conversationMentionsRecoveryTreatment(userText)
           || conversationMentionsStabilityRebuild(userText)
         )
       ) {
@@ -38636,6 +38750,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     /* ===== SECTION: Clarifying questions & exploration prompts ===== */
     function buildClarifyingPrompt(userText) {
+      const safeUserText = stripHealthAdjacentContent(userText, 2000) || "[details omitted — career focus only]";
       if (isFounderOrProjectPrompt(userText)) {
         const product = getFounderProductLabel(userText);
         if (!isWhatimadoFounderPrompt(userText)) {
@@ -38643,19 +38758,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             `You are whatimado, a practical advisor helping someone plan "${product}" from a product / business-plan brief. They are NOT asking for a personal side hustle or neighborhood gig path.\n` +
             `Ask ONE short follow-up question about the NEXT stage for ${product}: still shaping the product, recruiting campus / founding users, finishing the written business plan, or preparing a funding ask.\n` +
             "Reference something specific they said (features, audience, GTM, monetization). Plain text only.\n\nFounder message:\n" +
-            userText
+            safeUserText
           );
         }
         return (
           "You are whatimado, a practical advisor to the founder of whatimado.com. They are NOT asking for a personal job path — they are planning how to grow the site itself. Read their message carefully. Ask ONE short follow-up question to learn what STAGE they are at: still testing if the app works (closed beta with a few people), getting first strangers to try it, running a structured pilot with a partner, or seeking grants/sponsors. Reference something specific they said. Plain text only.\n\nFounder message:\n" +
-          userText
+          safeUserText
         );
       }
 
       if (isReentrySituation({ title: userText })) {
         return (
-          "You are whatimado, an empathetic advisor for someone rebuilding after incarceration or release. Read their message carefully. Ask ONE short follow-up question that references something specific they said — ID/documents, housing, parole or probation, background checks, urgent income timeline, or skills they already have. If they have not mentioned ID yet, ask whether they have ID and a birth certificate lined up or still need to get those sorted. Do not ask where they live — the app asks that separately next. Do not ask about long-term training or business ideas yet. Plain text only.\n\nUser: " +
-          userText
+          "You are whatimado, an empathetic advisor for someone rebuilding after incarceration or release. Read their message carefully. Ask ONE short follow-up question that references something specific they said — ID/documents, housing, parole or probation, background checks, urgent income timeline, or skills they already have. If they have not mentioned ID yet, ask whether they have ID and a birth certificate lined up or still need to get those sorted. Do not ask where they live — the app asks that separately next. Do not ask about long-term training or business ideas yet. Do not ask about medical, substance-use, or mental-health history. Plain text only.\n\nUser: " +
+          safeUserText
         );
       }
 
@@ -38664,13 +38779,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && (
           conversationMentionsIdNeed(userText)
           || conversationMentionsHousingInstability(userText)
-          || conversationMentionsRecoveryTreatment(userText)
           || conversationMentionsStabilityRebuild(userText)
         )
       ) {
         return (
-          "You are whatimado, an empathetic advisor. This person may need ID, documents, or stable housing before they can work or apply for programs. Ask ONE short question about whether they have valid ID now or need to get that sorted first — reference something specific they said. Do not ask where they live. Plain text only.\n\nUser: " +
-          userText
+          "You are whatimado, an empathetic advisor. This person may need ID, documents, or stable housing before they can work or apply for programs. Ask ONE short question about whether they have valid ID now or need to get that sorted first — reference something specific they said. Do not ask where they live. Do not ask about medical or treatment history. Plain text only.\n\nUser: " +
+          safeUserText
         );
       }
 
@@ -38682,8 +38796,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           SINGLE_QUESTION_PACING +
           "Ask ONE warm, organic follow-up question. Aim it at whatever this conversation is currently missing — either what feels alive to them, or a concrete asset they have — but ask about just ONE of those, not both.\n" +
           "Reference something specific they already said. Sound like a thoughtful friend, not a form.\n" +
-          "Do not ask where they live. Do not ask about children yet unless they already brought kids up. Plain text only.\n\nUser: " +
-          userText
+          "Do not ask where they live. Do not ask about children yet unless they already brought kids up. Do not probe medical or treatment history. Plain text only.\n\nUser: " +
+          safeUserText
         );
       }
 
@@ -38693,7 +38807,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           SINGLE_QUESTION_PACING +
           "Ask ONE short, natural question about whether they have children or other people they care for day to day — so schedules and logistics can stay realistic.\n" +
           "Reference something specific from their message. Do not ask where they live. Plain text only.\n\nUser: " +
-          userText
+          safeUserText
         );
       }
 
@@ -38702,15 +38816,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         EXPLORATION_DUAL_MANDATE +
         SINGLE_QUESTION_PACING +
         "Ask ONE short clarifying question that deepens whichever side the conversation still lacks — either something they enjoy, or one concrete skill/experience they have — so paths can match the real person. Ask about only one of those this turn.\n" +
-        "Reference something specific they mentioned. Do not ask where they live. Do not list career options yet. Plain text only.\n\nUser: " +
-        userText
+        "Reference something specific they mentioned. Do not ask where they live. Do not list career options yet. Do not probe medical or treatment history. Plain text only.\n\nUser: " +
+        safeUserText
       );
     }
 
     function buildSecondClarifyingPrompt() {
-      const transcript = state.history
-        .map((entry) => `${entry.role === "user" ? "User" : "Advisor"}: ${entry.content}`)
-        .join("\n\n");
+      const transcript = getSanitizedConversationSummary();
       const blob = getConversationUserBlob();
       if (isFounderOrProjectPrompt(getFirstUserMessage())) {
         const product = getFounderProductLabel();
@@ -38728,7 +38840,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const needsInterests = explorationPhaseNeedsInterestQuestion(blob);
       const stabilityPriority = !conversationLooksLikeCareerPivot(blob) && (
         conversationMentionsStabilityRebuild(blob)
-        || conversationMentionsRecoveryTreatment(blob)
         || conversationMentionsHousingInstability(blob)
         || conversationMentionsIdNeed(blob)
         || isReentrySituation()
@@ -38736,7 +38847,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       let focus;
       if (stabilityPriority) {
-        focus = "For anyone rebuilding after recovery, release, homelessness, or a major disruption, establish whichever stability fact is still missing: valid ID, or a safe place they can reliably stay for at least the next week. Do not jump to job hunting.";
+        focus = "For anyone rebuilding after release, homelessness, or a major disruption, establish whichever stability fact is still missing: valid ID, or a safe place they can reliably stay for at least the next week. Do not jump to job hunting.";
       } else if (needsKids) {
         focus = "EXPLORATION PHASE — after acknowledging their latest answer, ask whether they have children or other dependents they care for day to day, so roadmaps can respect school schedules, childcare, and flexibility. Keep it natural and brief.";
       } else if (needsInterests) {
@@ -38774,7 +38885,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (
         !conversationLooksLikeCareerPivot(blob)
-        && (/housing|homeless|shelter|evict|no place to stay|nowhere to stay/.test(blob) || conversationMentionsRecoveryTreatment(blob))
+        && (/housing|homeless|shelter|evict|no place to stay|nowhere to stay/.test(blob))
       ) {
         return withExplorationAcknowledgment(
           "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
@@ -38922,7 +39033,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const housingAlreadyDiscussed = conversationMentionsHousingInstability(blob) || conversationConfirmsHasHousing(blob);
         const stabilityRebuild = !conversationLooksLikeCareerPivot(blob) && (
           conversationMentionsStabilityRebuild(blob)
-          || conversationMentionsRecoveryTreatment(blob)
         );
         const needsIdQuestion = !idAlreadyDiscussed && !conversationLooksLikeCareerPivot(blob) && (
           conversationMentionsHousingInstability(blob)
@@ -39357,11 +39467,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     async function submitMapFeedback(sentiment, detailText = "") {
       const trimmedDetail = String(detailText || "").trim();
+      const safeDetail = sanitizeFreeTextForStorage(trimmedDetail, 800);
       state.mapFeedbackGiven = true;
       state.mapFeedbackSentiment = sentiment;
 
-      const summary = trimmedDetail
-        ? `Map feedback (${sentiment}): ${trimmedDetail}`
+      const summary = safeDetail
+        ? `Map feedback (${sentiment}): ${safeDetail}`
         : `Map feedback (${sentiment})`;
 
       const payload = {
@@ -40697,7 +40808,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         let finalAnswer = answer || fallback;
         const stabilityRebuild = !conversationLooksLikeCareerPivot(userText) && (
           conversationMentionsStabilityRebuild(userText)
-          || conversationMentionsRecoveryTreatment(userText)
         );
         if (stabilityRebuild) {
           const idKnown = conversationMentionsIdNeed(userText) || conversationConfirmsHasId(userText);
@@ -41908,7 +42018,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         response_length: String(response || "").length
       };
       console.info("[whatimado] early reveal skipped:", payload);
-      trackEvent("roadmap_early_reveal_skipped", payload);
+      trackEvent("roadmap_early_reveal_skipped", {
+        reason: payload.reason || "unknown",
+        idea_index: payload.idea_index,
+        roadmap_key: payload.roadmap_key || "",
+        response_length: payload.response_length
+      });
     }
 
     function resolveEarlyRevealStages(response, idea) {
@@ -46237,6 +46352,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         input?.focus();
         return;
       }
+      const safeText = sanitizeFreeTextForStorage(text, 1200);
+      if (!safeText) {
+        if (msg) {
+          msg.hidden = false;
+          msg.classList.remove("success");
+          msg.classList.add("error");
+          msg.textContent = "Please share product feedback only — avoid personal or health details.";
+        }
+        input?.focus();
+        return;
+      }
       if (button?.disabled || input?.disabled || nameInput?.disabled) return;
 
       const originalLabel = button?.textContent || "Send suggestion";
@@ -46252,7 +46378,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       const payload = {
-        suggestion: text,
+        suggestion: safeText,
         submitter_name: submitterName,
         session_id: getAnalyticsSessionId(),
         user_id: state.currentUser?.id ?? null,
@@ -46269,7 +46395,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (!savedRemotely) {
         try {
-          saveSuggestionLocally(text, submitterName);
+          saveSuggestionLocally(safeText, submitterName);
         } catch {
           if (msg) {
             msg.hidden = false;

@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -11,7 +10,20 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'API key is missing from backend environment variables.' });
     }
 
-    // Direct HTTP Request to Anthropic API—bypassing SDK network wrappers entirely
+    const safeMessages = Array.isArray(messages)
+      ? messages.map((message) => {
+          if (!message || typeof message.content !== 'string') return message;
+          let content = message.content;
+          content = content.replace(/\nRECOVERY\s*\/\s*REBUILDING[\s\S]*?(?=\n[A-Z][A-Z /]+(?:\n|$)|$)/gi, '');
+          if (!/PRIVACY & SCOPE \(non-negotiable/i.test(content)) {
+            content =
+              '\nPRIVACY & SCOPE: Career/productivity tool only — do not collect or retain medical, substance-use, or mental-health information.\n' +
+              content;
+          }
+          return { ...message, content };
+        })
+      : messages;
+
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -22,11 +34,10 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: model || 'claude-3-5-sonnet-20241022',
         max_tokens: max_tokens || 1024,
-        messages: messages
+        messages: safeMessages
       })
     });
 
-    // If Anthropic returns an error state, catch it here explicitly
     if (!anthropicResponse.ok) {
       const errorText = await anthropicResponse.text();
       return res.status(anthropicResponse.status).json({ error: `Anthropic API Error: ${errorText}` });

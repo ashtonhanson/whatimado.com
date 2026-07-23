@@ -1,6 +1,7 @@
 -- Run this in Supabase Dashboard -> SQL Editor
 -- Lightweight analytics/events backend for launch stats
 -- Public clients can insert events, but cannot read them through the API.
+-- metadata must contain scalars/enums/counts only — no raw user text (see cleanAnalyticsMetadata in index.html).
 
 create table if not exists public.site_events (
   id uuid primary key default gen_random_uuid(),
