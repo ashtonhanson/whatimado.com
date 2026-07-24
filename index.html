@@ -3882,7 +3882,7 @@
       height: var(--orb-size, min(62vw, 680px));
       filter: blur(58px);
       opacity: var(--orb-opacity, .22);
-      animation: ambient-orb-dual-a var(--orb-duration, 5s) ease-in-out infinite;
+      animation: ambient-orb-dual-a var(--orb-duration, 9s) ease-in-out infinite;
       animation-delay: var(--orb-delay, 0s);
     }
 
@@ -9716,6 +9716,38 @@
       padding-top: .15rem;
     }
 
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop--continuation {
+      border-style: dashed;
+      border-color: rgba(141, 149, 165, .24);
+      background: rgba(17, 23, 34, .42);
+      cursor: default;
+      pointer-events: none;
+      opacity: .82;
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop--continuation .roadmap-glance-node {
+      border-style: dashed;
+      border-color: rgba(141, 149, 165, .32);
+      color: var(--ink-muted);
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop:not(.roadmap-glance-timeline-stop--continuation):has(+ .roadmap-glance-timeline-stop--continuation)::after {
+      background: repeating-linear-gradient(90deg, rgba(141, 149, 165, .42) 0 4px, transparent 4px 8px);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-stop--continuation {
+      flex: 0 0 6.75rem;
+      min-width: 6.75rem;
+      max-width: 6.75rem;
+      min-height: 4.1rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-stop:not(.roadmap-glance-timeline-stop--continuation):has(+ .roadmap-glance-timeline-stop--continuation)::after {
+      top: 1.65rem;
+    }
+
     @media (max-width: 699px) {
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-rail {
         gap: .5rem;
@@ -10597,7 +10629,7 @@
         z-index: 26;
         width: min(
           calc(100vw - var(--sidebar-w, 0px) - 2rem),
-          calc(max(260px, calc(var(--roadmap-progress-stops, 3) * 7.2rem + 1.5rem)) + 13rem)
+          calc(max(260px, calc(var(--roadmap-progress-stops, 4) * 7.2rem + 1.5rem)))
         );
         height: var(--roadmap-menu-progress-h);
         padding: .5rem 0 .45rem;
@@ -10612,7 +10644,7 @@
       html[data-color-scheme="adult"] .roadmap-float-progress-summary,
       html[data-color-scheme="adult"] .roadmap-float-progress-bar-wrap,
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
-        width: min(100%, max(260px, calc(var(--roadmap-progress-stops, 3) * 7.2rem + 1.5rem)));
+        width: min(100%, max(260px, calc(var(--roadmap-progress-stops, 4) * 7.2rem + 1.5rem)));
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
@@ -10686,51 +10718,17 @@
         font-size: .52rem;
       }
 
-      html[data-color-scheme="adult"] .roadmap-progress-continuation {
-        display: flex;
-        position: absolute;
-        left: calc(max(260px, calc(var(--roadmap-progress-stops, 3) * 7.2rem + 1.5rem)) + .65rem);
-        right: 0;
-        bottom: .7rem;
-        align-items: center;
-        gap: .4rem;
-        min-width: 10rem;
-        color: #94a3b8;
-        opacity: .72;
-        pointer-events: none;
-      }
-
-      html[data-color-scheme="adult"] .roadmap-progress-continuation::before {
-        content: "";
-        flex: 0 0 1.15rem;
-        height: 1px;
-        background: repeating-linear-gradient(90deg, #cbd5e1 0 4px, transparent 4px 8px);
-      }
-
-      html[data-color-scheme="adult"] .roadmap-progress-continuation-node {
-        display: grid;
-        place-items: center;
-        flex: 0 0 1.35rem;
-        width: 1.35rem;
-        height: 1.35rem;
-        border: 1px dashed #94a3b8;
-        border-radius: 50%;
-        background: rgba(248, 250, 252, .9);
-        font-size: .65rem;
-        font-weight: 800;
-      }
-
-      html[data-color-scheme="adult"] .roadmap-progress-continuation-copy {
-        display: grid;
-        gap: .05rem;
-        max-width: 8.5rem;
-        font-size: .55rem;
+      html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-stop--continuation .roadmap-glance-desc {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        font-size: .48rem;
         line-height: 1.2;
       }
 
-      html[data-color-scheme="adult"] .roadmap-progress-continuation-copy strong {
-        color: #64748b;
-        font-size: .58rem;
+      html[data-color-scheme="adult"] .roadmap-progress-continuation {
+        display: none !important;
       }
     }
 
@@ -16116,7 +16114,7 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-label {
-      margin: 0 0 .5rem;
+      margin: 0 0 .75rem;
       font-size: clamp(.58rem, 1.5vw, .66rem);
       color: var(--task-royal);
       text-shadow: var(--wm-text-glow-blue);
@@ -16153,10 +16151,21 @@
       text-shadow: 0 0 14px rgba(244, 246, 249, .1);
     }
 
+    html[data-color-scheme="adult"] #screen-roadmap .task-progress-reminder {
+      margin: 0 0 .85rem;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--task-grey);
+      font-size: .68rem;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-copy,
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-hint,
     html[data-color-scheme="adult"] #screen-roadmap .task-goal-bridge-copy,
-    html[data-color-scheme="adult"] #screen-roadmap .task-progress-reminder,
     html[data-color-scheme="adult"] #screen-roadmap .overview-task-detail-copy,
     html[data-color-scheme="adult"] #screen-roadmap .overview-task-why-copy,
     html[data-color-scheme="adult"] #screen-roadmap .task-plain-explain-copy,
@@ -16187,7 +16196,7 @@
     html[data-color-scheme="adult"] #screen-roadmap .task-action-pack,
     html[data-color-scheme="adult"] #screen-roadmap .overview-task-details {
       display: grid;
-      gap: 1.2rem;
+      gap: 1.85rem;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-card .task-mentor-section,
@@ -16213,13 +16222,13 @@
 
     html[data-color-scheme="adult"] #screen-roadmap .task-item.is-expanded .task-compressed-row {
       margin-bottom: 0;
-      padding-bottom: 1rem;
+      padding-bottom: 1.25rem;
       border-bottom: 0;
       box-shadow: 0 1px 0 rgba(90, 125, 255, .14);
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-meta {
-      margin: .35rem 0 .15rem;
+      margin: .55rem 0 .35rem;
       gap: .45rem;
     }
 
@@ -44377,6 +44386,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   </span>
                 </button>`;
             }).join("")}
+            <div class="roadmap-glance-timeline-stop roadmap-glance-phase roadmap-glance-timeline-stop--continuation is-upcoming" aria-label="Possible future roadmap continuation">
+              <span class="roadmap-glance-income-dot roadmap-glance-income-dot--empty" aria-hidden="true">—</span>
+              <span class="roadmap-glance-node" aria-hidden="true">?</span>
+              <span class="roadmap-glance-copy">
+                <span class="roadmap-glance-label">Possible continuation</span>
+                <span class="roadmap-glance-desc">Your roadmap can keep evolving from here.</span>
+              </span>
+            </div>
           </div>
         </div>`;
     }
@@ -44467,7 +44484,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
 
-      const stopCount = String(Math.max(stages.length, 1));
+      const stopCount = String(Math.max(stages.length + 1, 2));
       floatProgress?.style.setProperty("--roadmap-progress-stops", stopCount);
       const timelineHtml = buildProgressMapTimelineHtml(stages);
       tracks.forEach((track) => {
@@ -46888,7 +46905,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const size = layoutMobile
           ? Math.min(window.innerWidth * 0.88, 420)
           : Math.min(window.innerWidth * 0.62, 680);
-        const duration = 4 + Math.random() * 1.5;
+        const duration = 8 + Math.random() * 3;
         const delay = index === 1 ? -(duration * 0.5) : -(Math.random() * duration * 0.15);
         const opacity = index === 0 ? 0.22 : 0.17;
         const palette = ["#ffffff", "#eef4ff"];
