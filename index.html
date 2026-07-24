@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-24-orbs-progress-task-meta -->
+<!-- whatimado build: 2026-07-24-roadmap-gap-task-white-loading -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -212,7 +212,7 @@
       --topbar-h: 52px;
       --roadmap-header-gap: 1.5rem;
       --roadmap-progress-h: 0px;
-      --roadmap-menu-progress-h: 168px;
+      --roadmap-menu-progress-h: 132px;
       --roadmap-sticky-offset: var(--topbar-h);
       --composer-browser-gap: 12px;
       --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
@@ -3293,8 +3293,41 @@
       border-top-color: rgba(255, 255, 255, .08);
     }
 
+    html[data-color-scheme="adult"] #screen-map .opp-type,
+    html[data-color-scheme="adult"] #screen-map .opp-name,
+    html[data-color-scheme="adult"] #screen-map .opp-tagline,
+    html[data-color-scheme="adult"] #screen-map .opp-meta span,
+    html[data-color-scheme="adult"] #screen-map .opp-why,
+    html[data-color-scheme="adult"] #screen-map .opp-card-open-hint,
+    html[data-color-scheme="adult"] #screen-map .opp-card-discuss-btn {
+      font-family: var(--font-task-body);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .opp-type {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, .72);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .opp-name {
+      font-family: var(--font-task-head);
+      font-size: clamp(1rem, 2.4vw, 1.12rem);
+      font-weight: 600;
+      letter-spacing: -.015em;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .opp-tagline,
+    html[data-color-scheme="adult"] #screen-map .opp-why {
+      font-size: .84rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, .82);
+    }
+
     html[data-color-scheme="adult"] .opp-type {
-      color: #9eb0ff;
+      color: rgba(255, 255, 255, .72);
     }
 
     html[data-color-scheme="adult"] .opp-meta span {
@@ -10621,25 +10654,31 @@
 
     @media (min-width: 961px) {
       html[data-color-scheme="adult"] body.is-roadmap-progress-visible .dashboard-topbar.minimal-topbar {
-        min-height: var(--roadmap-menu-progress-h);
-        align-items: flex-start;
+        min-height: var(--topbar-h, 52px);
+        align-items: center;
       }
 
       html[data-color-scheme="adult"] body.is-roadmap-progress-visible #screen-roadmap.active .roadmap-page {
-        padding-top: calc(var(--roadmap-menu-progress-h) + 1.35rem + var(--roadmap-header-gap, 1.5rem));
+        padding-top: calc(
+          var(--preview-banner-h, 0px)
+          + env(safe-area-inset-top, 0px)
+          + var(--topbar-h, 52px)
+          + var(--roadmap-menu-progress-h, 132px)
+          + .85rem
+        );
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
         display: flex;
         position: fixed;
-        top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px));
+        top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
         left: calc(var(--sidebar-w, 0px) + 1.5rem);
         right: 1rem;
         z-index: 26;
         width: auto;
         min-height: 0;
         height: auto;
-        padding: calc(var(--topbar-h, 52px) + .55rem) 0 .65rem;
+        padding: 0 0 .45rem;
         flex-direction: column;
         justify-content: flex-start;
         align-items: flex-start;
@@ -13575,8 +13614,21 @@
       background: linear-gradient(135deg, #5A7DFF 0%, #3d5fd9 100%);
     }
 
+    html[data-color-scheme="adult"] .roadmap-glance-label {
+      font-family: var(--font-task-body);
+    }
+
+    html[data-color-scheme="adult"] .roadmap-glance-desc,
+    html[data-color-scheme="adult"] .roadmap-glance-count,
+    html[data-color-scheme="adult"] .roadmap-glance-income-dot {
+      font-family: var(--font-task-body);
+    }
+
     html[data-color-scheme="adult"] .roadmap-float-progress-label {
-      color: var(--ink-muted);
+      font-family: var(--font-display);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: .62rem;
     }
 
     html[data-color-scheme="adult"] .roadmap-float-progress-track {
@@ -16123,27 +16175,23 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-label {
-      margin: 0 0 .75rem;
+      margin: 0 0 .85rem;
       font-size: clamp(.58rem, 1.5vw, .66rem);
-      color: var(--task-royal);
-      text-shadow: var(--wm-text-glow-blue);
+      color: rgba(255, 255, 255, .88);
+      text-shadow: 0 0 10px rgba(255, 255, 255, .08);
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--context .task-mentor-label {
-      color: var(--task-neon);
-      text-shadow: var(--wm-text-glow-green);
-    }
-
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--context .task-mentor-label,
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--goal-bridge .task-mentor-label {
-      color: var(--task-neon);
-      text-shadow: var(--wm-text-glow-green);
+      color: rgba(255, 255, 255, .92);
+      text-shadow: 0 0 10px rgba(255, 255, 255, .1);
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--resources .task-mentor-label,
     html[data-color-scheme="adult"] #screen-roadmap .task-tools-drawer-trigger {
       font-size: clamp(.56rem, 1.4vw, .64rem);
-      color: var(--task-grey);
-      text-shadow: var(--wm-glow-grey);
+      color: rgba(255, 255, 255, .78);
+      text-shadow: none;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-compressed-mission,
@@ -16161,12 +16209,12 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-progress-reminder {
-      margin: 0 0 .25rem;
+      margin: 0 0 .35rem;
       padding: 0;
       border: 0;
       border-radius: 0;
       background: transparent;
-      color: var(--task-grey);
+      color: rgba(255, 255, 255, .62);
       font-size: .68rem;
       font-weight: 500;
       line-height: 1.4;
@@ -16190,8 +16238,8 @@
       font-size: .84rem;
       font-weight: 400;
       line-height: 1.65;
-      color: var(--task-grey);
-      text-shadow: var(--wm-glow-grey);
+      color: rgba(255, 255, 255, .9);
+      text-shadow: none;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-copy,
@@ -16201,8 +16249,9 @@
 
     html[data-color-scheme="adult"] #screen-roadmap .task-text-link,
     html[data-color-scheme="adult"] #screen-roadmap .overview-task-inline-links a {
-      color: var(--task-royal);
-      text-shadow: var(--wm-text-glow-blue);
+      color: rgba(255, 255, 255, .95);
+      text-shadow: none;
+      text-decoration-color: rgba(255, 255, 255, .35);
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .overview-task-content,
@@ -16210,7 +16259,7 @@
     html[data-color-scheme="adult"] #screen-roadmap .task-action-pack,
     html[data-color-scheme="adult"] #screen-roadmap .overview-task-details {
       display: grid;
-      gap: 1.85rem;
+      gap: 2.35rem;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-card .task-mentor-section,
@@ -16278,23 +16327,62 @@
       gap: .45rem;
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-badge {
+    html[data-color-scheme="adult"] #screen-roadmap .overview-task-detail-label,
+    html[data-color-scheme="adult"] #screen-roadmap .task-action-label {
+      color: rgba(255, 255, 255, .84);
+      text-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-badge,
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-badge--time,
+    html[data-color-scheme="adult"] #screen-roadmap .task-difficulty--easy,
+    html[data-color-scheme="adult"] #screen-roadmap .task-difficulty--medium,
+    html[data-color-scheme="adult"] #screen-roadmap .task-difficulty--hard {
+      color: rgba(255, 255, 255, .88);
+      border-color: rgba(255, 255, 255, .22);
+      background: rgba(255, 255, 255, .06);
+      box-shadow: none;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-tools-drawer[open] .task-tools-drawer-trigger {
+      color: rgba(255, 255, 255, .92);
+      text-shadow: none;
+    }
+
+    .roadmap-open-loading {
+      display: none;
+      margin: 0 0 1.15rem;
+      padding: .95rem 1rem 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(17, 23, 34, .72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    #screen-roadmap.is-loading .roadmap-open-loading:not([hidden]) {
+      display: block;
+    }
+
+    .roadmap-open-loading-label {
+      margin: 0 0 .65rem;
+      color: rgba(255, 255, 255, .88);
       font-family: var(--font-task-body);
+      font-size: .82rem;
       font-weight: 600;
-      box-shadow: var(--wm-glow-grey);
+      line-height: 1.45;
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap .task-difficulty--easy {
-      color: var(--task-neon);
-      border-color: rgba(31, 211, 88, .28);
-      background: rgba(31, 211, 88, .08);
-      box-shadow: var(--wm-glow-green);
+    html[data-color-scheme="adult"] #screen-roadmap.is-loading.is-loading-shell .roadmap-header-actions,
+    html[data-color-scheme="adult"] #screen-roadmap.is-loading.is-loading-shell .roadmap-overview-header,
+    html[data-color-scheme="adult"] #screen-roadmap.is-loading.is-loading-shell .roadmap-content {
+      opacity: .72;
+      pointer-events: none;
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-badge--time {
-      color: var(--task-grey);
-      background: rgba(141, 149, 165, .1);
-      border-color: rgba(141, 149, 165, .18);
+    html[data-color-scheme="adult"] #screen-roadmap.is-loading.is-loading-shell .roadmap-open-loading {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-tools-drawer {
@@ -16302,9 +16390,9 @@
       padding-top: .85rem;
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap .task-tools-drawer[open] .task-tools-drawer-trigger {
-      color: var(--task-royal);
-      text-shadow: var(--wm-text-glow-blue);
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-badge {
+      font-family: var(--font-task-body);
+      font-weight: 600;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-ai-assist-btn,
@@ -17234,6 +17322,18 @@
 
       <div class="page roadmap-layout roadmap-page" id="roadmap-page">
         <div class="roadmap-float-progress-spacer" id="roadmap-float-progress-spacer" aria-hidden="true"></div>
+        <div class="roadmap-open-loading" id="roadmap-open-loading" hidden aria-live="polite">
+          <p class="roadmap-open-loading-label" id="roadmap-open-loading-label">Opening your roadmap…</p>
+          <div class="site-loading-progress" id="roadmap-open-loader-progress">
+            <div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Roadmap loading progress">
+              <span class="site-loading-progress-fill"></span>
+            </div>
+            <p class="site-loading-progress-meta">
+              <span class="site-loading-progress-pct">0%</span>
+              <span class="site-loading-progress-eta">Preparing your missions…</span>
+            </p>
+          </div>
+        </div>
         <div class="roadmap-main">
           <div class="roadmap-header-actions">
             <button class="screen-nav-btn roadmap-page-nav-back" id="roadmap-page-nav-back" type="button" aria-label="Back to map">
@@ -42177,14 +42277,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const cached = state.allRoadmaps?.[roadmapKey];
       const alreadyBuilt = roadmapHasVisibleMissionCards(cached?.stages)
         || (cached?.flexibleFirstMissionPicked && roadmapHasVisibleMissionCards(state.roadmapStages));
-      // Show the site-style loader immediately so path selection never looks frozen while missions calculate.
-      if (!alreadyBuilt || options.force) {
-        showScreen("roadmap");
-        setRoadmapLoading(true, {
-          ideaTitle: idea.title,
-          progressDurationMs: isFounderRoadmapForIdea(idea) ? 22000 : undefined
-        });
-      }
+      showScreen("roadmap");
+      setRoadmapLoading(true, {
+        shell: true,
+        ideaTitle: idea.title,
+        cached: alreadyBuilt && !options.force,
+        progressDurationMs: alreadyBuilt && !options.force
+          ? 4200
+          : (isFounderRoadmapForIdea(idea) ? 22000 : undefined)
+      });
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       try {
         await viewRoadmap(idea, index, {
           reopen: options.reopen ?? (hasRoadmapProgress(idea.title) || Boolean(cached)),
@@ -42405,6 +42507,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const screen = $("#screen-roadmap");
       const overlay = $("#roadmap-loading");
       const page = $("#roadmap-page");
+      const inlineLoading = $("#roadmap-open-loading");
+      const inlineLabel = $("#roadmap-open-loading-label");
+      const inlineProgress = $("#roadmap-open-loader-progress");
       if (screen) {
         screen.classList.toggle("is-loading", loading);
         screen.classList.toggle("is-loading-shell", loading && shell);
@@ -42414,15 +42519,34 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         page.hidden = loading && !shell;
         page.setAttribute("aria-hidden", loading && !shell ? "true" : "false");
       }
+      if (inlineLoading) inlineLoading.hidden = !loading;
       document.body.classList.toggle("roadmap-loading-active", loading);
       document.body.classList.toggle("roadmap-loading-shell-active", loading && shell);
       if (loading) {
+        const pathTitle = String(options.ideaTitle || state.currentIdea?.title || "").trim();
         if (shell) {
           stopLoadingQuips();
           stopSiteLoadingProgress($("#roadmap-loader-progress"));
+          if (inlineLabel) {
+            inlineLabel.textContent = pathTitle
+              ? `Opening ${pathTitle}…`
+              : (options.cached ? "Loading your roadmap…" : "Building your first mission…");
+          }
+          startSiteLoadingProgress(inlineProgress, {
+            durationMs: options.progressDurationMs || (options.cached ? 4200 : ROADMAP_FIRST_MISSION_PROGRESS_MS),
+            cap: options.progressCap || (options.cached ? 92 : 94),
+            formatRemaining: options.cached
+              ? (ms) => (ms <= 0 ? "Almost ready…" : `About ${Math.ceil(ms / 1000)}s left…`)
+              : formatRoadmapFirstMissionEta,
+            phases: options.cached ? null : ROADMAP_GENERATION_PHASES,
+            onPhaseChange: (phase) => {
+              if (inlineLabel && phase?.description) inlineLabel.textContent = phase.description;
+            }
+          });
         } else {
+          if (inlineLoading) inlineLoading.hidden = true;
+          stopSiteLoadingProgress(inlineProgress);
           const tagline = $("#roadmap-loading .loader-tagline");
-          const pathTitle = String(options.ideaTitle || state.currentIdea?.title || "").trim();
           const product = isFounderOrProjectPrompt(getFirstUserMessage()) ? getFounderProductLabel() : "";
           if (tagline) {
             if (pathTitle) {
@@ -42433,8 +42557,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               tagline.textContent = "Building your first mission…";
             }
           }
-          // Phase-aware microcopy replaces the generic quip rotator here: it gives the
-          // user a sense of forward motion mapped to the progress bar (avoids frozen feel).
           stopLoadingQuips();
           startSiteLoadingProgress($("#roadmap-loader-progress"), {
             durationMs: options.progressDurationMs || ROADMAP_FIRST_MISSION_PROGRESS_MS,
@@ -42449,7 +42571,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         syncRoadmapStickyOffset();
       } else {
         stopLoadingQuips();
+        completeSiteLoadingProgress(inlineProgress);
         completeSiteLoadingProgress($("#roadmap-loader-progress"));
+        if (inlineLoading) inlineLoading.hidden = true;
         updateRoadmapOverviewChrome();
       }
     }
@@ -43639,9 +43763,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (cachedIsUsable) {
         showScreen("roadmap");
-        setRoadmapLoading(false);
         setRoadmapRefining(false);
         hideRoadmapBranchPicker();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         const rawCachedStages = resolveCachedRoadmapStages(cached);
         const normalizedStages = normalizeRoadmapStages(rawCachedStages);
         let stagesToRender = normalizedStages;
@@ -43712,6 +43836,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             }
           });
         }
+        setRoadmapLoading(false);
         return;
       }
 
@@ -43744,6 +43869,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       showScreen("roadmap");
       setRoadmapLoading(true, {
+        shell: true,
         ideaTitle: idea.title,
         progressDurationMs: founderModeForGen ? 22000 : undefined
       });
