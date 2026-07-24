@@ -27003,7 +27003,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function conversationMentionsIdNeed(text = "") {
       const blob = String(text || "").toLowerCase();
-      return /\b(need(?:s|ed)? (?:an? )?(?:id|identification|birth certificate|driver'?s license|state id|ssn|social security)|don'?t have (?:a |an )?(?:id|birth certificate|driver'?s license|social security)|no (?:valid )?id\b|no job or id|no id or job|(?:don'?t|do not) have (?:a |an )?id|missing (?:my )?(?:id|documents|papers)|lost my (?:id|license)|get(?:ting)? (?:an? )?(?:id|birth certificate|documents)|replace (?:my )?(?:id|license)|sort (?:my )?id|id and housing|without (?:an? )?id|need (?:a |an )?id)\b/.test(blob);
+      return /\b(need(?:s|ed)? (?:an? )?(?:id|identification|birth certificate|driver'?s license|drivers license|driver license|state id|ssn|social security)|don'?t have (?:a |an )?(?:id|birth certificate|driver'?s license|drivers license|driver license|social security)|no (?:valid )?id\b|no job or id|no id or job|(?:don'?t|do not) have (?:a |an )?(?:id|driver'?s license|drivers license|driver license)|missing (?:my )?(?:id|documents|papers)|lost my (?:id|license)|get(?:ting)? (?:an? )?(?:id|birth certificate|documents)|replace (?:my )?(?:id|license)|sort (?:my )?id|id and housing|without (?:an? )?id|need (?:a |an )?id)\b/.test(blob);
     }
 
     function conversationMentionsHousingInstability(text = "") {
@@ -27106,14 +27106,87 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function conversationConfirmsHasId(text = "") {
       const blob = String(text || "").toLowerCase();
       if (conversationMentionsIdNeed(blob)) return false;
-      return /\b(have (?:my )?(?:id|driver'?s license|state id|birth certificate)|id is (?:good|fine|set|valid)|already have (?:an? )?(?:id|birth certificate|license))\b/.test(blob);
+      return /\b(have (?:my )?(?:id|driver'?s license|drivers license|driver license|state id|birth certificate)|id is (?:good|fine|set|valid)|already have (?:an? )?(?:id|birth certificate|license))\b/.test(blob);
+    }
+
+    function assistantAskedIdQuestion(text = "") {
+      return /\b(valid id|driver'?s license|drivers license|state id|birth certificate|get(?:ting)? (?:that |your )?id sorted)\b/i.test(String(text || ""));
+    }
+
+    function conversationIdStatusKnown(text = getConversationUserBlob()) {
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.idStatus === "has" || profile.idStatus === "needs") return true;
+      const blob = String(text || "").toLowerCase();
+      return conversationMentionsIdNeed(blob) || conversationConfirmsHasId(blob);
+    }
+
+    function conversationHousingStatusKnown(text = getConversationUserBlob()) {
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.housingStatus === "has" || profile.housingStatus === "needs") return true;
+      const blob = String(text || "").toLowerCase();
+      return conversationMentionsHousingInstability(blob) || conversationConfirmsHasHousing(blob);
+    }
+
+    function responseRepeatsIdQuestion(text = "") {
+      return /\b(do you have a valid id|driver'?s license or state id|getting that sorted still on your to-do list|getting that sorted the first thing)\b/i.test(String(text || ""));
+    }
+
+    function getStabilityFollowUpQuestion(latest = getLatestUserMessage()) {
+      if (!conversationHousingStatusKnown()) {
+        return withExplorationAcknowledgment(
+          "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+          latest
+        );
+      }
+      return withExplorationAcknowledgment(
+        "What documents do you still need for ID — and do you know where to go locally to get them?",
+        latest
+      );
+    }
+
+    function avoidRepeatedIdQuestion(finalAnswer, latest = getLatestUserMessage()) {
+      const reply = String(finalAnswer || "").trim();
+      if (!reply || !conversationIdStatusKnown()) return reply;
+      if (!responseRepeatsIdQuestion(reply)) return reply;
+      return getStabilityFollowUpQuestion(latest);
     }
 
     function updateIdStatusFromConversation() {
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profile.idStatus === "has" || profile.idStatus === "needs") {
+        state.userProfile = profile;
+        return;
+      }
+      for (let i = state.history.length - 1; i >= 0; i -= 1) {
+        const entry = state.history[i];
+        if (entry.role !== "assistant" || !assistantAskedIdQuestion(entry.content)) continue;
+        const nextUser = state.history.slice(i + 1).find((item) => item.role === "user");
+        if (!nextUser) break;
+        const answer = String(nextUser.content || "");
+        const parsed = parseIdStatus(answer);
+        if (parsed) {
+          profile.idStatus = parsed;
+          profile.updatedAt = Date.now();
+          state.userProfile = profile;
+          return;
+        }
+        if (conversationConfirmsHasId(answer)) {
+          profile.idStatus = "has";
+          profile.updatedAt = Date.now();
+          state.userProfile = profile;
+          return;
+        }
+        if (conversationMentionsIdNeed(answer)) {
+          profile.idStatus = "needs";
+          profile.updatedAt = Date.now();
+          state.userProfile = profile;
+          return;
+        }
+        break;
+      }
       const blob = getConversationUserBlob().toLowerCase();
-      state.userProfile = normalizeUserProfile(state.userProfile);
       if (conversationConfirmsHasId(blob)) {
-        state.userProfile.idStatus = "has";
+        profile.idStatus = "has";
       } else if (
         !conversationLooksLikeCareerPivot(blob)
         && (
@@ -27122,14 +27195,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           || (isReentrySituation() && !conversationConfirmsHasId(blob))
         )
       ) {
-        state.userProfile.idStatus = "needs";
+        profile.idStatus = "needs";
       }
-      state.userProfile.updatedAt = Date.now();
+      profile.updatedAt = Date.now();
+      state.userProfile = profile;
     }
 
     function profileIntakeNeedsIdStep(profile = normalizeUserProfile(state.userProfile)) {
       if (profile.idStatus === "has" || profile.idStatus === "needs") return false;
-      if (conversationConfirmsHasId(getConversationUserBlob())) return false;
+      if (conversationIdStatusKnown()) return false;
       if (conversationLooksLikeCareerPivot()) return false;
       const blob = getConversationUserBlob().toLowerCase();
       return conversationMentionsHousingInstability(blob)
@@ -27154,10 +27228,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function parseIdStatus(text) {
       const q = String(text || "").toLowerCase();
-      if (/\b(yes|yeah|yep|have (?:my )?(?:id|license|state id|driver'?s license|birth certificate)|got (?:my )?(?:id|license)|valid id|id is (?:good|fine|valid))\b/.test(q)) {
+      if (/\b(yes|yeah|yep|have (?:my )?(?:id|license|state id|driver'?s license|drivers license|driver license|birth certificate)|got (?:my )?(?:id|license)|valid id|id is (?:good|fine|valid))\b/.test(q)) {
         return "has";
       }
-      if (/\b(no|nope|not yet|don'?t have|do not have|need to get|still need|lost (?:my )?(?:id|license)|missing (?:my )?(?:id|documents)|no id)\b/.test(q)) {
+      if (
+        /\b(no|nope|not yet|don'?t have|do not have|need to get|still need|lost (?:my )?(?:id|license)|missing (?:my )?(?:id|documents)|no id|without (?:a |an )?id)\b/.test(q)
+        || /\b(don'?t|do not) have\b.*\b(id|license|driver'?s license|drivers license|driver license)\b/.test(q)
+      ) {
         return "needs";
       }
       if (/\b(not sure|unsure|don'?t know|maybe|sort of|working on)\b/.test(q)) {
@@ -39635,7 +39712,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       let focus;
       if (stabilityPriority) {
-        focus = "For anyone rebuilding after release, homelessness, or a major disruption, establish whichever stability fact is still missing: valid ID, or a safe place they can reliably stay for at least the next week. Do not jump to job hunting.";
+        if (conversationIdStatusKnown(blob) && !conversationHousingStatusKnown(blob)) {
+          focus = "The user already said they still need ID sorted or do not have valid ID. Do NOT ask about ID again. Ask ONE short question about whether they have a safe place they can reliably stay for at least the next week.";
+        } else if (conversationIdStatusKnown(blob)) {
+          focus = "The user already answered the ID question. Do NOT ask about ID again. Ask ONE practical follow-up about documents, housing stability, or the next stability step they still need.";
+        } else {
+          focus = "For anyone rebuilding after release, homelessness, or a major disruption, establish whichever stability fact is still missing: valid ID, or a safe place they can reliably stay for at least the next week. Do not jump to job hunting.";
+        }
       } else if (needsKids) {
         focus = "EXPLORATION PHASE — after acknowledging their latest answer, ask whether they have children or other dependents they care for day to day, so roadmaps can respect school schedules, childcare, and flexibility. Keep it natural and brief.";
       } else if (needsInterests) {
@@ -39673,20 +39756,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (
         !conversationLooksLikeCareerPivot(blob)
-        && (/housing|homeless|shelter|evict|no place to stay|nowhere to stay/.test(blob))
+        && conversationMentionsHousingInstability(blob)
+        && !conversationIdStatusKnown(blob)
       ) {
         return withExplorationAcknowledgment(
           "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
           latest
         );
       }
-      if (!conversationLooksLikeCareerPivot(blob) && (conversationMentionsIdNeed(blob) || userNeedsIdFirst())) {
-        if (!conversationConfirmsHasHousing(blob) && !conversationMentionsHousingInstability(blob)) {
-          return withExplorationAcknowledgment(
-            "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
-            latest
-          );
-        }
+      if (
+        !conversationLooksLikeCareerPivot(blob)
+        && conversationIdStatusKnown(blob)
+        && !conversationHousingStatusKnown(blob)
+      ) {
+        return withExplorationAcknowledgment(
+          "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+          latest
+        );
+      }
+      if (!conversationLooksLikeCareerPivot(blob) && conversationIdStatusKnown(blob)) {
         return withExplorationAcknowledgment(
           "What documents do you still need for ID — and do you know where to go locally to get them?",
           latest
@@ -39817,8 +39905,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const fallback = getSecondClarifyingFallback();
         let finalAnswer = answer || fallback;
         const blob = getConversationUserBlob().toLowerCase();
-        const idAlreadyDiscussed = conversationMentionsIdNeed(blob) || conversationConfirmsHasId(blob);
-        const housingAlreadyDiscussed = conversationMentionsHousingInstability(blob) || conversationConfirmsHasHousing(blob);
+        const idAlreadyDiscussed = conversationIdStatusKnown(blob);
+        const housingAlreadyDiscussed = conversationHousingStatusKnown(blob);
         const stabilityRebuild = !conversationLooksLikeCareerPivot(blob) && (
           conversationMentionsStabilityRebuild(blob)
         );
@@ -39856,6 +39944,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getSecondClarifyingFallback(), latest);
         }
         finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, fallback, latest);
+        finalAnswer = avoidRepeatedIdQuestion(finalAnswer, latest);
         finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
@@ -41598,8 +41687,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           conversationMentionsStabilityRebuild(userText)
         );
         if (stabilityRebuild) {
-          const idKnown = conversationMentionsIdNeed(userText) || conversationConfirmsHasId(userText);
-          const housingKnown = conversationMentionsHousingInstability(userText) || conversationConfirmsHasHousing(userText);
+          const idKnown = conversationIdStatusKnown(userText);
+          const housingKnown = conversationHousingStatusKnown(userText);
           if (!idKnown) {
             finalAnswer = withExplorationAcknowledgment(
               "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
@@ -41613,6 +41702,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           }
         }
         finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, fallback, userText);
+        finalAnswer = avoidRepeatedIdQuestion(finalAnswer, userText);
         finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
 
         resolveTyping(finalAnswer);
@@ -41812,6 +41902,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           intake_mode: state.intakeMode || "standard",
           clarifying_round: state.clarifyingQuestionsAsked || 1
         });
+        updateIdStatusFromConversation();
+        updateHousingStatusFromConversation();
         if ((state.clarifyingQuestionsAsked || 0) < MIN_CLARIFYING_QUESTIONS) {
           addTypingBubble();
           await askFollowUpClarifyingQuestion();
