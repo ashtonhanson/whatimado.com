@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-08-preview-demo -->
+<!-- whatimado build: 2026-07-24-orbs-progress-task-meta -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -212,7 +212,7 @@
       --topbar-h: 52px;
       --roadmap-header-gap: 1.5rem;
       --roadmap-progress-h: 0px;
-      --roadmap-menu-progress-h: 124px;
+      --roadmap-menu-progress-h: 168px;
       --roadmap-sticky-offset: var(--topbar-h);
       --composer-browser-gap: 12px;
       --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
@@ -3880,9 +3880,12 @@
       top: 46%;
       width: var(--orb-size, min(62vw, 680px));
       height: var(--orb-size, min(62vw, 680px));
-      filter: blur(58px);
-      opacity: var(--orb-opacity, .22);
-      animation: ambient-orb-dual-a var(--orb-duration, 9s) ease-in-out infinite;
+      filter: blur(72px);
+      opacity: var(--orb-opacity, .06);
+      box-shadow:
+        0 0 18px color-mix(in srgb, var(--orb-color, #ffffff) 22%, transparent),
+        0 0 36px color-mix(in srgb, var(--orb-color, #ffffff) 10%, transparent);
+      animation: ambient-orb-dual-a var(--orb-duration, 48s) ease-in-out infinite;
       animation-delay: var(--orb-delay, 0s);
     }
 
@@ -3894,45 +3897,45 @@
       0%,
       100% {
         transform: translate(-50%, -50%) translate(0, 0) scale(1);
-        opacity: calc(var(--orb-opacity, .22) * 1.05);
+        opacity: var(--orb-opacity, .06);
       }
 
       25% {
-        transform: translate(-50%, -50%) translate(22vw, -10vh) scale(0.68);
-        opacity: calc(var(--orb-opacity, .22) * 0.8);
+        transform: translate(-50%, -50%) translate(18vw, -8vh) scale(0.92);
+        opacity: calc(var(--orb-opacity, .06) * 0.92);
       }
 
       50% {
-        transform: translate(-50%, -50%) translate(8vw, 16vh) scale(1.22);
-        opacity: calc(var(--orb-opacity, .22) * 1.24);
+        transform: translate(-50%, -50%) translate(6vw, 12vh) scale(1.04);
+        opacity: calc(var(--orb-opacity, .06) * 0.98);
       }
 
       75% {
-        transform: translate(-50%, -50%) translate(-20vw, 4vh) scale(0.8);
-        opacity: calc(var(--orb-opacity, .22) * 0.88);
+        transform: translate(-50%, -50%) translate(-16vw, 3vh) scale(0.9);
+        opacity: calc(var(--orb-opacity, .06) * 0.94);
       }
     }
 
     @keyframes ambient-orb-dual-b {
       0%,
       100% {
-        transform: translate(-50%, -50%) translate(0, 0) scale(1.08);
-        opacity: calc(var(--orb-opacity, .18) * 1.08);
+        transform: translate(-50%, -50%) translate(0, 0) scale(1.02);
+        opacity: var(--orb-opacity, .04);
       }
 
       25% {
-        transform: translate(-50%, -50%) translate(-22vw, 10vh) scale(1.18);
-        opacity: calc(var(--orb-opacity, .18) * 1.2);
+        transform: translate(-50%, -50%) translate(-18vw, 8vh) scale(1.06);
+        opacity: calc(var(--orb-opacity, .04) * 0.96);
       }
 
       50% {
-        transform: translate(-50%, -50%) translate(-8vw, -16vh) scale(0.66);
-        opacity: calc(var(--orb-opacity, .18) * 0.76);
+        transform: translate(-50%, -50%) translate(-6vw, -12vh) scale(0.88);
+        opacity: calc(var(--orb-opacity, .04) * 0.9);
       }
 
       75% {
-        transform: translate(-50%, -50%) translate(20vw, -4vh) scale(0.94);
-        opacity: calc(var(--orb-opacity, .18) * 0.92);
+        transform: translate(-50%, -50%) translate(16vw, -3vh) scale(0.96);
+        opacity: calc(var(--orb-opacity, .04) * 0.93);
       }
     }
 
@@ -9528,6 +9531,29 @@
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll {
       position: relative;
       min-width: 0;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll .roadmap-glance-track {
+      display: block;
+      overflow: visible;
+      scroll-snap-type: none;
+      min-width: min-content;
+      max-width: none;
+      padding: .45rem 1.85rem .35rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-progress-map-scroll .roadmap-glance-track::-webkit-scrollbar {
+      display: none;
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll::before,
@@ -9601,24 +9627,6 @@
 
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll-btn[hidden] {
       display: none !important;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-progress-map-scroll .roadmap-glance-track {
-      display: block;
-      overflow-x: auto;
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-x: contain;
-      scroll-snap-type: none;
-      min-width: 0;
-      max-width: 100%;
-      padding: .2rem 1.85rem .35rem;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-progress-map-scroll .roadmap-glance-track::-webkit-scrollbar {
-      display: none;
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline {
@@ -10624,21 +10632,20 @@
       html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
         display: flex;
         position: fixed;
-        top: 0;
+        top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px));
         left: calc(var(--sidebar-w, 0px) + 1.5rem);
+        right: 1rem;
         z-index: 26;
-        width: min(
-          calc(100vw - var(--sidebar-w, 0px) - 2rem),
-          calc(max(260px, calc(var(--roadmap-progress-stops, 4) * 7.2rem + 1.5rem)))
-        );
-        height: var(--roadmap-menu-progress-h);
-        padding: .5rem 0 .45rem;
+        width: auto;
+        min-height: 0;
+        height: auto;
+        padding: calc(var(--topbar-h, 52px) + .55rem) 0 .65rem;
         flex-direction: column;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: flex-start;
-        gap: .25rem;
+        gap: .28rem;
         pointer-events: auto;
-        overflow: hidden;
+        overflow: visible;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-summary,
@@ -10652,16 +10659,18 @@
         width: 100%;
         margin: 0;
         min-height: 0;
-        overflow: hidden;
+        overflow: visible;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-progress-map-scroll {
         width: 100%;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: visible;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-track {
-        padding: 0 .75rem;
+        overflow: visible;
+        padding: .15rem .75rem .15rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float .roadmap-glance-timeline-rail {
@@ -16152,7 +16161,7 @@
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-progress-reminder {
-      margin: 0 0 .85rem;
+      margin: 0 0 .25rem;
       padding: 0;
       border: 0;
       border-radius: 0;
@@ -16183,6 +16192,11 @@
       line-height: 1.65;
       color: var(--task-grey);
       text-shadow: var(--wm-glow-grey);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-copy,
+    html[data-color-scheme="adult"] #screen-roadmap .task-goal-bridge-copy {
+      margin-top: .2rem;
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-text-link,
@@ -16222,13 +16236,45 @@
 
     html[data-color-scheme="adult"] #screen-roadmap .task-item.is-expanded .task-compressed-row {
       margin-bottom: 0;
-      padding-bottom: 1.25rem;
+      padding-bottom: .85rem;
       border-bottom: 0;
       box-shadow: 0 1px 0 rgba(90, 125, 255, .14);
     }
 
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--mission .task-mentor-label {
+      margin-bottom: .15rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-head-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .35rem .55rem;
+      margin: 0 0 .35rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-head-row .task-mentor-meta {
+      margin: 0;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-head-row .task-mentor-label {
+      margin: 0;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--mission-compact {
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--mission-compact > .task-mentor-section--context,
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--mission-compact > .task-mentor-section--why {
+      margin-top: 0;
+      padding-top: 0;
+    }
+
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-meta {
-      margin: .55rem 0 .35rem;
+      margin: 0;
       gap: .45rem;
     }
 
@@ -23525,8 +23571,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         bar.setAttribute("aria-hidden", show ? "false" : "true");
       }
       document.body.classList.toggle("is-roadmap-progress-visible", show && !collapsed);
-      const progressBarHeight = show && mobile && bar && !collapsed ? Math.ceil(bar.getBoundingClientRect().height) : 0;
+      const progressBarHeight = show && bar && !collapsed ? Math.ceil(bar.getBoundingClientRect().height) : 0;
       const progressH = progressBarHeight;
+      if (show && !collapsed && progressBarHeight) {
+        document.documentElement.style.setProperty("--roadmap-menu-progress-h", `${progressBarHeight}px`);
+      }
       const spacerHeight = progressBarHeight ? progressBarHeight + 14 : 0;
       document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
       if (spacer) {
@@ -25277,12 +25326,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return normalized;
     }
 
-    function renderTaskContextNoteHtml(note) {
+    function renderTaskWhyStepHeaderHtml(metaHtml = "") {
+      const meta = String(metaHtml || "").trim();
+      if (!meta) return `<h4 class="task-mentor-label">Why this step</h4>`;
+      return `
+        <div class="task-mentor-head-row">
+          ${meta}
+          <h4 class="task-mentor-label">Why this step</h4>
+        </div>`;
+    }
+
+    function renderTaskContextNoteHtml(note, metaHtml = "") {
       const copy = String(note || "").trim();
       if (!copy || copy.length < 12) return "";
       return `
-        <section class="task-mentor-section task-mentor-section--context">
-          <h4 class="task-mentor-label">Why this step</h4>
+        <section class="task-mentor-section task-mentor-section--context task-mentor-section--why">
+          ${renderTaskWhyStepHeaderHtml(metaHtml)}
           <p class="task-mentor-copy task-mentor-copy--context">${escapeHtml(copy)}</p>
         </section>`;
     }
@@ -45164,7 +45223,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(localLabel)}">${escapeHtml(localLabel.length > 42 ? localLabel.slice(0, 42).replace(/\s+\S*$/, "").trim() || localLabel.slice(0, 42) : localLabel)}</span>`);
       }
       const meta = renderTaskMentorMetaHtml(normalized);
-      const contextNoteHtml = renderTaskContextNoteHtml(contextNote);
+      let pendingTaskMetaHtml = meta;
+      const takeTaskMetaHtml = () => {
+        const chunk = pendingTaskMetaHtml;
+        pendingTaskMetaHtml = "";
+        return chunk;
+      };
+      const renderWhyStepSectionHtml = (copy) => {
+        const body = String(copy || "").trim();
+        if (!body) return "";
+        return `
+                <section class="task-mentor-section task-mentor-section--why">
+                  ${renderTaskWhyStepHeaderHtml(takeTaskMetaHtml())}
+                  <p class="task-mentor-copy">${escapeHtml(body)}</p>
+                </section>`;
+      };
+      const contextNoteHtml = renderTaskContextNoteHtml(contextNote, takeTaskMetaHtml());
       const whyShownInContext = Boolean(contextNoteHtml.trim());
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const taskDetailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
@@ -45172,11 +45246,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const howToRestatesAction = howTo && textSimilarity(howTo, text) >= 0.72;
       const goalBridgeHtml = renderTaskGoalBridgeHtml(normalized, stage);
       const simplifiedWhyHow = [
-        !whyShownInContext && why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) && textSimilarity(why, text) < 0.72 ? `
-                <section class="task-mentor-section">
-                  <h4 class="task-mentor-label">Why this step</h4>
-                  <p class="task-mentor-copy">${escapeHtml(why)}</p>
-                </section>` : "",
+        !whyShownInContext && why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) && textSimilarity(why, text) < 0.72
+          ? renderWhyStepSectionHtml(why)
+          : "",
         goalBridgeHtml,
         howTo && !howToRestatesAction && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
                 <section class="task-mentor-section">
@@ -45194,11 +45266,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                   <button type="button" class="task-mentor-label task-mentor-label--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">What to do</button>
                   <button type="button" class="task-text task-text--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">${linkifyTaskTextHtml(text)}</button>
                 </section>
-                ${why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) ? `
-                <section class="task-mentor-section">
-                  <h4 class="task-mentor-label">Why this step</h4>
-                  <p class="task-mentor-copy">${escapeHtml(why)}</p>
-                </section>` : ""}
+                ${why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) ? renderWhyStepSectionHtml(why) : ""}
                 ${renderTaskGoalBridgeHtml(normalized, stage)}
                 ${howTo && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
                 <section class="task-mentor-section">
@@ -45236,7 +45304,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               <div class="overview-task-content">
                 <section class="task-mentor-section task-mentor-section--mission${simplified ? " task-mentor-section--mission-compact" : ""}">
                   ${simplified ? "" : `<h4 class="task-mentor-label">Your task</h4>`}
-                  ${meta}
+                  ${pendingTaskMetaHtml}
                   ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
                   ${simplified ? simplifiedWhatToDo : ""}
                 </section>
@@ -46905,9 +46973,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const size = layoutMobile
           ? Math.min(window.innerWidth * 0.88, 420)
           : Math.min(window.innerWidth * 0.62, 680);
-        const duration = 8 + Math.random() * 3;
+        const duration = 42 + Math.random() * 18;
         const delay = index === 1 ? -(duration * 0.5) : -(Math.random() * duration * 0.15);
-        const opacity = index === 0 ? 0.22 : 0.17;
+        const opacity = index === 0 ? 0.06 : 0.04;
         const palette = ["#ffffff", "#eef4ff"];
         const staticOffsetX = index === 0 ? "-10vw" : "10vw";
         const staticOffsetY = index === 0 ? "-2vh" : "2vh";
