@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-orbs-mobile-nav-desktop-layout -->
+<!-- whatimado build: 2026-07-25-mobile-logo-gap-tighten -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -1501,6 +1501,13 @@
       object-position: left center;
     }
 
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] .topbar-logo img {
+        height: 44px;
+        max-width: min(68vw, 240px);
+      }
+    }
+
     /* Sidebar stays a slide-in drawer at every breakpoint — full-width main content */
 
     @media (min-width: 768px) {
@@ -2052,9 +2059,9 @@
       position: relative;
       z-index: 1;
       margin: 0;
-      padding: 0 0 .35rem;
+      padding: 0;
       background: transparent;
-      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      border-bottom: 0;
     }
 
     html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
@@ -11332,12 +11339,17 @@
           + env(safe-area-inset-top, 0px)
           + var(--topbar-h, 52px)
           + var(--roadmap-menu-progress-h, 132px)
-          + .85rem
+          + .25rem
         );
       }
 
+      html[data-color-scheme="adult"] body.is-roadmap-float-chrome-visible #screen-roadmap.active .roadmap-float-progress-spacer {
+        display: none !important;
+        height: 0 !important;
+      }
+
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
-        padding-top: calc(var(--topbar-h, 52px) + 1rem + var(--roadmap-header-gap, 1.5rem));
+        padding-top: calc(var(--topbar-h, 52px) + .45rem + var(--roadmap-header-gap, .75rem));
       }
 
       html[data-color-scheme="adult"] .roadmap-float-progress-spacer {
@@ -11352,6 +11364,8 @@
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-overview-header {
         padding-top: 0;
+        padding-bottom: .75rem;
+        gap: .65rem;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
@@ -12893,7 +12907,7 @@
 
     /* Focus mode — roadmap resources drawer (desktop) */
     html[data-color-scheme="adult"] .roadmap-side-toggle {
-      margin-left: auto;
+      justify-self: end;
     }
 
     html[data-color-scheme="adult"] .roadmap-side-overlay {
@@ -24243,11 +24257,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (show && chromeHeight) {
         document.documentElement.style.setProperty("--roadmap-menu-progress-h", `${chromeHeight}px`);
       }
-      const spacerHeight = progressH ? progressH + 14 : 0;
+      const useMobilePaddingOnly = mobile && show;
+      const spacerHeight = useMobilePaddingOnly ? 0 : (progressH ? progressH + 14 : 0);
       document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
       if (spacer) {
         spacer.style.height = spacerHeight ? `${spacerHeight}px` : "0px";
-        spacer.hidden = !show || !mobile;
+        spacer.hidden = !show || !mobile || useMobilePaddingOnly;
       }
       document.documentElement.style.setProperty(
         "--roadmap-sticky-offset",
