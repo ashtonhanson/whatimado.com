@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-roadmap-actions-under-tasks -->
+<!-- whatimado build: 2026-07-25-roadmap-padding-resources-chevron -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -11019,11 +11019,28 @@
         flex-direction: column;
         position: fixed;
         top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
-        left: calc(var(--sidebar-w, 0px) + 1.5rem);
-        right: 1rem;
+        left: max(1rem, calc((100vw - min(94vw, 720px)) / 2));
+        right: max(1rem, calc((100vw - min(94vw, 720px)) / 2));
+        width: auto;
         z-index: 26;
         gap: .45rem;
         pointer-events: auto;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page,
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-page {
+        width: min(94vw, 720px);
+        max-width: min(94vw, 720px);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 1.15rem;
+        padding-right: 1.15rem;
+        box-sizing: border-box;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-page-actions,
+      html[data-color-scheme="adult"] .roadmap-phases {
+        width: 100%;
       }
 
       html[data-color-scheme="adult"] .roadmap-mobile-toggle {
@@ -12902,7 +12919,6 @@
       html[data-color-scheme="adult"] .roadmap-load-phases-btn,
       html[data-color-scheme="adult"] .roadmap-complete-card--footer,
       html[data-color-scheme="adult"] .roadmap-post-mission-picker { order: 65; width: 100%; }
-      html[data-color-scheme="adult"] .roadmap-side #roadmap-side-local-card { order: 50; }
       html[data-color-scheme="adult"] .roadmap-overview-footer { order: 90; }
 
       html[data-color-scheme="adult"] .roadmap-phase-head {
@@ -12958,7 +12974,26 @@
 
     /* Focus mode — roadmap resources drawer (desktop) */
     html[data-color-scheme="adult"] .roadmap-side-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
       justify-self: end;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-toggle-chevron {
+      width: .85rem;
+      height: .85rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+      transition: transform .2s ease;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-side-toggle[aria-expanded="true"] .roadmap-side-toggle-chevron {
+      transform: rotate(180deg);
     }
 
     html[data-color-scheme="adult"] .roadmap-side-overlay {
@@ -17544,7 +17579,10 @@
             <svg class="roadmap-mobile-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
           </button>
           <span class="roadmap-header-actions-spacer" aria-hidden="true"></span>
-          <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">Resources</button>
+          <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">
+            Resources
+            <svg class="roadmap-side-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+          </button>
           <div class="roadmap-actions-menu">
             <button type="button" class="roadmap-actions-menu-btn" id="roadmap-actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="roadmap-actions-menu-panel" aria-label="Roadmap options">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
