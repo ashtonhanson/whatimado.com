@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-24-roadmap-gap-task-white-loading -->
+<!-- whatimado build: 2026-07-25-mobile-roadmap-expand-toggle -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -1999,6 +1999,7 @@
 
     html[data-color-scheme="adult"] .dashboard-main > .dashboard-topbar,
     html[data-color-scheme="adult"] .dashboard-main > main,
+    html[data-color-scheme="adult"] .dashboard-main > .roadmap-float-chrome,
     html[data-color-scheme="adult"] .dashboard-main > .roadmap-float-progress {
       position: relative;
       z-index: 1;
@@ -2032,20 +2033,28 @@
       scroll-padding-top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px) + 16px);
     }
 
-    /* Header controls scroll with the page so they never cover a hero/title section.
-       Only the progress map is allowed to overlay content on scroll. */
+    /* Roadmap action buttons + progress map stick below the top bar. */
     html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
       padding-top: calc(var(--topbar-h, 52px) + 1.35rem + var(--roadmap-header-gap, 1.5rem));
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
+    html[data-color-scheme="adult"] body.is-roadmap-float-chrome-visible #screen-roadmap.active .roadmap-page {
+      padding-top: calc(
+        var(--preview-banner-h, 0px)
+        + env(safe-area-inset-top, 0px)
+        + var(--topbar-h, 52px)
+        + var(--roadmap-menu-progress-h, 132px)
+        + .85rem
+      );
+    }
+
+    html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
       position: relative;
       z-index: 1;
-      margin-top: 0;
-      margin-bottom: .4rem;
-      padding: 0 0 .5rem;
+      margin: 0;
+      padding: 0 0 .35rem;
       background: transparent;
-      border-bottom: 1px solid rgba(37, 99, 235, .08);
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
     }
 
     html[data-color-scheme="adult"] #screen-map.active .map-header-nav-row {
@@ -3293,6 +3302,31 @@
       border-top-color: rgba(255, 255, 255, .08);
     }
 
+    html[data-color-scheme="adult"] #screen-map .page-title {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: clamp(1.35rem, 3.6vw, 1.85rem);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .page-subtitle,
+    html[data-color-scheme="adult"] #screen-map .map-feedback-card,
+    html[data-color-scheme="adult"] #screen-map .map-sync-nudge,
+    html[data-color-scheme="adult"] #screen-map .save-status-bar,
+    html[data-color-scheme="adult"] #screen-map .opp-card-save-label,
+    html[data-color-scheme="adult"] #screen-map .map-paths-actions .map-toolbar-btn,
+    html[data-color-scheme="adult"] #screen-map .map-toolbar-btn {
+      font-family: var(--font-task-body);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .page-subtitle {
+      font-size: .88rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, .78);
+    }
+
     html[data-color-scheme="adult"] #screen-map .opp-type,
     html[data-color-scheme="adult"] #screen-map .opp-name,
     html[data-color-scheme="adult"] #screen-map .opp-tagline,
@@ -3324,6 +3358,42 @@
       font-size: .84rem;
       line-height: 1.6;
       color: rgba(255, 255, 255, .82);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .map-parent-context,
+    html[data-color-scheme="adult"] #screen-map .map-feedback-send,
+    html[data-color-scheme="adult"] #screen-map .opp-label-title,
+    html[data-color-scheme="adult"] #screen-map .opp-label-type,
+    html[data-color-scheme="adult"] #screen-map .map-paths-actions,
+    html[data-color-scheme="adult"] #screen-map .more-ideas-btn {
+      font-family: var(--font-task-body);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .map-feedback-title {
+      font-family: var(--font-task-head);
+      font-weight: 600;
+      letter-spacing: -.015em;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .opp-label-title {
+      font-family: var(--font-task-head);
+      font-weight: 600;
+      letter-spacing: -.015em;
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .opp-label-type {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-size: .62rem;
+      color: rgba(255, 255, 255, .68);
+    }
+
+    html[data-color-scheme="adult"] #screen-map .map-feedback-input {
+      font-family: var(--font-task-body);
     }
 
     html[data-color-scheme="adult"] .opp-type {
@@ -3913,12 +3983,13 @@
       top: 46%;
       width: var(--orb-size, min(62vw, 680px));
       height: var(--orb-size, min(62vw, 680px));
-      filter: blur(72px);
-      opacity: var(--orb-opacity, .06);
+      filter: blur(56px);
+      opacity: var(--orb-opacity, .11);
       box-shadow:
-        0 0 18px color-mix(in srgb, var(--orb-color, #ffffff) 22%, transparent),
-        0 0 36px color-mix(in srgb, var(--orb-color, #ffffff) 10%, transparent);
-      animation: ambient-orb-dual-a var(--orb-duration, 48s) ease-in-out infinite;
+        0 0 28px color-mix(in srgb, var(--orb-color, #ffffff) 34%, transparent),
+        0 0 56px color-mix(in srgb, var(--orb-color, #ffffff) 16%, transparent),
+        0 0 88px color-mix(in srgb, var(--orb-color, #ffffff) 8%, transparent);
+      animation: ambient-orb-dual-a var(--orb-duration, 34s) ease-in-out infinite;
       animation-delay: var(--orb-delay, 0s);
     }
 
@@ -3930,45 +4001,45 @@
       0%,
       100% {
         transform: translate(-50%, -50%) translate(0, 0) scale(1);
-        opacity: var(--orb-opacity, .06);
+        opacity: var(--orb-opacity, .11);
       }
 
       25% {
-        transform: translate(-50%, -50%) translate(18vw, -8vh) scale(0.92);
-        opacity: calc(var(--orb-opacity, .06) * 0.92);
+        transform: translate(-50%, -50%) translate(24vw, -12vh) scale(0.9);
+        opacity: calc(var(--orb-opacity, .11) * 0.9);
       }
 
       50% {
-        transform: translate(-50%, -50%) translate(6vw, 12vh) scale(1.04);
-        opacity: calc(var(--orb-opacity, .06) * 0.98);
+        transform: translate(-50%, -50%) translate(10vw, 18vh) scale(1.1);
+        opacity: calc(var(--orb-opacity, .11) * 1.08);
       }
 
       75% {
-        transform: translate(-50%, -50%) translate(-16vw, 3vh) scale(0.9);
-        opacity: calc(var(--orb-opacity, .06) * 0.94);
+        transform: translate(-50%, -50%) translate(-22vw, 5vh) scale(0.92);
+        opacity: calc(var(--orb-opacity, .11) * 0.94);
       }
     }
 
     @keyframes ambient-orb-dual-b {
       0%,
       100% {
-        transform: translate(-50%, -50%) translate(0, 0) scale(1.02);
-        opacity: var(--orb-opacity, .04);
+        transform: translate(-50%, -50%) translate(0, 0) scale(1.04);
+        opacity: var(--orb-opacity, .08);
       }
 
       25% {
-        transform: translate(-50%, -50%) translate(-18vw, 8vh) scale(1.06);
-        opacity: calc(var(--orb-opacity, .04) * 0.96);
+        transform: translate(-50%, -50%) translate(-24vw, 12vh) scale(1.12);
+        opacity: calc(var(--orb-opacity, .08) * 1.06);
       }
 
       50% {
-        transform: translate(-50%, -50%) translate(-6vw, -12vh) scale(0.88);
-        opacity: calc(var(--orb-opacity, .04) * 0.9);
+        transform: translate(-50%, -50%) translate(-10vw, -18vh) scale(0.86);
+        opacity: calc(var(--orb-opacity, .08) * 0.88);
       }
 
       75% {
-        transform: translate(-50%, -50%) translate(16vw, -3vh) scale(0.96);
-        opacity: calc(var(--orb-opacity, .04) * 0.93);
+        transform: translate(-50%, -50%) translate(22vw, -5vh) scale(0.98);
+        opacity: calc(var(--orb-opacity, .08) * 0.96);
       }
     }
 
@@ -10583,6 +10654,26 @@
       color: var(--ink-muted);
     }
 
+    .roadmap-mobile-toggle {
+      display: none;
+    }
+
+    .roadmap-float-chrome-panel-wrap {
+      display: contents;
+    }
+
+    .roadmap-float-chrome-panel {
+      display: contents;
+    }
+
+    .roadmap-float-chrome {
+      display: none;
+    }
+
+    .roadmap-float-chrome[hidden] {
+      display: none !important;
+    }
+
     .roadmap-float-progress {
       display: none;
     }
@@ -10595,7 +10686,7 @@
       pointer-events: none;
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-header-actions {
+    html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-float-chrome .roadmap-header-actions {
       margin-top: 0;
       padding-top: 0;
     }
@@ -10654,6 +10745,21 @@
     }
 
     @media (min-width: 961px) {
+      html[data-color-scheme="adult"] body.is-roadmap-float-chrome-visible .dashboard-topbar.minimal-topbar {
+        min-height: var(--topbar-h, 52px);
+        align-items: center;
+      }
+
+      html[data-color-scheme="adult"] body.is-roadmap-float-chrome-visible #screen-roadmap.active .roadmap-page {
+        padding-top: calc(
+          var(--preview-banner-h, 0px)
+          + env(safe-area-inset-top, 0px)
+          + var(--topbar-h, 52px)
+          + var(--roadmap-menu-progress-h, 132px)
+          + .85rem
+        );
+      }
+
       html[data-color-scheme="adult"] body.is-roadmap-progress-visible .dashboard-topbar.minimal-topbar {
         min-height: var(--topbar-h, 52px);
         align-items: center;
@@ -10669,17 +10775,44 @@
         );
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
+      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) {
         display: flex;
+        flex-direction: column;
         position: fixed;
         top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
         left: calc(var(--sidebar-w, 0px) + 1.5rem);
         right: 1rem;
         z-index: 26;
-        width: auto;
+        gap: .45rem;
+        pointer-events: auto;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-mobile-toggle {
+        display: none !important;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome-panel-wrap,
+      html[data-color-scheme="adult"] .roadmap-float-chrome-panel {
+        display: contents;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .45rem;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-float-progress:not([hidden]) {
+        display: flex;
+        position: static;
+        width: 100%;
         min-height: 0;
         height: auto;
-        padding: 0 0 .45rem;
+        padding: 0 0 .15rem;
         flex-direction: column;
         justify-content: flex-start;
         align-items: flex-start;
@@ -10789,40 +10922,147 @@
       html[data-color-scheme="adult"] .roadmap-side > .roadmap-progress-map {
         display: none !important;
       }
-    }
 
-    @media (max-width: 960px) {
-      html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
+      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) {
         display: flex;
         flex-direction: column;
         position: fixed;
-        top: calc(var(--topbar-h, 52px) + env(safe-area-inset-top, 0px));
+        top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px));
         left: 0;
         right: 0;
         width: 100%;
         z-index: 24;
         flex-shrink: 0;
         align-items: stretch;
-        gap: .45rem;
-        padding: .55rem 1rem .75rem;
-        border-radius: 0;
+        gap: 0;
+        padding: 0;
         border: 0;
-        border-bottom: 1px solid rgba(37, 99, 235, .12);
-        box-shadow: 0 2px 14px rgba(15, 23, 42, .08);
-        background: rgba(255, 255, 255, .98);
-        backdrop-filter: blur(10px);
-        pointer-events: auto;
+        box-shadow: none;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        pointer-events: none;
         max-height: none;
         overflow: visible;
-        transform: translateY(0);
-        transition: transform .32s cubic-bezier(.4, 0, .2, 1), box-shadow .32s ease;
-        will-change: transform;
+        transform: none;
+        will-change: auto;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-progress.is-collapsed:not([hidden]) {
-        transform: translateY(calc(-100% - 1px));
+      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-mobile-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        gap: .75rem;
+        width: min(94vw, 420px);
+        margin: .45rem auto 0;
+        padding: .68rem 2.35rem .68rem 1rem;
+        border: 1px solid rgba(90, 125, 255, .28);
+        border-radius: 999px;
+        background: rgba(23, 31, 45, .94);
+        color: var(--ink);
+        font-family: var(--font-task-body);
+        font-size: .82rem;
+        font-weight: 600;
+        letter-spacing: .01em;
+        box-shadow: 0 0 18px rgba(90, 125, 255, .12);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        pointer-events: auto;
+        cursor: pointer;
+        transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-mobile-toggle:hover {
+        border-color: rgba(90, 125, 255, .42);
+        background: rgba(23, 31, 45, .98);
+        box-shadow: 0 0 22px rgba(90, 125, 255, .18);
+        color: #eef2ff;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-mobile-toggle-label {
+        text-align: center;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-mobile-toggle-chevron {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        flex: 0 0 auto;
+        width: 1rem;
+        height: 1rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transform: translateY(-50%);
+        transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome.is-mobile-expanded .roadmap-mobile-toggle-chevron {
+        transform: translateY(-50%) rotate(180deg);
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome-panel-wrap {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows .34s cubic-bezier(.4, 0, .2, 1);
         pointer-events: none;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome.is-mobile-expanded .roadmap-float-chrome-panel-wrap {
+        grid-template-rows: 1fr;
+        pointer-events: auto;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome-panel {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+        min-height: 0;
+        overflow: hidden;
+        padding: 0 1rem .75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, .08);
+        background: rgba(10, 13, 20, .96);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .28);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
+        order: 0;
+        margin: 0;
+        padding: .55rem 0 .35rem;
+        border-bottom: 1px solid rgba(255, 255, 255, .08);
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-float-progress {
+        display: flex;
+        flex-direction: column;
+        position: static;
+        width: 100%;
+        padding: 0;
+        border: 0;
         box-shadow: none;
+        background: transparent;
+        backdrop-filter: none;
+        gap: .45rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
+        display: flex;
+        flex-direction: column;
+        position: static;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+        background: transparent;
+        backdrop-filter: none;
+        gap: .45rem;
+        transform: none;
+        pointer-events: auto;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
@@ -10837,6 +11077,16 @@
         margin: 0;
         overflow-x: auto;
         overflow-y: visible;
+      }
+
+      html[data-color-scheme="adult"] body.is-roadmap-float-chrome-visible #screen-roadmap.active .roadmap-page {
+        padding-top: calc(
+          var(--preview-banner-h, 0px)
+          + env(safe-area-inset-top, 0px)
+          + var(--topbar-h, 52px)
+          + var(--roadmap-menu-progress-h, 132px)
+          + .85rem
+        );
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page {
@@ -10857,12 +11107,12 @@
         padding-top: 0;
       }
 
-      html[data-color-scheme="adult"] .roadmap-header-actions {
-        order: 10;
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
+        order: 0;
         margin-top: 0;
-        margin-bottom: .3rem;
+        margin-bottom: 0;
         padding-top: 0;
-        padding-bottom: .4rem;
+        padding-bottom: .35rem;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap #roadmap-rebuild-remaining-btn {
@@ -10892,6 +11142,11 @@
         width: 100%;
         max-width: none;
         height: .42rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-progress-label,
+      html[data-color-scheme="adult"] .roadmap-float-progress-text {
+        color: rgba(255, 255, 255, .82);
       }
 
       html[data-color-scheme="adult"] .roadmap-phases {
@@ -12335,7 +12590,6 @@
         text-decoration: none;
       }
 
-      html[data-color-scheme="adult"] .roadmap-header-actions { order: 10; }
       html[data-color-scheme="adult"] .roadmap-overview-header { order: 20; }
       html[data-color-scheme="adult"] .roadmap-content { display: contents; }
       html[data-color-scheme="adult"] .roadmap-side #roadmap-side-local-card { order: 50; }
@@ -15952,13 +16206,15 @@
       top: var(--preview-banner-h);
     }
 
+    html.has-preview-banner .roadmap-float-chrome:not([hidden]),
     html.has-preview-banner .roadmap-float-progress:not([hidden]) {
       top: calc(var(--topbar-h, 64px) + var(--preview-banner-h));
     }
 
     @media (min-width: 961px) {
+      html.has-preview-banner[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]),
       html.has-preview-banner[data-color-scheme="adult"] .roadmap-float-progress:not([hidden]) {
-        top: var(--preview-banner-h);
+        top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
       }
     }
 
@@ -16374,7 +16630,7 @@
       line-height: 1.45;
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap.is-loading.is-loading-shell .roadmap-header-actions,
+    html[data-color-scheme="adult"] #screen-roadmap.is-loading.is-loading-shell .roadmap-float-chrome,
     html[data-color-scheme="adult"] #screen-roadmap.is-loading.is-loading-shell .roadmap-overview-header,
     html[data-color-scheme="adult"] #screen-roadmap.is-loading.is-loading-shell .roadmap-content {
       opacity: .72;
@@ -16938,33 +17194,57 @@
         </div>
       </header>
 
-      <div class="roadmap-float-progress" id="roadmap-float-progress" hidden aria-hidden="true">
-        <div class="roadmap-float-progress-summary">
-          <span class="roadmap-float-progress-label">Progress map</span>
-          <span class="roadmap-float-progress-text" id="roadmap-float-progress-text">0%</span>
+      <div class="roadmap-float-chrome" id="roadmap-float-chrome" hidden aria-hidden="true">
+        <button type="button" class="roadmap-mobile-toggle" id="roadmap-mobile-toggle" hidden aria-expanded="false" aria-controls="roadmap-float-chrome-panel">
+          <span class="roadmap-mobile-toggle-label">Expand roadmap</span>
+          <svg class="roadmap-mobile-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <div class="roadmap-float-chrome-panel-wrap" id="roadmap-float-chrome-panel-wrap">
+          <div class="roadmap-float-chrome-panel" id="roadmap-float-chrome-panel">
+        <div class="roadmap-header-actions">
+          <button class="screen-nav-btn roadmap-page-nav-back" id="roadmap-page-nav-back" type="button" aria-label="Back to map">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+          </button>
+          <button class="screen-nav-btn roadmap-page-nav-forward" id="roadmap-page-nav-forward" type="button" aria-label="Go forward" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+          </button>
+          <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
+          <span class="roadmap-remove-anchor"><button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button></span>
+          <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">Resources</button>
+          <button class="back-btn" id="roadmap-copy-markdown-btn" type="button">Copy Markdown</button>
+          <button class="back-btn" id="roadmap-download-markdown-btn" type="button">Download .md</button>
+          <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Refresh next steps</button>
         </div>
-        <div class="roadmap-float-progress-bar-wrap" aria-hidden="true">
-          <div class="roadmap-float-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Roadmap progress">
-            <span class="roadmap-float-progress-fill" id="roadmap-float-progress-fill"></span>
+        <div class="roadmap-float-progress" id="roadmap-float-progress">
+          <div class="roadmap-float-progress-summary">
+            <span class="roadmap-float-progress-label">Progress map</span>
+            <span class="roadmap-float-progress-text" id="roadmap-float-progress-text">0%</span>
+          </div>
+          <div class="roadmap-float-progress-bar-wrap" aria-hidden="true">
+            <div class="roadmap-float-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Roadmap progress">
+              <span class="roadmap-float-progress-fill" id="roadmap-float-progress-fill"></span>
+            </div>
+          </div>
+          <div class="roadmap-progress-map-timeline roadmap-progress-map-timeline--float" id="roadmap-float-timeline" hidden>
+            <div class="roadmap-progress-map-scroll" data-progress-map-scroll>
+              <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--prev" hidden aria-label="Scroll progress map left">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+              </button>
+              <div class="roadmap-glance-track" id="roadmap-float-timeline-track"></div>
+              <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--next" hidden aria-label="Scroll progress map right">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+              </button>
+            </div>
+          </div>
+          <div class="roadmap-progress-continuation" aria-label="Possible future roadmap continuation">
+            <span class="roadmap-progress-continuation-node" aria-hidden="true">?</span>
+            <span class="roadmap-progress-continuation-copy">
+              <strong>Possible continuation</strong>
+              <span>Your roadmap can keep evolving from here.</span>
+            </span>
           </div>
         </div>
-        <div class="roadmap-progress-map-timeline roadmap-progress-map-timeline--float" id="roadmap-float-timeline" hidden>
-          <div class="roadmap-progress-map-scroll" data-progress-map-scroll>
-            <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--prev" hidden aria-label="Scroll progress map left">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
-            </button>
-            <div class="roadmap-glance-track" id="roadmap-float-timeline-track"></div>
-            <button type="button" class="roadmap-progress-map-scroll-btn roadmap-progress-map-scroll-btn--next" hidden aria-label="Scroll progress map right">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
-            </button>
           </div>
-        </div>
-        <div class="roadmap-progress-continuation" aria-label="Possible future roadmap continuation">
-          <span class="roadmap-progress-continuation-node" aria-hidden="true">?</span>
-          <span class="roadmap-progress-continuation-copy">
-            <strong>Possible continuation</strong>
-            <span>Your roadmap can keep evolving from here.</span>
-          </span>
         </div>
       </div>
 
@@ -17336,21 +17616,6 @@
           </div>
         </div>
         <div class="roadmap-main">
-          <div class="roadmap-header-actions">
-            <button class="screen-nav-btn roadmap-page-nav-back" id="roadmap-page-nav-back" type="button" aria-label="Back to map">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
-            </button>
-            <button class="screen-nav-btn roadmap-page-nav-forward" id="roadmap-page-nav-forward" type="button" aria-label="Go forward" hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
-            </button>
-            <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
-            <span class="roadmap-remove-anchor"><button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button></span>
-            <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">Resources</button>
-            <button class="back-btn" id="roadmap-copy-markdown-btn" type="button">Copy Markdown</button>
-            <button class="back-btn" id="roadmap-download-markdown-btn" type="button">Download .md</button>
-            <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Refresh next steps</button>
-          </div>
-
           <header class="roadmap-overview-header" id="roadmap-overview-header">
             <span class="roadmap-status-badge" id="roadmap-status-badge">Active tasks</span>
             <p class="roadmap-parent-context" id="roadmap-parent-context" hidden></p>
@@ -23655,29 +23920,69 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $$(".task-item[data-task-id]").forEach((item) => syncTaskExpandUi(item.dataset.taskId));
     }
 
-    function shouldShowMobileRoadmapProgress() {
+    function shouldShowRoadmapFloatChrome() {
       const adult = document.documentElement.dataset.colorScheme === "adult";
       const onRoadmap = $("#screen-roadmap")?.classList.contains("active") && !$("#screen-roadmap")?.classList.contains("is-loading");
       return Boolean(adult && onRoadmap && state.roadmapStages?.length);
     }
 
+    function shouldShowMobileRoadmapProgress() {
+      return shouldShowRoadmapFloatChrome();
+    }
+
+    function isMobileRoadmapLayout() {
+      return shouldShowRoadmapFloatChrome() && window.matchMedia("(max-width: 960px)").matches;
+    }
+
+    function syncRoadmapMobileToggleUi(expanded) {
+      const toggle = $("#roadmap-mobile-toggle");
+      const label = toggle?.querySelector(".roadmap-mobile-toggle-label");
+      if (!toggle) return;
+      toggle.hidden = !isMobileRoadmapLayout();
+      toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+      if (label) label.textContent = expanded ? "Compress roadmap" : "Expand roadmap";
+    }
+
+    function setRoadmapMobileExpanded(expanded) {
+      const chrome = $("#roadmap-float-chrome");
+      const mobile = isMobileRoadmapLayout();
+      if (!mobile) expanded = true;
+      if (roadmapProgressScrollState.mobileExpanded === expanded) {
+        syncRoadmapMobileToggleUi(expanded);
+        return;
+      }
+      roadmapProgressScrollState.mobileExpanded = expanded;
+      chrome?.classList.toggle("is-mobile-expanded", mobile && expanded);
+      chrome?.classList.remove("is-collapsed");
+      $("#roadmap-float-progress")?.classList.remove("is-collapsed");
+      syncRoadmapMobileToggleUi(mobile && expanded);
+      scheduleRoadmapStickyOffsetRemeasure();
+    }
+
     function syncRoadmapStickyOffset() {
+      const chrome = $("#roadmap-float-chrome");
       const bar = $("#roadmap-float-progress");
       const spacer = $("#roadmap-float-progress-spacer");
-      const show = shouldShowMobileRoadmapProgress();
+      const show = shouldShowRoadmapFloatChrome();
       const mobile = window.matchMedia("(max-width: 960px)").matches;
-      const collapsed = Boolean(bar?.classList.contains("is-collapsed"));
+      const mobileExpanded = mobile && Boolean(chrome?.classList.contains("is-mobile-expanded"));
+      if (chrome) {
+        chrome.hidden = !show;
+        chrome.setAttribute("aria-hidden", show ? "false" : "true");
+      }
       if (bar) {
-        bar.hidden = !show;
         bar.setAttribute("aria-hidden", show ? "false" : "true");
       }
-      document.body.classList.toggle("is-roadmap-progress-visible", show && !collapsed);
-      const progressBarHeight = show && bar && !collapsed ? Math.ceil(bar.getBoundingClientRect().height) : 0;
-      const progressH = progressBarHeight;
-      if (show && !collapsed && progressBarHeight) {
-        document.documentElement.style.setProperty("--roadmap-menu-progress-h", `${progressBarHeight}px`);
+      syncRoadmapMobileToggleUi(mobileExpanded);
+      document.body.classList.toggle("is-roadmap-float-chrome-visible", show);
+      document.body.classList.toggle("is-roadmap-mobile-expanded", show && mobileExpanded);
+      document.body.classList.toggle("is-roadmap-progress-visible", show && (!mobile || mobileExpanded));
+      const chromeHeight = show && chrome ? Math.ceil(chrome.getBoundingClientRect().height) : 0;
+      const progressH = chromeHeight;
+      if (show && chromeHeight) {
+        document.documentElement.style.setProperty("--roadmap-menu-progress-h", `${chromeHeight}px`);
       }
-      const spacerHeight = progressBarHeight ? progressBarHeight + 14 : 0;
+      const spacerHeight = progressH ? progressH + 14 : 0;
       document.documentElement.style.setProperty("--roadmap-progress-h", `${progressH}px`);
       if (spacer) {
         spacer.style.height = spacerHeight ? `${spacerHeight}px` : "0px";
@@ -23691,69 +23996,50 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     const roadmapProgressScrollState = {
       lastY: 0,
-      collapsed: false,
+      mobileExpanded: false,
       ticking: false,
       resizeObserver: null
     };
 
-    function setRoadmapProgressCollapsed(collapsed) {
-      const bar = $("#roadmap-float-progress");
-      if (!shouldShowMobileRoadmapProgress() || !window.matchMedia("(max-width: 960px)").matches) {
-        collapsed = false;
-      }
-      if (roadmapProgressScrollState.collapsed === collapsed) return;
-      roadmapProgressScrollState.collapsed = collapsed;
-      bar?.classList.toggle("is-collapsed", collapsed);
-      scheduleRoadmapStickyOffsetRemeasure();
-    }
-
     function resetRoadmapProgressScrollState() {
       roadmapProgressScrollState.lastY = Math.max(0, window.scrollY || 0);
-      setRoadmapProgressCollapsed(false);
+      setRoadmapMobileExpanded(false);
     }
 
-    function handleRoadmapProgressScroll() {
-      if (!shouldShowMobileRoadmapProgress() || !window.matchMedia("(max-width: 960px)").matches) {
-        setRoadmapProgressCollapsed(false);
-        return;
-      }
-      const y = Math.max(0, window.scrollY || 0);
-      const delta = y - roadmapProgressScrollState.lastY;
-      if (Math.abs(delta) < 1) return;
-      if (y <= 6) {
-        setRoadmapProgressCollapsed(false);
-      } else if (delta > 0) {
-        setRoadmapProgressCollapsed(true);
-      } else if (delta < 0) {
-        setRoadmapProgressCollapsed(false);
-      }
-      roadmapProgressScrollState.lastY = y;
+    function toggleRoadmapMobileExpanded() {
+      setRoadmapMobileExpanded(!roadmapProgressScrollState.mobileExpanded);
     }
 
     function bindRoadmapFloatProgressResizeObserver() {
+      const chrome = $("#roadmap-float-chrome");
       const bar = $("#roadmap-float-progress");
       const timeline = $("#roadmap-float-timeline");
-      if (!bar || roadmapProgressScrollState.resizeObserver) return;
+      const actions = chrome?.querySelector(".roadmap-header-actions");
+      const panel = $("#roadmap-float-chrome-panel");
+      const panelWrap = $("#roadmap-float-chrome-panel-wrap");
+      const toggle = $("#roadmap-mobile-toggle");
+      if (!chrome || roadmapProgressScrollState.resizeObserver) return;
       if (typeof ResizeObserver === "undefined") return;
       roadmapProgressScrollState.resizeObserver = new ResizeObserver(() => {
         scheduleRoadmapStickyOffsetRemeasure();
       });
-      roadmapProgressScrollState.resizeObserver.observe(bar);
+      roadmapProgressScrollState.resizeObserver.observe(chrome);
+      if (bar) roadmapProgressScrollState.resizeObserver.observe(bar);
       if (timeline) roadmapProgressScrollState.resizeObserver.observe(timeline);
+      if (actions) roadmapProgressScrollState.resizeObserver.observe(actions);
+      if (panel) roadmapProgressScrollState.resizeObserver.observe(panel);
+      if (panelWrap) roadmapProgressScrollState.resizeObserver.observe(panelWrap);
+      if (toggle) roadmapProgressScrollState.resizeObserver.observe(toggle);
     }
 
     function initRoadmapProgressScrollBehavior() {
       bindRoadmapFloatProgressResizeObserver();
-      if (window._roadmapProgressScrollBound) return;
-      window._roadmapProgressScrollBound = true;
-      window.addEventListener("scroll", () => {
-        if (roadmapProgressScrollState.ticking) return;
-        roadmapProgressScrollState.ticking = true;
-        requestAnimationFrame(() => {
-          handleRoadmapProgressScroll();
-          roadmapProgressScrollState.ticking = false;
-        });
-      }, { passive: true });
+      if (window._roadmapMobileToggleBound) return;
+      window._roadmapMobileToggleBound = true;
+      $("#roadmap-mobile-toggle")?.addEventListener("click", toggleRoadmapMobileExpanded);
+      $("#roadmap-float-chrome-panel-wrap")?.addEventListener("transitionend", (event) => {
+        if (event.propertyName === "grid-template-rows") scheduleRoadmapStickyOffsetRemeasure();
+      });
     }
 
     function scheduleRoadmapStickyOffsetRemeasure() {
@@ -44410,11 +44696,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || parseInt(getComputedStyle(document.documentElement).getPropertyValue("--header-h"), 10)
         || 64;
       const extraOffset = options.extraOffset ?? 12;
-      const progressBar = $("#roadmap-float-progress");
-      const progressCollapsed = Boolean(progressBar?.classList.contains("is-collapsed"));
-      const progressH = shouldShowMobileRoadmapProgress() && progressBar && !progressCollapsed
-        ? progressBar.offsetHeight
-        : 0;
+      const chrome = $("#roadmap-float-chrome");
+      const mobile = isMobileRoadmapLayout();
+      const mobileExpanded = mobile && Boolean(chrome?.classList.contains("is-mobile-expanded"));
+      let progressH = 0;
+      if (shouldShowRoadmapFloatChrome() && chrome && !chrome.hidden) {
+        if (mobile && !mobileExpanded) {
+          const toggle = $("#roadmap-mobile-toggle");
+          progressH = toggle ? toggle.offsetHeight + 12 : 0;
+        } else {
+          progressH = chrome.offsetHeight;
+        }
+      }
       const offset = topbarH + progressH + extraOffset;
 
       requestAnimationFrame(() => {
@@ -47100,9 +47393,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const size = layoutMobile
           ? Math.min(window.innerWidth * 0.88, 420)
           : Math.min(window.innerWidth * 0.62, 680);
-        const duration = 42 + Math.random() * 18;
+        const duration = 32 + Math.random() * 12;
         const delay = index === 1 ? -(duration * 0.5) : -(Math.random() * duration * 0.15);
-        const opacity = index === 0 ? 0.06 : 0.04;
+        const opacity = index === 0 ? 0.13 : 0.09;
         const palette = ["#ffffff", "#eef4ff"];
         const staticOffsetX = index === 0 ? "-10vw" : "10vw";
         const staticOffsetY = index === 0 ? "-2vh" : "2vh";
