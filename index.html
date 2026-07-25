@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-roadmap-buttons-map-card-style -->
+<!-- whatimado build: 2026-07-25-roadmap-desktop-column-align -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -214,6 +214,7 @@
       --roadmap-progress-h: 0px;
       --roadmap-menu-progress-h: 132px;
       --roadmap-sticky-offset: var(--topbar-h);
+      --roadmap-column-w: min(94vw, 720px);
       --composer-browser-gap: 12px;
       --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
       --chat-composer-h: 120px;
@@ -9239,9 +9240,9 @@
       html[data-color-scheme="adult"] .roadmap-overview-header {
         align-items: center;
         text-align: center;
-        max-width: min(94vw, 720px);
-        margin-left: auto;
-        margin-right: auto;
+        width: 100%;
+        max-width: none;
+        margin-inline: 0;
       }
 
       html[data-color-scheme="adult"] .roadmap-overview-header .roadmap-parent-context,
@@ -11021,9 +11022,13 @@
         flex-direction: column;
         position: fixed;
         top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
-        left: max(1rem, calc((100vw - min(94vw, 720px)) / 2));
-        right: max(1rem, calc((100vw - min(94vw, 720px)) / 2));
-        width: auto;
+        left: 50%;
+        right: auto;
+        width: var(--roadmap-column-w, min(94vw, 720px));
+        max-width: var(--roadmap-column-w, min(94vw, 720px));
+        transform: translateX(-50%);
+        padding-inline: 1.15rem;
+        box-sizing: border-box;
         z-index: 26;
         gap: .45rem;
         pointer-events: auto;
@@ -11031,18 +11036,31 @@
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page,
       html[data-color-scheme="adult"] #screen-roadmap .roadmap-page {
-        width: min(94vw, 720px);
-        max-width: min(94vw, 720px);
-        margin-left: auto;
-        margin-right: auto;
-        padding-left: 1.15rem;
-        padding-right: 1.15rem;
+        width: 100%;
+        max-width: none;
+        margin-inline: auto;
+        padding-inline: 1.15rem;
         box-sizing: border-box;
       }
 
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: var(--roadmap-column-w, min(94vw, 720px));
+        max-width: var(--roadmap-column-w, min(94vw, 720px));
+        margin-inline: auto;
+        gap: 1.25rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-main,
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-content,
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-overview-header,
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-overview-footer,
       html[data-color-scheme="adult"] .roadmap-page-actions,
       html[data-color-scheme="adult"] .roadmap-phases {
         width: 100%;
+        min-width: 0;
       }
 
       html[data-color-scheme="adult"] .roadmap-mobile-toggle {
@@ -11088,7 +11106,8 @@
       html[data-color-scheme="adult"] .roadmap-float-progress-summary,
       html[data-color-scheme="adult"] .roadmap-float-progress-bar-wrap,
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
-        width: min(100%, max(260px, calc(var(--roadmap-progress-stops, 4) * 7.2rem + 1.5rem)));
+        width: 100%;
+        max-width: 100%;
       }
 
       html[data-color-scheme="adult"] .roadmap-progress-map-timeline--float {
