@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-mobile-logo-gap-tighten -->
+<!-- whatimado build: 2026-07-25-roadmap-spacing-transparency -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -1424,7 +1424,7 @@
       display: flex;
       flex-direction: column;
       padding: 1.25rem 1rem 1rem;
-      background: rgba(17, 23, 34, .94);
+      background: rgba(17, 23, 34, .88);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
       border-right: 1px solid rgba(255, 255, 255, .06);
@@ -1505,6 +1505,10 @@
       html[data-color-scheme="adult"] .topbar-logo img {
         height: 44px;
         max-width: min(68vw, 240px);
+      }
+
+      html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
+        background: rgba(10, 13, 20, .68);
       }
     }
 
@@ -7639,7 +7643,9 @@
       margin: 0;
       border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 12px;
-      background: rgba(17, 23, 34, .42);
+      background: rgba(17, 23, 34, .28);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       overflow: hidden;
     }
 
@@ -9408,7 +9414,7 @@
       padding: .55rem .7rem;
       border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 10px;
-      background: rgba(17, 23, 34, .62);
+      background: rgba(17, 23, 34, .42);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       color: var(--ink);
@@ -9447,7 +9453,7 @@
       padding: .8rem .85rem;
       border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 14px;
-      background: rgba(17, 23, 34, .62);
+      background: rgba(17, 23, 34, .42);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
@@ -9464,7 +9470,7 @@
 
     html[data-color-scheme="adult"] .roadmap-glance-phase.is-in-progress {
       border-color: rgba(90, 125, 255, .42);
-      background: rgba(17, 23, 34, .78);
+      background: rgba(17, 23, 34, .54);
       box-shadow:
         0 0 0 1px rgba(90, 125, 255, .12),
         0 0 22px rgba(90, 125, 255, .14);
@@ -9982,7 +9988,7 @@
       padding: .85rem .8rem;
       border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 16px;
-      background: rgba(17, 23, 34, .62);
+      background: rgba(17, 23, 34, .42);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       box-shadow:
@@ -9995,7 +10001,7 @@
 
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-timeline-stop.is-in-progress {
       border-color: rgba(90, 125, 255, .42);
-      background: rgba(17, 23, 34, .78);
+      background: rgba(17, 23, 34, .54);
       box-shadow:
         0 0 0 1px rgba(90, 125, 255, .12),
         0 0 22px rgba(90, 125, 255, .14);
@@ -10146,7 +10152,7 @@
     html[data-color-scheme="adult"] .roadmap-phase {
       border: 1px solid rgba(255, 255, 255, .06);
       border-radius: 14px;
-      background: rgba(17, 23, 34, .45);
+      background: rgba(17, 23, 34, .32);
       overflow: hidden;
       box-shadow: none;
       scroll-margin-top: calc(var(--roadmap-sticky-offset, var(--topbar-h, 64px)) + 12px);
@@ -10158,7 +10164,7 @@
 
     html[data-color-scheme="adult"] .roadmap-phase.is-in-progress {
       border-color: rgba(90, 125, 255, .22);
-      background: rgba(17, 23, 34, .62);
+      background: rgba(17, 23, 34, .46);
     }
 
     html[data-color-scheme="adult"] .roadmap-phase.is-complete {
@@ -11017,12 +11023,18 @@
 
       html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         align-items: center;
         gap: .45rem;
         margin: 0;
         padding: 0;
         width: 100%;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions-spacer {
+        display: block;
+        flex: 1 1 auto;
+        min-width: 0;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-float-progress:not([hidden]) {
@@ -11174,9 +11186,12 @@
         gap: .35rem;
         width: 100%;
         margin: 0;
-        padding: .45rem 1rem 0;
+        padding: .45rem 1rem .55rem;
         border: 0;
-        background: transparent;
+        border-bottom: 1px solid rgba(255, 255, 255, .05);
+        background: rgba(10, 13, 20, .62);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         pointer-events: auto;
       }
 
@@ -11339,7 +11354,7 @@
           + env(safe-area-inset-top, 0px)
           + var(--topbar-h, 52px)
           + var(--roadmap-menu-progress-h, 132px)
-          + .25rem
+          + .7rem
         );
       }
 
@@ -11363,7 +11378,7 @@
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-overview-header {
-        padding-top: 0;
+        padding-top: .55rem;
         padding-bottom: .75rem;
         gap: .65rem;
       }
@@ -14004,7 +14019,7 @@
     html[data-color-scheme="adult"] #screen-roadmap .task-textarea,
     html[data-color-scheme="adult"] #screen-roadmap .task-question {
       color: var(--ink);
-      background: rgba(23, 31, 45, .78);
+      background: rgba(23, 31, 45, .58);
       border-color: rgba(255, 255, 255, .1);
     }
 
@@ -16773,7 +16788,9 @@
       padding: .85rem .9rem;
       border: 1px solid rgba(90, 125, 255, .22);
       border-radius: 12px;
-      background: rgba(17, 23, 34, .55);
+      background: rgba(17, 23, 34, .38);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 0 18px rgba(90, 125, 255, .08);
     }
 
