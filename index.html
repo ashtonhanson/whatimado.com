@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-roadmap-shared-column-grid -->
+<!-- whatimado build: 2026-07-25-roadmap-flex-rails-sticky-tools -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -215,7 +215,7 @@
       --roadmap-menu-progress-h: 132px;
       --roadmap-sticky-offset: var(--topbar-h);
       --roadmap-column-w: min(94vw, 720px);
-      --roadmap-rail-w: 10.5rem;
+      --roadmap-rail-min: 10rem;
       --roadmap-center-max-w: 45rem;
       --roadmap-shell-gap: 1rem;
       --roadmap-shell-inset: 1.15rem;
@@ -10998,13 +10998,6 @@
       display: none;
     }
 
-    /* Only widen the side rails once the center column can still hold its full width. */
-    @media (min-width: 1240px) {
-      html[data-color-scheme="adult"] {
-        --roadmap-rail-w: 14rem;
-      }
-    }
-
     @media (min-width: 961px) {
       html[data-color-scheme="adult"] body.is-roadmap-float-chrome-visible .dashboard-topbar.minimal-topbar {
         min-height: var(--topbar-h, 52px);
@@ -11062,10 +11055,9 @@
       html[data-color-scheme="adult"] #screen-roadmap .roadmap-shell-grid {
         display: grid;
         grid-template-columns:
-          var(--roadmap-rail-w)
+          minmax(var(--roadmap-rail-min), 1fr)
           minmax(0, var(--roadmap-center-max-w))
-          var(--roadmap-rail-w);
-        justify-content: center;
+          minmax(var(--roadmap-rail-min), 1fr);
         gap: var(--roadmap-shell-gap);
         width: 100%;
         max-width: none;
@@ -11112,7 +11104,7 @@
         );
         z-index: 25;
         display: flex;
-        justify-content: flex-end;
+        justify-content: flex-start;
         padding-bottom: .35rem;
       }
 
@@ -11120,11 +11112,11 @@
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: .45rem;
         margin: 0;
         padding: 0;
-        width: 100%;
+        width: auto;
       }
 
       html[data-color-scheme="adult"] .roadmap-col--right {
@@ -11132,6 +11124,7 @@
         flex-direction: column;
         gap: .35rem;
         min-width: 0;
+        align-self: stretch;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .roadmap-main,
@@ -13142,6 +13135,7 @@
         bottom: auto;
         z-index: auto;
         width: 100%;
+        max-width: 18rem;
         max-height: 0;
         padding: 0;
         background: transparent;
