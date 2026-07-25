@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-roadmap-three-column-center -->
+<!-- whatimado build: 2026-07-25-roadmap-shared-column-grid -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -215,10 +215,10 @@
       --roadmap-menu-progress-h: 132px;
       --roadmap-sticky-offset: var(--topbar-h);
       --roadmap-column-w: min(94vw, 720px);
-      --roadmap-rail-w: 11.5rem;
+      --roadmap-rail-w: 10.5rem;
       --roadmap-center-max-w: 45rem;
       --roadmap-shell-gap: 1rem;
-      --roadmap-shell-w: min(96vw, calc(var(--roadmap-rail-w) * 2 + var(--roadmap-center-max-w) + var(--roadmap-shell-gap) * 2));
+      --roadmap-shell-inset: 1.15rem;
       --composer-browser-gap: 12px;
       --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
       --chat-composer-h: 120px;
@@ -9880,9 +9880,11 @@
       opacity: 1;
     }
 
+    /* Card-style stops draw no rail behind the node, so the dark knockout ring is dropped. */
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-node,
     html[data-color-scheme="adult"] .roadmap-progress-map-timeline .roadmap-glance-income-dot {
       opacity: 1;
+      box-shadow: none;
     }
 
     html[data-color-scheme="adult"] .roadmap-progress-map-scroll {
@@ -10996,6 +10998,13 @@
       display: none;
     }
 
+    /* Only widen the side rails once the center column can still hold its full width. */
+    @media (min-width: 1240px) {
+      html[data-color-scheme="adult"] {
+        --roadmap-rail-w: 14rem;
+      }
+    }
+
     @media (min-width: 961px) {
       html[data-color-scheme="adult"] body.is-roadmap-float-chrome-visible .dashboard-topbar.minimal-topbar {
         min-height: var(--topbar-h, 52px);
@@ -11027,29 +11036,40 @@
         );
       }
 
+      /* Chrome and page are both full-width boxes with identical inset, so the shared
+         grid below is the only thing that positions columns. */
       html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) {
         display: block;
         position: fixed;
         top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
-        left: 50%;
-        right: auto;
-        width: var(--roadmap-shell-w);
-        max-width: var(--roadmap-shell-w);
-        transform: translateX(-50%);
-        padding-inline: 0;
+        left: 0;
+        right: 0;
+        width: auto;
+        max-width: none;
+        transform: none;
+        padding-inline: var(--roadmap-shell-inset);
         box-sizing: border-box;
         z-index: 26;
+        /* Spans the viewport now, so only the real controls capture clicks. */
+        pointer-events: none;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions--nav {
         pointer-events: auto;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-shell-grid,
       html[data-color-scheme="adult"] #screen-roadmap .roadmap-shell-grid {
         display: grid;
-        grid-template-columns: var(--roadmap-rail-w) minmax(0, 1fr) var(--roadmap-rail-w);
+        grid-template-columns:
+          var(--roadmap-rail-w)
+          minmax(0, var(--roadmap-center-max-w))
+          var(--roadmap-rail-w);
+        justify-content: center;
         gap: var(--roadmap-shell-gap);
         width: 100%;
         max-width: none;
-        margin-inline: auto;
+        margin-inline: 0;
         align-items: start;
       }
 
@@ -11061,8 +11081,8 @@
       html[data-color-scheme="adult"] #screen-roadmap .roadmap-page {
         width: 100%;
         max-width: none;
-        margin-inline: auto;
-        padding-inline: 0;
+        margin-inline: 0;
+        padding-inline: var(--roadmap-shell-inset);
         box-sizing: border-box;
       }
 
@@ -11072,14 +11092,8 @@
         align-items: stretch;
         width: 100%;
         max-width: none;
-        margin-inline: auto;
+        margin-inline: 0;
         gap: 1.25rem;
-      }
-
-      html[data-color-scheme="adult"] #screen-roadmap .roadmap-shell-grid {
-        width: var(--roadmap-shell-w);
-        max-width: calc(100% - 2.3rem);
-        margin-inline: auto;
       }
 
       html[data-color-scheme="adult"] .roadmap-col--center {
@@ -11146,7 +11160,7 @@
         gap: .45rem;
         margin: 0;
         padding: 0;
-        width: 100%;
+        width: fit-content;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions-spacer {
