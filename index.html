@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-roadmap-desktop-column-align -->
+<!-- whatimado build: 2026-07-25-roadmap-three-column -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -215,6 +215,10 @@
       --roadmap-menu-progress-h: 132px;
       --roadmap-sticky-offset: var(--topbar-h);
       --roadmap-column-w: min(94vw, 720px);
+      --roadmap-rail-w: min(16vw, 11.5rem);
+      --roadmap-center-max-w: min(94vw, 720px);
+      --roadmap-shell-gap: 1rem;
+      --roadmap-shell-w: calc(var(--roadmap-rail-w) * 2 + var(--roadmap-center-max-w) + var(--roadmap-shell-gap) * 2);
       --composer-browser-gap: 12px;
       --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
       --chat-composer-h: 120px;
@@ -2060,7 +2064,8 @@
       );
     }
 
-    html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
+    html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions--nav,
+    html[data-color-scheme="adult"] .roadmap-col-tools .roadmap-header-actions--tools {
       position: relative;
       z-index: 1;
       margin: 0;
@@ -9218,6 +9223,18 @@
       align-items: start;
     }
 
+    .roadmap-shell-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+      width: 100%;
+      align-items: start;
+    }
+
+    .roadmap-col {
+      min-width: 0;
+    }
+
     html[data-color-scheme="adult"] .roadmap-main {
       display: grid;
       gap: 1.25rem;
@@ -9258,30 +9275,23 @@
         justify-content: center;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
-        display: grid;
-        grid-template-columns: auto auto 1fr auto auto;
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions--nav {
+        display: flex;
+        flex-wrap: nowrap;
         align-items: center;
-        width: 100%;
         gap: .45rem;
         padding: 0;
         margin: 0;
         border: 0;
+        width: 100%;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions-spacer {
-        display: block;
-        grid-column: 3;
-      }
-
-      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-side-toggle {
-        grid-column: 4;
+      html[data-color-scheme="adult"] .roadmap-col-tools .roadmap-side-toggle {
         justify-self: end;
         margin-left: 0;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-actions-menu {
-        grid-column: 5;
+      html[data-color-scheme="adult"] .roadmap-col-tools .roadmap-actions-menu {
         justify-self: end;
         margin-left: 0;
       }
@@ -10928,7 +10938,7 @@
       pointer-events: none;
     }
 
-    html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-float-chrome .roadmap-header-actions {
+    html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-float-chrome .roadmap-header-actions--nav {
       margin-top: 0;
       padding-top: 0;
     }
@@ -11018,20 +11028,29 @@
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) {
-        display: flex;
-        flex-direction: column;
+        display: block;
         position: fixed;
         top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
         left: 50%;
         right: auto;
-        width: var(--roadmap-column-w, min(94vw, 720px));
-        max-width: var(--roadmap-column-w, min(94vw, 720px));
+        width: min(96vw, var(--roadmap-shell-w, 1080px));
+        max-width: min(96vw, var(--roadmap-shell-w, 1080px));
         transform: translateX(-50%);
         padding-inline: 1.15rem;
         box-sizing: border-box;
         z-index: 26;
-        gap: .45rem;
         pointer-events: auto;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-shell-grid {
+        display: grid;
+        grid-template-columns: var(--roadmap-rail-w) minmax(0, 1fr) var(--roadmap-rail-w);
+        gap: var(--roadmap-shell-gap);
+        align-items: start;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-col--right {
+        min-height: 0;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page,
@@ -11047,10 +11066,53 @@
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        width: var(--roadmap-column-w, min(94vw, 720px));
-        max-width: var(--roadmap-column-w, min(94vw, 720px));
+        width: 100%;
+        max-width: none;
         margin-inline: auto;
         gap: 1.25rem;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-shell-grid {
+        display: grid;
+        grid-template-columns: var(--roadmap-rail-w) minmax(0, min(var(--roadmap-center-max-w), 100%)) var(--roadmap-rail-w);
+        gap: var(--roadmap-shell-gap);
+        width: min(96vw, var(--roadmap-shell-w, 1080px));
+        max-width: min(96vw, var(--roadmap-shell-w, 1080px));
+        margin-inline: auto;
+        align-items: start;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-col-tools {
+        position: sticky;
+        top: calc(
+          var(--preview-banner-h, 0px)
+          + env(safe-area-inset-top, 0px)
+          + var(--topbar-h, 52px)
+          + var(--roadmap-menu-progress-h, 132px)
+          + .45rem
+        );
+        z-index: 25;
+        display: flex;
+        justify-content: flex-end;
+        padding-bottom: .35rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-header-actions--tools {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: .45rem;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-col--right {
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+        min-width: 0;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .roadmap-main,
@@ -11072,7 +11134,7 @@
         display: contents;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions--nav {
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
@@ -11231,7 +11293,7 @@
         will-change: auto;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-header-actions {
+      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-header-actions--nav {
         display: grid;
         grid-template-columns: auto auto minmax(0, 1fr) auto;
         align-items: center;
@@ -11248,7 +11310,7 @@
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions-spacer,
-      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-side-toggle {
+      html[data-color-scheme="adult"] .roadmap-col-tools {
         display: none !important;
       }
 
@@ -11310,9 +11372,27 @@
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-actions-menu {
-        grid-column: 4;
-        margin-left: 0;
-        justify-self: end;
+        display: none !important;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-shell-grid {
+        display: block;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-col--right {
+        display: none;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-page .roadmap-shell-grid {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: none;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-page .roadmap-col--left,
+      html[data-color-scheme="adult"] .roadmap-page .roadmap-col--right {
+        display: contents;
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome-panel-wrap {
@@ -11435,7 +11515,7 @@
         gap: .65rem;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions--nav {
         display: grid;
         flex-wrap: nowrap;
         gap: .35rem;
@@ -13032,30 +13112,39 @@
     }
 
     @media (min-width: 961px) {
+      html[data-color-scheme="adult"] .roadmap-side-overlay {
+        display: none !important;
+      }
+
       html[data-color-scheme="adult"] .roadmap-side {
-        position: fixed;
-        top: calc(var(--topbar-h, 64px) + env(safe-area-inset-top, 0px));
-        right: 0;
-        bottom: 0;
-        z-index: 35;
-        width: min(92vw, 320px);
-        max-height: none;
-        padding: 1rem 1.1rem 1.25rem;
-        background: var(--bg-soft, #fff);
-        border-left: 1px solid var(--line);
-        box-shadow: -8px 0 32px rgba(15, 23, 42, .08);
-        transform: translateX(calc(100% + 12px));
-        transition: transform .24s ease;
+        position: static;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        z-index: auto;
+        width: 100%;
+        max-height: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        transform: none;
+        opacity: 0;
+        visibility: hidden;
         overflow: hidden;
+        transition: max-height .28s ease, opacity .22s ease, visibility .22s ease;
       }
 
       html[data-color-scheme="adult"] .roadmap-layout.is-side-open .roadmap-side {
-        transform: translateX(0);
+        max-height: min(72vh, 640px);
+        opacity: 1;
+        visibility: visible;
+        overflow: visible;
       }
 
-      html[data-color-scheme="adult"] .roadmap-side-scroll {
-        max-height: calc(100dvh - var(--topbar-h, 64px) - 2rem);
-        padding-right: .35rem;
+      html[data-color-scheme="adult"] .roadmap-layout.is-side-open .roadmap-side-scroll {
+        max-height: min(68vh, 600px);
+        padding-right: .15rem;
       }
     }
 
@@ -17577,36 +17666,22 @@
       </header>
 
       <div class="roadmap-float-chrome" id="roadmap-float-chrome" hidden aria-hidden="true">
-        <div class="roadmap-header-actions">
-          <button class="screen-nav-btn roadmap-page-nav-back" id="roadmap-page-nav-back" type="button" aria-label="Back to map">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
-          </button>
-          <button class="screen-nav-btn roadmap-page-nav-forward" id="roadmap-page-nav-forward" type="button" aria-label="Go forward" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
-          </button>
-          <button type="button" class="roadmap-mobile-toggle" id="roadmap-mobile-toggle" hidden aria-expanded="false" aria-controls="roadmap-float-chrome-panel-wrap">
-            <span class="roadmap-mobile-toggle-label">Expand roadmap</span>
-            <svg class="roadmap-mobile-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
-          </button>
-          <span class="roadmap-header-actions-spacer" aria-hidden="true"></span>
-          <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">
-            Resources
-            <svg class="roadmap-side-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
-          </button>
-          <div class="roadmap-actions-menu">
-            <button type="button" class="roadmap-actions-menu-btn" id="roadmap-actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="roadmap-actions-menu-panel" aria-label="Roadmap options">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
-            </button>
-            <div class="roadmap-actions-menu-panel" id="roadmap-actions-menu-panel" role="menu" hidden>
-              <button class="roadmap-actions-menu-item" id="roadmap-change-path-btn" type="button" role="menuitem">Change this path</button>
-              <button class="roadmap-actions-menu-item roadmap-remove-btn" id="roadmap-remove-btn" type="button" role="menuitem">Remove roadmap</button>
-              <button class="roadmap-actions-menu-item" id="roadmap-copy-markdown-btn" type="button" role="menuitem">Copy Markdown</button>
-              <button class="roadmap-actions-menu-item" id="roadmap-download-markdown-btn" type="button" role="menuitem">Download .md</button>
-              <button class="roadmap-actions-menu-item" id="roadmap-rebuild-remaining-btn" type="button" role="menuitem" hidden>Refresh next steps</button>
-              <button class="roadmap-actions-menu-item" id="roadmap-footer-regen-btn" type="button" role="menuitem">Regenerate roadmap</button>
+        <div class="roadmap-shell-grid">
+          <div class="roadmap-col roadmap-col--left">
+            <div class="roadmap-header-actions roadmap-header-actions--nav">
+              <button class="screen-nav-btn roadmap-page-nav-back" id="roadmap-page-nav-back" type="button" aria-label="Back to map">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+              </button>
+              <button class="screen-nav-btn roadmap-page-nav-forward" id="roadmap-page-nav-forward" type="button" aria-label="Go forward" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+              </button>
+              <button type="button" class="roadmap-mobile-toggle" id="roadmap-mobile-toggle" hidden aria-expanded="false" aria-controls="roadmap-float-chrome-panel-wrap">
+                <span class="roadmap-mobile-toggle-label">Expand roadmap</span>
+                <svg class="roadmap-mobile-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+              </button>
             </div>
           </div>
-        </div>
+          <div class="roadmap-col roadmap-col--center">
         <div class="roadmap-float-chrome-panel-wrap" id="roadmap-float-chrome-panel-wrap">
           <div class="roadmap-float-chrome-panel" id="roadmap-float-chrome-panel">
         <div class="roadmap-float-progress" id="roadmap-float-progress">
@@ -17639,6 +17714,9 @@
           </div>
         </div>
           </div>
+        </div>
+          </div>
+          <div class="roadmap-col roadmap-col--right" aria-hidden="true"></div>
         </div>
       </div>
 
@@ -18009,6 +18087,9 @@
             </p>
           </div>
         </div>
+        <div class="roadmap-shell-grid">
+          <div class="roadmap-col roadmap-col--left" aria-hidden="true"></div>
+          <div class="roadmap-col roadmap-col--center">
         <div class="roadmap-main">
           <header class="roadmap-overview-header" id="roadmap-overview-header">
             <span class="roadmap-status-badge" id="roadmap-status-badge">Active tasks</span>
@@ -18100,25 +18181,49 @@
             <p class="roadmap-footer-updated" id="roadmap-footer-updated">Last updated —</p>
           </footer>
         </div>
-
-        <aside class="roadmap-side" id="roadmap-side">
-          <div class="roadmap-side-scroll" id="roadmap-side-scroll">
-            <div class="roadmap-side-card" id="roadmap-side-local-card">
-              <h3 class="roadmap-side-card-title">Local resources for you</h3>
-              <ul class="roadmap-local-list" id="roadmap-local-list"></ul>
-              <div class="roadmap-location-add" id="roadmap-location-add">
-                <p class="roadmap-side-copy" id="roadmap-location-empty-msg">Add where you're based to unlock local employment, training, and support resources for your area.</p>
-                <label class="roadmap-location-label" for="roadmap-location-input">City, state, country</label>
-                <input class="roadmap-location-input" id="roadmap-location-input" type="text" placeholder="e.g. Austin, Texas, USA" autocomplete="address-level2">
-                <button type="button" class="roadmap-location-save" id="roadmap-location-save">Save location</button>
-              </div>
-              <button type="button" class="roadmap-side-link" id="roadmap-more-resources-btn" hidden>View more resources</button>
-            </div>
-
-            <span id="progress-pct" hidden>0%</span>
-            <div id="progress-chain" hidden></div>
           </div>
-        </aside>
+          <div class="roadmap-col roadmap-col--right">
+            <div class="roadmap-col-tools" id="roadmap-col-tools">
+              <div class="roadmap-header-actions roadmap-header-actions--tools">
+                <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">
+                  Resources
+                  <svg class="roadmap-side-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+                </button>
+                <div class="roadmap-actions-menu">
+                  <button type="button" class="roadmap-actions-menu-btn" id="roadmap-actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="roadmap-actions-menu-panel" aria-label="Roadmap options">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
+                  </button>
+                  <div class="roadmap-actions-menu-panel" id="roadmap-actions-menu-panel" role="menu" hidden>
+                    <button class="roadmap-actions-menu-item" id="roadmap-change-path-btn" type="button" role="menuitem">Change this path</button>
+                    <button class="roadmap-actions-menu-item roadmap-remove-btn" id="roadmap-remove-btn" type="button" role="menuitem">Remove roadmap</button>
+                    <button class="roadmap-actions-menu-item" id="roadmap-copy-markdown-btn" type="button" role="menuitem">Copy Markdown</button>
+                    <button class="roadmap-actions-menu-item" id="roadmap-download-markdown-btn" type="button" role="menuitem">Download .md</button>
+                    <button class="roadmap-actions-menu-item" id="roadmap-rebuild-remaining-btn" type="button" role="menuitem" hidden>Refresh next steps</button>
+                    <button class="roadmap-actions-menu-item" id="roadmap-footer-regen-btn" type="button" role="menuitem">Regenerate roadmap</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <aside class="roadmap-side" id="roadmap-side" aria-hidden="true">
+              <div class="roadmap-side-scroll" id="roadmap-side-scroll">
+                <div class="roadmap-side-card" id="roadmap-side-local-card">
+                  <h3 class="roadmap-side-card-title">Local resources for you</h3>
+                  <ul class="roadmap-local-list" id="roadmap-local-list"></ul>
+                  <div class="roadmap-location-add" id="roadmap-location-add">
+                    <p class="roadmap-side-copy" id="roadmap-location-empty-msg">Add where you're based to unlock local employment, training, and support resources for your area.</p>
+                    <label class="roadmap-location-label" for="roadmap-location-input">City, state, country</label>
+                    <input class="roadmap-location-input" id="roadmap-location-input" type="text" placeholder="e.g. Austin, Texas, USA" autocomplete="address-level2">
+                    <button type="button" class="roadmap-location-save" id="roadmap-location-save">Save location</button>
+                  </div>
+                  <button type="button" class="roadmap-side-link" id="roadmap-more-resources-btn" hidden>View more resources</button>
+                </div>
+
+                <span id="progress-pct" hidden>0%</span>
+                <div id="progress-chain" hidden></div>
+              </div>
+            </aside>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -24395,7 +24500,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const chrome = $("#roadmap-float-chrome");
       const bar = $("#roadmap-float-progress");
       const timeline = $("#roadmap-float-timeline");
-      const actions = chrome?.querySelector(".roadmap-header-actions");
+      const actions = chrome?.querySelector(".roadmap-header-actions--nav");
       const panel = $("#roadmap-float-chrome-panel");
       const panelWrap = $("#roadmap-float-chrome-panel-wrap");
       const toggle = $("#roadmap-mobile-toggle");
@@ -48869,13 +48974,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       document.querySelector(".roadmap-layout")?.classList.add("is-side-open");
       const side = $("#roadmap-side");
       const toggle = $("#roadmap-side-toggle");
-      const overlay = $("#roadmap-side-overlay");
       side?.setAttribute("aria-hidden", "false");
       toggle?.setAttribute("aria-expanded", "true");
-      if (overlay) {
-        overlay.hidden = false;
-        requestAnimationFrame(() => overlay.classList.add("is-visible"));
-      }
     }
 
     function toggleRoadmapSidePanel() {
