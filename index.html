@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-roadmap-footer-action-buttons -->
+<!-- whatimado build: 2026-07-25-roadmap-actions-under-tasks -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -12766,6 +12766,23 @@
       margin-top: .65rem;
     }
 
+    html[data-color-scheme="adult"] .roadmap-page-actions {
+      margin-top: 1rem;
+      width: 100%;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-page-actions .roadmap-side-card-title {
+      margin-bottom: .35rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-page-actions .roadmap-side-copy {
+      margin: 0 0 .15rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-page-actions .roadmap-page-action-stack {
+      margin-top: .65rem;
+    }
+
     html[data-color-scheme="adult"] .roadmap-location-add {
       display: grid;
       gap: .45rem;
@@ -12879,14 +12896,13 @@
       html[data-color-scheme="adult"] .roadmap-content { display: contents; }
       html[data-color-scheme="adult"] .roadmap-side #roadmap-side-local-card { order: 50; }
       html[data-color-scheme="adult"] .roadmap-phases,
+      html[data-color-scheme="adult"] .roadmap-page-actions,
       html[data-color-scheme="adult"] .roadmap-refining-banner,
       html[data-color-scheme="adult"] .roadmap-branch-picker,
       html[data-color-scheme="adult"] .roadmap-load-phases-btn,
       html[data-color-scheme="adult"] .roadmap-complete-card--footer,
       html[data-color-scheme="adult"] .roadmap-post-mission-picker { order: 65; width: 100%; }
-      html[data-color-scheme="adult"] .roadmap-side .roadmap-side-card:nth-child(3),
-      html[data-color-scheme="adult"] .roadmap-side-scroll > .roadmap-side-card:nth-child(2) { order: 70; }
-      html[data-color-scheme="adult"] .roadmap-side-help { order: 80; }
+      html[data-color-scheme="adult"] .roadmap-side #roadmap-side-local-card { order: 50; }
       html[data-color-scheme="adult"] .roadmap-overview-footer { order: 90; }
 
       html[data-color-scheme="adult"] .roadmap-phase-head {
@@ -17989,6 +18005,18 @@
 
             <div class="roadmap-phases" id="stage-list"></div>
 
+            <section class="roadmap-page-actions" id="roadmap-page-actions" aria-label="Roadmap actions">
+              <h3 class="roadmap-side-card-title">Need help or want to change direction?</h3>
+              <p class="roadmap-side-copy">Stuck on a step? Ask below any task, or jump to your next open step.</p>
+              <div class="roadmap-page-action-stack">
+                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-ask-assistant-btn">
+                  <span aria-hidden="true">💬</span> Ask AI assistant
+                </button>
+                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-page-rebuild-btn" hidden>Refresh next steps</button>
+                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-page-regen-btn">Regenerate roadmap</button>
+              </div>
+            </section>
+
             <section class="roadmap-branch-picker" id="roadmap-branch-picker" hidden aria-live="polite">
               <h3 class="roadmap-branch-picker-head" id="roadmap-branch-picker-title">Pick your next direction</h3>
               <p class="roadmap-branch-picker-copy" id="roadmap-branch-picker-copy">Choose the approach that fits you best — your roadmap will continue from here.</p>
@@ -18037,18 +18065,6 @@
                 <button type="button" class="roadmap-location-save" id="roadmap-location-save">Save location</button>
               </div>
               <button type="button" class="roadmap-side-link" id="roadmap-more-resources-btn" hidden>View more resources</button>
-            </div>
-
-            <div class="roadmap-side-card roadmap-side-help">
-              <h3 class="roadmap-side-card-title">Need help or want to change direction?</h3>
-              <p class="roadmap-side-copy">Stuck on a step? Ask below any task, or jump to your next open step.</p>
-              <div class="roadmap-page-action-stack">
-                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-ask-assistant-btn">
-                  <span aria-hidden="true">💬</span> Ask AI assistant
-                </button>
-                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-page-rebuild-btn" hidden>Refresh next steps</button>
-                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-page-regen-btn">Regenerate roadmap</button>
-              </div>
             </div>
 
             <span id="progress-pct" hidden>0%</span>
