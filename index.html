@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-mobile-roadmap-expand-toggle -->
+<!-- whatimado build: 2026-07-25-roadmap-ui-hierarchy-cleanup -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -7536,6 +7536,158 @@
       margin-bottom: 1.35rem;
     }
 
+    .roadmap-actions-menu {
+      position: relative;
+      margin-left: auto;
+    }
+
+    .roadmap-actions-menu-btn {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 50%;
+      background: rgba(23, 31, 45, .78);
+      color: var(--ink-muted);
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease;
+    }
+
+    .roadmap-actions-menu-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .roadmap-actions-menu-btn:hover,
+    .roadmap-actions-menu-btn[aria-expanded="true"] {
+      border-color: rgba(90, 125, 255, .32);
+      background: rgba(23, 31, 45, .92);
+      color: var(--ink);
+      box-shadow: 0 0 16px rgba(90, 125, 255, .12);
+    }
+
+    .roadmap-actions-menu-panel {
+      position: absolute;
+      top: calc(100% + .35rem);
+      right: 0;
+      z-index: 30;
+      display: grid;
+      gap: .2rem;
+      min-width: 11.5rem;
+      padding: .35rem;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 12px;
+      background: rgba(10, 13, 20, .98);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, .38);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .roadmap-actions-menu-panel[hidden] {
+      display: none !important;
+    }
+
+    .roadmap-actions-menu-item {
+      width: 100%;
+      padding: .58rem .72rem;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: rgba(255, 255, 255, .88);
+      font-family: var(--font-task-body);
+      font-size: .78rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: background .14s ease, color .14s ease;
+    }
+
+    .roadmap-actions-menu-item:hover {
+      background: rgba(90, 125, 255, .12);
+      color: #eef2ff;
+    }
+
+    .roadmap-actions-menu-item.roadmap-remove-btn:hover {
+      background: rgba(185, 28, 28, .14);
+      color: #fecaca;
+    }
+
+    .roadmap-actions-menu-item[hidden] {
+      display: none !important;
+    }
+
+    .task-context-drawer {
+      margin: 0;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 12px;
+      background: rgba(17, 23, 34, .42);
+      overflow: hidden;
+    }
+
+    .task-context-drawer-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .65rem;
+      padding: .62rem .85rem;
+      color: rgba(255, 255, 255, .78);
+      font-family: var(--font-task-body);
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .task-context-drawer-trigger::-webkit-details-marker {
+      display: none;
+    }
+
+    .task-context-drawer-trigger::after {
+      content: "⌄";
+      color: rgba(255, 255, 255, .52);
+      font-size: .9rem;
+      line-height: 1;
+      transition: transform .2s ease;
+    }
+
+    .task-context-drawer[open] .task-context-drawer-trigger::after {
+      transform: rotate(180deg);
+    }
+
+    .task-context-drawer-body {
+      display: grid;
+      gap: .75rem;
+      padding: 0 .85rem .85rem;
+      border-top: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .task-context-item + .task-context-item {
+      padding-top: .75rem;
+      border-top: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .task-context-label {
+      margin: 0 0 .35rem;
+      color: rgba(255, 255, 255, .62);
+      font-family: var(--font-display);
+      font-size: .58rem;
+      font-weight: 500;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .task-context-drawer .task-mentor-copy,
+    .task-context-drawer .task-goal-bridge-copy {
+      color: rgba(255, 255, 255, .74);
+      font-size: .8rem;
+      line-height: 1.55;
+    }
+
     .roadmap-header-actions .roadmap-back-btn {
       margin-bottom: 0;
     }
@@ -12245,33 +12397,21 @@
     }
 
     html[data-color-scheme="adult"] .roadmap-overview-footer {
-      margin-top: 1.25rem;
-      padding: 1rem 0 0;
+      margin-top: .85rem;
+      padding: .65rem 0 0;
       border: 0;
-      border-top: 1px solid rgba(15, 23, 42, .07);
+      border-top: 1px solid rgba(255, 255, 255, .06);
       border-radius: 0;
       background: transparent;
     }
 
-    html[data-color-scheme="adult"] .roadmap-footer-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1rem;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-footer-label {
-      margin: 0 0 .35rem;
-      color: var(--ink);
-      font-size: .72rem;
-      font-weight: 800;
-    }
-
-    html[data-color-scheme="adult"] .roadmap-footer-text,
     html[data-color-scheme="adult"] .roadmap-footer-updated {
       margin: 0;
-      color: var(--ink-muted);
-      font-size: .76rem;
-      line-height: 1.45;
+      color: rgba(255, 255, 255, .48);
+      font-family: var(--font-task-body);
+      font-size: .68rem;
+      line-height: 1.4;
+      text-align: center;
     }
 
     html[data-color-scheme="adult"] .roadmap-side-card {
@@ -16516,7 +16656,65 @@
     html[data-color-scheme="adult"] #screen-roadmap .task-action-pack,
     html[data-color-scheme="adult"] #screen-roadmap .overview-task-details {
       display: grid;
-      gap: 2.35rem;
+      gap: 1.15rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--task.task-mentor-section--primary {
+      padding: .85rem .9rem;
+      border: 1px solid rgba(90, 125, 255, .22);
+      border-radius: 12px;
+      background: rgba(17, 23, 34, .55);
+      box-shadow: 0 0 18px rgba(90, 125, 255, .08);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--task.task-mentor-section--primary .task-mentor-label,
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--next .task-mentor-label {
+      color: rgba(255, 255, 255, .92);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mentor-section--next .task-mentor-copy {
+      color: rgba(255, 255, 255, .78);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-progress-reminder {
+      color: rgba(255, 255, 255, .48);
+    }
+
+    html[data-color-scheme="adult"] #screen-roadmap .task-mission-actions .task-condense-btn,
+    html[data-color-scheme="adult"] #screen-roadmap .task-mission-actions .task-alter-path-btn {
+      box-shadow: 0 0 16px rgba(90, 125, 255, .14);
+    }
+
+    @media (max-width: 960px) {
+      html[data-color-scheme="adult"] #screen-roadmap .overview-task-content,
+      html[data-color-scheme="adult"] #screen-roadmap .task-expanded-panel,
+      html[data-color-scheme="adult"] #screen-roadmap .task-action-pack,
+      html[data-color-scheme="adult"] #screen-roadmap .overview-task-details {
+        gap: .95rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions {
+        flex-wrap: nowrap;
+        gap: .35rem;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-side-toggle {
+        margin-left: 0;
+        flex: 1 1 auto;
+        min-width: 0;
+        justify-content: center;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-actions-menu {
+        margin-left: 0;
+        flex: 0 0 auto;
+      }
+
+      html[data-color-scheme="adult"] #screen-roadmap #roadmap-rebuild-remaining-btn {
+        flex-basis: auto;
+        margin-left: 0;
+        max-width: none;
+      }
     }
 
     html[data-color-scheme="adult"] #screen-roadmap .task-mentor-card .task-mentor-section,
@@ -17208,12 +17406,20 @@
           <button class="screen-nav-btn roadmap-page-nav-forward" id="roadmap-page-nav-forward" type="button" aria-label="Go forward" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
           </button>
-          <button class="back-btn" id="roadmap-change-path-btn" type="button">Change this path</button>
-          <span class="roadmap-remove-anchor"><button class="back-btn roadmap-remove-btn" id="roadmap-remove-btn" type="button">Remove roadmap</button></span>
           <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">Resources</button>
-          <button class="back-btn" id="roadmap-copy-markdown-btn" type="button">Copy Markdown</button>
-          <button class="back-btn" id="roadmap-download-markdown-btn" type="button">Download .md</button>
-          <button class="back-btn" id="roadmap-rebuild-remaining-btn" type="button" hidden>Refresh next steps</button>
+          <div class="roadmap-actions-menu">
+            <button type="button" class="roadmap-actions-menu-btn" id="roadmap-actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="roadmap-actions-menu-panel" aria-label="Roadmap options">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
+            </button>
+            <div class="roadmap-actions-menu-panel" id="roadmap-actions-menu-panel" role="menu" hidden>
+              <button class="roadmap-actions-menu-item" id="roadmap-change-path-btn" type="button" role="menuitem">Change this path</button>
+              <button class="roadmap-actions-menu-item roadmap-remove-btn" id="roadmap-remove-btn" type="button" role="menuitem">Remove roadmap</button>
+              <button class="roadmap-actions-menu-item" id="roadmap-copy-markdown-btn" type="button" role="menuitem">Copy Markdown</button>
+              <button class="roadmap-actions-menu-item" id="roadmap-download-markdown-btn" type="button" role="menuitem">Download .md</button>
+              <button class="roadmap-actions-menu-item" id="roadmap-rebuild-remaining-btn" type="button" role="menuitem" hidden>Refresh next steps</button>
+              <button class="roadmap-actions-menu-item" id="roadmap-footer-regen-btn" type="button" role="menuitem">Regenerate roadmap</button>
+            </div>
+          </div>
         </div>
         <div class="roadmap-float-progress" id="roadmap-float-progress">
           <div class="roadmap-float-progress-summary">
@@ -17691,20 +17897,7 @@
           </div>
 
           <footer class="roadmap-overview-footer">
-            <div class="roadmap-footer-grid">
-              <div class="roadmap-footer-block">
-                <h4 class="roadmap-footer-label">Your goal</h4>
-                <p class="roadmap-footer-text" id="roadmap-footer-goal">—</p>
-              </div>
-              <div class="roadmap-footer-block">
-                <h4 class="roadmap-footer-label">Your details</h4>
-                <p class="roadmap-footer-text" id="roadmap-footer-details">—</p>
-              </div>
-              <div class="roadmap-footer-block roadmap-footer-actions">
-                <p class="roadmap-footer-updated" id="roadmap-footer-updated">Last updated —</p>
-                <button type="button" class="roadmap-footer-regen" id="roadmap-footer-regen-btn">Regenerate roadmap</button>
-              </div>
-            </div>
+            <p class="roadmap-footer-updated" id="roadmap-footer-updated">Last updated —</p>
           </footer>
         </div>
 
@@ -17720,11 +17913,6 @@
                 <button type="button" class="roadmap-location-save" id="roadmap-location-save">Save location</button>
               </div>
               <button type="button" class="roadmap-side-link" id="roadmap-more-resources-btn" hidden>View more resources</button>
-            </div>
-
-            <div class="roadmap-side-card">
-              <h3 class="roadmap-side-card-title">Why these tasks?</h3>
-              <p class="roadmap-side-copy" id="roadmap-side-why">Each step includes why it matters, what you'll have when it's done, time, cost, and local help when relevant.</p>
             </div>
 
             <div class="roadmap-side-card roadmap-side-help">
@@ -25094,6 +25282,65 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return `Completing this unlocks progress toward ${macroOutcome.downstream.charAt(0).toLowerCase()}${macroOutcome.downstream.slice(1).replace(/\.$/, "")}.`;
       }
       return `Finishing this gives you something concrete to point to — proof that ${pathGoal} is moving from idea to real progress.`;
+    }
+
+    function renderTaskContextItemHtml(label, copy) {
+      const body = String(copy || "").trim();
+      if (!body) return "";
+      return `
+        <section class="task-context-item">
+          <h5 class="task-context-label">${escapeHtml(label)}</h5>
+          <p class="task-mentor-copy">${escapeHtml(body)}</p>
+        </section>`;
+    }
+
+    function renderTaskContextDrawerHtml(itemsHtml) {
+      const body = String(itemsHtml || "").trim();
+      if (!body) return "";
+      return `
+        <details class="task-context-drawer">
+          <summary class="task-context-drawer-trigger">Context</summary>
+          <div class="task-context-drawer-body">${body}</div>
+        </details>`;
+    }
+
+    function renderTaskGoalBridgeItemHtml(normalized, stage) {
+      const bridge = inferTaskGoalBridge(normalized, stage);
+      if (!bridge || isGenericMentorCopy(bridge, normalized)) return "";
+      return renderTaskContextItemHtml("Feeds your goal", bridge);
+    }
+
+    function setRoadmapActionsMenuOpen(open) {
+      const button = $("#roadmap-actions-menu-btn");
+      const panel = $("#roadmap-actions-menu-panel");
+      if (!button || !panel) return;
+      panel.hidden = !open;
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function initRoadmapActionsMenu() {
+      const button = $("#roadmap-actions-menu-btn");
+      const panel = $("#roadmap-actions-menu-panel");
+      if (!button || !panel || button.dataset.bound) return;
+      button.dataset.bound = "1";
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setRoadmapActionsMenuOpen(panel.hidden);
+      });
+      panel.querySelectorAll(".roadmap-actions-menu-item").forEach((item) => {
+        item.addEventListener("click", () => setRoadmapActionsMenuOpen(false));
+      });
+      if (!window._roadmapActionsMenuDismissBound) {
+        window._roadmapActionsMenuDismissBound = true;
+        document.addEventListener("click", (event) => {
+          if (panel.hidden) return;
+          if (event.target.closest(".roadmap-actions-menu")) return;
+          setRoadmapActionsMenuOpen(false);
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") setRoadmapActionsMenuOpen(false);
+        });
+      }
     }
 
     function renderTaskGoalBridgeHtml(normalized, stage) {
@@ -45144,21 +45391,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setMeta($("#roadmap-meta-type"), idea.type || "");
       setMeta($("#roadmap-meta-timeline"), idea.timeline || idea.income || "");
 
-      const firstUser = getFirstUserMessage();
-      const goal = idea.why || (firstUser.length > 120 ? `${firstUser.slice(0, 117)}…` : firstUser) || "—";
-      const details = [shortLocation, idea.type, idea.timeline || idea.income].filter(Boolean).join(" · ");
-
-      const goalEl = $("#roadmap-footer-goal");
-      const detailsEl = $("#roadmap-footer-details");
       const updatedEl = $("#roadmap-footer-updated");
-      if (goalEl) goalEl.textContent = goal;
-      if (detailsEl) detailsEl.textContent = details || "—";
       if (updatedEl) updatedEl.textContent = `Last updated ${formatMapDate(Date.now())}`;
 
-      const why = $("#roadmap-side-why");
-      if (why) {
-        why.textContent = "Each task includes what to do, time estimates, and local help when relevant.";
-      }
       updateMapContextDisplays();
       renderRoadmapPotentialOutcome(idea);
     }
@@ -45643,39 +45878,33 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         chips.push(`<span class="task-chip task-chip--local" title="${escapeHtml(localLabel)}">${escapeHtml(localLabel.length > 42 ? localLabel.slice(0, 42).replace(/\s+\S*$/, "").trim() || localLabel.slice(0, 42) : localLabel)}</span>`);
       }
       const meta = renderTaskMentorMetaHtml(normalized);
-      let pendingTaskMetaHtml = meta;
-      const takeTaskMetaHtml = () => {
-        const chunk = pendingTaskMetaHtml;
-        pendingTaskMetaHtml = "";
-        return chunk;
-      };
       const renderWhyStepSectionHtml = (copy) => {
         const body = String(copy || "").trim();
         if (!body) return "";
         return `
                 <section class="task-mentor-section task-mentor-section--why">
-                  ${renderTaskWhyStepHeaderHtml(takeTaskMetaHtml())}
+                  ${renderTaskWhyStepHeaderHtml("")}
                   <p class="task-mentor-copy">${escapeHtml(body)}</p>
                 </section>`;
       };
-      const contextNoteHtml = renderTaskContextNoteHtml(contextNote, takeTaskMetaHtml());
-      const whyShownInContext = Boolean(contextNoteHtml.trim());
+      const contextNoteCopy = String(contextNote || "").trim();
+      const whyCopy = String(why || "").trim();
+      const contextDrawerHtml = renderTaskContextDrawerHtml([
+        contextNoteCopy ? renderTaskContextItemHtml("Why this step", contextNoteCopy) : "",
+        !contextNoteCopy && whyCopy && !isTaskRestatement(whyCopy, normalized) && !isGenericMentorCopy(whyCopy, normalized) && textSimilarity(whyCopy, text) < 0.72
+          ? renderTaskContextItemHtml("Why this step", whyCopy)
+          : "",
+        renderTaskGoalBridgeItemHtml(normalized, stage)
+      ].join(""));
       const actionPack = renderTaskActionPackHtml(normalized, { stage, stageIndex });
       const taskDetailBlock = renderTaskDetailSectionsHtml(normalized, showResources, id);
       const plainExplainHtml = renderTaskPlainExplainHtml(normalized, stageIndex, taskIndex);
       const howToRestatesAction = howTo && textSimilarity(howTo, text) >= 0.72;
-      const goalBridgeHtml = renderTaskGoalBridgeHtml(normalized, stage);
-      const simplifiedWhyHow = [
-        !whyShownInContext && why && !isTaskRestatement(why, normalized) && !isGenericMentorCopy(why, normalized) && textSimilarity(why, text) < 0.72
-          ? renderWhyStepSectionHtml(why)
-          : "",
-        goalBridgeHtml,
-        howTo && !howToRestatesAction && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
-                <section class="task-mentor-section">
+      const nextActionHtml = howTo && !howToRestatesAction && !isTaskRestatement(howTo, normalized) && !isGenericMentorCopy(howTo, normalized) ? `
+                <section class="task-mentor-section task-mentor-section--next">
                   <h4 class="task-mentor-label">Next action</h4>
                   <p class="task-mentor-copy">${escapeHtml(howTo)}</p>
-                </section>` : ""
-      ].join("");
+                </section>` : "";
       const notesExtras = renderTaskNotesExtrasHtml(id, normalized);
       const roadblockSection = renderTaskRoadblockButtonsHtml(id, normalized, stage);
       const nextTaskId = getNextTaskId(stageIndex, taskIndex);
@@ -45696,14 +45925,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
                 `;
 
       const simplifiedWhatToDo = showWhatToDo ? `
-                ${contextNoteHtml}
                 ${plainExplainHtml}
-                <section class="task-mentor-section task-mentor-section--task">
-                  <button type="button" class="task-mentor-label task-mentor-label--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">What to do</button>
-                  <button type="button" class="task-text task-text--toggle" data-task-expand="${escapeHtml(id)}" aria-expanded="false">${linkifyTaskTextHtml(text)}</button>
+                <section class="task-mentor-section task-mentor-section--task task-mentor-section--primary">
+                  <h4 class="task-mentor-label">What to do</h4>
+                  <p class="task-text">${linkifyTaskTextHtml(text)}</p>
                 </section>
-                ${simplifiedWhyHow}
-                ${taskDetailBlock}` : `${contextNoteHtml}${plainExplainHtml}${simplifiedWhyHow}${taskDetailBlock}`;
+                ${nextActionHtml}
+                ${contextDrawerHtml}
+                ${taskDetailBlock}` : `${plainExplainHtml}${nextActionHtml}${contextDrawerHtml}${taskDetailBlock}`;
 
       return `
         <div class="task-item overview-task task-mentor-card${isDone ? " is-done" : ""}${taskData.draft?.trim() ? " has-draft" : ""}" data-task-id="${id}" data-stage-index="${stageIndex}" data-task-index="${taskIndex}"${nextTaskId ? ` data-next-task-id="${escapeHtml(nextTaskId)}"` : ""}>
@@ -45724,7 +45953,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               <div class="overview-task-content">
                 <section class="task-mentor-section task-mentor-section--mission${simplified ? " task-mentor-section--mission-compact" : ""}">
                   ${simplified ? "" : `<h4 class="task-mentor-label">Your task</h4>`}
-                  ${pendingTaskMetaHtml}
+                  ${meta}
                   ${chips.length ? `<div class="overview-task-chips">${chips.join("")}</div>` : ""}
                   ${simplified ? simplifiedWhatToDo : ""}
                 </section>
@@ -48579,6 +48808,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       $("#dashboard-mobile-menu")?.addEventListener("click", toggleDashboardMobileNav);
       $("#dashboard-mobile-overlay")?.addEventListener("click", closeDashboardMobileNav);
       $("#roadmap-side-toggle")?.addEventListener("click", toggleRoadmapSidePanel);
+      initRoadmapActionsMenu();
       $("#roadmap-side-overlay")?.addEventListener("click", closeRoadmapSidePanel);
       if (isRoadmapSideDrawerMode()) {
         $("#roadmap-side")?.setAttribute("aria-hidden", "true");
