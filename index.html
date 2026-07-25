@@ -3447,6 +3447,8 @@
     html[data-color-scheme="adult"] .opp-card-actions {
       margin-top: 1rem;
       padding-top: 1rem;
+      display: grid;
+      gap: .75rem;
     }
 
     html[data-color-scheme="adult"] .opp-card-open-hint {
@@ -12760,27 +12762,16 @@
       line-height: 1.4;
     }
 
-    html[data-color-scheme="adult"] .roadmap-ask-assistant-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: .45rem;
-      width: 100%;
-      padding: .65rem .85rem;
-      border: 0;
-      border-radius: 12px;
-      background: #29abe2;
-      color: #fff;
-      font: inherit;
-      font-size: .78rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
     html[data-color-scheme="adult"] .roadmap-page-action-stack {
       display: grid;
       gap: .55rem;
       margin-top: .65rem;
+    }
+
+    html[data-color-scheme="adult"] .roadmap-page-action-stack .opp-card-discuss-btn {
+      width: 100%;
+      margin-bottom: 0;
+      font-family: var(--font-task-body);
     }
 
     html[data-color-scheme="adult"] .roadmap-page-actions {
@@ -18047,11 +18038,11 @@
               <h3 class="roadmap-side-card-title">Need help or want to change direction?</h3>
               <p class="roadmap-side-copy">Stuck on a step? Ask below any task, or jump to your next open step.</p>
               <div class="roadmap-page-action-stack">
-                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-ask-assistant-btn">
+                <button type="button" class="opp-card-discuss-btn" id="roadmap-ask-assistant-btn">
                   <span aria-hidden="true">💬</span> Ask AI assistant
                 </button>
-                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-page-rebuild-btn" hidden>Refresh next steps</button>
-                <button type="button" class="roadmap-ask-assistant-btn" id="roadmap-page-regen-btn">Regenerate roadmap</button>
+                <button type="button" class="opp-card-discuss-btn" id="roadmap-page-rebuild-btn" hidden>Refresh next steps</button>
+                <button type="button" class="opp-card-discuss-btn" id="roadmap-page-regen-btn">Regenerate roadmap</button>
               </div>
             </section>
 
