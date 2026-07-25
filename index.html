@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-roadmap-three-column -->
+<!-- whatimado build: 2026-07-25-roadmap-three-column-center -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -215,10 +215,10 @@
       --roadmap-menu-progress-h: 132px;
       --roadmap-sticky-offset: var(--topbar-h);
       --roadmap-column-w: min(94vw, 720px);
-      --roadmap-rail-w: min(16vw, 11.5rem);
-      --roadmap-center-max-w: min(94vw, 720px);
+      --roadmap-rail-w: 11.5rem;
+      --roadmap-center-max-w: 45rem;
       --roadmap-shell-gap: 1rem;
-      --roadmap-shell-w: calc(var(--roadmap-rail-w) * 2 + var(--roadmap-center-max-w) + var(--roadmap-shell-gap) * 2);
+      --roadmap-shell-w: min(96vw, calc(var(--roadmap-rail-w) * 2 + var(--roadmap-center-max-w) + var(--roadmap-shell-gap) * 2));
       --composer-browser-gap: 12px;
       --composer-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
       --chat-composer-h: 120px;
@@ -11033,19 +11033,23 @@
         top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
         left: 50%;
         right: auto;
-        width: min(96vw, var(--roadmap-shell-w, 1080px));
-        max-width: min(96vw, var(--roadmap-shell-w, 1080px));
+        width: var(--roadmap-shell-w);
+        max-width: var(--roadmap-shell-w);
         transform: translateX(-50%);
-        padding-inline: 1.15rem;
+        padding-inline: 0;
         box-sizing: border-box;
         z-index: 26;
         pointer-events: auto;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-shell-grid {
+      html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) .roadmap-shell-grid,
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-shell-grid {
         display: grid;
         grid-template-columns: var(--roadmap-rail-w) minmax(0, 1fr) var(--roadmap-rail-w);
         gap: var(--roadmap-shell-gap);
+        width: 100%;
+        max-width: none;
+        margin-inline: auto;
         align-items: start;
       }
 
@@ -11058,7 +11062,7 @@
         width: 100%;
         max-width: none;
         margin-inline: auto;
-        padding-inline: 1.15rem;
+        padding-inline: 0;
         box-sizing: border-box;
       }
 
@@ -11073,13 +11077,14 @@
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .roadmap-shell-grid {
-        display: grid;
-        grid-template-columns: var(--roadmap-rail-w) minmax(0, min(var(--roadmap-center-max-w), 100%)) var(--roadmap-rail-w);
-        gap: var(--roadmap-shell-gap);
-        width: min(96vw, var(--roadmap-shell-w, 1080px));
-        max-width: min(96vw, var(--roadmap-shell-w, 1080px));
+        width: var(--roadmap-shell-w);
+        max-width: calc(100% - 2.3rem);
         margin-inline: auto;
-        align-items: start;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-col--center {
+        min-width: 0;
+        width: 100%;
       }
 
       html[data-color-scheme="adult"] .roadmap-col-tools {
