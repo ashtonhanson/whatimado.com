@@ -213,6 +213,8 @@
       --roadmap-header-gap: 1.5rem;
       --roadmap-progress-h: 0px;
       --roadmap-menu-progress-h: 132px;
+      --roadmap-tools-top-gap: .65rem;
+      --roadmap-tools-rail-h: 2.75rem;
       --roadmap-sticky-offset: var(--topbar-h);
       --roadmap-column-w: min(94vw, 720px);
       --roadmap-rail-min: 10rem;
@@ -11034,7 +11036,7 @@
       html[data-color-scheme="adult"] .roadmap-float-chrome:not([hidden]) {
         display: block;
         position: fixed;
-        top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + .2rem);
+        top: calc(var(--preview-banner-h, 0px) + env(safe-area-inset-top, 0px) + var(--topbar-h, 52px) + var(--roadmap-tools-top-gap, .65rem));
         left: 0;
         right: 0;
         width: auto;
@@ -11048,6 +11050,30 @@
       }
 
       html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions--nav {
+        pointer-events: auto;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-col--right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: flex-start;
+        align-self: start;
+        min-height: 0;
+        pointer-events: auto;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-col-tools {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        padding-bottom: .35rem;
+        position: static;
+        z-index: 27;
+      }
+
+      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-header-actions--tools {
+        justify-content: flex-end;
         pointer-events: auto;
       }
 
@@ -11065,8 +11091,29 @@
         align-items: start;
       }
 
-      html[data-color-scheme="adult"] .roadmap-float-chrome .roadmap-col--right {
-        min-height: 0;
+      html[data-color-scheme="adult"] #screen-roadmap .roadmap-col--right {
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+        min-width: 0;
+        align-self: start;
+        position: sticky;
+        top: calc(
+          var(--preview-banner-h, 0px)
+          + env(safe-area-inset-top, 0px)
+          + var(--topbar-h, 52px)
+          + var(--roadmap-tools-top-gap, .65rem)
+          + var(--roadmap-tools-rail-h, 2.75rem)
+          + .35rem
+        );
+        margin-top: calc(
+          var(--roadmap-tools-top-gap, .65rem)
+          + var(--roadmap-tools-rail-h, 2.75rem)
+          + .35rem
+          - var(--roadmap-menu-progress-h, 132px)
+          - .85rem
+        );
+        z-index: 20;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap.active .roadmap-page,
@@ -11093,38 +11140,15 @@
         width: 100%;
       }
 
-      html[data-color-scheme="adult"] .roadmap-col-tools {
-        position: sticky;
-        top: calc(
-          var(--preview-banner-h, 0px)
-          + env(safe-area-inset-top, 0px)
-          + var(--topbar-h, 52px)
-          + var(--roadmap-menu-progress-h, 132px)
-          + .45rem
-        );
-        z-index: 25;
-        display: flex;
-        justify-content: flex-start;
-        padding-bottom: .35rem;
-      }
-
       html[data-color-scheme="adult"] .roadmap-header-actions--tools {
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
-        justify-content: flex-start;
+        justify-content: flex-end;
         gap: .45rem;
         margin: 0;
         padding: 0;
         width: auto;
-      }
-
-      html[data-color-scheme="adult"] .roadmap-col--right {
-        display: flex;
-        flex-direction: column;
-        gap: .35rem;
-        min-width: 0;
-        align-self: stretch;
       }
 
       html[data-color-scheme="adult"] #screen-roadmap .roadmap-main,
@@ -13149,14 +13173,24 @@
       }
 
       html[data-color-scheme="adult"] .roadmap-layout.is-side-open .roadmap-side {
-        max-height: min(72vh, 640px);
+        max-height: none;
         opacity: 1;
         visibility: visible;
         overflow: visible;
       }
 
       html[data-color-scheme="adult"] .roadmap-layout.is-side-open .roadmap-side-scroll {
-        max-height: min(68vh, 600px);
+        max-height: calc(
+          100dvh
+          - var(--preview-banner-h, 0px)
+          - env(safe-area-inset-top, 0px)
+          - var(--topbar-h, 52px)
+          - var(--roadmap-tools-top-gap, .65rem)
+          - var(--roadmap-tools-rail-h, 2.75rem)
+          - .75rem
+        );
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding-right: .15rem;
       }
     }
@@ -17799,7 +17833,29 @@
           </div>
         </div>
           </div>
-          <div class="roadmap-col roadmap-col--right" aria-hidden="true"></div>
+          <div class="roadmap-col roadmap-col--right">
+            <div class="roadmap-col-tools" id="roadmap-col-tools">
+              <div class="roadmap-header-actions roadmap-header-actions--tools">
+                <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">
+                  Resources
+                  <svg class="roadmap-side-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+                </button>
+                <div class="roadmap-actions-menu">
+                  <button type="button" class="roadmap-actions-menu-btn" id="roadmap-actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="roadmap-actions-menu-panel" aria-label="Roadmap options">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
+                  </button>
+                  <div class="roadmap-actions-menu-panel" id="roadmap-actions-menu-panel" role="menu" hidden>
+                    <button class="roadmap-actions-menu-item" id="roadmap-change-path-btn" type="button" role="menuitem">Change this path</button>
+                    <button class="roadmap-actions-menu-item roadmap-remove-btn" id="roadmap-remove-btn" type="button" role="menuitem">Remove roadmap</button>
+                    <button class="roadmap-actions-menu-item" id="roadmap-copy-markdown-btn" type="button" role="menuitem">Copy Markdown</button>
+                    <button class="roadmap-actions-menu-item" id="roadmap-download-markdown-btn" type="button" role="menuitem">Download .md</button>
+                    <button class="roadmap-actions-menu-item" id="roadmap-rebuild-remaining-btn" type="button" role="menuitem" hidden>Refresh next steps</button>
+                    <button class="roadmap-actions-menu-item" id="roadmap-footer-regen-btn" type="button" role="menuitem">Regenerate roadmap</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -18266,27 +18322,6 @@
         </div>
           </div>
           <div class="roadmap-col roadmap-col--right">
-            <div class="roadmap-col-tools" id="roadmap-col-tools">
-              <div class="roadmap-header-actions roadmap-header-actions--tools">
-                <button class="back-btn roadmap-side-toggle" id="roadmap-side-toggle" type="button" aria-expanded="false" aria-controls="roadmap-side">
-                  Resources
-                  <svg class="roadmap-side-toggle-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
-                </button>
-                <div class="roadmap-actions-menu">
-                  <button type="button" class="roadmap-actions-menu-btn" id="roadmap-actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="roadmap-actions-menu-panel" aria-label="Roadmap options">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
-                  </button>
-                  <div class="roadmap-actions-menu-panel" id="roadmap-actions-menu-panel" role="menu" hidden>
-                    <button class="roadmap-actions-menu-item" id="roadmap-change-path-btn" type="button" role="menuitem">Change this path</button>
-                    <button class="roadmap-actions-menu-item roadmap-remove-btn" id="roadmap-remove-btn" type="button" role="menuitem">Remove roadmap</button>
-                    <button class="roadmap-actions-menu-item" id="roadmap-copy-markdown-btn" type="button" role="menuitem">Copy Markdown</button>
-                    <button class="roadmap-actions-menu-item" id="roadmap-download-markdown-btn" type="button" role="menuitem">Download .md</button>
-                    <button class="roadmap-actions-menu-item" id="roadmap-rebuild-remaining-btn" type="button" role="menuitem" hidden>Refresh next steps</button>
-                    <button class="roadmap-actions-menu-item" id="roadmap-footer-regen-btn" type="button" role="menuitem">Regenerate roadmap</button>
-                  </div>
-                </div>
-              </div>
-            </div>
             <aside class="roadmap-side" id="roadmap-side" aria-hidden="true">
               <div class="roadmap-side-scroll" id="roadmap-side-scroll">
                 <div class="roadmap-side-card" id="roadmap-side-local-card">
@@ -24592,8 +24627,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       document.body.classList.toggle("is-roadmap-progress-visible", show && (!mobile || mobileExpanded));
       const chromeHeight = show && chrome ? Math.ceil(chrome.getBoundingClientRect().height) : 0;
       const progressH = chromeHeight;
+      const tools = $("#roadmap-col-tools");
+      const toolsHeight = show && tools ? Math.ceil(tools.getBoundingClientRect().height) : 0;
       if (show && chromeHeight) {
         document.documentElement.style.setProperty("--roadmap-menu-progress-h", `${chromeHeight}px`);
+      }
+      if (show && toolsHeight) {
+        document.documentElement.style.setProperty("--roadmap-tools-rail-h", `${toolsHeight}px`);
       }
       const useMobilePaddingOnly = mobile && show;
       const spacerHeight = useMobilePaddingOnly ? 0 : (progressH ? progressH + 14 : 0);
@@ -24632,6 +24672,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const panel = $("#roadmap-float-chrome-panel");
       const panelWrap = $("#roadmap-float-chrome-panel-wrap");
       const toggle = $("#roadmap-mobile-toggle");
+      const tools = $("#roadmap-col-tools");
       if (!chrome || roadmapProgressScrollState.resizeObserver) return;
       if (typeof ResizeObserver === "undefined") return;
       roadmapProgressScrollState.resizeObserver = new ResizeObserver(() => {
@@ -24644,6 +24685,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (panel) roadmapProgressScrollState.resizeObserver.observe(panel);
       if (panelWrap) roadmapProgressScrollState.resizeObserver.observe(panelWrap);
       if (toggle) roadmapProgressScrollState.resizeObserver.observe(toggle);
+      if (tools) roadmapProgressScrollState.resizeObserver.observe(tools);
     }
 
     function initRoadmapProgressScrollBehavior() {
