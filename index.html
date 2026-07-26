@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- whatimado build: 2026-07-25-roadmap-flex-rails-sticky-tools -->
+<!-- whatimado build: 2026-07-26-claude-cost-pass-1-cache-trunc-fix -->
 <html lang="en" data-color-scheme="adult">
 <head>
   <meta charset="utf-8">
@@ -14624,6 +14624,76 @@
       opacity: 1;
     }
 
+    #advisor-dev-panel {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      z-index: 9999;
+      width: min(22rem, calc(100vw - 2rem));
+      max-height: min(70vh, 28rem);
+      overflow: auto;
+      border: 1px solid rgba(78, 205, 196, .35);
+      border-radius: .75rem;
+      padding: .65rem .75rem;
+      color: #d0e8ff;
+      background: rgba(12, 14, 24, .96);
+      font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .45);
+      backdrop-filter: blur(12px);
+    }
+
+    #advisor-dev-panel[hidden] {
+      display: none !important;
+    }
+
+    #advisor-dev-panel .dev-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+      margin-bottom: .45rem;
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #90fff5;
+    }
+
+    #advisor-dev-panel .dev-panel-row {
+      display: flex;
+      justify-content: space-between;
+      gap: .75rem;
+      margin: .15rem 0;
+    }
+
+    #advisor-dev-panel .dev-panel-row span:last-child {
+      text-align: right;
+      color: #fff;
+    }
+
+    #advisor-dev-panel .dev-panel-last {
+      margin-top: .45rem;
+      padding-top: .45rem;
+      border-top: 1px solid rgba(255, 255, 255, .08);
+      color: #a8b8d8;
+      word-break: break-word;
+    }
+
+    #advisor-dev-panel select,
+    #advisor-dev-panel button {
+      font: inherit;
+      border-radius: .35rem;
+      border: 1px solid rgba(255, 255, 255, .15);
+      background: rgba(255, 255, 255, .06);
+      color: inherit;
+      padding: .2rem .35rem;
+      cursor: pointer;
+    }
+
+    #advisor-dev-panel button:hover {
+      background: rgba(255, 255, 255, .12);
+    }
+
     .progress-map {
       padding: 1rem;
     }
@@ -18425,6 +18495,26 @@
 
   <div class="save-toast" id="save-toast" aria-live="polite">Progress saved</div>
 
+  <div id="advisor-dev-panel" hidden aria-label="Claude API cost inspector">
+    <div class="dev-panel-head">
+      <span>Claude cost inspector</span>
+      <button type="button" id="advisor-dev-panel-hide" aria-label="Hide cost inspector">Hide</button>
+    </div>
+    <div class="dev-panel-row"><span>Daily budget</span>
+      <select id="advisor-dev-budget-select" aria-label="Daily Claude budget">
+        <option value="0">Unlimited</option>
+        <option value="10">$10 / day</option>
+        <option value="20">$20 / day</option>
+        <option value="50">$50 / day</option>
+      </select>
+    </div>
+    <div class="dev-panel-row"><span>Today</span><span id="advisor-dev-daily-cost">$0.00</span></div>
+    <div class="dev-panel-row"><span>This month</span><span id="advisor-dev-monthly-cost">$0.00</span></div>
+    <div class="dev-panel-row"><span>Calls today</span><span id="advisor-dev-daily-calls">0</span></div>
+    <div class="dev-panel-row"><span>Budget status</span><span id="advisor-dev-budget-status">OK</span></div>
+    <div class="dev-panel-last" id="advisor-dev-last-call">No calls yet.</div>
+  </div>
+
   <script>
     /*
      * whatimado — main application script (section index)
@@ -19284,6 +19374,28 @@
       } catch { /* ignore */ }
     })();
 
+    const DEV_CONFIG = {
+      enabled: false,
+      showCostInspector: false,
+      dailyBudgetUsd: 0
+    };
+
+    (function initDevConfigFromQuery() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const storedDev = localStorage.getItem("whatimado_dev_mode") === "1";
+        if (params.get("dev") === "1" || storedDev) {
+          DEV_CONFIG.enabled = true;
+          DEV_CONFIG.showCostInspector = true;
+          if (params.get("dev") === "1") localStorage.setItem("whatimado_dev_mode", "1");
+        }
+        const budgetParam = params.get("claude_budget");
+        const storedBudget = localStorage.getItem("whatimado_claude_daily_budget");
+        const budget = parseFloat(budgetParam || storedBudget || "0");
+        if (Number.isFinite(budget) && budget > 0) DEV_CONFIG.dailyBudgetUsd = budget;
+      } catch { /* ignore */ }
+    })();
+
     function monetizationAllowed() {
       return HPE_CONFIG.allowMonetization === true || HPE_CONFIG.lifecycle === "production";
     }
@@ -19574,8 +19686,11 @@
     let roadmapBackgroundRefinementInFlight = false;
     let roadmapAdaptTimer = null;
     let roadmapAdaptInFlight = false;
-    const ROADMAP_ADAPT_DEBOUNCE_MS = 3200;
-    const ROADMAP_ADAPT_COOLDOWN_MS = 50000;
+    let pendingAdaptSignals = [];
+    const ROADMAP_ADAPT_DEBOUNCE_MS = 8000;
+    const ROADMAP_ADAPT_BATCH_DEBOUNCE_MS = 8000;
+    const ROADMAP_ADAPT_COOLDOWN_MS = 120000;
+    const ROADMAP_ADAPT_URGENT_COOLDOWN_MS = 120000;
 
     function getFounderPathTemplate(idea) {
       const title = String(idea?.title || "").toLowerCase();
@@ -22631,7 +22746,7 @@ Practice each one out loud once and time yourself.`;
             `Context:\n${getAdvisorContext()}\n\nCompleted roadmap:\n${completedSummary}\n` +
             `Respond only with a raw JSON array: [{"title":"...","type":"Growth milestone","tagline":"one plain sentence","why":"one sentence","cost":"e.g. $0","timeline":"e.g. 60-90 days","income":"e.g. $5k-10k/mo"}]`
           );
-        const response = await callAdvisor(prompt, 1200);
+        const response = await callAdvisor(prompt, 1200, { feature: "post_mission_picker" });
         const ideas = filterNewIdeas(extractIdeasFromAdvisorResponse(response), state.ideas);
         if (ideas.length >= 3 && state.roadmapExhausted) {
           renderPostMissionPicker(ideas.slice(0, 3), scenario);
@@ -24187,7 +24302,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!draftType) return null;
 
       const prompt = buildUsableDraftPrompt(normalized, draftType, options);
-      const raw = await callAdvisor(prompt, 1600, { timeoutMs: 55000 });
+      const raw = await callAdvisor(prompt, 1600, { timeoutMs: 55000, feature: "task_draft" });
       const draft = String(raw || "").trim();
       if (!draft || /^NO_DRAFT$/i.test(draft)) return null;
       if (!isUsableDraftContent(draft, normalized) && !options.variant) return null;
@@ -29571,9 +29686,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!$("#screen-roadmap")?.classList.contains("active")) return false;
       if (!state.currentIdea || !state.roadmapStages.length) return false;
       if (roadmapAdaptInFlight || state.roadmapAutoContinuePending) return false;
-      if (urgent) return true;
       if (!state.roadmapLastAdaptAt) return true;
-      return Date.now() - state.roadmapLastAdaptAt >= ROADMAP_ADAPT_COOLDOWN_MS;
+      const cooldown = urgent ? ROADMAP_ADAPT_URGENT_COOLDOWN_MS : ROADMAP_ADAPT_COOLDOWN_MS;
+      return Date.now() - state.roadmapLastAdaptAt >= cooldown;
     }
 
     function setRoadmapAdaptingUi(active, message = "Updating your next steps…") {
@@ -29625,7 +29740,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function buildRoadmapPlanSummaryPrompt(idea) {
-      const context = getAdvisorContext();
+      const context = getCompactAdvisorContext(6000);
       const stabilityNote = (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea))
         ? "User likely needs shelter, ID, and essential documents BEFORE formal job searches or long training."
         : "Order steps by what unlocks the next — stability basics before employment when relevant.";
@@ -29656,12 +29771,28 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function requestRoadmapPlanSummary(idea, extraPrompt = "") {
+      const roadmapKey = slugify(idea?.title || "");
+      const cacheToken = extraPrompt ? hashRoadmapPromptContext(extraPrompt) : "default";
+      const cachedEntry = state.allRoadmaps[roadmapKey]?.planSummaryCache?.[cacheToken];
+      if (cachedEntry && !extraPrompt) return cachedEntry;
+
       const response = await callAdvisor(
         buildRoadmapPlanSummaryPrompt(idea) + (extraPrompt ? `\n\n${extraPrompt}` : ""),
         700,
-        { timeoutMs: 60000 }
+        { timeoutMs: 60000, feature: "roadmap_plan_summary" }
       );
-      return parseRoadmapPlanSummaryResponse(response);
+      const summary = parseRoadmapPlanSummaryResponse(response);
+      if (response?.trim() && summary?.bullets?.length && roadmapKey) {
+        state.allRoadmaps[roadmapKey] = {
+          ...(state.allRoadmaps[roadmapKey] || {}),
+          planSummaryCache: {
+            ...(state.allRoadmaps[roadmapKey]?.planSummaryCache || {}),
+            [cacheToken]: summary
+          }
+        };
+        schedulePersist();
+      }
+      return summary;
     }
 
     function hideRoadmapConfirmGate() {
@@ -29944,7 +30075,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const prompt = userReply
           ? buildRoadblockFollowUpPrompt(session, userReply)
           : buildRoadblockAckPrompt(session);
-        const answer = await callAdvisor(prompt, userReply ? 550 : 450);
+        const answer = await callAdvisor(prompt, userReply ? 550 : 450, { feature: "roadblock_chat" });
         const ready = /\[\[READY_FOR_PLAN_UPDATE\]\]/.test(answer || "");
         const cleaned = String(answer || "").replace(/\[\[READY_FOR_PLAN_UPDATE\]\]/g, "").trim()
           || "Got it — let me help you work through this.";
@@ -29971,7 +30102,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       session.phase = "awaiting_confirm";
       addTypingBubble("Updating your plan…");
       try {
-        const response = await callAdvisor(buildRoadmapUpdateSummaryPrompt(idea, session), 700);
+        const response = await callAdvisor(buildRoadmapUpdateSummaryPrompt(idea, session), 700, { feature: "roadblock_plan_update" });
         const summary = parseRoadmapPlanSummaryResponse(response);
         const intro = summary.intro || "Here's an updated plan that addresses what you shared.";
         resolveTyping(intro);
@@ -30058,6 +30189,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function scheduleRoadmapAdaptation(reason, options = {}) {
       if (state.roadblockSession || state.roadmapConfirmGate) return;
       if (!state.roadmapStages.length || !state.currentIdea) return;
+      if (reason === "task_completed") return;
+
       const pos = getFirstIncompleteTaskPosition();
       const hasRemaining = Boolean(
         pos && (
@@ -30067,17 +30200,33 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
       if (!hasRemaining) return;
 
+      pendingAdaptSignals.push({
+        reason,
+        detail: options.detail || "",
+        urgent: Boolean(options.urgent)
+      });
+
       clearTimeout(roadmapAdaptTimer);
+      const debounceMs = options.urgent ? ROADMAP_ADAPT_BATCH_DEBOUNCE_MS : ROADMAP_ADAPT_DEBOUNCE_MS;
       roadmapAdaptTimer = setTimeout(() => {
         roadmapAdaptTimer = null;
-        if (!canAutoAdaptRoadmap(reason, options.urgent)) return;
+        const batch = pendingAdaptSignals.splice(0);
+        if (!batch.length) return;
+        const urgent = batch.some((entry) => entry.urgent);
+        const primary = batch[batch.length - 1];
+        if (!canAutoAdaptRoadmap(primary.reason, urgent)) return;
+        const mergedDetail = batch
+          .map((entry) => entry.detail)
+          .filter(Boolean)
+          .slice(-3)
+          .join(" | ");
         void adaptRemainingRoadmap({
           auto: true,
-          reason,
-          detail: options.detail || "",
+          reason: primary.reason,
+          detail: mergedDetail,
           skipConfirm: true
         });
-      }, options.urgent ? 600 : ROADMAP_ADAPT_DEBOUNCE_MS);
+      }, debounceMs);
     }
 
     async function adaptRemainingRoadmap(options = {}) {
@@ -30120,7 +30269,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         reason_length: options.detail?.length || 0
       });
 
-      const context = getAdvisorContext();
+      const context = getCompactAdvisorContext(8000);
       const founderMode = isFounderRoadmapForIdea(state.currentIdea);
       const adaptPhase = options.auto || options.reason ? "adapt" : "continue";
       const progressBlock = buildRoadmapAdaptContext(options);
@@ -30134,7 +30283,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           (options.extraRefreshBlock ? `${options.extraRefreshBlock}\n\n` : "") +
           `Replace all remaining future stages. Shorten the path when possible. Never repeat completed or skipped tasks verbatim.\n` +
           `Mission rule: every new mission includes title, mentorHelp, howTo, resources, script, talkingPoints, and followUp when relevant.\n`,
-          getRoadmapAdvisorTokenLimit(founderMode)
+          getRoadmapAdvisorTokenLimit(founderMode),
+          { feature: options.auto ? "roadmap_adapt_auto" : "roadmap_adapt_manual" }
         );
         const nextStages = parseRoadmapResponse(response, state.currentIdea);
         if (!nextStages || !stagesAreMeaningful(nextStages)) throw new Error("Adapt response was empty or too generic");
@@ -32924,13 +33074,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const parsed = parseTaskId(taskId);
       const stage = parsed ? state.roadmapStages[parsed.stageIndex] : null;
       const task = parsed ? state.roadmapStages[parsed.stageIndex]?.tasks?.[parsed.taskIndex] : null;
-      const context = getAdvisorContext();
+      const context = getCompactAdvisorContext(5000);
 
       const fullPrompt = buildTaskCoachPrompt({ taskText, thread, question, context, stage, task });
-      let text = await callAdvisor(fullPrompt, 900);
+      let text = await callAdvisor(fullPrompt, 900, { feature: "task_ask_full" });
       if (text) return { text, source: "ai-full" };
 
-      text = await callAdvisor(buildCompactTaskCoachPrompt(taskText, question), 700);
+      text = await callAdvisor(buildCompactTaskCoachPrompt(taskText, question), 700, { feature: "task_ask_compact_retry" });
       if (text) return { text, source: "ai-compact" };
 
       if (isTaskResourceRequest(question)) {
@@ -32962,18 +33112,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     async function resolveTaskRewrite(taskId, scope, thread, targets) {
       const userRequest = getLastUserMessage(thread);
-      const context = getAdvisorContext();
+      const context = getCompactAdvisorContext(5000);
 
       const fullResponse = await callAdvisor(
         buildTaskAdjustPrompt(taskId, scope, thread, targets, context),
-        2000
+        2000,
+        { feature: "task_rewrite_full" }
       );
       let texts = parseTaskTextArray(fullResponse, targets.length);
       if (texts) return { texts, source: "ai-full" };
 
       const compactResponse = await callAdvisor(
         buildCompactTaskAdjustPrompt(targets, userRequest),
-        1200
+        1200,
+        { feature: "task_rewrite_compact_retry" }
       );
       texts = parseTaskTextArray(compactResponse, targets.length);
       if (texts) return { texts, source: "ai-compact" };
@@ -37405,16 +37557,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function submitMapChatReply() {
-      const summary = getAdvisorContext();
+      const summary = getCompactAdvisorContext(6000);
       const lastUser = [...state.history].reverse().find((entry) => entry.role === "user")?.content || "";
       trackEvent("map_chat_reply", {
         chat_type: state.mapChat?.type || "unknown",
         history_count: state.history.length
       });
-      let response = await callAdvisor(buildMapChatPrompt(summary), 550);
+      let response = await callAdvisor(buildMapChatPrompt(summary), 550, { feature: "map_chat" });
       if (!response) {
-        const compactSummary = truncateAdvisorPrompt(getAdvisorContext(), 6000);
-        response = await callAdvisor(buildMapChatPrompt(compactSummary), 550);
+        const compactSummary = truncateAdvisorPrompt(getCompactAdvisorContext(4500), 4500);
+        response = await callAdvisor(buildMapChatPrompt(compactSummary), 550, { feature: "map_chat_compact_retry" });
       }
       const answer = response || getMapChatLocalFallback(lastUser) || getMapChatErrorFallback();
       resolveTyping(answer);
@@ -37424,7 +37576,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     async function applyAlterPathChanges() {
-      const summary = getAdvisorContext();
+      const summary = getCompactAdvisorContext(7000);
       const direct = isDirectPathMode();
       const previousTitle = state.ideas[0]?.title || "";
       trackEvent("alter_path_submitted", {
@@ -37437,7 +37589,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? `${buildIdeasPrompt(summary, 1)}\n\nThe user chose DIRECT PATH — one focused recommendation: "${previousTitle}". Refine THIS path from their feedback. Return exactly ONE idea. Keep the same path type (employment vs self-employment vs training) and goal unless they explicitly asked to switch — tighten the fit, don't pivot to a different strategy.`
         : `${buildIdeasPrompt(summary, 3)}\n\nThe user is revising their path options — previous paths did not fully fit. Generate 3 NEW ideas that reflect their latest feedback. Reference what they want changed.`;
 
-      const response = await callAdvisor(refinePrompt, direct ? 700 : 900);
+      const response = await callAdvisor(refinePrompt, direct ? 700 : 900, { feature: "path_refine" });
 
       const fallback = direct && state.ideas[0] ? [state.ideas[0]] : getFallbackIdeas();
       let ideas = ensureIdeaSet(extractJsonArray(response, fallback), fallback, direct ? 1 : 3);
@@ -37479,7 +37631,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const idea = Number.isInteger(index) ? state.ideas[index] : null;
       if (!idea) return;
 
-      const summary = getAdvisorContext();
+      const summary = getCompactAdvisorContext(7000);
       const existingTitles = state.ideas.map((entry) => entry.title);
       trackEvent("idea_discuss_applied", {
         idea_index: index,
@@ -37488,7 +37640,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const response = await callAdvisor(
         `${buildIdeasPrompt(summary, 1, existingTitles.filter((_, i) => i !== index))}\n\nReplace path "${idea.title}" with ONE new idea that reflects the user's latest feedback from this discussion. Keep the rest of the map unchanged.`,
-        700
+        700,
+        { feature: "idea_discuss_replace" }
       );
       const newIdeas = extractJsonArray(response, []).filter((entry) => entry.title);
       if (!newIdeas.length) {
@@ -37665,7 +37818,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const taskData = getRoadmapTaskData(taskId);
       const thread = taskData.threads?.find((item) => item.id === threadId);
       const threadContext = buildTaskThreadContext(thread);
-      const summary = getAdvisorContext();
+      const summary = getCompactAdvisorContext(7000);
       const existingTitles = state.ideas.map((entry) => entry.title);
       const feedbackBlock = threadContext
         ? `\n\nTask Ask chat — user needs a different path:\n${threadContext}\n\nReplace with ONE path that matches where they ACTUALLY are (e.g. closed beta with 3-5 testers if still testing functionality — NOT a 15-30 user impact pilot).\n`
@@ -37675,7 +37828,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       const response = await callAdvisor(
         `${buildIdeasPrompt(summary, 1, existingTitles.filter((_, i) => i !== index))}${feedbackBlock}\nReplace path "${idea.title}" with ONE new idea reflecting the task chat above.`,
-        700
+        700,
+        { feature: "task_replace_path" }
       );
       const newIdeas = extractJsonArray(response, []).filter((entry) => entry.title);
       if (!newIdeas.length) {
@@ -38622,9 +38776,285 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         .trim();
     }
 
+    const ADVISOR_MODEL = "claude-sonnet-4-5";
+    const ADVISOR_USAGE_LOG_KEY = "whatimado_advisor_usage_log_v1";
+    const ADVISOR_DAILY_SPEND_KEY = "whatimado_advisor_daily_spend_v1";
+    const ADVISOR_USAGE_LOG_MAX = 250;
+    const ADVISOR_BUDGET_PAUSED_MSG = "Daily Claude budget reached — AI generation is paused until tomorrow. Your saved progress is unchanged.";
+
+    function getAdvisorSpendDayKey(date = new Date()) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    function getAdvisorSpendMonthKey(date = new Date()) {
+      return date.toISOString().slice(0, 7);
+    }
+
+    function readAdvisorSpendLedger() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(ADVISOR_DAILY_SPEND_KEY) || "{}");
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function writeAdvisorSpendLedger(ledger) {
+      try {
+        localStorage.setItem(ADVISOR_DAILY_SPEND_KEY, JSON.stringify(ledger));
+      } catch {
+        /* ignore quota / private mode */
+      }
+    }
+
+    function getAdvisorSpendTotals() {
+      const ledger = readAdvisorSpendLedger();
+      const dayKey = getAdvisorSpendDayKey();
+      const monthKey = getAdvisorSpendMonthKey();
+      let monthlyCost = 0;
+      let monthlyCalls = 0;
+      Object.entries(ledger).forEach(([key, entry]) => {
+        if (!key.startsWith(monthKey)) return;
+        monthlyCost += entry?.costUsd || 0;
+        monthlyCalls += entry?.calls || 0;
+      });
+      const today = ledger[dayKey] || { costUsd: 0, calls: 0 };
+      return {
+        dayKey,
+        monthKey,
+        dailyCost: Number((today.costUsd || 0).toFixed(6)),
+        dailyCalls: today.calls || 0,
+        monthlyCost: Number(monthlyCost.toFixed(6)),
+        monthlyCalls
+      };
+    }
+
+    function recordAdvisorSpend(costUsd = 0) {
+      if (!costUsd) return getAdvisorSpendTotals();
+      const ledger = readAdvisorSpendLedger();
+      const dayKey = getAdvisorSpendDayKey();
+      const prev = ledger[dayKey] || { costUsd: 0, calls: 0 };
+      ledger[dayKey] = {
+        costUsd: Number((prev.costUsd + costUsd).toFixed(6)),
+        calls: (prev.calls || 0) + 1
+      };
+      writeAdvisorSpendLedger(ledger);
+      return getAdvisorSpendTotals();
+    }
+
+    function isAdvisorBudgetExceeded() {
+      const budget = DEV_CONFIG.dailyBudgetUsd || 0;
+      if (!budget) return false;
+      return getAdvisorSpendTotals().dailyCost >= budget;
+    }
+
+    function setAdvisorDailyBudgetUsd(value) {
+      const parsed = Number(value);
+      DEV_CONFIG.dailyBudgetUsd = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+      try {
+        if (DEV_CONFIG.dailyBudgetUsd > 0) {
+          localStorage.setItem("whatimado_claude_daily_budget", String(DEV_CONFIG.dailyBudgetUsd));
+        } else {
+          localStorage.removeItem("whatimado_claude_daily_budget");
+        }
+      } catch {
+        /* ignore */
+      }
+      updateDevCostInspector();
+    }
+
+    function formatAdvisorCostUsd(value) {
+      return `$${Number(value || 0).toFixed(4)}`;
+    }
+
+    function updateDevCostInspector(lastEntry = null) {
+      if (!DEV_CONFIG.showCostInspector) return;
+      const panel = $("#advisor-dev-panel");
+      if (!panel) return;
+      panel.hidden = false;
+
+      const totals = getAdvisorSpendTotals();
+      const budget = DEV_CONFIG.dailyBudgetUsd || 0;
+      const budgetEl = $("#advisor-dev-budget-select");
+      if (budgetEl && String(budgetEl.value) !== String(budget)) {
+        budgetEl.value = String(budget);
+      }
+
+      const dailyEl = $("#advisor-dev-daily-cost");
+      const monthlyEl = $("#advisor-dev-monthly-cost");
+      const callsEl = $("#advisor-dev-daily-calls");
+      const statusEl = $("#advisor-dev-budget-status");
+      const lastEl = $("#advisor-dev-last-call");
+
+      if (dailyEl) dailyEl.textContent = formatAdvisorCostUsd(totals.dailyCost);
+      if (monthlyEl) monthlyEl.textContent = formatAdvisorCostUsd(totals.monthlyCost);
+      if (callsEl) callsEl.textContent = String(totals.dailyCalls);
+      if (statusEl) {
+        if (!budget) statusEl.textContent = "Unlimited";
+        else if (totals.dailyCost >= budget) statusEl.textContent = "Paused";
+        else statusEl.textContent = `${formatAdvisorCostUsd(budget - totals.dailyCost)} left`;
+      }
+      if (lastEl && lastEntry) {
+        lastEl.textContent =
+          `${lastEntry.feature || "unknown"} · ${lastEntry.ok ? "ok" : "err"} · ` +
+          `${lastEntry.inputTokens || 0}/${lastEntry.outputTokens || 0} tok · ` +
+          `${formatAdvisorCostUsd(lastEntry.estimatedCostUsd)} · ${lastEntry.durationMs || 0}ms`;
+      }
+    }
+
+    function initDevCostInspector() {
+      if (!DEV_CONFIG.showCostInspector) return;
+      const panel = $("#advisor-dev-panel");
+      const hideBtn = $("#advisor-dev-panel-hide");
+      const budgetSelect = $("#advisor-dev-budget-select");
+      if (!panel) return;
+
+      panel.hidden = false;
+      if (budgetSelect) {
+        budgetSelect.value = String(DEV_CONFIG.dailyBudgetUsd || 0);
+        budgetSelect.addEventListener("change", () => {
+          setAdvisorDailyBudgetUsd(budgetSelect.value);
+        });
+      }
+      hideBtn?.addEventListener("click", () => {
+        panel.hidden = true;
+        DEV_CONFIG.showCostInspector = false;
+      });
+      updateDevCostInspector();
+    }
+
+    function estimateAdvisorCostUsd(model, inputTokens = 0, outputTokens = 0) {
+      const rates = { inputPer1M: 3, outputPer1M: 15 };
+      return Number(
+        (
+          (inputTokens / 1_000_000) * rates.inputPer1M +
+          (outputTokens / 1_000_000) * rates.outputPer1M
+        ).toFixed(6)
+      );
+    }
+
+    function recordAdvisorUsage(entry) {
+      const payload = {
+        type: "advisor_usage",
+        timestamp: new Date().toISOString(),
+        model: ADVISOR_MODEL,
+        ...entry
+      };
+      console.info("[advisor-usage]", payload);
+      try {
+        const existing = JSON.parse(localStorage.getItem(ADVISOR_USAGE_LOG_KEY) || "[]");
+        const next = Array.isArray(existing) ? existing : [];
+        next.push(payload);
+        while (next.length > ADVISOR_USAGE_LOG_MAX) next.shift();
+        localStorage.setItem(ADVISOR_USAGE_LOG_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore quota / private mode */
+      }
+      if (entry.ok && entry.estimatedCostUsd) recordAdvisorSpend(entry.estimatedCostUsd);
+      updateDevCostInspector(payload);
+      return payload;
+    }
+
+    function getAdvisorUsageReport() {
+      let entries = [];
+      try {
+        entries = JSON.parse(localStorage.getItem(ADVISOR_USAGE_LOG_KEY) || "[]");
+        if (!Array.isArray(entries)) entries = [];
+      } catch {
+        entries = [];
+      }
+
+      const byFeature = {};
+      let totalInput = 0;
+      let totalOutput = 0;
+      let totalCost = 0;
+      let successCount = 0;
+      let errorCount = 0;
+
+      entries.forEach((entry) => {
+        const feature = entry.feature || "unknown";
+        if (!byFeature[feature]) {
+          byFeature[feature] = {
+            feature,
+            calls: 0,
+            successes: 0,
+            errors: 0,
+            inputTokens: 0,
+            outputTokens: 0,
+            estimatedCostUsd: 0
+          };
+        }
+        const bucket = byFeature[feature];
+        bucket.calls += 1;
+        if (entry.ok) bucket.successes += 1;
+        else bucket.errors += 1;
+        bucket.inputTokens += entry.inputTokens || 0;
+        bucket.outputTokens += entry.outputTokens || 0;
+        bucket.estimatedCostUsd = Number((bucket.estimatedCostUsd + (entry.estimatedCostUsd || 0)).toFixed(6));
+        totalInput += entry.inputTokens || 0;
+        totalOutput += entry.outputTokens || 0;
+        totalCost += entry.estimatedCostUsd || 0;
+        if (entry.ok) successCount += 1;
+        else errorCount += 1;
+      });
+
+      const features = Object.values(byFeature).sort(
+        (a, b) => b.estimatedCostUsd - a.estimatedCostUsd || b.calls - a.calls
+      );
+
+      return {
+        generatedAt: new Date().toISOString(),
+        entryCount: entries.length,
+        totals: {
+          calls: entries.length,
+          successes: successCount,
+          errors: errorCount,
+          inputTokens: totalInput,
+          outputTokens: totalOutput,
+          estimatedCostUsd: Number(totalCost.toFixed(6))
+        },
+        byFeature: features,
+        recent: entries.slice(-40)
+      };
+    }
+
+    window.getAdvisorUsageReport = getAdvisorUsageReport;
+    window.clearAdvisorUsageLog = () => {
+      try {
+        localStorage.removeItem(ADVISOR_USAGE_LOG_KEY);
+      } catch {
+        /* ignore */
+      }
+    };
+    window.setAdvisorDailyBudgetUsd = setAdvisorDailyBudgetUsd;
+    window.getAdvisorSpendTotals = getAdvisorSpendTotals;
+
     /* ===== SECTION: Advisor API (Claude) ===== */
-    async function callAdvisor(prompt, maxTokens = 700, { timeoutMs = 0 } = {}) {
+    async function callAdvisor(prompt, maxTokens = 700, { timeoutMs = 0, feature = "unknown" } = {}) {
       lastAdvisorError = "";
+      if (isAdvisorBudgetExceeded()) {
+        lastAdvisorError = ADVISOR_BUDGET_PAUSED_MSG;
+        recordAdvisorUsage({
+          feature,
+          ok: false,
+          httpStatus: 429,
+          durationMs: 0,
+          maxTokensRequested: capAdvisorTokens(maxTokens),
+          promptChars: String(prompt || "").length,
+          inputTokens: 0,
+          outputTokens: 0,
+          estimatedCostUsd: 0,
+          error: "daily_budget_exceeded"
+        });
+        return "";
+      }
+
+      const callId = (typeof crypto !== "undefined" && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `adv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const startedAt = Date.now();
+      const promptChars = String(prompt || "").length;
+      const promptLimit = 14000;
       const controller = timeoutMs > 0 ? new AbortController() : null;
       const timeoutId = controller
         ? setTimeout(() => controller.abort(), timeoutMs)
@@ -38635,9 +39065,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           headers: { "Content-Type": "application/json" },
           signal: controller?.signal,
           body: JSON.stringify({
-            model: "claude-sonnet-4-5",
+            model: ADVISOR_MODEL,
             max_tokens: capAdvisorTokens(maxTokens),
-            messages: [{ role: "user", content: truncateAdvisorPrompt(wrapAdvisorPromptWithGuardrails(sanitizeAdvisorPromptText(prompt))) }]
+            feature,
+            callId,
+            messages: [{ role: "user", content: truncateAdvisorPrompt(wrapAdvisorPromptWithGuardrails(sanitizeAdvisorPromptText(prompt)), promptLimit) }]
           })
         });
         let data;
@@ -38646,14 +39078,59 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         } catch {
           lastAdvisorError = `Invalid response (${response.status})`;
           console.error("Advisor API returned non-JSON:", response.status);
+          recordAdvisorUsage({
+            callId,
+            feature,
+            ok: false,
+            httpStatus: response.status,
+            durationMs: Date.now() - startedAt,
+            maxTokensRequested: capAdvisorTokens(maxTokens),
+            promptChars,
+            inputTokens: 0,
+            outputTokens: 0,
+            estimatedCostUsd: 0,
+            error: "non_json_response"
+          });
           return "";
         }
         if (!response.ok || data.type === "error" || data.error) {
           lastAdvisorError = humanizeAdvisorError(getAdvisorErrorMessage(data) || `Request failed (${response.status})`);
           console.error("Advisor API error:", data.error || data);
+          recordAdvisorUsage({
+            callId,
+            feature,
+            ok: false,
+            httpStatus: response.status,
+            durationMs: Date.now() - startedAt,
+            maxTokensRequested: capAdvisorTokens(maxTokens),
+            promptChars,
+            inputTokens: data?.usage?.input_tokens || 0,
+            outputTokens: data?.usage?.output_tokens || 0,
+            estimatedCostUsd: estimateAdvisorCostUsd(
+              ADVISOR_MODEL,
+              data?.usage?.input_tokens || 0,
+              data?.usage?.output_tokens || 0
+            ),
+            error: lastAdvisorError
+          });
           return "";
         }
         const text = extractAdvisorText(data);
+        const inputTokens = data?.usage?.input_tokens || 0;
+        const outputTokens = data?.usage?.output_tokens || 0;
+        recordAdvisorUsage({
+          callId,
+          feature,
+          ok: true,
+          httpStatus: response.status,
+          durationMs: Date.now() - startedAt,
+          maxTokensRequested: capAdvisorTokens(maxTokens),
+          promptChars,
+          inputTokens,
+          outputTokens,
+          estimatedCostUsd: estimateAdvisorCostUsd(ADVISOR_MODEL, inputTokens, outputTokens),
+          responseChars: text.length
+        });
         if (!text) {
           lastAdvisorError = "AI returned an empty answer";
           console.warn("Advisor API returned no text:", data);
@@ -38666,6 +39143,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           lastAdvisorError = error.message || "Network error";
         }
         console.error("Advisor request failed:", error);
+        recordAdvisorUsage({
+          callId,
+          feature,
+          ok: false,
+          httpStatus: 0,
+          durationMs: Date.now() - startedAt,
+          maxTokensRequested: capAdvisorTokens(maxTokens),
+          promptChars,
+          inputTokens: 0,
+          outputTokens: 0,
+          estimatedCostUsd: 0,
+          error: lastAdvisorError
+        });
         return "";
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -39177,6 +39667,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function getAdvisorContext() {
       return getConversationSummary() + getUserProfileBlock();
+    }
+
+    function getCompactAdvisorContext(maxChars = 7000) {
+      const profile = getUserProfileBlock();
+      const summary = getConversationSummary();
+      const combined = `${summary}${profile}`;
+      if (combined.length <= maxChars) return combined;
+      const profileBudget = Math.min(profile.length, Math.floor(maxChars * 0.35));
+      const summaryBudget = Math.max(1200, maxChars - profileBudget);
+      const recentSummary = summary.length > summaryBudget
+        ? `[Earlier conversation trimmed.]\n${summary.slice(-summaryBudget)}`
+        : summary;
+      return `${recentSummary}${profile.slice(-profileBudget)}`.slice(-maxChars);
     }
 
     function parseIncomeUrgency(text) {
@@ -40850,7 +41353,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         state.roadmapCheckIn = null;
         state.profileIntakeStep = null;
         const latest = getLatestUserMessage();
-        const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450);
+        const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450, { feature: "intake_ability_baseline" });
         let finalAnswer = answer || getAbilityBaselineFallback(force);
         if (!/\b(good at|skill|enjoy|hobby|interest|liked|loved|miss|kit|not sure|unsure)\b/i.test(finalAnswer || "")) {
           finalAnswer = getAbilityBaselineFallback(force);
@@ -40888,7 +41391,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         // Prefer ability/interest discovery whenever the kit baseline is still missing.
         if (!explorationReadyForRoadmapCheckIn() && !explorationPhaseNeedsDependentQuestion()) {
           const force = (state.clarifyingQuestionsAsked || 0) + 1 >= MAX_CLARIFYING_QUESTIONS;
-          const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450);
+          const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450, { feature: "intake_ability_followup" });
           let finalAnswer = answer || getAbilityBaselineFallback(force);
           if (!/\b(good at|skill|enjoy|hobby|interest|liked|loved|miss|kit|not sure|unsure)\b/i.test(finalAnswer || "")) {
             finalAnswer = getAbilityBaselineFallback(force);
@@ -40916,7 +41419,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           return;
         }
 
-        const answer = await callAdvisor(buildSecondClarifyingPrompt(), 450);
+        const answer = await callAdvisor(buildSecondClarifyingPrompt(), 450, { feature: "intake_second_clarifying" });
         const fallback = getSecondClarifyingFallback();
         let finalAnswer = answer || fallback;
         const blob = getConversationUserBlob().toLowerCase();
@@ -41177,7 +41680,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         let response = await callAdvisor(
           ideasPrompt(ideaCount),
           1200,
-          { timeoutMs: MAP_GENERATION_TIMEOUT_MS }
+          { timeoutMs: MAP_GENERATION_TIMEOUT_MS, feature: "map_generation" }
         );
 
         ideas = ensureIdeaSet(
@@ -41201,7 +41704,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           response = await callAdvisor(
             `${ideasPrompt(3, capExcludeTitles([...recentTitles, ...ideas.map((idea) => idea.title).filter(Boolean)]))}\n\nYour last draft reused generic money-path templates or repeated prior paths. Regenerate 3 completely different strategies with new industries, titles, and first steps. Each object MUST include a non-empty title and tagline.`,
             1200,
-            { timeoutMs: MAP_GENERATION_TIMEOUT_MS }
+            { timeoutMs: MAP_GENERATION_TIMEOUT_MS, feature: "map_generation_money_retry" }
           );
           const regen = ensureIdeaSet(
             sanitizeIdeasAgainstInventedContext(extractJsonArray(response, fallbackIdeas)),
@@ -41229,7 +41732,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           response = await callAdvisor(
             `${ideasPrompt(3, capExcludeTitles([...recentTitles, ...ideas.map((idea) => idea.title).filter(Boolean)]))}\n\nYour last set repeated structure between paths. Regenerate 3 completely different strategies with distinct titles, taglines, and first steps. Do NOT invent partners, pilots, or projects they never mentioned. Each object MUST include a non-empty title and tagline.`,
             1200,
-            { timeoutMs: MAP_GENERATION_TIMEOUT_MS }
+            { timeoutMs: MAP_GENERATION_TIMEOUT_MS, feature: "map_generation_similarity_retry" }
           );
           const regen = ensureIdeaSet(
             sanitizeIdeasAgainstInventedContext(extractJsonArray(response, ideas)),
@@ -41516,13 +42019,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ? `${buildFounderIdeasPrompt(summary)}\n\nGenerate 3 NEW path options different from these existing titles: ${existingTitles.join(", ")}`
         : buildIdeasPrompt(summary, 3, existingTitles);
 
-      let response = await callAdvisor(basePrompt, 1200);
+      let response = await callAdvisor(basePrompt, 1200, { feature: "map_more_paths" });
       let newIdeas = filterNewIdeas(extractIdeasFromAdvisorResponse(response), existingIdeas);
 
       if (!newIdeas.length) {
         const retryPrompt =
           `${basePrompt}\n\nReturn ONLY a raw JSON array of exactly 3 objects. No markdown, no commentary. Each title must be clearly different from: ${existingTitles.join("; ")}.`;
-        response = await callAdvisor(retryPrompt, 1200);
+        response = await callAdvisor(retryPrompt, 1200, { feature: "map_more_paths_retry" });
         newIdeas = filterNewIdeas(extractIdeasFromAdvisorResponse(response), existingIdeas);
       }
 
@@ -41752,7 +42255,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const response = await callAdvisor(
         buildFlexibleBranchOptionsPrompt(taskId, excludeTitles, options),
         700,
-        { timeoutMs: 45000 }
+        { timeoutMs: 45000, feature: "roadmap_branch_options" }
       );
       let choices = extractJsonArray(response, []);
       choices = choices
@@ -42116,7 +42619,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         setTimeout(() => $("#stage-list")?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
       }
 
-      void maybeEnrichRoadmapLocalContacts({ silent: true }).then((updated) => {
+      void Promise.resolve(tryApplyLocalEnrichmentOnly({ silent: true })).then((updated) => {
         if (updated && roadmapStagesAreRenderable(state.roadmapStages) && $("#stage-list")?.children.length) {
           renderStages(state.roadmapStages);
           updateRoadmapLocalResourcesList();
@@ -42184,7 +42687,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           response = await callAdvisor(
             buildFlexibleBranchMissionPrompt(choice, taskId, context),
             branchTokenLimit,
-            { timeoutMs: branchTimeoutMs }
+            { timeoutMs: branchTimeoutMs, feature: "roadmap_branch_mission" }
           );
         } catch (advisorError) {
           if (context.phaseComplete) throw advisorError;
@@ -42289,7 +42792,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
 
         if (!context.phaseComplete && newStages?.length) {
-          void maybeEnrichRoadmapLocalContacts({ silent: true });
+          tryApplyLocalEnrichmentOnly({ silent: true });
         }
       } catch (error) {
         console.warn("[whatimado] flexible branch mission failed:", error?.message || error);
@@ -42695,7 +43198,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const pathModeNote = pathMode === "direct"
           ? " They chose a Direct Roadmap — three options on the map, then one full step-by-step roadmap after they pick a starting direction."
           : " They chose a Flexible Roadmap — they will pick between options at every step.";
-        const answer = await callAdvisor(buildClarifyingPrompt(userText) + pathModeNote, 450);
+        const answer = await callAdvisor(buildClarifyingPrompt(userText) + pathModeNote, 450, { feature: "intake_clarifying" });
         const fallback = getClarifyingFallback(userText);
         let finalAnswer = answer || fallback;
         const stabilityRebuild = !conversationLooksLikeCareerPivot(userText) && (
@@ -44147,12 +44650,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         callbacks = {}
       } = params;
 
+      const aiIssueCodes = ["homework", "parse_failed", "generic_stages", "overlap", "refresh_stale", "generic_mismatch", "business_employment_mismatch", "reentry", "id_basics"];
+      const needsAiCorrection = issues.some((issue) => aiIssueCodes.includes(issue.code));
+
       try {
         let working = state.roadmapStages?.length ? state.roadmapStages : initialStages;
         if (!working?.length) return;
 
         const issueCodes = issues.map((issue) => issue.code);
-        if (issues.length) callbacks.onRefining?.(true);
+        if (needsAiCorrection) callbacks.onRefining?.(true);
 
         const needsLocalPatch = issues.some((issue) => issue.code === "local_resources")
           || roadmapNeedsLocalEnrichment(working, idea);
@@ -44164,8 +44670,20 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           working = patchRoadmapStages(working, locallyEnriched, [{ code: "local_resources" }]);
         }
 
-        const aiIssueCodes = ["homework", "parse_failed", "generic_stages", "overlap", "refresh_stale", "generic_mismatch", "reentry", "id_basics"];
-        const needsAiCorrection = issues.some((issue) => aiIssueCodes.includes(issue.code));
+        if (!needsAiCorrection) {
+          if (needsLocalPatch && working?.length) {
+            const finalized = finalizeRoadmapStages(working, idea, founderMode, ideaIndex, {
+              roadmapSource: "ai",
+              lenient: stageOneHasRevealableMission(working)
+            });
+            callbacks.onRefinementComplete?.(finalized.stages, {
+              roadmapSource: finalized.roadmapSource,
+              issues: issueCodes
+            });
+          }
+          tryApplyLocalEnrichmentOnly({ silent: true });
+          return;
+        }
 
         if (needsAiCorrection) {
           let correctionPrompt = basePrompt;
@@ -44177,7 +44695,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           const response = await callAdvisor(
             `${correctionPrompt}\n\n${correctionBlock}`,
             tokenLimit,
-            { timeoutMs: ROADMAP_ADVISOR_TIMEOUT_MS }
+            { timeoutMs: ROADMAP_ADVISOR_TIMEOUT_MS, feature: "roadmap_background_refinement" }
           );
           const corrected = parseRoadmapResponse(response, idea)
             || parseRoadmapPreviewResponse(response, idea);
@@ -44208,9 +44726,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           issues: issueCodes
         });
 
-        if (roadmapNeedsLocalEnrichment(finalized.stages, idea)) {
-          void maybeEnrichRoadmapLocalContacts({ silent: true });
-        }
+        tryApplyLocalEnrichmentOnly({ silent: true });
       } catch (error) {
         console.error("[whatimado] background roadmap refinement failed:", error);
         trackEvent("roadmap_refinement_failed", {
@@ -44334,7 +44850,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           source: roadmapSource
         });
         if (roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) {
-          void maybeEnrichRoadmapLocalContacts({ silent: true });
+          tryApplyLocalEnrichmentOnly({ silent: true });
         }
       }
     }
@@ -44373,27 +44889,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return true;
       };
 
-      void (async () => {
-        try {
-          const quickPrompt = buildFirstMissionQuickPrompt(idea, context, { founderMode });
-          const quickResponse = await callAdvisor(
-            quickPrompt,
-            founderMode ? 1400 : 1200,
-            { timeoutMs: 60000 }
-          );
-          const quickResolved = resolveEarlyRevealStages(quickResponse, idea);
-          if (quickResolved.stages) {
-            tryClaimFirstMissionReveal(
-              applyLocalResourceFixesIfPossible(quickResolved.stages, idea),
-              "quick"
-            );
-          }
-        } catch (error) {
-          console.warn("[whatimado] quick first mission failed:", error?.message || error);
-        }
-      })();
-
-      let response = await callAdvisor(basePrompt, tokenLimit, { timeoutMs: ROADMAP_ADVISOR_TIMEOUT_MS });
+      let response = await callAdvisor(basePrompt, tokenLimit, { timeoutMs: ROADMAP_ADVISOR_TIMEOUT_MS, feature: "roadmap_generation_full" });
 
       const earlyReveal = resolveEarlyRevealStages(response, idea);
       if (earlyReveal.stages) {
@@ -44431,20 +44927,26 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         lenient: canShowLenient
       });
 
-      void runRoadmapBackgroundRefinement({
-        idea,
-        ideaIndex,
-        founderMode,
-        context,
-        promptOptions,
-        tokenLimit,
-        basePrompt,
-        issues,
-        initialStages: initialReturn.stages,
-        refreshBlock,
-        previousStages: options.previousStages,
-        callbacks
-      });
+      const aiRefinementIssueCodes = ["homework", "parse_failed", "generic_stages", "overlap", "refresh_stale", "generic_mismatch", "business_employment_mismatch", "reentry", "id_basics"];
+      const needsAiRefinement = issues.some((issue) => aiRefinementIssueCodes.includes(issue.code));
+      if (needsAiRefinement) {
+        void runRoadmapBackgroundRefinement({
+          idea,
+          ideaIndex,
+          founderMode,
+          context,
+          promptOptions,
+          tokenLimit,
+          basePrompt,
+          issues,
+          initialStages: initialReturn.stages,
+          refreshBlock,
+          previousStages: options.previousStages,
+          callbacks
+        });
+      } else {
+        tryApplyLocalEnrichmentOnly({ silent: true });
+      }
 
       if (revealClaimed && initialReturn.stages?.length) {
         callbacks.onFullStagesReady?.(initialReturn.stages, {
@@ -44676,7 +45178,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         renderSidebarRoadmaps();
         schedulePersist();
         if (shouldEnrichCachedRoadmapOnOpen(idea)) {
-          void maybeEnrichRoadmapLocalContacts({ silent: true }).then((updated) => {
+          void Promise.resolve(tryApplyLocalEnrichmentOnly({ silent: true })).then((updated) => {
             if (updated && roadmapStagesAreRenderable(state.roadmapStages) && $("#stage-list")?.children.length) {
               renderStages(state.roadmapStages);
               updateRoadmapLocalResourcesList();
@@ -45120,7 +45622,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
               void showFlexibleBranchPicker(taskId);
             }, 500);
           } else if (check.checked) {
-            scheduleRoadmapAdaptation("task_completed", { taskId });
+            /* Routine task completion no longer triggers auto-adapt — saves large roadmap calls. */
           } else {
             scheduleRoadmapAdaptation("task_skipped", { taskId, urgent: true, detail: getTaskTextById(taskId) });
           }
@@ -45839,6 +46341,38 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       trackEvent("roadmap_location_saved", { source: "sidebar" });
     }
 
+    function tryApplyLocalEnrichmentOnly(options = {}) {
+      const { silent = true } = options;
+      const key = state.roadmapKey;
+      const idea = state.currentIdea;
+      if (!key || !idea || !getUserLocation()) return false;
+      if (!roadmapNeedsLocalEnrichment(state.roadmapStages, idea)) return false;
+
+      const cached = state.allRoadmaps[key];
+      if (cached?.localEnriched && roadmapHasRichLocalData(state.roadmapStages, idea)) return false;
+
+      const loc = getUserLocation();
+      let stages = applyLocalResourceFixesIfPossible(state.roadmapStages, idea);
+      if (!roadmapHasRichLocalData(stages, idea) && loc) {
+        stages = applyLocalResourceFallback(stages, loc);
+      }
+      stages = ensureRoadmapLocalContacts(normalizeRoadmapStages(stages), idea);
+      const enriched = roadmapHasRichLocalData(stages, idea);
+
+      state.roadmapStages = stages;
+      state.allRoadmaps[key] = {
+        ...(cached || {}),
+        idea,
+        stages: state.roadmapStages,
+        source: cached?.source || "ai",
+        localEnriched: enriched,
+        localEnrichFailed: !enriched
+      };
+      if (!silent && enriched) renderStages(state.roadmapStages);
+      else schedulePersist();
+      return enriched;
+    }
+
     async function maybeEnrichRoadmapLocalContacts(options = {}) {
       const { force = false, silent = false } = options;
       const key = state.roadmapKey;
@@ -45878,7 +46412,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (!silent) setLocalEnrichProgress(0, 78, "Applying local org list");
         const fastFallbackStages = applyLocalResourceFallback(state.roadmapStages, loc);
         if (roadmapHasRichLocalData(fastFallbackStages, idea)) {
-          const founderMode = isFounderRoadmapForIdea(idea);
           state.roadmapStages = ensureRoadmapLocalContacts(normalizeRoadmapStages(fastFallbackStages), idea);
           state.allRoadmaps[key] = {
             ...(state.allRoadmaps[key] || {}),
@@ -45900,6 +46433,36 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         }
       }
 
+      if (!force) {
+        if (!silent) setLocalEnrichProgress(3, 90, "Using verified local org list");
+        const bestEffort = ensureRoadmapLocalContacts(
+          normalizeRoadmapStages(applyLocalResourceFallback(state.roadmapStages, loc)),
+          idea
+        );
+        state.roadmapStages = bestEffort;
+        const enriched = roadmapHasRichLocalData(bestEffort, idea);
+        state.allRoadmaps[key] = {
+          ...(state.allRoadmaps[key] || {}),
+          idea,
+          stages: state.roadmapStages,
+          source: state.allRoadmaps[key]?.source || "ai",
+          localEnriched: enriched,
+          localEnrichFailed: !enriched
+        };
+        if (!silent) {
+          renderStages(state.roadmapStages);
+          finishLocalEnrichProgress(enriched);
+        } else {
+          schedulePersist();
+        }
+        trackEvent("roadmap_local_enrich_succeeded", {
+          roadmap_key: key,
+          source: enriched ? "fallback_only" : "fallback_partial"
+        });
+        roadmapLocalEnrichInFlight = false;
+        return enriched;
+      }
+
       let enrichSource = "ai";
 
       try {
@@ -45915,23 +46478,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         let response = await callAdvisor(
           buildCompactLocalEnrichPrompt(idea, loc, founderMode),
           tokenLimit,
-          { timeoutMs: advisorTimeoutMs }
+          { timeoutMs: advisorTimeoutMs, feature: "roadmap_local_enrich" }
         );
         let stages = parseRoadmapResponse(response, idea);
 
         if (!stages || !roadmapHasRichLocalData(stages, idea)) {
           if (!silent) setLocalEnrichProgress(3, 82);
-          response = await callAdvisor(
-            `${buildCompactLocalEnrichPrompt(idea, loc, founderMode)}\n` +
-            "CRITICAL: Return ONLY valid JSON. Include contacts[] with org, url, phone on outreach tasks.\n",
-            tokenLimit,
-            { timeoutMs: advisorTimeoutMs }
-          );
-          stages = parseRoadmapResponse(response, idea);
-        }
-
-        if (!stages || !roadmapHasRichLocalData(stages, idea)) {
-          if (!silent) setLocalEnrichProgress(3, 90, "Using verified local org list");
           stages = applyLocalResourceFallback(state.roadmapStages, loc);
           enrichSource = "fallback";
         }
@@ -46747,14 +47299,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         auto
       });
 
-      const context = getAdvisorContext();
+      const context = getCompactAdvisorContext(8000);
       const founderMode = isFounderRoadmapForIdea(state.currentIdea);
       const completedStages = buildCompletedRoadmapSummary();
 
       try {
         const response = await callAdvisor(
           `${buildRoadmapPrompt(state.currentIdea, context, { phase: "continue", founderMode })}\n\nCompleted roadmap:\n${completedStages}`,
-          getRoadmapAdvisorTokenLimit(founderMode)
+          getRoadmapAdvisorTokenLimit(founderMode),
+          { feature: "roadmap_continue_plan" }
         );
 
         const nextStages = parseRoadmapResponse(response, state.currentIdea);
@@ -49525,6 +50078,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           last_screen: state.lastScreen,
           has_user: Boolean(state.currentUser)
         });
+        initDevCostInspector();
       } catch (error) {
         console.error("App init failed:", error);
       } finally {
