@@ -7419,6 +7419,7 @@
       margin-top: .6rem;
     }
 
+    .reply-escape-actions,
     .reply-map-actions {
       display: flex;
       flex-wrap: wrap;
@@ -7426,6 +7427,7 @@
       width: 100%;
     }
 
+    .reply-escape-actions[hidden],
     .reply-map-actions[hidden] {
       display: none !important;
     }
@@ -16869,6 +16871,7 @@
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-inner,
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-actions,
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-escape-actions,
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-map-actions,
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .profile-intake-chips {
         pointer-events: auto;
@@ -17919,10 +17922,14 @@
             </div>
             <div class="profile-intake-chips" id="profile-intake-chips" hidden aria-label="Quick answer options"></div>
             <div class="reply-actions">
+              <div class="reply-escape-actions" id="reply-escape-actions" hidden>
+                <button type="button" class="reply-map-btn" id="reply-continue-map-btn">Continue map conversation</button>
+                <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-map-escape-btn">Back to map</button>
+                <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-roadmap-btn" hidden>Back to roadmap</button>
+              </div>
               <div class="reply-map-actions" id="reply-map-actions" hidden>
                 <button type="button" class="reply-map-btn" id="reply-apply-map-btn">Update my paths</button>
                 <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-regen-roadmap-btn" hidden>Regenerate roadmap</button>
-                <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-map-btn">Back to map</button>
               </div>
               <button class="reset-pill" id="reply-reset-btn" type="button">Start new map</button>
             </div>
@@ -36992,6 +36999,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       } else if (state.step >= 2 && state.step < INTAKE_STEP_MAP) {
         showReplyBox(true);
       }
+      updateReplyComposerActions();
     }
 
     function intakeEditAllowed() {
@@ -37331,6 +37339,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       renderSavedMapsHome();
       renderSidebarRoadmaps();
       updateScreenNavButtons();
+      updateReplyComposerActions();
     }
 
     function isMapChatIntroMessage(content) {
@@ -37364,33 +37373,106 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         screenNavFuture.unshift("map");
       }
       showScreen("convo", { skipNavHistory: true });
+      showReplyBox(true);
+      updateReplyComposerActions();
       schedulePersist();
       updateScreenNavButtons();
     }
 
+    function getMapConversationIntro() {
+      return isDirectPathMode()
+        ? `Want to refine "${state.ideas[0]?.title || "your path"}"? Tell me what's not fitting — too slow, wrong focus, not local enough, etc. Chat as long as you need; tap "Update my path" when you're ready, or go back to your map anytime.`
+        : "Want to tweak these paths or add new ones? Tell me what's not fitting, what direction you'd rather explore, or what to add. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back to your map anytime.";
+    }
+
+    function setMapConversationPlaceholder() {
+      const reply = $("#reply-textarea");
+      if (!reply) return;
+      reply.placeholder = state.mapChat?.type === "idea"
+        ? "e.g. Is this realistic if I only have weekends? Could it work part-time?"
+        : isDirectPathMode()
+          ? "e.g. Keep this as a job path — I want help desk or IT support, not freelance"
+          : "e.g. These feel too online — I want something local and hands-on...";
+    }
+
+    function enterMapConversationMode(options = {}) {
+      const { announce = true } = options;
+      if (!state.ideas.length) return false;
+      if (!state.mapChat) {
+        state.mapChat = { type: "alter" };
+      }
+      state.alterPathMode = false;
+      trackEvent("map_conversation_entered", {
+        ideas_count: state.ideas.length,
+        path_mode: getPathMode(),
+        resumed: !announce
+      });
+      showScreen("convo");
+      setMapConversationPlaceholder();
+      if (announce) {
+        const prompt = getMapConversationIntro();
+        const last = state.history[state.history.length - 1];
+        if (!last || last.role !== "assistant" || !isMapChatIntroMessage(last.content)) {
+          addTypingBubble();
+          resolveTyping(prompt);
+          state.history.push({ role: "assistant", content: prompt });
+        }
+      }
+      showReplyBox(true);
+      updateReplyComposerActions();
+      schedulePersist();
+      return true;
+    }
+
+    function continueMapConversationFromChat() {
+      if (!state.ideas.length) return;
+      if (state.mapChat) {
+        showScreen("convo");
+        showReplyBox(true);
+        setMapConversationPlaceholder();
+        updateReplyComposerActions();
+        $("#reply-textarea")?.focus();
+        return;
+      }
+      const run = () => enterMapConversationMode({ announce: true });
+      if (hasAnyGeneratedRoadmaps()) {
+        showConfirmDialog({
+          title: "Refine your map?",
+          message: "You've already opened step-by-step roadmaps for some paths.",
+          detail: "Refining your map may change those roadmaps and reset progress that isn't saved to your account.",
+          confirmLabel: "Continue conversation",
+          cancelLabel: "Stay in chat"
+        }).then((ok) => {
+          if (ok) run();
+        });
+        return;
+      }
+      run();
+    }
+
+    function goToMapFromChat() {
+      if (!state.ideas.length) return;
+      showScreen("map");
+      updateReplyComposerActions();
+      updateScreenNavButtons();
+      schedulePersist();
+    }
+
+    function goToRoadmapFromChat() {
+      if (!state.currentIdea || !state.roadmapKey) return;
+      const cached = state.allRoadmaps[state.roadmapKey];
+      if (!state.roadmapStages.length && Array.isArray(cached?.stages) && cached.stages.length) {
+        state.roadmapStages = normalizeRoadmapStages(cached.stages);
+      }
+      showScreen("roadmap");
+      updateReplyComposerActions();
+      updateScreenNavButtons();
+      schedulePersist();
+    }
+
     function startAlterPathChat() {
       if (!state.ideas.length) return;
-      const runAlter = () => {
-        state.mapChat = { type: "alter" };
-        state.alterPathMode = false;
-        trackEvent("alter_path_started", { ideas_count: state.ideas.length, path_mode: getPathMode() });
-        showScreen("convo");
-        const prompt = isDirectPathMode()
-          ? `Want to refine "${state.ideas[0]?.title || "your path"}"? Tell me what's not fitting — too slow, wrong focus, not local enough, etc. Chat as long as you need; tap "Update my path" when you're ready, or go back to your map anytime.`
-          : "Want to tweak these paths or add new ones? Tell me what's not fitting, what direction you'd rather explore, or what to add. Chat here as long as you need; tap \"Update my paths\" when you want a revised map, or go back to your map anytime.";
-        addTypingBubble();
-        resolveTyping(prompt);
-        state.history.push({ role: "assistant", content: prompt });
-        const reply = $("#reply-textarea");
-        if (reply) {
-          reply.placeholder = isDirectPathMode()
-            ? "e.g. Keep this as a job path — I want help desk or IT support, not freelance"
-            : "e.g. These feel too online — I want something local and hands-on...";
-        }
-        showReplyBox(true);
-        updateReplyMapActions();
-        schedulePersist();
-      };
+      const runAlter = () => enterMapConversationMode({ announce: true });
       if (hasAnyGeneratedRoadmaps()) {
         showConfirmDialog({
           title: "Refine your map?",
@@ -37431,7 +37513,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           : "e.g. Is this realistic if I only have weekends? Could it work part-time?";
       }
       showReplyBox(true);
-      updateReplyMapActions();
+      updateReplyComposerActions();
       schedulePersist();
     }
 
@@ -37528,7 +37610,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       addTypingBubble("Regenerating your roadmap with new steps...");
       state.mapChat = null;
       state.alterPathMode = false;
-      updateReplyMapActions();
+      updateReplyComposerActions();
       const reply = $("#reply-textarea");
       if (reply) reply.placeholder = "Type your response...";
 
@@ -37546,6 +37628,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setRoadmapNavVisible(true);
       schedulePersist();
       await viewRoadmap(idea, index, { force: true, previousStages });
+    }
+
+    function updateReplyEscapeActions() {
+      const escape = $("#reply-escape-actions");
+      const continueBtn = $("#reply-continue-map-btn");
+      const backMapBtn = $("#reply-back-map-escape-btn");
+      const backRoadmapBtn = $("#reply-back-roadmap-btn");
+      if (!escape) return;
+
+      const chatActive = $("#screen-main")?.classList.contains("is-chat-active");
+      const hasIdeas = state.ideas.length > 0;
+      const hasRoadmap = Boolean(state.currentIdea && state.roadmapKey);
+      escape.hidden = !(chatActive && (hasIdeas || hasRoadmap));
+
+      if (continueBtn) {
+        continueBtn.hidden = !hasIdeas;
+        continueBtn.disabled = Boolean(state.mapChat);
+        continueBtn.textContent = state.mapChat ? "Map conversation active" : "Continue map conversation";
+      }
+      if (backMapBtn) backMapBtn.hidden = !hasIdeas;
+      if (backRoadmapBtn) backRoadmapBtn.hidden = !hasRoadmap;
     }
 
     function updateReplyMapActions() {
@@ -37569,12 +37672,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
     }
 
+    function updateReplyComposerActions() {
+      updateReplyEscapeActions();
+      updateReplyMapActions();
+    }
+
     function exitMapChat() {
       state.mapChat = null;
       state.alterPathMode = false;
       const reply = $("#reply-textarea");
       if (reply) reply.placeholder = "Type your response...";
-      updateReplyMapActions();
+      updateReplyComposerActions();
       showScreen("map");
       schedulePersist();
     }
@@ -37650,7 +37758,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       setRoadmapNavVisible(false);
       const reply = $("#reply-textarea");
       if (reply) reply.placeholder = "Type your response...";
-      updateReplyMapActions();
+      updateReplyComposerActions();
 
       const closing = direct
         ? "Got it — I've refined your path based on that. Take a look at the updated version on your map."
@@ -37716,7 +37824,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.alterPathMode = false;
       const reply = $("#reply-textarea");
       if (reply) reply.placeholder = "Type your response...";
-      updateReplyMapActions();
+      updateReplyComposerActions();
 
       const closing = `Updated path ${index + 1} based on our chat. Take a look at the revised version on your map.`;
       resolveTyping(closing);
@@ -38482,12 +38590,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function prepareLeaveMapForConvo() {
       const trimmedIntro = trimDanglingMapChatIntro();
-      state.mapChat = null;
       state.alterPathMode = false;
-      updateReplyMapActions();
       const reply = $("#reply-textarea");
       if (reply) reply.placeholder = "Type your response...";
-      showReplyBox(false);
+      showReplyBox(true);
+      updateReplyComposerActions();
       if (trimmedIntro) restoreConversationBubbles();
     }
 
@@ -38661,6 +38768,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       renderSidebarRoadmaps();
       updateScreenNavButtons();
+      if (chatOnMain) updateReplyComposerActions();
       requestAnimationFrame(() => {
         updateScrollProgress();
         syncRoadmapStickyOffset();
@@ -38799,7 +38907,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       reply.style.display = show ? "block" : "none";
       reply.classList.toggle("has-intake-chips", Boolean(chipsInChain || (chips && !chips.hidden && chips.querySelector(".profile-intake-chips-list")?.children.length)));
       if (show) {
-        updateReplyMapActions();
+        updateReplyComposerActions();
         syncReplyPromptHeight();
         if (!options.skipFocus && !reply.classList.contains("has-intake-chips")) {
           $("#reply-textarea")?.focus();
@@ -50022,9 +50130,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         syncReplyPromptHeight();
       }
       $("#reply-reset-btn")?.addEventListener("click", confirmStartNewMap);
+      $("#reply-continue-map-btn")?.addEventListener("click", continueMapConversationFromChat);
+      $("#reply-back-map-escape-btn")?.addEventListener("click", goToMapFromChat);
+      $("#reply-back-roadmap-btn")?.addEventListener("click", goToRoadmapFromChat);
       $("#reply-apply-map-btn")?.addEventListener("click", applyMapChatChanges);
       $("#reply-regen-roadmap-btn")?.addEventListener("click", () => regenerateRoadmapFromChat());
-      $("#reply-back-map-btn")?.addEventListener("click", exitMapChat);
 
       $("#opp-plans-section")?.addEventListener("click", (event) => {
         const moreBtn = event.target.closest(".map-paths-more-btn");
