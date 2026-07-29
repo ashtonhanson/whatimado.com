@@ -1473,7 +1473,8 @@
       inset: 0 0 auto 0;
       z-index: 25;
       width: 100%;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
       box-sizing: border-box;
       height: auto;
@@ -1487,45 +1488,59 @@
       box-shadow: 0 1px 0 rgba(0, 0, 0, .24);
     }
 
-    html[data-color-scheme="adult"] .minimal-topbar .dashboard-topbar-start,
+    html[data-color-scheme="adult"] .minimal-topbar .dashboard-topbar-start {
+      grid-column: 1;
+      justify-self: start;
+      pointer-events: auto;
+    }
+
     html[data-color-scheme="adult"] .minimal-topbar .dashboard-topbar-end {
+      grid-column: 3;
+      justify-self: end;
       pointer-events: auto;
     }
 
     html[data-color-scheme="adult"] .topbar-logo {
+      grid-column: 2;
+      justify-self: center;
       display: inline-flex;
       align-items: center;
       text-decoration: none;
       color: inherit;
+      pointer-events: auto;
     }
 
     html[data-color-scheme="adult"] .topbar-logo img {
       display: block;
-      height: 34px;
+      height: 44px;
       width: auto;
-      max-width: min(52vw, 188px);
+      max-width: min(68vw, 240px);
       object-fit: contain;
-      object-position: left center;
+      object-position: center center;
     }
 
     @media (max-width: 960px) {
-      html[data-color-scheme="adult"] .topbar-logo img {
-        height: 44px;
-        max-width: min(68vw, 240px);
-      }
-
       html[data-color-scheme="adult"] .dashboard-topbar.minimal-topbar {
         background: rgba(10, 13, 20, .68);
       }
     }
 
-    /* Sidebar stays a slide-in drawer at every breakpoint — full-width main content */
-
-    @media (min-width: 768px) {
+    @media (min-width: 961px) {
       html[data-color-scheme="adult"] .topbar-logo img {
-        height: 36px;
+        height: 52px;
+        max-width: min(42vw, 280px);
       }
     }
+
+    html[data-color-scheme="adult"] #map-page-nav-back,
+    html[data-color-scheme="adult"] #map-page-nav-forward,
+    html[data-color-scheme="adult"] .map-header-nav-row,
+    html[data-color-scheme="adult"] #roadmap-page-nav-back,
+    html[data-color-scheme="adult"] #roadmap-page-nav-forward {
+      display: none !important;
+    }
+
+    /* Sidebar stays a slide-in drawer at every breakpoint — full-width main content */
 
     html[data-color-scheme="adult"] .minimal-home {
       width: 100%;
@@ -17837,7 +17852,7 @@
     <div class="dashboard-main">
       <header class="dashboard-topbar minimal-topbar">
         <div class="dashboard-topbar-start">
-          <div class="screen-nav-controls" id="topbar-screen-nav" hidden>
+          <div class="screen-nav-controls" id="topbar-screen-nav">
             <button type="button" class="screen-nav-btn page-screen-nav-back" id="convo-page-nav-back" aria-label="Go back" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
             </button>
@@ -17845,10 +17860,10 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
             </button>
           </div>
-          <a class="topbar-logo" href="#main" data-home-nav aria-label="whatimado home">
-            <img src="/whatimado-logo.svg" alt="whatimado" width="1366" height="664">
-          </a>
         </div>
+        <a class="topbar-logo" href="#main" data-home-nav aria-label="whatimado home">
+          <img src="/whatimado-logo.svg" alt="whatimado" width="1366" height="664">
+        </a>
         <div class="dashboard-topbar-end">
           <button type="button" class="dashboard-topbar-btn dashboard-mobile-menu" id="dashboard-mobile-menu" aria-label="Open menu">
             <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
@@ -37046,6 +37061,18 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && !state.mapChat;
     }
 
+    function shouldRestoreReplyComposer() {
+      if (!state.history.length) return false;
+      if (state.awaitingPathModeChoice || shouldShowPathModeChoiceOnRestore()) return false;
+      if (state.roadmapConfirmGate?.awaiting) return false;
+      return (
+        state.step >= 2
+        || Boolean(state.mapChat)
+        || Boolean(state.profileIntakeStep)
+        || Boolean(state.roadmapCheckIn?.awaiting || state.roadmapCheckIn?.deferred)
+      );
+    }
+
     function restoreConversationBubbles() {
       const chain = $("#bubble-chain");
       if (!chain || !state.history.length) return;
@@ -37061,7 +37088,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       });
       if (state.awaitingPathModeChoice || shouldShowPathModeChoiceOnRestore()) {
         showPathModeChoice();
-      } else if (state.step >= 2 && state.step < INTAKE_STEP_MAP) {
+      } else if (shouldRestoreReplyComposer()) {
         showReplyBox(true);
       }
       updateReplyComposerActions();
@@ -37404,6 +37431,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       renderSavedMapsHome();
       renderSidebarRoadmaps();
       updateScreenNavButtons();
+      if ($("#screen-main")?.classList.contains("is-chat-active") && shouldRestoreReplyComposer()) {
+        showReplyBox(true);
+      }
       updateReplyComposerActions();
     }
 
@@ -38554,9 +38584,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function updateScreenNavButtons() {
       const canBack = canScreenNavBack();
       const canForward = screenNavFuture.length > 0;
-      const chatActive = $("#screen-main")?.classList.contains("is-chat-active");
-      const topbarNav = $("#topbar-screen-nav");
-      if (topbarNav) topbarNav.hidden = !chatActive;
 
       [
         $("#map-page-nav-back"),
