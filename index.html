@@ -1952,9 +1952,35 @@
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-actions {
       display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
       justify-content: center;
+      align-items: center;
+      gap: .55rem;
       margin-top: .55rem;
       padding: 0 .15rem;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-map-action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .48rem 1rem;
+      border: 1px solid rgba(37, 99, 235, .28);
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .08);
+      color: var(--ink);
+      font-size: .74rem;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
+      transition: border-color .15s ease, color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-map-action-btn:hover {
+      border-color: rgba(37, 99, 235, .42);
+      background: rgba(37, 99, 235, .14);
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .reset-pill {
@@ -3584,6 +3610,18 @@
       color: #b91c1c;
       border-color: rgba(239, 68, 68, .35);
       background: rgba(239, 68, 68, .06);
+    }
+
+    html[data-color-scheme="adult"] .reply-map-action-btn {
+      border-color: rgba(37, 99, 235, .28);
+      background: rgba(37, 99, 235, .08);
+      color: var(--ink);
+    }
+
+    html[data-color-scheme="adult"] .reply-map-action-btn:hover {
+      border-color: rgba(37, 99, 235, .42);
+      background: rgba(37, 99, 235, .14);
+      color: var(--ink);
     }
 
     html[data-color-scheme="adult"] .reply-map-btn {
@@ -7414,24 +7452,12 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: .55rem;
-      justify-content: flex-start;
       margin-top: .6rem;
     }
 
-    .reply-escape-actions,
-    .reply-map-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .55rem;
-      width: 100%;
-    }
-
-    .reply-escape-actions[hidden],
-    .reply-map-actions[hidden] {
-      display: none !important;
-    }
-
+    .reply-map-action-btn,
     .reply-map-btn {
       display: inline-flex;
       align-items: center;
@@ -7444,7 +7470,12 @@
       border: 1px solid rgba(124, 111, 205, .45);
       background: rgba(124, 111, 205, .18);
       color: var(--ink);
+      cursor: pointer;
       transition: .16s ease;
+    }
+
+    .reply-map-action-btn[hidden] {
+      display: none !important;
     }
 
     .reply-map-btn:hover {
@@ -16871,8 +16902,7 @@
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-inner,
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-actions,
-      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-escape-actions,
-      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-map-actions,
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-map-action-btn,
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .profile-intake-chips {
         pointer-events: auto;
       }
@@ -17922,16 +17952,8 @@
             </div>
             <div class="profile-intake-chips" id="profile-intake-chips" hidden aria-label="Quick answer options"></div>
             <div class="reply-actions">
-              <div class="reply-escape-actions" id="reply-escape-actions" hidden>
-                <button type="button" class="reply-map-btn" id="reply-continue-map-btn">Continue map conversation</button>
-                <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-map-escape-btn">Back to map</button>
-                <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-back-roadmap-btn" hidden>Back to roadmap</button>
-              </div>
-              <div class="reply-map-actions" id="reply-map-actions" hidden>
-                <button type="button" class="reply-map-btn" id="reply-apply-map-btn">Update my paths</button>
-                <button type="button" class="reply-map-btn reply-map-btn--ghost" id="reply-regen-roadmap-btn" hidden>Regenerate roadmap</button>
-              </div>
-              <button class="reset-pill" id="reply-reset-btn" type="button">Start new map</button>
+              <button type="button" class="reply-map-action-btn" id="reply-map-action-btn" hidden>Continue map conversation</button>
+              <button class="reset-pill" id="reply-reset-btn" type="button">Start New Map</button>
             </div>
           </div>
         </div>
@@ -37450,24 +37472,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       run();
     }
 
-    function goToMapFromChat() {
-      if (!state.ideas.length) return;
-      showScreen("map");
-      updateReplyComposerActions();
-      updateScreenNavButtons();
-      schedulePersist();
-    }
-
-    function goToRoadmapFromChat() {
-      if (!state.currentIdea || !state.roadmapKey) return;
-      const cached = state.allRoadmaps[state.roadmapKey];
-      if (!state.roadmapStages.length && Array.isArray(cached?.stages) && cached.stages.length) {
-        state.roadmapStages = normalizeRoadmapStages(cached.stages);
+    function handleReplyMapActionClick() {
+      if (state.mapChat) {
+        applyMapChatChanges();
+        return;
       }
-      showScreen("roadmap");
-      updateReplyComposerActions();
-      updateScreenNavButtons();
-      schedulePersist();
+      continueMapConversationFromChat();
     }
 
     function startAlterPathChat() {
@@ -37630,61 +37640,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       await viewRoadmap(idea, index, { force: true, previousStages });
     }
 
-    function updateReplyEscapeActions() {
-      const escape = $("#reply-escape-actions");
-      const continueBtn = $("#reply-continue-map-btn");
-      const backMapBtn = $("#reply-back-map-escape-btn");
-      const backRoadmapBtn = $("#reply-back-roadmap-btn");
-      if (!escape) return;
-
-      const chatActive = $("#screen-main")?.classList.contains("is-chat-active");
-      const hasIdeas = state.ideas.length > 0;
-      const hasRoadmap = Boolean(state.currentIdea && state.roadmapKey);
-      escape.hidden = !(chatActive && (hasIdeas || hasRoadmap));
-
-      if (continueBtn) {
-        continueBtn.hidden = !hasIdeas;
-        continueBtn.disabled = Boolean(state.mapChat);
-        continueBtn.textContent = state.mapChat ? "Map conversation active" : "Continue map conversation";
-      }
-      if (backMapBtn) backMapBtn.hidden = !hasIdeas;
-      if (backRoadmapBtn) backRoadmapBtn.hidden = !hasRoadmap;
-    }
-
-    function updateReplyMapActions() {
-      const actions = $("#reply-map-actions");
-      const applyBtn = $("#reply-apply-map-btn");
-      const regenBtn = $("#reply-regen-roadmap-btn");
-      if (!actions) return;
-      const active = Boolean(state.mapChat);
-      actions.hidden = !active;
-      if (applyBtn) {
-        if (state.mapChat?.type === "idea") {
-          applyBtn.textContent = "Update this path";
-        } else if (isDirectPathMode() && state.mapChat?.type === "alter") {
-          applyBtn.textContent = "Update my path";
-        } else {
-          applyBtn.textContent = "Update my paths";
-        }
-      }
-      if (regenBtn) {
-        regenBtn.hidden = !(state.mapChat?.type === "idea" && state.mapChat?.fromRoadmap);
-      }
+    function getReplyMapActionLabel() {
+      return state.mapChat ? "Update my paths" : "Continue map conversation";
     }
 
     function updateReplyComposerActions() {
-      updateReplyEscapeActions();
-      updateReplyMapActions();
-    }
+      const actionBtn = $("#reply-map-action-btn");
+      if (!actionBtn) return;
 
-    function exitMapChat() {
-      state.mapChat = null;
-      state.alterPathMode = false;
-      const reply = $("#reply-textarea");
-      if (reply) reply.placeholder = "Type your response...";
-      updateReplyComposerActions();
-      showScreen("map");
-      schedulePersist();
+      const chatActive = $("#screen-main")?.classList.contains("is-chat-active");
+      const hasIdeas = state.ideas.length > 0;
+      actionBtn.hidden = !(chatActive && hasIdeas);
+      actionBtn.textContent = getReplyMapActionLabel();
+      actionBtn.setAttribute("aria-pressed", state.mapChat ? "true" : "false");
     }
 
     function buildMapChatPrompt(summary) {
@@ -50130,11 +50098,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         syncReplyPromptHeight();
       }
       $("#reply-reset-btn")?.addEventListener("click", confirmStartNewMap);
-      $("#reply-continue-map-btn")?.addEventListener("click", continueMapConversationFromChat);
-      $("#reply-back-map-escape-btn")?.addEventListener("click", goToMapFromChat);
-      $("#reply-back-roadmap-btn")?.addEventListener("click", goToRoadmapFromChat);
-      $("#reply-apply-map-btn")?.addEventListener("click", applyMapChatChanges);
-      $("#reply-regen-roadmap-btn")?.addEventListener("click", () => regenerateRoadmapFromChat());
+      $("#reply-map-action-btn")?.addEventListener("click", handleReplyMapActionClick);
 
       $("#opp-plans-section")?.addEventListener("click", (event) => {
         const moreBtn = event.target.closest(".map-paths-more-btn");
