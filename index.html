@@ -20974,6 +20974,7 @@
     }
 
     function ensureDraftResources(normalized) {
+      if (isDiscoveryArchetypePath(state.currentIdea)) return normalized;
       if (getFlatTaskResources(normalized).length >= 2 || !isOrgListTask(normalized)) return normalized;
       const known = getKnownLocalResourcesForPath(state.currentIdea, getUserLocation());
       if (!known.length) return normalized;
@@ -23242,6 +23243,12 @@ Practice each one out loud once and time yourself.`;
     }
 
     function getGeneralDraftSuggestionIds(normalized) {
+      if (isDiscoveryArchetypePath(state.currentIdea)) {
+        return getMentionedDraftSuggestionIds(normalized).filter((id) =>
+          !["contact_tracker", "outreach_email", "phone_script", "follow_up_email"].includes(id)
+        );
+      }
+
       if (isPeopleInterviewTask(normalized)) {
         return ["interview_questions", "research_checklist"];
       }
@@ -26018,13 +26025,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return Number(state.clarifyingQuestionsAsked) || 0;
     }
 
-    // Strict "Identity & Assets" gate: >= 2 concrete skills AND >= 1 personal interest/hobby.
+    // Identity & Assets gate: enough named skills to sketch a real path (hobby optional).
     function identityAssetsPhaseSatisfied(text = "") {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return true;
       const blob = String(text || getConversationUserBlob()).toLowerCase();
       if (!blob.trim()) return false;
-      return countConcreteSkillSignals(blob) >= IDENTITY_ASSETS_MIN_SKILLS
-        && conversationMentionsHobbyOrInterest(blob);
+      const skills = countConcreteSkillSignals(blob);
+      if (skills >= IDENTITY_ASSETS_MIN_SKILLS) return true;
+      if (skills >= 1 && conversationHasStatedWorkOrSkill(blob)) return true;
+      return false;
     }
 
     // How many times the user has signalled they're stuck / don't know (excludes the
@@ -26046,6 +26055,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function identityAssetsSafetyValveTriggered(text = "") {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
       if (identityAssetsPhaseSatisfied(text)) return false;
+      // Skilled users who named real work should get tailored paths, not Discovery & Clarity.
+      if (conversationHasStatedWorkOrSkill(text) && countConcreteSkillSignals(text) >= 1) return false;
       if (explorationTurnCount() >= IDENTITY_ASSETS_SAFETY_VALVE_TURNS) return true;
       if (explorationTurnCount() >= IDENTITY_ASSETS_MIN_TURNS && countStuckOrUnsureExpressions() >= 2) return true;
       return false;
@@ -26065,6 +26076,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     // True when we let them through via the safety valve rather than a met baseline.
     function shouldRouteToDiscoveryClarity(text = "") {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (conversationHasStatedWorkOrSkill(text) && countConcreteSkillSignals(text) >= 1) return false;
       if (state.discoveryClarityMode) return true;
       return identityAssetsSafetyValveTriggered(text) && !identityAssetsPhaseSatisfied(text);
     }
@@ -26869,7 +26881,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (fromSource && !isGenericMissionTitle(fromSource)) pool.push(fromSource);
       const fromAction = summarizeMissionTitle(getTaskDisplayActionText(normalized), { usedTitles });
       if (fromAction && !isGenericMissionTitle(fromAction)) pool.push(fromAction);
-      pool.push(...getMissionTitleCandidates(angle, normalized, idea));
+      const businessAngles = new Set(["outreach", "track_outreach", "first_client", "business_advisor", "funding"]);
+      if (!isDiscoveryArchetypePath(idea) || !businessAngles.has(angle)) {
+        pool.push(...getMissionTitleCandidates(angle, normalized, idea));
+      }
       const forInfer = { ...normalized, mission: "" };
       const inferred = inferMissionTitle(forInfer, { taskIndex, stageLabel });
       if (inferred) pool.push(inferred);
@@ -27279,6 +27294,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = getTaskContentBlob(normalized);
       const mentionedDrafts = getMentionedDraftSuggestionIds(normalized);
 
+      if (isDiscoveryArchetypePath(state.currentIdea)) {
+        const discoveryText = humanizeTaskText(text || normalized.text || "");
+        if (discoveryText) return personalizeTaskActionText(discoveryText, state.currentIdea);
+      }
+
       if ((isProductBuilderPath(state.currentIdea) || isDigitalProductTask(normalized))
         && text
         && !/\b(call each business|visit, who you spoke|contact tracking spreadsheet|log each business)\b/i.test(text)) {
@@ -27460,6 +27480,15 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function buildAlternateTaskForAngle(angle, repeatIndex, idea = state.currentIdea) {
+      if (isDiscoveryArchetypePath(idea)) {
+        const discoveryAlts = [
+          "Jot one line about a moment this week when you felt useful or lost track of time",
+          "Ask one person who knows you what they usually come to you for",
+          "Pick one tiny 30-minute experiment and put it on your calendar for this week"
+        ];
+        const text = discoveryAlts[Math.min(repeatIndex, discoveryAlts.length - 1)];
+        return normalizeRoadmapTask({ text, duration: "30 minutes", difficulty: "Easy" });
+      }
       const service = getServiceLabel(idea);
       const loc = getUserLocation() || "your area";
       const alts = {
@@ -29024,6 +29053,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function taskNeedsLocalContacts(task, stage, stageIndex, idea = state.currentIdea) {
+      if (isDiscoveryArchetypePath(idea)) return false;
       const normalized = normalizeRoadmapTask(task);
       const taskText = getTaskContentBlob(normalized);
       if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
@@ -29270,6 +29300,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     /* ===== SECTION: Local resources injection ===== */
     function ensureRoadmapLocalContacts(stages, idea = state.currentIdea, options = {}) {
       try {
+        if (isDiscoveryArchetypePath(idea)) {
+          return enrichTaskClarity(normalizeRoadmapStages(stages), idea);
+        }
         const { force = false } = options;
         let cleaned = stripMisplacedLocalContacts(stages, idea);
         if (force) cleaned = clearTaskResourcesForReinjection(cleaned, idea);
@@ -31310,6 +31343,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return /\b(workforce|american job center|211|staffing agenc|community college|compare training|upwork|fiverr|99designs?|skill sprint|local help-for-hire|contra\.com|indeed|google jobs|job search|hiring lanes)\b/i.test(text);
     }
 
+    function roadmapHasDiscoveryBusinessMismatch(stages, idea = state.currentIdea) {
+      if (!isDiscoveryArchetypePath(idea)) return false;
+      const businessAngles = new Set(["outreach", "track_outreach", "first_client", "business_advisor", "job_search"]);
+      return (stages || []).some((stage) =>
+        (stage.tasks || []).some((task) => {
+          if (isPendingRoadmapTask(task)) return false;
+          const normalized = normalizeRoadmapTask(task);
+          const blob = getTaskContentBlob(normalized).toLowerCase();
+          if (businessAngles.has(extractTaskAngle(normalized))) return true;
+          if (taskTextIsEmploymentFocused(blob)) return true;
+          return /\b(reach out to (?:one )?prospect|contact tracking spreadsheet|log each business|sba local|startup advising|workforce|staffing agenc|prospect pipeline)\b/.test(blob);
+        })
+      );
+    }
+
     function getGroundedSidebarResources(idea = null) {
       const profile = getUserSituationProfile(idea);
       const city = profile.city && profile.city !== "your city" ? profile.city : "";
@@ -31605,6 +31653,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       // In safety-valve mode every generated path is a discovery path.
       return Boolean(state.discoveryClarityMode) && /\bself[- ]?discovery\b/.test(blob);
+    }
+
+    function isDiscoveryArchetypePath(idea = state.currentIdea) {
+      return isDiscoveryClarityIdea(idea);
     }
 
     function getPathArchetype(idea) {
@@ -44656,10 +44708,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       // Prefer keeping a usable AI draft instead of silently swapping in a template.
       if (lenient && working?.length && stageOneHasRevealableMission(working)) {
-        return finish(working, source);
+        if (!(isDiscoveryArchetypePath(idea) && roadmapHasDiscoveryBusinessMismatch(working, idea))) {
+          return finish(working, source);
+        }
       }
 
-      if (working && founderMode && roadmapLooksLikeEndUserReentry(working)) {
+      if (working && isDiscoveryArchetypePath(idea) && roadmapHasDiscoveryBusinessMismatch(working, idea)) {
+        working = normalizeRoadmapStages(getFallbackStages(idea));
+        source = "fallback";
+        trackEvent("roadmap_discovery_business_mismatch_fallback", { idea_index: ideaIndex });
+      } else if (working && founderMode && roadmapLooksLikeEndUserReentry(working)) {
         working = getFounderFallbackStages(idea);
         source = "fallback";
         trackEvent("roadmap_founder_reentry_mismatch_fallback", { idea_index: ideaIndex });
@@ -45157,6 +45215,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     async function generateRoadmapStagesFromAi(idea, ideaIndex, options = {}, callbacks = {}) {
       const founderMode = isFounderRoadmapForIdea(idea);
       if (HPE_CONFIG.enabled) refreshProgressContext(idea);
+
+      // Discovery paths use curated fallback exercises — AI often injects business outreach tasks.
+      if (isDiscoveryArchetypePath(idea) && !options.force) {
+        const fallbackStages = normalizeRoadmapStages(getFallbackStages(idea));
+        return finalizeRoadmapStages(fallbackStages, idea, founderMode, ideaIndex, {
+          roadmapSource: "fallback",
+          lenient: false
+        });
+      }
+
       const context = getAdvisorContext();
       const refreshBlock = [
         options.previousStages?.length ? buildRoadmapRefreshBlock(options.previousStages) : "",
