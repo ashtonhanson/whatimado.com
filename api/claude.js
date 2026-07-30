@@ -1,21 +1,42 @@
 const ADVISOR_MODEL_RATES_USD = {
-  'claude-sonnet-4-5': { inputPer1M: 3, outputPer1M: 15 },
-  'claude-3-5-sonnet-20241022': { inputPer1M: 3, outputPer1M: 15 }
+  'anthropic/claude-sonnet-4': { inputPer1M: 3, outputPer1M: 15 },
+  'claude-sonnet-4-5': { inputPer1M: 3, outputPer1M: 15 }
 };
 
 function estimateAdvisorCostUsd(model, inputTokens = 0, outputTokens = 0) {
-  const rates = ADVISOR_MODEL_RATES_USD[model] || ADVISOR_MODEL_RATES_USD['claude-sonnet-4-5'];
+  const rates = ADVISOR_MODEL_RATES_USD[model] || ADVISOR_MODEL_RATES_USD['anthropic/claude-sonnet-4'];
   return Number(
-    (
-      (inputTokens / 1_000_000) * rates.inputPer1M +
-      (outputTokens / 1_000_000) * rates.outputPer1M
-    ).toFixed(6)
+    ((inputTokens / 1_000_000) * rates.inputPer1M + (outputTokens / 1_000_000) * rates.outputPer1M).toFixed(6)
   );
 }
 
-function logAnthropicUsage(entry) {
-  const line = JSON.stringify({ type: 'anthropic_api_call', ...entry });
-  console.log(line);
+function logAdvisorUsage(entry) {
+  console.log(JSON.stringify({ type: 'advisor_api_call', ...entry }));
+}
+
+// Map what the frontend sends → OpenRouter model slug
+function toOpenRouterModel(model) {
+  const map = {
+    'claude-sonnet-4-5': 'anthropic/claude-sonnet-4',
+    'claude-3-5-sonnet-20241022': 'anthropic/claude-3.5-sonnet'
+  };
+  return map[model] || model;
+}
+
+// OpenRouter (OpenAI-style) → Anthropic shape your frontend expects
+function toAnthropicShape(openRouterData, modelUsed) {
+  const text = openRouterData?.choices?.[0]?.message?.content || '';
+  return {
+    id: openRouterData?.id || 'openrouter',
+    type: 'message',
+    role: 'assistant',
+    model: modelUsed,
+    content: [{ type: 'text', text }],
+    usage: {
+      input_tokens: openRouterData?.usage?.prompt_tokens || 0,
+      output_tokens: openRouterData?.usage?.completion_tokens || 0
+    }
+  };
 }
 
 export default async function handler(req, res) {
@@ -24,13 +45,14 @@ export default async function handler(req, res) {
   }
 
   const startedAt = Date.now();
+  const apiKey = process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY;
 
   try {
     const { model, messages, max_tokens, feature, callId } = req.body;
-    const modelUsed = model || 'claude-3-5-sonnet-20241022';
+    const modelUsed = toOpenRouterModel(model || 'claude-sonnet-4-5');
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return res.status(500).json({ error: 'API key is missing from backend environment variables.' });
+    if (!apiKey) {
+      return res.status(500).json({ error: 'API key is missing (set OPENROUTER_API_KEY in Vercel).' });
     }
 
     const safeMessages = Array.isArray(messages)
@@ -47,12 +69,13 @@ export default async function handler(req, res) {
         })
       : messages;
 
-    const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+    const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        Authorization: `Bearer ${apiKey}`,
+        'HTTP-Referer': process.env.SITE_URL || 'https://whatimado.com',
+        'X-Title': process.env.SITE_NAME || 'whatimado'
       },
       body: JSON.stringify({
         model: modelUsed,
@@ -61,30 +84,27 @@ export default async function handler(req, res) {
       })
     });
 
-    if (!anthropicResponse.ok) {
-      const errorText = await anthropicResponse.text();
-      logAnthropicUsage({
+    if (!openRouterResponse.ok) {
+      const errorText = await openRouterResponse.text();
+      logAdvisorUsage({
         callId: callId || null,
         feature: feature || 'unknown',
         timestamp: new Date().toISOString(),
         model: modelUsed,
         ok: false,
-        httpStatus: anthropicResponse.status,
+        httpStatus: openRouterResponse.status,
         durationMs: Date.now() - startedAt,
-        maxTokensRequested: max_tokens || 1024,
-        inputTokens: 0,
-        outputTokens: 0,
-        estimatedCostUsd: 0,
         error: errorText.slice(0, 240)
       });
-      return res.status(anthropicResponse.status).json({ error: `Anthropic API Error: ${errorText}` });
+      return res.status(openRouterResponse.status).json({ error: `OpenRouter API Error: ${errorText}` });
     }
 
-    const data = await anthropicResponse.json();
-    const inputTokens = data?.usage?.input_tokens || 0;
-    const outputTokens = data?.usage?.output_tokens || 0;
+    const openRouterData = await openRouterResponse.json();
+    const anthropicShape = toAnthropicShape(openRouterData, modelUsed);
+    const inputTokens = anthropicShape.usage.input_tokens;
+    const outputTokens = anthropicShape.usage.output_tokens;
 
-    logAnthropicUsage({
+    logAdvisorUsage({
       callId: callId || null,
       feature: feature || 'unknown',
       timestamp: new Date().toISOString(),
@@ -98,24 +118,9 @@ export default async function handler(req, res) {
       estimatedCostUsd: estimateAdvisorCostUsd(modelUsed, inputTokens, outputTokens)
     });
 
-    return res.status(200).json(data);
-
+    return res.status(200).json(anthropicShape);
   } catch (error) {
     console.error('Network Error:', error);
-    logAnthropicUsage({
-      callId: req.body?.callId || null,
-      feature: req.body?.feature || 'unknown',
-      timestamp: new Date().toISOString(),
-      model: req.body?.model || 'claude-3-5-sonnet-20241022',
-      ok: false,
-      httpStatus: 500,
-      durationMs: Date.now() - startedAt,
-      maxTokensRequested: req.body?.max_tokens || 1024,
-      inputTokens: 0,
-      outputTokens: 0,
-      estimatedCostUsd: 0,
-      error: error.message || 'Internal Server Error'
-    });
     return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 }
