@@ -2969,6 +2969,7 @@
     html[data-color-scheme="adult"] #screen-map.active .page {
       width: min(100%, 1080px);
       margin-inline: auto;
+      padding-top: calc(var(--topbar-h, 52px) + 1.35rem);
       padding-inline: clamp(1rem, 3vw, 1.5rem);
       box-sizing: border-box;
     }
@@ -20974,7 +20975,7 @@
     }
 
     function ensureDraftResources(normalized) {
-      if (isDiscoveryArchetypePath(state.currentIdea)) return normalized;
+      if (shouldSkipBusinessOutreachEnrichment(state.currentIdea)) return normalized;
       if (getFlatTaskResources(normalized).length >= 2 || !isOrgListTask(normalized)) return normalized;
       const known = getKnownLocalResourcesForPath(state.currentIdea, getUserLocation());
       if (!known.length) return normalized;
@@ -23243,7 +23244,7 @@ Practice each one out loud once and time yourself.`;
     }
 
     function getGeneralDraftSuggestionIds(normalized) {
-      if (isDiscoveryArchetypePath(state.currentIdea)) {
+      if (shouldSkipBusinessOutreachEnrichment(state.currentIdea)) {
         return getMentionedDraftSuggestionIds(normalized).filter((id) =>
           !["contact_tracker", "outreach_email", "phone_script", "follow_up_email"].includes(id)
         );
@@ -26083,6 +26084,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function explorationReadyForRoadmapCheckIn(text = "") {
       if (isFounderOrProjectPrompt(getFirstUserMessage())) return true;
+      if (conversationSignalsStabilityIntake(text) && !stabilityBasicsIntakeComplete()) return false;
       // Hard lock: no roadmap options during the first three conversational turns, and not
       // until the user has explicitly shared >= 2 concrete skills AND >= 1 interest/hobby —
       // unless the safety valve fires (then we unlock toward Discovery & Clarity).
@@ -26882,7 +26884,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const fromAction = summarizeMissionTitle(getTaskDisplayActionText(normalized), { usedTitles });
       if (fromAction && !isGenericMissionTitle(fromAction)) pool.push(fromAction);
       const businessAngles = new Set(["outreach", "track_outreach", "first_client", "business_advisor", "funding"]);
-      if (!isDiscoveryArchetypePath(idea) || !businessAngles.has(angle)) {
+      if (!shouldSkipBusinessOutreachEnrichment(idea) || !businessAngles.has(angle)) {
         pool.push(...getMissionTitleCandidates(angle, normalized, idea));
       }
       const forInfer = { ...normalized, mission: "" };
@@ -27294,9 +27296,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = getTaskContentBlob(normalized);
       const mentionedDrafts = getMentionedDraftSuggestionIds(normalized);
 
-      if (isDiscoveryArchetypePath(state.currentIdea)) {
-        const discoveryText = humanizeTaskText(text || normalized.text || "");
-        if (discoveryText) return personalizeTaskActionText(discoveryText, state.currentIdea);
+      if (shouldSkipBusinessOutreachEnrichment(state.currentIdea)) {
+        const plainText = humanizeTaskText(text || normalized.text || "");
+        if (plainText && !/\b(contact tracking spreadsheet|log each business|workforce solutions|workforce solutions austin)\b/i.test(plainText)) {
+          return personalizeTaskActionText(plainText, state.currentIdea);
+        }
       }
 
       if ((isProductBuilderPath(state.currentIdea) || isDigitalProductTask(normalized))
@@ -27306,6 +27310,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
 
       if (mentionedDrafts.includes("contact_tracker") && !isDigitalProductPath(state.currentIdea) && !isDigitalProductTask(normalized)) {
+        if (shouldSkipBusinessOutreachEnrichment(state.currentIdea)) {
+          if (userNeedsIdFirst() || userNeedsHousingFirst()) {
+            return humanizeTaskText(text || "Call or visit the first local shelter or ID-help resource below — write down what they tell you.");
+          }
+          const plain = humanizeTaskText(text || normalized.text || "");
+          if (plain) return personalizeTaskActionText(plain, state.currentIdea);
+          return humanizeTaskText(text || "Use the local resources below — call or visit the first org on the list today.");
+        }
         if (isProductBuilderPath(state.currentIdea)) {
           return humanizeTaskText(text || "List each beta tester you invited: name, how you know them, whether they agreed, and when they'll try the site.");
         }
@@ -27488,6 +27500,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         ];
         const text = discoveryAlts[Math.min(repeatIndex, discoveryAlts.length - 1)];
         return normalizeRoadmapTask({ text, duration: "30 minutes", difficulty: "Easy" });
+      }
+      if (isStabilityArchetypePath(idea)) {
+        const city = shortenLocationForSpeech(getUserLocation() || "your area");
+        const stabilityAlts = [
+          `Call 211 or a housing navigator in ${city} — ask what you need for shelter tonight and which documents to bring`,
+          "Gather every ID paper you already have, medications, and your phone charger into one bag",
+          "Write down two backup places you could stay this week if your current setup changes"
+        ];
+        const text = stabilityAlts[Math.min(repeatIndex, stabilityAlts.length - 1)];
+        return normalizeRoadmapTask({ text, duration: "45 minutes", difficulty: "Easy" });
       }
       const service = getServiceLabel(idea);
       const loc = getUserLocation() || "your area";
@@ -28384,11 +28406,33 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (conversationMentionsHousingInstability(blob)) return true;
       if (conversationMentionsReentryHardship(blob)) return true;
       const softRebuild = /\b(rebuild(?:ing)? (?:my )?life|starting over|fresh start|back on (?:my )?feet)\b/.test(blob);
+      if (softRebuild && /\b(out in society|back out|reintegrat|everyday life|day to day|real world|on my own again|getting out|trying to get back|get back on)\b/.test(blob)) {
+        return true;
+      }
       if (!softRebuild) return false;
       return conversationMentionsIdNeed(blob)
         || conversationMentionsHousingInstability(blob)
         || conversationMentionsReentryHardship(blob)
         || /\b(no place|homeless|shelter|nowhere to stay|starting from nothing|no (?:valid )?id)\b/.test(blob);
+    }
+
+    // Practical stability intake (housing, ID, transport) — career/logistics only, not clinical.
+    function conversationSignalsStabilityIntake(text = "") {
+      if (isFounderOrProjectPrompt(getFirstUserMessage())) return false;
+      if (conversationLooksLikeCareerPivot(text)) return false;
+      const blob = String(text || getConversationUserBlob()).toLowerCase();
+      return conversationMentionsStabilityRebuild(blob)
+        || conversationMentionsHousingInstability(blob)
+        || conversationMentionsReentryHardship(blob)
+        || isReentrySituation();
+    }
+
+    function stabilityBasicsIntakeComplete(profile = normalizeUserProfile(state.userProfile)) {
+      if (!conversationSignalsStabilityIntake()) return true;
+      const housingKnown = profile.housingStatus === "has" || profile.housingStatus === "needs";
+      const idKnown = profile.idStatus === "has" || profile.idStatus === "needs";
+      const transportKnown = ["has", "needs", "limited"].includes(profile.transportStatus);
+      return housingKnown && idKnown && transportKnown;
     }
 
     function userNeedsHousingFirst(idea = null) {
@@ -28504,6 +28548,31 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.userProfile = profile;
     }
 
+    function profileIntakeNeedsTransportStep(profile = normalizeUserProfile(state.userProfile)) {
+      if (!conversationSignalsStabilityIntake()) return false;
+      if (["has", "needs", "limited"].includes(profile.transportStatus)) return false;
+      return true;
+    }
+
+    function parseTransportStatus(text) {
+      const q = String(text || "").toLowerCase().trim();
+      if (!q) return "";
+      if (/\b(yes|yeah|yep|have (?:a )?car|own (?:a )?car|reliable (?:car|transport|vehicle)|drive|driver'?s license)\b/.test(q)
+        && !/\b(no|don'?t|not|without)\b/.test(q)) {
+        return "has";
+      }
+      if (/\b(sometimes|limited|bus|transit|public transport|bike|bicycle|rides|uber|lyft|occasionally)\b/.test(q)) {
+        return "limited";
+      }
+      if (/\b(no|nope|don'?t have|do not have|without (?:a )?car|no car|no transport|no vehicle|not really)\b/.test(q)) {
+        return "needs";
+      }
+      if (/\b(not sure|unsure|working on|maybe)\b/.test(q)) {
+        return "limited";
+      }
+      return "";
+    }
+
     function profileIntakeNeedsIdStep(profile = normalizeUserProfile(state.userProfile)) {
       if (profile.idStatus === "has" || profile.idStatus === "needs") return false;
       if (conversationIdStatusKnown()) return false;
@@ -28511,7 +28580,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = getConversationUserBlob().toLowerCase();
       return conversationMentionsHousingInstability(blob)
         || isReentrySituation()
-        || conversationMentionsStabilityRebuild(blob);
+        || conversationMentionsStabilityRebuild(blob)
+        || conversationSignalsStabilityIntake(blob);
     }
 
     function profileIntakeNeedsHousingStep(profile = normalizeUserProfile(state.userProfile)) {
@@ -28521,7 +28591,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const blob = getConversationUserBlob().toLowerCase();
       return conversationMentionsHousingInstability(blob)
         || conversationMentionsStabilityRebuild(blob)
-        || isReentrySituation();
+        || isReentrySituation()
+        || conversationSignalsStabilityIntake(blob);
     }
 
     function profileIntakeNeedsDependentStep(profile = normalizeUserProfile(state.userProfile)) {
@@ -29056,6 +29127,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (isDiscoveryArchetypePath(idea)) return false;
       const normalized = normalizeRoadmapTask(task);
       const taskText = getTaskContentBlob(normalized);
+      if (isStabilityArchetypePath(idea)) {
+        if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
+        if (taskCopyPromisesIncludedAssistance(taskText)) return true;
+        return /\b(housing|shelter|211|id\b|documents?|benefits?|food|healthcare|voucher|assistance|social services|county clerk|dmv|transport)\b/i.test(taskText);
+      }
       if (!taskText || taskExplicitlyExcludesLocalContacts(taskText)) return false;
       if (taskIsBrowseOnlyTask(taskText)) return false;
       if (taskCopyPromisesIncludedAssistance(taskText)) return true;
@@ -29300,7 +29376,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     /* ===== SECTION: Local resources injection ===== */
     function ensureRoadmapLocalContacts(stages, idea = state.currentIdea, options = {}) {
       try {
-        if (isDiscoveryArchetypePath(idea)) {
+        if (shouldSkipBusinessOutreachEnrichment(idea)) {
           return enrichTaskClarity(normalizeRoadmapStages(stages), idea);
         }
         const { force = false } = options;
@@ -31358,6 +31434,22 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       );
     }
 
+    function roadmapHasStabilityBusinessMismatch(stages, idea = state.currentIdea) {
+      if (!isStabilityArchetypePath(idea)) return false;
+      const businessAngles = new Set(["outreach", "track_outreach", "first_client", "business_advisor", "job_search", "funding"]);
+      return (stages || []).some((stage) =>
+        (stage.tasks || []).some((task) => {
+          if (isPendingRoadmapTask(task)) return false;
+          const normalized = normalizeRoadmapTask(task);
+          const blob = getTaskContentBlob(normalized).toLowerCase();
+          if (businessAngles.has(extractTaskAngle(normalized))) return true;
+          if (taskTextIsEmploymentFocused(blob)) return true;
+          if (stageHasJobSearchHomework(stage)) return true;
+          return /\b(reach out to (?:one )?prospect|contact tracking spreadsheet|log each business|workforce solutions|workforce|staffing agenc|prospect pipeline|client outreach|land (?:a |your )?first (?:client|sale))\b/.test(blob);
+        })
+      );
+    }
+
     function getGroundedSidebarResources(idea = null) {
       const profile = getUserSituationProfile(idea);
       const city = profile.city && profile.city !== "your city" ? profile.city : "";
@@ -31657,6 +31749,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function isDiscoveryArchetypePath(idea = state.currentIdea) {
       return isDiscoveryClarityIdea(idea);
+    }
+
+    function isStabilityArchetypePath(idea = state.currentIdea) {
+      if (!idea) return false;
+      const blob = `${idea?.type || ""} ${idea?.title || ""} ${idea?.tagline || ""}`.toLowerCase();
+      if (/\bstability\b/.test(blob) || ideaIsStabilityOnly(idea)) return true;
+      const situation = getPathSituationType(idea);
+      if (situation === "housing" || situation === "reentry") return true;
+      if (userNeedsIdFirst(idea) || userNeedsHousingFirst(idea)) return true;
+      if (situationRequiresHardStabilityFirst(idea)) return true;
+      return false;
+    }
+
+    function shouldSkipBusinessOutreachEnrichment(idea = state.currentIdea) {
+      return isDiscoveryArchetypePath(idea) || isStabilityArchetypePath(idea);
     }
 
     function getPathArchetype(idea) {
@@ -33427,6 +33534,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       profileIntakeStep: null,
       clarifyingQuestionsAsked: 0,
       roadmapCheckIn: null,
+      coachingPreview: null,
       roadmapAnalysis: null,
       progressContext: null,
       discoveryClarityMode: false,
@@ -34913,6 +35021,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         profileIntakeStep: state.profileIntakeStep || null,
         clarifyingQuestionsAsked: Number(state.clarifyingQuestionsAsked) || 0,
         roadmapCheckIn: state.roadmapCheckIn || null,
+        coachingPreview: state.coachingPreview || null,
         roadmapAnalysis: state.roadmapAnalysis || null,
         roadmapCategories: state.roadmapCategories,
         activeRoadmapCategoryId: state.activeRoadmapCategoryId,
@@ -34955,6 +35064,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         profileIntakeStep: source.profileIntakeStep || null,
         clarifyingQuestionsAsked: Number(source.clarifyingQuestionsAsked) || 0,
         roadmapCheckIn: source.roadmapCheckIn || null,
+        coachingPreview: source.coachingPreview || null,
         roadmapAnalysis: source.roadmapAnalysis || null,
         removedRoadmapKeys: Array.isArray(source.removedRoadmapKeys) ? source.removedRoadmapKeys : []
       };
@@ -35036,6 +35146,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.roadmapCheckIn = data.roadmapCheckIn && typeof data.roadmapCheckIn === "object"
         ? data.roadmapCheckIn
         : null;
+      state.coachingPreview = data.coachingPreview && typeof data.coachingPreview === "object"
+        ? data.coachingPreview
+        : null;
       state.roadmapAnalysis = data.roadmapAnalysis && typeof data.roadmapAnalysis === "object"
         ? data.roadmapAnalysis
         : null;
@@ -35069,6 +35182,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (state.roadmapCheckIn?.awaiting && state.step === 2 && !state.ideas.length) {
         renderRoadmapCheckInChips();
+      }
+      if (state.coachingPreview?.awaiting && state.step === 2 && !state.ideas.length) {
+        showReplyBox(true);
       }
     }
 
@@ -37220,6 +37336,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const parsers = {
         id_status: ["idStatus", parseIdStatus],
         housing_status: ["housingStatus", parseHousingStatus],
+        transport_status: ["transportStatus", parseTransportStatus],
         dependent_support: ["dependentSupport", parseDependentSupport],
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
@@ -37259,6 +37376,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           { field: "housingStatus", value: "has", label: "Yes — I have a safe, reliable place" },
           { field: "housingStatus", value: "needs", label: "Only temporary / not reliable" },
           { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
+        ]);
+        return;
+      }
+      if (step === "transport_status") {
+        renderProfileIntakeChips([
+          { field: "transportStatus", value: "has", label: "Yes — car or reliable transport" },
+          { field: "transportStatus", value: "limited", label: "Limited — bus, rides, or sometimes" },
+          { field: "transportStatus", value: "needs", label: "No — no reliable transport" }
         ]);
         return;
       }
@@ -37342,6 +37467,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.userLocation = emptyUserLocation();
       state.profileIntakeStep = null;
       state.roadmapCheckIn = null;
+      state.coachingPreview = null;
       hideProfileIntakeChips();
 
       const profile = emptyUserProfile();
@@ -39577,6 +39703,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         none: "No children or dependents to plan for",
         no_help: "Has children or dependents; no added assistance requested",
         needs_help: "Needs support for children or other dependents"
+      },
+      transportStatus: {
+        has: "Has reliable transportation (car or equivalent)",
+        limited: "Limited transportation (transit, rides, or occasional access)",
+        needs: "No reliable transportation right now"
       }
     };
 
@@ -39590,6 +39721,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         founderStage: "",
         idStatus: "",
         housingStatus: "",
+        transportStatus: "",
         dependentSupport: "",
         skills: "",
         constraints: "",
@@ -39836,6 +39968,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         founderStage: String(source.founderStage || "").trim(),
         idStatus: String(source.idStatus || "").trim(),
         housingStatus: String(source.housingStatus || "").trim(),
+        transportStatus: String(source.transportStatus || "").trim(),
         dependentSupport: String(source.dependentSupport || "").trim(),
         skills: String(source.skills || "").trim(),
         constraints: String(source.constraints || "").trim(),
@@ -39909,6 +40042,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (profile.idStatus === "has") lines.push("ID/documents: has valid ID");
       if (profile.housingStatus === "needs") lines.push("Housing: still needs a safe, reliably accessible place to stay");
       if (profile.housingStatus === "has") lines.push("Housing: has safe housing or reliable shelter access");
+      if (profile.transportStatus === "needs") lines.push("Transportation: no reliable car or transport — prioritize walkable, transit, or remote options");
+      if (profile.transportStatus === "limited") lines.push("Transportation: limited — note transit, rides, or partial access when suggesting tasks");
+      if (profile.transportStatus === "has") lines.push("Transportation: has reliable transportation");
       if (profile.dependentSupport === "none") lines.push("Dependents: no children or other dependents to plan for; do not include childcare or family-specific aid");
       if (profile.dependentSupport === "no_help") lines.push("Dependents: has children or dependents — design for school-hour logistics and scheduling flexibility; do not push aid programs they did not ask for");
       if (profile.dependentSupport === "needs_help") lines.push("Dependents: has children or dependents — include childcare, transportation, food, healthcare, school, housing, or other family assistance, plus flexible scheduling");
@@ -40075,7 +40211,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function profileIntakeIsComplete(founderMode = isFounderOrProjectPrompt(getFirstUserMessage())) {
       const profile = normalizeUserProfile(state.userProfile);
-      if (profileIntakeNeedsIdStep(profile) || profileIntakeNeedsHousingStep(profile)) return false;
+      if (profileIntakeNeedsHousingStep(profile) || profileIntakeNeedsIdStep(profile) || profileIntakeNeedsTransportStep(profile)) return false;
       if (profileIntakeNeedsDependentStep(profile)) return false;
       if (!profile.incomeUrgency || !profile.pathPreference) return false;
       if (founderMode) return Boolean(profile.founderStage);
@@ -40152,6 +40288,19 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
       ]);
       trackEvent("profile_intake_step_shown", { step: "housing_status" });
+    }
+
+    function askProfileTransportStep() {
+      state.profileIntakeStep = "transport_status";
+      pushProfileIntakeAssistantMessage(
+        "Do you have reliable transportation right now — like a car that runs, or steady access to transit/rides?"
+      );
+      renderProfileIntakeChips([
+        { field: "transportStatus", value: "has", label: "Yes — car or reliable transport" },
+        { field: "transportStatus", value: "limited", label: "Limited — bus, rides, or sometimes" },
+        { field: "transportStatus", value: "needs", label: "No — no reliable transport" }
+      ]);
+      trackEvent("profile_intake_step_shown", { step: "transport_status" });
     }
 
     function askProfileDependentSupportStep() {
@@ -40327,6 +40476,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         pathPreference: "path",
         idStatus: "id_status",
         housingStatus: "housing_status",
+        transportStatus: "transport_status",
         dependentSupport: "dependent_support",
         willingToRelocate: "relocate",
         founderStage: "founder_stage",
@@ -40346,8 +40496,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (state.profileIntakeStep) return state.profileIntakeStep;
       const profile = normalizeUserProfile(state.userProfile);
-      if (profileIntakeNeedsIdStep(profile)) return (state.profileIntakeStep = "id_status");
       if (profileIntakeNeedsHousingStep(profile)) return (state.profileIntakeStep = "housing_status");
+      if (profileIntakeNeedsIdStep(profile)) return (state.profileIntakeStep = "id_status");
+      if (profileIntakeNeedsTransportStep(profile)) return (state.profileIntakeStep = "transport_status");
       if (profileIntakeNeedsDependentStep(profile)) return (state.profileIntakeStep = "dependent_support");
       if (!profile.incomeUrgency) return (state.profileIntakeStep = "income");
       if (!profile.pathPreference) return (state.profileIntakeStep = "path");
@@ -40378,13 +40529,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       if (step === "id_status") {
         if (profileIntakeNeedsIdStep(profile)) return askProfileIdStatusStep();
-        if (profileIntakeNeedsHousingStep(profile)) return askProfileHousingStatusStep();
+        if (profileIntakeNeedsTransportStep(profile)) return askProfileTransportStep();
         if (profileIntakeNeedsDependentStep(profile)) return askProfileDependentSupportStep();
         askProfileIncomeStep();
         return;
       }
       if (step === "housing_status") {
         if (profileIntakeNeedsHousingStep(profile)) return askProfileHousingStatusStep();
+        if (profileIntakeNeedsIdStep(profile)) return askProfileIdStatusStep();
+        if (profileIntakeNeedsTransportStep(profile)) return askProfileTransportStep();
+        if (profileIntakeNeedsDependentStep(profile)) return askProfileDependentSupportStep();
+        askProfileIncomeStep();
+        return;
+      }
+      if (step === "transport_status") {
+        if (profileIntakeNeedsTransportStep(profile)) return askProfileTransportStep();
         if (profileIntakeNeedsDependentStep(profile)) return askProfileDependentSupportStep();
         askProfileIncomeStep();
         return;
@@ -40554,9 +40713,125 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       return "";
     }
 
+    const COACHING_PREVIEW_INSTRUCTIONS =
+      "COACHING PREVIEW (Phase 1 — voice before structure):\n" +
+      "You are whatimado. The user has shared enough for a thoughtful planning conversation, but NO map or roadmap exists yet.\n" +
+      "Write a warm, grounded coaching narrative — NOT a questionnaire, NOT JSON, NOT path cards.\n" +
+      "Structure (use these headings in plain text):\n" +
+      "1) Opening (2–3 sentences): acknowledge their situation in human terms — routine, confidence, purpose, momentum — without repeating clinical/health details.\n" +
+      "2) Phase 1 — Re-establish (next ~30 days): 3–5 bullet actions tailored to THEIR stated skills and situation.\n" +
+      "3) Phase 2 — Build value (1–3 months): what to strengthen, learn, or prove — tied to skills they mentioned.\n" +
+      "4) Phase 3 — Create opportunity (3–12 months): realistic ways income could grow (job, freelance, business, training) — only options that fit what they shared.\n" +
+      "5) Weekly rhythm: one simple Mon–Fri or weekly pattern they could actually follow.\n" +
+      "6) Mindset: 2–3 sentences — no toxic positivity; acknowledge uncertainty; emphasize small consistent steps.\n" +
+      "7) End with exactly 2–3 short coaching questions (not logistics forms) that would sharpen the plan — e.g. what gives them energy, strongest skill, employment vs self-employed preference.\n" +
+      "RULES:\n" +
+      "- Plain text only. Use * for bullets. No markdown headers with #.\n" +
+      "- Be specific to their skills and words — never a generic career blog post.\n" +
+      "- If housing, ID, or transport look uncertain, Phase 1 may include ONE stability step alongside career steps — do not make the whole plan about bureaucracy.\n" +
+      "- Do NOT offer to generate a map yet. Do NOT say \"click\" or reference UI.\n" +
+      "- Length: roughly 250–450 words.\n";
+
+    function buildCoachingPreviewPrompt(analysis = state.roadmapAnalysis) {
+      const transcript = getSanitizedConversationSummary();
+      const profileBlock = getUserProfileBlock();
+      const founder = isFounderOrProjectPrompt(getFirstUserMessage());
+      const modeNote = founder
+        ? "MODE: Founder / product builder — phases should focus on validation, testers, and shipping, not job applications.\n"
+        : analysis?.situationType === "housing" || analysis?.situationType === "reentry"
+        ? "MODE: Rebuilding with possible stability gaps — Phase 1 must include safety basics if relevant, but keep hope and forward motion.\n"
+        : analysis?.careerPivot
+        ? "MODE: Career change / pivot — emphasize transferable skills and low-risk experiments.\n"
+        : "";
+      return (
+        COACHING_PREVIEW_INSTRUCTIONS +
+        modeNote +
+        profileBlock +
+        "\nConversation so far:\n" +
+        transcript
+      );
+    }
+
+    function getCoachingPreviewFallback(analysis = state.roadmapAnalysis) {
+      const profile = normalizeUserProfile(state.userProfile);
+      const skillHint = profile.skills || "what you're already good at";
+      const pivot = analysis?.careerPivot ? " a fresh direction" : " your next chapter";
+      return (
+        `That's a meaningful place to focus — rebuilding${pivot} is as much about confidence and routine as it is about income.\n\n` +
+        `*Phase 1 — Re-establish (next 30 days)*\n` +
+        `• Name one concrete skill (${skillHint}) and write a one-line proof of it.\n` +
+        `• Update one place people can see your work (résumé, portfolio, or LinkedIn — pick just one).\n` +
+        `• Reach out to one person who knows your work and ask what they think you're best at.\n` +
+        `• Set a weekly target you can keep — a few quality applications or one portfolio piece, not dozens of random sends.\n\n` +
+        `*Phase 2 — Build value (1–3 months)*\n` +
+        `• Ask: what am I already good at, what's becoming more valuable, and where do those overlap?\n` +
+        `• Add one small skill or tool that makes your existing strengths more competitive.\n\n` +
+        `*Phase 3 — Create opportunity (3–12 months)*\n` +
+        `• Don't rely on applications alone — consider freelance projects, local networking, or teaching what you know.\n` +
+        `• Often momentum comes when someone sees your work before they see your résumé.\n\n` +
+        `*A simple weekly rhythm*\n` +
+        `• One day for outreach/applications, one for learning, one for building something for your portfolio, one for networking, one for reviewing what worked.\n\n` +
+        `*Mindset*\n` +
+        `It's common to feel pressure to "make up for lost time." Small, consistent steps compound — you don't have to fix everything this week.\n\n` +
+        `A few questions that would help me tailor this further:\n` +
+        `• What kind of work gives you energy — even a little?\n` +
+        `• Which of your skills feel strongest right now?\n` +
+        `• Do you lean toward working for a company, freelancing, or building something of your own?`
+      );
+    }
+
+    function finalizeCoachingPreview(answer, analysis = state.roadmapAnalysis) {
+      let text = String(answer || "").trim();
+      text = text.replace(/^```[\s\S]*?```/gm, "").trim();
+      text = text.replace(/^["']|["']$/g, "").trim();
+      if (text.length < 180) {
+        text = getCoachingPreviewFallback(analysis);
+      }
+      if (text.length > 3200) {
+        text = `${text.slice(0, 3197)}…`;
+      }
+      return text;
+    }
+
+    async function offerCoachingPreview(options = {}) {
+      intakeInProgress = true;
+      try {
+        hideProfileIntakeChips();
+        state.profileIntakeStep = null;
+        state.roadmapCheckIn = null;
+        const analysis = refreshBackgroundRoadmapAnalysis();
+        if (!options.skipTypingBubble) {
+          addTypingBubble("Putting together a plan based on what you've shared…");
+        }
+        let narrative = await callAdvisor(buildCoachingPreviewPrompt(analysis), 1100, {
+          feature: "coaching_preview",
+          timeoutMs: 55000
+        });
+        narrative = finalizeCoachingPreview(narrative, analysis);
+        if (!resolveTyping(narrative)) appendAssistantBubble(narrative);
+        state.history.push({ role: "assistant", content: narrative });
+        state.coachingPreview = {
+          shown: true,
+          awaiting: true,
+          offeredAt: Date.now()
+        };
+        showReplyBox(true);
+        trackEvent("coaching_preview_shown", {
+          situation_type: analysis.situationType || "",
+          career_pivot: Boolean(analysis.careerPivot),
+          has_ability_baseline: Boolean(analysis.hasAbilityBaseline),
+          after_more_share: Boolean(options.afterMoreShare)
+        });
+        schedulePersist();
+      } finally {
+        intakeInProgress = false;
+      }
+    }
+
     /* ===== SECTION: Roadmap check-in transition ===== */
     async function offerRoadmapCheckIn(options = {}) {
       const afterMoreShare = Boolean(options.afterMoreShare);
+      const skipCoachingPreview = Boolean(options.skipCoachingPreview);
       intakeInProgress = true;
       try {
         state.profileIntakeStep = null;
@@ -40566,6 +40841,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           await askAbilityBaselineClarifyingQuestion({
             force: (state.clarifyingQuestionsAsked || 0) >= MAX_CLARIFYING_QUESTIONS
           });
+          return;
+        }
+        // Phase 1: coaching narrative before path/map offer (skip for Discovery & Clarity).
+        if (
+          !skipCoachingPreview
+          && !state.coachingPreview?.shown
+          && !shouldRouteToDiscoveryClarity()
+        ) {
+          intakeInProgress = false;
+          await offerCoachingPreview({ afterMoreShare, skipTypingBubble: true });
           return;
         }
         state.roadmapCheckIn = {
@@ -40620,9 +40905,43 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       schedulePersist();
     }
 
+    function promptStabilityBasicsIfNeeded() {
+      mergeUserProfileFromConversation();
+      const profile = normalizeUserProfile(state.userProfile);
+      if (profileIntakeNeedsHousingStep(profile)) {
+        askProfileHousingStatusStep();
+        return true;
+      }
+      if (profileIntakeNeedsIdStep(profile)) {
+        askProfileIdStatusStep();
+        return true;
+      }
+      if (profileIntakeNeedsTransportStep(profile)) {
+        askProfileTransportStep();
+        return true;
+      }
+      return false;
+    }
+
+    function advanceStabilityBasicsIntake() {
+      mergeUserProfileFromConversation();
+      if (promptStabilityBasicsIfNeeded()) return;
+      state.profileIntakeStep = null;
+      if (state.roadmapCheckIn?.deferred) {
+        void offerRoadmapCheckIn({ afterMoreShare: true });
+        return;
+      }
+      if (explorationReadyForRoadmapCheckIn()) {
+        void offerRoadmapCheckIn();
+        return;
+      }
+      advanceProfileIntake();
+    }
+
     async function proceedFromRoadmapCheckIn() {
       hideProfileIntakeChips();
       applySoftProfileForPreliminaryPath();
+      if (promptStabilityBasicsIfNeeded()) return;
       const analysis = state.roadmapAnalysis || refreshBackgroundRoadmapAnalysis();
       state.roadmapCheckIn = {
         awaiting: false,
@@ -40666,7 +40985,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         deferredAt: Date.now()
       };
       addTypingBubble();
-      await offerRoadmapCheckIn({ afterMoreShare: true });
+      await offerRoadmapCheckIn({ afterMoreShare: true, skipCoachingPreview: true });
     }
 
     function beginProfileIntake() {
@@ -40674,12 +40993,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       mergeUserProfileFromConversation();
       const founder = isFounderOrProjectPrompt(getFirstUserMessage());
       const profile = normalizeUserProfile(state.userProfile);
+      if (profileIntakeNeedsHousingStep(profile)) {
+        askProfileHousingStatusStep();
+        return;
+      }
       if (profileIntakeNeedsIdStep(profile)) {
         askProfileIdStatusStep();
         return;
       }
-      if (profileIntakeNeedsHousingStep(profile)) {
-        askProfileHousingStatusStep();
+      if (profileIntakeNeedsTransportStep(profile)) {
+        askProfileTransportStep();
         return;
       }
       if (profileIntakeNeedsDependentStep(profile)) {
@@ -40723,7 +41046,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       if (!field || value == null || value === "") return false;
       ensureProfileIntakeStep(stepHint || profileFieldToIntakeStep(field));
       setUserProfileField(field, value);
-      advanceProfileIntake();
+      if (["idStatus", "housingStatus", "transportStatus"].includes(field) && conversationSignalsStabilityIntake()) {
+        advanceStabilityBasicsIntake();
+      } else {
+        advanceProfileIntake();
+      }
       return true;
     }
 
@@ -40735,6 +41062,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const parsers = {
         id_status: ["idStatus", parseIdStatus],
         housing_status: ["housingStatus", parseHousingStatus],
+        transport_status: ["transportStatus", parseTransportStatus],
         dependent_support: ["dependentSupport", parseDependentSupport],
         income: ["incomeUrgency", parseIncomeUrgency],
         path: ["pathPreference", parsePathPreference],
@@ -40751,6 +41079,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           const clarificationByStep = {
             id_status: "I did not catch whether you have usable ID. Do you have a valid driver's license or state ID right now?",
             housing_status: "I did not catch whether your housing is safe and reliable. Do you have somewhere you can stay for at least the next week?",
+            transport_status: "I did not catch your transportation situation. Do you have a car, limited transit/rides, or no reliable transport?",
             dependent_support: "I want to avoid making assumptions. Do you have children or dependents, and if so, should this map include assistance for them?",
             income: "I did not catch the timing. Do you need income immediately, within three months, or is long-term okay?",
             path: "I did not catch your preference. Would you rather get hired, start your own thing, or consider either?",
@@ -40769,7 +41098,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         return;
       }
       hideProfileIntakeChips();
-      advanceProfileIntake();
+      if (["id_status", "housing_status", "transport_status"].includes(step) && conversationSignalsStabilityIntake()) {
+        advanceStabilityBasicsIntake();
+      } else {
+        advanceProfileIntake();
+      }
       schedulePersist();
     }
 
@@ -43761,6 +44094,24 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           await handleRoadmapCheckInReply(text);
           return;
         }
+        if (state.coachingPreview?.awaiting) {
+          trackEvent("coaching_preview_answered", {
+            reply_length: text.length,
+            intake_mode: state.intakeMode || "standard"
+          });
+          state.coachingPreview = {
+            ...state.coachingPreview,
+            awaiting: false,
+            answeredAt: Date.now()
+          };
+          updateIdStatusFromConversation();
+          updateHousingStatusFromConversation();
+          mergeUserProfileFromConversation();
+          addTypingBubble();
+          if (promptStabilityBasicsIfNeeded()) return;
+          await offerRoadmapCheckIn({ afterMoreShare: true, skipCoachingPreview: true });
+          return;
+        }
         trackEvent("clarifying_answer_submitted", {
           reply_length: text.length,
           intake_mode: state.intakeMode || "standard",
@@ -43823,12 +44174,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           mergeUserProfileFromConversation();
           const founder = isFounderOrProjectPrompt(getFirstUserMessage());
           const profile = normalizeUserProfile(state.userProfile);
+          if (profileIntakeNeedsHousingStep(profile)) {
+            askProfileHousingStatusStep();
+            return;
+          }
           if (profileIntakeNeedsIdStep(profile)) {
             askProfileIdStatusStep();
             return;
           }
-          if (profileIntakeNeedsHousingStep(profile)) {
-            askProfileHousingStatusStep();
+          if (profileIntakeNeedsTransportStep(profile)) {
+            askProfileTransportStep();
             return;
           }
           if (!profileIntakeIsComplete(founder)) {
@@ -44708,7 +45063,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
       // Prefer keeping a usable AI draft instead of silently swapping in a template.
       if (lenient && working?.length && stageOneHasRevealableMission(working)) {
-        if (!(isDiscoveryArchetypePath(idea) && roadmapHasDiscoveryBusinessMismatch(working, idea))) {
+        const hasArchetypeMismatch =
+          (isDiscoveryArchetypePath(idea) && roadmapHasDiscoveryBusinessMismatch(working, idea))
+          || (isStabilityArchetypePath(idea) && roadmapHasStabilityBusinessMismatch(working, idea));
+        if (!hasArchetypeMismatch) {
           return finish(working, source);
         }
       }
@@ -44717,6 +45075,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         working = normalizeRoadmapStages(getFallbackStages(idea));
         source = "fallback";
         trackEvent("roadmap_discovery_business_mismatch_fallback", { idea_index: ideaIndex });
+      } else if (working && isStabilityArchetypePath(idea) && roadmapHasStabilityBusinessMismatch(working, idea)) {
+        working = normalizeRoadmapStages(
+          userNeedsIdFirst(idea) || userNeedsHousingFirst(idea)
+            ? getStabilityFirstRoadmapStages(idea)
+            : getFallbackStages(idea)
+        );
+        source = "fallback";
+        trackEvent("roadmap_stability_business_mismatch_fallback", { idea_index: ideaIndex });
       } else if (working && founderMode && roadmapLooksLikeEndUserReentry(working)) {
         working = getFounderFallbackStages(idea);
         source = "fallback";
@@ -45216,9 +45582,21 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       const founderMode = isFounderRoadmapForIdea(idea);
       if (HPE_CONFIG.enabled) refreshProgressContext(idea);
 
-      // Discovery paths use curated fallback exercises — AI often injects business outreach tasks.
+      // Discovery and stability paths use curated fallback exercises — AI often injects business outreach tasks.
       if (isDiscoveryArchetypePath(idea) && !options.force) {
         const fallbackStages = normalizeRoadmapStages(getFallbackStages(idea));
+        return finalizeRoadmapStages(fallbackStages, idea, founderMode, ideaIndex, {
+          roadmapSource: "fallback",
+          lenient: false
+        });
+      }
+
+      if (isStabilityArchetypePath(idea) && !options.force) {
+        const fallbackStages = normalizeRoadmapStages(
+          userNeedsIdFirst(idea) || userNeedsHousingFirst(idea)
+            ? getStabilityFirstRoadmapStages(idea)
+            : getFallbackStages(idea)
+        );
         return finalizeRoadmapStages(fallbackStages, idea, founderMode, ideaIndex, {
           roadmapSource: "fallback",
           lenient: false
@@ -45584,7 +45962,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       showScreen("roadmap");
       setRoadmapLoading(true, {
-        shell: true,
+        shell: false,
         ideaTitle: idea.title,
         progressDurationMs: founderModeForGen ? 22000 : undefined
       });
@@ -45751,9 +46129,23 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         if (loadingFallbackTimer) clearTimeout(loadingFallbackTimer);
         stopRoadmapShellWait();
         if (!revealed) {
-          setRoadmapLoading(false);
-          setRoadmapRefining(false);
-          stopPendingRoadmapProgressBars();
+          try {
+            const fallbackStages = getQuickFallbackStages(idea)
+              || ensureRoadmapLocalContacts(normalizeRoadmapStages(getFallbackStages(idea)), idea);
+            if (stageOneHasRevealableMission(fallbackStages)) {
+              revealRoadmapProgressively(fallbackStages, "fallback", { isFinal: true });
+              trackEvent("roadmap_empty_state_recovery", { idea_index: ideaIndex });
+            } else if (recoverEmptyRoadmapStages(idea, ideaIndex, { force: true })) {
+              trackEvent("roadmap_empty_state_recovery", { idea_index: ideaIndex, via: "recoverEmpty" });
+            }
+          } catch (recoveryError) {
+            console.warn("[whatimado] roadmap empty-state recovery failed:", recoveryError?.message || recoveryError);
+          }
+          if (!revealed) {
+            setRoadmapLoading(false);
+            setRoadmapRefining(false);
+            stopPendingRoadmapProgressBars();
+          }
         }
         const sub = $("#roadmap-sub");
         if (sub && revealed) sub.hidden = true;
