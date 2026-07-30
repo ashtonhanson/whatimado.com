@@ -25930,7 +25930,16 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function conversationLacksSkillSignal(blob) {
       const text = String(blob || "").toLowerCase();
       if (text.length > 520) return false;
-      return !/\b(skill|experience|good at|background|resume|certif|certified|trained|training|school(?:ing)?|student|apprentice|vocational|worked as|working at|work(?:ing)? (?:at|in)|years? (?:of )?experience|typing|customer service|sales|coding|design|writing|admin|trade|electrician|nurse|teacher|driver|manager|bartend|retail|warehouse|hospitality|data entry|support rep|onboard|communicat|organiz|detail-oriented|creative|hands[- ]on|learn|pick up|comfortable with|groom(?:ing|er)?|salon|pet (?:care|groom)|mobile (?:pet )?groom|veterinar|animal care)\b/.test(text);
+      if (countConcreteSkillSignals(text) >= 1) return false;
+      return !/\b(skill|experience|good at|background|resume|certif|certified|trained|training|school(?:ing)?|student|apprentice|vocational|worked as|working at|work(?:ing)? (?:at|in)|years? (?:of )?experience|typing|customer service|sales|coding|design|writing|admin|trade|electrician|nurse|teacher|driver|manager|bartend|retail|warehouse|hospitality|data entry|support rep|onboard|communicat|organiz|detail-oriented|creative|hands[- ]on|learn|pick up|comfortable with|groom(?:ing|er)?|salon|pet (?:care|groom)|mobile (?:pet )?groom|veterinar|animal care|landscap|lawn|mow|hvac|plumb|weld|carpent|mechanic|paint(?:er|ing)?|clean(?:ing|er)?|cook(?:ing|er)?|barber|hair|nail tech|massage|fitness|trainer|tutor|caregiv|nann)\b/.test(text);
+    }
+
+    function conversationHasStatedWorkOrSkill(text = "") {
+      const blob = String(text || getConversationUserBlob()).trim();
+      if (!blob) return false;
+      if (countConcreteSkillSignals(blob) >= 1) return true;
+      if (conversationHasAbilityOrInterestBaseline(blob)) return true;
+      return !conversationLacksSkillSignal(blob);
     }
 
     function conversationMentionsInterestsOrEnjoyedWork(text = "") {
@@ -41268,6 +41277,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function latestUserMessageAddsSkillOrInterest(text = getLatestUserMessage()) {
+      if (conversationHasStatedWorkOrSkill()) return true;
       const latest = String(text || "").trim();
       if (!latest) return false;
       return !conversationLacksSkillSignal(latest)
@@ -41275,9 +41285,37 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         || conversationHasAbilityOrInterestBaseline(latest);
     }
 
+    function isLogisticsOrShortAnswer(text = "") {
+      const lower = String(text || "").trim().toLowerCase();
+      if (!lower || lower.length > 80) return false;
+      if (/^(no|yes|nope|yeah|yep|yup|none|nah|not really)\b/.test(lower)) return true;
+      if (/\b(no (?:kids|children|dependents)|don'?t have (?:any )?(?:kids|children)|do not have (?:any )?(?:kids|children))\b/.test(lower)) {
+        return true;
+      }
+      return lower.length < 36 && conversationMentionsChildrenOrDependents(lower);
+    }
+
+    function looksLikeClarifyingQuestion(text = "") {
+      const value = String(text || "").trim();
+      return value.includes("?") && value.length >= 12;
+    }
+
     function avoidRepeatedAbilityQuestion(finalAnswer, latest = getLatestUserMessage()) {
       const reply = String(finalAnswer || "").trim();
       if (!reply || !isDuplicateClarifyingQuestion(reply)) return reply;
+      const repeatsAbilityAsk = /\b(something you(?:'|')?re actually good at|people tend to count on you|good at, even if it feels ordinary)\b/i.test(reply);
+      if (repeatsAbilityAsk && conversationHasStatedWorkOrSkill()) {
+        if (explorationPhaseNeedsInterestQuestion()) {
+          return withExplorationAcknowledgment(
+            "When you've got a free hour and nobody needs anything from you, what do you find yourself drifting toward?",
+            latest
+          );
+        }
+        return withExplorationAcknowledgment(
+          "What's one constraint that would make or break this for you — time, money, or schedule?",
+          latest
+        );
+      }
       if (explorationPhaseNeedsDependentQuestion()) {
         return withExplorationAcknowledgment(getDependentLogisticsQuestion(), latest);
       }
@@ -41295,17 +41333,25 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     function buildExplorationAcknowledgment(latestUserText = getLatestUserMessage()) {
       const latest = String(latestUserText || "").trim();
-      if (!latest) return "Thanks for sharing that —";
-      const hook = extractExplorationHook(latest);
+      if (!latest || isLogisticsOrShortAnswer(latest)) return "Got it";
       const lower = latest.toLowerCase();
       if (/\b(furniture|restor|sanding|refinish|woodwork)\b/.test(lower)) {
-        return "Restoring old furniture — that tactile, bring-something-back-to-life energy really stands out.";
+        return "Restoring old furniture — that hands-on work really comes through";
       }
-      if (hook && hook.length >= 8) {
-        const clean = hook.replace(/[.?!…]+$/g, "").trim();
-        return `What you shared about ${clean.charAt(0).toLowerCase()}${clean.slice(1)} really stands out.`;
+      return "Thanks for sharing that";
+    }
+
+    function finalizeClarifyingAnswer(answer, fallback, latestUserText = getLatestUserMessage()) {
+      let finalAnswer = String(answer || "").trim();
+      if (!looksLikeClarifyingQuestion(finalAnswer)) {
+        finalAnswer = String(fallback || "").trim();
+        if (finalAnswer && !responseAcknowledgesLatestInput(finalAnswer, latestUserText) && !messageHasLeadingAcknowledgment(finalAnswer)) {
+          finalAnswer = withExplorationAcknowledgment(finalAnswer, latestUserText);
+        }
       }
-      return "Thanks for trusting me with that —";
+      finalAnswer = avoidRepeatedIdQuestion(finalAnswer, latestUserText);
+      finalAnswer = avoidRepeatedAbilityQuestion(finalAnswer, latestUserText);
+      return enforceSingleClarifyingQuestion(finalAnswer);
     }
 
     function withExplorationAcknowledgment(question, latestUserText = getLatestUserMessage()) {
@@ -41334,20 +41380,11 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function ensureExplorationAcknowledgesLatest(response, fallbackQuestion, latestUserText = getLatestUserMessage()) {
       const reply = String(response || "").trim();
       const fallback = String(fallbackQuestion || "").trim();
+      if (reply && looksLikeClarifyingQuestion(reply)) return reply;
       if (reply && (responseAcknowledgesLatestInput(reply, latestUserText) || messageHasLeadingAcknowledgment(reply))) {
         return reply;
       }
-      if (fallback) {
-        if (responseAcknowledgesLatestInput(fallback, latestUserText) || messageHasLeadingAcknowledgment(fallback)) {
-          return fallback;
-        }
-        return withExplorationAcknowledgment(fallback, latestUserText);
-      }
-      if (reply) return withExplorationAcknowledgment(reply, latestUserText);
-      return withExplorationAcknowledgment(
-        "What else feels important for me to understand before we sketch a path?",
-        latestUserText
-      );
+      return finalizeClarifyingAnswer(reply, fallback || "What else feels important for me to understand before we sketch a path?", latestUserText);
     }
 
     function getDependentLogisticsQuestion() {
@@ -41597,17 +41634,10 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     }
 
     function getAbilityBaselineFallback(force = false) {
-      const latest = getLatestUserMessage();
       if (force) {
-        return withExplorationAcknowledgment(
-          "No pressure to have it all figured out — what's one thing people tend to count on you for?",
-          latest
-        );
+        return "No pressure to have it all figured out — what's one thing people tend to count on you for?";
       }
-      return withExplorationAcknowledgment(
-        "What's something you're actually good at, even if it feels ordinary to you?",
-        latest
-      );
+      return "What's something you're actually good at, even if it feels ordinary to you?";
     }
 
     async function askAbilityBaselineClarifyingQuestion(options = {}) {
@@ -41619,13 +41649,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         state.profileIntakeStep = null;
         const latest = getLatestUserMessage();
         const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450, { feature: "intake_ability_baseline" });
-        let finalAnswer = answer || getAbilityBaselineFallback(force);
-        if (!/\b(good at|skill|enjoy|hobby|interest|liked|loved|miss|kit|not sure|unsure)\b/i.test(finalAnswer || "")) {
-          finalAnswer = getAbilityBaselineFallback(force);
-        }
-        finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getAbilityBaselineFallback(force), latest);
-        finalAnswer = avoidRepeatedAbilityQuestion(finalAnswer, latest);
-        finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
+        const finalAnswer = finalizeClarifyingAnswer(answer, getAbilityBaselineFallback(force), latest);
         if (!resolveTyping(finalAnswer)) appendAssistantBubble(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
@@ -41654,21 +41678,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       intakeInProgress = true;
       try {
         const latest = getLatestUserMessage();
-        // Prefer ability/interest discovery whenever the kit baseline is still missing.
+        const blob = getConversationUserBlob();
+        // Prefer ability/interest discovery only when the conversation still lacks work/skill signals.
         if (
           !explorationReadyForRoadmapCheckIn()
           && !explorationPhaseNeedsDependentQuestion()
+          && !conversationHasStatedWorkOrSkill(blob)
           && !(assistantRecentlyAskedAbilityBaseline() && latestUserMessageAddsSkillOrInterest(latest))
         ) {
           const force = (state.clarifyingQuestionsAsked || 0) + 1 >= MAX_CLARIFYING_QUESTIONS;
           const answer = await callAdvisor(buildAbilityBaselinePrompt(force), 450, { feature: "intake_ability_followup" });
-          let finalAnswer = answer || getAbilityBaselineFallback(force);
-          if (!/\b(good at|skill|enjoy|hobby|interest|liked|loved|miss|kit|not sure|unsure)\b/i.test(finalAnswer || "")) {
-            finalAnswer = getAbilityBaselineFallback(force);
-          }
-          finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getAbilityBaselineFallback(force), latest);
-          finalAnswer = avoidRepeatedAbilityQuestion(finalAnswer, latest);
-          finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
+          const finalAnswer = finalizeClarifyingAnswer(answer, getAbilityBaselineFallback(force), latest);
           resolveTyping(finalAnswer);
           state.history.push({ role: "assistant", content: finalAnswer });
           state.step = 2;
@@ -41703,12 +41723,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           conversationMentionsHousingInstability(blob)
           || stabilityRebuild
         );
-        if (needsIdQuestion && !/\b(id|identification|birth certificate|driver'?s license|state id|documents)\b/i.test(finalAnswer || "")) {
+        if (needsIdQuestion && !looksLikeClarifyingQuestion(finalAnswer) && !/\b(id|identification|birth certificate|driver'?s license|state id|documents)\b/i.test(finalAnswer || "")) {
           finalAnswer = withExplorationAcknowledgment(
             "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
             latest
           );
-        } else if (stabilityRebuild && idAlreadyDiscussed && !housingAlreadyDiscussed) {
+        } else if (stabilityRebuild && idAlreadyDiscussed && !housingAlreadyDiscussed && !looksLikeClarifyingQuestion(finalAnswer)) {
           finalAnswer = withExplorationAcknowledgment(
             "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
             latest
@@ -41717,9 +41737,9 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           !needsIdQuestion
           && !stabilityRebuild
           && explorationPhaseNeedsDependentQuestion(blob)
+          && !looksLikeClarifyingQuestion(finalAnswer)
           && !/\b(kid|child|children|dependent|parent)\b/i.test(finalAnswer || "")
         ) {
-          // Keep any good acknowledgment; only supply the logistics ask with a bridge.
           finalAnswer = responseAcknowledgesLatestInput(finalAnswer, latest)
             ? `${String(finalAnswer).trim().replace(/[.?!]+$/g, "")}. ${getDependentLogisticsQuestion()}`
             : withExplorationAcknowledgment(getDependentLogisticsQuestion(), latest);
@@ -41728,14 +41748,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           && !stabilityRebuild
           && explorationPhaseNeedsInterestQuestion(blob)
           && !explorationPhaseNeedsDependentQuestion(blob)
-          && !/\b(enjoy|hobby|interest|creative|hands[- ]on|liked|loved|good at|skill)\b/i.test(finalAnswer || "")
+          && !looksLikeClarifyingQuestion(finalAnswer)
         ) {
-          finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, getSecondClarifyingFallback(), latest);
+          finalAnswer = finalizeClarifyingAnswer("", getSecondClarifyingFallback(), latest);
+        } else {
+          finalAnswer = finalizeClarifyingAnswer(finalAnswer, fallback, latest);
         }
-        finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, fallback, latest);
-        finalAnswer = avoidRepeatedIdQuestion(finalAnswer, latest);
-        finalAnswer = avoidRepeatedAbilityQuestion(finalAnswer, latest);
-        finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
@@ -43491,11 +43509,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
             );
           }
         }
-        finalAnswer = ensureExplorationAcknowledgesLatest(finalAnswer, fallback, userText);
-        finalAnswer = avoidRepeatedIdQuestion(finalAnswer, userText);
-        finalAnswer = avoidRepeatedAbilityQuestion(finalAnswer, userText);
-        finalAnswer = enforceSingleClarifyingQuestion(finalAnswer);
-
+        finalAnswer = finalizeClarifyingAnswer(finalAnswer, fallback, userText);
         resolveTyping(finalAnswer);
         state.history.push({ role: "assistant", content: finalAnswer });
         state.step = 2;
