@@ -14975,12 +14975,21 @@
 
     .loader-inner {
       display: grid;
-      gap: 1rem;
+      gap: 1.35rem;
       justify-items: center;
       text-align: center;
-      width: min(100%, 28rem);
+      width: min(100%, 20rem);
       padding: 0;
       box-sizing: border-box;
+    }
+
+    #loader .loader-progress-minimal {
+      width: min(100%, 14rem);
+      margin-top: .15rem;
+    }
+
+    #loader .loader-progress-minimal .site-loading-progress-track {
+      height: 4px;
     }
 
     .loader-dot {
@@ -17414,13 +17423,11 @@
   <div class="loader" id="loader">
     <div class="loader-inner">
       <img class="loader-logo" src="/whatimado-logo.svg" alt="whatimado" width="1366" height="664">
-      <p class="loader-quote">"The two most important days in your life are the day you are born and the day you find out why."</p>
-      <small class="loader-tagline">Let us help you figure out what you're gonna do.</small>
-      <div class="site-loading-progress" id="loader-progress" aria-live="polite">
+      <div class="site-loading-progress loader-progress-minimal" id="loader-progress" aria-live="polite" aria-label="Loading">
         <div class="site-loading-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <span class="site-loading-progress-fill"></span>
         </div>
-        <p class="site-loading-progress-meta">
+        <p class="site-loading-progress-meta" hidden aria-hidden="true">
           <span class="site-loading-progress-pct">0%</span>
           <span class="site-loading-progress-eta">Starting up…</span>
         </p>
@@ -41713,14 +41720,14 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         const answer = await callAdvisor(buildSecondClarifyingPrompt(), 450, { feature: "intake_second_clarifying" });
         const fallback = getSecondClarifyingFallback();
         let finalAnswer = answer || fallback;
-        const blob = getConversationUserBlob().toLowerCase();
-        const idAlreadyDiscussed = conversationIdStatusKnown(blob);
-        const housingAlreadyDiscussed = conversationHousingStatusKnown(blob);
-        const stabilityRebuild = !conversationLooksLikeCareerPivot(blob) && (
-          conversationMentionsStabilityRebuild(blob)
+        const blobLower = blob.toLowerCase();
+        const idAlreadyDiscussed = conversationIdStatusKnown(blobLower);
+        const housingAlreadyDiscussed = conversationHousingStatusKnown(blobLower);
+        const stabilityRebuild = !conversationLooksLikeCareerPivot(blobLower) && (
+          conversationMentionsStabilityRebuild(blobLower)
         );
-        const needsIdQuestion = !idAlreadyDiscussed && !conversationLooksLikeCareerPivot(blob) && (
-          conversationMentionsHousingInstability(blob)
+        const needsIdQuestion = !idAlreadyDiscussed && !conversationLooksLikeCareerPivot(blobLower) && (
+          conversationMentionsHousingInstability(blobLower)
           || stabilityRebuild
         );
         if (needsIdQuestion && !looksLikeClarifyingQuestion(finalAnswer) && !/\b(id|identification|birth certificate|driver'?s license|state id|documents)\b/i.test(finalAnswer || "")) {
@@ -41736,7 +41743,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         } else if (
           !needsIdQuestion
           && !stabilityRebuild
-          && explorationPhaseNeedsDependentQuestion(blob)
+          && explorationPhaseNeedsDependentQuestion(blobLower)
           && !looksLikeClarifyingQuestion(finalAnswer)
           && !/\b(kid|child|children|dependent|parent)\b/i.test(finalAnswer || "")
         ) {
@@ -41746,8 +41753,8 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         } else if (
           !needsIdQuestion
           && !stabilityRebuild
-          && explorationPhaseNeedsInterestQuestion(blob)
-          && !explorationPhaseNeedsDependentQuestion(blob)
+          && explorationPhaseNeedsInterestQuestion(blobLower)
+          && !explorationPhaseNeedsDependentQuestion(blobLower)
           && !looksLikeClarifyingQuestion(finalAnswer)
         ) {
           finalAnswer = finalizeClarifyingAnswer("", getSecondClarifyingFallback(), latest);
@@ -50321,7 +50328,6 @@ If you're curious, try https://whatimado.com and tell me what would make it more
 
     /* ===== SECTION: App bootstrap (window load) ===== */
     window.addEventListener("load", async () => {
-      startLoadingQuips("#loader .loader-tagline");
       startSiteLoadingProgress($("#loader-progress"), { durationMs: 10000, cap: 88 });
       const loaderFallbackTimer = setTimeout(() => {
         if (!$("#loader")?.classList.contains("hidden")) {
