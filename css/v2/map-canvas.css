@@ -51,14 +51,9 @@ whatimado-map .whatimado-map__svg {
   overflow: visible;
 }
 
-/* Ghost / ambient — unified 0.28 opacity on edges, nodes, and labels */
-whatimado-map[data-mode="ghost"] .whatimado-map__layer--ghost,
-whatimado-map[data-mode="ghost"] .whatimado-map__layer--live,
-whatimado-map[data-mode="faint"] .whatimado-map__layer--live {
-  opacity: var(--v2-map-ghost-opacity);
-}
-
-whatimado-map[data-mode="visible"] .whatimado-map__layer--live {
+/* All map layers at full opacity — nodes, lines, and labels */
+whatimado-map .whatimado-map__layer--ghost,
+whatimado-map .whatimado-map__layer--live {
   opacity: 1;
 }
 
