@@ -33,7 +33,16 @@ export function appendMessage(container, role, content, options = {}) {
   }
 
   container.appendChild(wrap);
-  wrap.scrollIntoView({ behavior: "smooth", block: "end" });
+
+  const frameBody = container.closest(".whatimado-frame__body");
+  if (frameBody) {
+    requestAnimationFrame(() => {
+      frameBody.scrollTop = frameBody.scrollHeight;
+    });
+  } else {
+    wrap.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+
   return wrap;
 }
 

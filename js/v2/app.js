@@ -1,3 +1,4 @@
+import "./components/whatimado-frame.js";
 import { PHASE, applyPhaseToDom } from "./phases.js";
 import { seedPossibilityNodes, graphStore } from "./graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "./advisor.js";
@@ -10,14 +11,17 @@ const state = {
   turnCount: 0
 };
 
+/** @type {import("./components/whatimado-frame.js").WhatimadoFrame|null} */
+const frameEl = document.getElementById("dynamic-frame");
 const messagesEl = document.getElementById("messages");
-const composerForm = document.getElementById("composer");
-const composerInput = document.getElementById("composer-input");
-const sendBtn = document.getElementById("composer-send");
 const mapSvg = document.getElementById("map-svg");
 const activePathEl = document.getElementById("active-path-label");
 const selectionPanel = document.getElementById("selection-panel");
 const pathCardsEl = document.getElementById("path-cards");
+
+function notifyFrameLayout() {
+  frameEl?.notifyContentChange();
+}
 
 function setPhase(phase) {
   state.phase = phase;
@@ -25,8 +29,7 @@ function setPhase(phase) {
 }
 
 function setComposerEnabled(enabled) {
-  if (composerInput) composerInput.disabled = !enabled;
-  if (sendBtn) sendBtn.disabled = !enabled;
+  frameEl?.setComposerEnabled(enabled);
 }
 
 function showDemoPossibilities() {
@@ -37,6 +40,7 @@ function showDemoPossibilities() {
     activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one to continue — demo scaffold.";
   }
   renderDemoPathCards();
+  notifyFrameLayout();
 }
 
 function renderDemoPathCards() {
@@ -79,6 +83,7 @@ function handleNodeSelect(nodeId) {
   if (activePathEl) {
     activePathEl.innerHTML = `<strong>${node.label}</strong>0 missions · scaffold`;
   }
+  notifyFrameLayout();
 }
 
 async function handleSubmit(text) {
@@ -92,10 +97,12 @@ async function handleSubmit(text) {
   }
 
   appendMessage(messagesEl, "user", trimmed);
+  notifyFrameLayout();
   state.messages.push({ role: "user", content: trimmed });
   state.turnCount += 1;
 
   const typingEl = appendMessage(messagesEl, "advisor", "…", { typing: true });
+  notifyFrameLayout();
 
   try {
     const reply = await callAdvisor(buildExplorationPrompt(state.messages), {
@@ -105,6 +112,7 @@ async function handleSubmit(text) {
     typingEl.remove();
     const finalText = reply || "I'm here — tell me a bit more about what you're hoping changes.";
     appendMessage(messagesEl, "advisor", finalText);
+    notifyFrameLayout();
     state.messages.push({ role: "assistant", content: finalText });
 
     if (state.turnCount >= 2 && state.phase === PHASE.EXPLORING) {
@@ -116,6 +124,7 @@ async function handleSubmit(text) {
         "advisor",
         "When you're ready, I can sketch a few possible directions on the map above. For this preview shell, that appears after a few turns — tap a path card or node to explore."
       );
+      notifyFrameLayout();
       showDemoPossibilities();
     }
   } catch (error) {
@@ -125,29 +134,23 @@ async function handleSubmit(text) {
       "advisor",
       `I couldn't reach the advisor right now (${error?.message || "unknown error"}). Check your connection or OpenRouter balance.`
     );
+    notifyFrameLayout();
   } finally {
     setComposerEnabled(true);
-    composerInput?.focus();
+    frameEl?.focusComposer();
   }
 }
 
-composerForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const text = composerInput?.value || "";
-  if (composerInput) composerInput.value = "";
-  void handleSubmit(text);
-});
-
-composerInput?.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
-    composerForm?.requestSubmit();
-  }
+frameEl?.addEventListener("composer-submit", (event) => {
+  const detail = /** @type {CustomEvent<{ text: string }>} */ (event).detail;
+  void handleSubmit(detail?.text || "");
 });
 
 document.getElementById("nav-home")?.addEventListener("click", () => {
   window.location.reload();
 });
 
+window.addEventListener("resize", () => notifyFrameLayout());
+
 setPhase(PHASE.OPEN);
-composerInput?.focus();
+frameEl?.focusComposer();
