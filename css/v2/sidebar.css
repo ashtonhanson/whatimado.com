@@ -1,33 +1,33 @@
-/* Left rail — fixed to viewport with explicit inset (avoids grid clip) */
+/* Left rail — fixed inset panel; full border, no right-edge clip */
 .v2-rail--left {
   position: fixed;
-  z-index: 30;
+  z-index: 40;
   top: var(--v2-rail-inset);
   left: max(var(--v2-rail-inset), env(safe-area-inset-left, 0px));
   bottom: var(--v2-rail-inset);
   width: var(--v2-rail-w);
-  max-width: calc(100vw - 2 * var(--v2-rail-inset));
+  max-width: calc(100vw - 2 * var(--v2-rail-inset) - var(--v2-rail-gap));
   margin: 0;
   padding: 0;
   border: 1px solid var(--v2-border);
-  border-right: none;
-  border-radius: var(--v2-radius-lg) 0 0 var(--v2-radius-lg);
+  border-radius: var(--v2-radius-lg);
   background: var(--v2-rail-bg);
   box-shadow: 0 0 18px rgba(46, 232, 214, 0.08);
-  overflow: hidden;
+  overflow-x: visible;
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
+  box-sizing: border-box;
 }
 
 .v2-rail-brand {
   flex-shrink: 0;
-  padding: 0.95rem 1.05rem 0.85rem 1.1rem;
+  padding: 0.95rem 1.15rem;
   border-bottom: 1px solid rgba(46, 232, 214, 0.12);
   background: var(--v2-frame-bg);
   box-shadow: 0 0 18px rgba(46, 232, 214, 0.1);
-  /* Square top-right — brand extends frame language into the rail */
-  border-radius: var(--v2-radius-lg) 0 0 0;
+  border-radius: var(--v2-radius-lg) var(--v2-radius-lg) 0 0;
 }
 
 .v2-brand {
@@ -49,7 +49,7 @@
   display: block;
   height: 28px;
   width: auto;
-  max-width: min(100%, 160px);
+  max-width: min(100%, 140px);
   object-fit: contain;
   object-position: left center;
 }
@@ -60,9 +60,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  padding: 0.75rem 0.85rem 0.75rem 1.05rem;
+  padding: 0.75rem 1.15rem;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible;
 }
 
 .v2-undo-btn {
@@ -107,7 +107,8 @@
   align-items: flex-start;
   gap: 0.65rem;
   width: 100%;
-  padding: 0.68rem 0.75rem;
+  max-width: 100%;
+  padding: 0.68rem 0.85rem;
   border: none;
   border-radius: 12px;
   background: transparent;
@@ -120,6 +121,7 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   line-height: 1.35;
+  box-sizing: border-box;
 }
 
 .v2-nav-label {
@@ -174,7 +176,7 @@
 
 .v2-nav-group-label {
   margin: 0.65rem 0 0.25rem;
-  padding: 0 0.75rem;
+  padding: 0;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -203,10 +205,10 @@
   flex-shrink: 0;
   display: grid;
   gap: 0.55rem;
-  padding: 0.75rem 0.85rem 0.85rem 1.05rem;
+  padding: 0.75rem 1.15rem 0.9rem;
   border-top: 1px solid rgba(46, 232, 214, 0.1);
   background: rgba(0, 0, 0, 0.18);
-  border-radius: 0 0 0 var(--v2-radius-lg);
+  border-radius: 0 0 var(--v2-radius-lg) var(--v2-radius-lg);
 }
 
 .v2-sync-note {
@@ -234,7 +236,8 @@
   align-items: center;
   gap: 0.65rem;
   width: 100%;
-  padding: 0.65rem 0.7rem;
+  max-width: 100%;
+  padding: 0.65rem 0.85rem;
   border: 1px solid rgba(46, 232, 214, 0.14);
   border-radius: 12px;
   background: rgba(4, 12, 14, 0.72);
@@ -243,6 +246,7 @@
   text-align: left;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
+  box-sizing: border-box;
 }
 
 .v2-profile:hover {

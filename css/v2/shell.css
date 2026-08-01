@@ -1,5 +1,5 @@
 .v2-shell {
-  --v2-sidebar-offset: calc(var(--v2-rail-w) + 2 * var(--v2-rail-inset));
+  --v2-sidebar-offset: calc(var(--v2-rail-inset) + var(--v2-rail-w) + var(--v2-rail-gap));
   display: grid;
   grid-template-columns: 1fr var(--v2-rail-w);
   min-height: 100dvh;
@@ -41,6 +41,7 @@
   grid-column: 1;
   grid-row: 1;
   position: relative;
+  z-index: 1;
   min-width: 0;
   min-height: calc(100dvh - 2 * var(--v2-rail-inset));
   overflow: hidden;
