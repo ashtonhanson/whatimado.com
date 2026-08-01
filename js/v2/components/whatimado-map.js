@@ -141,6 +141,16 @@ export class WhatimadoMap extends HTMLElement {
     this._driftNodes = new Map();
     /** @type {{ lineEl: SVGLineElement, fromId: string, toId: string }[]} */
     this._driftEdges = [];
+    /** @type {{
+     *   nodeId: string, pointerId: number,
+     *   startSvgX: number, startSvgY: number,
+     *   startBaseX: number, startBaseY: number,
+     *   moved: boolean
+     * }|null} */
+    this._pointer = null;
+
+    this._onPointerMove = (event) => this._handlePointerMove(event);
+    this._onPointerUp = (event) => this._handlePointerUp(event);
   }
 
   connectedCallback() {
@@ -159,6 +169,9 @@ export class WhatimadoMap extends HTMLElement {
     this._stopDriftLoop();
     this._onSelect = null;
     this._promptEmptyChecker = null;
+    this.removeEventListener("pointermove", this._onPointerMove);
+    this.removeEventListener("pointerup", this._onPointerUp);
+    this.removeEventListener("pointercancel", this._onPointerUp);
   }
 
   attributeChangedCallback(name) {
@@ -256,6 +269,24 @@ export class WhatimadoMap extends HTMLElement {
     if (this._svg) {
       this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
     }
+    this.addEventListener("pointermove", this._onPointerMove);
+    this.addEventListener("pointerup", this._onPointerUp);
+    this.addEventListener("pointercancel", this._onPointerUp);
+  }
+
+  /**
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _clientToSvg(clientX, clientY) {
+    if (!this._svg) return { x: 0, y: 0 };
+    const pt = this._svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = this._svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const svgPt = pt.matrixTransform(ctm.inverse());
+    return { x: svgPt.x, y: svgPt.y };
   }
 
   _applyMode() {
@@ -294,6 +325,8 @@ export class WhatimadoMap extends HTMLElement {
         radius,
         delay,
         duration,
+        dragX: 0,
+        dragY: 0,
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         textEl: text ? /** @type {SVGTextElement} */ (text) : null
@@ -326,13 +359,23 @@ export class WhatimadoMap extends HTMLElement {
     const centers = new Map();
 
     for (const [id, node] of this._driftNodes) {
-      const offset = this._driftReducedMotion
-        ? { x: 0, y: 0 }
-        : driftOffset(elapsed, node.delay, node.duration);
-      node.groupEl.setAttribute("transform", `translate(${offset.x}, ${offset.y})`);
+      const isDragging = this._pointer?.nodeId === id;
+      let ox = 0;
+      let oy = 0;
+
+      if (isDragging) {
+        ox = node.dragX;
+        oy = node.dragY;
+      } else if (!this._driftReducedMotion) {
+        const drift = driftOffset(elapsed, node.delay, node.duration);
+        ox = drift.x;
+        oy = drift.y;
+      }
+
+      node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
       centers.set(id, {
-        x: node.baseX + offset.x,
-        y: node.baseY + offset.y,
+        x: node.baseX + ox,
+        y: node.baseY + oy,
         r: node.radius
       });
     }
@@ -393,7 +436,98 @@ export class WhatimadoMap extends HTMLElement {
 
     const cleanup = () => ripple.remove();
     ripple.addEventListener("animationend", cleanup, { once: true });
-    window.setTimeout(cleanup, 280);
+    window.setTimeout(cleanup, 620);
+  }
+
+  /**
+   * @param {PointerEvent} event
+   * @param {string} nodeId
+   */
+  _onNodePointerDown(event, nodeId) {
+    if (event.button !== 0) return;
+
+    const driftNode = this._driftNodes.get(nodeId);
+    if (!driftNode) return;
+
+    event.preventDefault();
+    driftNode.groupEl.setPointerCapture(event.pointerId);
+
+    const pt = this._clientToSvg(event.clientX, event.clientY);
+    this._pointer = {
+      nodeId,
+      pointerId: event.pointerId,
+      startSvgX: pt.x,
+      startSvgY: pt.y,
+      startBaseX: driftNode.baseX,
+      startBaseY: driftNode.baseY,
+      moved: false
+    };
+
+    driftNode.dragX = 0;
+    driftNode.dragY = 0;
+    driftNode.groupEl.classList.add("is-dragging");
+  }
+
+  /** @param {PointerEvent} event */
+  _handlePointerMove(event) {
+    if (!this._pointer || event.pointerId !== this._pointer.pointerId) return;
+
+    const driftNode = this._driftNodes.get(this._pointer.nodeId);
+    if (!driftNode) return;
+
+    const pt = this._clientToSvg(event.clientX, event.clientY);
+    const dx = pt.x - this._pointer.startSvgX;
+    const dy = pt.y - this._pointer.startSvgY;
+
+    if (Math.hypot(dx, dy) > 4) {
+      this._pointer.moved = true;
+    }
+
+    driftNode.dragX = dx;
+    driftNode.dragY = dy;
+  }
+
+  /** @param {PointerEvent} event */
+  _handlePointerUp(event) {
+    if (!this._pointer || event.pointerId !== this._pointer.pointerId) return;
+
+    const { nodeId, moved, startBaseX, startBaseY } = this._pointer;
+    const driftNode = this._driftNodes.get(nodeId);
+
+    if (driftNode) {
+      if (moved) {
+        driftNode.baseX = startBaseX + driftNode.dragX;
+        driftNode.baseY = startBaseY + driftNode.dragY;
+        driftNode.dragX = 0;
+        driftNode.dragY = 0;
+
+        driftNode.circleEl.setAttribute("cx", String(driftNode.baseX));
+        driftNode.circleEl.setAttribute("cy", String(driftNode.baseY));
+        if (driftNode.textEl) {
+          driftNode.textEl.setAttribute("x", String(driftNode.baseX));
+          driftNode.textEl.setAttribute("y", String(driftNode.baseY - driftNode.radius - 6));
+        }
+
+        const graphNode = this._liveNodes.find((n) => n.id === nodeId);
+        if (graphNode) {
+          graphNode.x = driftNode.baseX / VIEW_W;
+          graphNode.y = driftNode.baseY / VIEW_H;
+        }
+      } else {
+        driftNode.dragX = 0;
+        driftNode.dragY = 0;
+        this._handleNodeClick(nodeId);
+      }
+
+      try {
+        driftNode.groupEl.releasePointerCapture(event.pointerId);
+      } catch {
+        /* pointer already released */
+      }
+      driftNode.groupEl.classList.remove("is-dragging");
+    }
+
+    this._pointer = null;
   }
 
   /** @param {string} nodeId */
@@ -431,20 +565,13 @@ export class WhatimadoMap extends HTMLElement {
     }
   }
 
-  /** @param {SVGGElement} layer @param {import("../graph-store.js").GraphNode[]} nodes */
-  _bindNodeInteractions(layer, nodes) {
+  /** @param {SVGGElement} layer */
+  _bindNodeInteractions(layer) {
     layer.querySelectorAll('.whatimado-map__node[data-layer="live"]').forEach((el) => {
       const id = el.getAttribute("data-node-id");
       if (!id) return;
 
-      const activate = () => this._handleNodeClick(id);
-      el.addEventListener("click", activate);
-      el.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          activate();
-        }
-      });
+      el.addEventListener("pointerdown", (event) => this._onNodePointerDown(event, id));
     });
   }
 
@@ -503,7 +630,7 @@ export class WhatimadoMap extends HTMLElement {
         nodeParts.push({
           isAnchor,
           html: `
-        <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}" role="button" tabindex="0">
+        <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}">
           <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
           <text x="${cx}" y="${cy - r - 6}" text-anchor="middle">${escapeHtml(node.label)}</text>
         </g>
@@ -518,7 +645,7 @@ export class WhatimadoMap extends HTMLElement {
     layer.innerHTML = parts.join("");
 
     if (!skipNodes && options.layer === "live") {
-      this._bindNodeInteractions(layer, nodes);
+      this._bindNodeInteractions(layer);
     }
 
     if (options.layer === "live" || options.edgesOnly) {

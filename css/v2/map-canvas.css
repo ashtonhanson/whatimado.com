@@ -27,7 +27,18 @@ whatimado-map[data-mode="visible"] {
 
 whatimado-map .whatimado-map__node--live {
   pointer-events: auto;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+
+whatimado-map .whatimado-map__node--live:focus,
+whatimado-map .whatimado-map__node--live:focus-visible {
+  outline: none;
+}
+
+whatimado-map .whatimado-map__node--live.is-dragging {
+  cursor: grabbing;
 }
 
 whatimado-map.is-dismissing-ghost .whatimado-map__layer--ghost {
@@ -78,6 +89,7 @@ whatimado-map .whatimado-map__edge--live {
 whatimado-map .whatimado-map__node--live.is-support .whatimado-map__node-body {
   fill: var(--v2-teal);
   stroke: none;
+  outline: none;
   transition: fill 0.2s ease;
 }
 
@@ -94,6 +106,8 @@ whatimado-map .whatimado-map__node--live.is-support text {
 /* Active anchor — neon yellow, larger */
 whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-body {
   fill: var(--v2-yellow);
+  stroke: none;
+  outline: none;
   transition: fill 0.2s ease;
 }
 
@@ -124,14 +138,17 @@ whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-body {
   animation: whatimado-anchor-glow 2.2s ease-in-out infinite;
 }
 
-/* Click pop ripple — radial expand from node center */
+/* Click ripple — soft organic pulse from node center */
 @keyframes whatimado-ripple-pop {
   0% {
     transform: scale(1);
-    opacity: 0.75;
+    opacity: 0.65;
+  }
+  40% {
+    opacity: 0.4;
   }
   100% {
-    transform: scale(3.2);
+    transform: scale(2.8);
     opacity: 0;
   }
 }
@@ -143,7 +160,7 @@ whatimado-map .whatimado-map__ripple {
   pointer-events: none;
   transform-box: fill-box;
   transform-origin: center;
-  animation: whatimado-ripple-pop 220ms ease-out forwards;
+  animation: whatimado-ripple-pop 550ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 whatimado-map .whatimado-map__ripple.is-anchor {
@@ -152,12 +169,6 @@ whatimado-map .whatimado-map__ripple.is-anchor {
 
 whatimado-map .whatimado-map__node--live.is-support:hover .whatimado-map__node-body {
   fill: #3df0de;
-}
-
-whatimado-map .whatimado-map__node--live:focus-visible .whatimado-map__node-body {
-  outline: none;
-  stroke: rgba(255, 255, 255, 0.45);
-  stroke-width: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -172,7 +183,7 @@ whatimado-map .whatimado-map__node--live:focus-visible .whatimado-map__node-body
   }
 
   whatimado-map .whatimado-map__ripple {
-    animation-duration: 120ms;
+    animation-duration: 350ms;
   }
 }
 
