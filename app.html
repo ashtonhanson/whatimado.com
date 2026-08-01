@@ -3,34 +3,88 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="whatimado-build" content="v2-shell-frame-wc" />
+  <meta name="whatimado-build" content="v2-shell-sidebar-kicker" />
   <title>whatimado — v2</title>
   <link rel="icon" href="/favicon.png" type="image/png" />
   <link rel="stylesheet" href="/css/v2/tokens.css" />
   <link rel="stylesheet" href="/css/v2/shell.css" />
+  <link rel="stylesheet" href="/css/v2/sidebar.css" />
   <link rel="stylesheet" href="/css/v2/map-canvas.css" />
   <link rel="stylesheet" href="/css/v2/frame.css" />
 </head>
 <body class="v2-app" data-phase="open">
   <div class="v2-shell">
     <aside class="v2-rail v2-rail--left" aria-label="Navigation">
-      <a class="v2-logo" href="/app.html">
-        <img src="/whatimado-mark.svg" alt="" width="28" height="28" />
-        <span>what im a do</span>
-      </a>
-      <nav>
-        <ul class="v2-nav">
-          <li><button type="button" id="nav-home">Home</button></li>
-          <li><a href="/index.html">Classic app</a></li>
-        </ul>
-      </nav>
-      <div class="v2-active-path" id="active-path-label">
-        <strong>No active path</strong>
-        Start a conversation below.
+      <div class="v2-rail-brand">
+        <a class="v2-brand" href="/app.html">
+          <img class="v2-brand-mark" src="/whatimado-mark.svg" alt="" width="34" height="34" />
+          <img class="v2-brand-logo" src="/whatimado-logo.svg" alt="whatimado" width="1366" height="664" />
+        </a>
       </div>
-      <div class="v2-rail-footer">
-        v2 preview shell<br />
-        <a href="/index.html" style="color: var(--v2-teal-dim)">Production UI →</a>
+
+      <div class="v2-rail-body">
+        <button type="button" class="v2-undo-btn" disabled aria-disabled="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14H4V9l1.5 1.5C7.8 8.2 10.2 7 13 7c4.4 0 8 3.6 8 8s-3.6 8-8 8c-2.8 0-5.3-1.4-6.8-3.5"></path></svg>
+          Undo
+        </button>
+
+        <nav aria-label="Primary">
+          <ul class="v2-nav">
+            <li>
+              <button type="button" class="v2-nav-btn is-active" id="nav-home">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
+                Home <span class="v2-nav-meta">(start new map)</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+                Roadmaps
+              </button>
+            </li>
+            <li>
+              <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"></path></svg>
+                My Notes
+              </button>
+            </li>
+            <li>
+              <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M12 20V4M20 20v-6"></path></svg>
+                Analytics
+              </button>
+            </li>
+            <li>
+              <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
+                Settings
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <p class="v2-nav-group-label">Active path</p>
+        <div class="v2-active-path" id="active-path-label">
+          <strong>No active path</strong>
+          Start a conversation below.
+        </div>
+      </div>
+
+      <div class="v2-rail-foot">
+        <p class="v2-sync-note">Maps auto-save on this device. Sync to back up to your account.</p>
+        <div class="v2-theme-note" aria-hidden="true">◐ Dark theme</div>
+        <button type="button" class="v2-profile" id="profile-btn" aria-label="Account">
+          <img
+            class="v2-profile-avatar"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect fill='%23041a18' width='80' height='80'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%232ee8d6'/%3E%3Cpath d='M16 68c4-14 16-22 24-22s20 8 24 22' fill='%231a9e92'/%3E%3C/svg%3E"
+            alt=""
+          />
+          <span class="v2-profile-copy">
+            <strong>Guest</strong>
+            <span>Sign in</span>
+          </span>
+          <svg class="v2-profile-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+        </button>
       </div>
     </aside>
 
@@ -39,10 +93,15 @@
         <svg id="map-svg" role="img" aria-label="Possibility map"></svg>
       </div>
 
+      <div class="v2-frame-kicker" id="frame-kicker">
+        <h1 class="v2-kicker-brand" aria-label="Your Path Finder">
+          <span class="brand-your">Your</span><span class="v2-kicker-space" aria-hidden="true"> </span><span class="brand-path">Path</span><span class="v2-kicker-space" aria-hidden="true"> </span><span class="brand-finder">Finder</span>
+        </h1>
+        <p class="v2-kicker-sub">Discover the best path based on your skills, goals, and situation.</p>
+      </div>
+
       <whatimado-frame id="dynamic-frame" anchor="42" max-growth="calc(100dvh - var(--whatimado-frame-top) - 1rem)">
-        <section class="v2-home-prompt" id="home-prompt">
-          <h1>Tell me where you're at and where you'd like to go.</h1>
-        </section>
+        <section class="v2-home-prompt hidden" id="home-prompt" aria-hidden="true"></section>
         <div class="v2-messages" id="messages" aria-live="polite"></div>
         <section class="v2-selection hidden" id="selection-panel"></section>
         <section class="v2-possibilities hidden" id="possibilities">

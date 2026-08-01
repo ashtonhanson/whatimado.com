@@ -50,6 +50,9 @@ export function applyPhaseToDom(doc, phase) {
   const home = doc.getElementById("home-prompt");
   if (home) home.classList.toggle("hidden", !vis.homePrompt);
 
+  const kicker = doc.getElementById("frame-kicker");
+  if (kicker) kicker.classList.toggle("hidden", phase !== PHASE.OPEN);
+
   const possibilities = doc.getElementById("possibilities");
   if (possibilities) possibilities.classList.toggle("hidden", !vis.possibilities);
 

@@ -6,88 +6,18 @@
 }
 
 .v2-rail {
-  padding: 1.25rem 1rem;
-  border-right: 1px solid rgba(46, 232, 214, 0.12);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  min-height: 0;
 }
 
 .v2-rail--right {
-  border-right: none;
-  border-left: 1px solid rgba(46, 232, 214, 0.12);
-}
-
-.v2-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  color: var(--v2-teal);
-  font-weight: 600;
-  font-size: 1.05rem;
-  letter-spacing: 0.02em;
-}
-
-.v2-logo img {
-  width: 28px;
-  height: 28px;
-}
-
-.v2-nav {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.v2-nav a,
-.v2-nav button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 0.45rem 0.5rem;
-  border: none;
-  background: transparent;
-  color: var(--v2-text-muted);
-  font: inherit;
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  border-radius: 6px;
-}
-
-.v2-nav a:hover,
-.v2-nav button:hover {
-  color: var(--v2-teal);
-  background: rgba(46, 232, 214, 0.06);
-}
-
-.v2-active-path {
-  margin-top: 0.5rem;
-  padding: 0.75rem;
-  border: 1px dashed var(--v2-border-dashed);
-  border-radius: var(--v2-radius);
-  font-size: 0.78rem;
-  color: var(--v2-text-muted);
-  line-height: 1.45;
-}
-
-.v2-active-path strong {
-  display: block;
-  color: var(--v2-teal);
-  font-size: 0.85rem;
-  margin-bottom: 0.25rem;
-}
-
-.v2-rail-footer {
-  margin-top: auto;
-  font-size: 0.72rem;
-  color: var(--v2-text-muted);
-  line-height: 1.5;
+  margin: clamp(0.65rem, 1.5vw, 1rem) clamp(0.65rem, 1.5vw, 1rem) clamp(0.65rem, 1.5vw, 1rem) 0;
+  padding: 1.25rem 1rem;
+  border: 1px solid rgba(46, 232, 214, 0.12);
+  border-left: none;
+  border-radius: 0 var(--v2-radius-lg) var(--v2-radius-lg) 0;
+  background: var(--v2-rail-bg);
 }
 
 .v2-section-label {
@@ -132,28 +62,11 @@
     grid-template-rows: auto 1fr auto;
   }
 
-  .v2-rail--left {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    border-right: none;
-    border-bottom: 1px solid rgba(46, 232, 214, 0.12);
-    padding: 0.75rem 1rem;
-  }
-
   .v2-rail--right {
-    border-left: none;
+    margin: 0;
+    border: none;
     border-top: 1px solid rgba(46, 232, 214, 0.12);
+    border-radius: 0;
     max-height: 40vh;
-  }
-
-  .v2-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .v2-active-path,
-  .v2-rail-footer {
-    display: none;
   }
 }
