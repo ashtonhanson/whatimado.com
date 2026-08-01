@@ -1,27 +1,49 @@
 .v2-shell {
+  --v2-sidebar-offset: calc(var(--v2-rail-w) + 2 * var(--v2-rail-inset));
   display: grid;
-  grid-template-columns: var(--v2-rail-w) 1fr var(--v2-rail-w);
-  height: 100dvh;
+  grid-template-columns: 1fr var(--v2-rail-w);
   min-height: 100dvh;
   padding: var(--v2-rail-inset);
+  padding-left: var(--v2-sidebar-offset);
+  padding-right: var(--v2-rail-inset);
   gap: 0;
   box-sizing: border-box;
+}
+
+.v2-shell:has(#resources-rail.hidden) {
+  grid-template-columns: 1fr;
+  padding-right: var(--v2-rail-inset);
 }
 
 .v2-rail {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
 }
 
 .v2-rail--right {
-  margin: 0;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+  height: calc(100dvh - 2 * var(--v2-rail-inset));
   padding: 1.25rem 1rem;
   border: 1px solid rgba(46, 232, 214, 0.12);
   border-left: none;
   border-radius: 0 var(--v2-radius-lg) var(--v2-radius-lg) 0;
   background: var(--v2-rail-bg);
+}
+
+.v2-shell:has(#resources-rail.hidden) .v2-rail--right {
+  display: none;
+}
+
+.v2-main {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  min-width: 0;
+  min-height: calc(100dvh - 2 * var(--v2-rail-inset));
+  overflow: hidden;
 }
 
 .v2-section-label {
@@ -53,32 +75,26 @@
   color: var(--v2-teal);
 }
 
-.v2-main {
-  position: relative;
-  min-width: 0;
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
-}
-
 @media (max-width: 900px) {
   .v2-shell {
+    --v2-sidebar-offset: 0px;
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
-    height: auto;
-    min-height: 100dvh;
     padding: 0;
-  }
-
-  .v2-rail--right {
-    border: none;
-    border-top: 1px solid rgba(46, 232, 214, 0.12);
-    border-radius: 0;
-    max-height: 40vh;
+    min-height: 100dvh;
   }
 
   .v2-main {
-    height: auto;
     min-height: 60dvh;
+  }
+
+  .v2-rail--right {
+    grid-column: 1;
+    grid-row: 3;
+    height: auto;
+    max-height: 40vh;
+    border: none;
+    border-top: 1px solid rgba(46, 232, 214, 0.12);
+    border-radius: 0;
   }
 }
