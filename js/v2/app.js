@@ -156,9 +156,12 @@ async function handleSubmit(text) {
 
 mapEl?.setNodeSelectHandler(handleNodeSelect);
 
+mapEl?.setPromptEmptyChecker(() => !frameEl?.composerInput?.value.trim());
+
 mapEl?.addEventListener("map-node-select", (event) => {
-  const detail = /** @type {CustomEvent<{ nodeId: string }>} */ (event).detail;
-  if (detail?.nodeId) handleNodeSelect(detail.nodeId);
+  const detail = /** @type {CustomEvent<{ nodeId: string, promptEmpty?: boolean }>} */ (event).detail;
+  if (!detail?.nodeId || detail.promptEmpty) return;
+  handleNodeSelect(detail.nodeId);
 });
 
 frameEl?.composerInput?.addEventListener("input", () => {
