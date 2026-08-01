@@ -85,12 +85,12 @@ whatimado-map .whatimado-map__edge--live {
   stroke-dasharray: 1 5;
 }
 
-/* Unselected — solid teal; smooth fill transition decoupled from radius lerp */
+/* Unselected — solid teal */
 whatimado-map .whatimado-map__node--live.is-support .whatimado-map__node-body {
   fill: var(--v2-teal);
   stroke: none;
   outline: none;
-  transition: fill 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: fill 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 whatimado-map .whatimado-map__node--live.is-support text {
@@ -101,15 +101,15 @@ whatimado-map .whatimado-map__node--live.is-support text {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   pointer-events: none;
-  transition: fill 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: fill 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Active anchor — neon yellow; radius lerps in RAF, glow on separate layer */
+/* Active anchor — color + soft blurred aura; radius stays fixed (no layout twitch) */
 whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-body {
   fill: var(--v2-yellow);
   stroke: none;
   outline: none;
-  transition: fill 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: fill 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 whatimado-map .whatimado-map__node--live.is-anchor text {
@@ -120,34 +120,31 @@ whatimado-map .whatimado-map__node--live.is-anchor text {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   pointer-events: none;
-  transition: fill 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: fill 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Anchor halo — opacity pulse only (no filter on body = no click twitch) */
-whatimado-map .whatimado-map__node-glow {
-  fill: rgba(245, 213, 71, 0.42);
+/* Soft neon bleed — SVG blur filter, no rigid ring scaling */
+whatimado-map .whatimado-map__node-aura {
+  fill: rgba(245, 213, 71, 0.75);
   stroke: none;
   pointer-events: none;
   opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: opacity 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: url(#whatimado-node-aura);
+  transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-glow {
+whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-aura {
   opacity: 1;
-  animation: whatimado-anchor-glow-pulse 2.4s ease-in-out infinite;
+  animation: whatimado-anchor-aura-breathe 3.2s ease-in-out infinite;
 }
 
-@keyframes whatimado-anchor-glow-pulse {
+@keyframes whatimado-anchor-aura-breathe {
   0%,
   100% {
-    opacity: 0.42;
-    transform: scale(1);
+    opacity: 0.55;
   }
   50% {
-    opacity: 0.88;
-    transform: scale(1.12);
+    opacity: 0.92;
   }
 }
 
@@ -190,10 +187,9 @@ whatimado-map .whatimado-map__node--live.is-support:hover .whatimado-map__node-b
     transition: none;
   }
 
-  whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-glow {
+  whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-aura {
     animation: none;
-    opacity: 0.65;
-    transform: scale(1.05);
+    opacity: 0.72;
   }
 
   whatimado-map .whatimado-map__ripple {

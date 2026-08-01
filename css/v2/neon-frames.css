@@ -1,4 +1,4 @@
-/* Shared neon teal frame system — glow, undulating pulse, cinematic sweep */
+/* Neon frame borders — glow, border-only pulse, border-only cinematic sweep */
 
 :root {
   --v2-neon-teal: #42fff0;
@@ -6,23 +6,25 @@
   --v2-neon-glow-soft: rgba(66, 255, 240, 0.38);
   --v2-neon-glow-mid: rgba(66, 255, 240, 0.58);
   --v2-neon-glow-strong: rgba(66, 255, 240, 0.82);
+  --v2-neon-border-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
 }
 
 whatimado-frame .whatimado-frame__inner,
 .v2-rail--left,
 .v2-rail--right {
   position: relative;
-  isolation: isolate;
-  z-index: 0;
   border-color: var(--v2-neon-glow-strong);
   box-shadow:
     0 0 10px var(--v2-neon-glow-soft),
-    0 0 24px rgba(46, 232, 214, 0.28),
-    0 0 40px rgba(46, 232, 214, 0.12),
-    inset 0 0 18px rgba(46, 232, 214, 0.07);
+    0 0 24px rgba(46, 232, 214, 0.22);
 }
 
-/* Undulating energy wave along border segments */
+/* Left sidebar must stay above main — do not override sidebar.css z-index: 40 */
+.v2-rail--left {
+  z-index: 40;
+}
+
+/* Subtle undulating pulse — border stroke only, never interior fill */
 whatimado-frame .whatimado-frame__inner::before,
 .v2-rail--left::before,
 .v2-rail--right::before {
@@ -31,61 +33,59 @@ whatimado-frame .whatimado-frame__inner::before,
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 0;
+  z-index: 2;
   padding: 1px;
   background: linear-gradient(
     90deg,
-    rgba(66, 255, 240, 0.18) 0%,
-    rgba(125, 255, 239, 0.72) 12%,
-    rgba(66, 255, 240, 0.22) 24%,
-    rgba(125, 255, 239, 0.55) 38%,
-    rgba(66, 255, 240, 0.2) 52%,
-    rgba(125, 255, 239, 0.68) 66%,
-    rgba(66, 255, 240, 0.18) 80%,
-    rgba(125, 255, 239, 0.6) 92%,
-    rgba(66, 255, 240, 0.18) 100%
+    rgba(66, 255, 240, 0.15) 0%,
+    rgba(125, 255, 239, 0.62) 18%,
+    rgba(66, 255, 240, 0.18) 36%,
+    rgba(125, 255, 239, 0.5) 54%,
+    rgba(66, 255, 240, 0.15) 72%,
+    rgba(125, 255, 239, 0.58) 88%,
+    rgba(66, 255, 240, 0.15) 100%
   );
-  background-size: 320% 100%;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
+  background-size: 280% 100%;
+  -webkit-mask: var(--v2-neon-border-mask);
   -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
+  mask: var(--v2-neon-border-mask);
   mask-composite: exclude;
-  animation: v2-neon-wave-travel 6.8s ease-in-out infinite;
+  animation: v2-neon-wave-travel 9s ease-in-out infinite;
 }
 
-/* Cinematic broad sweep flare */
+/* Cinematic sweep — clipped strictly to border outline, not interior */
 whatimado-frame .whatimado-frame__inner::after,
 .v2-rail--left::after,
 .v2-rail--right::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 0;
+  z-index: 3;
   opacity: 0;
+  padding: 1px;
   background: linear-gradient(
-    105deg,
-    transparent 28%,
-    rgba(255, 255, 255, 0.05) 40%,
-    rgba(125, 255, 239, 0.72) 50%,
-    rgba(255, 255, 255, 0.05) 60%,
-    transparent 72%
+    100deg,
+    transparent 32%,
+    rgba(125, 255, 239, 0.25) 44%,
+    rgba(125, 255, 239, 0.95) 50%,
+    rgba(125, 255, 239, 0.25) 56%,
+    transparent 68%
   );
-  background-size: 240% 100%;
-  background-position: 125% 0;
-  mix-blend-mode: screen;
+  background-size: 320% 100%;
+  background-position: 140% 0;
+  -webkit-mask: var(--v2-neon-border-mask);
+  -webkit-mask-composite: xor;
+  mask: var(--v2-neon-border-mask);
+  mask-composite: exclude;
 }
 
 whatimado-frame .whatimado-frame__inner.v2-neon-sweep-active::after,
 .v2-rail--left.v2-neon-sweep-active::after,
 .v2-rail--right.v2-neon-sweep-active::after {
   opacity: 1;
-  animation: v2-neon-frame-sweep 2.6s cubic-bezier(0.35, 0, 0.2, 1) forwards;
+  animation: v2-neon-frame-sweep 4.8s cubic-bezier(0.42, 0, 0.18, 1) forwards;
 }
 
 whatimado-frame .whatimado-frame__body,
@@ -99,95 +99,30 @@ whatimado-frame .whatimado-frame__composer,
 }
 
 @keyframes v2-neon-wave-travel {
-  0% {
-    background-position: 0% 50%;
-    opacity: 0.72;
-  }
-  35% {
-    background-position: 55% 50%;
-    opacity: 0.95;
-  }
-  68% {
-    background-position: 100% 50%;
-    opacity: 0.78;
-  }
+  0%,
   100% {
-    background-position: 140% 50%;
-    opacity: 0.72;
+    background-position: 0% 50%;
+    opacity: 0.65;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.88;
   }
 }
 
 @keyframes v2-neon-frame-sweep {
   0% {
-    background-position: 125% 0;
+    background-position: 140% 0;
     opacity: 0;
   }
-  12% {
-    opacity: 0.88;
+  8% {
+    opacity: 0.75;
   }
-  88% {
-    opacity: 0.88;
+  92% {
+    opacity: 0.75;
   }
   100% {
-    background-position: -25% 0;
-    opacity: 0;
-  }
-}
-
-/* Composer prompt field — neon teal capsule */
-whatimado-frame .whatimado-frame__composer-input {
-  box-shadow:
-    0 0 12px rgba(46, 232, 214, 0.45),
-    0 0 24px rgba(46, 232, 214, 0.2),
-    inset 0 0 8px rgba(255, 255, 255, 0.12);
-}
-
-whatimado-frame .whatimado-frame__composer-send {
-  border-color: var(--v2-neon-glow-mid);
-  box-shadow: 0 0 10px rgba(46, 232, 214, 0.25);
-}
-
-/* Hero title — sweeping glint band */
-.v2-kicker-brand {
-  position: relative;
-  overflow: hidden;
-}
-
-.v2-kicker-brand::after {
-  content: "";
-  position: absolute;
-  inset: -30% -50%;
-  pointer-events: none;
-  background: linear-gradient(
-    100deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.15) 45%,
-    rgba(125, 255, 239, 0.85) 50%,
-    rgba(255, 255, 255, 0.15) 55%,
-    transparent 65%
-  );
-  transform: translateX(-120%) skewX(-14deg);
-  opacity: 0;
-  mix-blend-mode: screen;
-}
-
-.v2-kicker-brand.v2-neon-sweep-active::after {
-  animation: v2-title-glint-sweep 2.4s cubic-bezier(0.35, 0, 0.2, 1) forwards;
-}
-
-@keyframes v2-title-glint-sweep {
-  0% {
-    transform: translateX(-120%) skewX(-14deg);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.95;
-  }
-  85% {
-    opacity: 0.95;
-  }
-  100% {
-    transform: translateX(120%) skewX(-14deg);
+    background-position: -40% 0;
     opacity: 0;
   }
 }
@@ -197,14 +132,13 @@ whatimado-frame .whatimado-frame__composer-send {
   .v2-rail--left::before,
   .v2-rail--right::before {
     animation: none;
-    opacity: 0.75;
+    opacity: 0.7;
     background-position: 50% 50%;
   }
 
   whatimado-frame .whatimado-frame__inner.v2-neon-sweep-active::after,
   .v2-rail--left.v2-neon-sweep-active::after,
-  .v2-rail--right.v2-neon-sweep-active::after,
-  .v2-kicker-brand.v2-neon-sweep-active::after {
+  .v2-rail--right.v2-neon-sweep-active::after {
     animation: none;
     opacity: 0;
   }

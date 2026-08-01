@@ -82,6 +82,13 @@ const MAP_TEMPLATE = `
           <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.55)" />
           <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="rgba(245,213,71,0.45)" />
         </filter>
+        <filter id="whatimado-node-aura" x="-200%" y="-200%" width="500%" height="500%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+          <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.55 0" result="soft" />
+          <feMerge>
+            <feMergeNode in="soft" />
+          </feMerge>
+        </filter>
       </defs>
       <g class="whatimado-map__layer whatimado-map__layer--ghost"></g>
       <g class="whatimado-map__layer whatimado-map__layer--live"></g>
@@ -133,9 +140,9 @@ export class WhatimadoMap extends HTMLElement {
     this._liveNodes = [];
     /**
      * @type {Map<string, {
-     *   baseX: number, baseY: number, radius: number, targetRadius: number,
+     *   baseX: number, baseY: number, radius: number,
      *   delay: number, duration: number, groupEl: SVGGElement,
-     *   circleEl: SVGCircleElement, glowEl: SVGCircleElement|null, textEl: SVGTextElement|null
+     *   circleEl: SVGCircleElement, auraEl: SVGCircleElement|null, textEl: SVGTextElement|null
      * }>}
      */
     this._driftNodes = new Map();
@@ -310,7 +317,7 @@ export class WhatimadoMap extends HTMLElement {
     this.querySelectorAll(".whatimado-map__node--live").forEach((groupEl, index) => {
       const id = groupEl.getAttribute("data-node-id");
       const circle = groupEl.querySelector(".whatimado-map__node-body");
-      const glow = groupEl.querySelector(".whatimado-map__node-glow");
+      const aura = groupEl.querySelector(".whatimado-map__node-aura");
       const text = groupEl.querySelector("text");
       if (!id || !circle) return;
 
@@ -324,14 +331,13 @@ export class WhatimadoMap extends HTMLElement {
         baseX,
         baseY,
         radius,
-        targetRadius: radius,
         delay,
         duration,
         dragX: 0,
         dragY: 0,
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
-        glowEl: glow ? /** @type {SVGCircleElement} */ (glow) : null,
+        auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
         textEl: text ? /** @type {SVGTextElement} */ (text) : null
       });
     });
@@ -375,22 +381,6 @@ export class WhatimadoMap extends HTMLElement {
         oy = drift.y;
       }
 
-      const targetR = node.targetRadius;
-      const radiusDelta = targetR - node.radius;
-      if (Math.abs(radiusDelta) > 0.02) {
-        node.radius += radiusDelta * 0.16;
-      } else {
-        node.radius = targetR;
-      }
-
-      node.circleEl.setAttribute("r", String(node.radius));
-      if (node.glowEl) {
-        node.glowEl.setAttribute("r", String(node.radius + 5));
-      }
-      if (node.textEl) {
-        node.textEl.setAttribute("y", String(node.baseY - node.radius - 6));
-      }
-
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
       centers.set(id, {
         x: node.baseX + ox,
@@ -415,14 +405,10 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   _applyAnchorStyles() {
-    const { lg: radiusLg, sm: radiusSm } = getNodeRadii();
-
     for (const [id, node] of this._driftNodes) {
       const isAnchor = id === this._anchorId;
       const graphNode = this._liveNodes.find((n) => n.id === id);
       const isStart = graphNode?.type === "start";
-
-      node.targetRadius = isAnchor ? radiusLg : radiusSm;
 
       const group = node.groupEl;
       group.classList.toggle("is-anchor", isAnchor);
@@ -517,9 +503,9 @@ export class WhatimadoMap extends HTMLElement {
 
         driftNode.circleEl.setAttribute("cx", String(driftNode.baseX));
         driftNode.circleEl.setAttribute("cy", String(driftNode.baseY));
-        if (driftNode.glowEl) {
-          driftNode.glowEl.setAttribute("cx", String(driftNode.baseX));
-          driftNode.glowEl.setAttribute("cy", String(driftNode.baseY));
+        if (driftNode.auraEl) {
+          driftNode.auraEl.setAttribute("cx", String(driftNode.baseX));
+          driftNode.auraEl.setAttribute("cy", String(driftNode.baseY));
         }
         if (driftNode.textEl) {
           driftNode.textEl.setAttribute("x", String(driftNode.baseX));
@@ -624,14 +610,15 @@ export class WhatimadoMap extends HTMLElement {
     }
 
     if (!skipNodes) {
-      const { lg: radiusLg, sm: radiusSm } = getNodeRadii();
+      const { lg: radiusLg } = getNodeRadii();
+      const nodeR = radiusLg;
 
       nodes.forEach((node, index) => {
         const cx = node.x * VIEW_W;
         const cy = node.y * VIEW_H;
         const isAnchor = this._anchorId === node.id;
         const isStart = node.type === "start";
-        const r = isAnchor ? radiusLg : radiusSm;
+        const r = nodeR;
         const classes = [
           "whatimado-map__node",
           `whatimado-map__node--${options.layer}`,
@@ -649,7 +636,7 @@ export class WhatimadoMap extends HTMLElement {
           isAnchor,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}">
-          <circle class="whatimado-map__node-glow" cx="${cx}" cy="${cy}" r="${r + 5}" />
+          <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 2}" />
           <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
           <text x="${cx}" y="${cy - r - 6}" text-anchor="middle">${escapeHtml(node.label)}</text>
         </g>
