@@ -134,6 +134,8 @@ export class WhatimadoMap extends HTMLElement {
     if (!layer) return;
 
     const parts = [];
+    /** @type {{ isPrimary: boolean, html: string }[]} */
+    const nodeParts = [];
     edges.forEach(({ from, to }) => {
       const a = nodes.find((n) => n.id === from);
       const b = nodes.find((n) => n.id === to);
@@ -146,26 +148,39 @@ export class WhatimadoMap extends HTMLElement {
     nodes.forEach((node, index) => {
       const cx = node.x * VIEW_W;
       const cy = node.y * VIEW_H;
-      const r = node.type === "start" ? 14 : 11;
       const isSelected = options.selectedId === node.id;
+      const isPrimary = node.type === "start" || isSelected;
+      const r = isPrimary ? 15 : 9;
       const classes = [
         "whatimado-map__node",
         `whatimado-map__node--${options.layer}`,
         node.type === "start" ? "is-start" : "",
-        isSelected ? "is-selected" : ""
+        isSelected ? "is-selected" : "",
+        isPrimary ? "is-primary" : "is-support"
       ]
         .filter(Boolean)
         .join(" ");
 
-      const driftStyle = options.layer === "ghost" ? "" : `--whatimado-drift-delay: ${(index * 0.7) % 4}s`;
+      const driftDelay = (index * 0.85) % 5;
+      const driftDuration = 12 + (index % 4) * 1.5;
+      const driftStyle =
+        options.layer === "ghost"
+          ? ""
+          : `--whatimado-drift-delay: ${driftDelay}s; --whatimado-drift-duration: ${driftDuration}s`;
 
-      parts.push(`
+      nodeParts.push({
+        isPrimary,
+        html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" style="${driftStyle}" ${options.interactive ? 'role="button" tabindex="0"' : 'aria-hidden="true"'}>
           <circle cx="${cx}" cy="${cy}" r="${r}" />
-          <text x="${cx}" y="${cy - r - 6}" text-anchor="middle">${escapeHtml(node.label)}</text>
+          <text x="${cx}" y="${cy - r - 7}" text-anchor="middle">${escapeHtml(node.label)}</text>
         </g>
-      `);
+      `
+      });
     });
+
+    nodeParts.sort((a, b) => Number(a.isPrimary) - Number(b.isPrimary));
+    parts.push(...nodeParts.map((n) => n.html));
 
     layer.innerHTML = parts.join("");
 
