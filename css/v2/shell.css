@@ -1,18 +1,22 @@
 .v2-shell {
   display: grid;
   grid-template-columns: var(--v2-rail-w) 1fr var(--v2-rail-w);
+  height: 100dvh;
   min-height: 100dvh;
+  padding: var(--v2-rail-inset);
   gap: 0;
+  box-sizing: border-box;
 }
 
 .v2-rail {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100%;
 }
 
 .v2-rail--right {
-  margin: var(--v2-rail-inset) var(--v2-rail-inset) var(--v2-rail-inset) 0;
+  margin: 0;
   padding: 1.25rem 1rem;
   border: 1px solid rgba(46, 232, 214, 0.12);
   border-left: none;
@@ -52,7 +56,8 @@
 .v2-main {
   position: relative;
   min-width: 0;
-  height: 100dvh;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -60,13 +65,20 @@
   .v2-shell {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
+    height: auto;
+    min-height: 100dvh;
+    padding: 0;
   }
 
   .v2-rail--right {
-    margin: 0;
     border: none;
     border-top: 1px solid rgba(46, 232, 214, 0.12);
     border-radius: 0;
     max-height: 40vh;
+  }
+
+  .v2-main {
+    height: auto;
+    min-height: 60dvh;
   }
 }
