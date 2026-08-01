@@ -1,4 +1,4 @@
-/* Left rail — fixed inset panel; full border, no right-edge clip */
+/* Left rail — matches whatimado-frame panel; square top-left corner */
 .v2-rail--left {
   position: fixed;
   z-index: 40;
@@ -10,11 +10,10 @@
   margin: 0;
   padding: 0;
   border: 1px solid var(--v2-border);
-  border-radius: var(--v2-radius-lg);
-  background: var(--v2-rail-bg);
-  box-shadow: 0 0 18px rgba(46, 232, 214, 0.08);
-  overflow-x: visible;
-  overflow-y: hidden;
+  border-radius: 0 var(--v2-frame-radius) var(--v2-frame-radius) var(--v2-frame-radius);
+  background: var(--v2-frame-bg);
+  box-shadow: var(--v2-frame-shadow);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -25,9 +24,7 @@
   flex-shrink: 0;
   padding: 0.95rem 1.15rem;
   border-bottom: 1px solid rgba(46, 232, 214, 0.12);
-  background: var(--v2-frame-bg);
-  box-shadow: 0 0 18px rgba(46, 232, 214, 0.1);
-  border-radius: var(--v2-radius-lg) var(--v2-radius-lg) 0 0;
+  background: transparent;
 }
 
 .v2-brand {
@@ -62,7 +59,7 @@
   gap: 0.35rem;
   padding: 0.75rem 1.15rem;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
 }
 
 .v2-undo-btn {
@@ -206,9 +203,8 @@
   display: grid;
   gap: 0.55rem;
   padding: 0.75rem 1.15rem 0.9rem;
-  border-top: 1px solid rgba(46, 232, 214, 0.1);
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 0 0 var(--v2-radius-lg) var(--v2-radius-lg);
+  border-top: 1px solid rgba(46, 232, 214, 0.12);
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .v2-sync-note {
