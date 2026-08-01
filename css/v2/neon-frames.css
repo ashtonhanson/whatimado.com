@@ -9,8 +9,8 @@
   --v2-neon-border-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
 }
 
+/* Frame panels only — never override sidebar fixed positioning */
 whatimado-frame .whatimado-frame__inner,
-.v2-rail--left,
 .v2-rail--right {
   position: relative;
   border-color: var(--v2-neon-glow-strong);
@@ -19,12 +19,16 @@ whatimado-frame .whatimado-frame__inner,
     0 0 24px rgba(46, 232, 214, 0.22);
 }
 
-/* Left sidebar must stay above main — do not override sidebar.css z-index: 40 */
+/* Left rail: keep sidebar.css position:fixed — only neon border + stable stacking */
 .v2-rail--left {
-  z-index: 40;
+  z-index: 50;
+  border-color: var(--v2-neon-glow-strong);
+  box-shadow:
+    0 0 10px var(--v2-neon-glow-soft),
+    0 0 24px rgba(46, 232, 214, 0.22);
 }
 
-/* Subtle undulating pulse — border stroke only, never interior fill */
+/* Subtle undulating pulse — border stroke only */
 whatimado-frame .whatimado-frame__inner::before,
 .v2-rail--left::before,
 .v2-rail--right::before {
@@ -37,23 +41,22 @@ whatimado-frame .whatimado-frame__inner::before,
   padding: 1px;
   background: linear-gradient(
     90deg,
-    rgba(66, 255, 240, 0.15) 0%,
-    rgba(125, 255, 239, 0.62) 18%,
-    rgba(66, 255, 240, 0.18) 36%,
-    rgba(125, 255, 239, 0.5) 54%,
-    rgba(66, 255, 240, 0.15) 72%,
-    rgba(125, 255, 239, 0.58) 88%,
-    rgba(66, 255, 240, 0.15) 100%
+    rgba(66, 255, 240, 0.12) 0%,
+    rgba(125, 255, 239, 0.55) 20%,
+    rgba(66, 255, 240, 0.15) 40%,
+    rgba(125, 255, 239, 0.48) 60%,
+    rgba(66, 255, 240, 0.12) 80%,
+    rgba(125, 255, 239, 0.52) 100%
   );
-  background-size: 280% 100%;
+  background-size: 300% 100%;
   -webkit-mask: var(--v2-neon-border-mask);
   -webkit-mask-composite: xor;
   mask: var(--v2-neon-border-mask);
   mask-composite: exclude;
-  animation: v2-neon-wave-travel 9s ease-in-out infinite;
+  animation: v2-neon-wave-travel 10s ease-in-out infinite;
 }
 
-/* Cinematic sweep — clipped strictly to border outline, not interior */
+/* Cinematic sweep — outline only, never interior fill */
 whatimado-frame .whatimado-frame__inner::after,
 .v2-rail--left::after,
 .v2-rail--right::after {
@@ -67,14 +70,14 @@ whatimado-frame .whatimado-frame__inner::after,
   padding: 1px;
   background: linear-gradient(
     100deg,
-    transparent 32%,
-    rgba(125, 255, 239, 0.25) 44%,
-    rgba(125, 255, 239, 0.95) 50%,
-    rgba(125, 255, 239, 0.25) 56%,
-    transparent 68%
+    transparent 34%,
+    rgba(125, 255, 239, 0.2) 44%,
+    rgba(180, 255, 248, 0.92) 50%,
+    rgba(125, 255, 239, 0.2) 56%,
+    transparent 66%
   );
-  background-size: 320% 100%;
-  background-position: 140% 0;
+  background-size: 400% 100%;
+  background-position: 150% 0;
   -webkit-mask: var(--v2-neon-border-mask);
   -webkit-mask-composite: xor;
   mask: var(--v2-neon-border-mask);
@@ -85,7 +88,7 @@ whatimado-frame .whatimado-frame__inner.v2-neon-sweep-active::after,
 .v2-rail--left.v2-neon-sweep-active::after,
 .v2-rail--right.v2-neon-sweep-active::after {
   opacity: 1;
-  animation: v2-neon-frame-sweep 4.8s cubic-bezier(0.42, 0, 0.18, 1) forwards;
+  animation: v2-neon-frame-sweep 6.5s cubic-bezier(0.45, 0.05, 0.2, 1) forwards;
 }
 
 whatimado-frame .whatimado-frame__body,
@@ -102,27 +105,27 @@ whatimado-frame .whatimado-frame__composer,
   0%,
   100% {
     background-position: 0% 50%;
-    opacity: 0.65;
+    opacity: 0.6;
   }
   50% {
     background-position: 100% 50%;
-    opacity: 0.88;
+    opacity: 0.82;
   }
 }
 
 @keyframes v2-neon-frame-sweep {
   0% {
-    background-position: 140% 0;
+    background-position: 150% 0;
     opacity: 0;
   }
-  8% {
-    opacity: 0.75;
+  6% {
+    opacity: 0.7;
   }
-  92% {
-    opacity: 0.75;
+  94% {
+    opacity: 0.7;
   }
   100% {
-    background-position: -40% 0;
+    background-position: -50% 0;
     opacity: 0;
   }
 }
@@ -132,7 +135,7 @@ whatimado-frame .whatimado-frame__composer,
   .v2-rail--left::before,
   .v2-rail--right::before {
     animation: none;
-    opacity: 0.7;
+    opacity: 0.68;
     background-position: 50% 50%;
   }
 
