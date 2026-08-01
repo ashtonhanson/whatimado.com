@@ -16,7 +16,6 @@ whatimado-map[data-mode="ghost"],
 whatimado-map[data-mode="faint"],
 whatimado-map[data-mode="visible"] {
   opacity: 1;
-  pointer-events: auto;
 }
 
 whatimado-map[data-mode="ghost"],
@@ -37,34 +36,44 @@ whatimado-map.is-ghost-dismissed .whatimado-map__layer--ghost {
   display: none;
 }
 
+/* Node constellation sits above the kicker reserve (hero title zone) */
+whatimado-map .whatimado-map__stage {
+  height: var(--v2-map-svg-h);
+}
+
 whatimado-map .whatimado-map__stage,
 whatimado-map .whatimado-map__svg {
   width: 100%;
-  height: 100%;
 }
 
 whatimado-map .whatimado-map__svg {
+  height: 100%;
   overflow: visible;
 }
 
-/* Ghost layer — dashed edge web at 0.28 (nodes live on the layer above) */
-whatimado-map .whatimado-map__layer--ghost {
+/* Ghost / ambient — unified 0.28 opacity on edges, nodes, and labels */
+whatimado-map[data-mode="ghost"] .whatimado-map__layer--ghost,
+whatimado-map[data-mode="ghost"] .whatimado-map__layer--live,
+whatimado-map[data-mode="faint"] .whatimado-map__layer--live {
   opacity: var(--v2-map-ghost-opacity);
 }
 
-whatimado-map .whatimado-map__layer--live {
+whatimado-map[data-mode="visible"] .whatimado-map__layer--live {
   opacity: 1;
+}
+
+whatimado-map .whatimado-map__layer--live {
   isolation: isolate;
 }
 
 whatimado-map .whatimado-map__edge--ghost {
   fill: none;
-  stroke: rgba(46, 232, 214, 0.38);
+  stroke: var(--v2-teal);
   stroke-width: 1.25;
   stroke-dasharray: 6 8;
 }
 
-/* Live layer — floating solid nodes above ghost backdrop */
+/* Live layer — floating nodes */
 whatimado-map .whatimado-map__node--live {
   cursor: pointer;
   transform-box: fill-box;
@@ -80,10 +89,10 @@ whatimado-map .whatimado-map__node--live {
     transform: translate(0, 0);
   }
   33% {
-    transform: translate(3px, -4px);
+    transform: translate(6px, -7px);
   }
   66% {
-    transform: translate(-2.5px, 3px);
+    transform: translate(-5px, 6px);
   }
 }
 
@@ -92,7 +101,7 @@ whatimado-map .whatimado-map__node--live.is-ambient {
   pointer-events: none;
 }
 
-/* Unselected — small solid teal supporting nodes */
+/* Unselected — solid teal, ~75% of home node radius */
 whatimado-map .whatimado-map__node--live circle {
   fill: var(--v2-teal);
   stroke: none;
@@ -101,7 +110,7 @@ whatimado-map .whatimado-map__node--live circle {
 
 whatimado-map .whatimado-map__node--live text {
   fill: var(--v2-teal);
-  font-size: 10px;
+  font-size: 7px;
   font-family: var(--v2-font);
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -109,7 +118,7 @@ whatimado-map .whatimado-map__node--live text {
   pointer-events: none;
 }
 
-/* Home + selected — large neon yellow primary anchor */
+/* Home + selected — neon yellow, largest node */
 whatimado-map .whatimado-map__node--live.is-start circle,
 whatimado-map .whatimado-map__node--live.is-selected circle {
   fill: var(--v2-yellow);
@@ -118,16 +127,24 @@ whatimado-map .whatimado-map__node--live.is-selected circle {
 whatimado-map .whatimado-map__node--live.is-start text,
 whatimado-map .whatimado-map__node--live.is-selected text {
   fill: var(--v2-yellow);
-  font-size: 11px;
+  font-size: 8px;
   font-weight: 600;
+}
+
+/* Visible mode — soft depth shadows on live nodes */
+whatimado-map[data-mode="visible"] .whatimado-map__node--live.is-support circle {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45)) drop-shadow(0 1px 3px rgba(46, 232, 214, 0.35));
+}
+
+whatimado-map[data-mode="visible"] .whatimado-map__node--live.is-primary circle {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5)) drop-shadow(0 2px 6px rgba(245, 213, 71, 0.4));
 }
 
 whatimado-map .whatimado-map__edge--live {
   fill: none;
-  stroke: rgba(46, 232, 214, 0.32);
+  stroke: var(--v2-teal);
   stroke-width: 1;
   stroke-dasharray: 4 6;
-  opacity: 0.85;
 }
 
 whatimado-map .whatimado-map__node--live:hover:not(.is-start):not(.is-selected):not(.is-ambient) circle {
@@ -142,5 +159,11 @@ whatimado-map .whatimado-map__node--live:hover:not(.is-start):not(.is-selected):
 
   whatimado-map .whatimado-map__node--live {
     animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --v2-kicker-reserve: clamp(4rem, 14vh, 5.5rem);
   }
 }

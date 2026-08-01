@@ -1,19 +1,27 @@
 import { GHOST_GRAPH, graphStore } from "../graph-store.js";
 
 const VIEW_W = 800;
-const VIEW_H = 280;
+const VIEW_H = 240;
+
+/** Read node radii from CSS tokens so sizing stays consistent across breakpoints */
+function getNodeRadii() {
+  const style = getComputedStyle(document.documentElement);
+  const lg = parseFloat(style.getPropertyValue("--v2-map-node-lg")) || 8.5;
+  const sm = parseFloat(style.getPropertyValue("--v2-map-node-sm")) || 6.4;
+  return { lg, sm };
+}
 
 const MAP_TEMPLATE = `
   <div class="whatimado-map__stage">
     <svg class="whatimado-map__svg" part="svg" role="img" aria-label="Possibility map">
       <defs>
         <filter id="whatimado-node-shadow" x="-80%" y="-80%" width="260%" height="260%">
-          <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.5)" />
-          <feDropShadow dx="0" dy="1" stdDeviation="2.5" flood-color="rgba(46,232,214,0.4)" />
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.5)" />
+          <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(46,232,214,0.35)" />
         </filter>
         <filter id="whatimado-node-shadow-primary" x="-90%" y="-90%" width="280%" height="280%">
-          <feDropShadow dx="0" dy="4" stdDeviation="5.5" flood-color="rgba(0,0,0,0.55)" />
-          <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgba(245,213,71,0.5)" />
+          <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.55)" />
+          <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="rgba(245,213,71,0.45)" />
         </filter>
       </defs>
       <g class="whatimado-map__layer whatimado-map__layer--ghost"></g>
@@ -177,13 +185,20 @@ export class WhatimadoMap extends HTMLElement {
     }
 
     if (!skipNodes) {
+      const { lg: radiusLg, sm: radiusSm } = getNodeRadii();
+
       nodes.forEach((node, index) => {
         const cx = node.x * VIEW_W;
         const cy = node.y * VIEW_H;
         const isSelected = options.selectedId === node.id;
         const isPrimary = node.type === "start" || isSelected;
-        const r = isPrimary ? 17 : 10;
-        const shadowFilter = isPrimary ? "url(#whatimado-node-shadow-primary)" : "url(#whatimado-node-shadow)";
+        const r = isPrimary ? radiusLg : radiusSm;
+        const useFilter = options.layer === "live" && !options.ambient;
+        const shadowFilter = useFilter
+          ? isPrimary
+            ? "url(#whatimado-node-shadow-primary)"
+            : "url(#whatimado-node-shadow)"
+          : "none";
         const classes = [
           "whatimado-map__node",
           `whatimado-map__node--${options.layer}`,
@@ -196,7 +211,7 @@ export class WhatimadoMap extends HTMLElement {
           .join(" ");
 
         const driftDelay = (index * 0.85) % 5;
-        const driftDuration = 12 + (index % 4) * 1.5;
+        const driftDuration = 9 + (index % 4) * 1.2;
         const driftStyle =
           options.layer === "live" && !reducedMotion
             ? `style="--whatimado-drift-delay:${driftDelay}s;--whatimado-drift-duration:${driftDuration}s"`
@@ -206,8 +221,8 @@ export class WhatimadoMap extends HTMLElement {
           isPrimary,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" ${driftStyle} ${options.interactive ? 'role="button" tabindex="0"' : 'aria-hidden="true"'}>
-          <circle cx="${cx}" cy="${cy}" r="${r}" filter="${shadowFilter}" />
-          <text x="${cx}" y="${cy - r - 8}" text-anchor="middle">${escapeHtml(node.label)}</text>
+          <circle cx="${cx}" cy="${cy}" r="${r}" ${shadowFilter !== "none" ? `filter="${shadowFilter}"` : ""} />
+          <text x="${cx}" y="${cy - r - 6}" text-anchor="middle">${escapeHtml(node.label)}</text>
         </g>
       `
         });

@@ -15,7 +15,7 @@ export function resetGraph() {
 /** Placeholder possibility nodes for scaffold demo */
 export function seedPossibilityNodes() {
   graphStore.nodes = [
-    { id: "start", type: "start", label: "You", x: 0.5, y: 0.85 },
+    { id: "start", type: "start", label: "You", x: 0.5, y: 0.82 },
     { id: "path-a", type: "path", label: "Rebuild", x: 0.22, y: 0.35, parentId: "start" },
     { id: "path-b", type: "path", label: "Train", x: 0.5, y: 0.2, parentId: "start" },
     { id: "path-c", type: "path", label: "Freelance", x: 0.78, y: 0.35, parentId: "start" }
@@ -31,11 +31,11 @@ export function seedPossibilityNodes() {
 /** Ambient ghost map — generic roadmap silhouette on first load */
 export const GHOST_GRAPH = {
   nodes: [
-    { id: "ghost-start", type: "start", label: "You", x: 0.5, y: 0.88 },
-    { id: "ghost-stabilize", type: "path", label: "Stabilize", x: 0.16, y: 0.48 },
-    { id: "ghost-skills", type: "path", label: "Skills", x: 0.35, y: 0.26 },
-    { id: "ghost-train", type: "path", label: "Train", x: 0.65, y: 0.26 },
-    { id: "ghost-explore", type: "path", label: "Explore", x: 0.84, y: 0.48 },
+    { id: "ghost-start", type: "start", label: "You", x: 0.5, y: 0.82 },
+    { id: "ghost-stabilize", type: "path", label: "Stabilize", x: 0.16, y: 0.52 },
+    { id: "ghost-skills", type: "path", label: "Skills", x: 0.35, y: 0.28 },
+    { id: "ghost-train", type: "path", label: "Train", x: 0.65, y: 0.28 },
+    { id: "ghost-explore", type: "path", label: "Explore", x: 0.84, y: 0.52 },
     { id: "ghost-mission", type: "mission", label: "Next step", x: 0.5, y: 0.08 }
   ],
   edges: [
