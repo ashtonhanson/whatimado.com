@@ -1,4 +1,3 @@
-import { graphStore, selectGraphNode } from "./graph-store.js";
 
 /** @param {string} value */
 export function escapeHtml(value) {
@@ -44,56 +43,4 @@ export function appendMessage(container, role, content, options = {}) {
   }
 
   return wrap;
-}
-
-/**
- * @param {SVGElement} svg
- * @param {(nodeId: string) => void} [onSelect]
- */
-export function renderMapCanvas(svg, onSelect) {
-  if (!svg) return;
-  const w = 800;
-  const h = 280;
-  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-
-  const parts = [];
-  graphStore.edges.forEach(({ from, to }) => {
-    const a = graphStore.nodes.find((n) => n.id === from);
-    const b = graphStore.nodes.find((n) => n.id === to);
-    if (!a || !b) return;
-    parts.push(
-      `<line class="v2-map-edge" x1="${a.x * w}" y1="${a.y * h}" x2="${b.x * w}" y2="${b.y * h}" />`
-    );
-  });
-
-  graphStore.nodes.forEach((node) => {
-    const cx = node.x * w;
-    const cy = node.y * h;
-    const r = node.type === "start" ? 14 : 11;
-    const classes = [
-      "v2-map-node",
-      node.type === "start" ? "is-start" : "",
-      graphStore.selectedId === node.id ? "is-selected" : ""
-    ]
-      .filter(Boolean)
-      .join(" ");
-    parts.push(`
-      <g class="${classes}" data-node-id="${escapeHtml(node.id)}" role="button" tabindex="0">
-        <circle cx="${cx}" cy="${cy}" r="${r}" />
-        <text x="${cx}" y="${cy - r - 6}" text-anchor="middle">${escapeHtml(node.label)}</text>
-      </g>
-    `);
-  });
-
-  svg.innerHTML = parts.join("");
-
-  svg.querySelectorAll(".v2-map-node").forEach((el) => {
-    const id = el.getAttribute("data-node-id");
-    if (!id) return;
-    el.addEventListener("click", () => {
-      selectGraphNode(id);
-      renderMapCanvas(svg, onSelect);
-      onSelect?.(id);
-    });
-  });
 }

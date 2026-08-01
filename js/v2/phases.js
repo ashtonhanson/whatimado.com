@@ -9,15 +9,24 @@ export const PHASE = {
 };
 
 /** @typedef {typeof PHASE[keyof typeof PHASE]} Phase */
+/** @typedef {"hidden"|"ghost"|"faint"|"visible"} MapMode */
 
 /**
  * @param {Phase} phase
- * @returns {{ map: "hidden"|"faint"|"visible", resources: boolean, possibilities: boolean, homePrompt: boolean }}
+ * @param {{ ghostDismissed?: boolean }} [options]
+ * @returns {{ map: MapMode, resources: boolean, possibilities: boolean, homePrompt: boolean }}
  */
-export function getPhaseVisibility(phase) {
+export function getPhaseVisibility(phase, options = {}) {
+  const { ghostDismissed = false } = options;
+
   switch (phase) {
     case PHASE.OPEN:
-      return { map: "hidden", resources: false, possibilities: false, homePrompt: true };
+      return {
+        map: ghostDismissed ? "faint" : "ghost",
+        resources: false,
+        possibilities: false,
+        homePrompt: true
+      };
     case PHASE.EXPLORING:
     case PHASE.COACHING:
       return { map: "faint", resources: false, possibilities: false, homePrompt: false };
@@ -27,24 +36,23 @@ export function getPhaseVisibility(phase) {
     case PHASE.MISSIONS:
       return { map: "visible", resources: true, possibilities: false, homePrompt: false };
     default:
-      return { map: "hidden", resources: false, possibilities: false, homePrompt: true };
+      return { map: "ghost", resources: false, possibilities: false, homePrompt: true };
   }
 }
 
 /**
  * @param {Document} doc
  * @param {Phase} phase
+ * @param {{ ghostDismissed?: boolean }} [options]
  */
-export function applyPhaseToDom(doc, phase) {
+export function applyPhaseToDom(doc, phase, options = {}) {
   const body = doc.body;
   body.dataset.phase = phase;
-  const vis = getPhaseVisibility(phase);
+  const vis = getPhaseVisibility(phase, options);
 
-  const map = doc.getElementById("map-canvas");
+  const map = doc.querySelector("whatimado-map");
   if (map) {
-    map.classList.toggle("is-visible", vis.map === "visible");
-    map.classList.toggle("is-faint", vis.map === "faint");
-    map.setAttribute("aria-hidden", vis.map === "hidden" ? "true" : "false");
+    map.setAttribute("mode", vis.map);
   }
 
   const home = doc.getElementById("home-prompt");

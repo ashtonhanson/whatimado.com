@@ -1,20 +1,23 @@
 import "./components/whatimado-frame.js";
+import "./components/whatimado-map.js";
 import { PHASE, applyPhaseToDom } from "./phases.js";
-import { seedPossibilityNodes, graphStore } from "./graph-store.js";
+import { seedPossibilityNodes, graphStore, selectGraphNode } from "./graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "./advisor.js";
-import { appendMessage, renderMapCanvas } from "./ui.js";
+import { appendMessage } from "./ui.js";
 
-/** @type {{ phase: import("./phases.js").Phase, messages: { role: "user"|"assistant", content: string }[], turnCount: number }} */
+/** @type {{ phase: import("./phases.js").Phase, messages: { role: "user"|"assistant", content: string }[], turnCount: number, ghostDismissed: boolean }} */
 const state = {
   phase: PHASE.OPEN,
   messages: [],
-  turnCount: 0
+  turnCount: 0,
+  ghostDismissed: false
 };
 
 /** @type {import("./components/whatimado-frame.js").WhatimadoFrame|null} */
 const frameEl = document.getElementById("dynamic-frame");
+/** @type {import("./components/whatimado-map.js").WhatimadoMap|null} */
+const mapEl = document.getElementById("possibility-map");
 const messagesEl = document.getElementById("messages");
-const mapSvg = document.getElementById("map-svg");
 const activePathEl = document.getElementById("active-path-label");
 const selectionPanel = document.getElementById("selection-panel");
 const pathCardsEl = document.getElementById("path-cards");
@@ -25,16 +28,23 @@ function notifyFrameLayout() {
 
 function setPhase(phase) {
   state.phase = phase;
-  applyPhaseToDom(document, phase);
+  applyPhaseToDom(document, phase, { ghostDismissed: state.ghostDismissed });
 }
 
 function setComposerEnabled(enabled) {
   frameEl?.setComposerEnabled(enabled);
 }
 
+function dismissGhostMap() {
+  if (state.ghostDismissed) return;
+  state.ghostDismissed = true;
+  mapEl?.dismissGhost();
+  setPhase(state.phase);
+}
+
 function showDemoPossibilities() {
   seedPossibilityNodes();
-  renderMapCanvas(mapSvg, handleNodeSelect);
+  mapEl?.syncLiveFromStore();
   setPhase(PHASE.POSSIBILITIES);
   if (activePathEl) {
     activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one to continue — demo scaffold.";
@@ -75,6 +85,8 @@ function renderDemoPathCards() {
 function handleNodeSelect(nodeId) {
   const node = graphStore.nodes.find((n) => n.id === nodeId);
   if (!node || node.type === "start") return;
+  selectGraphNode(nodeId);
+  mapEl?.setSelectedNode(nodeId);
   setPhase(PHASE.PATH_SELECTED);
   if (selectionPanel) {
     selectionPanel.classList.remove("hidden");
@@ -90,6 +102,7 @@ async function handleSubmit(text) {
   const trimmed = text.trim();
   if (!trimmed) return;
 
+  dismissGhostMap();
   setComposerEnabled(false);
 
   if (state.phase === PHASE.OPEN) {
@@ -122,7 +135,7 @@ async function handleSubmit(text) {
       appendMessage(
         messagesEl,
         "advisor",
-        "When you're ready, I can sketch a few possible directions on the map above. For this preview shell, that appears after a few turns — tap a path card or node to explore."
+        "When you're ready, I can sketch a few possible directions on the map above. Tap a path node or card to explore."
       );
       notifyFrameLayout();
       showDemoPossibilities();
@@ -140,6 +153,17 @@ async function handleSubmit(text) {
     frameEl?.focusComposer();
   }
 }
+
+mapEl?.setNodeSelectHandler(handleNodeSelect);
+
+mapEl?.addEventListener("map-node-select", (event) => {
+  const detail = /** @type {CustomEvent<{ nodeId: string }>} */ (event).detail;
+  if (detail?.nodeId) handleNodeSelect(detail.nodeId);
+});
+
+frameEl?.composerInput?.addEventListener("input", () => {
+  if (frameEl.composerInput?.value.trim()) dismissGhostMap();
+});
 
 frameEl?.addEventListener("composer-submit", (event) => {
   const detail = /** @type {CustomEvent<{ text: string }>} */ (event).detail;
