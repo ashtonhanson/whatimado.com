@@ -12,18 +12,19 @@ whatimado-map {
   pointer-events: none;
 }
 
-whatimado-map[data-mode="ghost"] {
-  opacity: var(--v2-map-ghost-opacity);
-  pointer-events: none;
+whatimado-map[data-mode="ghost"],
+whatimado-map[data-mode="faint"],
+whatimado-map[data-mode="visible"] {
+  opacity: 1;
+  pointer-events: auto;
 }
 
+whatimado-map[data-mode="ghost"],
 whatimado-map[data-mode="faint"] {
-  opacity: 0.14;
   pointer-events: none;
 }
 
 whatimado-map[data-mode="visible"] {
-  opacity: 1;
   pointer-events: auto;
 }
 
@@ -46,48 +47,31 @@ whatimado-map .whatimado-map__svg {
   overflow: visible;
 }
 
+/* Ghost layer — dashed edge web at 0.28 (nodes live on the layer above) */
 whatimado-map .whatimado-map__layer--ghost {
-  opacity: 1;
+  opacity: var(--v2-map-ghost-opacity);
 }
 
 whatimado-map .whatimado-map__layer--live {
+  opacity: 1;
   isolation: isolate;
-}
-
-/* Ghost layer — ambient backdrop silhouette (behind floating live nodes) */
-whatimado-map .whatimado-map__node--ghost circle {
-  fill: rgba(4, 20, 22, 0.62);
-  stroke: rgba(46, 232, 214, 0.44);
-  stroke-width: 1.25;
-  stroke-dasharray: 3 4;
-}
-
-whatimado-map .whatimado-map__node--ghost.is-start circle {
-  stroke: rgba(245, 213, 71, 0.42);
-}
-
-whatimado-map .whatimado-map__node--ghost text {
-  fill: rgba(46, 232, 214, 0.48);
-  font-size: 9px;
-  font-family: var(--v2-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 whatimado-map .whatimado-map__edge--ghost {
   fill: none;
-  stroke: rgba(46, 232, 214, 0.26);
-  stroke-width: 1;
-  stroke-dasharray: 5 7;
+  stroke: rgba(46, 232, 214, 0.38);
+  stroke-width: 1.25;
+  stroke-dasharray: 6 8;
 }
 
-/* Live layer — floating nodes above ghost map */
+/* Live layer — floating solid nodes above ghost backdrop */
 whatimado-map .whatimado-map__node--live {
   cursor: pointer;
   transform-box: fill-box;
   transform-origin: center;
   animation: whatimado-node-drift var(--whatimado-drift-duration, var(--v2-map-drift-duration)) ease-in-out infinite;
   animation-delay: var(--whatimado-drift-delay, 0s);
+  will-change: transform;
 }
 
 @keyframes whatimado-node-drift {
@@ -95,25 +79,29 @@ whatimado-map .whatimado-map__node--live {
   100% {
     transform: translate(0, 0);
   }
-  35% {
-    transform: translate(1.2px, -2px);
+  33% {
+    transform: translate(3px, -4px);
   }
-  70% {
-    transform: translate(-1px, 1.4px);
+  66% {
+    transform: translate(-2.5px, 3px);
   }
+}
+
+whatimado-map .whatimado-map__node--live.is-ambient {
+  cursor: default;
+  pointer-events: none;
 }
 
 /* Unselected — small solid teal supporting nodes */
 whatimado-map .whatimado-map__node--live circle {
   fill: var(--v2-teal);
   stroke: none;
-  filter: var(--v2-map-node-shadow);
-  transition: fill 0.25s ease, r 0.25s ease, filter 0.25s ease;
+  transition: fill 0.25s ease;
 }
 
 whatimado-map .whatimado-map__node--live text {
   fill: var(--v2-teal);
-  font-size: 9px;
+  font-size: 10px;
   font-family: var(--v2-font);
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -125,26 +113,25 @@ whatimado-map .whatimado-map__node--live text {
 whatimado-map .whatimado-map__node--live.is-start circle,
 whatimado-map .whatimado-map__node--live.is-selected circle {
   fill: var(--v2-yellow);
-  filter: var(--v2-map-node-shadow-primary);
 }
 
 whatimado-map .whatimado-map__node--live.is-start text,
 whatimado-map .whatimado-map__node--live.is-selected text {
   fill: var(--v2-yellow);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 whatimado-map .whatimado-map__edge--live {
   fill: none;
-  stroke: rgba(46, 232, 214, 0.28);
+  stroke: rgba(46, 232, 214, 0.32);
   stroke-width: 1;
   stroke-dasharray: 4 6;
   opacity: 0.85;
 }
 
-whatimado-map .whatimado-map__node--live:hover:not(.is-start):not(.is-selected) circle {
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4)) drop-shadow(0 2px 8px rgba(46, 232, 214, 0.32));
+whatimado-map .whatimado-map__node--live:hover:not(.is-start):not(.is-selected):not(.is-ambient) circle {
+  fill: #3df0de;
 }
 
 @media (prefers-reduced-motion: reduce) {

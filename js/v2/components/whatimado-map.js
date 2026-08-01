@@ -6,6 +6,16 @@ const VIEW_H = 280;
 const MAP_TEMPLATE = `
   <div class="whatimado-map__stage">
     <svg class="whatimado-map__svg" part="svg" role="img" aria-label="Possibility map">
+      <defs>
+        <filter id="whatimado-node-shadow" x="-80%" y="-80%" width="260%" height="260%">
+          <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.5)" />
+          <feDropShadow dx="0" dy="1" stdDeviation="2.5" flood-color="rgba(46,232,214,0.4)" />
+        </filter>
+        <filter id="whatimado-node-shadow-primary" x="-90%" y="-90%" width="280%" height="280%">
+          <feDropShadow dx="0" dy="4" stdDeviation="5.5" flood-color="rgba(0,0,0,0.55)" />
+          <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgba(245,213,71,0.5)" />
+        </filter>
+      </defs>
       <g class="whatimado-map__layer whatimado-map__layer--ghost"></g>
       <g class="whatimado-map__layer whatimado-map__layer--live"></g>
     </svg>
@@ -47,8 +57,11 @@ export class WhatimadoMap extends HTMLElement {
   connectedCallback() {
     if (!this._built) this._build();
     this._applyMode();
-    if (!this._ghostDismissed && this._ghostLayer?.childElementCount === 0) {
+    if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
+    }
+    if (this._liveLayer?.childElementCount === 0) {
+      this.loadAmbientLiveGraph();
     }
   }
 
@@ -68,7 +81,19 @@ export class WhatimadoMap extends HTMLElement {
   loadGhostGraph() {
     this._renderLayer(this._ghostLayer, GHOST_GRAPH.nodes, GHOST_GRAPH.edges, {
       layer: "ghost",
-      interactive: false
+      interactive: false,
+      edgesOnly: true
+    });
+  }
+
+  /** Floating teal/yellow nodes on load — sits above ghost edge backdrop */
+  loadAmbientLiveGraph() {
+    this._renderLayer(this._liveLayer, GHOST_GRAPH.nodes, GHOST_GRAPH.edges, {
+      layer: "live",
+      interactive: false,
+      selectedId: "ghost-start",
+      ambient: true,
+      nodesOnly: true
     });
   }
 
@@ -128,7 +153,7 @@ export class WhatimadoMap extends HTMLElement {
    * @param {SVGGElement|null} layer
    * @param {GraphNode[]} nodes
    * @param {GraphEdge[]} edges
-   * @param {{ layer: "ghost"|"live", interactive?: boolean, selectedId?: string|null }} options
+   * @param {{ layer: "ghost"|"live", interactive?: boolean, selectedId?: string|null, edgesOnly?: boolean, nodesOnly?: boolean, ambient?: boolean }} options
    */
   _renderLayer(layer, nodes, edges, options) {
     if (!layer) return;
@@ -136,51 +161,61 @@ export class WhatimadoMap extends HTMLElement {
     const parts = [];
     /** @type {{ isPrimary: boolean, html: string }[]} */
     const nodeParts = [];
-    edges.forEach(({ from, to }) => {
-      const a = nodes.find((n) => n.id === from);
-      const b = nodes.find((n) => n.id === to);
-      if (!a || !b) return;
-      parts.push(
-        `<line class="whatimado-map__edge whatimado-map__edge--${options.layer}" x1="${a.x * VIEW_W}" y1="${a.y * VIEW_H}" x2="${b.x * VIEW_W}" y2="${b.y * VIEW_H}" />`
-      );
-    });
+    const skipEdges = options.nodesOnly === true;
+    const skipNodes = options.edgesOnly === true;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    nodes.forEach((node, index) => {
-      const cx = node.x * VIEW_W;
-      const cy = node.y * VIEW_H;
-      const isSelected = options.selectedId === node.id;
-      const isPrimary = node.type === "start" || isSelected;
-      const r = isPrimary ? 15 : 9;
-      const classes = [
-        "whatimado-map__node",
-        `whatimado-map__node--${options.layer}`,
-        node.type === "start" ? "is-start" : "",
-        isSelected ? "is-selected" : "",
-        isPrimary ? "is-primary" : "is-support"
-      ]
-        .filter(Boolean)
-        .join(" ");
+    if (!skipEdges) {
+      edges.forEach(({ from, to }) => {
+        const a = nodes.find((n) => n.id === from);
+        const b = nodes.find((n) => n.id === to);
+        if (!a || !b) return;
+        parts.push(
+          `<line class="whatimado-map__edge whatimado-map__edge--${options.layer}" x1="${a.x * VIEW_W}" y1="${a.y * VIEW_H}" x2="${b.x * VIEW_W}" y2="${b.y * VIEW_H}" />`
+        );
+      });
+    }
 
-      const driftDelay = (index * 0.85) % 5;
-      const driftDuration = 12 + (index % 4) * 1.5;
-      const driftStyle =
-        options.layer === "ghost"
-          ? ""
-          : `--whatimado-drift-delay: ${driftDelay}s; --whatimado-drift-duration: ${driftDuration}s`;
+    if (!skipNodes) {
+      nodes.forEach((node, index) => {
+        const cx = node.x * VIEW_W;
+        const cy = node.y * VIEW_H;
+        const isSelected = options.selectedId === node.id;
+        const isPrimary = node.type === "start" || isSelected;
+        const r = isPrimary ? 17 : 10;
+        const shadowFilter = isPrimary ? "url(#whatimado-node-shadow-primary)" : "url(#whatimado-node-shadow)";
+        const classes = [
+          "whatimado-map__node",
+          `whatimado-map__node--${options.layer}`,
+          node.type === "start" ? "is-start" : "",
+          isSelected ? "is-selected" : "",
+          isPrimary ? "is-primary" : "is-support",
+          options.ambient ? "is-ambient" : ""
+        ]
+          .filter(Boolean)
+          .join(" ");
 
-      nodeParts.push({
-        isPrimary,
-        html: `
-        <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" style="${driftStyle}" ${options.interactive ? 'role="button" tabindex="0"' : 'aria-hidden="true"'}>
-          <circle cx="${cx}" cy="${cy}" r="${r}" />
-          <text x="${cx}" y="${cy - r - 7}" text-anchor="middle">${escapeHtml(node.label)}</text>
+        const driftDelay = (index * 0.85) % 5;
+        const driftDuration = 12 + (index % 4) * 1.5;
+        const driftStyle =
+          options.layer === "live" && !reducedMotion
+            ? `style="--whatimado-drift-delay:${driftDelay}s;--whatimado-drift-duration:${driftDuration}s"`
+            : "";
+
+        nodeParts.push({
+          isPrimary,
+          html: `
+        <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" ${driftStyle} ${options.interactive ? 'role="button" tabindex="0"' : 'aria-hidden="true"'}>
+          <circle cx="${cx}" cy="${cy}" r="${r}" filter="${shadowFilter}" />
+          <text x="${cx}" y="${cy - r - 8}" text-anchor="middle">${escapeHtml(node.label)}</text>
         </g>
       `
+        });
       });
-    });
 
-    nodeParts.sort((a, b) => Number(a.isPrimary) - Number(b.isPrimary));
-    parts.push(...nodeParts.map((n) => n.html));
+      nodeParts.sort((a, b) => Number(a.isPrimary) - Number(b.isPrimary));
+      parts.push(...nodeParts.map((n) => n.html));
+    }
 
     layer.innerHTML = parts.join("");
 
