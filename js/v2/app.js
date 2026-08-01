@@ -4,6 +4,7 @@ import { PHASE, applyPhaseToDom } from "./phases.js";
 import { seedPossibilityNodes, graphStore, selectGraphNode } from "./graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "./advisor.js";
 import { appendMessage } from "./ui.js";
+import { initNeonShine } from "./neon-shine.js";
 
 /** @type {{ phase: import("./phases.js").Phase, messages: { role: "user"|"assistant", content: string }[], turnCount: number, ghostDismissed: boolean }} */
 const state = {
@@ -181,3 +182,4 @@ window.addEventListener("resize", () => notifyFrameLayout());
 
 setPhase(PHASE.OPEN);
 frameEl?.focusComposer();
+initNeonShine();

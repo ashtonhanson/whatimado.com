@@ -133,9 +133,9 @@ export class WhatimadoMap extends HTMLElement {
     this._liveNodes = [];
     /**
      * @type {Map<string, {
-     *   baseX: number, baseY: number, radius: number,
+     *   baseX: number, baseY: number, radius: number, targetRadius: number,
      *   delay: number, duration: number, groupEl: SVGGElement,
-     *   circleEl: SVGCircleElement, textEl: SVGTextElement|null
+     *   circleEl: SVGCircleElement, glowEl: SVGCircleElement|null, textEl: SVGTextElement|null
      * }>}
      */
     this._driftNodes = new Map();
@@ -310,6 +310,7 @@ export class WhatimadoMap extends HTMLElement {
     this.querySelectorAll(".whatimado-map__node--live").forEach((groupEl, index) => {
       const id = groupEl.getAttribute("data-node-id");
       const circle = groupEl.querySelector(".whatimado-map__node-body");
+      const glow = groupEl.querySelector(".whatimado-map__node-glow");
       const text = groupEl.querySelector("text");
       if (!id || !circle) return;
 
@@ -323,12 +324,14 @@ export class WhatimadoMap extends HTMLElement {
         baseX,
         baseY,
         radius,
+        targetRadius: radius,
         delay,
         duration,
         dragX: 0,
         dragY: 0,
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
+        glowEl: glow ? /** @type {SVGCircleElement} */ (glow) : null,
         textEl: text ? /** @type {SVGTextElement} */ (text) : null
       });
     });
@@ -372,6 +375,22 @@ export class WhatimadoMap extends HTMLElement {
         oy = drift.y;
       }
 
+      const targetR = node.targetRadius;
+      const radiusDelta = targetR - node.radius;
+      if (Math.abs(radiusDelta) > 0.02) {
+        node.radius += radiusDelta * 0.16;
+      } else {
+        node.radius = targetR;
+      }
+
+      node.circleEl.setAttribute("r", String(node.radius));
+      if (node.glowEl) {
+        node.glowEl.setAttribute("r", String(node.radius + 5));
+      }
+      if (node.textEl) {
+        node.textEl.setAttribute("y", String(node.baseY - node.radius - 6));
+      }
+
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
       centers.set(id, {
         x: node.baseX + ox,
@@ -402,13 +421,8 @@ export class WhatimadoMap extends HTMLElement {
       const isAnchor = id === this._anchorId;
       const graphNode = this._liveNodes.find((n) => n.id === id);
       const isStart = graphNode?.type === "start";
-      const r = isAnchor ? radiusLg : radiusSm;
 
-      node.radius = r;
-      node.circleEl.setAttribute("r", String(r));
-      if (node.textEl) {
-        node.textEl.setAttribute("y", String(node.baseY - r - 6));
-      }
+      node.targetRadius = isAnchor ? radiusLg : radiusSm;
 
       const group = node.groupEl;
       group.classList.toggle("is-anchor", isAnchor);
@@ -503,6 +517,10 @@ export class WhatimadoMap extends HTMLElement {
 
         driftNode.circleEl.setAttribute("cx", String(driftNode.baseX));
         driftNode.circleEl.setAttribute("cy", String(driftNode.baseY));
+        if (driftNode.glowEl) {
+          driftNode.glowEl.setAttribute("cx", String(driftNode.baseX));
+          driftNode.glowEl.setAttribute("cy", String(driftNode.baseY));
+        }
         if (driftNode.textEl) {
           driftNode.textEl.setAttribute("x", String(driftNode.baseX));
           driftNode.textEl.setAttribute("y", String(driftNode.baseY - driftNode.radius - 6));
@@ -631,6 +649,7 @@ export class WhatimadoMap extends HTMLElement {
           isAnchor,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}">
+          <circle class="whatimado-map__node-glow" cx="${cx}" cy="${cy}" r="${r + 5}" />
           <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
           <text x="${cx}" y="${cy - r - 6}" text-anchor="middle">${escapeHtml(node.label)}</text>
         </g>

@@ -1,0 +1,211 @@
+/* Shared neon teal frame system — glow, undulating pulse, cinematic sweep */
+
+:root {
+  --v2-neon-teal: #42fff0;
+  --v2-neon-teal-bright: #7dffef;
+  --v2-neon-glow-soft: rgba(66, 255, 240, 0.38);
+  --v2-neon-glow-mid: rgba(66, 255, 240, 0.58);
+  --v2-neon-glow-strong: rgba(66, 255, 240, 0.82);
+}
+
+whatimado-frame .whatimado-frame__inner,
+.v2-rail--left,
+.v2-rail--right {
+  position: relative;
+  isolation: isolate;
+  z-index: 0;
+  border-color: var(--v2-neon-glow-strong);
+  box-shadow:
+    0 0 10px var(--v2-neon-glow-soft),
+    0 0 24px rgba(46, 232, 214, 0.28),
+    0 0 40px rgba(46, 232, 214, 0.12),
+    inset 0 0 18px rgba(46, 232, 214, 0.07);
+}
+
+/* Undulating energy wave along border segments */
+whatimado-frame .whatimado-frame__inner::before,
+.v2-rail--left::before,
+.v2-rail--right::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(66, 255, 240, 0.18) 0%,
+    rgba(125, 255, 239, 0.72) 12%,
+    rgba(66, 255, 240, 0.22) 24%,
+    rgba(125, 255, 239, 0.55) 38%,
+    rgba(66, 255, 240, 0.2) 52%,
+    rgba(125, 255, 239, 0.68) 66%,
+    rgba(66, 255, 240, 0.18) 80%,
+    rgba(125, 255, 239, 0.6) 92%,
+    rgba(66, 255, 240, 0.18) 100%
+  );
+  background-size: 320% 100%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: v2-neon-wave-travel 6.8s ease-in-out infinite;
+}
+
+/* Cinematic broad sweep flare */
+whatimado-frame .whatimado-frame__inner::after,
+.v2-rail--left::after,
+.v2-rail--right::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.05) 40%,
+    rgba(125, 255, 239, 0.72) 50%,
+    rgba(255, 255, 255, 0.05) 60%,
+    transparent 72%
+  );
+  background-size: 240% 100%;
+  background-position: 125% 0;
+  mix-blend-mode: screen;
+}
+
+whatimado-frame .whatimado-frame__inner.v2-neon-sweep-active::after,
+.v2-rail--left.v2-neon-sweep-active::after,
+.v2-rail--right.v2-neon-sweep-active::after {
+  opacity: 1;
+  animation: v2-neon-frame-sweep 2.6s cubic-bezier(0.35, 0, 0.2, 1) forwards;
+}
+
+whatimado-frame .whatimado-frame__body,
+whatimado-frame .whatimado-frame__composer,
+.v2-rail-brand,
+.v2-rail-body,
+.v2-rail-foot,
+.v2-rail--right > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes v2-neon-wave-travel {
+  0% {
+    background-position: 0% 50%;
+    opacity: 0.72;
+  }
+  35% {
+    background-position: 55% 50%;
+    opacity: 0.95;
+  }
+  68% {
+    background-position: 100% 50%;
+    opacity: 0.78;
+  }
+  100% {
+    background-position: 140% 50%;
+    opacity: 0.72;
+  }
+}
+
+@keyframes v2-neon-frame-sweep {
+  0% {
+    background-position: 125% 0;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.88;
+  }
+  88% {
+    opacity: 0.88;
+  }
+  100% {
+    background-position: -25% 0;
+    opacity: 0;
+  }
+}
+
+/* Composer prompt field — neon teal capsule */
+whatimado-frame .whatimado-frame__composer-input {
+  box-shadow:
+    0 0 12px rgba(46, 232, 214, 0.45),
+    0 0 24px rgba(46, 232, 214, 0.2),
+    inset 0 0 8px rgba(255, 255, 255, 0.12);
+}
+
+whatimado-frame .whatimado-frame__composer-send {
+  border-color: var(--v2-neon-glow-mid);
+  box-shadow: 0 0 10px rgba(46, 232, 214, 0.25);
+}
+
+/* Hero title — sweeping glint band */
+.v2-kicker-brand {
+  position: relative;
+  overflow: hidden;
+}
+
+.v2-kicker-brand::after {
+  content: "";
+  position: absolute;
+  inset: -30% -50%;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(125, 255, 239, 0.85) 50%,
+    rgba(255, 255, 255, 0.15) 55%,
+    transparent 65%
+  );
+  transform: translateX(-120%) skewX(-14deg);
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.v2-kicker-brand.v2-neon-sweep-active::after {
+  animation: v2-title-glint-sweep 2.4s cubic-bezier(0.35, 0, 0.2, 1) forwards;
+}
+
+@keyframes v2-title-glint-sweep {
+  0% {
+    transform: translateX(-120%) skewX(-14deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  85% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateX(120%) skewX(-14deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  whatimado-frame .whatimado-frame__inner::before,
+  .v2-rail--left::before,
+  .v2-rail--right::before {
+    animation: none;
+    opacity: 0.75;
+    background-position: 50% 50%;
+  }
+
+  whatimado-frame .whatimado-frame__inner.v2-neon-sweep-active::after,
+  .v2-rail--left.v2-neon-sweep-active::after,
+  .v2-rail--right.v2-neon-sweep-active::after,
+  .v2-kicker-brand.v2-neon-sweep-active::after {
+    animation: none;
+    opacity: 0;
+  }
+}
