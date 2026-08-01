@@ -1,0 +1,69 @@
+.v2-map-canvas {
+  width: min(100%, 960px);
+  height: var(--v2-map-h);
+  position: relative;
+  margin-bottom: 0.5rem;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+
+.v2-map-canvas.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.v2-map-canvas.is-faint {
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.v2-map-canvas svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.v2-map-node {
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.v2-map-node circle {
+  fill: rgba(4, 20, 22, 0.9);
+  stroke: var(--v2-teal);
+  stroke-width: 1.5;
+}
+
+.v2-map-node.is-start circle {
+  stroke: var(--v2-yellow);
+  filter: drop-shadow(0 0 8px rgba(245, 213, 71, 0.5));
+}
+
+.v2-map-node.is-selected circle {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 12px rgba(46, 232, 214, 0.6));
+}
+
+.v2-map-node text {
+  fill: var(--v2-teal);
+  font-size: 10px;
+  font-family: var(--v2-font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.v2-map-edge {
+  fill: none;
+  stroke: rgba(46, 232, 214, 0.35);
+  stroke-width: 1;
+  stroke-dasharray: 4 6;
+}
+
+.v2-map-connector {
+  fill: none;
+  stroke: rgba(46, 232, 214, 0.5);
+  stroke-width: 1.5;
+}

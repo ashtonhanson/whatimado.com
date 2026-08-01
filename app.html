@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="whatimado-build" content="v2-shell-scaffold" />
+  <title>whatimado — v2</title>
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <link rel="stylesheet" href="/css/v2/tokens.css" />
+  <link rel="stylesheet" href="/css/v2/shell.css" />
+  <link rel="stylesheet" href="/css/v2/map-canvas.css" />
+  <link rel="stylesheet" href="/css/v2/frame.css" />
+</head>
+<body class="v2-app" data-phase="open">
+  <div class="v2-shell">
+    <aside class="v2-rail v2-rail--left" aria-label="Navigation">
+      <a class="v2-logo" href="/app.html">
+        <img src="/whatimado-mark.svg" alt="" width="28" height="28" />
+        <span>what im a do</span>
+      </a>
+      <nav>
+        <ul class="v2-nav">
+          <li><button type="button" id="nav-home">Home</button></li>
+          <li><a href="/index.html">Classic app</a></li>
+        </ul>
+      </nav>
+      <div class="v2-active-path" id="active-path-label">
+        <strong>No active path</strong>
+        Start a conversation below.
+      </div>
+      <div class="v2-rail-footer">
+        v2 preview shell<br />
+        <a href="/index.html" style="color: var(--v2-teal-dim)">Production UI →</a>
+      </div>
+    </aside>
+
+    <main class="v2-main">
+      <div class="v2-map-canvas" id="map-canvas" aria-hidden="true">
+        <svg id="map-svg" role="img" aria-label="Possibility map"></svg>
+      </div>
+
+      <div class="v2-frame" id="dynamic-frame">
+        <div class="v2-frame-scroll" id="frame-scroll">
+          <section class="v2-home-prompt" id="home-prompt">
+            <h1>Tell me where you're at and where you'd like to go.</h1>
+            <p>One conversation — paths bloom on the map when you're ready.</p>
+          </section>
+          <div class="v2-messages" id="messages" aria-live="polite"></div>
+          <section class="v2-selection hidden" id="selection-panel"></section>
+          <section class="v2-possibilities hidden" id="possibilities">
+            <h2 class="v2-section-label">Possibility maps</h2>
+            <div class="v2-path-cards" id="path-cards"></div>
+          </section>
+        </div>
+        <form class="v2-composer" id="composer">
+          <label class="sr-only" for="composer-input">Your message</label>
+          <textarea
+            id="composer-input"
+            class="v2-composer-input"
+            rows="1"
+            placeholder="Share what's going on…"
+            autocomplete="off"
+          ></textarea>
+          <button type="submit" class="v2-composer-send" id="composer-send">Send</button>
+        </form>
+      </div>
+    </main>
+
+    <aside class="v2-rail v2-rail--right hidden" id="resources-rail" aria-label="Resources">
+      <h2 class="v2-section-label">Resources</h2>
+      <ul class="v2-resources-list">
+        <li>Local help will appear here when a path is selected and location is known.</li>
+        <li>SBA Local Assistance · <a href="https://www.sba.gov/local-assistance" target="_blank" rel="noopener noreferrer">Website</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <script type="module" src="/js/v2/app.js"></script>
+</body>
+</html>
