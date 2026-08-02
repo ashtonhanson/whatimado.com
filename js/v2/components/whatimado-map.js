@@ -18,10 +18,11 @@ const BOUND_GLIDE_DAMP = 0.45;
 
 /** Home anchor — free pull anywhere; spring back to layout vicinity on release */
 const HOME_SOFT_RADIUS = 30;
-const HOME_SPRING_K = 0.058;
-const HOME_SPRING_DAMP = 0.87;
-const HOME_SETTLE_DIST = 0.55;
-const HOME_SETTLE_SPEED = 0.06;
+const HOME_SPRING_K = 0.062;
+const HOME_SPRING_DAMP = 0.912;
+const HOME_SPRING_DAMP_SETTLE = 0.79;
+const HOME_SETTLE_DIST = 0.22;
+const HOME_SETTLE_SPEED = 0.034;
 const HOME_RETURN_KICK = 0.022;
 
 /** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
@@ -505,26 +506,31 @@ export class WhatimadoMap extends HTMLElement {
     const dist = Math.hypot(dx, dy);
     const speed = Math.hypot(node.homeVx, node.homeVy);
 
-    if (dist <= HOME_SOFT_RADIUS && speed < HOME_SETTLE_SPEED) {
-      if (dist > 0 && dist < HOME_SETTLE_DIST) {
-        node.baseX = node.originX;
-        node.baseY = node.originY;
-        node.homeVx = 0;
-        node.homeVy = 0;
-        this._syncNodePosition(node);
-        return true;
-      }
+    if (dist < HOME_SETTLE_DIST && speed < HOME_SETTLE_SPEED) {
+      node.baseX = node.originX;
+      node.baseY = node.originY;
+      node.homeVx = 0;
+      node.homeVy = 0;
+      this._syncNodePosition(node);
+      return true;
+    }
+
+    if (dist <= HOME_SOFT_RADIUS && speed < HOME_SETTLE_SPEED * 0.45) {
       return false;
     }
 
     const pull =
       dist > HOME_SOFT_RADIUS
         ? HOME_SPRING_K * (1 + Math.min((dist - HOME_SOFT_RADIUS) * 0.014, 1.35))
-        : HOME_SPRING_K * 0.35;
+        : HOME_SPRING_K * (0.5 + (1 - dist / HOME_SOFT_RADIUS) * 0.22);
+
+    const nearT = dist < HOME_SOFT_RADIUS ? 1 - dist / HOME_SOFT_RADIUS : 0;
+    const damp = HOME_SPRING_DAMP - nearT * (HOME_SPRING_DAMP - HOME_SPRING_DAMP_SETTLE);
+
     node.homeVx += dx * pull;
     node.homeVy += dy * pull;
-    node.homeVx *= HOME_SPRING_DAMP;
-    node.homeVy *= HOME_SPRING_DAMP;
+    node.homeVx *= damp;
+    node.homeVy *= damp;
     node.baseX += node.homeVx;
     node.baseY += node.homeVy;
     node.glideVx *= 0.88;
@@ -718,7 +724,7 @@ export class WhatimadoMap extends HTMLElement {
           if (distFromHome > 0.5) {
             const nx = (driftNode.originX - driftNode.baseX) / distFromHome;
             const ny = (driftNode.originY - driftNode.baseY) / distFromHome;
-            const kick = Math.min(4.2, distFromHome * HOME_RETURN_KICK);
+            const kick = Math.min(2.1, distFromHome * HOME_RETURN_KICK);
             driftNode.homeVx = nx * kick;
             driftNode.homeVy = ny * kick;
           }
