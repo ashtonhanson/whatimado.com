@@ -1,0 +1,17 @@
+/**
+ * Shared frosted glass — frame + both sidebars use the same tokens
+ * so panels read as one material layer over the node map.
+ */
+.v2-glass-panel {
+  background: var(--v2-glass-bg);
+  backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+}
+
+.v2-glass-panel--elevated {
+  background: rgba(4, 10, 12, calc(var(--v2-glass-alpha) + var(--v2-frame-elevation, 0) * 0.22));
+  backdrop-filter: blur(calc(var(--v2-glass-blur) + var(--v2-frame-elevation, 0) * 6px))
+    saturate(var(--v2-glass-saturate));
+  -webkit-backdrop-filter: blur(calc(var(--v2-glass-blur) + var(--v2-frame-elevation, 0) * 6px))
+    saturate(var(--v2-glass-saturate));
+}

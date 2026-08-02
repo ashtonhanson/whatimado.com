@@ -39,6 +39,21 @@ function getMapBounds() {
   };
 }
 
+/** Read global upward graph shift from CSS token (fraction of view height) */
+function readGraphShiftY() {
+  const style = getComputedStyle(document.documentElement);
+  const frac = Number.parseFloat(style.getPropertyValue("--v2-map-graph-shift-y")) || 0.15;
+  return -frac * VIEW_H;
+}
+
+/** SVG units per screen pixel — used for hand-tool canvas panning */
+function svgScale(svg) {
+  if (!svg) return 1;
+  const rect = svg.getBoundingClientRect();
+  if (rect.width <= 0) return 1;
+  return VIEW_W / rect.width;
+}
+
 /** Read node radii from CSS tokens so sizing stays consistent across breakpoints */
 function getNodeRadii() {
   const style = getComputedStyle(document.documentElement);
@@ -108,6 +123,7 @@ function trimLineToNodeEdges(ax, ay, ar, bx, by, br) {
 
 const MAP_TEMPLATE = `
   <div class="whatimado-map__stage">
+    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center on You">YOU</button>
     <svg class="whatimado-map__svg" part="svg" role="img" aria-label="Possibility map">
       <defs>
         <filter id="whatimado-node-shadow" x="-80%" y="-80%" width="260%" height="260%">
@@ -127,8 +143,10 @@ const MAP_TEMPLATE = `
           </feMerge>
         </filter>
       </defs>
-      <g class="whatimado-map__layer whatimado-map__layer--ghost"></g>
-      <g class="whatimado-map__layer whatimado-map__layer--live"></g>
+      <g class="whatimado-map__pan">
+        <g class="whatimado-map__layer whatimado-map__layer--ghost"></g>
+        <g class="whatimado-map__layer whatimado-map__layer--live"></g>
+      </g>
     </svg>
   </div>
 `;
@@ -153,6 +171,18 @@ export class WhatimadoMap extends HTMLElement {
     this._built = false;
     /** @type {boolean} */
     this._ghostDismissed = false;
+    /** @type {SVGGElement|null} */
+    this._panLayer = null;
+    /** @type {HTMLButtonElement|null} */
+    this._youBtn = null;
+    /** @type {number} */
+    this._panX = 0;
+    /** @type {number} */
+    this._panY = 0;
+    /** @type {{ pointerId: number, startPanX: number, startPanY: number, startClientX: number, startClientY: number }|null} */
+    this._panPointer = null;
+    /** @type {number|null} */
+    this._panResetRaf = null;
     /** @type {SVGElement|null} */
     this._svg = null;
     /** @type {SVGGElement|null} */
@@ -219,6 +249,10 @@ export class WhatimadoMap extends HTMLElement {
 
   disconnectedCallback() {
     this._stopDriftLoop();
+    if (this._panResetRaf !== null) {
+      cancelAnimationFrame(this._panResetRaf);
+      this._panResetRaf = null;
+    }
     this._onSelect = null;
     this._promptEmptyChecker = null;
     this.removeEventListener("pointermove", this._onPointerMove);
@@ -307,16 +341,66 @@ export class WhatimadoMap extends HTMLElement {
     return this._anchorId;
   }
 
+  /** Smoothly reset user pan so YOU sits in the default focal position */
+  resetToYou({ animate = true } = {}) {
+    if (this._panResetRaf !== null) {
+      cancelAnimationFrame(this._panResetRaf);
+      this._panResetRaf = null;
+    }
+
+    const targetX = 0;
+    const targetY = 0;
+
+    if (!animate || this._driftReducedMotion) {
+      this._panX = targetX;
+      this._panY = targetY;
+      this._applyPanTransform();
+      return;
+    }
+
+    const startX = this._panX;
+    const startY = this._panY;
+    const startTime = performance.now();
+    const duration = 680;
+
+    const tick = (now) => {
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - (1 - t) ** 5;
+      this._panX = startX + (targetX - startX) * eased;
+      this._panY = startY + (targetY - startY) * eased;
+      this._applyPanTransform();
+      if (t < 1) {
+        this._panResetRaf = requestAnimationFrame(tick);
+      } else {
+        this._panResetRaf = null;
+      }
+    };
+
+    this._panResetRaf = requestAnimationFrame(tick);
+  }
+
+  /** Apply camera transform: built-in graph shift + user pan offset */
+  _applyPanTransform() {
+    if (!this._panLayer) return;
+    const shiftY = readGraphShiftY();
+    this._panLayer.setAttribute("transform", `translate(${this._panX}, ${shiftY + this._panY})`);
+  }
+
   _build() {
     if (this._built) return;
     this._built = true;
     this.innerHTML = MAP_TEMPLATE;
     this._svg = this.querySelector(".whatimado-map__svg");
+    this._panLayer = this.querySelector(".whatimado-map__pan");
     this._ghostLayer = this.querySelector(".whatimado-map__layer--ghost");
     this._liveLayer = this.querySelector(".whatimado-map__layer--live");
+    this._youBtn = this.querySelector(".whatimado-map__you-btn");
     if (this._svg) {
       this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
     }
+    this._youBtn?.addEventListener("click", () => this.resetToYou());
+    this._svg?.addEventListener("pointerdown", (event) => this._handleCanvasPointerDown(event));
+    this._applyPanTransform();
     this.addEventListener("pointermove", this._onPointerMove);
     this.addEventListener("pointerup", this._onPointerUp);
     this.addEventListener("pointercancel", this._onPointerUp);
@@ -648,6 +732,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!driftNode) return;
 
     event.preventDefault();
+    event.stopPropagation();
     driftNode.groupEl.setPointerCapture(event.pointerId);
 
     this._commitDriftToBase(nodeId);
@@ -677,6 +762,11 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {PointerEvent} event */
   _handlePointerMove(event) {
+    if (this._panPointer && event.pointerId === this._panPointer.pointerId) {
+      this._handlePanMove(event);
+      return;
+    }
+
     if (!this._pointer || event.pointerId !== this._pointer.pointerId) return;
 
     const driftNode = this._driftNodes.get(this._pointer.nodeId);
@@ -701,6 +791,11 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {PointerEvent} event */
   _handlePointerUp(event) {
+    if (this._panPointer && event.pointerId === this._panPointer.pointerId) {
+      this._handlePanUp(event);
+      return;
+    }
+
     if (!this._pointer || event.pointerId !== this._pointer.pointerId) return;
 
     const { nodeId, moved, startBaseX, startBaseY } = this._pointer;
@@ -758,6 +853,57 @@ export class WhatimadoMap extends HTMLElement {
     }
 
     this._pointer = null;
+  }
+
+  /**
+   * Hand tool — pan the canvas when dragging empty background (not nodes).
+   * @param {PointerEvent} event
+   */
+  _handleCanvasPointerDown(event) {
+    if (event.button !== 0) return;
+
+    const target = /** @type {Element} */ (event.target);
+    if (target.closest(".whatimado-map__node")) return;
+    if (target.closest(".whatimado-map__you-btn")) return;
+
+    event.preventDefault();
+    this._svg?.setPointerCapture(event.pointerId);
+
+    this._panPointer = {
+      pointerId: event.pointerId,
+      startPanX: this._panX,
+      startPanY: this._panY,
+      startClientX: event.clientX,
+      startClientY: event.clientY
+    };
+    this.classList.add("is-panning");
+  }
+
+  /** @param {PointerEvent} event */
+  _handlePanMove(event) {
+    if (!this._panPointer) return;
+
+    const scale = svgScale(this._svg);
+    const dx = (event.clientX - this._panPointer.startClientX) * scale;
+    const dy = (event.clientY - this._panPointer.startClientY) * scale;
+
+    this._panX = this._panPointer.startPanX + dx;
+    this._panY = this._panPointer.startPanY + dy;
+    this._applyPanTransform();
+  }
+
+  /** @param {PointerEvent} event */
+  _handlePanUp(event) {
+    if (!this._panPointer || event.pointerId !== this._panPointer.pointerId) return;
+
+    try {
+      this._svg?.releasePointerCapture(event.pointerId);
+    } catch {
+      /* already released */
+    }
+
+    this._panPointer = null;
+    this.classList.remove("is-panning");
   }
 
   /** @param {string} nodeId */

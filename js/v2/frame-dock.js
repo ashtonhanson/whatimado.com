@@ -104,7 +104,20 @@ export function measureHomeBase(mainEl, mapEl) {
 }
 
 /**
- * Gap between frame outer bottom and composer top — captured once from default layout.
+ * Upper gap: frame top → composer top (used for symmetric bottom cushion).
+ * @param {HTMLElement} frameEl
+ */
+export function measureFrameTopToComposerGap(frameEl) {
+  const composer = frameEl.querySelector(".whatimado-frame__composer");
+  if (!composer) return 0;
+
+  const frameRect = frameEl.getBoundingClientRect();
+  const composerRect = composer.getBoundingClientRect();
+  return Math.max(0, composerRect.top - frameRect.top);
+}
+
+/**
+ * Gap between frame outer bottom and composer top — legacy metric.
  * @param {HTMLElement} frameEl
  */
 export function measureFrameBottomToComposerGap(frameEl) {
@@ -121,7 +134,7 @@ export function measureFrameBottomToComposerGap(frameEl) {
  * @param {HTMLElement} mainEl
  * @param {HTMLElement} frameEl
  * @param {HTMLElement|null} [mapEl]
- * @param {{ defaultFrameHeight?: number|null, defaultBottomGap?: number|null }} [cache]
+ * @param {{ defaultUpperGap?: number|null }} [cache]
  */
 export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
   const map = mapEl ?? document.getElementById("possibility-map");
@@ -130,20 +143,11 @@ export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
   let homeBase = measureHomeBase(mainEl, map);
 
   /**
-   * Bottom Cushion — reuse default frame height so frame-bottom → composer-top
-   * spacing matches the original resting layout exactly.
+   * Symmetric Bottom Cushion — upper gap (frame.top → composer.top) must equal
+   * lower gap (composer.top → frame.bottom): frame.top = mainH - 2 × upperGap.
    */
-  const defaultFrameHeight = cache.defaultFrameHeight ?? frameEl.offsetHeight;
-  const defaultBottomGap = cache.defaultBottomGap ?? measureFrameBottomToComposerGap(frameEl);
-
-  const composer = frameEl.querySelector(".whatimado-frame__composer");
-  const composerH = composer?.offsetHeight ?? 0;
-
-  /** top = mainH - frameHeight preserves internal composer offset (gap + composer) */
-  let bottomCushion = mainH - defaultFrameHeight;
-  if (composerH > 0 && defaultBottomGap >= 0) {
-    bottomCushion = mainH - composerH - defaultBottomGap;
-  }
+  const upperGap = cache.defaultUpperGap ?? measureFrameTopToComposerGap(frameEl);
+  let bottomCushion = mainH - 2 * upperGap;
 
   bottomCushion = Math.max(bottomCushion, homeBase + mainH * 0.06);
   homeBase = Math.min(homeBase, bottomCushion - mainH * 0.04);
@@ -153,8 +157,7 @@ export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
     homeBase,
     bottomCushion,
     mainH,
-    defaultFrameHeight,
-    defaultBottomGap
+    defaultUpperGap: upperGap
   };
 }
 
@@ -272,9 +275,7 @@ export class FrameDockController {
     /** @type {number} */
     this._pendingClientY = 0;
     /** @type {number|null} */
-    this._defaultFrameHeight = null;
-    /** @type {number|null} */
-    this._defaultBottomGap = null;
+    this._defaultUpperGap = null;
     /** @type {boolean} */
     this._motionEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
@@ -286,8 +287,7 @@ export class FrameDockController {
 
   _anchorCache() {
     return {
-      defaultFrameHeight: this._defaultFrameHeight,
-      defaultBottomGap: this._defaultBottomGap
+      defaultUpperGap: this._defaultUpperGap
     };
   }
 
@@ -298,8 +298,7 @@ export class FrameDockController {
   }
 
   _captureDefaultMetrics() {
-    this._defaultFrameHeight = this.frameEl.offsetHeight;
-    this._defaultBottomGap = measureFrameBottomToComposerGap(this.frameEl);
+    this._defaultUpperGap = measureFrameTopToComposerGap(this.frameEl);
   }
 
   _stopMotion() {
@@ -330,8 +329,7 @@ export class FrameDockController {
     this._docked = false;
     this.activeSnap = SNAP.HOME;
     this._anchors = null;
-    this._defaultFrameHeight = null;
-    this._defaultBottomGap = null;
+    this._defaultUpperGap = null;
 
     document.documentElement.style.setProperty("--v2-kicker-reserve", KICKER_RESERVE_DEFAULT);
     document.documentElement.style.removeProperty("--v2-map-dim");
