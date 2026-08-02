@@ -99,6 +99,56 @@ function handleNodeSelect(nodeId) {
   notifyFrameLayout();
 }
 
+/** Hypothetical transcript for v2 layout preview (matches layout SVG) */
+const DEMO_CHAT = [
+  {
+    role: "user",
+    content:
+      "I'm getting out of AA recovery and I'm trying to get back on my feet again out in society."
+  },
+  {
+    role: "advisor",
+    content:
+      "Congratulations. I am happy to see that you are making an effort to get yourself back into the work field."
+  },
+  {
+    role: "user",
+    content: "I do have kids though. So that is making my situation more complicated."
+  },
+  {
+    role: "advisor",
+    content:
+      "That makes sense — childcare and stable hours often come first. What does a typical week look like for you right now?"
+  },
+  {
+    role: "user",
+    content: "Mostly school drop-offs, part-time shifts when I can get them, and trying not to miss rent."
+  },
+  {
+    role: "advisor",
+    content:
+      "Thanks for laying that out. Let's stabilize the basics first, then map paths that fit school hours and your skills."
+  }
+];
+
+function seedHypotheticalChat() {
+  if (!messagesEl) return;
+
+  for (const turn of DEMO_CHAT) {
+    appendMessage(messagesEl, turn.role, turn.content);
+    state.messages.push({
+      role: turn.role === "user" ? "user" : "assistant",
+      content: turn.content
+    });
+  }
+
+  state.turnCount = 3;
+  state.ghostDismissed = true;
+  mapEl?.dismissGhost();
+  setPhase(PHASE.COACHING);
+  notifyFrameLayout();
+}
+
 async function handleSubmit(text) {
   const trimmed = text.trim();
   if (!trimmed) return;
@@ -180,8 +230,7 @@ document.getElementById("nav-home")?.addEventListener("click", () => {
 
 window.addEventListener("resize", () => notifyFrameLayout());
 
-requestAnimationFrame(() => notifyFrameLayout());
+requestAnimationFrame(() => seedHypotheticalChat());
 
-setPhase(PHASE.OPEN);
 frameEl?.focusComposer();
 initNeonShine();

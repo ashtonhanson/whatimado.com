@@ -13,7 +13,9 @@ const PLACEHOLDER_CYCLE_MS_MAX = 7000;
 
 const FRAME_TEMPLATE = `
   <div class="whatimado-frame__inner">
-    <div class="whatimado-frame__body" part="body"></div>
+    <div class="whatimado-frame__body-wrap">
+      <div class="whatimado-frame__body" part="body"></div>
+    </div>
     <form class="whatimado-frame__composer" part="composer" novalidate>
       <label class="sr-only" for="whatimado-composer-input">Your message</label>
       <textarea
@@ -55,6 +57,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._onComposerFocus = () => this._pausePlaceholderCycle();
     this._onComposerBlur = () => this._maybeResumePlaceholderCycle();
     this._onComposerInput = () => this._onComposerInputChange();
+    this._onBodyScroll = () => this._updateScrollFade();
   }
 
   connectedCallback() {
@@ -66,6 +69,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput?.addEventListener("focus", this._onComposerFocus);
     this._composerInput?.addEventListener("blur", this._onComposerBlur);
     this._composerInput?.addEventListener("input", this._onComposerInput);
+    this._body?.addEventListener("scroll", this._onBodyScroll, { passive: true });
     this._initPlaceholderCycle();
     requestAnimationFrame(() => this._updateScrollState());
   }
@@ -78,6 +82,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput?.removeEventListener("focus", this._onComposerFocus);
     this._composerInput?.removeEventListener("blur", this._onComposerBlur);
     this._composerInput?.removeEventListener("input", this._onComposerInput);
+    this._body?.removeEventListener("scroll", this._onBodyScroll);
   }
 
   attributeChangedCallback(name) {
@@ -146,29 +151,11 @@ export class WhatimadoFrame extends HTMLElement {
     return match ? Number.parseFloat(match[1]) : null;
   }
 
-  /** Grow/shrink frame anchor with content while preserving minimum map band */
+  /** Keep frame anchor fixed — grow downward only (upward expansion comes later) */
   _syncAnchorToContent() {
-    const bottomPad = 16;
     const defaultVh = this._readRootVh("--whatimado-frame-top-default") ?? 42;
-    const minMapVh = this._readRootVh("--v2-map-min-band") ?? 28;
-
-    if (this._body) {
-      this._body.style.maxHeight = "";
-      this._body.style.overflowY = "";
-    }
-    this.classList.remove("is-scrollable");
-
-    const frameHeight = this.getBoundingClientRect().height;
-    const maxBottom = window.innerHeight - bottomPad;
-    let idealTopPx = maxBottom - frameHeight;
-    const minTopPx = (window.innerHeight * minMapVh) / 100;
-    const maxTopPx = (window.innerHeight * defaultVh) / 100;
-
-    idealTopPx = Math.max(minTopPx, Math.min(maxTopPx, idealTopPx));
-    const anchorVh = (idealTopPx / window.innerHeight) * 100;
-
-    document.documentElement.style.setProperty("--whatimado-frame-top", `${anchorVh.toFixed(2)}vh`);
-    this.style.setProperty("--whatimado-frame-top", `${anchorVh.toFixed(2)}vh`);
+    document.documentElement.style.setProperty("--whatimado-frame-top", `${defaultVh}vh`);
+    this.style.setProperty("--whatimado-frame-top", `${defaultVh}vh`);
   }
 
   _parseMaxGrowth() {
@@ -189,14 +176,19 @@ export class WhatimadoFrame extends HTMLElement {
     this._resizeObserver.observe(this);
   }
 
+  _updateScrollFade() {
+    if (!this._body) return;
+    const faded = this.classList.contains("is-scrollable") && this._body.scrollTop > 6;
+    this.classList.toggle("is-fade-top", faded);
+  }
+
   _updateScrollState() {
     if (!this._body) return;
 
     const topPx = this._parseAnchorVh() * window.innerHeight / 100;
     const maxOuter = window.innerHeight - topPx - 16;
     const composerH = this._composerForm?.offsetHeight || 0;
-    const innerPad = 0;
-    const bodyMax = Math.max(80, maxOuter - composerH - innerPad);
+    const bodyMax = Math.max(80, maxOuter - composerH);
 
     if (this._body.scrollHeight > bodyMax) {
       this._body.style.maxHeight = `${bodyMax}px`;
@@ -207,6 +199,8 @@ export class WhatimadoFrame extends HTMLElement {
       this._body.style.overflowY = "";
       this.classList.remove("is-scrollable");
     }
+
+    this._updateScrollFade();
   }
 
   _onSubmit = (event) => {
@@ -297,6 +291,7 @@ export class WhatimadoFrame extends HTMLElement {
       this._updateScrollState();
       if (this.classList.contains("is-scrollable") && this._body) {
         this._body.scrollTop = this._body.scrollHeight;
+        this._updateScrollFade();
       }
     });
   }

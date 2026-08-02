@@ -9,7 +9,6 @@ whatimado-frame {
   max-height: var(--whatimado-frame-max-h, calc(100dvh - var(--whatimado-frame-top, 42vh) - 1rem));
   z-index: 2;
   box-sizing: border-box;
-  transition: top 0.32s ease;
 }
 
 whatimado-frame .whatimado-frame__inner {
@@ -24,6 +23,14 @@ whatimado-frame .whatimado-frame__inner {
   max-height: inherit;
 }
 
+whatimado-frame .whatimado-frame__body-wrap {
+  position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 whatimado-frame .whatimado-frame__body {
   flex: 0 1 auto;
   min-height: 0;
@@ -34,6 +41,20 @@ whatimado-frame .whatimado-frame__body {
 whatimado-frame.is-scrollable .whatimado-frame__body {
   scrollbar-width: thin;
   scrollbar-color: var(--v2-teal-dim) transparent;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2.75rem, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 2.75rem, #000 100%);
+}
+
+whatimado-frame.is-fade-top .whatimado-frame__body-wrap::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.75rem;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(to bottom, var(--v2-frame-bg) 0%, rgba(4, 12, 14, 0.92) 35%, transparent 100%);
 }
 
 whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar {
