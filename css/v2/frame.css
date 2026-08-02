@@ -93,6 +93,7 @@ whatimado-frame .whatimado-frame__body-wrap {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: transparent;
 }
 
 whatimado-frame .whatimado-frame__body {
@@ -102,11 +103,13 @@ whatimado-frame .whatimado-frame__body {
   padding-right: clamp(1.1rem, 2.8vw, 1.35rem);
   scroll-behavior: smooth;
   overscroll-behavior: contain;
+  background: transparent;
 }
 
 whatimado-frame .whatimado-frame__body-content {
   min-height: 100%;
   will-change: transform;
+  background: transparent;
 }
 
 whatimado-frame .whatimado-frame__body-content.is-spring-back {
@@ -174,7 +177,7 @@ whatimado-frame.is-fade-top .whatimado-frame__body-wrap::before {
   height: 2.75rem;
   pointer-events: none;
   z-index: 2;
-  background: linear-gradient(to bottom, var(--v2-frame-bg) 0%, rgba(4, 12, 14, 0.92) 35%, transparent 100%);
+  background: linear-gradient(to bottom, rgba(4, 12, 14, var(--v2-glass-alpha)) 0%, transparent 100%);
 }
 
 whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
@@ -186,7 +189,7 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   height: 2.75rem;
   pointer-events: none;
   z-index: 2;
-  background: linear-gradient(to top, var(--v2-frame-bg) 0%, rgba(4, 12, 14, 0.92) 35%, transparent 100%);
+  background: linear-gradient(to top, rgba(4, 12, 14, var(--v2-glass-alpha)) 0%, transparent 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -218,10 +221,7 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   }
 }
 
-whatimado-frame.is-docked .whatimado-frame__composer {
-  background: rgba(4, 12, 14, calc(var(--v2-glass-alpha) + 0.14));
-}
-
+whatimado-frame.is-docked .whatimado-frame__composer,
 whatimado-frame .whatimado-frame__composer {
   display: flex;
   gap: 0.5rem;
@@ -230,7 +230,7 @@ whatimado-frame .whatimado-frame__composer {
   z-index: 3;
   padding: 0.65rem clamp(0.85rem, 2.5vw, 1.1rem) clamp(0.85rem, 2vw, 1rem);
   border-top: 1px solid rgba(46, 232, 214, 0.08);
-  background: rgba(4, 12, 14, calc(var(--v2-glass-alpha) + 0.08));
+  background: transparent;
   margin: 0;
 }
 
@@ -365,7 +365,9 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 .v2-msg--user {
   align-self: flex-end;
   padding: 0.65rem 0.95rem;
-  background: var(--v2-teal);
+  background: rgba(46, 232, 214, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: #041010;
   border-radius: var(--v2-prompt-radius);
 }
@@ -376,7 +378,9 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   border: 1px solid var(--v2-border);
   border-radius: var(--v2-response-radius);
   color: var(--v2-text);
-  background: transparent;
+  background: var(--v2-glass-bg-soft);
+  backdrop-filter: blur(var(--v2-glass-blur));
+  -webkit-backdrop-filter: blur(var(--v2-glass-blur));
 }
 
 .v2-msg-label {
@@ -399,6 +403,9 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   font-size: 0.82rem;
   color: var(--v2-text-muted);
   line-height: 1.45;
+  background: var(--v2-glass-bg-soft);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .v2-possibilities {
@@ -414,7 +421,9 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 .v2-path-card {
   padding: 0.75rem 0.9rem;
   border: 1px dashed var(--v2-border-dashed);
-  background: transparent;
+  background: var(--v2-glass-bg-soft);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   cursor: pointer;
   text-align: left;
   font: inherit;

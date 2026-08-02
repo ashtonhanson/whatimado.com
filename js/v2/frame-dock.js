@@ -14,6 +14,13 @@ const GLIDE_MAX_SPEED = 22;
 /** U-node clearance below the 2/3 viewport home line */
 const YOU_NODE_CLEARANCE = "clamp(0.75rem, 2vh, 1.25rem)";
 
+/** Minimum panel height at Bottom Cushion — uses min height, not live offsetHeight */
+const MIN_FRAME_HEIGHT = 260;
+const BOTTOM_CONTENT_CUSHION = 36;
+
+/** Minimum vertical band between Home Base and Bottom Cushion (fraction of main height) */
+const HOME_BOTTOM_MIN_SEP = 0.2;
+
 /** Final ease into anchor after glide settles */
 const SNAP_EASE_MS = 680;
 
@@ -134,30 +141,37 @@ export function measureFrameBottomToComposerGap(frameEl) {
  * @param {HTMLElement} mainEl
  * @param {HTMLElement} frameEl
  * @param {HTMLElement|null} [mapEl]
- * @param {{ defaultUpperGap?: number|null }} [cache]
+ * @param {{ defaultFrameHeight?: number|null }} [cache]
  */
 export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
   const map = mapEl ?? document.getElementById("possibility-map");
   const mainH = mainEl.clientHeight;
   const topLock = measureTopLock(mainEl);
-  let homeBase = measureHomeBase(mainEl, map);
+  const homeBase = measureHomeBase(mainEl, map);
+
+  const composer = frameEl.querySelector(".whatimado-frame__composer");
+  const composerH = composer?.offsetHeight ?? 72;
+  const minDockedH = composerH + MIN_FRAME_HEIGHT * 0.45 + BOTTOM_CONTENT_CUSHION;
 
   /**
-   * Symmetric Bottom Cushion — upper gap (frame.top → composer.top) must equal
-   * lower gap (composer.top → frame.bottom): frame.top = mainH - 2 × upperGap.
+   * Bottom Cushion — restored distant anchor near the viewport bottom.
+   * Never uses live offsetHeight (nearly full viewport when raised) so the
+   * full Top → Home → Bottom travel range stays open.
    */
-  const upperGap = cache.defaultUpperGap ?? measureFrameTopToComposerGap(frameEl);
-  let bottomCushion = mainH - 2 * upperGap;
+  const defaultFrameHeight = cache.defaultFrameHeight ?? frameEl.offsetHeight;
+  let bottomCushion = Math.min(mainH - minDockedH, mainH - defaultFrameHeight);
 
-  bottomCushion = Math.max(bottomCushion, homeBase + mainH * 0.06);
-  homeBase = Math.min(homeBase, bottomCushion - mainH * 0.04);
+  /** Enforce clear separation so Home and Bottom never cluster together */
+  const minSep = mainH * HOME_BOTTOM_MIN_SEP;
+  bottomCushion = Math.max(bottomCushion, homeBase + minSep);
+  bottomCushion = Math.min(bottomCushion, mainH - minDockedH);
 
   return {
     topLock,
     homeBase,
     bottomCushion,
     mainH,
-    defaultUpperGap: upperGap
+    defaultFrameHeight
   };
 }
 
@@ -275,7 +289,7 @@ export class FrameDockController {
     /** @type {number} */
     this._pendingClientY = 0;
     /** @type {number|null} */
-    this._defaultUpperGap = null;
+    this._defaultFrameHeight = null;
     /** @type {boolean} */
     this._motionEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
@@ -287,7 +301,7 @@ export class FrameDockController {
 
   _anchorCache() {
     return {
-      defaultUpperGap: this._defaultUpperGap
+      defaultFrameHeight: this._defaultFrameHeight
     };
   }
 
@@ -298,7 +312,7 @@ export class FrameDockController {
   }
 
   _captureDefaultMetrics() {
-    this._defaultUpperGap = measureFrameTopToComposerGap(this.frameEl);
+    this._defaultFrameHeight = this.frameEl.offsetHeight;
   }
 
   _stopMotion() {
@@ -329,7 +343,7 @@ export class FrameDockController {
     this._docked = false;
     this.activeSnap = SNAP.HOME;
     this._anchors = null;
-    this._defaultUpperGap = null;
+    this._defaultFrameHeight = null;
 
     document.documentElement.style.setProperty("--v2-kicker-reserve", KICKER_RESERVE_DEFAULT);
     document.documentElement.style.removeProperty("--v2-map-dim");

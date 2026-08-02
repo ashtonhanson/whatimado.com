@@ -179,6 +179,16 @@ export class WhatimadoMap extends HTMLElement {
     this._panX = 0;
     /** @type {number} */
     this._panY = 0;
+    /** @type {{ x: number, y: number, t: number }[]} */
+    this._panSamples = [];
+    /** @type {number} */
+    this._panVelX = 0;
+    /** @type {number} */
+    this._panVelY = 0;
+    /** @type {boolean} */
+    this._panGliding = false;
+    /** @type {number|null} */
+    this._panGlideRaf = null;
     /** @type {{ pointerId: number, startPanX: number, startPanY: number, startClientX: number, startClientY: number }|null} */
     this._panPointer = null;
     /** @type {number|null} */
@@ -249,6 +259,7 @@ export class WhatimadoMap extends HTMLElement {
 
   disconnectedCallback() {
     this._stopDriftLoop();
+    this._stopPanGlide();
     if (this._panResetRaf !== null) {
       cancelAnimationFrame(this._panResetRaf);
       this._panResetRaf = null;
@@ -341,8 +352,72 @@ export class WhatimadoMap extends HTMLElement {
     return this._anchorId;
   }
 
+  /** Stop inertial pan glide */
+  _stopPanGlide() {
+    if (this._panGlideRaf !== null) {
+      cancelAnimationFrame(this._panGlideRaf);
+      this._panGlideRaf = null;
+    }
+    this._panGliding = false;
+    this._panVelX = 0;
+    this._panVelY = 0;
+  }
+
+  /**
+   * Release velocity for canvas pan — same friction family as frame/node glide.
+   * @param {{ x: number, y: number, t: number }[]} samples
+   * @param {number} scale svg units per pixel
+   */
+  _computePanReleaseVelocity(samples, scale) {
+    if (samples.length < 2) return { vx: 0, vy: 0 };
+
+    const last = samples[samples.length - 1];
+    const prev = samples[Math.max(0, samples.length - 4)];
+    const dt = last.t - prev.t;
+    if (dt <= 0) return { vx: 0, vy: 0 };
+
+    const pxPerMsX = (last.x - prev.x) / dt;
+    const pxPerMsY = (last.y - prev.y) / dt;
+    const pxPerFrameX = pxPerMsX * (1000 / 60) * scale;
+    const pxPerFrameY = pxPerMsY * (1000 / 60) * scale;
+
+    let vx = pxPerFrameX * GLIDE_VEL_SCALE;
+    let vy = pxPerFrameY * GLIDE_VEL_SCALE;
+    const speed = Math.hypot(vx, vy);
+    if (speed > GLIDE_MAX_SPEED) {
+      vx = (vx / speed) * GLIDE_MAX_SPEED;
+      vy = (vy / speed) * GLIDE_MAX_SPEED;
+    }
+
+    return { vx, vy };
+  }
+
+  /** Inertial pan glide after background drag release */
+  _startPanGlide() {
+    this._stopPanGlide();
+    this._panGliding = true;
+
+    const step = () => {
+      this._panVelX *= GLIDE_FRICTION;
+      this._panVelY *= GLIDE_FRICTION;
+      this._panX += this._panVelX;
+      this._panY += this._panVelY;
+      this._applyPanTransform();
+
+      if (Math.hypot(this._panVelX, this._panVelY) < GLIDE_MIN_SPEED) {
+        this._stopPanGlide();
+        return;
+      }
+
+      this._panGlideRaf = requestAnimationFrame(step);
+    };
+
+    this._panGlideRaf = requestAnimationFrame(step);
+  }
+
   /** Smoothly reset user pan so YOU sits in the default focal position */
   resetToYou({ animate = true } = {}) {
+    this._stopPanGlide();
     if (this._panResetRaf !== null) {
       cancelAnimationFrame(this._panResetRaf);
       this._panResetRaf = null;
@@ -868,7 +943,9 @@ export class WhatimadoMap extends HTMLElement {
 
     event.preventDefault();
     this._svg?.setPointerCapture(event.pointerId);
+    this._stopPanGlide();
 
+    this._panSamples = [{ x: event.clientX, y: event.clientY, t: performance.now() }];
     this._panPointer = {
       pointerId: event.pointerId,
       startPanX: this._panX,
@@ -882,6 +959,9 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {PointerEvent} event */
   _handlePanMove(event) {
     if (!this._panPointer) return;
+
+    this._panSamples.push({ x: event.clientX, y: event.clientY, t: performance.now() });
+    if (this._panSamples.length > 8) this._panSamples.shift();
 
     const scale = svgScale(this._svg);
     const dx = (event.clientX - this._panPointer.startClientX) * scale;
@@ -902,8 +982,17 @@ export class WhatimadoMap extends HTMLElement {
       /* already released */
     }
 
+    const scale = svgScale(this._svg);
+    const { vx, vy } = this._computePanReleaseVelocity(this._panSamples, scale);
+    this._panSamples = [];
     this._panPointer = null;
     this.classList.remove("is-panning");
+
+    if (!this._driftReducedMotion && Math.hypot(vx, vy) >= GLIDE_MIN_SPEED) {
+      this._panVelX = vx;
+      this._panVelY = vy;
+      this._startPanGlide();
+    }
   }
 
   /** @param {string} nodeId */
