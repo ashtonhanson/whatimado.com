@@ -1,5 +1,6 @@
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"action", label: string, x: number, y: number, parentId?: string }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"action", label: string, x: number, y: number, parentId?: string, title?: string, description?: string }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
+/** @typedef {{ id?: string, label: string, title: string, description: string }} AdvisorPath */
 export const graphStore = {
   nodes: [],
   edges: [],
@@ -9,6 +10,63 @@ export const graphStore = {
 export function resetGraph() {
   graphStore.nodes = [];
   graphStore.edges = [];
+  graphStore.selectedId = null;
+}
+
+/** @param {string} id @param {number} index */
+function sanitizePathId(id, index) {
+  const base = String(id || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return base || `path-${index + 1}`;
+}
+
+/** @param {string} value @param {number} max */
+function shortenMapLabel(value, max) {
+  const text = String(value || "").trim();
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1)}…`;
+}
+
+/** Layout slots for up to four path nodes above YOU */
+const PATH_LAYOUT_SLOTS = [
+  { x: 0.18, y: 0.5 },
+  { x: 0.38, y: 0.3 },
+  { x: 0.62, y: 0.3 },
+  { x: 0.82, y: 0.5 }
+];
+
+/**
+ * Populate live graph from advisor path proposals.
+ * @param {AdvisorPath[]} paths
+ */
+export function loadAdvisorPaths(paths) {
+  const trimmed = paths.slice(0, 4);
+  /** @type {GraphNode[]} */
+  const nodes = [{ id: "start", type: "start", label: "You", x: 0.5, y: 0.82 }];
+  /** @type {GraphEdge[]} */
+  const edges = [];
+
+  trimmed.forEach((path, index) => {
+    const slot = PATH_LAYOUT_SLOTS[index] ?? PATH_LAYOUT_SLOTS[PATH_LAYOUT_SLOTS.length - 1];
+    const id = sanitizePathId(path.id, index);
+    const title = String(path.title || path.label || `Path ${index + 1}`).trim();
+    nodes.push({
+      id,
+      type: "path",
+      label: shortenMapLabel(path.label || title, 14),
+      title,
+      description: String(path.description || "").trim(),
+      x: slot.x,
+      y: slot.y,
+      parentId: "start"
+    });
+    edges.push({ from: "start", to: id });
+  });
+
+  graphStore.nodes = nodes;
+  graphStore.edges = edges;
   graphStore.selectedId = null;
 }
 

@@ -59,3 +59,60 @@ export function buildExplorationPrompt(messages) {
     .join("\n\n");
   return `${EXPLORATION_SYSTEM}\n\nConversation:\n${transcript}\n\nRespond to the user's latest message.`;
 }
+
+const PATHS_SYSTEM = `You are whatimado — a career and life planning peer.
+From the conversation below, propose exactly 3 distinct, realistic paths the user could take next.
+Each path should fit their constraints (schedule, skills, stability needs) mentioned in the chat.
+Do not include medical or clinical advice.
+
+Return ONLY valid JSON — no markdown fences, no commentary:
+{
+  "intro": "One warm sentence inviting them to explore the map",
+  "paths": [
+    {
+      "id": "kebab-case-id",
+      "label": "Short map label (max 14 chars)",
+      "title": "Clear path name",
+      "description": "1-2 sentences on what this path involves"
+    }
+  ]
+}`;
+
+/**
+ * @param {{ role: "user"|"assistant", content: string }[]} messages
+ */
+export function buildPathsPrompt(messages) {
+  const transcript = messages
+    .map((m) => `${m.role === "user" ? "User" : "Advisor"}: ${m.content}`)
+    .join("\n\n");
+  return `${PATHS_SYSTEM}\n\nConversation:\n${transcript}\n\nGenerate the JSON now.`;
+}
+
+/**
+ * @param {string} raw
+ * @returns {{ intro: string, paths: { id: string, label: string, title: string, description: string }[] }}
+ */
+export function parseAdvisorPathsResponse(raw) {
+  const text = String(raw || "").trim();
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Advisor did not return JSON paths");
+  }
+
+  const parsed = JSON.parse(jsonMatch[0]);
+  const paths = Array.isArray(parsed?.paths) ? parsed.paths : [];
+
+  if (paths.length < 1) {
+    throw new Error("No paths in advisor response");
+  }
+
+  return {
+    intro: String(parsed.intro || "Here are a few directions that could fit — tap a node or card to explore."),
+    paths: paths.slice(0, 4).map((path, index) => ({
+      id: String(path.id || `path-${index + 1}`),
+      label: String(path.label || path.title || `Path ${index + 1}`),
+      title: String(path.title || path.label || `Path ${index + 1}`),
+      description: String(path.description || "")
+    }))
+  };
+}

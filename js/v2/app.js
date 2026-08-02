@@ -1,17 +1,24 @@
 import "./components/whatimado-frame.js";
 import "./components/whatimado-map.js";
 import { PHASE, applyPhaseToDom } from "./phases.js";
-import { seedPossibilityNodes, graphStore, selectGraphNode } from "./graph-store.js";
-import { callAdvisor, buildExplorationPrompt } from "./advisor.js";
-import { appendMessage } from "./ui.js";
+import { loadAdvisorPaths, graphStore, selectGraphNode, seedPossibilityNodes } from "./graph-store.js";
+import {
+  callAdvisor,
+  buildExplorationPrompt,
+  buildPathsPrompt,
+  parseAdvisorPathsResponse
+} from "./advisor.js";
+import { appendMessage, escapeHtml } from "./ui.js";
 import { initNeonShine } from "./neon-shine.js";
 
-/** @type {{ phase: import("./phases.js").Phase, messages: { role: "user"|"assistant", content: string }[], turnCount: number, ghostDismissed: boolean }} */
+/** @type {{ phase: import("./phases.js").Phase, messages: { role: "user"|"assistant", content: string }[], turnCount: number, ghostDismissed: boolean, pathsGenerated: boolean, pathsGenerating: boolean }} */
 const state = {
   phase: PHASE.OPEN,
   messages: [],
   turnCount: 0,
-  ghostDismissed: false
+  ghostDismissed: false,
+  pathsGenerated: false,
+  pathsGenerating: false
 };
 
 /** @type {import("./components/whatimado-frame.js").WhatimadoFrame|null} */
@@ -23,6 +30,8 @@ const messagesEl = document.getElementById("messages");
 const activePathEl = document.getElementById("active-path-label");
 const selectionPanel = document.getElementById("selection-panel");
 const pathCardsEl = document.getElementById("path-cards");
+
+const PATHS_READY_TURN = 3;
 
 function notifyFrameLayout() {
   frameEl?.notifyContentChange();
@@ -49,30 +58,16 @@ function dismissGhostMap() {
   setPhase(state.phase);
 }
 
-function showDemoPossibilities() {
-  seedPossibilityNodes();
-  mapEl?.syncLiveFromStore();
-  setPhase(PHASE.POSSIBILITIES);
-  if (activePathEl) {
-    activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one to continue — demo scaffold.";
-  }
-  renderDemoPathCards();
-  notifyFrameLayout();
-}
-
-function renderDemoPathCards() {
+function renderPathCards() {
   if (!pathCardsEl) return;
-  const titles = [
-    { id: "path-a", title: "Rebuild with your skills", desc: "Use what you already know while stabilizing basics." },
-    { id: "path-b", title: "Train into a trade", desc: "Structured certification route with clear milestones." },
-    { id: "path-c", title: "Freelance / self-employed", desc: "Small projects first, then repeat clients." }
-  ];
-  pathCardsEl.innerHTML = titles
+
+  const paths = graphStore.nodes.filter((node) => node.type === "path");
+  pathCardsEl.innerHTML = paths
     .map(
-      (p) => `
-    <button type="button" class="v2-path-card" data-path-id="${p.id}">
-      <h3>${p.title}</h3>
-      <p>${p.desc}</p>
+      (path) => `
+    <button type="button" class="v2-path-card" data-path-id="${escapeHtml(path.id)}">
+      <h3>${escapeHtml(path.title || path.label)}</h3>
+      <p>${escapeHtml(path.description || "")}</p>
     </button>`
     )
     .join("");
@@ -88,6 +83,71 @@ function renderDemoPathCards() {
   });
 }
 
+function applyPathsToMap() {
+  mapEl?.syncLiveFromStore();
+  setPhase(PHASE.POSSIBILITIES);
+  if (activePathEl) {
+    activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
+  }
+  renderPathCards();
+  notifyFrameLayout();
+}
+
+function fallbackPaths() {
+  seedPossibilityNodes();
+  const seeded = graphStore.nodes.filter((node) => node.type === "path");
+  seeded.forEach((node, index) => {
+    const titles = ["Rebuild with your skills", "Train into a trade", "Freelance / self-employed"];
+    const descs = [
+      "Use what you already know while stabilizing basics.",
+      "Structured certification route with clear milestones.",
+      "Small projects first, then repeat clients."
+    ];
+    node.title = titles[index] || node.label;
+    node.description = descs[index] || "";
+  });
+  applyPathsToMap();
+}
+
+async function generateAdvisorPaths() {
+  if (state.pathsGenerated || state.pathsGenerating) return;
+  state.pathsGenerating = true;
+  setComposerEnabled(false);
+
+  const typingEl = appendMessage(messagesEl, "advisor", "Mapping a few paths that could fit…", { typing: true });
+  notifyFrameLayout();
+
+  try {
+    const raw = await callAdvisor(buildPathsPrompt(state.messages), {
+      maxTokens: 700,
+      feature: "v2_paths"
+    });
+    const { intro, paths } = parseAdvisorPathsResponse(raw);
+
+    typingEl.remove();
+    loadAdvisorPaths(paths);
+    applyPathsToMap();
+    appendMessage(messagesEl, "advisor", intro);
+    state.messages.push({ role: "assistant", content: intro });
+    state.pathsGenerated = true;
+    notifyFrameLayout();
+  } catch (error) {
+    typingEl.remove();
+    appendMessage(
+      messagesEl,
+      "advisor",
+      "I couldn't map custom paths just now — here are starter directions you can explore."
+    );
+    notifyFrameLayout();
+    fallbackPaths();
+    state.pathsGenerated = true;
+  } finally {
+    state.pathsGenerating = false;
+    setComposerEnabled(true);
+    frameEl?.focusComposer();
+  }
+}
+
 /** @param {string} nodeId */
 function handleNodeSelect(nodeId) {
   const node = graphStore.nodes.find((n) => n.id === nodeId);
@@ -95,12 +155,13 @@ function handleNodeSelect(nodeId) {
   selectGraphNode(nodeId);
   mapEl?.setSelectedNode(nodeId);
   setPhase(PHASE.PATH_SELECTED);
+  const displayTitle = node.title || node.label;
   if (selectionPanel) {
     selectionPanel.classList.remove("hidden");
-    selectionPanel.innerHTML = `<h2 class="v2-section-label">Selected path</h2><p><strong>${node.label}</strong> — mission nodes and resources will connect here in the next build step.</p>`;
+    selectionPanel.innerHTML = `<h2 class="v2-section-label">Selected path</h2><p><strong>${escapeHtml(displayTitle)}</strong>${node.description ? ` — ${escapeHtml(node.description)}` : ""}</p>`;
   }
   if (activePathEl) {
-    activePathEl.innerHTML = `<strong>${node.label}</strong>0 missions · scaffold`;
+    activePathEl.innerHTML = `<strong>${escapeHtml(displayTitle)}</strong>Ready for missions next.`;
   }
   notifyFrameLayout();
 }
@@ -153,6 +214,7 @@ function seedHypotheticalChat() {
   mapEl?.dismissGhost();
   setPhase(PHASE.COACHING);
   notifyFrameLayout();
+  void generateAdvisorPaths();
 }
 
 async function handleSubmit(text) {
@@ -188,14 +250,8 @@ async function handleSubmit(text) {
     if (state.turnCount >= 2 && state.phase === PHASE.EXPLORING) {
       setPhase(PHASE.COACHING);
     }
-    if (state.turnCount >= 3 && state.phase === PHASE.COACHING) {
-      appendMessage(
-        messagesEl,
-        "advisor",
-        "When you're ready, I can sketch a few possible directions on the map above. Tap a path node or card to explore."
-      );
-      notifyFrameLayout();
-      showDemoPossibilities();
+    if (state.turnCount >= PATHS_READY_TURN && state.phase === PHASE.COACHING && !state.pathsGenerated) {
+      await generateAdvisorPaths();
     }
   } catch (error) {
     typingEl.remove();
