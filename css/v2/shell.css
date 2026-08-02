@@ -19,6 +19,14 @@
   overflow: hidden;
 }
 
+/* Center column — shared horizontal bounds for map, kicker, and prompt frame */
+.v2-main > whatimado-map,
+.v2-main > whatimado-frame,
+.v2-main > .v2-frame-kicker {
+  left: 0;
+  right: 0;
+}
+
 .v2-section-label {
   margin: 0 0 0.75rem;
   font-size: 0.72rem;
@@ -42,5 +50,12 @@
 
   .v2-main {
     min-height: 60dvh;
+  }
+
+  .v2-main > whatimado-map,
+  .v2-main > whatimado-frame,
+  .v2-main > .v2-frame-kicker {
+    left: var(--v2-main-gutter);
+    right: var(--v2-main-gutter);
   }
 }

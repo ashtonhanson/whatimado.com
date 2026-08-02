@@ -230,19 +230,15 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   loadGhostGraph() {
-    this._renderLayer(this._ghostLayer, GHOST_GRAPH.nodes, GHOST_GRAPH.edges, {
-      layer: "ghost",
-      edgesOnly: true
-    });
+    if (this._ghostLayer) this._ghostLayer.innerHTML = "";
   }
 
-  /** Floating nodes on load — sits above ghost edge backdrop */
+  /** Floating nodes on load — edges live on the live layer so they persist after ghost dismiss */
   loadAmbientLiveGraph() {
     this._liveNodes = GHOST_GRAPH.nodes;
     this._anchorId = "ghost-start";
     this._renderLayer(this._liveLayer, GHOST_GRAPH.nodes, GHOST_GRAPH.edges, {
-      layer: "live",
-      nodesOnly: true
+      layer: "live"
     });
   }
 
