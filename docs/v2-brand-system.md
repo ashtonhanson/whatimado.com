@@ -12,6 +12,7 @@ Every framed control uses **three rounded corners and one straight corner**. The
 | Prompt | `--v2-prompt-radius` / `.v2-text-box--prompt` | Top-right | Composer textarea, user message bubbles |
 | Response | `--v2-response-radius` | Top-left | Same as chrome; advisor/system replies |
 | Shell | `.v2-text-box--shell` | Top-left | Sidebar rail, main `whatimado-frame` outer panel |
+| Shell (right) | `.v2-text-box--shell-right` | Top-right | Resources rail |
 
 Do not revert chrome controls to full pill or uniform radius without an explicit brand change.
 
@@ -37,7 +38,7 @@ Do not revert chrome controls to full pill or uniform radius without an explicit
 
 - **WHAT** — yellow (`--v2-yellow`), weight 400  
 - **IMA** — teal (`--v2-teal`), weight 500  
-- **DO** — light text (`--v2-text`), weight 300  
+- **DO** — deep teal (`--v2-brand-do`), weight 500  
 
 Logo sits inside a **Text Box chrome** frame.
 
@@ -79,7 +80,10 @@ Physics (`js/v2/components/whatimado-map.js` — keep in sync with this doc):
 
 ## Layout anchors
 
-- Home/chat frame top: `--whatimado-frame-top` 42vh  
+- Default frame top: `--whatimado-frame-top-default` 42vh (dynamic via `--whatimado-frame-top`)  
+- Minimum map band when frame grows: `--v2-map-min-band` 28vh  
+- Frame anchor moves up as chat content grows (`whatimado-frame._syncAnchorToContent`)  
+- Dual sidebar inset: `--v2-sidebar-offset` on left and right when resources rail is visible  
 - Kicker reserve under map: `--v2-kicker-reserve`  
 - Center columns: `--v2-center-gutter`; chat/home widths per `layout-intent` rule  
 
@@ -89,6 +93,6 @@ Physics (`js/v2/components/whatimado-map.js` — keep in sync with this doc):
 |---------|--------|
 | Tokens | `css/v2/tokens.css` |
 | Text Box utility | `css/v2/text-box.css` |
-| Shell / sidebar / frame | `css/v2/shell.css`, `sidebar.css`, `frame.css` |
+| Shell / sidebar / frame / resources | `css/v2/shell.css`, `sidebar.css`, `resources.css`, `frame.css` |
 | Map | `css/v2/map-canvas.css`, `js/v2/components/whatimado-map.js` |
 | Entry | `app.html`, `js/v2/app.js` |

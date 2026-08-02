@@ -18,9 +18,14 @@
   --v2-frame-border-stroke: 1px;
 }
 
-whatimado-frame .whatimado-frame__inner,
-.v2-rail--right {
+whatimado-frame .whatimado-frame__inner {
   position: relative;
+  border-width: var(--v2-frame-border-stroke);
+  border-color: var(--v2-neon-glow-mid);
+  animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
+}
+
+.v2-rail--right {
   border-width: var(--v2-frame-border-stroke);
   border-color: var(--v2-neon-glow-mid);
   animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;

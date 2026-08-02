@@ -125,9 +125,50 @@ export class WhatimadoFrame extends HTMLElement {
   }
 
   _parseAnchorVh() {
+    const fromRoot = getComputedStyle(document.documentElement)
+      .getPropertyValue("--whatimado-frame-top")
+      .trim();
+    const rootMatch = fromRoot.match(/^([\d.]+)vh$/);
+    if (rootMatch) {
+      const num = Number.parseFloat(rootMatch[1]);
+      if (Number.isFinite(num)) return num;
+    }
+
     const raw = this.getAttribute("anchor");
     const num = raw ? Number.parseFloat(raw) : 42;
     return Number.isFinite(num) ? num : 42;
+  }
+
+  /** @param {string} token */
+  _readRootVh(token) {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+    const match = raw.match(/^([\d.]+)vh$/);
+    return match ? Number.parseFloat(match[1]) : null;
+  }
+
+  /** Grow/shrink frame anchor with content while preserving minimum map band */
+  _syncAnchorToContent() {
+    const bottomPad = 16;
+    const defaultVh = this._readRootVh("--whatimado-frame-top-default") ?? 42;
+    const minMapVh = this._readRootVh("--v2-map-min-band") ?? 28;
+
+    if (this._body) {
+      this._body.style.maxHeight = "";
+      this._body.style.overflowY = "";
+    }
+    this.classList.remove("is-scrollable");
+
+    const frameHeight = this.getBoundingClientRect().height;
+    const maxBottom = window.innerHeight - bottomPad;
+    let idealTopPx = maxBottom - frameHeight;
+    const minTopPx = (window.innerHeight * minMapVh) / 100;
+    const maxTopPx = (window.innerHeight * defaultVh) / 100;
+
+    idealTopPx = Math.max(minTopPx, Math.min(maxTopPx, idealTopPx));
+    const anchorVh = (idealTopPx / window.innerHeight) * 100;
+
+    document.documentElement.style.setProperty("--whatimado-frame-top", `${anchorVh.toFixed(2)}vh`);
+    this.style.setProperty("--whatimado-frame-top", `${anchorVh.toFixed(2)}vh`);
   }
 
   _parseMaxGrowth() {
@@ -143,8 +184,9 @@ export class WhatimadoFrame extends HTMLElement {
 
   _observeBody() {
     if (!this._body || typeof ResizeObserver === "undefined") return;
-    this._resizeObserver = new ResizeObserver(() => this._updateScrollState());
+    this._resizeObserver = new ResizeObserver(() => this.notifyContentChange());
     this._resizeObserver.observe(this._body);
+    this._resizeObserver.observe(this);
   }
 
   _updateScrollState() {
@@ -251,6 +293,7 @@ export class WhatimadoFrame extends HTMLElement {
   /** Call after DOM updates inside the body (new messages, etc.) */
   notifyContentChange() {
     requestAnimationFrame(() => {
+      this._syncAnchorToContent();
       this._updateScrollState();
       if (this.classList.contains("is-scrollable") && this._body) {
         this._body.scrollTop = this._body.scrollHeight;

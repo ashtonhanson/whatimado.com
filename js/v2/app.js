@@ -180,6 +180,8 @@ document.getElementById("nav-home")?.addEventListener("click", () => {
 
 window.addEventListener("resize", () => notifyFrameLayout());
 
+requestAnimationFrame(() => notifyFrameLayout());
+
 setPhase(PHASE.OPEN);
 frameEl?.focusComposer();
 initNeonShine();
