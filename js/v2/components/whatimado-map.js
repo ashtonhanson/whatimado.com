@@ -13,17 +13,18 @@ const GLIDE_MAX_SPEED = 14;
 /** Map edge recovery — pull nodes back into the visible constellation band */
 const BOUND_PAD_X = 22;
 const BOUND_PAD_Y = 26;
-const BOUND_PULL = 0.14;
-const BOUND_GLIDE_DAMP = 0.45;
+const BOUND_PULL = 0.1;
+const BOUND_GLIDE_DAMP = 0.52;
 
 /** Home anchor — free pull anywhere; spring back to layout vicinity on release */
-const HOME_SOFT_RADIUS = 30;
-const HOME_SPRING_K = 0.062;
-const HOME_SPRING_DAMP = 0.912;
-const HOME_SPRING_DAMP_SETTLE = 0.79;
+const HOME_SOFT_RADIUS = 36;
+const HOME_SPRING_K = 0.042;
+const HOME_SPRING_DAMP = 0.928;
+const HOME_SPRING_DAMP_SETTLE = 0.82;
 const HOME_SETTLE_DIST = 0.22;
-const HOME_SETTLE_SPEED = 0.034;
-const HOME_RETURN_KICK = 0.022;
+const HOME_SETTLE_SPEED = 0.028;
+const HOME_RETURN_KICK = 0.014;
+const HOME_RETURN_KICK_MAX = 1.35;
 
 /** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
 function getMapBounds() {
@@ -759,8 +760,8 @@ export class WhatimadoMap extends HTMLElement {
 
     const pull =
       dist > HOME_SOFT_RADIUS
-        ? HOME_SPRING_K * (1 + Math.min((dist - HOME_SOFT_RADIUS) * 0.014, 1.35))
-        : HOME_SPRING_K * (0.5 + (1 - dist / HOME_SOFT_RADIUS) * 0.22);
+        ? HOME_SPRING_K * (1 + Math.min((dist - HOME_SOFT_RADIUS) * 0.009, 0.85))
+        : HOME_SPRING_K * (0.5 + (1 - dist / HOME_SOFT_RADIUS) * 0.18);
 
     const nearT = dist < HOME_SOFT_RADIUS ? 1 - dist / HOME_SOFT_RADIUS : 0;
     const damp = HOME_SPRING_DAMP - nearT * (HOME_SPRING_DAMP - HOME_SPRING_DAMP_SETTLE);
@@ -771,8 +772,8 @@ export class WhatimadoMap extends HTMLElement {
     node.homeVy *= damp;
     node.baseX += node.homeVx;
     node.baseY += node.homeVy;
-    node.glideVx *= 0.88;
-    node.glideVy *= 0.88;
+    node.glideVx *= 0.92;
+    node.glideVy *= 0.92;
     this._syncNodePosition(node);
     return true;
   }
@@ -973,7 +974,7 @@ export class WhatimadoMap extends HTMLElement {
           if (distFromHome > 0.5) {
             const nx = (driftNode.originX - driftNode.baseX) / distFromHome;
             const ny = (driftNode.originY - driftNode.baseY) / distFromHome;
-            const kick = Math.min(2.1, distFromHome * HOME_RETURN_KICK);
+            const kick = Math.min(HOME_RETURN_KICK_MAX, distFromHome * HOME_RETURN_KICK);
             driftNode.homeVx = nx * kick;
             driftNode.homeVy = ny * kick;
           }
