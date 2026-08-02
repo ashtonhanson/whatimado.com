@@ -170,21 +170,13 @@ export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
   const minDockedH = composerH + MIN_FRAME_HEIGHT * 0.45 + BOTTOM_CONTENT_CUSHION;
 
   /**
-   * Bottom Cushion — distant anchor aligned to target screenshot:
-   * content scroll reserve sits above the prompt bar; frame top leaves
-   * composer block + breathing gap + minimal content band.
+   * Bottom Cushion — authoritative snap from clean screenshot.
+   * Frame top sits at mainH minus the fixed offset token; overrides prior heuristics.
    */
-  const contentGap = measureCssVarLength("--v2-composer-content-gap");
-  const contentReserve = composerH + contentGap;
-  const dragRailH =
-    frameEl.querySelector(".whatimado-frame__drag-rail")?.getBoundingClientRect().height ?? 14;
-  const minContentBand = MIN_FRAME_HEIGHT * 0.35;
+  const snapTopOffset = measureCssVarLength("--v2-bottom-snap-top-offset");
+  let bottomCushion = mainH - snapTopOffset;
 
-  let bottomCushion = mainH - contentReserve - dragRailH - minContentBand;
-
-  /** Keep full travel range — Bottom stays well below Home */
-  const minSep = mainH * HOME_BOTTOM_MIN_SEP;
-  bottomCushion = Math.max(bottomCushion, homeBase + minSep);
+  bottomCushion = Math.max(bottomCushion, topLock);
   bottomCushion = Math.min(bottomCushion, mainH - minDockedH);
 
   return {

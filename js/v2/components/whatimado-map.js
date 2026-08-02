@@ -122,6 +122,7 @@ function trimLineToNodeEdges(ax, ay, ar, bx, by, br) {
 }
 
 const MAP_TEMPLATE = `
+  <div class="whatimado-map__pan-surface" part="pan-surface" aria-hidden="true"></div>
   <div class="whatimado-map__stage">
     <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center on You">YOU</button>
     <svg class="whatimado-map__svg" part="svg" role="img" aria-label="Possibility map">
@@ -173,6 +174,8 @@ export class WhatimadoMap extends HTMLElement {
     this._ghostDismissed = false;
     /** @type {SVGGElement|null} */
     this._panLayer = null;
+    /** @type {HTMLElement|null} */
+    this._panSurface = null;
     /** @type {HTMLButtonElement|null} */
     this._youBtn = null;
     /** @type {number} */
@@ -241,8 +244,13 @@ export class WhatimadoMap extends HTMLElement {
      * }|null} */
     this._pointer = null;
 
+    /** @type {boolean} */
+    this._globalPanActive = false;
+
     this._onPointerMove = (event) => this._handlePointerMove(event);
     this._onPointerUp = (event) => this._handlePointerUp(event);
+    this._onGlobalPanMove = (event) => this._handlePanMove(event);
+    this._onGlobalPanUp = (event) => this._finishPanPointer(event);
   }
 
   connectedCallback() {
@@ -269,6 +277,7 @@ export class WhatimadoMap extends HTMLElement {
     this.removeEventListener("pointermove", this._onPointerMove);
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
+    this._detachGlobalPanListeners();
   }
 
   attributeChangedCallback(name) {
@@ -466,10 +475,76 @@ export class WhatimadoMap extends HTMLElement {
     this._panLayer.setAttribute("transform", `translate(${this._panX}, ${shiftY + this._panY})`);
   }
 
+  _detachGlobalPanListeners() {
+    document.removeEventListener("pointermove", this._onGlobalPanMove);
+    document.removeEventListener("pointerup", this._onGlobalPanUp);
+    document.removeEventListener("pointercancel", this._onGlobalPanUp);
+    this._globalPanActive = false;
+  }
+
+  /** @param {PointerEvent} event */
+  _finishPanPointer(event) {
+    if (!this._panPointer || event.pointerId !== this._panPointer.pointerId) return;
+
+    if (this._globalPanActive) {
+      this._detachGlobalPanListeners();
+    }
+
+    const scale = svgScale(this._svg);
+    const { vx, vy } = this._computePanReleaseVelocity(this._panSamples, scale);
+    this._panSamples = [];
+    this._panPointer = null;
+    this.classList.remove("is-panning");
+
+    if (!this._driftReducedMotion && Math.hypot(vx, vy) >= GLIDE_MIN_SPEED) {
+      this._panVelX = vx;
+      this._panVelY = vy;
+      this._startPanGlide();
+    }
+  }
+
+  /**
+   * Global pan entry — any visible map background outside the prompt frame.
+   * @param {PointerEvent} event
+   */
+  handleGlobalPanPointerDown(event) {
+    if (event.button !== 0) return;
+    if (this.getAttribute("mode") === "hidden") return;
+
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest(".whatimado-map__node")) return;
+    if (target.closest(".whatimado-map__you-btn")) return;
+
+    this._beginPanPointer(event);
+  }
+
+  /** @param {PointerEvent} event */
+  _beginPanPointer(event) {
+    event.preventDefault();
+    this._stopPanGlide();
+
+    this._globalPanActive = true;
+    document.addEventListener("pointermove", this._onGlobalPanMove);
+    document.addEventListener("pointerup", this._onGlobalPanUp);
+    document.addEventListener("pointercancel", this._onGlobalPanUp);
+
+    this._panSamples = [{ x: event.clientX, y: event.clientY, t: performance.now() }];
+    this._panPointer = {
+      pointerId: event.pointerId,
+      startPanX: this._panX,
+      startPanY: this._panY,
+      startClientX: event.clientX,
+      startClientY: event.clientY
+    };
+    this.classList.add("is-panning");
+  }
+
   _build() {
     if (this._built) return;
     this._built = true;
     this.innerHTML = MAP_TEMPLATE;
+    this._panSurface = this.querySelector(".whatimado-map__pan-surface");
     this._svg = this.querySelector(".whatimado-map__svg");
     this._panLayer = this.querySelector(".whatimado-map__pan");
     this._ghostLayer = this.querySelector(".whatimado-map__layer--ghost");
@@ -479,7 +554,6 @@ export class WhatimadoMap extends HTMLElement {
       this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
     }
     this._youBtn?.addEventListener("click", () => this.resetToYou());
-    this._svg?.addEventListener("pointerdown", (event) => this._handleCanvasPointerDown(event));
     this._applyPanTransform();
     this.addEventListener("pointermove", this._onPointerMove);
     this.addEventListener("pointerup", this._onPointerUp);
@@ -935,32 +1009,6 @@ export class WhatimadoMap extends HTMLElement {
     this._pointer = null;
   }
 
-  /**
-   * Hand tool — pan the canvas when dragging empty background (not nodes).
-   * @param {PointerEvent} event
-   */
-  _handleCanvasPointerDown(event) {
-    if (event.button !== 0) return;
-
-    const target = /** @type {Element} */ (event.target);
-    if (target.closest(".whatimado-map__node")) return;
-    if (target.closest(".whatimado-map__you-btn")) return;
-
-    event.preventDefault();
-    this._svg?.setPointerCapture(event.pointerId);
-    this._stopPanGlide();
-
-    this._panSamples = [{ x: event.clientX, y: event.clientY, t: performance.now() }];
-    this._panPointer = {
-      pointerId: event.pointerId,
-      startPanX: this._panX,
-      startPanY: this._panY,
-      startClientX: event.clientX,
-      startClientY: event.clientY
-    };
-    this.classList.add("is-panning");
-  }
-
   /** @param {PointerEvent} event */
   _handlePanMove(event) {
     if (!this._panPointer) return;
@@ -979,25 +1027,7 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {PointerEvent} event */
   _handlePanUp(event) {
-    if (!this._panPointer || event.pointerId !== this._panPointer.pointerId) return;
-
-    try {
-      this._svg?.releasePointerCapture(event.pointerId);
-    } catch {
-      /* already released */
-    }
-
-    const scale = svgScale(this._svg);
-    const { vx, vy } = this._computePanReleaseVelocity(this._panSamples, scale);
-    this._panSamples = [];
-    this._panPointer = null;
-    this.classList.remove("is-panning");
-
-    if (!this._driftReducedMotion && Math.hypot(vx, vy) >= GLIDE_MIN_SPEED) {
-      this._panVelX = vx;
-      this._panVelY = vy;
-      this._startPanGlide();
-    }
+    this._finishPanPointer(event);
   }
 
   /** @param {string} nodeId */

@@ -1,4 +1,4 @@
-/* whatimado-map — fixed-height background band; never tied to frame drag position */
+/* whatimado-map — full-height background; graph renders in upper band only */
 whatimado-map {
   display: block;
   position: absolute;
@@ -26,22 +26,34 @@ whatimado-map[data-mode="visible"] {
   opacity: 1;
 }
 
-whatimado-map[data-mode="ghost"] .whatimado-map__stage,
-whatimado-map[data-mode="faint"] .whatimado-map__stage,
-whatimado-map[data-mode="visible"] .whatimado-map__stage {
-  pointer-events: auto;
-}
-
-whatimado-map[data-mode="ghost"] .whatimado-map__svg,
-whatimado-map[data-mode="faint"] .whatimado-map__svg,
-whatimado-map[data-mode="visible"] .whatimado-map__svg {
+whatimado-map[data-mode="ghost"] .whatimado-map__pan-surface,
+whatimado-map[data-mode="faint"] .whatimado-map__pan-surface,
+whatimado-map[data-mode="visible"] .whatimado-map__pan-surface {
   pointer-events: auto;
   cursor: grab;
   touch-action: none;
 }
 
-whatimado-map.is-panning .whatimado-map__svg {
+whatimado-map.is-panning .whatimado-map__pan-surface {
   cursor: grabbing;
+}
+
+whatimado-map[data-mode="ghost"] .whatimado-map__stage,
+whatimado-map[data-mode="faint"] .whatimado-map__stage,
+whatimado-map[data-mode="visible"] .whatimado-map__stage {
+  pointer-events: none;
+}
+
+whatimado-map .whatimado-map__pan-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+whatimado-map[data-mode="ghost"] .whatimado-map__svg,
+whatimado-map[data-mode="faint"] .whatimado-map__svg,
+whatimado-map[data-mode="visible"] .whatimado-map__svg {
+  pointer-events: none;
 }
 
 whatimado-map .whatimado-map__you-btn {
@@ -101,8 +113,12 @@ whatimado-map.is-ghost-dismissed .whatimado-map__layer--ghost {
 }
 
 whatimado-map .whatimado-map__stage {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   height: var(--v2-map-svg-h);
+  z-index: 2;
   transition: filter 680ms cubic-bezier(0.32, 0.94, 0.42, 1);
   filter:
     brightness(calc(1 - var(--v2-map-dim, 0) * 0.38))

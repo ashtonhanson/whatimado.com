@@ -15,17 +15,19 @@
   --v2-border: rgba(66, 255, 240, 0.48);
   --v2-border-dashed: rgba(66, 255, 240, 0.32);
   /* Frosted glass — identical on frame + both sidebars (see glass.css) */
-  --v2-glass-alpha: 0.52;
+  --v2-glass-alpha: 0.36;
   --v2-glass-bg: rgba(4, 12, 14, var(--v2-glass-alpha));
-  --v2-glass-blur: 10px;
+  --v2-glass-blur: 11px;
   --v2-glass-saturate: 1.12;
-  --v2-glass-bg-soft: rgba(4, 12, 14, 0.28);
+  --v2-glass-bg-soft: rgba(4, 12, 14, 0.18);
   --v2-glass-tint: rgba(46, 232, 214, 0.22);
-  /* Content scroll stops above prompt bar — matches target screenshot gap */
-  --v2-composer-content-gap: clamp(0.85rem, 2.2vh, 1.35rem);
+  /* Bottom snap — authoritative offset from clean screenshot (frame top at bottom anchor) */
+  --v2-bottom-snap-top-offset: clamp(4.85rem, 12.5vh, 5.75rem);
+  --v2-bottom-snap-gap: clamp(0.45rem, 1.1vh, 0.65rem);
+  --v2-composer-content-gap: var(--v2-bottom-snap-gap);
   --v2-composer-block-h: clamp(3.25rem, 8vh, 4.25rem);
-  --v2-scroll-bottom-reserve: var(--v2-composer-content-gap);
-  --v2-content-bottom-reserve: calc(var(--v2-composer-block-h) + var(--v2-composer-content-gap));
+  --v2-scroll-bottom-reserve: var(--v2-bottom-snap-gap);
+  --v2-content-bottom-reserve: calc(var(--v2-composer-block-h) + var(--v2-bottom-snap-gap));
   --v2-frame-bg: var(--v2-glass-bg);
   --v2-radius: 14px;
   --v2-radius-lg: 22px;
@@ -46,8 +48,8 @@
   --whatimado-frame-top: var(--whatimado-frame-top-default);
   --whatimado-scroll-thumb-h: 3.25rem;
   --v2-kicker-reserve: clamp(4.5rem, 12vh, 6.25rem);
-  /* Fixed map band — independent of prompt frame position (prevents node scale collapse) */
-  --v2-map-band-h: var(--whatimado-frame-top-default);
+  /* Full main column — global pan surface; graph SVG stays in upper band */
+  --v2-map-band-h: 100%;
   --v2-map-svg-h: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
   --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
 

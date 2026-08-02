@@ -18,6 +18,7 @@ const state = {
 const frameEl = document.getElementById("dynamic-frame");
 /** @type {import("./components/whatimado-map.js").WhatimadoMap|null} */
 const mapEl = document.getElementById("possibility-map");
+const mainEl = document.querySelector(".v2-main");
 const messagesEl = document.getElementById("messages");
 const activePathEl = document.getElementById("active-path-label");
 const selectionPanel = document.getElementById("selection-panel");
@@ -213,6 +214,18 @@ async function handleSubmit(text) {
 mapEl?.setNodeSelectHandler(handleNodeSelect);
 
 mapEl?.setPromptEmptyChecker(() => !frameEl?.composerInput?.value.trim());
+
+/** Global map pan — any visible canvas outside the prompt frame (no dead zones) */
+mainEl?.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0) return;
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+  if (target.closest("whatimado-frame")) return;
+  if (target.closest(".v2-rail")) return;
+  if (target.closest(".whatimado-map__node--live")) return;
+  if (target.closest(".whatimado-map__you-btn")) return;
+  mapEl?.handleGlobalPanPointerDown(event);
+});
 
 mapEl?.addEventListener("map-node-select", (event) => {
   const detail = /** @type {CustomEvent<{ nodeId: string, promptEmpty?: boolean }>} */ (event).detail;
