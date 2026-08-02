@@ -15,6 +15,7 @@
   position: relative;
   z-index: 1;
   min-width: 0;
+  height: calc(100dvh - 2 * var(--v2-rail-inset));
   min-height: calc(100dvh - 2 * var(--v2-rail-inset));
   overflow: hidden;
 }
@@ -49,13 +50,12 @@
   }
 
   .v2-main {
-    min-height: calc(100dvh - 2 * var(--v2-rail-inset));
+    height: calc(100dvh - env(safe-area-inset-bottom, 0px));
+    min-height: calc(100dvh - env(safe-area-inset-bottom, 0px));
   }
 
-  .v2-shell {
-    --whatimado-frame-max-h: calc(
-      100dvh - var(--whatimado-frame-top) - 2 * var(--v2-main-gutter) - env(safe-area-inset-bottom, 0px) - var(--whatimado-frame-bottom-gap)
-    );
+  .v2-main > whatimado-frame {
+    bottom: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
   }
 
   .v2-main > whatimado-map,

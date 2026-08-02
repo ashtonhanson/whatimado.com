@@ -1,12 +1,12 @@
-/* whatimado-frame — anchored hub: compact start, grow down, then scroll inside */
+/* whatimado-frame — anchored top, flush bottom (matches side rail height) */
 whatimado-frame {
   display: block;
   position: absolute;
   left: var(--v2-center-gutter);
   right: var(--v2-center-gutter);
   top: var(--whatimado-frame-top, 42vh);
+  bottom: 0;
   width: auto;
-  max-height: var(--whatimado-frame-max-h, calc(100dvh - var(--whatimado-frame-top, 42vh) - 2 * var(--v2-rail-inset) - 0.35rem));
   z-index: 2;
   box-sizing: border-box;
 }
@@ -14,25 +14,26 @@ whatimado-frame {
 whatimado-frame .whatimado-frame__inner {
   display: flex;
   flex-direction: column;
+  height: 100%;
   border: 1px solid var(--v2-border);
   /* Text Box shell — square top-left */
   border-radius: var(--v2-shell-radius);
   background: var(--v2-frame-bg);
   box-shadow: var(--v2-frame-shadow);
   overflow: hidden;
-  max-height: inherit;
 }
 
 whatimado-frame .whatimado-frame__body-wrap {
   position: relative;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 whatimado-frame .whatimado-frame__body {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
   padding: 0.85rem clamp(0.85rem, 2.5vw, 1.25rem) 0.65rem;
   scroll-behavior: smooth;
