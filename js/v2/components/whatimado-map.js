@@ -143,7 +143,7 @@ export class WhatimadoMap extends HTMLElement {
      * @type {Map<string, {
      *   baseX: number, baseY: number, radius: number,
      *   delay: number, duration: number,
-     *   dragX: number, dragY: number, inertiaVx: number, inertiaVy: number,
+     *   dragX: number, dragY: number,
      *   groupEl: SVGGElement,
      *   circleEl: SVGCircleElement, auraEl: SVGCircleElement|null, textEl: SVGTextElement|null
      * }>}
@@ -155,9 +155,7 @@ export class WhatimadoMap extends HTMLElement {
      *   nodeId: string, pointerId: number,
      *   startSvgX: number, startSvgY: number,
      *   startBaseX: number, startBaseY: number,
-     *   moved: boolean,
-     *   prevX: number, prevY: number, lastT: number,
-     *   velX: number, velY: number
+     *   moved: boolean
      * }|null} */
     this._pointer = null;
 
@@ -340,8 +338,6 @@ export class WhatimadoMap extends HTMLElement {
         duration,
         dragX: 0,
         dragY: 0,
-        inertiaVx: 0,
-        inertiaVy: 0,
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
@@ -364,6 +360,26 @@ export class WhatimadoMap extends HTMLElement {
     this._stopDriftLoop();
     if (this._driftNodes.size > 0) {
       this._driftFrame = requestAnimationFrame((t) => this._tickDrift(t));
+    }
+  }
+
+  /** Bake ambient drift into base coords so grab position matches visual position */
+  _commitDriftToBase(nodeId) {
+    const node = this._driftNodes.get(nodeId);
+    if (!node || this._driftReducedMotion) return;
+
+    const elapsed = performance.now() - this._driftStartMs;
+    const drift = driftOffset(elapsed, node.delay, node.duration);
+    if (drift.x === 0 && drift.y === 0) return;
+
+    node.baseX += drift.x;
+    node.baseY += drift.y;
+    this._syncNodePosition(node);
+
+    const graphNode = this._liveNodes.find((n) => n.id === nodeId);
+    if (graphNode) {
+      graphNode.x = node.baseX / VIEW_W;
+      graphNode.y = node.baseY / VIEW_H;
     }
   }
 
@@ -397,26 +413,10 @@ export class WhatimadoMap extends HTMLElement {
       if (isDragging) {
         ox = node.dragX;
         oy = node.dragY;
-      } else if (Math.abs(node.inertiaVx) > 0.06 || Math.abs(node.inertiaVy) > 0.06) {
-        node.baseX += node.inertiaVx;
-        node.baseY += node.inertiaVy;
-        node.inertiaVx *= 0.9;
-        node.inertiaVy *= 0.9;
-        this._syncNodePosition(node);
-
-        const graphNode = this._liveNodes.find((n) => n.id === id);
-        if (graphNode) {
-          graphNode.x = node.baseX / VIEW_W;
-          graphNode.y = node.baseY / VIEW_H;
-        }
-      } else {
-        node.inertiaVx = 0;
-        node.inertiaVy = 0;
-        if (!this._driftReducedMotion) {
-          const drift = driftOffset(elapsed, node.delay, node.duration);
-          ox = drift.x;
-          oy = drift.y;
-        }
+      } else if (!this._driftReducedMotion) {
+        const drift = driftOffset(elapsed, node.delay, node.duration);
+        ox = drift.x;
+        oy = drift.y;
       }
 
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
@@ -470,12 +470,12 @@ export class WhatimadoMap extends HTMLElement {
     event.preventDefault();
     driftNode.groupEl.setPointerCapture(event.pointerId);
 
+    this._commitDriftToBase(nodeId);
+
     const pt = this._clientToSvg(event.clientX, event.clientY);
 
     driftNode.dragX = 0;
     driftNode.dragY = 0;
-    driftNode.inertiaVx = 0;
-    driftNode.inertiaVy = 0;
     driftNode.groupEl.classList.add("is-dragging");
 
     this._pointer = {
@@ -485,12 +485,7 @@ export class WhatimadoMap extends HTMLElement {
       startSvgY: pt.y,
       startBaseX: driftNode.baseX,
       startBaseY: driftNode.baseY,
-      moved: false,
-      prevX: pt.x,
-      prevY: pt.y,
-      lastT: performance.now(),
-      velX: 0,
-      velY: 0
+      moved: false
     };
   }
 
@@ -511,12 +506,6 @@ export class WhatimadoMap extends HTMLElement {
 
     driftNode.dragX = dx;
     driftNode.dragY = dy;
-
-    this._pointer.velX = pt.x - this._pointer.prevX;
-    this._pointer.velY = pt.y - this._pointer.prevY;
-    this._pointer.prevX = pt.x;
-    this._pointer.prevY = pt.y;
-    this._pointer.lastT = performance.now();
   }
 
   /** @param {PointerEvent} event */
@@ -532,8 +521,6 @@ export class WhatimadoMap extends HTMLElement {
         driftNode.baseY = startBaseY + driftNode.dragY;
         driftNode.dragX = 0;
         driftNode.dragY = 0;
-        driftNode.inertiaVx = this._pointer.velX * 0.62;
-        driftNode.inertiaVy = this._pointer.velY * 0.62;
         this._syncNodePosition(driftNode);
 
         const graphNode = this._liveNodes.find((n) => n.id === nodeId);
