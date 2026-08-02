@@ -1,3 +1,5 @@
+import { FrameDockController } from "../frame-dock.js";
+
 /** Example prompts cycled in the composer when empty */
 const EXAMPLE_PROMPTS = [
   "Share what's going on…",
@@ -16,6 +18,16 @@ const SCROLL_THUMB_MIN_SCALE = 0.52;
 
 const FRAME_TEMPLATE = `
   <div class="whatimado-frame__inner">
+    <div
+      class="whatimado-frame__drag-rail"
+      part="drag-rail"
+      role="separator"
+      aria-orientation="horizontal"
+      aria-label="Drag to reposition chat panel"
+      tabindex="0"
+    >
+      <span class="whatimado-frame__drag-grip" aria-hidden="true"></span>
+    </div>
     <div class="whatimado-frame__body-wrap">
       <div class="whatimado-frame__body" part="body">
         <div class="whatimado-frame__body-content"></div>
@@ -81,6 +93,10 @@ export class WhatimadoFrame extends HTMLElement {
     this._touchStartScroll = 0;
     /** @type {number} */
     this._baseThumbHeight = 28;
+    /** @type {FrameDockController|null} */
+    this._dock = null;
+    /** @type {HTMLElement|null} */
+    this._dragRail = null;
 
     this._onComposerFocus = () => this._pausePlaceholderCycle();
     this._onComposerBlur = () => this._maybeResumePlaceholderCycle();
@@ -93,6 +109,9 @@ export class WhatimadoFrame extends HTMLElement {
     this._onTouchStart = (event) => this._handleTouchStart(event);
     this._onTouchMove = (event) => this._handleTouchMove(event);
     this._onTouchEnd = () => this._releaseOverscroll();
+    this._onDragPointerDown = (event) => this._handleDragPointerDown(event);
+    this._onDragPointerMove = (event) => this._handleDragPointerMove(event);
+    this._onDragPointerUp = (event) => this._handleDragPointerUp(event);
   }
 
   connectedCallback() {
@@ -111,7 +130,11 @@ export class WhatimadoFrame extends HTMLElement {
     this._body?.addEventListener("touchend", this._onTouchEnd, { passive: true });
     this._body?.addEventListener("touchcancel", this._onTouchEnd, { passive: true });
     this._initPlaceholderCycle();
-    requestAnimationFrame(() => this._updateScrollState());
+    this._initDock();
+    requestAnimationFrame(() => {
+      this._updateScrollState();
+      this._initPhaseLayout();
+    });
   }
 
   disconnectedCallback() {
@@ -128,6 +151,10 @@ export class WhatimadoFrame extends HTMLElement {
     this._body?.removeEventListener("touchmove", this._onTouchMove);
     this._body?.removeEventListener("touchend", this._onTouchEnd);
     this._body?.removeEventListener("touchcancel", this._onTouchEnd);
+    this._dragRail?.removeEventListener("pointerdown", this._onDragPointerDown);
+    this.removeEventListener("pointermove", this._onDragPointerMove);
+    this.removeEventListener("pointerup", this._onDragPointerUp);
+    this.removeEventListener("pointercancel", this._onDragPointerUp);
     this._clearBounceReleaseTimer();
     this._clearSpringCleanupTimer();
   }
@@ -158,6 +185,59 @@ export class WhatimadoFrame extends HTMLElement {
     if (this._composerInput) this._composerInput.disabled = !enabled;
     const sendBtn = this._composerForm?.querySelector("button[type=submit]");
     if (sendBtn) sendBtn.disabled = !enabled;
+  }
+
+  /** Hero dismissed — collapse kicker gap and slide to Home Base */
+  onHeroDismissed({ animate = true } = {}) {
+    this._dock?.enterDockedHome({ animate });
+  }
+
+  /** Re-measure snap anchors on resize */
+  remeasureDock() {
+    this._dock?.remeasure();
+  }
+
+  _initPhaseLayout() {
+    const phase = document.body.dataset.phase || "open";
+    if (phase === "open") {
+      this._dock?.enterOpenLayout();
+    } else {
+      this._dock?.enterDockedHome({ animate: false });
+    }
+  }
+
+  _initDock() {
+    this._dock = new FrameDockController(this, {
+      onLayout: () => this._updateScrollState()
+    });
+    this._dragRail = this.querySelector(".whatimado-frame__drag-rail");
+    this._dragRail?.addEventListener("pointerdown", this._onDragPointerDown);
+    this.addEventListener("pointermove", this._onDragPointerMove);
+    this.addEventListener("pointerup", this._onDragPointerUp);
+    this.addEventListener("pointercancel", this._onDragPointerUp);
+  }
+
+  _handleDragPointerDown(event) {
+    if (!this._dock?.onDragStart(event)) return;
+    event.preventDefault();
+    this._dragRail?.setPointerCapture(event.pointerId);
+  }
+
+  /** @param {PointerEvent} event */
+  _handleDragPointerMove(event) {
+    this._dock?.onDragMove(event);
+  }
+
+  /** @param {PointerEvent} event */
+  _handleDragPointerUp(event) {
+    if (this._dragRail?.hasPointerCapture(event.pointerId)) {
+      try {
+        this._dragRail.releasePointerCapture(event.pointerId);
+      } catch {
+        /* already released */
+      }
+    }
+    this._dock?.onDragEnd(event);
   }
 
   _build() {
@@ -202,11 +282,9 @@ export class WhatimadoFrame extends HTMLElement {
     return match ? Number.parseFloat(match[1]) : null;
   }
 
-  /** Keep frame anchor fixed — grow downward only (upward expansion comes later) */
+  /** Keep scroll layout stable — vertical position owned by dock controller */
   _syncAnchorToContent() {
-    const defaultVh = this._readRootVh("--whatimado-frame-top-default") ?? 42;
-    document.documentElement.style.setProperty("--whatimado-frame-top", `${defaultVh}vh`);
-    this.style.setProperty("--whatimado-frame-top", `${defaultVh}vh`);
+    /* no-op: frame top is managed by FrameDockController */
   }
 
   _parseMaxGrowth() {
@@ -221,8 +299,6 @@ export class WhatimadoFrame extends HTMLElement {
   }
 
   _applyAnchorStyles() {
-    const anchorVh = this._parseAnchorVh();
-    this.style.setProperty("--whatimado-frame-top", `${anchorVh}vh`);
     const maxGrowth = this._parseMaxGrowth();
     if (maxGrowth) {
       this.style.setProperty("--whatimado-frame-max-h", maxGrowth);
@@ -554,7 +630,7 @@ export class WhatimadoFrame extends HTMLElement {
   /** Call after DOM updates inside the body (new messages, etc.) */
   notifyContentChange() {
     requestAnimationFrame(() => {
-      this._syncAnchorToContent();
+      this._dock?.remeasure();
       this._updateScrollState();
       if (this.classList.contains("is-scrollable") && this._body) {
         this._body.scrollTop = this._body.scrollHeight;

@@ -25,11 +25,16 @@ const pathCardsEl = document.getElementById("path-cards");
 
 function notifyFrameLayout() {
   frameEl?.notifyContentChange();
+  frameEl?.remeasureDock();
 }
 
 function setPhase(phase) {
+  const wasOpen = state.phase === PHASE.OPEN;
   state.phase = phase;
   applyPhaseToDom(document, phase, { ghostDismissed: state.ghostDismissed });
+  if (wasOpen && phase !== PHASE.OPEN) {
+    frameEl?.onHeroDismissed({ animate: true });
+  }
 }
 
 function setComposerEnabled(enabled) {

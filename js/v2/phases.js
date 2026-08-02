@@ -59,7 +59,24 @@ export function applyPhaseToDom(doc, phase, options = {}) {
   if (home) home.classList.toggle("hidden", !vis.homePrompt);
 
   const kicker = doc.getElementById("frame-kicker");
-  if (kicker) kicker.classList.toggle("hidden", phase !== PHASE.OPEN);
+  if (kicker) {
+    const showKicker = phase === PHASE.OPEN;
+    kicker.classList.toggle("is-dismissing", !showKicker);
+    if (showKicker) {
+      kicker.classList.remove("hidden");
+    } else {
+      window.setTimeout(() => {
+        if (doc.body.dataset.phase !== PHASE.OPEN) {
+          kicker.classList.add("hidden");
+        }
+      }, 480);
+    }
+  }
+
+  doc.documentElement.style.setProperty(
+    "--v2-kicker-reserve",
+    phase === PHASE.OPEN ? "clamp(4.5rem, 12vh, 6.25rem)" : "0px"
+  );
 
   const possibilities = doc.getElementById("possibilities");
   if (possibilities) possibilities.classList.toggle("hidden", !vis.possibilities);

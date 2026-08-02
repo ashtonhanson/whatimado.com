@@ -7,8 +7,66 @@ whatimado-frame {
   top: var(--whatimado-frame-top, 42vh);
   bottom: 0;
   width: auto;
-  z-index: 2;
+  z-index: 4;
   box-sizing: border-box;
+  transition: top 620ms cubic-bezier(0.32, 0.94, 0.42, 1);
+  will-change: top;
+}
+
+whatimado-frame.is-dragging {
+  transition: none;
+}
+
+whatimado-frame.is-docked .whatimado-frame__inner {
+  background: rgba(4, 10, 12, calc(0.52 + var(--v2-frame-elevation, 0) * 0.28));
+  backdrop-filter: blur(calc(10px + var(--v2-frame-elevation, 0) * 14px)) saturate(1.12);
+  -webkit-backdrop-filter: blur(calc(10px + var(--v2-frame-elevation, 0) * 14px)) saturate(1.12);
+  box-shadow:
+    var(--v2-frame-shadow),
+    0 calc(8px + var(--v2-frame-elevation, 0) * 16px) calc(24px + var(--v2-frame-elevation, 0) * 20px)
+      rgba(0, 0, 0, calc(0.18 + var(--v2-frame-elevation, 0) * 0.22));
+}
+
+whatimado-frame .whatimado-frame__drag-rail {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 14px;
+  margin: 0;
+  padding: 0.35rem 0 0.15rem;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+whatimado-frame:not(.is-docked) .whatimado-frame__drag-rail {
+  display: none;
+}
+
+whatimado-frame .whatimado-frame__drag-grip {
+  display: block;
+  width: clamp(2.75rem, 12vw, 3.5rem);
+  height: 4px;
+  border-radius: var(--v2-radius-pill);
+  background: rgba(66, 255, 240, 0.28);
+  box-shadow: 0 0 10px rgba(46, 232, 214, 0.18);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+whatimado-frame.is-docked .whatimado-frame__drag-rail:hover .whatimado-frame__drag-grip,
+whatimado-frame.is-docked .whatimado-frame__drag-rail:focus-visible .whatimado-frame__drag-grip {
+  background: rgba(125, 255, 239, 0.55);
+  transform: scaleX(1.06);
+  box-shadow: 0 0 14px rgba(46, 232, 214, 0.32);
+}
+
+whatimado-frame.is-dragging .whatimado-frame__drag-grip {
+  background: rgba(125, 255, 239, 0.72);
+  transform: scaleX(1.12);
 }
 
 whatimado-frame .whatimado-frame__inner {
@@ -127,6 +185,10 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  whatimado-frame {
+    transition: none;
+  }
+
   whatimado-frame.is-scrollable .whatimado-frame__body {
     scrollbar-width: thin;
     scrollbar-color: var(--v2-teal-dim) transparent;
@@ -149,6 +211,10 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   whatimado-frame .whatimado-frame__scroll-rail {
     display: none !important;
   }
+}
+
+whatimado-frame.is-docked .whatimado-frame__composer {
+  background: rgba(4, 12, 14, calc(0.78 + var(--v2-frame-elevation, 0) * 0.12));
 }
 
 whatimado-frame .whatimado-frame__composer {
@@ -221,6 +287,22 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   z-index: 3;
   text-align: center;
   pointer-events: none;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.48s cubic-bezier(0.32, 0.94, 0.42, 1),
+    transform 0.48s cubic-bezier(0.32, 0.94, 0.42, 1);
+}
+
+.v2-frame-kicker.is-dismissing {
+  opacity: 0;
+  transform: translateY(-0.65rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-frame-kicker {
+    transition: opacity 0.15s ease;
+  }
 }
 
 .v2-kicker-brand {
