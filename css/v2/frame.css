@@ -23,6 +23,7 @@ whatimado-frame.is-settling {
 
 whatimado-frame.is-docked .whatimado-frame__inner {
   box-shadow:
+    var(--v2-frame-shadow),
     0 calc(8px + var(--v2-frame-elevation, 0) * 16px) calc(24px + var(--v2-frame-elevation, 0) * 20px)
       rgba(0, 0, 0, calc(0.18 + var(--v2-frame-elevation, 0) * 0.22));
 }
@@ -75,7 +76,7 @@ whatimado-frame .whatimado-frame__inner {
   height: 100%;
   border: 1px solid var(--v2-border);
   border-radius: var(--v2-shell-radius);
-  box-shadow: none;
+  box-shadow: var(--v2-frame-shadow);
   overflow: hidden;
 }
 
@@ -419,10 +420,12 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   --path-accent: var(--v2-teal);
   position: relative;
   padding: 0.75rem 0.9rem;
-  border: 1px dotted rgba(26, 173, 158, 0.52);
+  border: 1px dotted rgba(46, 232, 214, 0.42);
   border-radius: var(--v2-radius);
-  background: rgba(26, 173, 158, 0.12);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  background: rgba(46, 232, 214, 0.1);
+  box-shadow:
+    0 0 8px rgba(46, 232, 214, 0.14),
+    0 4px 14px rgba(0, 0, 0, 0.16);
   cursor: pointer;
   text-align: left;
   font: inherit;
@@ -451,12 +454,16 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   0%,
   100% {
     transform: translateY(0);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+    box-shadow:
+      0 0 8px rgba(46, 232, 214, 0.14),
+      0 4px 14px rgba(0, 0, 0, 0.16);
   }
 
   50% {
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    box-shadow:
+      0 0 12px rgba(46, 232, 214, 0.2),
+      0 6px 18px rgba(0, 0, 0, 0.18);
   }
 }
 
@@ -474,7 +481,7 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 .v2-path-card.is-selected {
   animation: none;
   border-color: color-mix(in srgb, var(--v2-yellow) 72%, transparent);
-  background: color-mix(in srgb, var(--v2-yellow) 16%, rgba(26, 173, 158, 0.1));
+  background: color-mix(in srgb, var(--v2-yellow) 16%, rgba(46, 232, 214, 0.08));
   box-shadow:
     0 0 16px color-mix(in srgb, var(--v2-yellow) 32%, transparent),
     0 4px 14px rgba(0, 0, 0, 0.16);
@@ -485,7 +492,7 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--v2-teal-rest);
+  color: var(--v2-teal);
   transition: color 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

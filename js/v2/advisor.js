@@ -71,7 +71,8 @@ Return ONLY valid JSON — no markdown fences, no commentary:
   "paths": [
     {
       "id": "kebab-case-id",
-      "title": "Path name (used on map labels and possibility cards)",
+      "label": "Short map label (max 14 chars)",
+      "title": "Clear path name",
       "description": "1-2 sentences on what this path involves"
     }
   ]
@@ -107,14 +108,11 @@ export function parseAdvisorPathsResponse(raw) {
 
   return {
     intro: String(parsed.intro || "Here are a few directions that could fit — tap a node or card to explore."),
-    paths: paths.slice(0, 4).map((path, index) => {
-      const title = String(path.title || path.label || `Path ${index + 1}`).trim();
-      return {
-        id: String(path.id || `path-${index + 1}`),
-        label: title,
-        title,
-        description: String(path.description || "")
-      };
-    })
+    paths: paths.slice(0, 4).map((path, index) => ({
+      id: String(path.id || `path-${index + 1}`),
+      label: String(path.label || path.title || `Path ${index + 1}`),
+      title: String(path.title || path.label || `Path ${index + 1}`),
+      description: String(path.description || "")
+    }))
   };
 }

@@ -1,7 +1,7 @@
 import "./components/whatimado-frame.js";
 import "./components/whatimado-map.js";
 import { PHASE, applyPhaseToDom } from "./phases.js";
-import { loadAdvisorPaths, graphStore, pathDisplayName, selectGraphNode, seedPossibilityNodes } from "./graph-store.js";
+import { loadAdvisorPaths, graphStore, selectGraphNode, seedPossibilityNodes } from "./graph-store.js";
 import {
   callAdvisor,
   buildExplorationPrompt,
@@ -66,7 +66,7 @@ function renderPathCards() {
     .map(
       (path) => `
     <button type="button" class="v2-path-card" data-path-id="${escapeHtml(path.id)}" style="--path-accent: ${escapeHtml(path.accent || "#2ee8d6")}">
-      <h3>${escapeHtml(pathDisplayName(path))}</h3>
+      <h3>${escapeHtml(path.title || path.label)}</h3>
       <p>${escapeHtml(path.description || "")}</p>
     </button>`
     )
@@ -105,15 +105,13 @@ function fallbackPaths() {
   seedPossibilityNodes();
   const seeded = graphStore.nodes.filter((node) => node.type === "path");
   seeded.forEach((node, index) => {
-    const names = ["Rebuild with your skills", "Train into a trade", "Freelance / self-employed"];
+    const titles = ["Rebuild with your skills", "Train into a trade", "Freelance / self-employed"];
     const descs = [
       "Use what you already know while stabilizing basics.",
       "Structured certification route with clear milestones.",
       "Small projects first, then repeat clients."
     ];
-    const name = names[index] || node.label;
-    node.label = name;
-    node.title = name;
+    node.title = titles[index] || node.label;
     node.description = descs[index] || "";
   });
   applyPathsToMap();
@@ -165,7 +163,7 @@ function handleNodeSelect(nodeId) {
   selectGraphNode(nodeId);
   mapEl?.setSelectedNode(nodeId);
   setPhase(PHASE.PATH_SELECTED);
-  const displayTitle = pathDisplayName(node);
+  const displayTitle = node.title || node.label;
   if (selectionPanel) {
     selectionPanel.classList.remove("hidden");
     selectionPanel.innerHTML = `<h2 class="v2-section-label">Selected path</h2><p><strong>${escapeHtml(displayTitle)}</strong>${node.description ? ` — ${escapeHtml(node.description)}` : ""}</p>`;
