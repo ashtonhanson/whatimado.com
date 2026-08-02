@@ -38,6 +38,22 @@ function viewportHeight() {
 }
 
 /**
+ * Resolve a CSS custom property to pixels (handles clamp/calc via layout).
+ * @param {string} varName e.g. "--v2-composer-content-gap"
+ */
+function measureCssVarLength(varName) {
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;height:var(" +
+    varName +
+    ");width:0;";
+  document.documentElement.appendChild(probe);
+  const px = probe.getBoundingClientRect().height;
+  probe.remove();
+  return px;
+}
+
+/**
  * Parse a CSS length (px, rem, vh, clamp) against a reference size.
  * @param {string} raw
  * @param {number} refPx
@@ -154,14 +170,19 @@ export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
   const minDockedH = composerH + MIN_FRAME_HEIGHT * 0.45 + BOTTOM_CONTENT_CUSHION;
 
   /**
-   * Bottom Cushion — restored distant anchor near the viewport bottom.
-   * Never uses live offsetHeight (nearly full viewport when raised) so the
-   * full Top → Home → Bottom travel range stays open.
+   * Bottom Cushion — distant anchor aligned to target screenshot:
+   * content scroll reserve sits above the prompt bar; frame top leaves
+   * composer block + breathing gap + minimal content band.
    */
-  const defaultFrameHeight = cache.defaultFrameHeight ?? frameEl.offsetHeight;
-  let bottomCushion = Math.min(mainH - minDockedH, mainH - defaultFrameHeight);
+  const contentGap = measureCssVarLength("--v2-composer-content-gap");
+  const contentReserve = composerH + contentGap;
+  const dragRailH =
+    frameEl.querySelector(".whatimado-frame__drag-rail")?.getBoundingClientRect().height ?? 14;
+  const minContentBand = MIN_FRAME_HEIGHT * 0.35;
 
-  /** Enforce clear separation so Home and Bottom never cluster together */
+  let bottomCushion = mainH - contentReserve - dragRailH - minContentBand;
+
+  /** Keep full travel range — Bottom stays well below Home */
   const minSep = mainH * HOME_BOTTOM_MIN_SEP;
   bottomCushion = Math.max(bottomCushion, homeBase + minSep);
   bottomCushion = Math.min(bottomCushion, mainH - minDockedH);
@@ -170,8 +191,7 @@ export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
     topLock,
     homeBase,
     bottomCushion,
-    mainH,
-    defaultFrameHeight
+    mainH
   };
 }
 
