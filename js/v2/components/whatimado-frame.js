@@ -280,15 +280,37 @@ export class WhatimadoFrame extends HTMLElement {
     this._overscrollY = this._clampOverscroll(value);
     if (!this._bodyContent) return;
     this._bodyContent.style.transform = this._overscrollY ? `translateY(${this._overscrollY}px)` : "";
-    this._setThumbTransition(false);
+    this._setThumbTransition("none");
     this._updateCustomScrollbar();
   }
 
-  _setThumbTransition(enabled) {
+  /** @param {"none"|"spring"|"ease"} mode */
+  _setThumbTransition(mode) {
     if (!this._scrollThumb) return;
-    this._scrollThumb.style.transition = enabled
-      ? "height 0.48s cubic-bezier(0.34, 1.45, 0.64, 1), transform 0.14s ease-out"
-      : "transform 0.14s ease-out";
+    if (mode === "spring") {
+      this._scrollThumb.style.transition =
+        `height ${SCROLL_BOUNCE_RELEASE_MS}ms cubic-bezier(0.34, 1.45, 0.64, 1), ` +
+        `transform ${SCROLL_BOUNCE_RELEASE_MS}ms cubic-bezier(0.34, 1.45, 0.64, 1)`;
+    } else if (mode === "ease") {
+      this._scrollThumb.style.transition = "height 0.22s ease-out, transform 0.22s ease-out";
+    } else {
+      this._scrollThumb.style.transition = "transform 0.14s ease-out";
+    }
+  }
+
+  _readThumbHeight(trackHeight) {
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue("--whatimado-scroll-thumb-h")
+      .trim();
+    let preferred = 52;
+    if (raw.endsWith("rem")) {
+      const rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      preferred = Number.parseFloat(raw) * rootFont;
+    } else if (raw.endsWith("px")) {
+      preferred = Number.parseFloat(raw);
+    }
+    const capped = Math.min(preferred, trackHeight * 0.42);
+    return Math.max(28, capped);
   }
 
   _cancelOverscroll() {
@@ -298,7 +320,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._cancelSpringBack();
     this._overscrollY = 0;
     this._bodyContent.style.transform = "";
-    this._setThumbTransition(true);
+    this._setThumbTransition("ease");
     this._updateCustomScrollbar();
   }
 
@@ -315,7 +337,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._bodyContent.classList.add("is-spring-back");
     this._overscrollY = 0;
     this._bodyContent.style.transform = "translateY(0)";
-    this._setThumbTransition(true);
+    this._setThumbTransition("spring");
     this._updateCustomScrollbar();
 
     this._clearSpringCleanupTimer();
@@ -392,12 +414,15 @@ export class WhatimadoFrame extends HTMLElement {
 
     const { scrollTop, scrollHeight, clientHeight } = this._body;
     const scrollRange = Math.max(1, scrollHeight - clientHeight);
-    const ratio = clientHeight / scrollHeight;
-    this._baseThumbHeight = Math.max(28, ratio * trackHeight);
+
+    this._baseThumbHeight = this._readThumbHeight(trackHeight);
 
     const push = Math.min(1, Math.abs(this._overscrollY) / SCROLL_BOUNCE_MAX);
     const heightScale = 1 - push * (1 - SCROLL_THUMB_MIN_SCALE);
-    const thumbHeight = Math.max(14, this._baseThumbHeight * heightScale);
+    const thumbHeight =
+      push > 0
+        ? Math.max(14, this._baseThumbHeight * heightScale)
+        : this._baseThumbHeight;
 
     const maxTravel = Math.max(0, trackHeight - this._baseThumbHeight);
     const scrollRatio = scrollTop / scrollRange;
@@ -416,7 +441,6 @@ export class WhatimadoFrame extends HTMLElement {
 
     this._scrollThumb.style.height = `${thumbHeight}px`;
     this._scrollThumb.style.transform = `translateY(${thumbY}px)`;
-    this._scrollThumb.style.scale = "1 1";
   }
 
   _updateScrollFade() {
