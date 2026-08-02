@@ -352,13 +352,18 @@ export class WhatimadoMap extends HTMLElement {
     return this._anchorId;
   }
 
-  /** Stop inertial pan glide */
-  _stopPanGlide() {
+  /** Cancel pan glide animation without clearing release velocity */
+  _cancelPanGlideFrame() {
     if (this._panGlideRaf !== null) {
       cancelAnimationFrame(this._panGlideRaf);
       this._panGlideRaf = null;
     }
     this._panGliding = false;
+  }
+
+  /** Stop inertial pan glide and zero velocity */
+  _stopPanGlide() {
+    this._cancelPanGlideFrame();
     this._panVelX = 0;
     this._panVelY = 0;
   }
@@ -392,9 +397,9 @@ export class WhatimadoMap extends HTMLElement {
     return { vx, vy };
   }
 
-  /** Inertial pan glide after background drag release */
+  /** Inertial pan glide — velocity is set before calling; do not zero it here */
   _startPanGlide() {
-    this._stopPanGlide();
+    this._cancelPanGlideFrame();
     this._panGliding = true;
 
     const step = () => {

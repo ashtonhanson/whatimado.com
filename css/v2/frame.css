@@ -22,9 +22,9 @@ whatimado-frame.is-settling {
 }
 
 whatimado-frame.is-docked .whatimado-frame__inner {
-  background: rgba(4, 10, 12, calc(var(--v2-glass-alpha) + var(--v2-frame-elevation, 0) * 0.22));
-  backdrop-filter: blur(calc(var(--v2-glass-blur) + var(--v2-frame-elevation, 0) * 6px)) saturate(var(--v2-glass-saturate));
-  -webkit-backdrop-filter: blur(calc(var(--v2-glass-blur) + var(--v2-frame-elevation, 0) * 6px)) saturate(var(--v2-glass-saturate));
+  background: rgba(4, 10, 12, calc(var(--v2-glass-alpha) + var(--v2-frame-elevation, 0) * 0.12));
+  backdrop-filter: blur(calc(var(--v2-glass-blur) + var(--v2-frame-elevation, 0) * 4px)) saturate(var(--v2-glass-saturate));
+  -webkit-backdrop-filter: blur(calc(var(--v2-glass-blur) + var(--v2-frame-elevation, 0) * 4px)) saturate(var(--v2-glass-saturate));
   box-shadow:
     var(--v2-frame-shadow),
     0 calc(8px + var(--v2-frame-elevation, 0) * 16px) calc(24px + var(--v2-frame-elevation, 0) * 20px)
@@ -84,6 +84,11 @@ whatimado-frame .whatimado-frame__inner {
   -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
   box-shadow: var(--v2-frame-shadow);
   overflow: hidden;
+}
+
+/* Internal regions stay transparent — single glass layer on __inner shows the map through */
+whatimado-frame .whatimado-frame__inner > * {
+  background-color: transparent;
 }
 
 whatimado-frame .whatimado-frame__body-wrap {
@@ -177,7 +182,7 @@ whatimado-frame.is-fade-top .whatimado-frame__body-wrap::before {
   height: 2.75rem;
   pointer-events: none;
   z-index: 2;
-  background: linear-gradient(to bottom, rgba(4, 12, 14, var(--v2-glass-alpha)) 0%, transparent 100%);
+  background: linear-gradient(to bottom, rgba(4, 12, 14, calc(var(--v2-glass-alpha) * 0.65)) 0%, transparent 100%);
 }
 
 whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
@@ -189,7 +194,7 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   height: 2.75rem;
   pointer-events: none;
   z-index: 2;
-  background: linear-gradient(to top, rgba(4, 12, 14, var(--v2-glass-alpha)) 0%, transparent 100%);
+  background: linear-gradient(to top, rgba(4, 12, 14, calc(var(--v2-glass-alpha) * 0.65)) 0%, transparent 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -241,7 +246,9 @@ whatimado-frame .whatimado-frame__composer-input {
   padding: 0.55rem 1rem;
   border: none;
   border-radius: var(--v2-prompt-radius);
-  background: var(--v2-teal);
+  background: var(--v2-glass-fill);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: #041010;
   font: inherit;
   font-size: 0.9rem;
@@ -262,7 +269,9 @@ whatimado-frame .whatimado-frame__composer-send {
   flex-shrink: 0;
   padding: 0 0.95rem;
   border: 1px solid var(--v2-border);
-  background: transparent;
+  background: var(--v2-glass-bg-soft);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: var(--v2-teal);
   font-size: 0.78rem;
   font-weight: 600;
@@ -365,9 +374,9 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 .v2-msg--user {
   align-self: flex-end;
   padding: 0.65rem 0.95rem;
-  background: rgba(46, 232, 214, 0.72);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: var(--v2-glass-fill);
+  backdrop-filter: blur(var(--v2-glass-blur));
+  -webkit-backdrop-filter: blur(var(--v2-glass-blur));
   color: #041010;
   border-radius: var(--v2-prompt-radius);
 }
@@ -434,7 +443,7 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 .v2-path-card:hover,
 .v2-path-card.is-selected {
   border-color: var(--v2-teal);
-  background: rgba(46, 232, 214, 0.06);
+  background: rgba(46, 232, 214, 0.12);
 }
 
 .v2-path-card h3 {
