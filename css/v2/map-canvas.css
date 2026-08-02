@@ -178,7 +178,11 @@ whatimado-map .whatimado-map__node--live.is-support .whatimado-map__node-body {
   transform: scale(0.5);
 }
 
-whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-body {
+whatimado-map .whatimado-map__node--live.is-support.is-start .whatimado-map__node-body {
+  transform: scale(1);
+}
+
+whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
   fill: var(--v2-yellow);
   transform: scale(1);
 }
@@ -197,12 +201,12 @@ whatimado-map .whatimado-map__node--live.is-support text {
   fill: var(--v2-teal);
 }
 
-whatimado-map .whatimado-map__node--live.is-anchor text {
+whatimado-map .whatimado-map__node--live.is-selected text {
   fill: var(--v2-yellow);
   font-weight: 600;
 }
 
-/* Soft diffused neon aura — blur only, no ring scaling */
+/* Soft diffused neon aura — selected path only */
 whatimado-map .whatimado-map__node-aura {
   fill: rgba(245, 213, 71, 0.65);
   stroke: none;
@@ -212,7 +216,7 @@ whatimado-map .whatimado-map__node-aura {
   transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-aura {
+whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-aura {
   opacity: 1;
   animation: whatimado-anchor-aura-breathe 3.6s ease-in-out infinite;
 }
@@ -227,8 +231,8 @@ whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-aura {
   }
 }
 
-whatimado-map .whatimado-map__node--live.is-support:hover .whatimado-map__node-body {
-  fill: #3df0de;
+whatimado-map .whatimado-map__node--live.is-support:hover:not(.is-path-preview) .whatimado-map__node-body {
+  fill: var(--v2-teal-dim);
 }
 
 /* Path-card hover mirror — same accent + glow as chat button */
@@ -271,7 +275,7 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-m
     transition: fill 0.2s ease;
   }
 
-  whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-aura {
+  whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-aura {
     animation: none;
     opacity: 0.62;
   }

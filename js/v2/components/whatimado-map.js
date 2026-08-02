@@ -308,15 +308,14 @@ export class WhatimadoMap extends HTMLElement {
     this._renderLayer(this._liveLayer, GHOST_GRAPH.nodes, GHOST_GRAPH.edges, {
       layer: "live"
     });
+    this._applyAnchorStyles();
   }
 
   /** @param {GraphNode[]} nodes @param {GraphEdge[]} edges */
   loadLiveGraph(nodes, edges) {
     this._liveNodes = nodes;
-    if (!nodes.some((n) => n.id === this._anchorId)) {
-      const start = nodes.find((n) => n.type === "start");
-      this._anchorId = start?.id ?? nodes[0]?.id ?? this._anchorId;
-    }
+    const start = nodes.find((n) => n.type === "start");
+    this._anchorId = start?.id ?? nodes[0]?.id ?? this._anchorId;
     this._renderLayer(this._liveLayer, nodes, edges, {
       layer: "live"
     });
@@ -325,10 +324,7 @@ export class WhatimadoMap extends HTMLElement {
   /** Sync live layer from graph-store */
   syncLiveFromStore() {
     this.loadLiveGraph(graphStore.nodes, graphStore.edges);
-    if (this._selectedId) {
-      this._anchorId = this._selectedId;
-      this._applyAnchorStyles();
-    }
+    this._applyAnchorStyles();
   }
 
   /** Fade out ambient ghost (Step B — full personalize in Step D) */
@@ -347,10 +343,7 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {string|null} id */
   setSelectedNode(id) {
     this._selectedId = id;
-    if (id) {
-      this._anchorId = id;
-      this._applyAnchorStyles();
-    }
+    this._applyAnchorStyles();
     this.setPathPreview(null);
   }
 
@@ -886,16 +879,17 @@ export class WhatimadoMap extends HTMLElement {
 
   _applyAnchorStyles() {
     for (const [id, node] of this._driftNodes) {
-      const isAnchor = id === this._anchorId;
+      const isLayoutAnchor = id === this._anchorId;
       const graphNode = this._liveNodes.find((n) => n.id === id);
       const isStart = graphNode?.type === "start";
+      const isSelected = id === this._selectedId;
 
       const group = node.groupEl;
-      group.classList.toggle("is-anchor", isAnchor);
-      group.classList.toggle("is-support", !isAnchor);
-      group.classList.toggle("is-primary", isAnchor);
+      group.classList.toggle("is-anchor", isLayoutAnchor);
+      group.classList.toggle("is-support", !isSelected);
+      group.classList.toggle("is-primary", isLayoutAnchor);
       group.classList.toggle("is-start", Boolean(isStart));
-      group.classList.toggle("is-selected", id === this._selectedId);
+      group.classList.toggle("is-selected", isSelected);
     }
   }
 
@@ -1059,9 +1053,6 @@ export class WhatimadoMap extends HTMLElement {
     const node = this._liveNodes.find((n) => n.id === nodeId);
     if (!node) return;
 
-    this._anchorId = nodeId;
-    this._applyAnchorStyles();
-
     const promptEmpty = this._promptEmptyChecker?.() ?? true;
 
     this.dispatchEvent(
@@ -1071,7 +1062,7 @@ export class WhatimadoMap extends HTMLElement {
       })
     );
 
-    if (!promptEmpty) {
+    if (!promptEmpty && node.type !== "start") {
       this._selectedId = nodeId;
       this._applyAnchorStyles();
       this._onSelect?.(nodeId);
@@ -1125,15 +1116,17 @@ export class WhatimadoMap extends HTMLElement {
       nodes.forEach((node, index) => {
         const cx = node.x * VIEW_W;
         const cy = node.y * VIEW_H;
-        const isAnchor = this._anchorId === node.id;
+        const isLayoutAnchor = this._anchorId === node.id;
         const isStart = node.type === "start";
+        const isSelected = node.id === this._selectedId;
         const r = nodeR;
         const classes = [
           "whatimado-map__node",
           `whatimado-map__node--${options.layer}`,
           isStart ? "is-start" : "",
-          isAnchor ? "is-anchor is-primary" : "is-support",
-          node.id === this._selectedId ? "is-selected" : ""
+          isLayoutAnchor ? "is-anchor is-primary" : "",
+          !isSelected ? "is-support" : "",
+          isSelected ? "is-selected" : ""
         ]
           .filter(Boolean)
           .join(" ");
@@ -1146,7 +1139,7 @@ export class WhatimadoMap extends HTMLElement {
             : "";
 
         nodeParts.push({
-          isAnchor,
+          isAnchor: isLayoutAnchor,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}"${accentAttr}>
           <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
@@ -1169,6 +1162,10 @@ export class WhatimadoMap extends HTMLElement {
 
     if (options.layer === "live" || options.edgesOnly) {
       this._refreshDrift();
+    }
+
+    if (options.layer === "live") {
+      this._applyAnchorStyles();
     }
 
     if (options.layer === "live" && this._pathPreviewId) {

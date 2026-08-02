@@ -29,8 +29,8 @@ function shortenMapLabel(value, max) {
   return `${text.slice(0, max - 1)}…`;
 }
 
-/** HUD accent palette — one color per path slot (card hover mirrors map node) */
-export const PATH_ACCENT_PALETTE = ["#42fff0", "#f5d547", "#2ee8d6", "#7dffef"];
+/** HUD hover accents — distinct hues; yellow reserved for selected state */
+export const PATH_ACCENT_PALETTE = ["#3df0de", "#2ee8d6", "#1ec9b8", "#5ce0d4"];
 
 /** @param {number} index */
 export function pathAccentForIndex(index) {

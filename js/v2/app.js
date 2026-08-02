@@ -65,7 +65,7 @@ function renderPathCards() {
   pathCardsEl.innerHTML = paths
     .map(
       (path) => `
-    <button type="button" class="v2-path-card" data-path-id="${escapeHtml(path.id)}" style="--path-accent: ${escapeHtml(path.accent || "#42fff0")}">
+    <button type="button" class="v2-path-card" data-path-id="${escapeHtml(path.id)}" style="--path-accent: ${escapeHtml(path.accent || "#2ee8d6")}">
       <h3>${escapeHtml(path.title || path.label)}</h3>
       <p>${escapeHtml(path.description || "")}</p>
     </button>`
