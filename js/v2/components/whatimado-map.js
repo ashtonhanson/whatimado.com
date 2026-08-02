@@ -9,6 +9,26 @@ const GLIDE_FRICTION = 0.905;
 const GLIDE_MIN_SPEED = 0.06;
 const GLIDE_MAX_SPEED = 14;
 
+/** Map edge recovery — pull nodes back into the visible constellation band */
+const BOUND_PAD_X = 22;
+const BOUND_PAD_Y = 26;
+const BOUND_PULL = 0.14;
+const BOUND_GLIDE_DAMP = 0.45;
+
+/** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
+function getMapBounds() {
+  const { lg } = getNodeRadii();
+  const padX = BOUND_PAD_X + lg * 0.35;
+  const padTop = BOUND_PAD_Y + lg * 0.55;
+  const padBottom = BOUND_PAD_Y + lg * 0.25;
+  return {
+    minX: padX,
+    maxX: VIEW_W - padX,
+    minY: padTop,
+    maxY: VIEW_H - padBottom
+  };
+}
+
 /** Read node radii from CSS tokens so sizing stays consistent across breakpoints */
 function getNodeRadii() {
   const style = getComputedStyle(document.documentElement);
@@ -411,6 +431,58 @@ export class WhatimadoMap extends HTMLElement {
     };
   }
 
+  /** @param {string} nodeId */
+  _syncGraphNode(nodeId) {
+    const node = this._driftNodes.get(nodeId);
+    const graphNode = this._liveNodes.find((n) => n.id === nodeId);
+    if (!node || !graphNode) return;
+    graphNode.x = node.baseX / VIEW_W;
+    graphNode.y = node.baseY / VIEW_H;
+  }
+
+  /**
+   * Ease an out-of-frame node back into the visible map band.
+   * @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node
+   * @param {number} ox
+   * @param {number} oy
+   * @returns {boolean}
+   */
+  _applyBoundsRecovery(node, ox, oy) {
+    const { minX, maxX, minY, maxY } = getMapBounds();
+    const cx = node.baseX + ox;
+    const cy = node.baseY + oy;
+    let nx = node.baseX;
+    let ny = node.baseY;
+    let adjusted = false;
+
+    if (cx < minX) {
+      nx += (minX - cx) * BOUND_PULL;
+      if (node.glideVx < 0) node.glideVx *= BOUND_GLIDE_DAMP;
+      adjusted = true;
+    } else if (cx > maxX) {
+      nx += (maxX - cx) * BOUND_PULL;
+      if (node.glideVx > 0) node.glideVx *= BOUND_GLIDE_DAMP;
+      adjusted = true;
+    }
+
+    if (cy < minY) {
+      ny += (minY - cy) * BOUND_PULL;
+      if (node.glideVy < 0) node.glideVy *= BOUND_GLIDE_DAMP;
+      adjusted = true;
+    } else if (cy > maxY) {
+      ny += (maxY - cy) * BOUND_PULL;
+      if (node.glideVy > 0) node.glideVy *= BOUND_GLIDE_DAMP;
+      adjusted = true;
+    }
+
+    if (!adjusted) return false;
+
+    node.baseX = nx;
+    node.baseY = ny;
+    this._syncNodePosition(node);
+    return true;
+  }
+
   /** @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node */
   _syncNodePosition(node) {
     node.circleEl.setAttribute("cx", String(node.baseX));
@@ -458,6 +530,10 @@ export class WhatimadoMap extends HTMLElement {
       } else {
         node.glideVx = 0;
         node.glideVy = 0;
+      }
+
+      if (!isDragging && this._applyBoundsRecovery(node, ox, oy)) {
+        this._syncGraphNode(id);
       }
 
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
@@ -586,11 +662,7 @@ export class WhatimadoMap extends HTMLElement {
 
         this._syncNodePosition(driftNode);
 
-        const graphNode = this._liveNodes.find((n) => n.id === nodeId);
-        if (graphNode) {
-          graphNode.x = driftNode.baseX / VIEW_W;
-          graphNode.y = driftNode.baseY / VIEW_H;
-        }
+        this._syncGraphNode(nodeId);
       } else {
         driftNode.dragX = 0;
         driftNode.dragY = 0;
