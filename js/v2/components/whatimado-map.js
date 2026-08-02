@@ -18,11 +18,11 @@ const BOUND_GLIDE_DAMP = 0.45;
 
 /** Home anchor — free pull anywhere; spring back to layout vicinity on release */
 const HOME_SOFT_RADIUS = 30;
-const HOME_SPRING_K = 0.11;
-const HOME_SPRING_DAMP = 0.8;
+const HOME_SPRING_K = 0.058;
+const HOME_SPRING_DAMP = 0.87;
 const HOME_SETTLE_DIST = 0.55;
-const HOME_SETTLE_SPEED = 0.1;
-const HOME_RETURN_KICK = 0.045;
+const HOME_SETTLE_SPEED = 0.06;
+const HOME_RETURN_KICK = 0.022;
 
 /** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
 function getMapBounds() {
@@ -519,7 +519,7 @@ export class WhatimadoMap extends HTMLElement {
 
     const pull =
       dist > HOME_SOFT_RADIUS
-        ? HOME_SPRING_K * (1 + Math.min((dist - HOME_SOFT_RADIUS) * 0.028, 2.8))
+        ? HOME_SPRING_K * (1 + Math.min((dist - HOME_SOFT_RADIUS) * 0.014, 1.35))
         : HOME_SPRING_K * 0.35;
     node.homeVx += dx * pull;
     node.homeVy += dy * pull;
