@@ -32,25 +32,32 @@
 .v2-brand {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
   text-decoration: none;
   color: inherit;
 }
 
-.v2-brand-mark {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  object-fit: contain;
+.v2-brand-word {
+  font-family: var(--v2-font-hero);
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: lowercase;
 }
 
-.v2-brand-logo {
-  display: block;
-  height: 28px;
-  width: auto;
-  max-width: min(100%, 140px);
-  object-fit: contain;
-  object-position: left center;
+.v2-brand-word .brand-what {
+  color: var(--v2-yellow);
+  font-weight: 400;
+}
+
+.v2-brand-word .brand-ima {
+  color: var(--v2-teal);
+  font-weight: 500;
+}
+
+.v2-brand-word .brand-do {
+  color: var(--v2-text);
+  font-weight: 300;
 }
 
 .v2-rail-body {
@@ -183,7 +190,7 @@
   margin: 0.35rem 0 0;
   padding: 0.65rem 0.75rem;
   border: 1px dashed var(--v2-border-dashed);
-  border-radius: var(--v2-radius);
+  border-radius: var(--v2-btn-radius);
   font-size: 0.74rem;
   color: var(--v2-text-muted);
   line-height: 1.45;
@@ -211,19 +218,6 @@
   font-size: 0.68rem;
   line-height: 1.45;
   color: var(--v2-text-muted);
-}
-
-.v2-theme-note {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.5rem 0.65rem;
-  border: 1px solid rgba(46, 232, 214, 0.1);
-  border-radius: 10px;
-  background: rgba(46, 232, 214, 0.04);
-  color: var(--v2-text-muted);
-  font-size: 0.78rem;
-  font-weight: 600;
 }
 
 .v2-profile {
