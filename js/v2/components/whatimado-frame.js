@@ -70,6 +70,8 @@ export class WhatimadoFrame extends HTMLElement {
     this._overscrollY = 0;
     /** @type {number|null} */
     this._bounceReleaseTimer = null;
+    /** @type {number|null} */
+    this._springCleanupTimer = null;
     /** @type {boolean} */
     this._bounceEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     /** @type {number} */
@@ -124,6 +126,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._body?.removeEventListener("touchend", this._onTouchEnd);
     this._body?.removeEventListener("touchcancel", this._onTouchEnd);
     this._clearBounceReleaseTimer();
+    this._clearSpringCleanupTimer();
   }
 
   attributeChangedCallback(name) {
@@ -240,13 +243,28 @@ export class WhatimadoFrame extends HTMLElement {
     }
   }
 
+  _clearSpringCleanupTimer() {
+    if (this._springCleanupTimer !== null) {
+      window.clearTimeout(this._springCleanupTimer);
+      this._springCleanupTimer = null;
+    }
+  }
+
+  _cancelSpringBack() {
+    this._clearSpringCleanupTimer();
+    this._bodyContent?.classList.remove("is-spring-back");
+  }
+
   _isAtScrollTop() {
-    return !!this._body && this._body.scrollTop <= 0;
+    return !!this._body && (this._body.scrollTop <= 0 || this._overscrollY > 0);
   }
 
   _isAtScrollBottom() {
     if (!this._body) return true;
-    return this._body.scrollTop + this._body.clientHeight >= this._body.scrollHeight - 1;
+    return (
+      this._body.scrollTop + this._body.clientHeight >= this._body.scrollHeight - 1 ||
+      this._overscrollY < 0
+    );
   }
 
   _clampOverscroll(value) {
@@ -254,6 +272,8 @@ export class WhatimadoFrame extends HTMLElement {
   }
 
   _applyOverscroll(value) {
+    this._cancelSpringBack();
+    this._clearBounceReleaseTimer();
     this._overscrollY = this._clampOverscroll(value);
     if (!this._bodyContent) return;
     this._bodyContent.style.transform = this._overscrollY ? `translateY(${this._overscrollY}px)` : "";
@@ -270,15 +290,20 @@ export class WhatimadoFrame extends HTMLElement {
     if (!this._overscrollY || !this._bodyContent) return;
 
     const edge = this._overscrollY > 0 ? "top" : "bottom";
+    this._cancelSpringBack();
     this._bodyContent.classList.add("is-spring-back");
     this._overscrollY = 0;
     this._bodyContent.style.transform = "translateY(0)";
     this._updateCustomScrollbar();
     this._triggerScrollbarBounce(edge);
 
-    window.setTimeout(() => {
+    this._clearSpringCleanupTimer();
+    this._springCleanupTimer = window.setTimeout(() => {
+      this._springCleanupTimer = null;
       this._bodyContent?.classList.remove("is-spring-back");
-      if (this._bodyContent) this._bodyContent.style.transform = "";
+      if (this._overscrollY === 0 && this._bodyContent) {
+        this._bodyContent.style.transform = "";
+      }
     }, SCROLL_BOUNCE_RELEASE_MS);
   }
 
@@ -330,16 +355,16 @@ export class WhatimadoFrame extends HTMLElement {
     }
 
     const deltaY = event.touches[0].clientY - this._touchStartY;
-    const atTop = this._body.scrollTop <= 0;
+    const atTop = this._isAtScrollTop();
     const atBottom = this._isAtScrollBottom();
 
-    if (atTop && deltaY > 0 && this._body.scrollTop <= 0) {
+    if (atTop && deltaY > 0) {
       event.preventDefault();
       this._applyOverscroll(deltaY * 0.42);
       return;
     }
 
-    if (atBottom && deltaY < 0 && this._isAtScrollBottom()) {
+    if (atBottom && deltaY < 0) {
       event.preventDefault();
       this._applyOverscroll(deltaY * 0.42);
     }
