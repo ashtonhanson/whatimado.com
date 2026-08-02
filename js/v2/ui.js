@@ -23,7 +23,7 @@ export function formatMessageHtml(value) {
  */
 export function appendMessage(container, role, content, options = {}) {
   const wrap = document.createElement("div");
-  wrap.className = `v2-msg v2-msg--${role}${options.typing ? " v2-msg--typing" : ""}`;
+  wrap.className = `v2-msg v2-msg--${role} v2-text-box v2-text-box--${role === "user" ? "prompt" : "response"}${options.typing ? " v2-msg--typing" : ""}`;
 
   if (role === "advisor") {
     wrap.innerHTML = `<div class="v2-msg-label">whatimado</div><div class="v2-msg-body">${formatMessageHtml(content)}</div>`;

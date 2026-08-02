@@ -1,5 +1,6 @@
 import { GHOST_GRAPH, graphStore } from "../graph-store.js";
 
+/** Brand map physics — keep aligned with docs/v2-brand-system.md */
 const VIEW_W = 800;
 const VIEW_H = 240;
 

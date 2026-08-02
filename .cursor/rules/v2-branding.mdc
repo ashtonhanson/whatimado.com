@@ -1,0 +1,40 @@
+---
+description: whatimado v2 brand — Text Box shape, colors, typography, map style
+globs: app.html,css/v2/**,js/v2/**
+alwaysApply: false
+---
+
+# v2 brand system (whatimado)
+
+Full reference: `docs/v2-brand-system.md`. Tokens: `css/v2/tokens.css`.
+
+## Text Box — one straight corner
+
+Use the correct variant; do not use uniform or pill radius on chrome unless asked.
+
+| Straight corner | Token / class | Applies to |
+|-----------------|---------------|------------|
+| Top-left | `--v2-btn-radius`, `.v2-text-box--chrome` | Buttons, logo, advisor bubbles, dashed panels |
+| Top-right | `--v2-prompt-radius`, `.v2-text-box--prompt` | Composer input, user messages |
+| Shell panels | `.v2-text-box--shell` | Sidebar, `whatimado-frame` outer border |
+
+Utility: `@import` / link `css/v2/text-box.css`; compose with `.v2-text-box` + variant class.
+
+## Colors
+
+Teal primary (`--v2-teal`), yellow hero/labels (`--v2-yellow`), dark `--v2-bg` + gradient. Wordmark caps: **WHAT** yellow, **IMA** teal, **DO** muted text. Borders: `--v2-border` solid, `--v2-border-dashed` for secondary panels.
+
+## Typography
+
+- Body: Inter (`--v2-font`)
+- Chrome + hero + map labels: Montserrat / Avenir stack (`--v2-font-hero`), uppercase on buttons and titles
+
+## Map nodes
+
+Keep drift + glide + bounds recovery in `whatimado-map.js`. Visuals from CSS tokens (`--v2-map-node-lg/sm`, drift duration, thin dashed edges). Do not reintroduce click ripple or radius scaling on selection.
+
+## When editing
+
+1. New framed UI → Text Box variant + existing tokens.  
+2. New colors → add to `tokens.css` and update `docs/v2-brand-system.md`.  
+3. Physics tweaks → document constants in brand doc.

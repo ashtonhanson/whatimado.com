@@ -1,4 +1,5 @@
 :root {
+  /* ── Brand: color ── see docs/v2-brand-system.md */
   --v2-bg: #060a0c;
   --v2-bg-gradient: radial-gradient(ellipse 120% 80% at 50% 20%, #0f2a2e 0%, #060a0c 55%, #040608 100%);
   --v2-teal: #2ee8d6;
@@ -13,8 +14,13 @@
   --v2-border: rgba(66, 255, 240, 0.48);
   --v2-border-dashed: rgba(66, 255, 240, 0.32);
   --v2-frame-bg: rgba(4, 12, 14, 0.92);
+  --v2-radius: 14px;
+  --v2-radius-lg: 22px;
+  --v2-radius-pill: 999px;
   --v2-frame-radius: calc(var(--v2-radius) + 2px);
   --v2-frame-shadow: 0 0 20px rgba(66, 255, 240, 0.18), 0 0 36px rgba(46, 232, 214, 0.08);
+
+  /* ── Brand: layout ── */
   --v2-rail-w: clamp(16rem, 20vw, 19rem);
   --v2-rail-inset: clamp(1rem, 2.5vw, 1.5rem);
   --v2-rail-gap: 0.65rem;
@@ -25,22 +31,24 @@
   --v2-map-band-h: var(--whatimado-frame-top);
   --v2-map-svg-h: calc(var(--whatimado-frame-top) - var(--v2-kicker-reserve));
   --v2-kicker-top: var(--v2-map-svg-h);
+
+  /* ── Brand: map look (physics constants live in whatimado-map.js) ── */
   --v2-map-ghost-opacity: 0.28;
   --v2-map-node-lg: 8.5;
   --v2-map-node-sm: 4.25;
   --v2-map-drift-duration: 11s;
+  --v2-map-edge-width: 0.65;
+
+  /* ── Brand: typography ── */
   --v2-font: "Inter", system-ui, -apple-system, sans-serif;
   --v2-font-display: "Inter", system-ui, -apple-system, sans-serif;
   --v2-font-hero: "Montserrat", "Avenir Next", "Avenir", system-ui, sans-serif;
-  --v2-radius: 14px;
-  --v2-radius-lg: 22px;
-  --v2-radius-pill: 999px;
-  /* Square top-left — matches prompt frame / text box corners */
+
+  /* ── Brand: Text Box corners (3 rounded + 1 straight) ── */
   --v2-btn-radius: 0 var(--v2-frame-radius) var(--v2-frame-radius) var(--v2-frame-radius);
-  /* Prompt / user: square upper-right */
   --v2-prompt-radius: var(--v2-frame-radius) 0 var(--v2-frame-radius) var(--v2-frame-radius);
-  /* Advisor response: square upper-left (same as btn) */
   --v2-response-radius: var(--v2-btn-radius);
+  --v2-shell-radius: 0 var(--v2-frame-radius) var(--v2-frame-radius) var(--v2-frame-radius);
 }
 
 *,
@@ -72,7 +80,8 @@ body.v2-app .v2-section-label,
 body.v2-app .v2-nav-group-label,
 body.v2-app .v2-msg-label,
 body.v2-app .v2-path-card h3,
-body.v2-app .v2-active-path strong {
+body.v2-app .v2-active-path strong,
+body.v2-app .v2-brand-word {
   font-family: var(--v2-font-hero);
   text-transform: uppercase;
 }
