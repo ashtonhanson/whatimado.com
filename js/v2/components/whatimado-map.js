@@ -16,13 +16,13 @@ const BOUND_PAD_Y = 26;
 const BOUND_PULL = 0.14;
 const BOUND_GLIDE_DAMP = 0.45;
 
-/** Home anchor — keep nodes near layout origin to avoid tangled edges */
+/** Home anchor — free pull anywhere; spring back to layout vicinity on release */
 const HOME_SOFT_RADIUS = 30;
-const HOME_MAX_RADIUS = 48;
 const HOME_SPRING_K = 0.11;
 const HOME_SPRING_DAMP = 0.8;
 const HOME_SETTLE_DIST = 0.55;
 const HOME_SETTLE_SPEED = 0.1;
+const HOME_RETURN_KICK = 0.045;
 
 /** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
 function getMapBounds() {
@@ -102,19 +102,6 @@ function trimLineToNodeEdges(ax, ay, ar, bx, by, br) {
     y1: ay + uy * ar,
     x2: bx - ux * br,
     y2: by - uy * br
-  };
-}
-
-/** Keep a point within max radius of its layout home */
-function clampToHomeRadius(x, y, originX, originY, maxRadius) {
-  const dx = x - originX;
-  const dy = y - originY;
-  const dist = Math.hypot(dx, dy);
-  if (dist <= maxRadius || dist === 0) return { x, y };
-  const scale = maxRadius / dist;
-  return {
-    x: originX + dx * scale,
-    y: originY + dy * scale
   };
 }
 
@@ -530,7 +517,10 @@ export class WhatimadoMap extends HTMLElement {
       return false;
     }
 
-    const pull = dist > HOME_SOFT_RADIUS ? HOME_SPRING_K * (1 + (dist - HOME_SOFT_RADIUS) * 0.02) : HOME_SPRING_K * 0.35;
+    const pull =
+      dist > HOME_SOFT_RADIUS
+        ? HOME_SPRING_K * (1 + Math.min((dist - HOME_SOFT_RADIUS) * 0.028, 2.8))
+        : HOME_SPRING_K * 0.35;
     node.homeVx += dx * pull;
     node.homeVy += dy * pull;
     node.homeVx *= HOME_SPRING_DAMP;
@@ -578,19 +568,6 @@ export class WhatimadoMap extends HTMLElement {
       } else if (isGliding) {
         node.baseX += node.glideVx;
         node.baseY += node.glideVy;
-        const homeClamped = clampToHomeRadius(
-          node.baseX,
-          node.baseY,
-          node.originX,
-          node.originY,
-          HOME_MAX_RADIUS
-        );
-        if (homeClamped.x !== node.baseX || homeClamped.y !== node.baseY) {
-          node.glideVx *= BOUND_GLIDE_DAMP;
-          node.glideVy *= BOUND_GLIDE_DAMP;
-        }
-        node.baseX = homeClamped.x;
-        node.baseY = homeClamped.y;
         node.glideVx *= GLIDE_FRICTION;
         node.glideVy *= GLIDE_FRICTION;
         this._syncNodePosition(node);
@@ -707,18 +684,8 @@ export class WhatimadoMap extends HTMLElement {
       this._pointer.moved = true;
     }
 
-    const rawX = this._pointer.startBaseX + dx;
-    const rawY = this._pointer.startBaseY + dy;
-    const clamped = clampToHomeRadius(
-      rawX,
-      rawY,
-      driftNode.originX,
-      driftNode.originY,
-      HOME_MAX_RADIUS
-    );
-
-    driftNode.dragX = clamped.x - this._pointer.startBaseX;
-    driftNode.dragY = clamped.y - this._pointer.startBaseY;
+    driftNode.dragX = dx;
+    driftNode.dragY = dy;
 
     this._pointer.velX = pt.x - this._pointer.prevX;
     this._pointer.velY = pt.y - this._pointer.prevY;
@@ -735,15 +702,8 @@ export class WhatimadoMap extends HTMLElement {
 
     if (driftNode) {
       if (moved) {
-        const clamped = clampToHomeRadius(
-          startBaseX + driftNode.dragX,
-          startBaseY + driftNode.dragY,
-          driftNode.originX,
-          driftNode.originY,
-          HOME_MAX_RADIUS
-        );
-        driftNode.baseX = clamped.x;
-        driftNode.baseY = clamped.y;
+        driftNode.baseX = startBaseX + driftNode.dragX;
+        driftNode.baseY = startBaseY + driftNode.dragY;
         driftNode.dragX = 0;
         driftNode.dragY = 0;
 
@@ -755,8 +715,13 @@ export class WhatimadoMap extends HTMLElement {
         if (distFromHome > HOME_SOFT_RADIUS) {
           driftNode.glideVx = 0;
           driftNode.glideVy = 0;
-          driftNode.homeVx = (driftNode.originX - driftNode.baseX) * 0.08;
-          driftNode.homeVy = (driftNode.originY - driftNode.baseY) * 0.08;
+          if (distFromHome > 0.5) {
+            const nx = (driftNode.originX - driftNode.baseX) / distFromHome;
+            const ny = (driftNode.originY - driftNode.baseY) / distFromHome;
+            const kick = Math.min(4.2, distFromHome * HOME_RETURN_KICK);
+            driftNode.homeVx = nx * kick;
+            driftNode.homeVy = ny * kick;
+          }
         } else {
           let vx = this._pointer.velX * GLIDE_VEL_SCALE;
           let vy = this._pointer.velY * GLIDE_VEL_SCALE;
