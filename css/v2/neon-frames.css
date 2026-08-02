@@ -1,34 +1,35 @@
-/* Neon frame borders — shared pulsing glow + border undulation */
+/* Neon frame borders — slim pulsing glow + border undulation */
 
 :root {
   --v2-neon-teal: #42fff0;
   --v2-neon-teal-bright: #7dffef;
-  --v2-neon-glow-soft: rgba(66, 255, 240, 0.38);
-  --v2-neon-glow-mid: rgba(66, 255, 240, 0.58);
-  --v2-neon-glow-strong: rgba(66, 255, 240, 0.82);
+  --v2-neon-glow-soft: rgba(66, 255, 240, 0.22);
+  --v2-neon-glow-mid: rgba(66, 255, 240, 0.38);
+  --v2-neon-glow-strong: rgba(66, 255, 240, 0.55);
   --v2-neon-border-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  /* Tunable frame glow system */
+  /* Tunable frame glow — slim/refined defaults */
   --v2-frame-glow-pulse-duration: 5.5s;
   --v2-frame-glow-pulse-ease: ease-in-out;
-  --v2-frame-glow-radius-near: 10px;
-  --v2-frame-glow-radius-far: 26px;
-  --v2-frame-glow-opacity-min: 0.28;
-  --v2-frame-glow-opacity-max: 0.52;
+  --v2-frame-glow-radius-near: 5px;
+  --v2-frame-glow-radius-far: 14px;
+  --v2-frame-glow-opacity-min: 0.14;
+  --v2-frame-glow-opacity-max: 0.28;
   --v2-frame-border-wave-duration: 11s;
+  --v2-frame-border-stroke: 1px;
 }
 
-/* Frame panels only — never override sidebar fixed positioning */
 whatimado-frame .whatimado-frame__inner,
 .v2-rail--right {
   position: relative;
-  border-color: var(--v2-neon-glow-strong);
+  border-width: var(--v2-frame-border-stroke);
+  border-color: var(--v2-neon-glow-mid);
   animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
 }
 
-/* Left rail: keep sidebar.css position:fixed */
 .v2-rail--left {
   z-index: 50;
-  border-color: var(--v2-neon-glow-strong);
+  border-width: var(--v2-frame-border-stroke);
+  border-color: var(--v2-neon-glow-mid);
   animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
 }
 
@@ -37,16 +38,15 @@ whatimado-frame .whatimado-frame__inner,
   100% {
     box-shadow:
       0 0 var(--v2-frame-glow-radius-near) rgba(66, 255, 240, var(--v2-frame-glow-opacity-min)),
-      0 0 var(--v2-frame-glow-radius-far) rgba(46, 232, 214, calc(var(--v2-frame-glow-opacity-min) * 0.65));
+      0 0 var(--v2-frame-glow-radius-far) rgba(46, 232, 214, calc(var(--v2-frame-glow-opacity-min) * 0.6));
   }
   50% {
     box-shadow:
-      0 0 calc(var(--v2-frame-glow-radius-near) + 6px) rgba(125, 255, 239, var(--v2-frame-glow-opacity-max)),
-      0 0 calc(var(--v2-frame-glow-radius-far) + 10px) rgba(46, 232, 214, calc(var(--v2-frame-glow-opacity-max) * 0.7));
+      0 0 calc(var(--v2-frame-glow-radius-near) + 3px) rgba(125, 255, 239, var(--v2-frame-glow-opacity-max)),
+      0 0 calc(var(--v2-frame-glow-radius-far) + 5px) rgba(46, 232, 214, calc(var(--v2-frame-glow-opacity-max) * 0.65));
   }
 }
 
-/* Undulating energy along border stroke only */
 whatimado-frame .whatimado-frame__inner::before,
 .v2-rail--left::before,
 .v2-rail--right::before {
@@ -59,13 +59,13 @@ whatimado-frame .whatimado-frame__inner::before,
   padding: 1px;
   background: linear-gradient(
     90deg,
-    rgba(66, 255, 240, 0.1) 0%,
-    rgba(125, 255, 239, 0.5) 18%,
-    rgba(66, 255, 240, 0.14) 38%,
-    rgba(125, 255, 239, 0.42) 58%,
-    rgba(66, 255, 240, 0.1) 78%,
-    rgba(125, 255, 239, 0.48) 92%,
-    rgba(66, 255, 240, 0.1) 100%
+    rgba(66, 255, 240, 0.06) 0%,
+    rgba(125, 255, 239, 0.32) 20%,
+    rgba(66, 255, 240, 0.08) 40%,
+    rgba(125, 255, 239, 0.26) 60%,
+    rgba(66, 255, 240, 0.06) 80%,
+    rgba(125, 255, 239, 0.3) 92%,
+    rgba(66, 255, 240, 0.06) 100%
   );
   background-size: 320% 100%;
   -webkit-mask: var(--v2-neon-border-mask);
@@ -75,7 +75,6 @@ whatimado-frame .whatimado-frame__inner::before,
   animation: v2-neon-wave-travel var(--v2-frame-border-wave-duration) ease-in-out infinite;
 }
 
-/* Cinematic sweep — outline only */
 whatimado-frame .whatimado-frame__inner::after,
 .v2-rail--left::after,
 .v2-rail--right::after {
@@ -89,11 +88,11 @@ whatimado-frame .whatimado-frame__inner::after,
   padding: 1px;
   background: linear-gradient(
     100deg,
-    transparent 34%,
-    rgba(125, 255, 239, 0.18) 44%,
-    rgba(180, 255, 248, 0.85) 50%,
-    rgba(125, 255, 239, 0.18) 56%,
-    transparent 66%
+    transparent 36%,
+    rgba(125, 255, 239, 0.12) 44%,
+    rgba(180, 255, 248, 0.55) 50%,
+    rgba(125, 255, 239, 0.12) 56%,
+    transparent 64%
   );
   background-size: 400% 100%;
   background-position: 150% 0;
@@ -124,11 +123,11 @@ whatimado-frame .whatimado-frame__composer,
   0%,
   100% {
     background-position: 0% 50%;
-    opacity: 0.58;
+    opacity: 0.45;
   }
   50% {
     background-position: 100% 50%;
-    opacity: 0.8;
+    opacity: 0.62;
   }
 }
 
@@ -138,10 +137,10 @@ whatimado-frame .whatimado-frame__composer,
     opacity: 0;
   }
   6% {
-    opacity: 0.65;
+    opacity: 0.5;
   }
   94% {
-    opacity: 0.65;
+    opacity: 0.5;
   }
   100% {
     background-position: -50% 0;
@@ -155,15 +154,15 @@ whatimado-frame .whatimado-frame__composer,
   .v2-rail--right {
     animation: none;
     box-shadow:
-      0 0 var(--v2-frame-glow-radius-near) rgba(66, 255, 240, 0.32),
-      0 0 var(--v2-frame-glow-radius-far) rgba(46, 232, 214, 0.18);
+      0 0 var(--v2-frame-glow-radius-near) rgba(66, 255, 240, 0.2),
+      0 0 var(--v2-frame-glow-radius-far) rgba(46, 232, 214, 0.1);
   }
 
   whatimado-frame .whatimado-frame__inner::before,
   .v2-rail--left::before,
   .v2-rail--right::before {
     animation: none;
-    opacity: 0.65;
+    opacity: 0.5;
     background-position: 50% 50%;
   }
 

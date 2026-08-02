@@ -3,6 +3,12 @@ import { GHOST_GRAPH, graphStore } from "../graph-store.js";
 const VIEW_W = 800;
 const VIEW_H = 240;
 
+/** Post-release glide tuning */
+const GLIDE_VEL_SCALE = 0.52;
+const GLIDE_FRICTION = 0.905;
+const GLIDE_MIN_SPEED = 0.06;
+const GLIDE_MAX_SPEED = 14;
+
 /** Read node radii from CSS tokens so sizing stays consistent across breakpoints */
 function getNodeRadii() {
   const style = getComputedStyle(document.documentElement);
@@ -144,6 +150,7 @@ export class WhatimadoMap extends HTMLElement {
      *   baseX: number, baseY: number, radius: number,
      *   delay: number, duration: number,
      *   dragX: number, dragY: number,
+     *   glideVx: number, glideVy: number,
      *   groupEl: SVGGElement,
      *   circleEl: SVGCircleElement, auraEl: SVGCircleElement|null, textEl: SVGTextElement|null
      * }>}
@@ -155,7 +162,9 @@ export class WhatimadoMap extends HTMLElement {
      *   nodeId: string, pointerId: number,
      *   startSvgX: number, startSvgY: number,
      *   startBaseX: number, startBaseY: number,
-     *   moved: boolean
+     *   moved: boolean,
+     *   prevX: number, prevY: number,
+     *   velX: number, velY: number
      * }|null} */
     this._pointer = null;
 
@@ -338,6 +347,8 @@ export class WhatimadoMap extends HTMLElement {
         duration,
         dragX: 0,
         dragY: 0,
+        glideVx: 0,
+        glideVy: 0,
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
@@ -413,10 +424,26 @@ export class WhatimadoMap extends HTMLElement {
       if (isDragging) {
         ox = node.dragX;
         oy = node.dragY;
-      } else if (!this._driftReducedMotion) {
-        const drift = driftOffset(elapsed, node.delay, node.duration);
-        ox = drift.x;
-        oy = drift.y;
+      } else if (Math.hypot(node.glideVx, node.glideVy) > GLIDE_MIN_SPEED) {
+        node.baseX += node.glideVx;
+        node.baseY += node.glideVy;
+        node.glideVx *= GLIDE_FRICTION;
+        node.glideVy *= GLIDE_FRICTION;
+        this._syncNodePosition(node);
+
+        const graphNode = this._liveNodes.find((n) => n.id === id);
+        if (graphNode) {
+          graphNode.x = node.baseX / VIEW_W;
+          graphNode.y = node.baseY / VIEW_H;
+        }
+      } else {
+        node.glideVx = 0;
+        node.glideVy = 0;
+        if (!this._driftReducedMotion) {
+          const drift = driftOffset(elapsed, node.delay, node.duration);
+          ox = drift.x;
+          oy = drift.y;
+        }
       }
 
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
@@ -476,6 +503,8 @@ export class WhatimadoMap extends HTMLElement {
 
     driftNode.dragX = 0;
     driftNode.dragY = 0;
+    driftNode.glideVx = 0;
+    driftNode.glideVy = 0;
     driftNode.groupEl.classList.add("is-dragging");
 
     this._pointer = {
@@ -485,7 +514,11 @@ export class WhatimadoMap extends HTMLElement {
       startSvgY: pt.y,
       startBaseX: driftNode.baseX,
       startBaseY: driftNode.baseY,
-      moved: false
+      moved: false,
+      prevX: pt.x,
+      prevY: pt.y,
+      velX: 0,
+      velY: 0
     };
   }
 
@@ -506,6 +539,11 @@ export class WhatimadoMap extends HTMLElement {
 
     driftNode.dragX = dx;
     driftNode.dragY = dy;
+
+    this._pointer.velX = pt.x - this._pointer.prevX;
+    this._pointer.velY = pt.y - this._pointer.prevY;
+    this._pointer.prevX = pt.x;
+    this._pointer.prevY = pt.y;
   }
 
   /** @param {PointerEvent} event */
@@ -521,6 +559,17 @@ export class WhatimadoMap extends HTMLElement {
         driftNode.baseY = startBaseY + driftNode.dragY;
         driftNode.dragX = 0;
         driftNode.dragY = 0;
+
+        let vx = this._pointer.velX * GLIDE_VEL_SCALE;
+        let vy = this._pointer.velY * GLIDE_VEL_SCALE;
+        const speed = Math.hypot(vx, vy);
+        if (speed > GLIDE_MAX_SPEED) {
+          vx = (vx / speed) * GLIDE_MAX_SPEED;
+          vy = (vy / speed) * GLIDE_MAX_SPEED;
+        }
+        driftNode.glideVx = vx;
+        driftNode.glideVy = vy;
+
         this._syncNodePosition(driftNode);
 
         const graphNode = this._liveNodes.find((n) => n.id === nodeId);

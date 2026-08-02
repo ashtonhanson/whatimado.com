@@ -1,3 +1,16 @@
+/** Example prompts cycled in the composer when empty */
+const EXAMPLE_PROMPTS = [
+  "Share what's going on…",
+  "I just lost my job and need a plan…",
+  "Help me explore a career change…",
+  "I'm stuck — not sure what path fits me…",
+  "I want training options near me…"
+];
+
+const PLACEHOLDER_FADE_MS = 450;
+const PLACEHOLDER_CYCLE_MS_MIN = 5000;
+const PLACEHOLDER_CYCLE_MS_MAX = 7000;
+
 const FRAME_TEMPLATE = `
   <div class="whatimado-frame__inner">
     <div class="whatimado-frame__body" part="body"></div>
@@ -7,7 +20,7 @@ const FRAME_TEMPLATE = `
         id="whatimado-composer-input"
         class="whatimado-frame__composer-input"
         rows="1"
-        placeholder="Share what's going on…"
+        placeholder=""
         autocomplete="off"
       ></textarea>
       <button type="submit" class="whatimado-frame__composer-send">Send</button>
@@ -30,7 +43,18 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput = null;
     /** @type {ResizeObserver|null} */
     this._resizeObserver = null;
+    /** @type {boolean} */
     this._built = false;
+    /** @type {number|null} */
+    this._placeholderTimer = null;
+    /** @type {number} */
+    this._placeholderIndex = 0;
+    /** @type {boolean} */
+    this._placeholderPaused = false;
+
+    this._onComposerFocus = () => this._pausePlaceholderCycle();
+    this._onComposerBlur = () => this._maybeResumePlaceholderCycle();
+    this._onComposerInput = () => this._onComposerInputChange();
   }
 
   connectedCallback() {
@@ -39,13 +63,21 @@ export class WhatimadoFrame extends HTMLElement {
     this._observeBody();
     this._composerForm?.addEventListener("submit", this._onSubmit);
     this._composerInput?.addEventListener("keydown", this._onKeydown);
+    this._composerInput?.addEventListener("focus", this._onComposerFocus);
+    this._composerInput?.addEventListener("blur", this._onComposerBlur);
+    this._composerInput?.addEventListener("input", this._onComposerInput);
+    this._initPlaceholderCycle();
     requestAnimationFrame(() => this._updateScrollState());
   }
 
   disconnectedCallback() {
+    this._stopPlaceholderCycle();
     this._resizeObserver?.disconnect();
     this._composerForm?.removeEventListener("submit", this._onSubmit);
     this._composerInput?.removeEventListener("keydown", this._onKeydown);
+    this._composerInput?.removeEventListener("focus", this._onComposerFocus);
+    this._composerInput?.removeEventListener("blur", this._onComposerBlur);
+    this._composerInput?.removeEventListener("input", this._onComposerInput);
   }
 
   attributeChangedCallback(name) {
@@ -139,6 +171,7 @@ export class WhatimadoFrame extends HTMLElement {
     event.preventDefault();
     const text = this._composerInput?.value || "";
     if (this._composerInput) this._composerInput.value = "";
+    this._maybeResumePlaceholderCycle();
     this.dispatchEvent(
       new CustomEvent("composer-submit", {
         bubbles: true,
@@ -146,6 +179,67 @@ export class WhatimadoFrame extends HTMLElement {
       })
     );
   };
+
+  _initPlaceholderCycle() {
+    if (!this._composerInput || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (this._composerInput) {
+        this._composerInput.placeholder = EXAMPLE_PROMPTS[0];
+      }
+      return;
+    }
+    this._placeholderIndex = 0;
+    this._composerInput.placeholder = EXAMPLE_PROMPTS[0];
+    this._schedulePlaceholderCycle();
+  }
+
+  _schedulePlaceholderCycle() {
+    this._stopPlaceholderCycle();
+    if (this._placeholderPaused || this._composerInput?.value.trim()) return;
+
+    const delay = PLACEHOLDER_CYCLE_MS_MIN + Math.random() * (PLACEHOLDER_CYCLE_MS_MAX - PLACEHOLDER_CYCLE_MS_MIN);
+    this._placeholderTimer = window.setTimeout(() => this._advancePlaceholder(), delay);
+  }
+
+  _stopPlaceholderCycle() {
+    if (this._placeholderTimer !== null) {
+      window.clearTimeout(this._placeholderTimer);
+      this._placeholderTimer = null;
+    }
+  }
+
+  _pausePlaceholderCycle() {
+    this._placeholderPaused = true;
+    this._stopPlaceholderCycle();
+    this._composerInput?.classList.remove("is-placeholder-fading");
+  }
+
+  _maybeResumePlaceholderCycle() {
+    if (this._composerInput?.value.trim()) return;
+    this._placeholderPaused = false;
+    this._schedulePlaceholderCycle();
+  }
+
+  _onComposerInputChange() {
+    if (this._composerInput?.value.trim()) {
+      this._pausePlaceholderCycle();
+    } else if (document.activeElement !== this._composerInput) {
+      this._maybeResumePlaceholderCycle();
+    }
+  }
+
+  _advancePlaceholder() {
+    if (!this._composerInput || this._placeholderPaused || this._composerInput.value.trim()) return;
+
+    this._composerInput.classList.add("is-placeholder-fading");
+    window.setTimeout(() => {
+      if (!this._composerInput || this._placeholderPaused || this._composerInput.value.trim()) return;
+
+      this._placeholderIndex = (this._placeholderIndex + 1) % EXAMPLE_PROMPTS.length;
+      this._composerInput.placeholder = EXAMPLE_PROMPTS[this._placeholderIndex];
+      this._composerInput.classList.remove("is-placeholder-fading");
+      this._schedulePlaceholderCycle();
+    }, PLACEHOLDER_FADE_MS);
+  }
 
   _onKeydown = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
