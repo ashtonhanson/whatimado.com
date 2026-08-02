@@ -6,9 +6,9 @@ export const SNAP = {
 };
 
 const HOME_RAIL_FRACTION = 1 / 3; /* 2/3 up from bottom of sidebar span */
+const YOU_NODE_CLEARANCE = 18;
 const MIN_FRAME_HEIGHT = 260;
 const BOTTOM_CONTENT_CUSHION = 36;
-const HOME_SNAP_BIAS = 64;
 const EASE_MS = 680;
 const EASE_CURVE = "cubic-bezier(0.32, 0.94, 0.42, 1)";
 const KICKER_RESERVE_DEFAULT = "clamp(4.5rem, 12vh, 6.25rem)";
@@ -36,24 +36,64 @@ export function measureRailSpan(mainEl) {
 }
 
 /**
+ * Bottom edge of the YOU / anchor node in main coordinates.
+ * @param {HTMLElement} mainEl
+ * @param {HTMLElement|null} mapEl
+ * @returns {number|null}
+ */
+export function measureYouNodeFloor(mainEl, mapEl) {
+  if (!mapEl) return null;
+
+  const mainRect = mainEl.getBoundingClientRect();
+  const anchorBody =
+    mapEl.querySelector('[data-node-id="ghost-start"] .whatimado-map__node-body') ||
+    mapEl.querySelector('[data-node-id="start"] .whatimado-map__node-body') ||
+    mapEl.querySelector(".whatimado-map__node--live.is-start .whatimado-map__node-body") ||
+    mapEl.querySelector(".whatimado-map__node--live.is-anchor .whatimado-map__node-body");
+
+  if (!anchorBody) return null;
+
+  const nodeRect = anchorBody.getBoundingClientRect();
+  return nodeRect.bottom - mainRect.top + YOU_NODE_CLEARANCE;
+}
+
+/**
  * @param {HTMLElement} mainEl
  * @param {HTMLElement} frameEl
+ * @param {HTMLElement|null} [mapEl]
  */
-export function measureAnchors(mainEl, frameEl) {
+export function measureAnchors(mainEl, frameEl, mapEl = null) {
+  const map = mapEl ?? document.getElementById("possibility-map");
   const { topLock, railSpan, mainH } = measureRailSpan(mainEl);
 
-  /** Home Base: 2/3 of sidebar height measured up from the bottom edge */
-  const homeBase = topLock + railSpan * HOME_RAIL_FRACTION;
+  /** Home Base: 2/3 up from sidebar bottom, nudged below the YOU node when needed */
+  const railHome = topLock + railSpan * HOME_RAIL_FRACTION;
+  const youFloor = measureYouNodeFloor(mainEl, map);
+  let homeBase = youFloor != null ? Math.max(railHome, youFloor) : railHome;
 
   const composer = frameEl.querySelector(".whatimado-frame__composer");
   const composerH = composer?.offsetHeight ?? 72;
   const minDockedH = composerH + MIN_FRAME_HEIGHT * 0.45 + BOTTOM_CONTENT_CUSHION;
 
-  /** Use minimum panel height — never current offsetHeight (nearly full viewport when docked) */
+  /** Lowest frame top while keeping breathing room above the composer */
   let bottomCushion = Math.min(mainH - minDockedH, topLock + railSpan - minDockedH);
-  bottomCushion = Math.max(bottomCushion, homeBase + 40);
+  bottomCushion = Math.max(bottomCushion, homeBase + 48);
+
+  /** Keep Home Base inside the draggable span */
+  homeBase = Math.min(homeBase, bottomCushion - 32);
 
   return { topLock, homeBase, bottomCushion, mainH, railSpan };
+}
+
+/**
+ * Midway boundaries between the three anchor lines.
+ * @param {{ topLock: number, homeBase: number, bottomCushion: number }} anchors
+ */
+export function computeSnapZones(anchors) {
+  return {
+    midTopHome: (anchors.topLock + anchors.homeBase) / 2,
+    midHomeBottom: (anchors.homeBase + anchors.bottomCushion) / 2
+  };
 }
 
 /**
@@ -65,36 +105,17 @@ export function clampTop(topPx, anchors) {
 }
 
 /**
- * Always resolve to the nearest anchor — no in-between resting states.
+ * Distance-based gravity — snap target from release position vs midway lines.
  * @param {number} topPx
  * @param {{ topLock: number, homeBase: number, bottomCushion: number }} anchors
  * @returns {typeof SNAP[keyof typeof SNAP]}
  */
 export function resolveSnap(topPx, anchors) {
-  /** Prefer Home Base when released near the 2/3 anchor line */
-  if (Math.abs(topPx - anchors.homeBase) <= HOME_SNAP_BIAS) {
-    return SNAP.HOME;
-  }
+  const { midTopHome, midHomeBottom } = computeSnapZones(anchors);
 
-  /** @type {[typeof SNAP[keyof typeof SNAP], number][]} */
-  const points = [
-    [SNAP.TOP, anchors.topLock],
-    [SNAP.HOME, anchors.homeBase],
-    [SNAP.BOTTOM, anchors.bottomCushion]
-  ];
-
-  let best = SNAP.HOME;
-  let bestDist = Infinity;
-
-  for (const [id, y] of points) {
-    const dist = Math.abs(topPx - y);
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = id;
-    }
-  }
-
-  return best;
+  if (topPx < midTopHome) return SNAP.TOP;
+  if (topPx < midHomeBottom) return SNAP.HOME;
+  return SNAP.BOTTOM;
 }
 
 /**
@@ -122,6 +143,7 @@ export class FrameDockController {
     this.frameEl = frameEl;
     this.onLayout = options.onLayout ?? (() => {});
     this.mainEl = /** @type {HTMLElement|null} */ (frameEl.closest(".v2-main"));
+    this.mapEl = /** @type {HTMLElement|null} */ (document.getElementById("possibility-map"));
     /** @type {typeof SNAP[keyof typeof SNAP]} */
     this.activeSnap = SNAP.HOME;
     /** @type {number} */
@@ -149,11 +171,11 @@ export class FrameDockController {
 
   _refreshAnchors() {
     if (!this.mainEl) return null;
-    this._anchors = measureAnchors(this.mainEl, this.frameEl);
+    this._anchors = measureAnchors(this.mainEl, this.frameEl, this.mapEl);
     return this._anchors;
   }
 
-  /** Initial open layout — frame sits at default vh anchor; map stays full height */
+  /** Initial open layout — frame sits at default vh anchor; map stays fixed band */
   enterOpenLayout() {
     if (!this.mainEl) return;
     const openVh =
