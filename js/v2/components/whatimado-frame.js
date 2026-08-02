@@ -10,11 +10,18 @@ const EXAMPLE_PROMPTS = [
 const PLACEHOLDER_FADE_MS = 450;
 const PLACEHOLDER_CYCLE_MS_MIN = 5000;
 const PLACEHOLDER_CYCLE_MS_MAX = 7000;
+const SCROLL_BOUNCE_MAX = 12;
+const SCROLL_BOUNCE_RELEASE_MS = 480;
 
 const FRAME_TEMPLATE = `
   <div class="whatimado-frame__inner">
     <div class="whatimado-frame__body-wrap">
-      <div class="whatimado-frame__body" part="body"></div>
+      <div class="whatimado-frame__body" part="body">
+        <div class="whatimado-frame__body-content"></div>
+      </div>
+      <div class="whatimado-frame__scroll-rail" aria-hidden="true">
+        <div class="whatimado-frame__scroll-thumb"></div>
+      </div>
     </div>
     <form class="whatimado-frame__composer" part="composer" novalidate>
       <label class="sr-only" for="whatimado-composer-input">Your message</label>
@@ -39,6 +46,12 @@ export class WhatimadoFrame extends HTMLElement {
     super();
     /** @type {HTMLElement|null} */
     this._body = null;
+    /** @type {HTMLElement|null} */
+    this._bodyContent = null;
+    /** @type {HTMLElement|null} */
+    this._scrollRail = null;
+    /** @type {HTMLElement|null} */
+    this._scrollThumb = null;
     /** @type {HTMLFormElement|null} */
     this._composerForm = null;
     /** @type {HTMLTextAreaElement|null} */
@@ -53,11 +66,28 @@ export class WhatimadoFrame extends HTMLElement {
     this._placeholderIndex = 0;
     /** @type {boolean} */
     this._placeholderPaused = false;
+    /** @type {number} */
+    this._overscrollY = 0;
+    /** @type {number|null} */
+    this._bounceReleaseTimer = null;
+    /** @type {boolean} */
+    this._bounceEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /** @type {number} */
+    this._touchStartY = 0;
+    /** @type {number} */
+    this._touchStartScroll = 0;
 
     this._onComposerFocus = () => this._pausePlaceholderCycle();
     this._onComposerBlur = () => this._maybeResumePlaceholderCycle();
     this._onComposerInput = () => this._onComposerInputChange();
-    this._onBodyScroll = () => this._updateScrollFade();
+    this._onBodyScroll = () => {
+      this._updateScrollFade();
+      this._updateCustomScrollbar();
+    };
+    this._onWheel = (event) => this._handleWheelOverscroll(event);
+    this._onTouchStart = (event) => this._handleTouchStart(event);
+    this._onTouchMove = (event) => this._handleTouchMove(event);
+    this._onTouchEnd = () => this._releaseOverscroll();
   }
 
   connectedCallback() {
@@ -70,6 +100,11 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput?.addEventListener("blur", this._onComposerBlur);
     this._composerInput?.addEventListener("input", this._onComposerInput);
     this._body?.addEventListener("scroll", this._onBodyScroll, { passive: true });
+    this._body?.addEventListener("wheel", this._onWheel, { passive: false });
+    this._body?.addEventListener("touchstart", this._onTouchStart, { passive: true });
+    this._body?.addEventListener("touchmove", this._onTouchMove, { passive: false });
+    this._body?.addEventListener("touchend", this._onTouchEnd, { passive: true });
+    this._body?.addEventListener("touchcancel", this._onTouchEnd, { passive: true });
     this._initPlaceholderCycle();
     requestAnimationFrame(() => this._updateScrollState());
   }
@@ -83,6 +118,12 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput?.removeEventListener("blur", this._onComposerBlur);
     this._composerInput?.removeEventListener("input", this._onComposerInput);
     this._body?.removeEventListener("scroll", this._onBodyScroll);
+    this._body?.removeEventListener("wheel", this._onWheel);
+    this._body?.removeEventListener("touchstart", this._onTouchStart);
+    this._body?.removeEventListener("touchmove", this._onTouchMove);
+    this._body?.removeEventListener("touchend", this._onTouchEnd);
+    this._body?.removeEventListener("touchcancel", this._onTouchEnd);
+    this._clearBounceReleaseTimer();
   }
 
   attributeChangedCallback(name) {
@@ -121,11 +162,15 @@ export class WhatimadoFrame extends HTMLElement {
     this.innerHTML = FRAME_TEMPLATE;
 
     this._body = this.querySelector(".whatimado-frame__body");
+    this._bodyContent = this.querySelector(".whatimado-frame__body-content");
+    this._scrollRail = this.querySelector(".whatimado-frame__scroll-rail");
+    this._scrollThumb = this.querySelector(".whatimado-frame__scroll-thumb");
     this._composerForm = this.querySelector(".whatimado-frame__composer");
     this._composerInput = this.querySelector(".whatimado-frame__composer-input");
 
+    const contentTarget = this._bodyContent || this._body;
     initialChildren.forEach((node) => {
-      this._body?.appendChild(node);
+      contentTarget?.appendChild(node);
     });
   }
 
@@ -184,7 +229,148 @@ export class WhatimadoFrame extends HTMLElement {
     if (!this._body || typeof ResizeObserver === "undefined") return;
     this._resizeObserver = new ResizeObserver(() => this.notifyContentChange());
     this._resizeObserver.observe(this._body);
+    if (this._bodyContent) this._resizeObserver.observe(this._bodyContent);
     this._resizeObserver.observe(this);
+  }
+
+  _clearBounceReleaseTimer() {
+    if (this._bounceReleaseTimer !== null) {
+      window.clearTimeout(this._bounceReleaseTimer);
+      this._bounceReleaseTimer = null;
+    }
+  }
+
+  _isAtScrollTop() {
+    return !!this._body && this._body.scrollTop <= 0;
+  }
+
+  _isAtScrollBottom() {
+    if (!this._body) return true;
+    return this._body.scrollTop + this._body.clientHeight >= this._body.scrollHeight - 1;
+  }
+
+  _clampOverscroll(value) {
+    return Math.max(-SCROLL_BOUNCE_MAX, Math.min(SCROLL_BOUNCE_MAX, value));
+  }
+
+  _applyOverscroll(value) {
+    this._overscrollY = this._clampOverscroll(value);
+    if (!this._bodyContent) return;
+    this._bodyContent.style.transform = this._overscrollY ? `translateY(${this._overscrollY}px)` : "";
+    this._updateCustomScrollbar();
+  }
+
+  _scheduleOverscrollRelease() {
+    this._clearBounceReleaseTimer();
+    this._bounceReleaseTimer = window.setTimeout(() => this._releaseOverscroll(), 90);
+  }
+
+  _releaseOverscroll() {
+    this._clearBounceReleaseTimer();
+    if (!this._overscrollY || !this._bodyContent) return;
+
+    const edge = this._overscrollY > 0 ? "top" : "bottom";
+    this._bodyContent.classList.add("is-spring-back");
+    this._overscrollY = 0;
+    this._bodyContent.style.transform = "translateY(0)";
+    this._updateCustomScrollbar();
+    this._triggerScrollbarBounce(edge);
+
+    window.setTimeout(() => {
+      this._bodyContent?.classList.remove("is-spring-back");
+      if (this._bodyContent) this._bodyContent.style.transform = "";
+    }, SCROLL_BOUNCE_RELEASE_MS);
+  }
+
+  /** @param {"top"|"bottom"} edge */
+  _triggerScrollbarBounce(edge) {
+    if (!this._scrollThumb) return;
+    this.classList.remove("is-thumb-bounce-top", "is-thumb-bounce-bottom");
+    void this.offsetWidth;
+    this.classList.add(edge === "top" ? "is-thumb-bounce-top" : "is-thumb-bounce-bottom");
+    window.setTimeout(() => {
+      this.classList.remove("is-thumb-bounce-top", "is-thumb-bounce-bottom");
+    }, SCROLL_BOUNCE_RELEASE_MS);
+  }
+
+  _handleWheelOverscroll(event) {
+    if (!this._bounceEnabled || !this.classList.contains("is-scrollable") || !this._body) return;
+
+    const atTop = this._isAtScrollTop();
+    const atBottom = this._isAtScrollBottom();
+
+    if (atTop && event.deltaY < 0) {
+      event.preventDefault();
+      this._applyOverscroll(this._overscrollY - event.deltaY * 0.32);
+      this._scheduleOverscrollRelease();
+      return;
+    }
+
+    if (atBottom && event.deltaY > 0) {
+      event.preventDefault();
+      this._applyOverscroll(this._overscrollY - event.deltaY * 0.32);
+      this._scheduleOverscrollRelease();
+      return;
+    }
+
+    if (this._overscrollY !== 0) {
+      this._releaseOverscroll();
+    }
+  }
+
+  _handleTouchStart(event) {
+    if (!this._body || !event.touches[0]) return;
+    this._touchStartY = event.touches[0].clientY;
+    this._touchStartScroll = this._body.scrollTop;
+  }
+
+  _handleTouchMove(event) {
+    if (!this._bounceEnabled || !this.classList.contains("is-scrollable") || !this._body || !event.touches[0]) {
+      return;
+    }
+
+    const deltaY = event.touches[0].clientY - this._touchStartY;
+    const atTop = this._body.scrollTop <= 0;
+    const atBottom = this._isAtScrollBottom();
+
+    if (atTop && deltaY > 0 && this._body.scrollTop <= 0) {
+      event.preventDefault();
+      this._applyOverscroll(deltaY * 0.42);
+      return;
+    }
+
+    if (atBottom && deltaY < 0 && this._isAtScrollBottom()) {
+      event.preventDefault();
+      this._applyOverscroll(deltaY * 0.42);
+    }
+  }
+
+  _updateCustomScrollbar() {
+    if (!this._scrollRail || !this._scrollThumb || !this._body) return;
+
+    const scrollable = this.classList.contains("is-scrollable");
+    this._scrollRail.hidden = !scrollable;
+    if (!scrollable) return;
+
+    const trackHeight = this._scrollRail.clientHeight;
+    if (trackHeight <= 0) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = this._body;
+    const scrollRange = Math.max(1, scrollHeight - clientHeight);
+    const ratio = clientHeight / scrollHeight;
+    const thumbHeight = Math.max(28, ratio * trackHeight);
+    const maxTravel = Math.max(0, trackHeight - thumbHeight);
+    const scrollRatio = scrollTop / scrollRange;
+    let thumbY = scrollRatio * maxTravel;
+
+    if (this._overscrollY > 0) {
+      thumbY -= (this._overscrollY / SCROLL_BOUNCE_MAX) * 10;
+    } else if (this._overscrollY < 0) {
+      thumbY += (-this._overscrollY / SCROLL_BOUNCE_MAX) * 10;
+    }
+
+    this._scrollThumb.style.height = `${thumbHeight}px`;
+    this._scrollThumb.style.transform = `translateY(${thumbY}px)`;
   }
 
   _updateScrollFade() {
@@ -211,6 +397,7 @@ export class WhatimadoFrame extends HTMLElement {
     }
 
     this._updateScrollFade();
+    this._updateCustomScrollbar();
   }
 
   _onSubmit = (event) => {

@@ -36,12 +36,69 @@ whatimado-frame .whatimado-frame__body {
   flex: 1 1 auto;
   min-height: 0;
   padding: 0.85rem clamp(0.85rem, 2.5vw, 1.25rem) 0.65rem;
+  padding-right: clamp(1.1rem, 2.8vw, 1.35rem);
   scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+whatimado-frame .whatimado-frame__body-content {
+  min-height: 100%;
+  will-change: transform;
+}
+
+whatimado-frame .whatimado-frame__body-content.is-spring-back {
+  transition: transform 0.48s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+whatimado-frame .whatimado-frame__scroll-rail {
+  position: absolute;
+  top: calc(var(--v2-frame-radius) + 0.35rem);
+  right: 0.45rem;
+  bottom: 2.85rem;
+  width: 6px;
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
+  border-radius: var(--v2-radius-pill);
+}
+
+whatimado-frame .whatimado-frame__scroll-rail[hidden] {
+  display: none;
+}
+
+whatimado-frame .whatimado-frame__scroll-thumb {
+  width: 100%;
+  min-height: 1.75rem;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-teal-dim);
+  transform: translateY(0);
+  transform-origin: center center;
+  will-change: transform, scale;
+}
+
+whatimado-frame.is-thumb-bounce-top .whatimado-frame__scroll-thumb,
+whatimado-frame.is-thumb-bounce-bottom .whatimado-frame__scroll-thumb {
+  animation: v2-scroll-thumb-squish 0.48s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+@keyframes v2-scroll-thumb-squish {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+
+  32% {
+    scale: 1 0.66;
+  }
+
+  68% {
+    scale: 1 1.05;
+  }
 }
 
 whatimado-frame.is-scrollable .whatimado-frame__body {
-  scrollbar-width: thin;
-  scrollbar-color: var(--v2-teal-dim) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   padding-bottom: 2.75rem;
   -webkit-mask-image: linear-gradient(
     to bottom,
@@ -57,6 +114,11 @@ whatimado-frame.is-scrollable .whatimado-frame__body {
     #000 calc(100% - 2.75rem),
     transparent 100%
   );
+}
+
+whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 whatimado-frame.is-fade-top .whatimado-frame__body-wrap::before {
@@ -83,13 +145,29 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   background: linear-gradient(to top, var(--v2-frame-bg) 0%, rgba(4, 12, 14, 0.92) 35%, transparent 100%);
 }
 
-whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar {
-  width: 6px;
-}
+@media (prefers-reduced-motion: reduce) {
+  whatimado-frame.is-scrollable .whatimado-frame__body {
+    scrollbar-width: thin;
+    scrollbar-color: var(--v2-teal-dim) transparent;
+  }
 
-whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar-thumb {
-  background: var(--v2-teal-dim);
-  border-radius: var(--v2-radius-pill);
+  whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar-thumb {
+    background: var(--v2-teal-dim);
+    border-radius: var(--v2-radius-pill);
+  }
+
+  whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar-track {
+    margin-top: calc(var(--v2-frame-radius) + 0.35rem);
+    margin-bottom: 2.85rem;
+  }
+
+  whatimado-frame .whatimado-frame__scroll-rail {
+    display: none !important;
+  }
 }
 
 whatimado-frame .whatimado-frame__composer {
