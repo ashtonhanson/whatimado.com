@@ -1,15 +1,17 @@
-/* whatimado-map — upper band constellation canvas */
+/* whatimado-map — fixed background layer; never reacts to prompt frame */
 whatimado-map {
   display: block;
   position: absolute;
   top: 0;
   left: var(--v2-center-gutter);
   right: var(--v2-center-gutter);
-  height: var(--v2-map-band-h);
+  bottom: 0;
+  height: auto;
   z-index: 1;
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
+  contain: layout style;
 }
 
 whatimado-map[data-mode="ghost"],
@@ -50,7 +52,7 @@ whatimado-map.is-ghost-dismissed .whatimado-map__layer--ghost {
 }
 
 whatimado-map .whatimado-map__stage {
-  height: var(--v2-map-svg-h);
+  height: 100%;
   transition: filter 620ms cubic-bezier(0.32, 0.94, 0.42, 1);
   filter:
     brightness(calc(1 - var(--v2-map-dim, 0) * 0.38))

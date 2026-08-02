@@ -5,44 +5,52 @@ export const SNAP = {
   BOTTOM: "bottom"
 };
 
-const SNAP_THRESHOLD = 42;
+const HOME_RAIL_FRACTION = 1 / 3; /* 2/3 up from bottom of sidebar span */
 const MIN_FRAME_HEIGHT = 260;
-const HOME_NODE_CLEARANCE = 20;
 const BOTTOM_CONTENT_CUSHION = 36;
 const EASE_MS = 620;
 const EASE_CURVE = "cubic-bezier(0.32, 0.94, 0.42, 1)";
 const KICKER_RESERVE_DEFAULT = "clamp(4.5rem, 12vh, 6.25rem)";
 
 /**
+ * Sidebar column span in main coordinates — top lock + home base derive from rails.
  * @param {HTMLElement} mainEl
- * @param {HTMLElement|null} mapEl
+ * @returns {{ topLock: number, railSpan: number, mainH: number }}
+ */
+export function measureRailSpan(mainEl) {
+  const mainRect = mainEl.getBoundingClientRect();
+  const mainH = mainRect.height;
+  const rail =
+    document.querySelector(".v2-rail--left") || document.querySelector(".v2-rail--right");
+
+  if (!rail) {
+    return { topLock: 0, railSpan: mainH, mainH };
+  }
+
+  const railRect = rail.getBoundingClientRect();
+  const topLock = Math.max(0, railRect.top - mainRect.top);
+  const railSpan = railRect.height;
+
+  return { topLock, railSpan, mainH };
+}
+
+/**
+ * @param {HTMLElement} mainEl
  * @param {HTMLElement} frameEl
  */
-export function measureAnchors(mainEl, mapEl, frameEl) {
-  const mainH = mainEl.clientHeight;
-  const mainRect = mainEl.getBoundingClientRect();
-  const topLock = 0;
+export function measureAnchors(mainEl, frameEl) {
+  const { topLock, railSpan, mainH } = measureRailSpan(mainEl);
 
-  let homeBase = mainH * 0.36;
-  const anchorBody =
-    mapEl?.querySelector('[data-node-id="ghost-start"] .whatimado-map__node-body') ||
-    mapEl?.querySelector(".whatimado-map__node--live.is-anchor .whatimado-map__node-body") ||
-    mapEl?.querySelector(".whatimado-map__node--live.is-start .whatimado-map__node-body");
-
-  if (anchorBody) {
-    const nodeRect = anchorBody.getBoundingClientRect();
-    homeBase = nodeRect.bottom - mainRect.top + HOME_NODE_CLEARANCE;
-  }
+  /** Home Base: 2/3 of sidebar height measured up from the bottom edge */
+  const homeBase = topLock + railSpan * HOME_RAIL_FRACTION;
 
   const frameH = Math.max(frameEl.offsetHeight, MIN_FRAME_HEIGHT);
   const composer = frameEl.querySelector(".whatimado-frame__composer");
   const composerH = composer?.offsetHeight ?? 72;
   const minDockedH = composerH + MIN_FRAME_HEIGHT * 0.45 + BOTTOM_CONTENT_CUSHION;
-  const bottomCushion = Math.max(topLock + 48, mainH - Math.max(frameH, minDockedH));
+  const bottomCushion = Math.max(topLock + 48, topLock + railSpan - Math.max(frameH, minDockedH));
 
-  homeBase = Math.max(topLock + 56, Math.min(homeBase, bottomCushion - 56));
-
-  return { topLock, homeBase, bottomCushion, mainH };
+  return { topLock, homeBase, bottomCushion, mainH, railSpan };
 }
 
 /**
@@ -54,11 +62,12 @@ export function clampTop(topPx, anchors) {
 }
 
 /**
+ * Always resolve to the nearest anchor — no in-between resting states.
  * @param {number} topPx
  * @param {{ topLock: number, homeBase: number, bottomCushion: number }} anchors
- * @returns {typeof SNAP[keyof typeof SNAP]|null}
+ * @returns {typeof SNAP[keyof typeof SNAP]}
  */
-export function nearestSnap(topPx, anchors) {
+export function resolveSnap(topPx, anchors) {
   /** @type {[typeof SNAP[keyof typeof SNAP], number][]} */
   const points = [
     [SNAP.TOP, anchors.topLock],
@@ -66,8 +75,8 @@ export function nearestSnap(topPx, anchors) {
     [SNAP.BOTTOM, anchors.bottomCushion]
   ];
 
-  let best = /** @type {typeof SNAP[keyof typeof SNAP]|null} */ (null);
-  let bestDist = SNAP_THRESHOLD + 1;
+  let best = SNAP.HOME;
+  let bestDist = Infinity;
 
   for (const [id, y] of points) {
     const dist = Math.abs(topPx - y);
@@ -77,26 +86,18 @@ export function nearestSnap(topPx, anchors) {
     }
   }
 
-  return bestDist <= SNAP_THRESHOLD ? best : null;
+  return best;
 }
 
 /**
  * @param {number} frameTop
- * @param {HTMLElement|null} mapEl
  * @param {HTMLElement} mainEl
  */
-export function mapDimStrength(frameTop, mapEl, mainEl) {
-  if (!mapEl) return 0;
-
-  const mainRect = mainEl.getBoundingClientRect();
-  const stage = mapEl.querySelector(".whatimado-map__stage");
-  const mapBottom = stage
-    ? stage.getBoundingClientRect().bottom - mainRect.top
-    : mapEl.getBoundingClientRect().bottom - mainRect.top;
-
-  if (frameTop >= mapBottom) return 0;
-  const overlap = mapBottom - frameTop;
-  return Math.min(1, overlap / Math.max(mapBottom * 0.85, 120));
+export function mapDimStrength(frameTop, mainEl) {
+  const mainH = mainEl.clientHeight;
+  if (frameTop >= mainH) return 0;
+  const overlap = mainH - frameTop;
+  return Math.min(1, overlap / Math.max(mainH * 0.72, 140));
 }
 
 export class FrameDockController {
@@ -108,7 +109,6 @@ export class FrameDockController {
     this.frameEl = frameEl;
     this.onLayout = options.onLayout ?? (() => {});
     this.mainEl = /** @type {HTMLElement|null} */ (frameEl.closest(".v2-main"));
-    this.mapEl = /** @type {HTMLElement|null} */ (document.getElementById("possibility-map"));
     /** @type {typeof SNAP[keyof typeof SNAP]} */
     this.activeSnap = SNAP.HOME;
     /** @type {number} */
@@ -119,6 +119,12 @@ export class FrameDockController {
     this._dragging = false;
     /** @type {{ pointerId: number, startY: number, startTop: number }|null} */
     this._pointer = null;
+    /** @type {ReturnType<typeof measureAnchors>|null} */
+    this._anchors = null;
+    /** @type {number|null} */
+    this._dragRaf = null;
+    /** @type {number} */
+    this._pendingClientY = 0;
     /** @type {boolean} */
     this._motionEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
@@ -128,7 +134,13 @@ export class FrameDockController {
     return this._topPx;
   }
 
-  /** Initial open layout — frame sits at default vh anchor */
+  _refreshAnchors() {
+    if (!this.mainEl) return null;
+    this._anchors = measureAnchors(this.mainEl, this.frameEl);
+    return this._anchors;
+  }
+
+  /** Initial open layout — frame sits at default vh anchor; map stays full height */
   enterOpenLayout() {
     if (!this.mainEl) return;
     const openVh =
@@ -137,12 +149,14 @@ export class FrameDockController {
       ) || 42;
     this._docked = false;
     this.activeSnap = SNAP.HOME;
+    this._anchors = null;
     document.documentElement.style.setProperty("--v2-kicker-reserve", KICKER_RESERVE_DEFAULT);
     document.documentElement.style.removeProperty("--v2-map-dim");
-    this._applyTop((this.mainEl.clientHeight * openVh) / 100, { animate: false, useVh: true });
+    document.documentElement.style.setProperty("--whatimado-frame-top", `${openVh}vh`);
     this.frameEl.classList.remove("is-docked", "is-dragging", "is-animating");
     this.frameEl.removeAttribute("data-snap");
     this.frameEl.style.removeProperty("top");
+    this._topPx = (this.mainEl.clientHeight * openVh) / 100;
     this._setMapDim(0);
   }
 
@@ -153,14 +167,15 @@ export class FrameDockController {
     this.activeSnap = SNAP.HOME;
     document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");
     this.frameEl.classList.add("is-docked");
-    const anchors = measureAnchors(this.mainEl, this.mapEl, this.frameEl);
-    this._applyTop(anchors.homeBase, { animate, snap: SNAP.HOME });
+    const anchors = this._refreshAnchors();
+    if (anchors) this._applyTop(anchors.homeBase, { animate, snap: SNAP.HOME });
   }
 
   /** @param {typeof SNAP[keyof typeof SNAP]} snapId */
   snapTo(snapId, { animate = true } = {}) {
     if (!this.mainEl) return;
-    const anchors = measureAnchors(this.mainEl, this.mapEl, this.frameEl);
+    const anchors = this._refreshAnchors();
+    if (!anchors) return;
     const map = {
       [SNAP.TOP]: anchors.topLock,
       [SNAP.HOME]: anchors.homeBase,
@@ -172,7 +187,8 @@ export class FrameDockController {
 
   remeasure() {
     if (!this._docked || !this.mainEl) return;
-    const anchors = measureAnchors(this.mainEl, this.mapEl, this.frameEl);
+    const anchors = this._refreshAnchors();
+    if (!anchors) return;
     const map = {
       [SNAP.TOP]: anchors.topLock,
       [SNAP.HOME]: anchors.homeBase,
@@ -188,11 +204,13 @@ export class FrameDockController {
     if (!this._docked || !this.mainEl || event.button !== 0) return false;
 
     this._dragging = true;
+    this._refreshAnchors();
     this._pointer = {
       pointerId: event.pointerId,
       startY: event.clientY,
       startTop: this._topPx
     };
+    this._pendingClientY = event.clientY;
     this.frameEl.classList.add("is-dragging");
     this.frameEl.classList.remove("is-animating");
     return true;
@@ -206,10 +224,21 @@ export class FrameDockController {
       return;
     }
 
-    const dy = event.clientY - this._pointer.startY;
-    const anchors = measureAnchors(this.mainEl, this.mapEl, this.frameEl);
-    const next = clampTop(this._pointer.startTop + dy, anchors);
-    this._applyTop(next, { animate: false });
+    this._pendingClientY = event.clientY;
+    if (this._dragRaf !== null) return;
+
+    this._dragRaf = requestAnimationFrame(() => {
+      this._dragRaf = null;
+      this._flushDragMove();
+    });
+  }
+
+  _flushDragMove() {
+    if (!this._dragging || !this._pointer || !this.mainEl || !this._anchors) return;
+
+    const dy = this._pendingClientY - this._pointer.startY;
+    const next = clampTop(this._pointer.startTop + dy, this._anchors);
+    this._applyTop(next, { animate: false, layout: false });
   }
 
   /**
@@ -220,38 +249,33 @@ export class FrameDockController {
       return;
     }
 
+    if (this._dragRaf !== null) {
+      cancelAnimationFrame(this._dragRaf);
+      this._dragRaf = null;
+      this._flushDragMove();
+    }
+
     this._dragging = false;
     this._pointer = null;
     this.frameEl.classList.remove("is-dragging");
 
-    const anchors = measureAnchors(this.mainEl, this.mapEl, this.frameEl);
-    const snap = nearestSnap(this._topPx, anchors);
-    if (snap) {
-      this.activeSnap = snap;
-      this.snapTo(snap, { animate: this._motionEnabled });
-    } else {
-      this._applyTop(this._topPx, { animate: this._motionEnabled });
-    }
+    const anchors = this._refreshAnchors();
+    if (!anchors) return;
+
+    const snap = resolveSnap(this._topPx, anchors);
+    this.activeSnap = snap;
+    this.snapTo(snap, { animate: this._motionEnabled });
   }
 
   /**
    * @param {number} topPx
-   * @param {{ animate?: boolean, snap?: typeof SNAP[keyof typeof SNAP]|null, useVh?: boolean }} [options]
+   * @param {{ animate?: boolean, snap?: typeof SNAP[keyof typeof SNAP]|null, layout?: boolean }} [options]
    */
-  _applyTop(topPx, { animate = false, snap = null, useVh = false } = {}) {
+  _applyTop(topPx, { animate = false, snap = null, layout = true } = {}) {
     if (!this.mainEl) return;
 
     this._topPx = topPx;
-
-    if (useVh && this.mainEl.clientHeight > 0) {
-      const vh = (topPx / this.mainEl.clientHeight) * 100;
-      document.documentElement.style.setProperty("--whatimado-frame-top", `${vh}vh`);
-      document.documentElement.style.setProperty("--v2-map-band-h", `${vh}vh`);
-    } else {
-      this.frameEl.style.top = `${topPx}px`;
-      document.documentElement.style.setProperty("--whatimado-frame-top", `${topPx}px`);
-      document.documentElement.style.setProperty("--v2-map-band-h", `${topPx}px`);
-    }
+    this.frameEl.style.top = `${topPx}px`;
 
     if (animate && this._motionEnabled) {
       this.frameEl.classList.add("is-animating");
@@ -262,8 +286,8 @@ export class FrameDockController {
       this.frameEl.dataset.snap = snap;
     }
 
-    this._setMapDim(mapDimStrength(topPx, this.mapEl, this.mainEl));
-    this.onLayout();
+    this._setMapDim(mapDimStrength(topPx, this.mainEl));
+    if (layout) this.onLayout();
   }
 
   /** @param {number} strength 0–1 */
