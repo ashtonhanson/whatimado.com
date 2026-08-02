@@ -189,8 +189,9 @@ export class WhatimadoFrame extends HTMLElement {
 
   _updateScrollFade() {
     if (!this._body) return;
-    const faded = this.classList.contains("is-scrollable") && this._body.scrollTop > 6;
-    this.classList.toggle("is-fade-top", faded);
+    const scrollable = this.classList.contains("is-scrollable");
+    const fadeTop = scrollable && this._body.scrollTop > 6;
+    this.classList.toggle("is-fade-top", fadeTop);
   }
 
   _updateScrollState() {

@@ -42,8 +42,21 @@ whatimado-frame .whatimado-frame__body {
 whatimado-frame.is-scrollable .whatimado-frame__body {
   scrollbar-width: thin;
   scrollbar-color: var(--v2-teal-dim) transparent;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2.75rem, #000 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 2.75rem, #000 100%);
+  padding-bottom: 2.75rem;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 2.75rem,
+    #000 calc(100% - 2.75rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 2.75rem,
+    #000 calc(100% - 2.75rem),
+    transparent 100%
+  );
 }
 
 whatimado-frame.is-fade-top .whatimado-frame__body-wrap::before {
@@ -56,6 +69,18 @@ whatimado-frame.is-fade-top .whatimado-frame__body-wrap::before {
   pointer-events: none;
   z-index: 2;
   background: linear-gradient(to bottom, var(--v2-frame-bg) 0%, rgba(4, 12, 14, 0.92) 35%, transparent 100%);
+}
+
+whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2.75rem;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(to top, var(--v2-frame-bg) 0%, rgba(4, 12, 14, 0.92) 35%, transparent 100%);
 }
 
 whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar {
@@ -71,9 +96,11 @@ whatimado-frame .whatimado-frame__composer {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
+  position: relative;
+  z-index: 3;
   padding: 0.65rem clamp(0.85rem, 2.5vw, 1.1rem) clamp(0.85rem, 2vw, 1rem);
   border-top: 1px solid rgba(46, 232, 214, 0.08);
-  background: transparent;
+  background: var(--v2-frame-bg);
   margin: 0;
 }
 
