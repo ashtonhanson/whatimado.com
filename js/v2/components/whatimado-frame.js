@@ -12,6 +12,7 @@ const PLACEHOLDER_CYCLE_MS_MIN = 5000;
 const PLACEHOLDER_CYCLE_MS_MAX = 7000;
 const SCROLL_BOUNCE_MAX = 12;
 const SCROLL_BOUNCE_RELEASE_MS = 480;
+const SCROLL_THUMB_MIN_SCALE = 0.52;
 
 const FRAME_TEMPLATE = `
   <div class="whatimado-frame__inner">
@@ -78,6 +79,8 @@ export class WhatimadoFrame extends HTMLElement {
     this._touchStartY = 0;
     /** @type {number} */
     this._touchStartScroll = 0;
+    /** @type {number} */
+    this._baseThumbHeight = 28;
 
     this._onComposerFocus = () => this._pausePlaceholderCycle();
     this._onComposerBlur = () => this._maybeResumePlaceholderCycle();
@@ -277,6 +280,25 @@ export class WhatimadoFrame extends HTMLElement {
     this._overscrollY = this._clampOverscroll(value);
     if (!this._bodyContent) return;
     this._bodyContent.style.transform = this._overscrollY ? `translateY(${this._overscrollY}px)` : "";
+    this._setThumbTransition(false);
+    this._updateCustomScrollbar();
+  }
+
+  _setThumbTransition(enabled) {
+    if (!this._scrollThumb) return;
+    this._scrollThumb.style.transition = enabled
+      ? "height 0.48s cubic-bezier(0.34, 1.45, 0.64, 1), transform 0.14s ease-out"
+      : "transform 0.14s ease-out";
+  }
+
+  _cancelOverscroll() {
+    this._clearBounceReleaseTimer();
+    if (!this._overscrollY || !this._bodyContent) return;
+
+    this._cancelSpringBack();
+    this._overscrollY = 0;
+    this._bodyContent.style.transform = "";
+    this._setThumbTransition(true);
     this._updateCustomScrollbar();
   }
 
@@ -289,13 +311,12 @@ export class WhatimadoFrame extends HTMLElement {
     this._clearBounceReleaseTimer();
     if (!this._overscrollY || !this._bodyContent) return;
 
-    const edge = this._overscrollY > 0 ? "top" : "bottom";
     this._cancelSpringBack();
     this._bodyContent.classList.add("is-spring-back");
     this._overscrollY = 0;
     this._bodyContent.style.transform = "translateY(0)";
+    this._setThumbTransition(true);
     this._updateCustomScrollbar();
-    this._triggerScrollbarBounce(edge);
 
     this._clearSpringCleanupTimer();
     this._springCleanupTimer = window.setTimeout(() => {
@@ -304,17 +325,6 @@ export class WhatimadoFrame extends HTMLElement {
       if (this._overscrollY === 0 && this._bodyContent) {
         this._bodyContent.style.transform = "";
       }
-    }, SCROLL_BOUNCE_RELEASE_MS);
-  }
-
-  /** @param {"top"|"bottom"} edge */
-  _triggerScrollbarBounce(edge) {
-    if (!this._scrollThumb) return;
-    this.classList.remove("is-thumb-bounce-top", "is-thumb-bounce-bottom");
-    void this.offsetWidth;
-    this.classList.add(edge === "top" ? "is-thumb-bounce-top" : "is-thumb-bounce-bottom");
-    window.setTimeout(() => {
-      this.classList.remove("is-thumb-bounce-top", "is-thumb-bounce-bottom");
     }, SCROLL_BOUNCE_RELEASE_MS);
   }
 
@@ -339,7 +349,7 @@ export class WhatimadoFrame extends HTMLElement {
     }
 
     if (this._overscrollY !== 0) {
-      this._releaseOverscroll();
+      this._cancelOverscroll();
     }
   }
 
@@ -383,19 +393,30 @@ export class WhatimadoFrame extends HTMLElement {
     const { scrollTop, scrollHeight, clientHeight } = this._body;
     const scrollRange = Math.max(1, scrollHeight - clientHeight);
     const ratio = clientHeight / scrollHeight;
-    const thumbHeight = Math.max(28, ratio * trackHeight);
-    const maxTravel = Math.max(0, trackHeight - thumbHeight);
+    this._baseThumbHeight = Math.max(28, ratio * trackHeight);
+
+    const push = Math.min(1, Math.abs(this._overscrollY) / SCROLL_BOUNCE_MAX);
+    const heightScale = 1 - push * (1 - SCROLL_THUMB_MIN_SCALE);
+    const thumbHeight = Math.max(14, this._baseThumbHeight * heightScale);
+
+    const maxTravel = Math.max(0, trackHeight - this._baseThumbHeight);
     const scrollRatio = scrollTop / scrollRange;
     let thumbY = scrollRatio * maxTravel;
 
     if (this._overscrollY > 0) {
-      thumbY -= (this._overscrollY / SCROLL_BOUNCE_MAX) * 10;
+      thumbY -= (this._overscrollY / SCROLL_BOUNCE_MAX) * 12;
     } else if (this._overscrollY < 0) {
-      thumbY += (-this._overscrollY / SCROLL_BOUNCE_MAX) * 10;
+      thumbY += (-this._overscrollY / SCROLL_BOUNCE_MAX) * 12;
+      thumbY += this._baseThumbHeight - thumbHeight;
     }
+
+    if (thumbY < 0) thumbY = 0;
+    const maxThumbY = Math.max(0, trackHeight - thumbHeight);
+    if (thumbY > maxThumbY) thumbY = maxThumbY;
 
     this._scrollThumb.style.height = `${thumbHeight}px`;
     this._scrollThumb.style.transform = `translateY(${thumbY}px)`;
+    this._scrollThumb.style.scale = "1 1";
   }
 
   _updateScrollFade() {
