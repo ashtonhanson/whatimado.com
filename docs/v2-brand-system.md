@@ -27,7 +27,8 @@ Do not revert chrome controls to full pill or uniform radius without an explicit
 | `--v2-yellow` | `#f5d547` | Hero headline, section labels, wordmark **WHAT** |
 | `--v2-yellow-bright` / `--v2-yellow-dim` | gradient ends | Hero + logo depth |
 | `--v2-text` | `#e8f4f2` | Body on dark |
-| `--v2-text-muted` | `#8aa8a3` | Secondary copy, wordmark **DO** |
+| `--v2-brand-do` | `#2f6660` | Wordmark **DO** — deep teal, separates from **IMA** |
+| `--v2-text-muted` | `#8aa8a3` | Secondary copy |
 | `--v2-border` | neon teal ~48% | Solid frames |
 | `--v2-border-dashed` | neon teal ~32% | Dashed panels (undo, paths) |
 | `--v2-frame-bg` | `rgba(4,12,14,0.92)` | Text Box fill |
