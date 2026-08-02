@@ -417,20 +417,74 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 }
 
 .v2-path-card {
+  --path-accent: var(--v2-neon-teal);
+  position: relative;
   padding: 0.75rem 0.9rem;
-  border: 1px dashed var(--v2-border-dashed);
-  background: transparent;
+  border: 1px dotted rgba(66, 255, 240, 0.34);
+  border-radius: var(--v2-radius);
+  background: rgba(66, 255, 240, 0.07);
+  box-shadow:
+    0 0 10px rgba(66, 255, 240, 0.1),
+    0 4px 14px rgba(0, 0, 0, 0.16);
   cursor: pointer;
   text-align: left;
   font: inherit;
   color: inherit;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    transform 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: v2-path-card-float 5.8s ease-in-out infinite;
 }
 
-.v2-path-card:hover,
+.v2-path-card:nth-child(2) {
+  animation-delay: -1.4s;
+}
+
+.v2-path-card:nth-child(3) {
+  animation-delay: -2.8s;
+}
+
+.v2-path-card:nth-child(4) {
+  animation-delay: -4.2s;
+}
+
+@keyframes v2-path-card-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow:
+      0 0 10px rgba(66, 255, 240, 0.1),
+      0 4px 14px rgba(0, 0, 0, 0.16);
+  }
+
+  50% {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 14px rgba(66, 255, 240, 0.16),
+      0 6px 18px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.v2-path-card:hover {
+  animation: none;
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--path-accent) 58%, transparent);
+  background: var(--path-accent);
+  box-shadow:
+    0 0 16px color-mix(in srgb, var(--path-accent) 48%, transparent),
+    0 0 28px color-mix(in srgb, var(--path-accent) 24%, transparent),
+    0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
 .v2-path-card.is-selected {
-  border-color: var(--v2-teal);
-  background: rgba(46, 232, 214, 0.12);
+  animation: none;
+  border-color: color-mix(in srgb, var(--path-accent) 72%, transparent);
+  background: color-mix(in srgb, var(--path-accent) 14%, rgba(66, 255, 240, 0.06));
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--path-accent) 28%, transparent),
+    0 4px 14px rgba(0, 0, 0, 0.16);
 }
 
 .v2-path-card h3 {
@@ -438,11 +492,36 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--v2-teal);
+  color: var(--v2-neon-teal);
+  transition: color 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .v2-path-card p {
   margin: 0;
   font-size: 0.76rem;
   color: var(--v2-text-muted);
+  transition: color 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v2-path-card:hover h3,
+.v2-path-card:hover p {
+  color: var(--v2-bg);
+}
+
+.v2-path-card.is-selected h3 {
+  color: var(--path-accent);
+}
+
+.v2-path-card.is-selected p {
+  color: var(--v2-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-path-card {
+    animation: none;
+  }
+
+  .v2-path-card:hover {
+    transform: translateY(-1px);
+  }
 }

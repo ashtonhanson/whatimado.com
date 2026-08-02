@@ -206,6 +206,8 @@ export class WhatimadoMap extends HTMLElement {
     /** @type {string|null} */
     this._selectedId = null;
     /** @type {string|null} */
+    this._pathPreviewId = null;
+    /** @type {string|null} */
     this._anchorId = "ghost-start";
     /** @type {(nodeId: string) => void|null} */
     this._onSelect = null;
@@ -349,6 +351,27 @@ export class WhatimadoMap extends HTMLElement {
       this._anchorId = id;
       this._applyAnchorStyles();
     }
+    this.setPathPreview(null);
+  }
+
+  /** Mirror path-card hover on the matching live node */
+  /** @param {string|null} id */
+  setPathPreview(id) {
+    if (this._pathPreviewId === id) return;
+
+    if (this._pathPreviewId) {
+      const prev = this.querySelector(
+        `.whatimado-map__node--live[data-node-id="${this._pathPreviewId}"]`
+      );
+      prev?.classList.remove("is-path-preview");
+    }
+
+    this._pathPreviewId = id;
+
+    if (!id) return;
+
+    const group = this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`);
+    group?.classList.add("is-path-preview");
   }
 
   /** @param {string} id */
@@ -1117,11 +1140,15 @@ export class WhatimadoMap extends HTMLElement {
 
         const driftDelay = (index * 0.85) % 5;
         const driftDuration = 9 + (index % 4) * 1.2;
+        const accentAttr =
+          node.type === "path" && node.accent
+            ? ` style="--node-accent: ${node.accent}"`
+            : "";
 
         nodeParts.push({
           isAnchor,
           html: `
-        <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}">
+        <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}"${accentAttr}>
           <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
           <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
           <text x="${cx}" y="${cy - r - 6}" text-anchor="middle">${escapeHtml(node.label)}</text>
@@ -1142,6 +1169,12 @@ export class WhatimadoMap extends HTMLElement {
 
     if (options.layer === "live" || options.edgesOnly) {
       this._refreshDrift();
+    }
+
+    if (options.layer === "live" && this._pathPreviewId) {
+      const previewId = this._pathPreviewId;
+      this._pathPreviewId = null;
+      this.setPathPreview(previewId);
     }
   }
 }

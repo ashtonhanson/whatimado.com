@@ -65,7 +65,7 @@ function renderPathCards() {
   pathCardsEl.innerHTML = paths
     .map(
       (path) => `
-    <button type="button" class="v2-path-card" data-path-id="${escapeHtml(path.id)}">
+    <button type="button" class="v2-path-card" data-path-id="${escapeHtml(path.id)}" style="--path-accent: ${escapeHtml(path.accent || "#42fff0")}">
       <h3>${escapeHtml(path.title || path.label)}</h3>
       <p>${escapeHtml(path.description || "")}</p>
     </button>`
@@ -73,9 +73,17 @@ function renderPathCards() {
     .join("");
 
   pathCardsEl.querySelectorAll(".v2-path-card").forEach((btn) => {
+    const id = btn.getAttribute("data-path-id");
+    if (!id) return;
+
+    btn.addEventListener("mouseenter", () => {
+      mapEl?.setPathPreview(id);
+    });
+    btn.addEventListener("mouseleave", () => {
+      mapEl?.setPathPreview(null);
+    });
     btn.addEventListener("click", () => {
-      const id = btn.getAttribute("data-path-id");
-      if (!id) return;
+      mapEl?.setPathPreview(null);
       pathCardsEl.querySelectorAll(".v2-path-card").forEach((b) => b.classList.remove("is-selected"));
       btn.classList.add("is-selected");
       handleNodeSelect(id);

@@ -1,4 +1,4 @@
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"action", label: string, x: number, y: number, parentId?: string, title?: string, description?: string }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"action", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
 /** @typedef {{ id?: string, label: string, title: string, description: string }} AdvisorPath */
 export const graphStore = {
@@ -27,6 +27,14 @@ function shortenMapLabel(value, max) {
   const text = String(value || "").trim();
   if (text.length <= max) return text;
   return `${text.slice(0, max - 1)}…`;
+}
+
+/** HUD accent palette — one color per path slot (card hover mirrors map node) */
+export const PATH_ACCENT_PALETTE = ["#42fff0", "#f5d547", "#2ee8d6", "#7dffef"];
+
+/** @param {number} index */
+export function pathAccentForIndex(index) {
+  return PATH_ACCENT_PALETTE[index % PATH_ACCENT_PALETTE.length];
 }
 
 /** Layout slots for up to four path nodes above YOU */
@@ -60,7 +68,8 @@ export function loadAdvisorPaths(paths) {
       description: String(path.description || "").trim(),
       x: slot.x,
       y: slot.y,
-      parentId: "start"
+      parentId: "start",
+      accent: pathAccentForIndex(index)
     });
     edges.push({ from: "start", to: id });
   });
@@ -74,9 +83,33 @@ export function loadAdvisorPaths(paths) {
 export function seedPossibilityNodes() {
   graphStore.nodes = [
     { id: "start", type: "start", label: "You", x: 0.5, y: 0.82 },
-    { id: "path-a", type: "path", label: "Rebuild", x: 0.22, y: 0.35, parentId: "start" },
-    { id: "path-b", type: "path", label: "Train", x: 0.5, y: 0.2, parentId: "start" },
-    { id: "path-c", type: "path", label: "Freelance", x: 0.78, y: 0.35, parentId: "start" }
+    {
+      id: "path-a",
+      type: "path",
+      label: "Rebuild",
+      x: 0.22,
+      y: 0.35,
+      parentId: "start",
+      accent: pathAccentForIndex(0)
+    },
+    {
+      id: "path-b",
+      type: "path",
+      label: "Train",
+      x: 0.5,
+      y: 0.2,
+      parentId: "start",
+      accent: pathAccentForIndex(1)
+    },
+    {
+      id: "path-c",
+      type: "path",
+      label: "Freelance",
+      x: 0.78,
+      y: 0.35,
+      parentId: "start",
+      accent: pathAccentForIndex(2)
+    }
   ];
   graphStore.edges = [
     { from: "start", to: "path-a" },

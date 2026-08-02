@@ -231,6 +231,36 @@ whatimado-map .whatimado-map__node--live.is-support:hover .whatimado-map__node-b
   fill: #3df0de;
 }
 
+/* Path-card hover mirror — same accent + glow as chat button */
+whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-map__node-body {
+  fill: var(--node-accent, var(--v2-teal));
+  transform: scale(0.58);
+  filter:
+    drop-shadow(0 0 4px color-mix(in srgb, var(--node-accent, var(--v2-teal)) 72%, transparent))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--node-accent, var(--v2-teal)) 42%, transparent));
+}
+
+whatimado-map .whatimado-map__node--live.is-support.is-path-preview text {
+  fill: var(--node-accent, var(--v2-teal));
+}
+
+whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-map__node-aura {
+  fill: var(--node-accent, var(--v2-teal));
+  opacity: 0.52;
+  animation: whatimado-path-preview-aura 2.4s ease-in-out infinite;
+}
+
+@keyframes whatimado-path-preview-aura {
+  0%,
+  100% {
+    opacity: 0.38;
+  }
+
+  50% {
+    opacity: 0.62;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   whatimado-map,
   whatimado-map .whatimado-map__layer--ghost {
@@ -244,6 +274,11 @@ whatimado-map .whatimado-map__node--live.is-support:hover .whatimado-map__node-b
   whatimado-map .whatimado-map__node--live.is-anchor .whatimado-map__node-aura {
     animation: none;
     opacity: 0.62;
+  }
+
+  whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-map__node-aura {
+    animation: none;
+    opacity: 0.5;
   }
 }
 
