@@ -22,15 +22,14 @@ function sanitizePathId(id, index) {
   return base || `path-${index + 1}`;
 }
 
-/** @param {string} value @param {number} max */
-function shortenMapLabel(value, max) {
-  const text = String(value || "").trim();
-  if (text.length <= max) return text;
-  return `${text.slice(0, max - 1)}…`;
+/** Single display name for path cards and map node labels */
+/** @param {{ title?: string, label?: string }} path */
+export function pathDisplayName(path) {
+  return String(path.title || path.label || "").trim();
 }
 
 /** HUD hover accents — distinct hues; yellow reserved for selected state */
-export const PATH_ACCENT_PALETTE = ["#3df0de", "#2ee8d6", "#1ec9b8", "#5ce0d4"];
+export const PATH_ACCENT_PALETTE = ["#2ee8d6", "#3df0de", "#1ec9b8", "#24b8a8"];
 
 /** @param {number} index */
 export function pathAccentForIndex(index) {
@@ -59,12 +58,12 @@ export function loadAdvisorPaths(paths) {
   trimmed.forEach((path, index) => {
     const slot = PATH_LAYOUT_SLOTS[index] ?? PATH_LAYOUT_SLOTS[PATH_LAYOUT_SLOTS.length - 1];
     const id = sanitizePathId(path.id, index);
-    const title = String(path.title || path.label || `Path ${index + 1}`).trim();
+    const name = pathDisplayName(path) || `Path ${index + 1}`;
     nodes.push({
       id,
       type: "path",
-      label: shortenMapLabel(path.label || title, 14),
-      title,
+      label: name,
+      title: name,
       description: String(path.description || "").trim(),
       x: slot.x,
       y: slot.y,
@@ -86,7 +85,8 @@ export function seedPossibilityNodes() {
     {
       id: "path-a",
       type: "path",
-      label: "Rebuild",
+      label: "Rebuild with your skills",
+      title: "Rebuild with your skills",
       x: 0.22,
       y: 0.35,
       parentId: "start",
@@ -95,7 +95,8 @@ export function seedPossibilityNodes() {
     {
       id: "path-b",
       type: "path",
-      label: "Train",
+      label: "Train into a trade",
+      title: "Train into a trade",
       x: 0.5,
       y: 0.2,
       parentId: "start",
@@ -104,7 +105,8 @@ export function seedPossibilityNodes() {
     {
       id: "path-c",
       type: "path",
-      label: "Freelance",
+      label: "Freelance / self-employed",
+      title: "Freelance / self-employed",
       x: 0.78,
       y: 0.35,
       parentId: "start",
