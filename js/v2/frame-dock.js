@@ -165,19 +165,16 @@ export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
   const topLock = measureTopLock(mainEl);
   const homeBase = measureHomeBase(mainEl, map);
 
-  const composer = frameEl.querySelector(".whatimado-frame__composer");
-  const composerH = composer?.offsetHeight ?? 72;
-  const minDockedH = composerH + MIN_FRAME_HEIGHT * 0.45 + BOTTOM_CONTENT_CUSHION;
-
   /**
    * Bottom Cushion — authoritative snap from clean screenshot.
-   * Frame top sits at mainH minus the fixed offset token; overrides prior heuristics.
+   * Frame top sits at mainH minus the fixed offset token.
+   * Do not clamp with minDockedH — that heuristic (~225px) always beat the
+   * screenshot token (~92px) and pushed the anchor ~130px too high.
    */
   const snapTopOffset = measureCssVarLength("--v2-bottom-snap-top-offset");
   let bottomCushion = mainH - snapTopOffset;
 
   bottomCushion = Math.max(bottomCushion, topLock);
-  bottomCushion = Math.min(bottomCushion, mainH - minDockedH);
 
   return {
     topLock,
