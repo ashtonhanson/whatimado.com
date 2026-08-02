@@ -35,6 +35,8 @@
   --v2-radius: 14px;
   --v2-radius-lg: 22px;
   --v2-radius-pill: 999px;
+  /* Square top-left — matches prompt frame / text box corners */
+  --v2-btn-radius: 0 var(--v2-frame-radius) var(--v2-frame-radius) var(--v2-frame-radius);
 }
 
 *,
@@ -70,6 +72,10 @@ body.v2-app .v2-active-path strong,
 body.v2-app .v2-theme-note {
   font-family: var(--v2-font-hero);
   text-transform: uppercase;
+}
+
+body.v2-app button {
+  border-radius: var(--v2-btn-radius);
 }
 
 .hidden {
