@@ -16,6 +16,14 @@ const BOUND_PAD_Y = 26;
 const BOUND_PULL = 0.14;
 const BOUND_GLIDE_DAMP = 0.45;
 
+/** Home anchor — keep nodes near layout origin to avoid tangled edges */
+const HOME_SOFT_RADIUS = 30;
+const HOME_MAX_RADIUS = 48;
+const HOME_SPRING_K = 0.11;
+const HOME_SPRING_DAMP = 0.8;
+const HOME_SETTLE_DIST = 0.55;
+const HOME_SETTLE_SPEED = 0.1;
+
 /** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
 function getMapBounds() {
   const { lg } = getNodeRadii();
@@ -97,6 +105,19 @@ function trimLineToNodeEdges(ax, ay, ar, bx, by, br) {
   };
 }
 
+/** Keep a point within max radius of its layout home */
+function clampToHomeRadius(x, y, originX, originY, maxRadius) {
+  const dx = x - originX;
+  const dy = y - originY;
+  const dist = Math.hypot(dx, dy);
+  if (dist <= maxRadius || dist === 0) return { x, y };
+  const scale = maxRadius / dist;
+  return {
+    x: originX + dx * scale,
+    y: originY + dy * scale
+  };
+}
+
 const MAP_TEMPLATE = `
   <div class="whatimado-map__stage">
     <svg class="whatimado-map__svg" part="svg" role="img" aria-label="Possibility map">
@@ -169,9 +190,11 @@ export class WhatimadoMap extends HTMLElement {
     /**
      * @type {Map<string, {
      *   baseX: number, baseY: number, radius: number,
+     *   originX: number, originY: number,
      *   delay: number, duration: number,
      *   dragX: number, dragY: number,
      *   glideVx: number, glideVy: number,
+     *   homeVx: number, homeVy: number,
      *   driftAnchorX: number, driftAnchorY: number,
      *   groupEl: SVGGElement,
      *   circleEl: SVGCircleElement, auraEl: SVGCircleElement|null, textEl: SVGTextElement|null
@@ -361,12 +384,16 @@ export class WhatimadoMap extends HTMLElement {
         baseX,
         baseY,
         radius,
+        originX: baseX,
+        originY: baseY,
         delay,
         duration,
         dragX: 0,
         dragY: 0,
         glideVx: 0,
         glideVy: 0,
+        homeVx: 0,
+        homeVy: 0,
         driftAnchorX: 0,
         driftAnchorY: 0,
         groupEl: /** @type {SVGGElement} */ (groupEl),
@@ -480,6 +507,42 @@ export class WhatimadoMap extends HTMLElement {
     return true;
   }
 
+  /**
+   * Spring a node back toward its layout home when pulled too far.
+   * @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node
+   * @returns {boolean}
+   */
+  _applyHomeSpring(node) {
+    const dx = node.originX - node.baseX;
+    const dy = node.originY - node.baseY;
+    const dist = Math.hypot(dx, dy);
+    const speed = Math.hypot(node.homeVx, node.homeVy);
+
+    if (dist <= HOME_SOFT_RADIUS && speed < HOME_SETTLE_SPEED) {
+      if (dist > 0 && dist < HOME_SETTLE_DIST) {
+        node.baseX = node.originX;
+        node.baseY = node.originY;
+        node.homeVx = 0;
+        node.homeVy = 0;
+        this._syncNodePosition(node);
+        return true;
+      }
+      return false;
+    }
+
+    const pull = dist > HOME_SOFT_RADIUS ? HOME_SPRING_K * (1 + (dist - HOME_SOFT_RADIUS) * 0.02) : HOME_SPRING_K * 0.35;
+    node.homeVx += dx * pull;
+    node.homeVy += dy * pull;
+    node.homeVx *= HOME_SPRING_DAMP;
+    node.homeVy *= HOME_SPRING_DAMP;
+    node.baseX += node.homeVx;
+    node.baseY += node.homeVy;
+    node.glideVx *= 0.88;
+    node.glideVy *= 0.88;
+    this._syncNodePosition(node);
+    return true;
+  }
+
   /** @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node */
   _syncNodePosition(node) {
     node.circleEl.setAttribute("cx", String(node.baseX));
@@ -515,6 +578,19 @@ export class WhatimadoMap extends HTMLElement {
       } else if (isGliding) {
         node.baseX += node.glideVx;
         node.baseY += node.glideVy;
+        const homeClamped = clampToHomeRadius(
+          node.baseX,
+          node.baseY,
+          node.originX,
+          node.originY,
+          HOME_MAX_RADIUS
+        );
+        if (homeClamped.x !== node.baseX || homeClamped.y !== node.baseY) {
+          node.glideVx *= BOUND_GLIDE_DAMP;
+          node.glideVy *= BOUND_GLIDE_DAMP;
+        }
+        node.baseX = homeClamped.x;
+        node.baseY = homeClamped.y;
         node.glideVx *= GLIDE_FRICTION;
         node.glideVy *= GLIDE_FRICTION;
         this._syncNodePosition(node);
@@ -527,6 +603,13 @@ export class WhatimadoMap extends HTMLElement {
       } else {
         node.glideVx = 0;
         node.glideVy = 0;
+      }
+
+      if (!isDragging) {
+        const homeAdjusted = this._applyHomeSpring(node);
+        if (homeAdjusted) {
+          this._syncGraphNode(id);
+        }
       }
 
       if (!isDragging && this._applyBoundsRecovery(node, ox, oy)) {
@@ -624,8 +707,18 @@ export class WhatimadoMap extends HTMLElement {
       this._pointer.moved = true;
     }
 
-    driftNode.dragX = dx;
-    driftNode.dragY = dy;
+    const rawX = this._pointer.startBaseX + dx;
+    const rawY = this._pointer.startBaseY + dy;
+    const clamped = clampToHomeRadius(
+      rawX,
+      rawY,
+      driftNode.originX,
+      driftNode.originY,
+      HOME_MAX_RADIUS
+    );
+
+    driftNode.dragX = clamped.x - this._pointer.startBaseX;
+    driftNode.dragY = clamped.y - this._pointer.startBaseY;
 
     this._pointer.velX = pt.x - this._pointer.prevX;
     this._pointer.velY = pt.y - this._pointer.prevY;
@@ -642,20 +735,39 @@ export class WhatimadoMap extends HTMLElement {
 
     if (driftNode) {
       if (moved) {
-        driftNode.baseX = startBaseX + driftNode.dragX;
-        driftNode.baseY = startBaseY + driftNode.dragY;
+        const clamped = clampToHomeRadius(
+          startBaseX + driftNode.dragX,
+          startBaseY + driftNode.dragY,
+          driftNode.originX,
+          driftNode.originY,
+          HOME_MAX_RADIUS
+        );
+        driftNode.baseX = clamped.x;
+        driftNode.baseY = clamped.y;
         driftNode.dragX = 0;
         driftNode.dragY = 0;
 
-        let vx = this._pointer.velX * GLIDE_VEL_SCALE;
-        let vy = this._pointer.velY * GLIDE_VEL_SCALE;
-        const speed = Math.hypot(vx, vy);
-        if (speed > GLIDE_MAX_SPEED) {
-          vx = (vx / speed) * GLIDE_MAX_SPEED;
-          vy = (vy / speed) * GLIDE_MAX_SPEED;
+        const distFromHome = Math.hypot(
+          driftNode.baseX - driftNode.originX,
+          driftNode.baseY - driftNode.originY
+        );
+
+        if (distFromHome > HOME_SOFT_RADIUS) {
+          driftNode.glideVx = 0;
+          driftNode.glideVy = 0;
+          driftNode.homeVx = (driftNode.originX - driftNode.baseX) * 0.08;
+          driftNode.homeVy = (driftNode.originY - driftNode.baseY) * 0.08;
+        } else {
+          let vx = this._pointer.velX * GLIDE_VEL_SCALE;
+          let vy = this._pointer.velY * GLIDE_VEL_SCALE;
+          const speed = Math.hypot(vx, vy);
+          if (speed > GLIDE_MAX_SPEED) {
+            vx = (vx / speed) * GLIDE_MAX_SPEED;
+            vy = (vy / speed) * GLIDE_MAX_SPEED;
+          }
+          driftNode.glideVx = vx;
+          driftNode.glideVy = vy;
         }
-        driftNode.glideVx = vx;
-        driftNode.glideVy = vy;
 
         this._syncNodePosition(driftNode);
 
