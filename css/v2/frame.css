@@ -6,7 +6,7 @@ whatimado-frame {
   right: var(--v2-center-gutter);
   top: var(--whatimado-frame-top, 42vh);
   width: auto;
-  max-height: var(--whatimado-frame-max-h, calc(100dvh - var(--whatimado-frame-top, 42vh) - 1rem));
+  max-height: var(--whatimado-frame-max-h, calc(100dvh - var(--whatimado-frame-top, 42vh) - 2 * var(--v2-rail-inset) - 0.35rem));
   z-index: 2;
   box-sizing: border-box;
 }
@@ -70,7 +70,7 @@ whatimado-frame .whatimado-frame__composer {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
-  padding: 0.65rem clamp(0.85rem, 2.5vw, 1.1rem) 0.75rem;
+  padding: 0.65rem clamp(0.85rem, 2.5vw, 1.1rem) clamp(0.85rem, 2vw, 1rem);
   border-top: 1px solid rgba(46, 232, 214, 0.08);
   background: transparent;
   margin: 0;

@@ -159,8 +159,33 @@ export class WhatimadoFrame extends HTMLElement {
   }
 
   _parseMaxGrowth() {
-    const raw = this.getAttribute("max-growth") || "calc(100dvh - var(--whatimado-frame-top) - 1rem)";
-    return raw;
+    const raw = this.getAttribute("max-growth");
+    if (raw) return raw;
+    return "var(--whatimado-frame-max-h)";
+  }
+
+  /** Space below frame top within the shell content area */
+  _availableOuterHeight() {
+    const main = this.closest(".v2-main");
+    if (main) {
+      const mainRect = main.getBoundingClientRect();
+      const frameTop = this.getBoundingClientRect().top;
+      const shell = document.querySelector(".v2-shell");
+      const shellPad = shell ? parseFloat(getComputedStyle(shell).paddingBottom) || 0 : 0;
+      const gap = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--whatimado-frame-bottom-gap")
+      ) || 6;
+      return Math.max(120, mainRect.bottom - frameTop - shellPad - gap);
+    }
+
+    const topPx = (this._parseAnchorVh() * window.innerHeight) / 100;
+    const railInset = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--v2-rail-inset")
+    ) || 16;
+    const gap = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--whatimado-frame-bottom-gap")
+    ) || 6;
+    return Math.max(120, window.innerHeight - topPx - 2 * railInset - gap);
   }
 
   _applyAnchorStyles() {
@@ -185,8 +210,7 @@ export class WhatimadoFrame extends HTMLElement {
   _updateScrollState() {
     if (!this._body) return;
 
-    const topPx = this._parseAnchorVh() * window.innerHeight / 100;
-    const maxOuter = window.innerHeight - topPx - 16;
+    const maxOuter = this._availableOuterHeight();
     const composerH = this._composerForm?.offsetHeight || 0;
     const bodyMax = Math.max(80, maxOuter - composerH);
 
