@@ -228,9 +228,14 @@ export function resolveSnap(topPx, velocityY, anchors) {
 export function mapDimStrength(frameTop, mainEl) {
   const mapEl = document.getElementById("possibility-map");
   const mainRect = mainEl.getBoundingClientRect();
-  const mapBottom = mapEl
-    ? mapEl.getBoundingClientRect().bottom - mainRect.top
-    : mainEl.clientHeight * 0.42;
+
+  /** Graph band only — not the full-height pan surface (which caused constant dimming) */
+  const mapStage = mapEl?.querySelector(".whatimado-map__stage");
+  const mapBottom = mapStage
+    ? mapStage.getBoundingClientRect().bottom - mainRect.top
+    : mapEl
+      ? mapEl.getBoundingClientRect().bottom - mainRect.top
+      : mainEl.clientHeight * 0.42;
 
   if (frameTop >= mapBottom) return 0;
   const overlap = mapBottom - frameTop;

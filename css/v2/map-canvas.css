@@ -153,7 +153,13 @@ whatimado-map .whatimado-map__edge--live {
   stroke-width: var(--v2-map-edge-width, 0.65);
   stroke-linecap: round;
   stroke-dasharray: 0.75 5.5;
-  opacity: 0.85;
+  opacity: 1;
+}
+
+/* Node map stays fully opaque — glass applies to frame/sidebars only */
+whatimado-map .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live text {
+  opacity: 1;
 }
 
 /* Shared node body — visual scale only; layout radius stays constant */
