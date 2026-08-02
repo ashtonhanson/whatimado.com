@@ -151,6 +151,7 @@ export class WhatimadoMap extends HTMLElement {
      *   delay: number, duration: number,
      *   dragX: number, dragY: number,
      *   glideVx: number, glideVy: number,
+     *   driftAnchorX: number, driftAnchorY: number,
      *   groupEl: SVGGElement,
      *   circleEl: SVGCircleElement, auraEl: SVGCircleElement|null, textEl: SVGTextElement|null
      * }>}
@@ -349,6 +350,8 @@ export class WhatimadoMap extends HTMLElement {
         dragY: 0,
         glideVx: 0,
         glideVy: 0,
+        driftAnchorX: 0,
+        driftAnchorY: 0,
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
@@ -374,15 +377,16 @@ export class WhatimadoMap extends HTMLElement {
     }
   }
 
-  /** Bake ambient drift into base coords so grab position matches visual position */
+  /** Bake ambient drift into base coords; record anchor so transform stays continuous */
   _commitDriftToBase(nodeId) {
     const node = this._driftNodes.get(nodeId);
     if (!node || this._driftReducedMotion) return;
 
     const elapsed = performance.now() - this._driftStartMs;
     const drift = driftOffset(elapsed, node.delay, node.duration);
-    if (drift.x === 0 && drift.y === 0) return;
 
+    node.driftAnchorX = drift.x;
+    node.driftAnchorY = drift.y;
     node.baseX += drift.x;
     node.baseY += drift.y;
     this._syncNodePosition(node);
@@ -392,6 +396,19 @@ export class WhatimadoMap extends HTMLElement {
       graphNode.x = node.baseX / VIEW_W;
       graphNode.y = node.baseY / VIEW_H;
     }
+  }
+
+  /**
+   * @param {number} elapsed
+   * @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node
+   */
+  _driftTransform(elapsed, node) {
+    if (this._driftReducedMotion) return { x: 0, y: 0 };
+    const drift = driftOffset(elapsed, node.delay, node.duration);
+    return {
+      x: drift.x - node.driftAnchorX,
+      y: drift.y - node.driftAnchorY
+    };
   }
 
   /** @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node */
@@ -418,13 +435,15 @@ export class WhatimadoMap extends HTMLElement {
 
     for (const [id, node] of this._driftNodes) {
       const isDragging = this._pointer?.nodeId === id;
-      let ox = 0;
-      let oy = 0;
+      const isGliding = Math.hypot(node.glideVx, node.glideVy) > GLIDE_MIN_SPEED;
+      const drift = this._driftTransform(elapsed, node);
+      let ox = drift.x;
+      let oy = drift.y;
 
       if (isDragging) {
-        ox = node.dragX;
-        oy = node.dragY;
-      } else if (Math.hypot(node.glideVx, node.glideVy) > GLIDE_MIN_SPEED) {
+        ox = node.dragX + drift.x;
+        oy = node.dragY + drift.y;
+      } else if (isGliding) {
         node.baseX += node.glideVx;
         node.baseY += node.glideVy;
         node.glideVx *= GLIDE_FRICTION;
@@ -439,11 +458,6 @@ export class WhatimadoMap extends HTMLElement {
       } else {
         node.glideVx = 0;
         node.glideVy = 0;
-        if (!this._driftReducedMotion) {
-          const drift = driftOffset(elapsed, node.delay, node.duration);
-          ox = drift.x;
-          oy = drift.y;
-        }
       }
 
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
