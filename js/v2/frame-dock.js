@@ -8,7 +8,8 @@ export const SNAP = {
 const HOME_RAIL_FRACTION = 1 / 3; /* 2/3 up from bottom of sidebar span */
 const MIN_FRAME_HEIGHT = 260;
 const BOTTOM_CONTENT_CUSHION = 36;
-const EASE_MS = 620;
+const HOME_SNAP_BIAS = 64;
+const EASE_MS = 680;
 const EASE_CURVE = "cubic-bezier(0.32, 0.94, 0.42, 1)";
 const KICKER_RESERVE_DEFAULT = "clamp(4.5rem, 12vh, 6.25rem)";
 
@@ -44,11 +45,13 @@ export function measureAnchors(mainEl, frameEl) {
   /** Home Base: 2/3 of sidebar height measured up from the bottom edge */
   const homeBase = topLock + railSpan * HOME_RAIL_FRACTION;
 
-  const frameH = Math.max(frameEl.offsetHeight, MIN_FRAME_HEIGHT);
   const composer = frameEl.querySelector(".whatimado-frame__composer");
   const composerH = composer?.offsetHeight ?? 72;
   const minDockedH = composerH + MIN_FRAME_HEIGHT * 0.45 + BOTTOM_CONTENT_CUSHION;
-  const bottomCushion = Math.max(topLock + 48, topLock + railSpan - Math.max(frameH, minDockedH));
+
+  /** Use minimum panel height — never current offsetHeight (nearly full viewport when docked) */
+  let bottomCushion = Math.min(mainH - minDockedH, topLock + railSpan - minDockedH);
+  bottomCushion = Math.max(bottomCushion, homeBase + 40);
 
   return { topLock, homeBase, bottomCushion, mainH, railSpan };
 }
@@ -68,6 +71,11 @@ export function clampTop(topPx, anchors) {
  * @returns {typeof SNAP[keyof typeof SNAP]}
  */
 export function resolveSnap(topPx, anchors) {
+  /** Prefer Home Base when released near the 2/3 anchor line */
+  if (Math.abs(topPx - anchors.homeBase) <= HOME_SNAP_BIAS) {
+    return SNAP.HOME;
+  }
+
   /** @type {[typeof SNAP[keyof typeof SNAP], number][]} */
   const points = [
     [SNAP.TOP, anchors.topLock],
@@ -94,10 +102,15 @@ export function resolveSnap(topPx, anchors) {
  * @param {HTMLElement} mainEl
  */
 export function mapDimStrength(frameTop, mainEl) {
-  const mainH = mainEl.clientHeight;
-  if (frameTop >= mainH) return 0;
-  const overlap = mainH - frameTop;
-  return Math.min(1, overlap / Math.max(mainH * 0.72, 140));
+  const mapEl = document.getElementById("possibility-map");
+  const mainRect = mainEl.getBoundingClientRect();
+  const mapBottom = mapEl
+    ? mapEl.getBoundingClientRect().bottom - mainRect.top
+    : mainEl.clientHeight * 0.42;
+
+  if (frameTop >= mapBottom) return 0;
+  const overlap = mapBottom - frameTop;
+  return Math.min(1, overlap / Math.max(mapBottom * 0.85, 120));
 }
 
 export class FrameDockController {

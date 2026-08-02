@@ -34,9 +34,9 @@
   --whatimado-frame-top: var(--whatimado-frame-top-default);
   --whatimado-scroll-thumb-h: 3.25rem;
   --v2-kicker-reserve: clamp(4.5rem, 12vh, 6.25rem);
-  /* Map fills the main column — independent of prompt frame position */
-  --v2-map-band-h: 100%;
-  --v2-map-svg-h: 100%;
+  /* Fixed map band — independent of prompt frame position (prevents node scale collapse) */
+  --v2-map-band-h: var(--whatimado-frame-top-default);
+  --v2-map-svg-h: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
   --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
 
   /* ── Brand: map look (physics constants live in whatimado-map.js) ── */
