@@ -22,34 +22,26 @@ whatimado-frame .whatimado-frame__inner {
   position: relative;
   border-width: var(--v2-frame-border-stroke);
   border-color: var(--v2-neon-glow-mid);
-  animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
+  box-shadow: none;
+}
+
+whatimado-frame.is-docked .whatimado-frame__inner {
+  box-shadow:
+    0 calc(8px + var(--v2-frame-elevation, 0) * 16px) calc(24px + var(--v2-frame-elevation, 0) * 20px)
+      rgba(0, 0, 0, calc(0.18 + var(--v2-frame-elevation, 0) * 0.22));
 }
 
 .v2-rail--right {
   border-width: var(--v2-frame-border-stroke);
   border-color: var(--v2-neon-glow-mid);
-  animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
+  box-shadow: none;
 }
 
 .v2-rail--left {
   z-index: 50;
   border-width: var(--v2-frame-border-stroke);
   border-color: var(--v2-neon-glow-mid);
-  animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
-}
-
-@keyframes v2-frame-glow-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 var(--v2-frame-glow-radius-near) rgba(66, 255, 240, var(--v2-frame-glow-opacity-min)),
-      0 0 var(--v2-frame-glow-radius-far) rgba(46, 232, 214, calc(var(--v2-frame-glow-opacity-min) * 0.6));
-  }
-  50% {
-    box-shadow:
-      0 0 calc(var(--v2-frame-glow-radius-near) + 3px) rgba(125, 255, 239, var(--v2-frame-glow-opacity-max)),
-      0 0 calc(var(--v2-frame-glow-radius-far) + 5px) rgba(46, 232, 214, calc(var(--v2-frame-glow-opacity-max) * 0.65));
-  }
+  box-shadow: none;
 }
 
 whatimado-frame .whatimado-frame__inner::before,
@@ -158,10 +150,7 @@ whatimado-frame .whatimado-frame__composer,
   whatimado-frame .whatimado-frame__inner,
   .v2-rail--left,
   .v2-rail--right {
-    animation: none;
-    box-shadow:
-      0 0 var(--v2-frame-glow-radius-near) rgba(66, 255, 240, 0.2),
-      0 0 var(--v2-frame-glow-radius-far) rgba(46, 232, 214, 0.1);
+    box-shadow: none;
   }
 
   whatimado-frame .whatimado-frame__inner::before,

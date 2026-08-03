@@ -221,6 +221,22 @@ whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-aura {
   animation: whatimado-anchor-aura-breathe 3.6s ease-in-out infinite;
 }
 
+/* You node — selected by default until a path node is chosen */
+whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start .whatimado-map__node-body {
+  fill: var(--v2-yellow);
+  transform: scale(1);
+}
+
+whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start text {
+  fill: var(--v2-yellow);
+  font-weight: 600;
+}
+
+whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start .whatimado-map__node-aura {
+  opacity: 1;
+  animation: whatimado-anchor-aura-breathe 3.6s ease-in-out infinite;
+}
+
 @keyframes whatimado-anchor-aura-breathe {
   0%,
   100% {
@@ -275,7 +291,8 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-m
     transition: fill 0.2s ease;
   }
 
-  whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-aura {
+  whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-aura,
+  whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start .whatimado-map__node-aura {
     animation: none;
     opacity: 0.62;
   }
