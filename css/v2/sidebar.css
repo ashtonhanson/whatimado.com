@@ -208,7 +208,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--v2-rail-stack-gap);
-  padding: 0 1.15rem 0.75rem;
+  padding: var(--v2-rail-body-top-gap) 1.15rem 0.75rem;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -488,7 +488,7 @@
 }
 
 .v2-rail--left.is-collapsed .v2-rail-header {
-  flex-flow: column nowrap;
+  flex-flow: row nowrap;
   justify-content: center;
   align-items: center;
   gap: 0;
@@ -508,6 +508,7 @@
   width: 100%;
   justify-content: center;
   z-index: 1;
+  pointer-events: none;
 }
 
 .v2-rail--left.is-collapsed .v2-rail-toggle {
@@ -520,7 +521,11 @@
   flex-shrink: 0;
   align-self: center;
   opacity: 0;
-  transition: opacity var(--v2-rail-tip-duration) var(--v2-rail-tip-ease);
+  visibility: hidden;
+  pointer-events: auto;
+  transition:
+    opacity var(--v2-rail-tip-duration) var(--v2-rail-tip-ease),
+    visibility 0s linear var(--v2-rail-tip-duration);
 }
 
 .v2-rail--left.is-collapsed .v2-rail-logo-slot:hover .v2-brand-mark,
@@ -531,6 +536,15 @@
 .v2-rail--left.is-collapsed .v2-rail-logo-slot:hover .v2-rail-toggle,
 .v2-rail--left.is-collapsed .v2-rail-logo-slot:focus-within .v2-rail-toggle {
   opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-tip-duration) var(--v2-rail-tip-ease),
+    visibility 0s;
+}
+
+.v2-rail--left.is-collapsed .v2-rail-toggle:hover,
+.v2-rail--left.is-collapsed .v2-rail-toggle:focus-visible {
+  background: transparent;
 }
 
 .v2-rail--left.is-collapsed .v2-rail-toggle-icon {
