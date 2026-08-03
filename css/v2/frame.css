@@ -6,7 +6,10 @@ whatimado-frame {
   right: var(--v2-center-gutter);
   top: var(--whatimado-frame-top, 42vh);
   bottom: 0;
-  width: auto;
+  width: var(--v2-frame-w);
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
   z-index: 4;
   box-sizing: border-box;
   transition: top 680ms cubic-bezier(0.32, 0.94, 0.42, 1);
@@ -276,6 +279,14 @@ whatimado-frame .whatimado-frame__composer-send:disabled {
 
 whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   background: rgba(46, 232, 214, 0.08);
+}
+
+@media (max-width: 900px) {
+  whatimado-frame {
+    width: auto;
+    margin-left: 0;
+    margin-right: 0;
+  }
 }
 
 /* Kicker above frame — matches production home copy */
