@@ -423,7 +423,7 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   border: 1px dotted rgba(46, 232, 214, 0.42);
   border-radius: var(--v2-radius);
   background: transparent;
-  box-shadow: none;
+  box-shadow: 0 0 6px rgba(46, 232, 214, 0.1);
   cursor: pointer;
   text-align: left;
   font: inherit;
@@ -435,7 +435,6 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
     border-color 0.45s ease,
     box-shadow 0.62s cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: center center;
-  animation: v2-path-card-glow 5.8s ease-in-out infinite;
 }
 
 .v2-path-card:nth-child(2) {
@@ -448,17 +447,6 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 
 .v2-path-card:nth-child(4) {
   animation-delay: -4.2s;
-}
-
-@keyframes v2-path-card-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 6px rgba(46, 232, 214, 0.1);
-  }
-
-  50% {
-    box-shadow: 0 0 10px rgba(46, 232, 214, 0.16);
-  }
 }
 
 @keyframes v2-path-card-hover-rise {
@@ -482,28 +470,14 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   }
 }
 
-@keyframes v2-path-card-hover-glow {
-  0%,
-  100% {
-    box-shadow:
-      var(--v2-frame-shadow),
-      0 0 28px rgba(46, 232, 214, 0.24),
-      0 6px 18px rgba(0, 0, 0, 0.16);
-  }
-
-  50% {
-    box-shadow:
-      var(--v2-frame-shadow),
-      0 0 32px rgba(46, 232, 214, 0.28),
-      0 8px 22px rgba(0, 0, 0, 0.18);
-  }
-}
-
 .v2-path-card:hover {
+  box-shadow:
+    var(--v2-frame-shadow),
+    0 0 28px rgba(46, 232, 214, 0.24),
+    0 6px 18px rgba(0, 0, 0, 0.16);
   animation:
     v2-path-card-hover-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-    v2-path-card-hover-wobble 3.2s ease-in-out 0.55s infinite,
-    v2-path-card-hover-glow 3.2s ease-in-out 0.55s infinite;
+    v2-path-card-hover-wobble 3.2s ease-in-out 0.55s infinite;
   border-color: rgba(46, 232, 214, 0.42);
   background: transparent;
 }
@@ -542,10 +516,6 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .v2-path-card {
-    animation: none;
-  }
-
   .v2-path-card:hover {
     animation: none;
     transform: translateY(-2px) scale(1.012);
