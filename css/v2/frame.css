@@ -440,12 +440,24 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   animation-delay: -1.4s;
 }
 
+.v2-path-card:nth-child(2):hover {
+  animation-delay: -0.65s;
+}
+
 .v2-path-card:nth-child(3) {
   animation-delay: -2.8s;
 }
 
+.v2-path-card:nth-child(3):hover {
+  animation-delay: -1.3s;
+}
+
 .v2-path-card:nth-child(4) {
   animation-delay: -4.2s;
+}
+
+.v2-path-card:nth-child(4):hover {
+  animation-delay: -1.95s;
 }
 
 @keyframes v2-path-card-glow {
@@ -459,15 +471,45 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   }
 }
 
+@keyframes v2-path-card-hover-wobble {
+  0%,
+  100% {
+    transform: translateY(-5px) scale(1.03) rotate(-0.7deg);
+    box-shadow:
+      var(--v2-frame-shadow),
+      0 0 34px rgba(46, 232, 214, 0.3),
+      0 12px 28px rgba(0, 0, 0, 0.2);
+  }
+
+  25% {
+    transform: translateY(-9px) scale(1.042) rotate(0.65deg);
+    box-shadow:
+      var(--v2-frame-shadow),
+      0 0 42px rgba(46, 232, 214, 0.38),
+      0 16px 34px rgba(0, 0, 0, 0.24);
+  }
+
+  50% {
+    transform: translateY(-4px) scale(1.026) rotate(-0.45deg);
+    box-shadow:
+      var(--v2-frame-shadow),
+      0 0 32px rgba(46, 232, 214, 0.28),
+      0 10px 26px rgba(0, 0, 0, 0.18);
+  }
+
+  75% {
+    transform: translateY(-8px) scale(1.038) rotate(0.55deg);
+    box-shadow:
+      var(--v2-frame-shadow),
+      0 0 40px rgba(46, 232, 214, 0.36),
+      0 14px 32px rgba(0, 0, 0, 0.22);
+  }
+}
+
 .v2-path-card:hover {
-  animation: none;
-  transform: translateY(-6px) scale(1.034);
+  animation: v2-path-card-hover-wobble 2.6s ease-in-out infinite;
   border-color: rgba(46, 232, 214, 0.42);
   background: transparent;
-  box-shadow:
-    var(--v2-frame-shadow),
-    0 0 38px rgba(46, 232, 214, 0.34),
-    0 14px 32px rgba(0, 0, 0, 0.22);
 }
 
 .v2-path-card.is-selected {
@@ -509,6 +551,11 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   }
 
   .v2-path-card:hover {
+    animation: none;
     transform: translateY(-3px) scale(1.02);
+    box-shadow:
+      var(--v2-frame-shadow),
+      0 0 28px rgba(46, 232, 214, 0.24),
+      0 8px 22px rgba(0, 0, 0, 0.18);
   }
 }
