@@ -325,6 +325,7 @@ export class WhatimadoMap extends HTMLElement {
   syncLiveFromStore() {
     this.loadLiveGraph(graphStore.nodes, graphStore.edges);
     this._applyAnchorStyles();
+    this.resetToYou({ animate: false });
   }
 
   /** Fade out ambient ghost (Step B — full personalize in Step D) */
