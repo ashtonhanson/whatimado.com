@@ -278,8 +278,8 @@ export class WhatimadoMap extends HTMLElement {
 
     /** @type {boolean} */
     this._globalPanActive = false;
-    /** @type {boolean} */
-    this._scenePanInitialized = false;
+    /** While true, map pan/band follow hero dismiss; locked false after dock settles */
+    this._frameCoupled = true;
 
     this._onPointerMove = (event) => this._handlePointerMove(event);
     this._onPointerUp = (event) => this._handlePointerUp(event);
@@ -297,11 +297,29 @@ export class WhatimadoMap extends HTMLElement {
       this.loadAmbientLiveGraph();
     }
     this._refreshDrift();
+    const isOpen = document.body.dataset.phase === "open";
+    this._frameCoupled = isOpen;
     requestAnimationFrame(() => {
-      if (!this._scenePanInitialized) {
-        this._ensureInitialScenePan();
+      if (isOpen) {
+        this.syncFrameGravity({ animate: false });
+        return;
       }
+      /** Mid-session reload — align once, then freeze */
+      this._frameCoupled = true;
+      this.syncFrameGravity({ animate: false });
+      this.lockFromFrame();
     });
+  }
+
+  /** Stop following prompt frame after hero dismiss completes. */
+  lockFromFrame() {
+    this._frameCoupled = false;
+  }
+
+  /** Re-enable frame coupling on home reset (new roadmap prompt). */
+  unlockFrameCoupling() {
+    this._frameCoupled = true;
+    this.syncFrameGravity({ animate: false });
   }
 
   disconnectedCallback() {
@@ -532,6 +550,27 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** @returns {{ x: number, y: number }|null} */
+  _getFrameCenterInSvgCoords() {
+    const frame = document.getElementById("dynamic-frame");
+    const stage = this.querySelector(".whatimado-map__stage");
+    if (!frame || !stage) return null;
+
+    const frameRect = frame.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.width <= 0 || stageRect.height <= 0) return null;
+
+    const scaleX = VIEW_W / stageRect.width;
+    const scaleY = VIEW_H / stageRect.height;
+    const centerScreenX = (frameRect.left + frameRect.right) / 2;
+    const centerScreenY = (frameRect.top + frameRect.bottom) / 2;
+
+    return {
+      x: (centerScreenX - stageRect.left) * scaleX,
+      y: (centerScreenY - stageRect.top) * scaleY
+    };
+  }
+
+  /** @returns {{ x: number, y: number }|null} */
   _getStageCenterInSvgCoords() {
     const stage = this.querySelector(".whatimado-map__stage");
     if (!stage) return null;
@@ -546,7 +585,118 @@ export class WhatimadoMap extends HTMLElement {
     };
   }
 
-  /** Default scene pan — centers the graph in the map stage (independent of prompt frame). */
+  /** @returns {boolean} */
+  _isOpenHomePhase() {
+    return document.body.dataset.phase === "open";
+  }
+
+  /** @returns {{ panX: number, panY: number }} */
+  _computeOpenHomeGravityPan() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const kicker = document.getElementById("frame-kicker");
+    if (!stage) return { panX: 0, panY: 0 };
+
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+
+    const bounds = this._getGraphBounds();
+    const shiftY = readGraphShiftY();
+    const scaleY = VIEW_H / stageRect.height;
+
+    const gapPx = 10;
+    const anchorScreenY = kicker
+      ? kicker.getBoundingClientRect().top - gapPx
+      : stageRect.bottom - gapPx;
+
+    const panY = clampPanYForTopPad(
+      (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
+      bounds,
+      stageRect,
+      shiftY
+    );
+    const panX = VIEW_W / 2 - bounds.cx;
+
+    return { panX, panY };
+  }
+
+  /** @returns {{ panX: number, panY: number }} */
+  _computeChatFrameGravityPan() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const frame = document.getElementById("dynamic-frame");
+    if (!stage || !frame) return { panX: 0, panY: 0 };
+
+    const stageRect = stage.getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+
+    const bounds = this._getGraphBounds();
+    const shiftY = readGraphShiftY();
+    const scaleY = VIEW_H / stageRect.height;
+    const gapPx = 12;
+
+    const anchorScreenY = frameRect.top - gapPx;
+    const panY = clampPanYForTopPad(
+      (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
+      bounds,
+      stageRect,
+      shiftY
+    );
+    const panX = VIEW_W / 2 - bounds.cx;
+
+    return { panX, panY };
+  }
+
+  /**
+   * @param {number} frameTopMainPx
+   * @returns {{ panX: number, panY: number }}
+   */
+  _computeChatFrameGravityPanAtMainTop(frameTopMainPx) {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const main = document.querySelector(".v2-main");
+    if (!stage || !main) return { panX: 0, panY: 0 };
+
+    const mainRect = main.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+
+    const bounds = this._getGraphBounds();
+    const shiftY = readGraphShiftY();
+    const scaleY = VIEW_H / stageRect.height;
+    const gapPx = 12;
+    const anchorScreenY = mainRect.top + frameTopMainPx - gapPx;
+    const panY = clampPanYForTopPad(
+      (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
+      bounds,
+      stageRect,
+      shiftY
+    );
+    const panX = VIEW_W / 2 - bounds.cx;
+
+    return { panX, panY };
+  }
+
+  /** During hero dismiss — map follows projected frame top */
+  syncGravityForFrameTop(frameTopMainPx, { animate = false } = {}) {
+    if (!this._frameCoupled || (this._focalLocked && !this._focalNodeId)) return;
+
+    const target = this._computeChatFrameGravityPanAtMainTop(frameTopMainPx);
+    this._animatePanTo(target.panX, target.panY, animate);
+  }
+
+  /** @returns {{ panX: number, panY: number }} */
+  _computeDefaultFrameGravityPan() {
+    const bounds = this._getGraphBounds();
+    const frameCenter = this._getFrameCenterInSvgCoords();
+    if (!frameCenter) return { panX: 0, panY: 0 };
+
+    const shiftY = readGraphShiftY();
+    return {
+      panX: frameCenter.x - bounds.cx,
+      panY: frameCenter.y - shiftY - bounds.cy
+    };
+  }
+
+  /** Frozen default when decoupled — centers graph in map stage */
   _computeDefaultScenePan() {
     const stage = this.querySelector(".whatimado-map__stage");
     const stageCenter = this._getStageCenterInSvgCoords();
@@ -568,31 +718,26 @@ export class WhatimadoMap extends HTMLElement {
     return { panX, panY };
   }
 
-  /** Set initial pan once — persists until user pans, selects a node, or hits YOU. */
-  _ensureInitialScenePan() {
-    const target = this._computeDefaultScenePan();
-    this._panX = target.panX;
-    this._panY = target.panY;
-    this._applyPanTransform();
-    this._scenePanInitialized = true;
-  }
-
   /**
    * @param {string} nodeId
    * @returns {{ panX: number, panY: number }}
    */
   _computePanForFocalNode(nodeId) {
     const node = this._liveNodes.find((entry) => entry.id === nodeId);
-    const stageCenter = this._getStageCenterInSvgCoords();
-    if (!node || !stageCenter) return this._computeDefaultScenePan();
+    const anchor = this._frameCoupled
+      ? this._getFrameCenterInSvgCoords()
+      : this._getStageCenterInSvgCoords();
+    if (!node || !anchor) {
+      return this._frameCoupled ? this._computeDefaultFrameGravityPan() : this._computeDefaultScenePan();
+    }
 
     const shiftY = readGraphShiftY();
     const nodeX = node.x * VIEW_W;
     const nodeY = node.y * VIEW_H;
 
     return {
-      panX: stageCenter.x - nodeX,
-      panY: stageCenter.y - shiftY - nodeY
+      panX: anchor.x - nodeX,
+      panY: anchor.y - shiftY - nodeY
     };
   }
 
@@ -636,10 +781,30 @@ export class WhatimadoMap extends HTMLElement {
     this._gravityRaf = requestAnimationFrame(tick);
   }
 
-  /** Reset pan to the default scene layout (YOU button). */
+  /** Align map to hero/frame layout while coupled; no-op once dock has settled. */
+  syncFrameGravity({ animate = false } = {}) {
+    if (!this._frameCoupled || (this._focalLocked && !this._focalNodeId)) return;
+
+    let target;
+    if (this._focalLocked && this._focalNodeId) {
+      target = this._computePanForFocalNode(this._focalNodeId);
+    } else if (this._isOpenHomePhase()) {
+      target = this._computeOpenHomeGravityPan();
+    } else {
+      target = this._computeChatFrameGravityPan();
+    }
+
+    this._animatePanTo(target.panX, target.panY, animate);
+  }
+
+  /** Reset pan — follows frame while coupled, stage-centered when locked. */
   resetToYou({ animate = true } = {}) {
     this._focalLocked = false;
     this._focalNodeId = null;
+    if (this._frameCoupled) {
+      this.syncFrameGravity({ animate });
+      return;
+    }
     const target = this._computeDefaultScenePan();
     this._animatePanTo(target.panX, target.panY, animate);
   }

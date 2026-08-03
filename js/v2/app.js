@@ -37,6 +37,9 @@ const PATHS_READY_TURN = 3;
 function notifyFrameLayout() {
   frameEl?.notifyContentChange();
   frameEl?.remeasureDock();
+  if (!frameEl?.isDockSettling()) {
+    mapEl?.syncFrameGravity({ animate: false });
+  }
 }
 
 function setPhase(phase) {
@@ -305,6 +308,18 @@ frameEl?.composerInput?.addEventListener("input", () => {
 frameEl?.addEventListener("composer-submit", (event) => {
   const detail = /** @type {CustomEvent<{ text: string }>} */ (event).detail;
   void handleSubmit(detail?.text || "");
+});
+
+frameEl?.addEventListener("dock-progress", (event) => {
+  const frameTop = /** @type {CustomEvent<{ frameTop: number }>} */ (event).detail?.frameTop;
+  if (typeof frameTop === "number") {
+    mapEl?.syncGravityForFrameTop(frameTop, { animate: false });
+  }
+});
+
+frameEl?.addEventListener("dock-settled", () => {
+  mapEl?.syncFrameGravity({ animate: false });
+  mapEl?.lockFromFrame();
 });
 
 document.getElementById("nav-home")?.addEventListener("click", () => {

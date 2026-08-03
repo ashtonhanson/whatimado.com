@@ -218,12 +218,13 @@ function computeReleaseVelocity(samples) {
 export class FrameDockController {
   /**
    * @param {HTMLElement} frameEl
-   * @param {{ onLayout?: () => void, onDockSettled?: () => void }} [options]
+   * @param {{ onLayout?: () => void, onDockSettled?: () => void, onDockProgress?: (frameTop: number) => void }} [options]
    */
   constructor(frameEl, options = {}) {
     this.frameEl = frameEl;
     this.onLayout = options.onLayout ?? (() => {});
     this.onDockSettled = options.onDockSettled ?? (() => {});
+    this.onDockProgress = options.onDockProgress ?? (() => {});
     this.mainEl = /** @type {HTMLElement|null} */ (frameEl.closest(".v2-main"));
     /** @type {typeof SNAP[keyof typeof SNAP]} */
     this.activeSnap = SNAP.HOME;
@@ -269,6 +270,11 @@ export class FrameDockController {
   /** True while the frame is easing into dock after hero dismiss. */
   get isInDockTransition() {
     return this._dockTransition || this._settling;
+  }
+
+  /** Map band height — only during hero dismiss; frozen once dock settles */
+  _syncMapBandLayout(frameTopPx) {
+    document.documentElement.style.setProperty("--v2-docked-frame-top", `${frameTopPx}px`);
   }
 
   _anchorCache() {
@@ -318,6 +324,7 @@ export class FrameDockController {
 
     document.documentElement.style.setProperty("--v2-kicker-reserve", KICKER_RESERVE_DEFAULT);
     document.documentElement.style.removeProperty("--v2-map-dim");
+    document.documentElement.style.removeProperty("--v2-docked-frame-top");
     document.documentElement.style.setProperty("--whatimado-frame-top", `${openVh}vh`);
 
     this.frameEl.classList.remove("is-docked", "is-dragging", "is-animating", "is-gliding", "is-settling");
@@ -347,6 +354,7 @@ export class FrameDockController {
         const frameRect = this.frameEl.getBoundingClientRect();
         this._topPx = frameRect.top - mainRect.top;
       }
+      this._syncMapBandLayout(this._topPx);
       const anchors = this._refreshAnchors();
       if (!anchors) return;
 
@@ -355,6 +363,7 @@ export class FrameDockController {
       } else {
         document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");
         this._applyTop(anchors.homeBase, { snap: SNAP.HOME });
+        this.onDockProgress(anchors.homeBase);
         this._finishDockTransition();
       }
     });
@@ -549,11 +558,12 @@ export class FrameDockController {
     }
   }
 
-  /** Finalize hero dismiss — frame only; map scene is independent. */
+  /** Finalize hero dismiss — sync map band once, then map locks from frame. */
   _finishDockTransition() {
     this._dockTransition = false;
     document.body.classList.remove("is-hero-dismissing");
     document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");
+    this._syncMapBandLayout(this._topPx);
     this.onDockSettled();
   }
 
@@ -581,6 +591,11 @@ export class FrameDockController {
       if (finalizeDock && startKicker > 0) {
         const kickerPx = startKicker * (1 - eased);
         document.documentElement.style.setProperty("--v2-kicker-reserve", `${kickerPx}px`);
+      }
+
+      if (finalizeDock) {
+        this._syncMapBandLayout(next);
+        this.onDockProgress(next);
       }
 
       this._applyTop(next, { layout: t >= 1, snap: t >= 1 ? snapId : null });
