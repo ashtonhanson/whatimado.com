@@ -1,4 +1,4 @@
-/* whatimado-map — full-height background; graph renders in upper band only */
+/* whatimado-map — full-height scene layer beneath the prompt frame overlay */
 whatimado-map {
   display: block;
   position: absolute;
@@ -11,36 +11,6 @@ whatimado-map {
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
-}
-
-body.v2-app[data-phase="open"] {
-  --v2-map-graph-shift-y: 0;
-}
-
-body.v2-app.is-hero-dismissing {
-  --v2-map-graph-shift-y: 0;
-}
-
-body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
-  --v2-map-svg-h: calc(
-    var(--whatimado-frame-top-default) - var(--v2-kicker-reserve) - var(--v2-hero-node-gap)
-      + var(--v2-map-band-offset-top)
-  );
-}
-
-body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map .whatimado-map__stage {
-  top: var(--v2-map-band-offset-top);
-}
-
-/** Dock + hero dismiss — map band tracks live frame top (set by frame-dock.js) */
-body.v2-app.is-hero-dismissing whatimado-map,
-body.v2-app:not([data-phase="open"]) whatimado-map {
-  --v2-map-svg-h: calc(var(--v2-docked-frame-top, 33.333vh) + var(--v2-map-band-offset-top));
-}
-
-body.v2-app.is-hero-dismissing whatimado-map .whatimado-map__stage,
-body.v2-app:not([data-phase="open"]) whatimado-map .whatimado-map__stage {
-  top: 0;
 }
 
 whatimado-map[data-mode="ghost"],
@@ -137,16 +107,13 @@ whatimado-map.is-ghost-dismissed .whatimado-map__layer--ghost {
 
 whatimado-map .whatimado-map__stage {
   position: absolute;
-  top: 0;
+  top: var(--v2-map-band-offset-top);
   left: 0;
   right: 0;
-  height: var(--v2-map-svg-h);
+  height: calc(100% - var(--v2-map-band-offset-top));
   z-index: 2;
   overflow: visible;
-  transition:
-    height var(--v2-hero-motion-duration) var(--v2-hero-motion-ease),
-    top var(--v2-hero-motion-duration) var(--v2-hero-motion-ease),
-    filter var(--v2-hero-motion-duration) var(--v2-hero-motion-ease);
+  transition: filter var(--v2-hero-motion-duration) var(--v2-hero-motion-ease);
   filter:
     brightness(calc(1 - var(--v2-map-dim, 0) * 0.38))
     saturate(calc(1 - var(--v2-map-dim, 0) * 0.22))
