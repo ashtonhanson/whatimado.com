@@ -310,6 +310,13 @@ frameEl?.addEventListener("composer-submit", (event) => {
   void handleSubmit(detail?.text || "");
 });
 
+frameEl?.addEventListener("dock-progress", (event) => {
+  const frameTop = /** @type {CustomEvent<{ frameTop: number }>} */ (event).detail?.frameTop;
+  if (typeof frameTop === "number") {
+    mapEl?.syncGravityForFrameTop(frameTop, { animate: false });
+  }
+});
+
 frameEl?.addEventListener("dock-settled", () => {
   mapEl?.syncFrameGravity({ animate: false });
 });

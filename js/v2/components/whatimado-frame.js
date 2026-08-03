@@ -214,6 +214,9 @@ export class WhatimadoFrame extends HTMLElement {
   _initDock() {
     this._dock = new FrameDockController(this, {
       onLayout: () => this._updateScrollState(),
+      onDockProgress: (frameTop) => {
+        this.dispatchEvent(new CustomEvent("dock-progress", { bubbles: true, detail: { frameTop } }));
+      },
       onDockSettled: () => {
         this.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
       }

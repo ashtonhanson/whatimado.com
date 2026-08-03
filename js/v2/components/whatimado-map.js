@@ -580,6 +580,39 @@ export class WhatimadoMap extends HTMLElement {
     return { panX, panY };
   }
 
+  /**
+   * Chat gravity for a projected frame-top position (main-local px).
+   * @param {number} frameTopMainPx
+   * @returns {{ panX: number, panY: number }}
+   */
+  _computeChatFrameGravityPanAtMainTop(frameTopMainPx) {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const main = document.querySelector(".v2-main");
+    if (!stage || !main) return { panX: 0, panY: 0 };
+
+    const mainRect = main.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+
+    const bounds = this._getGraphBounds();
+    const shiftY = readGraphShiftY();
+    const scaleY = VIEW_H / stageRect.height;
+    const gapPx = 12;
+    const anchorScreenY = mainRect.top + frameTopMainPx - gapPx;
+    const panY = (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY;
+    const panX = VIEW_W / 2 - bounds.cx;
+
+    return { panX, panY };
+  }
+
+  /** Glide map to sit above a target dock position — used during hero dismiss. */
+  syncGravityForFrameTop(frameTopMainPx, { animate = false } = {}) {
+    if (this._focalLocked && !this._focalNodeId) return;
+
+    const target = this._computeChatFrameGravityPanAtMainTop(frameTopMainPx);
+    this._animatePanTo(target.panX, target.panY, animate);
+  }
+
   /** @returns {{ panX: number, panY: number }} */
   _computeDefaultFrameGravityPan() {
     const centroid = this._getGraphCentroid();

@@ -276,12 +276,13 @@ function computeReleaseVelocity(samples) {
 export class FrameDockController {
   /**
    * @param {HTMLElement} frameEl
-   * @param {{ onLayout?: () => void, onDockSettled?: () => void }} [options]
+   * @param {{ onLayout?: () => void, onDockSettled?: () => void, onDockProgress?: (frameTop: number) => void }} [options]
    */
   constructor(frameEl, options = {}) {
     this.frameEl = frameEl;
     this.onLayout = options.onLayout ?? (() => {});
     this.onDockSettled = options.onDockSettled ?? (() => {});
+    this.onDockProgress = options.onDockProgress ?? (() => {});
     this.mainEl = /** @type {HTMLElement|null} */ (frameEl.closest(".v2-main"));
     this.mapEl = /** @type {HTMLElement|null} */ (document.getElementById("possibility-map"));
     /** @type {typeof SNAP[keyof typeof SNAP]} */
@@ -387,6 +388,7 @@ export class FrameDockController {
     this.frameEl.classList.remove("is-docked", "is-dragging", "is-animating", "is-gliding", "is-settling");
     this.frameEl.removeAttribute("data-snap");
     this.frameEl.style.removeProperty("top");
+    document.body.classList.remove("is-hero-dismissing");
 
     this._topPx = (this.mainEl.clientHeight * openVh) / 100;
     this._setMapDim(0);
@@ -401,7 +403,7 @@ export class FrameDockController {
     this._dockTransition = Boolean(animate && this._motionEnabled);
     this._skipYouNodeFloor = skipYouNodeFloor;
     this.activeSnap = SNAP.HOME;
-    document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");
+    document.body.classList.add("is-hero-dismissing");
     this.frameEl.classList.add("is-docked");
 
     requestAnimationFrame(() => {
@@ -412,7 +414,9 @@ export class FrameDockController {
       if (animate && this._motionEnabled) {
         this._easeToAnchor(anchors.homeBase, SNAP.HOME, { finalizeDock: true });
       } else {
+        document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");
         this._applyTop(anchors.homeBase, { snap: SNAP.HOME });
+        this.onDockProgress(anchors.homeBase);
         this._finishDockTransition();
       }
     });
@@ -610,6 +614,8 @@ export class FrameDockController {
   /** Gravity sync runs first; YOU-node nudge waits until the map has settled. */
   _finishDockTransition() {
     this._dockTransition = false;
+    document.body.classList.remove("is-hero-dismissing");
+    document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");
     this.onDockSettled();
 
     requestAnimationFrame(() => {
@@ -637,12 +643,22 @@ export class FrameDockController {
 
     const startTop = this._topPx;
     const startTime = performance.now();
+    const startKicker = finalizeDock ? measureCssVarLength("--v2-kicker-reserve") : 0;
 
     const tick = (now) => {
       const elapsed = now - startTime;
       const t = Math.min(1, elapsed / SNAP_EASE_MS);
       const eased = easeOutQuint(t);
       const next = startTop + (targetTop - startTop) * eased;
+
+      if (finalizeDock && startKicker > 0) {
+        const kickerPx = startKicker * (1 - eased);
+        document.documentElement.style.setProperty("--v2-kicker-reserve", `${kickerPx}px`);
+      }
+
+      if (finalizeDock) {
+        this.onDockProgress(next);
+      }
 
       this._applyTop(next, { layout: t >= 1, snap: t >= 1 ? snapId : null });
 

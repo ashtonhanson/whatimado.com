@@ -69,14 +69,13 @@ export function applyPhaseToDom(doc, phase, options = {}) {
         if (doc.body.dataset.phase !== PHASE.OPEN) {
           kicker.classList.add("hidden");
         }
-      }, 480);
+      }, 680);
     }
   }
 
-  doc.documentElement.style.setProperty(
-    "--v2-kicker-reserve",
-    phase === PHASE.OPEN ? "clamp(4.5rem, 11.5vh, 5.75rem)" : "0px"
-  );
+  if (phase === PHASE.OPEN) {
+    doc.documentElement.style.setProperty("--v2-kicker-reserve", "clamp(4.5rem, 11.5vh, 5.75rem)");
+  }
 
   const possibilities = doc.getElementById("possibilities");
   if (possibilities) possibilities.classList.toggle("hidden", !vis.possibilities);

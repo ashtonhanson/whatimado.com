@@ -17,18 +17,24 @@ body.v2-app[data-phase="open"] {
   --v2-map-graph-shift-y: 0;
 }
 
-body.v2-app[data-phase="open"] whatimado-map {
+body.v2-app.is-hero-dismissing {
+  --v2-map-graph-shift-y: 0;
+}
+
+body.v2-app[data-phase="open"] whatimado-map,
+body.v2-app.is-hero-dismissing whatimado-map {
   --v2-map-svg-h: calc(
     var(--whatimado-frame-top-default) - var(--v2-kicker-reserve) - var(--v2-hero-node-gap)
       + var(--v2-map-band-offset-top)
   );
 }
 
-body.v2-app[data-phase="open"] whatimado-map .whatimado-map__stage {
+body.v2-app[data-phase="open"] whatimado-map .whatimado-map__stage,
+body.v2-app.is-hero-dismissing whatimado-map .whatimado-map__stage {
   top: var(--v2-map-band-offset-top);
 }
 
-body.v2-app:not([data-phase="open"]) whatimado-map {
+body.v2-app:not([data-phase="open"]):not(.is-hero-dismissing) whatimado-map {
   --v2-map-svg-h: var(--whatimado-frame-top-default);
 }
 
@@ -132,7 +138,10 @@ whatimado-map .whatimado-map__stage {
   height: var(--v2-map-svg-h);
   z-index: 2;
   overflow: visible;
-  transition: filter 680ms cubic-bezier(0.32, 0.94, 0.42, 1);
+  transition:
+    height var(--v2-hero-motion-duration) var(--v2-hero-motion-ease),
+    top var(--v2-hero-motion-duration) var(--v2-hero-motion-ease),
+    filter var(--v2-hero-motion-duration) var(--v2-hero-motion-ease);
   filter:
     brightness(calc(1 - var(--v2-map-dim, 0) * 0.38))
     saturate(calc(1 - var(--v2-map-dim, 0) * 0.22))
@@ -306,6 +315,10 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-m
   whatimado-map,
   whatimado-map .whatimado-map__layer--ghost {
     transition: none;
+  }
+
+  whatimado-map .whatimado-map__stage {
+    transition: filter 0.15s ease;
   }
 
   whatimado-map .whatimado-map__node-body {
