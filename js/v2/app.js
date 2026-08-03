@@ -37,6 +37,7 @@ const PATHS_READY_TURN = 3;
 function notifyFrameLayout() {
   frameEl?.notifyContentChange();
   frameEl?.remeasureDock();
+  mapEl?.syncFrameGravity({ animate: false });
 }
 
 function setPhase(phase) {

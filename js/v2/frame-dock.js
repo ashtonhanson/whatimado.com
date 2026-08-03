@@ -27,7 +27,7 @@ const SNAP_EASE_MS = 680;
 /** Flick bias shifts midway thresholds in the direction of travel (px equivalent) */
 const FLICK_VEL_BIAS = 0.38;
 
-const KICKER_RESERVE_DEFAULT = "clamp(5.5rem, 14vh, 7rem)";
+const KICKER_RESERVE_DEFAULT = "clamp(4.5rem, 11.5vh, 5.75rem)";
 
 /**
  * Viewport height — resolution-independent anchor basis.

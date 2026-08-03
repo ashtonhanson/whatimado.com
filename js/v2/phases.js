@@ -75,7 +75,7 @@ export function applyPhaseToDom(doc, phase, options = {}) {
 
   doc.documentElement.style.setProperty(
     "--v2-kicker-reserve",
-    phase === PHASE.OPEN ? "clamp(5.5rem, 14vh, 7rem)" : "0px"
+    phase === PHASE.OPEN ? "clamp(4.5rem, 11.5vh, 5.75rem)" : "0px"
   );
 
   const possibilities = doc.getElementById("possibilities");

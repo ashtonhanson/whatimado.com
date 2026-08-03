@@ -197,6 +197,12 @@ export class WhatimadoMap extends HTMLElement {
     this._panPointer = null;
     /** @type {number|null} */
     this._panResetRaf = null;
+    /** @type {number|null} */
+    this._gravityRaf = null;
+    /** @type {boolean} */
+    this._focalLocked = false;
+    /** @type {string|null} */
+    this._focalNodeId = null;
     /** @type {SVGElement|null} */
     this._svg = null;
     /** @type {SVGGElement|null} */
@@ -266,6 +272,7 @@ export class WhatimadoMap extends HTMLElement {
       this.loadAmbientLiveGraph();
     }
     this._refreshDrift();
+    requestAnimationFrame(() => this.syncFrameGravity({ animate: false }));
   }
 
   disconnectedCallback() {
@@ -274,6 +281,10 @@ export class WhatimadoMap extends HTMLElement {
     if (this._panResetRaf !== null) {
       cancelAnimationFrame(this._panResetRaf);
       this._panResetRaf = null;
+    }
+    if (this._gravityRaf !== null) {
+      cancelAnimationFrame(this._gravityRaf);
+      this._gravityRaf = null;
     }
     this._onSelect = null;
     this._promptEmptyChecker = null;
@@ -343,6 +354,10 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {string|null} id */
   setSelectedNode(id) {
     this._selectedId = id;
+    if (id) {
+      this._focalLocked = true;
+      this._focalNodeId = id;
+    }
     this._applyAnchorStyles();
     this.setPathPreview(null);
   }
@@ -446,16 +461,98 @@ export class WhatimadoMap extends HTMLElement {
     this._panGlideRaf = requestAnimationFrame(step);
   }
 
-  /** Smoothly reset user pan so YOU sits in the default focal position */
-  resetToYou({ animate = true } = {}) {
-    this._stopPanGlide();
-    if (this._panResetRaf !== null) {
-      cancelAnimationFrame(this._panResetRaf);
-      this._panResetRaf = null;
+  /** @returns {{ x: number, y: number }} */
+  _getGraphCentroid() {
+    if (!this._liveNodes.length) {
+      return { x: VIEW_W / 2, y: VIEW_H / 2 };
     }
 
-    const targetX = 0;
-    const targetY = 0;
+    const { lg, sm } = getNodeRadii();
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const node of this._liveNodes) {
+      const cx = node.x * VIEW_W;
+      const cy = node.y * VIEW_H;
+      const r = node.type === "start" || node.type === "path" ? lg : sm;
+      minX = Math.min(minX, cx - r);
+      maxX = Math.max(maxX, cx + r);
+      minY = Math.min(minY, cy - r - 10);
+      maxY = Math.max(maxY, cy + r);
+    }
+
+    return {
+      x: (minX + maxX) / 2,
+      y: (minY + maxY) / 2
+    };
+  }
+
+  /** @returns {{ x: number, y: number }|null} */
+  _getFrameCenterInSvgCoords() {
+    const frame = document.getElementById("dynamic-frame");
+    const stage = this.querySelector(".whatimado-map__stage");
+    if (!frame || !stage) return null;
+
+    const frameRect = frame.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.width <= 0 || stageRect.height <= 0) return null;
+
+    const scaleX = VIEW_W / stageRect.width;
+    const scaleY = VIEW_H / stageRect.height;
+    const centerScreenX = (frameRect.left + frameRect.right) / 2;
+    const centerScreenY = (frameRect.top + frameRect.bottom) / 2;
+
+    return {
+      x: (centerScreenX - stageRect.left) * scaleX,
+      y: (centerScreenY - stageRect.top) * scaleY
+    };
+  }
+
+  /** @returns {{ panX: number, panY: number }} */
+  _computeDefaultFrameGravityPan() {
+    const centroid = this._getGraphCentroid();
+    const frameCenter = this._getFrameCenterInSvgCoords();
+    if (!frameCenter) return { panX: 0, panY: 0 };
+
+    const shiftY = readGraphShiftY();
+    return {
+      panX: frameCenter.x - centroid.x,
+      panY: frameCenter.y - shiftY - centroid.y
+    };
+  }
+
+  /**
+   * @param {string} nodeId
+   * @returns {{ panX: number, panY: number }}
+   */
+  _computePanForFocalNode(nodeId) {
+    const node = this._liveNodes.find((entry) => entry.id === nodeId);
+    const frameCenter = this._getFrameCenterInSvgCoords();
+    if (!node || !frameCenter) return this._computeDefaultFrameGravityPan();
+
+    const shiftY = readGraphShiftY();
+    const nodeX = node.x * VIEW_W;
+    const nodeY = node.y * VIEW_H;
+
+    return {
+      panX: frameCenter.x - nodeX,
+      panY: frameCenter.y - shiftY - nodeY
+    };
+  }
+
+  /**
+   * @param {number} targetX
+   * @param {number} targetY
+   * @param {boolean} [animate]
+   */
+  _animatePanTo(targetX, targetY, animate = false) {
+    this._stopPanGlide();
+    if (this._gravityRaf !== null) {
+      cancelAnimationFrame(this._gravityRaf);
+      this._gravityRaf = null;
+    }
 
     if (!animate || this._driftReducedMotion) {
       this._panX = targetX;
@@ -476,13 +573,32 @@ export class WhatimadoMap extends HTMLElement {
       this._panY = startY + (targetY - startY) * eased;
       this._applyPanTransform();
       if (t < 1) {
-        this._panResetRaf = requestAnimationFrame(tick);
+        this._gravityRaf = requestAnimationFrame(tick);
       } else {
-        this._panResetRaf = null;
+        this._gravityRaf = null;
       }
     };
 
-    this._panResetRaf = requestAnimationFrame(tick);
+    this._gravityRaf = requestAnimationFrame(tick);
+  }
+
+  /** Align map to frame center, preserving an explicit user focal point when locked. */
+  syncFrameGravity({ animate = false } = {}) {
+    if (this._focalLocked && !this._focalNodeId) return;
+
+    const target =
+      this._focalLocked && this._focalNodeId
+        ? this._computePanForFocalNode(this._focalNodeId)
+        : this._computeDefaultFrameGravityPan();
+
+    this._animatePanTo(target.panX, target.panY, animate);
+  }
+
+  /** Smoothly reset to default frame-centered gravity. */
+  resetToYou({ animate = true } = {}) {
+    this._focalLocked = false;
+    this._focalNodeId = null;
+    this.syncFrameGravity({ animate });
   }
 
   /** Apply camera transform: built-in graph shift + user pan offset */
@@ -503,6 +619,9 @@ export class WhatimadoMap extends HTMLElement {
   _finishPanPointer(event) {
     if (!this._panPointer || event.pointerId !== this._panPointer.pointerId) return;
 
+    const startPanX = this._panPointer.startPanX;
+    const startPanY = this._panPointer.startPanY;
+
     if (this._globalPanActive) {
       this._detachGlobalPanListeners();
     }
@@ -512,6 +631,11 @@ export class WhatimadoMap extends HTMLElement {
     this._panSamples = [];
     this._panPointer = null;
     this.classList.remove("is-panning");
+
+    if (Math.hypot(this._panX - startPanX, this._panY - startPanY) > 6) {
+      this._focalLocked = true;
+      this._focalNodeId = null;
+    }
 
     if (!this._driftReducedMotion && Math.hypot(vx, vy) >= GLIDE_MIN_SPEED) {
       this._panVelX = vx;

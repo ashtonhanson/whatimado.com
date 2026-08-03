@@ -51,15 +51,17 @@
   --v2-main-gutter: clamp(0.85rem, 2.2vw, 1.5rem);
   --v2-shell-radius: 0 var(--v2-frame-radius) var(--v2-frame-radius) var(--v2-frame-radius);
   --v2-shell-radius-right: var(--v2-frame-radius) 0 var(--v2-frame-radius) var(--v2-frame-radius);
-  --whatimado-frame-top-default: 54vh;
+  --whatimado-frame-top-default: 47vh;
   --whatimado-frame-top: var(--whatimado-frame-top-default);
   --whatimado-scroll-thumb-h: 3.25rem;
-  --v2-kicker-reserve: clamp(5.5rem, 14vh, 7rem);
-  --v2-hero-node-gap: clamp(1.25rem, 3.5vh, 2.25rem);
+  --v2-kicker-reserve: clamp(4.5rem, 11.5vh, 5.75rem);
+  --v2-hero-node-gap: clamp(0.55rem, 1.35vh, 0.9rem);
+  --v2-map-band-offset-top: clamp(0.4rem, 1vh, 0.7rem);
   /* Full main column — global pan surface; graph SVG stays in upper band */
   --v2-map-band-h: 100%;
   --v2-map-svg-h: calc(
     var(--whatimado-frame-top-default) - var(--v2-kicker-reserve) - var(--v2-hero-node-gap)
+      + var(--v2-map-band-offset-top)
   );
   --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
 
@@ -72,7 +74,7 @@
   --v2-map-dim: 0;
   --v2-frame-elevation: 0;
   /** Global upward shift for the node graph (fraction of SVG view height) */
-  --v2-map-graph-shift-y: 0.15;
+  --v2-map-graph-shift-y: 0.08;
 
   /* ── Brand: typography ── */
   --v2-font: "Inter", system-ui, -apple-system, sans-serif;
