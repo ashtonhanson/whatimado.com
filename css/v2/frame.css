@@ -428,7 +428,7 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   text-align: left;
   font: inherit;
   color: inherit;
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
   transition:
     transform 0.62s cubic-bezier(0.22, 1, 0.36, 1),
     background 0.45s ease,
@@ -446,30 +446,29 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   z-index: -1;
   opacity: 0;
   box-shadow:
-    var(--v2-frame-shadow),
-    0 0 34px rgba(46, 232, 214, 0.34),
-    0 10px 28px rgba(0, 0, 0, 0.2);
+    0 0 36px rgba(46, 232, 214, 0.26),
+    0 12px 30px rgba(0, 0, 0, 0.14);
   transition: opacity 0.62s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes v2-path-card-hover-rise {
   from {
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 
   to {
-    transform: translateY(-2px) scale(1.012);
+    transform: translateY(-2px);
   }
 }
 
 @keyframes v2-path-card-hover-wobble {
   0%,
   100% {
-    transform: translateY(-2px) scale(1.012);
+    transform: translateY(-2px);
   }
 
   50% {
-    transform: translateY(-3px) scale(1.018);
+    transform: translateY(-3px);
   }
 }
 
@@ -485,14 +484,11 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 }
 
 .v2-path-card:hover {
-  box-shadow:
-    var(--v2-frame-shadow),
-    0 0 28px rgba(46, 232, 214, 0.24),
-    0 6px 18px rgba(0, 0, 0, 0.16);
+  border: 1px dotted rgba(46, 232, 214, 0.34);
+  box-shadow: 0 0 22px rgba(46, 232, 214, 0.14);
   animation:
     v2-path-card-hover-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards,
     v2-path-card-hover-wobble 3.2s ease-in-out 0.55s infinite;
-  border-color: rgba(46, 232, 214, 0.42);
   background: transparent;
 }
 
