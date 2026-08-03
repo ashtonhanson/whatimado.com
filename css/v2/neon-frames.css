@@ -6,6 +6,7 @@
   --v2-neon-glow-soft: rgba(66, 255, 240, 0.22);
   --v2-neon-glow-mid: rgba(66, 255, 240, 0.38);
   --v2-neon-glow-strong: rgba(66, 255, 240, 0.55);
+  --v2-frame-border-color: rgba(66, 255, 240, 0.14);
   --v2-neon-border-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   /* Tunable frame glow — slim/refined defaults */
   --v2-frame-glow-pulse-duration: 5.5s;
@@ -21,7 +22,7 @@
 whatimado-frame .whatimado-frame__inner {
   position: relative;
   border-width: var(--v2-frame-border-stroke);
-  border-color: var(--v2-neon-glow-mid);
+  border-color: var(--v2-frame-border-color);
   box-shadow: none;
 }
 
@@ -33,14 +34,14 @@ whatimado-frame.is-docked .whatimado-frame__inner {
 
 .v2-rail--right {
   border-width: var(--v2-frame-border-stroke);
-  border-color: var(--v2-neon-glow-mid);
+  border-color: var(--v2-frame-border-color);
   box-shadow: none;
 }
 
 .v2-rail--left {
   z-index: 50;
   border-width: var(--v2-frame-border-stroke);
-  border-color: var(--v2-neon-glow-mid);
+  border-color: var(--v2-frame-border-color);
   box-shadow: none;
 }
 
@@ -56,13 +57,13 @@ whatimado-frame .whatimado-frame__inner::before,
   padding: 1px;
   background: linear-gradient(
     90deg,
-    rgba(66, 255, 240, 0.06) 0%,
-    rgba(125, 255, 239, 0.32) 20%,
-    rgba(66, 255, 240, 0.08) 40%,
-    rgba(125, 255, 239, 0.26) 60%,
-    rgba(66, 255, 240, 0.06) 80%,
-    rgba(125, 255, 239, 0.3) 92%,
-    rgba(66, 255, 240, 0.06) 100%
+    rgba(66, 255, 240, 0.03) 0%,
+    rgba(125, 255, 239, 0.14) 20%,
+    rgba(66, 255, 240, 0.04) 40%,
+    rgba(125, 255, 239, 0.11) 60%,
+    rgba(66, 255, 240, 0.03) 80%,
+    rgba(125, 255, 239, 0.12) 92%,
+    rgba(66, 255, 240, 0.03) 100%
   );
   background-size: 320% 100%;
   -webkit-mask: var(--v2-neon-border-mask);
@@ -121,11 +122,11 @@ whatimado-frame .whatimado-frame__composer,
   0%,
   100% {
     background-position: 0% 50%;
-    opacity: 0.45;
+    opacity: 0.22;
   }
   50% {
     background-position: 100% 50%;
-    opacity: 0.62;
+    opacity: 0.34;
   }
 }
 
@@ -157,7 +158,7 @@ whatimado-frame .whatimado-frame__composer,
   .v2-rail--left::before,
   .v2-rail--right::before {
     animation: none;
-    opacity: 0.5;
+    opacity: 0.28;
     background-position: 50% 50%;
   }
 
