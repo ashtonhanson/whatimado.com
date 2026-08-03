@@ -461,10 +461,17 @@ export class WhatimadoMap extends HTMLElement {
     this._panGlideRaf = requestAnimationFrame(step);
   }
 
-  /** @returns {{ x: number, y: number }} */
-  _getGraphCentroid() {
+  /** @returns {{ minX: number, maxX: number, minY: number, maxY: number, cx: number, cy: number }} */
+  _getGraphBounds() {
     if (!this._liveNodes.length) {
-      return { x: VIEW_W / 2, y: VIEW_H / 2 };
+      return {
+        minX: 0,
+        maxX: VIEW_W,
+        minY: 0,
+        maxY: VIEW_H,
+        cx: VIEW_W / 2,
+        cy: VIEW_H / 2
+      };
     }
 
     const { lg, sm } = getNodeRadii();
@@ -484,9 +491,19 @@ export class WhatimadoMap extends HTMLElement {
     }
 
     return {
-      x: (minX + maxX) / 2,
-      y: (minY + maxY) / 2
+      minX,
+      maxX,
+      minY,
+      maxY,
+      cx: (minX + maxX) / 2,
+      cy: (minY + maxY) / 2
     };
+  }
+
+  /** @returns {{ x: number, y: number }} */
+  _getGraphCentroid() {
+    const bounds = this._getGraphBounds();
+    return { x: bounds.cx, y: bounds.cy };
   }
 
   /** @returns {{ x: number, y: number }|null} */
@@ -508,6 +525,36 @@ export class WhatimadoMap extends HTMLElement {
       x: (centerScreenX - stageRect.left) * scaleX,
       y: (centerScreenY - stageRect.top) * scaleY
     };
+  }
+
+  /** @returns {boolean} */
+  _isOpenHomePhase() {
+    return document.body.dataset.phase === "open";
+  }
+
+  /** @returns {{ panX: number, panY: number }} */
+  _computeOpenHomeGravityPan() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const kicker = document.getElementById("frame-kicker");
+    if (!stage) return { panX: 0, panY: 0 };
+
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+
+    const bounds = this._getGraphBounds();
+    const shiftY = readGraphShiftY();
+    const scaleY = VIEW_H / stageRect.height;
+
+    /** Screen Y where the graph bottom should sit — just above hero kicker */
+    const gapPx = 10;
+    const anchorScreenY = kicker
+      ? kicker.getBoundingClientRect().top - gapPx
+      : stageRect.bottom - gapPx;
+
+    const panY = (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY;
+    const panX = VIEW_W / 2 - bounds.cx;
+
+    return { panX, panY };
   }
 
   /** @returns {{ panX: number, panY: number }} */
@@ -586,10 +633,14 @@ export class WhatimadoMap extends HTMLElement {
   syncFrameGravity({ animate = false } = {}) {
     if (this._focalLocked && !this._focalNodeId) return;
 
-    const target =
-      this._focalLocked && this._focalNodeId
-        ? this._computePanForFocalNode(this._focalNodeId)
-        : this._computeDefaultFrameGravityPan();
+    let target;
+    if (this._focalLocked && this._focalNodeId) {
+      target = this._computePanForFocalNode(this._focalNodeId);
+    } else if (this._isOpenHomePhase()) {
+      target = this._computeOpenHomeGravityPan();
+    } else {
+      target = this._computeDefaultFrameGravityPan();
+    }
 
     this._animatePanTo(target.panX, target.panY, animate);
   }
