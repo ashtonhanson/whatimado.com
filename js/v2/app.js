@@ -34,10 +34,12 @@ const pathCardsEl = document.getElementById("path-cards");
 
 const PATHS_READY_TURN = 3;
 
-function notifyFrameLayout() {
+function notifyFrameLayout({ syncGravity = true } = {}) {
   frameEl?.notifyContentChange();
   frameEl?.remeasureDock();
-  mapEl?.syncFrameGravity({ animate: false });
+  if (syncGravity && !frameEl?.isDockSettling()) {
+    mapEl?.syncFrameGravity({ animate: false });
+  }
 }
 
 function setPhase(phase) {
@@ -306,6 +308,10 @@ frameEl?.composerInput?.addEventListener("input", () => {
 frameEl?.addEventListener("composer-submit", (event) => {
   const detail = /** @type {CustomEvent<{ text: string }>} */ (event).detail;
   void handleSubmit(detail?.text || "");
+});
+
+frameEl?.addEventListener("dock-settled", () => {
+  mapEl?.syncFrameGravity({ animate: true });
 });
 
 document.getElementById("nav-home")?.addEventListener("click", () => {

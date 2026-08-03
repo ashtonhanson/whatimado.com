@@ -197,6 +197,11 @@ export class WhatimadoFrame extends HTMLElement {
     this._dock?.remeasure();
   }
 
+  /** True while the frame is easing into dock after hero dismiss. */
+  isDockSettling() {
+    return this._dock?.isInDockTransition ?? false;
+  }
+
   _initPhaseLayout() {
     const phase = document.body.dataset.phase || "open";
     if (phase === "open") {
@@ -208,7 +213,10 @@ export class WhatimadoFrame extends HTMLElement {
 
   _initDock() {
     this._dock = new FrameDockController(this, {
-      onLayout: () => this._updateScrollState()
+      onLayout: () => this._updateScrollState(),
+      onDockSettled: () => {
+        this.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
+      }
     });
     this._dragRail = this.querySelector(".whatimado-frame__drag-rail");
     this._dragRail?.addEventListener("pointerdown", this._onDragPointerDown);

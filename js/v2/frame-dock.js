@@ -113,14 +113,18 @@ export function measureYouNodeFloor(mainEl, mapEl) {
  * Home Base — 2/3 up from viewport bottom, shifted lower to clear the YOU node.
  * @param {HTMLElement} mainEl
  * @param {HTMLElement|null} mapEl
+ * @param {{ skipYouNodeFloor?: boolean }} [options]
  */
-export function measureHomeBase(mainEl, mapEl) {
+export function measureHomeBase(mainEl, mapEl, options = {}) {
+  const { skipYouNodeFloor = false } = options;
   const mainRect = mainEl.getBoundingClientRect();
   const vh = viewportHeight();
 
   /** 2/3 from bottom ⇒ line sits at vh × ⅓ from the viewport top */
   const viewportHome = vh / 3;
   const railHome = viewportHome - mainRect.top;
+
+  if (skipYouNodeFloor) return railHome;
 
   const youFloor = measureYouNodeFloor(mainEl, mapEl);
   return youFloor != null ? Math.max(railHome, youFloor) : railHome;
@@ -157,13 +161,15 @@ export function measureFrameBottomToComposerGap(frameEl) {
  * @param {HTMLElement} mainEl
  * @param {HTMLElement} frameEl
  * @param {HTMLElement|null} [mapEl]
- * @param {{ defaultFrameHeight?: number|null }} [cache]
+ * @param {{ defaultFrameHeight?: number|null, skipYouNodeFloor?: boolean }} [cache]
  */
 export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
   const map = mapEl ?? document.getElementById("possibility-map");
   const mainH = mainEl.clientHeight;
   const topLock = measureTopLock(mainEl);
-  const homeBase = measureHomeBase(mainEl, map);
+  const homeBase = measureHomeBase(mainEl, map, {
+    skipYouNodeFloor: Boolean(cache.skipYouNodeFloor)
+  });
 
   /**
    * Bottom Cushion — authoritative snap from clean screenshot.
@@ -267,11 +273,12 @@ function computeReleaseVelocity(samples) {
 export class FrameDockController {
   /**
    * @param {HTMLElement} frameEl
-   * @param {{ onLayout?: () => void }} [options]
+   * @param {{ onLayout?: () => void, onDockSettled?: () => void }} [options]
    */
   constructor(frameEl, options = {}) {
     this.frameEl = frameEl;
     this.onLayout = options.onLayout ?? (() => {});
+    this.onDockSettled = options.onDockSettled ?? (() => {});
     this.mainEl = /** @type {HTMLElement|null} */ (frameEl.closest(".v2-main"));
     this.mapEl = /** @type {HTMLElement|null} */ (document.getElementById("possibility-map"));
     /** @type {typeof SNAP[keyof typeof SNAP]} */
@@ -306,6 +313,10 @@ export class FrameDockController {
     this._defaultFrameHeight = null;
     /** @type {boolean} */
     this._motionEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /** @type {boolean} */
+    this._dockTransition = false;
+    /** @type {boolean} */
+    this._skipYouNodeFloor = false;
   }
 
   /** @returns {number} */
@@ -313,9 +324,15 @@ export class FrameDockController {
     return this._topPx;
   }
 
+  /** True while the frame is easing into dock after hero dismiss. */
+  get isInDockTransition() {
+    return this._dockTransition || this._settling;
+  }
+
   _anchorCache() {
     return {
-      defaultFrameHeight: this._defaultFrameHeight
+      defaultFrameHeight: this._defaultFrameHeight,
+      skipYouNodeFloor: this._skipYouNodeFloor
     };
   }
 
@@ -340,6 +357,7 @@ export class FrameDockController {
     }
     this._gliding = false;
     this._settling = false;
+    this._dockTransition = false;
     this._velocityY = 0;
     this.frameEl.classList.remove("is-gliding", "is-settling");
   }
@@ -372,11 +390,13 @@ export class FrameDockController {
   }
 
   /** After hero dismiss — glide into Home Base */
-  enterDockedHome({ animate = true } = {}) {
+  enterDockedHome({ animate = true, skipYouNodeFloor = animate } = {}) {
     if (!this.mainEl) return;
 
     this._stopMotion();
     this._docked = true;
+    this._dockTransition = Boolean(animate && this._motionEnabled);
+    this._skipYouNodeFloor = skipYouNodeFloor;
     this.activeSnap = SNAP.HOME;
     document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");
     this.frameEl.classList.add("is-docked");
@@ -387,9 +407,10 @@ export class FrameDockController {
       if (!anchors) return;
 
       if (animate && this._motionEnabled) {
-        this._easeToAnchor(anchors.homeBase, SNAP.HOME);
+        this._easeToAnchor(anchors.homeBase, SNAP.HOME, { finalizeDock: true });
       } else {
         this._applyTop(anchors.homeBase, { snap: SNAP.HOME });
+        this._finishDockTransition();
       }
     });
   }
@@ -417,7 +438,16 @@ export class FrameDockController {
   }
 
   remeasure() {
-    if (!this._docked || !this.mainEl || this._dragging || this._gliding || this._settling) return;
+    if (
+      !this._docked ||
+      !this.mainEl ||
+      this._dragging ||
+      this._gliding ||
+      this._settling ||
+      this._dockTransition
+    ) {
+      return;
+    }
 
     const anchors = this._refreshAnchors();
     if (!anchors) return;
@@ -574,12 +604,28 @@ export class FrameDockController {
     }
   }
 
+  /** Re-measure Home Base with live YOU-node clearance after gravity has settled. */
+  _finishDockTransition() {
+    this._dockTransition = false;
+    this._skipYouNodeFloor = false;
+
+    if (this._docked && this.activeSnap === SNAP.HOME && this.mainEl) {
+      const anchors = this._refreshAnchors();
+      if (anchors) {
+        this._applyTop(anchors.homeBase, { snap: SNAP.HOME });
+      }
+    }
+
+    this.onDockSettled();
+  }
+
   /**
    * Smooth quintic ease into the chosen anchor — no oscillation.
    * @param {number} targetTop
    * @param {typeof SNAP[keyof typeof SNAP]} snapId
+   * @param {{ finalizeDock?: boolean }} [options]
    */
-  _easeToAnchor(targetTop, snapId) {
+  _easeToAnchor(targetTop, snapId, { finalizeDock = false } = {}) {
     this._stopMotion();
     this._settling = true;
     this.frameEl.classList.add("is-settling");
@@ -604,6 +650,10 @@ export class FrameDockController {
       this.frameEl.classList.remove("is-settling");
       this.activeSnap = snapId;
       this.frameEl.dataset.snap = snapId;
+
+      if (finalizeDock) {
+        this._finishDockTransition();
+      }
     };
 
     this._settleRaf = requestAnimationFrame(tick);
