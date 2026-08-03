@@ -7,8 +7,8 @@
   padding-right: var(--v2-rail-inset);
   box-sizing: border-box;
   transition:
-    padding-left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    padding-right 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    padding-left var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    padding-right var(--v2-rail-motion-duration) var(--v2-rail-motion-ease);
 }
 
 .v2-shell:has(.v2-rail--left.is-collapsed) {
@@ -29,7 +29,7 @@
   min-width: 0;
   height: calc(100dvh - 2 * var(--v2-rail-inset));
   min-height: calc(100dvh - 2 * var(--v2-rail-inset));
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Center column — shared horizontal bounds for map, kicker, and prompt frame */

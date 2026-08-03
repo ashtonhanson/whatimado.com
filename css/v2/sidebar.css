@@ -20,7 +20,20 @@
   flex-direction: column;
   gap: 0;
   box-sizing: border-box;
-  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease);
+}
+
+.v2-rail-brand,
+.v2-rail-body,
+.v2-rail-foot,
+.v2-rail-header,
+.v2-nav-btn,
+.v2-profile {
+  transition:
+    padding var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    height var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    gap var(--v2-rail-motion-duration) var(--v2-rail-motion-ease);
 }
 
 .v2-rail--left.is-collapsed {
@@ -90,7 +103,7 @@
 }
 
 .v2-brand-mark {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2.35rem;
@@ -101,6 +114,15 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--v2-yellow);
+  overflow: hidden;
+  flex-shrink: 0;
+  max-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s linear var(--v2-rail-motion-duration);
 }
 
 .v2-brand-word {
@@ -113,6 +135,16 @@
   letter-spacing: 0.12em;
   line-height: 1;
   text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 16rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    padding var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 .v2-brand-word .brand-what {
@@ -156,6 +188,13 @@
   letter-spacing: 0.12em;
   cursor: not-allowed;
   opacity: 0.55;
+  overflow: hidden;
+  max-height: 4rem;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-height var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    padding var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 .v2-undo-btn svg {
@@ -203,6 +242,15 @@
   flex-direction: column;
   gap: 0.1rem;
   min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 14rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 .v2-nav-meta {
@@ -254,6 +302,14 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--v2-yellow);
+  overflow: hidden;
+  max-height: 2rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-height var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 .v2-active-path {
@@ -264,6 +320,15 @@
   font-size: 0.74rem;
   color: var(--v2-text-muted);
   line-height: 1.45;
+  overflow: hidden;
+  max-height: 8rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-height var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    padding var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 .v2-active-path strong {
@@ -288,6 +353,14 @@
   font-size: 0.68rem;
   line-height: 1.45;
   color: var(--v2-text-muted);
+  overflow: hidden;
+  max-height: 4rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-height var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 .v2-profile {
@@ -324,6 +397,14 @@
 .v2-profile-copy {
   min-width: 0;
   flex: 1;
+  overflow: hidden;
+  max-width: 12rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 .v2-profile-copy strong {
@@ -345,6 +426,14 @@
   fill: none;
   stroke-width: 2;
   flex-shrink: 0;
+  overflow: hidden;
+  max-width: 14px;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 /* Collapsed rail — icon-only Copilot-style */
@@ -353,16 +442,30 @@
 }
 
 .v2-rail--left.is-collapsed .v2-rail-header {
-  flex-direction: column;
-  gap: 0.55rem;
+  justify-content: center;
 }
 
 .v2-rail--left.is-collapsed .v2-brand-word {
-  display: none;
+  max-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    padding var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s linear var(--v2-rail-motion-duration);
 }
 
 .v2-rail--left.is-collapsed .v2-brand-mark {
-  display: inline-flex;
+  max-width: 2.35rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
 }
 
 .v2-rail--left.is-collapsed .v2-rail-body {
@@ -376,12 +479,32 @@
 .v2-rail--left.is-collapsed .v2-sync-note,
 .v2-rail--left.is-collapsed .v2-profile-copy,
 .v2-rail--left.is-collapsed .v2-profile-chevron {
-  display: none;
+  max-width: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-height var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    padding var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    margin var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s linear var(--v2-rail-motion-duration);
 }
 
-.v2-rail--left.is-collapsed .v2-undo-btn svg,
 .v2-rail--left.is-collapsed .v2-nav-label {
-  display: none;
+  max-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s linear var(--v2-rail-motion-duration);
 }
 
 .v2-rail--left.is-collapsed .v2-nav-btn {
