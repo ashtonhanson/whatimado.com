@@ -40,6 +40,29 @@ function getMapBounds() {
   };
 }
 
+/** Label sits above node body — keep in sync with renderNodeLayer text y */
+const NODE_LABEL_OFFSET = 6;
+const NODE_LABEL_CAP = 11;
+
+/** Read top inset for graph gravity from CSS token (screen px) */
+function readGraphTopPadPx() {
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;height:var(--v2-map-graph-top-pad);width:0;";
+  document.documentElement.appendChild(probe);
+  const px = probe.getBoundingClientRect().height;
+  probe.remove();
+  return px > 0 ? px : 16;
+}
+
+/** Prevent upward pan from clipping the topmost node labels */
+function clampPanYForTopPad(panY, bounds, stageRect, shiftY) {
+  const scaleY = VIEW_H / stageRect.height;
+  const topPadSvg = readGraphTopPadPx() * scaleY;
+  const panFloor = topPadSvg - bounds.minY - shiftY;
+  return Math.max(panY, panFloor);
+}
+
 /** Read global upward graph shift from CSS token (fraction of view height) */
 function readGraphShiftY() {
   const style = getComputedStyle(document.documentElement);
@@ -486,7 +509,7 @@ export class WhatimadoMap extends HTMLElement {
       const r = node.type === "start" || node.type === "path" ? lg : sm;
       minX = Math.min(minX, cx - r);
       maxX = Math.max(maxX, cx + r);
-      minY = Math.min(minY, cy - r - 10);
+      minY = Math.min(minY, cy - r - NODE_LABEL_OFFSET - NODE_LABEL_CAP);
       maxY = Math.max(maxY, cy + r);
     }
 
@@ -551,7 +574,12 @@ export class WhatimadoMap extends HTMLElement {
       ? kicker.getBoundingClientRect().top - gapPx
       : stageRect.bottom - gapPx;
 
-    const panY = (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY;
+    const panY = clampPanYForTopPad(
+      (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
+      bounds,
+      stageRect,
+      shiftY
+    );
     const panX = VIEW_W / 2 - bounds.cx;
 
     return { panX, panY };
@@ -574,7 +602,12 @@ export class WhatimadoMap extends HTMLElement {
 
     /** Keep graph bottom anchored just above the frame top — not the frame center */
     const anchorScreenY = frameRect.top - gapPx;
-    const panY = (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY;
+    const panY = clampPanYForTopPad(
+      (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
+      bounds,
+      stageRect,
+      shiftY
+    );
     const panX = VIEW_W / 2 - bounds.cx;
 
     return { panX, panY };
@@ -599,7 +632,12 @@ export class WhatimadoMap extends HTMLElement {
     const scaleY = VIEW_H / stageRect.height;
     const gapPx = 12;
     const anchorScreenY = mainRect.top + frameTopMainPx - gapPx;
-    const panY = (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY;
+    const panY = clampPanYForTopPad(
+      (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
+      bounds,
+      stageRect,
+      shiftY
+    );
     const panX = VIEW_W / 2 - bounds.cx;
 
     return { panX, panY };
