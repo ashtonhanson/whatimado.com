@@ -10,6 +10,7 @@ import {
 } from "./advisor.js";
 import { appendMessage, escapeHtml } from "./ui.js";
 import { initNeonShine } from "./neon-shine.js";
+import { initNavRailToggle } from "./rail-toggle.js";
 
 /** @type {{ phase: import("./phases.js").Phase, messages: { role: "user"|"assistant", content: string }[], turnCount: number, ghostDismissed: boolean, pathsGenerated: boolean, pathsGenerating: boolean }} */
 const state = {
@@ -316,3 +317,4 @@ requestAnimationFrame(() => seedHypotheticalChat());
 
 frameEl?.focusComposer();
 initNeonShine();
+initNavRailToggle();

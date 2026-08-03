@@ -21,13 +21,20 @@
 </head>
 <body class="v2-app" data-phase="open">
   <div class="v2-shell">
-    <aside class="v2-rail v2-rail--left" aria-label="Navigation">
+    <aside class="v2-rail v2-rail--left" id="nav-rail" aria-label="Navigation">
       <div class="v2-rail-brand">
-        <a class="v2-brand" href="/app.html" aria-label="whatimado home">
-          <span class="v2-brand-word v2-text-box v2-text-box--chrome" aria-hidden="true">
-            <span class="brand-what">WHAT</span><span class="brand-ima">IMA</span><span class="brand-do">DO</span>
-          </span>
-        </a>
+        <div class="v2-rail-header">
+          <a class="v2-brand" href="/app.html" aria-label="whatimado home">
+            <span class="v2-brand-word v2-text-box v2-text-box--chrome">
+              <span class="brand-what">WHAT</span><span class="brand-ima">IMA</span><span class="brand-do">DO</span>
+            </span>
+            <span class="v2-brand-mark v2-text-box v2-text-box--chrome" aria-hidden="true">W</span>
+          </a>
+          <button type="button" class="v2-rail-toggle" id="nav-rail-toggle" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="nav-rail">
+            <svg class="v2-rail-toggle-icon v2-rail-toggle-icon--collapse" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"></rect><path d="M9 4v16" stroke="currentColor" stroke-width="1.6"></path></svg>
+            <svg class="v2-rail-toggle-icon v2-rail-toggle-icon--expand" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"></rect><path d="M9 4v16M13 8h5M13 12h5M13 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+          </button>
+        </div>
       </div>
 
       <div class="v2-rail-body">
@@ -50,25 +57,25 @@
             <li>
               <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
-                Roadmaps
+                <span class="v2-nav-label"><span>Roadmaps</span></span>
               </button>
             </li>
             <li>
               <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"></path></svg>
-                My Notes
+                <span class="v2-nav-label"><span>My Notes</span></span>
               </button>
             </li>
             <li>
               <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M12 20V4M20 20v-6"></path></svg>
-                Analytics
+                <span class="v2-nav-label"><span>Analytics</span></span>
               </button>
             </li>
             <li>
               <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
-                Settings
+                <span class="v2-nav-label"><span>Settings</span></span>
               </button>
             </li>
           </ul>

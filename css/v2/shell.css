@@ -1,10 +1,16 @@
 .v2-shell {
-  --v2-sidebar-offset: calc(var(--v2-rail-inset) + var(--v2-rail-w) + var(--v2-rail-gap));
+  --v2-left-rail-w: var(--v2-rail-w);
+  --v2-sidebar-offset: calc(var(--v2-rail-inset) + var(--v2-left-rail-w) + var(--v2-rail-gap));
   min-height: 100dvh;
   padding: var(--v2-rail-inset);
   padding-left: var(--v2-sidebar-offset);
   padding-right: var(--v2-sidebar-offset);
   box-sizing: border-box;
+  transition: padding-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v2-shell:has(.v2-rail--left.is-collapsed) {
+  --v2-left-rail-w: var(--v2-rail-w-collapsed);
 }
 
 .v2-shell:has(#resources-rail.hidden) {

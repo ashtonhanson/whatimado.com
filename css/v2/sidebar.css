@@ -20,20 +20,87 @@
   flex-direction: column;
   gap: 0;
   box-sizing: border-box;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v2-rail--left.is-collapsed {
+  width: var(--v2-rail-w-collapsed);
 }
 
 .v2-rail-brand {
   flex-shrink: 0;
-  padding: 0.95rem 1.15rem;
+  padding: 0.85rem 0.9rem;
   border-bottom: 1px solid rgba(46, 232, 214, 0.12);
   background: transparent;
+}
+
+.v2-rail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.v2-rail-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--v2-btn-radius);
+  background: transparent;
+  color: var(--v2-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.v2-rail-toggle:hover {
+  background: rgba(46, 232, 214, 0.08);
+  color: var(--v2-text);
+}
+
+.v2-rail-toggle-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.v2-rail-toggle-icon--expand {
+  display: none;
+}
+
+.v2-rail--left.is-collapsed .v2-rail-toggle-icon--collapse {
+  display: none;
+}
+
+.v2-rail--left.is-collapsed .v2-rail-toggle-icon--expand {
+  display: block;
 }
 
 .v2-brand {
   display: flex;
   align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
   text-decoration: none;
   color: inherit;
+}
+
+.v2-brand-mark {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  margin: 0 auto;
+  font-family: var(--v2-font-hero);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--v2-yellow);
 }
 
 .v2-brand-word {
@@ -280,6 +347,77 @@
   flex-shrink: 0;
 }
 
+/* Collapsed rail — icon-only Copilot-style */
+.v2-rail--left.is-collapsed .v2-rail-brand {
+  padding: 0.75rem 0.45rem;
+}
+
+.v2-rail--left.is-collapsed .v2-rail-header {
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.v2-rail--left.is-collapsed .v2-brand-word {
+  display: none;
+}
+
+.v2-rail--left.is-collapsed .v2-brand-mark {
+  display: inline-flex;
+}
+
+.v2-rail--left.is-collapsed .v2-rail-body {
+  padding: 0.55rem 0.45rem;
+  align-items: center;
+}
+
+.v2-rail--left.is-collapsed .v2-undo-btn,
+.v2-rail--left.is-collapsed .v2-nav-group-label,
+.v2-rail--left.is-collapsed .v2-active-path,
+.v2-rail--left.is-collapsed .v2-sync-note,
+.v2-rail--left.is-collapsed .v2-profile-copy,
+.v2-rail--left.is-collapsed .v2-profile-chevron {
+  display: none;
+}
+
+.v2-rail--left.is-collapsed .v2-undo-btn svg,
+.v2-rail--left.is-collapsed .v2-nav-label {
+  display: none;
+}
+
+.v2-rail--left.is-collapsed .v2-nav-btn {
+  justify-content: center;
+  align-items: center;
+  width: 2.55rem;
+  height: 2.55rem;
+  padding: 0;
+  margin: 0 auto;
+  border-radius: var(--v2-btn-radius);
+}
+
+.v2-rail--left.is-collapsed .v2-nav-btn.is-active {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px rgba(232, 244, 242, 0.82);
+  color: var(--v2-text);
+}
+
+.v2-rail--left.is-collapsed .v2-rail-foot {
+  padding: 0.65rem 0.45rem 0.85rem;
+  justify-items: center;
+}
+
+.v2-rail--left.is-collapsed .v2-profile {
+  width: 2.55rem;
+  height: 2.55rem;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.v2-rail--left.is-collapsed .v2-profile-avatar {
+  width: 2rem;
+  height: 2rem;
+}
+
 @media (max-width: 900px) {
   .v2-rail--left {
     position: relative;
@@ -318,5 +456,13 @@
   .v2-nav {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+
+  .v2-rail--left.is-collapsed {
+    width: 100%;
+  }
+
+  .v2-rail-toggle {
+    display: none;
   }
 }
