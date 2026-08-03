@@ -182,9 +182,12 @@ export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
 
   bottomCushion = Math.max(bottomCushion, topLock);
 
+  const minFrameBand = 48;
+  const clampedHomeBase = Math.min(homeBase, bottomCushion - minFrameBand);
+
   return {
     topLock,
-    homeBase,
+    homeBase: Math.max(topLock, clampedHomeBase),
     bottomCushion,
     mainH
   };
@@ -604,19 +607,21 @@ export class FrameDockController {
     }
   }
 
-  /** Re-measure Home Base with live YOU-node clearance after gravity has settled. */
+  /** Gravity sync runs first; YOU-node nudge waits until the map has settled. */
   _finishDockTransition() {
     this._dockTransition = false;
-    this._skipYouNodeFloor = false;
-
-    if (this._docked && this.activeSnap === SNAP.HOME && this.mainEl) {
-      const anchors = this._refreshAnchors();
-      if (anchors) {
-        this._applyTop(anchors.homeBase, { snap: SNAP.HOME });
-      }
-    }
-
     this.onDockSettled();
+
+    requestAnimationFrame(() => {
+      this._skipYouNodeFloor = false;
+      if (!this._docked || this.activeSnap !== SNAP.HOME || !this.mainEl) return;
+
+      const anchors = this._refreshAnchors();
+      if (!anchors) return;
+
+      this._applyTop(anchors.homeBase, { snap: SNAP.HOME });
+      this.onDockSettled();
+    });
   }
 
   /**

@@ -311,7 +311,7 @@ frameEl?.addEventListener("composer-submit", (event) => {
 });
 
 frameEl?.addEventListener("dock-settled", () => {
-  mapEl?.syncFrameGravity({ animate: true });
+  mapEl?.syncFrameGravity({ animate: false });
 });
 
 document.getElementById("nav-home")?.addEventListener("click", () => {

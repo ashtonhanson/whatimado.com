@@ -558,6 +558,29 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** @returns {{ panX: number, panY: number }} */
+  _computeChatFrameGravityPan() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const frame = document.getElementById("dynamic-frame");
+    if (!stage || !frame) return { panX: 0, panY: 0 };
+
+    const stageRect = stage.getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+
+    const bounds = this._getGraphBounds();
+    const shiftY = readGraphShiftY();
+    const scaleY = VIEW_H / stageRect.height;
+    const gapPx = 12;
+
+    /** Keep graph bottom anchored just above the frame top — not the frame center */
+    const anchorScreenY = frameRect.top - gapPx;
+    const panY = (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY;
+    const panX = VIEW_W / 2 - bounds.cx;
+
+    return { panX, panY };
+  }
+
+  /** @returns {{ panX: number, panY: number }} */
   _computeDefaultFrameGravityPan() {
     const centroid = this._getGraphCentroid();
     const frameCenter = this._getFrameCenterInSvgCoords();
@@ -639,7 +662,7 @@ export class WhatimadoMap extends HTMLElement {
     } else if (this._isOpenHomePhase()) {
       target = this._computeOpenHomeGravityPan();
     } else {
-      target = this._computeDefaultFrameGravityPan();
+      target = this._computeChatFrameGravityPan();
     }
 
     this._animatePanTo(target.panX, target.panY, animate);
