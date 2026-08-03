@@ -12,6 +12,11 @@ function applyNavRailCollapsed(collapsed) {
     toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
     toggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
   }
+
+  const logoTip = rail.querySelector(".v2-rail-logo-slot .v2-rail-tip");
+  if (logoTip) {
+    logoTip.textContent = collapsed ? "Open Sidebar" : "";
+  }
 }
 
 /** Restore saved rail width preference and wire the toggle control. */
