@@ -23,20 +23,20 @@ export function getPhaseVisibility(phase, options = {}) {
     case PHASE.OPEN:
       return {
         map: ghostDismissed ? "faint" : "ghost",
-        resources: true,
+        resources: false,
         possibilities: false,
         homePrompt: true
       };
     case PHASE.EXPLORING:
     case PHASE.COACHING:
-      return { map: "faint", resources: true, possibilities: false, homePrompt: false };
+      return { map: "faint", resources: false, possibilities: false, homePrompt: false };
     case PHASE.POSSIBILITIES:
-      return { map: "visible", resources: true, possibilities: true, homePrompt: false };
+      return { map: "visible", resources: false, possibilities: true, homePrompt: false };
     case PHASE.PATH_SELECTED:
     case PHASE.MISSIONS:
       return { map: "visible", resources: true, possibilities: false, homePrompt: false };
     default:
-      return { map: "ghost", resources: true, possibilities: false, homePrompt: true };
+      return { map: "ghost", resources: false, possibilities: false, homePrompt: true };
   }
 }
 
@@ -75,7 +75,7 @@ export function applyPhaseToDom(doc, phase, options = {}) {
 
   doc.documentElement.style.setProperty(
     "--v2-kicker-reserve",
-    phase === PHASE.OPEN ? "clamp(4.5rem, 12vh, 6.25rem)" : "0px"
+    phase === PHASE.OPEN ? "clamp(5.5rem, 14vh, 7rem)" : "0px"
   );
 
   const possibilities = doc.getElementById("possibilities");

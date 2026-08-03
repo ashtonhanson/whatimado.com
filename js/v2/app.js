@@ -313,7 +313,11 @@ document.getElementById("nav-home")?.addEventListener("click", () => {
 
 window.addEventListener("resize", () => notifyFrameLayout());
 
-requestAnimationFrame(() => seedHypotheticalChat());
+applyPhaseToDom(document, PHASE.OPEN, { ghostDismissed: false });
+
+if (new URLSearchParams(window.location.search).has("demo")) {
+  requestAnimationFrame(() => seedHypotheticalChat());
+}
 
 frameEl?.focusComposer();
 initNeonShine();

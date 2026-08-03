@@ -289,6 +289,32 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
   }
 }
 
+@keyframes v2-kicker-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.65rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body.v2-app[data-phase="open"] .v2-frame-kicker {
+  left: 0;
+  right: 0;
+  width: var(--v2-frame-w);
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
+  animation: v2-kicker-enter 0.85s cubic-bezier(0.32, 0.94, 0.42, 1) both;
+  animation-delay: 0.12s;
+}
+
 /* Kicker above frame — matches production home copy */
 .v2-frame-kicker {
   position: absolute;
@@ -315,6 +341,10 @@ whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
+    animation: none;
+  }
+
   .v2-frame-kicker {
     transition: opacity 0.15s ease;
   }
