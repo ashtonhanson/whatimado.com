@@ -170,12 +170,16 @@ whatimado-map .whatimado-map__node-body {
   transform-origin: center;
   transition:
     fill 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke-width 0.55s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 whatimado-map .whatimado-map__node--live.is-support .whatimado-map__node-body {
   fill: var(--v2-teal);
   transform: scale(0.5);
+  stroke: #8a9399;
+  stroke-width: 0.75;
 }
 
 whatimado-map .whatimado-map__node--live.is-support.is-start .whatimado-map__node-body {
@@ -185,6 +189,8 @@ whatimado-map .whatimado-map__node--live.is-support.is-start .whatimado-map__nod
 whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
   fill: var(--v2-yellow);
   transform: scale(1);
+  stroke: none;
+  stroke-width: 0;
 }
 
 whatimado-map .whatimado-map__node--live text {
@@ -225,6 +231,8 @@ whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-aura {
 whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start .whatimado-map__node-body {
   fill: var(--v2-yellow);
   transform: scale(1);
+  stroke: none;
+  stroke-width: 0;
 }
 
 whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start text {
