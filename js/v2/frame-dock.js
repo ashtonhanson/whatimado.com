@@ -11,9 +11,6 @@ const GLIDE_FRICTION = 0.905;
 const GLIDE_MIN_SPEED = 0.06;
 const GLIDE_MAX_SPEED = 22;
 
-/** U-node clearance below the 2/3 viewport home line */
-const YOU_NODE_CLEARANCE = "clamp(0.75rem, 2vh, 1.25rem)";
-
 /** Minimum panel height at Bottom Cushion — uses min height, not live offsetHeight */
 const MIN_FRAME_HEIGHT = 260;
 const BOTTOM_CONTENT_CUSHION = 36;
@@ -54,24 +51,6 @@ function measureCssVarLength(varName) {
 }
 
 /**
- * Parse a CSS length (px, rem, vh, clamp) against a reference size.
- * @param {string} raw
- * @param {number} refPx
- */
-function readCssLength(raw, refPx) {
-  const value = String(raw || "").trim();
-  if (!value) return 0;
-  if (value.endsWith("px")) return Number.parseFloat(value) || 0;
-  if (value.endsWith("vh")) return (refPx * (Number.parseFloat(value) || 0)) / 100;
-  if (value.endsWith("rem")) {
-    const root = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    return (Number.parseFloat(value) || 0) * root;
-  }
-  const num = Number.parseFloat(value);
-  return Number.isFinite(num) ? num : 0;
-}
-
-/**
  * Top Lock — aligned with sidebar top edges in main coordinates.
  * @param {HTMLElement} mainEl
  */
@@ -87,47 +66,15 @@ export function measureTopLock(mainEl) {
 }
 
 /**
- * YOU-node floor in main coordinates — used to nudge Home Base slightly lower.
+ * Home Base — one-third from viewport top (hero-covered position after dismiss).
+ * Frame position is layout-owned; map gravity follows frame top, not node coords.
  * @param {HTMLElement} mainEl
- * @param {HTMLElement|null} mapEl
- * @returns {number|null}
  */
-export function measureYouNodeFloor(mainEl, mapEl) {
-  if (!mapEl) return null;
-
-  const mainRect = mainEl.getBoundingClientRect();
-  const anchorBody =
-    mapEl.querySelector('[data-node-id="ghost-start"] .whatimado-map__node-body') ||
-    mapEl.querySelector('[data-node-id="start"] .whatimado-map__node-body') ||
-    mapEl.querySelector(".whatimado-map__node--live.is-start .whatimado-map__node-body") ||
-    mapEl.querySelector(".whatimado-map__node--live.is-anchor .whatimado-map__node-body");
-
-  if (!anchorBody) return null;
-
-  const nodeRect = anchorBody.getBoundingClientRect();
-  const clearance = readCssLength(YOU_NODE_CLEARANCE, viewportHeight());
-  return nodeRect.bottom - mainRect.top + clearance;
-}
-
-/**
- * Home Base — 2/3 up from viewport bottom, shifted lower to clear the YOU node.
- * @param {HTMLElement} mainEl
- * @param {HTMLElement|null} mapEl
- * @param {{ skipYouNodeFloor?: boolean }} [options]
- */
-export function measureHomeBase(mainEl, mapEl, options = {}) {
-  const { skipYouNodeFloor = false } = options;
+export function measureHomeBase(mainEl) {
   const mainRect = mainEl.getBoundingClientRect();
   const vh = viewportHeight();
-
-  /** 2/3 from bottom ⇒ line sits at vh × ⅓ from the viewport top */
   const viewportHome = vh / 3;
-  const railHome = viewportHome - mainRect.top;
-
-  if (skipYouNodeFloor) return railHome;
-
-  const youFloor = measureYouNodeFloor(mainEl, mapEl);
-  return youFloor != null ? Math.max(railHome, youFloor) : railHome;
+  return viewportHome - mainRect.top;
 }
 
 /**
@@ -160,16 +107,12 @@ export function measureFrameBottomToComposerGap(frameEl) {
  * Three explicit anchor lines for the frame top edge.
  * @param {HTMLElement} mainEl
  * @param {HTMLElement} frameEl
- * @param {HTMLElement|null} [mapEl]
- * @param {{ defaultFrameHeight?: number|null, skipYouNodeFloor?: boolean }} [cache]
+ * @param {{ defaultFrameHeight?: number|null }} [cache]
  */
-export function measureAnchors(mainEl, frameEl, mapEl = null, cache = {}) {
-  const map = mapEl ?? document.getElementById("possibility-map");
+export function measureAnchors(mainEl, frameEl, cache = {}) {
   const mainH = mainEl.clientHeight;
   const topLock = measureTopLock(mainEl);
-  const homeBase = measureHomeBase(mainEl, map, {
-    skipYouNodeFloor: Boolean(cache.skipYouNodeFloor)
-  });
+  const homeBase = measureHomeBase(mainEl);
 
   /**
    * Bottom Cushion — authoritative snap from clean screenshot.
@@ -284,7 +227,6 @@ export class FrameDockController {
     this.onDockSettled = options.onDockSettled ?? (() => {});
     this.onDockProgress = options.onDockProgress ?? (() => {});
     this.mainEl = /** @type {HTMLElement|null} */ (frameEl.closest(".v2-main"));
-    this.mapEl = /** @type {HTMLElement|null} */ (document.getElementById("possibility-map"));
     /** @type {typeof SNAP[keyof typeof SNAP]} */
     this.activeSnap = SNAP.HOME;
     /** @type {number} */
@@ -319,8 +261,6 @@ export class FrameDockController {
     this._motionEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     /** @type {boolean} */
     this._dockTransition = false;
-    /** @type {boolean} */
-    this._skipYouNodeFloor = false;
   }
 
   /** @returns {number} */
@@ -333,16 +273,18 @@ export class FrameDockController {
     return this._dockTransition || this._settling;
   }
 
+  /** Keep map SVG band height lockstep with frame top during dock / dismiss */
+  _syncMapBandLayout(frameTopPx) {
+    document.documentElement.style.setProperty("--v2-docked-frame-top", `${frameTopPx}px`);
+  }
+
   _anchorCache() {
-    return {
-      defaultFrameHeight: this._defaultFrameHeight,
-      skipYouNodeFloor: this._skipYouNodeFloor
-    };
+    return { defaultFrameHeight: this._defaultFrameHeight };
   }
 
   _refreshAnchors() {
     if (!this.mainEl) return null;
-    this._anchors = measureAnchors(this.mainEl, this.frameEl, this.mapEl, this._anchorCache());
+    this._anchors = measureAnchors(this.mainEl, this.frameEl, this._anchorCache());
     return this._anchors;
   }
 
@@ -383,6 +325,7 @@ export class FrameDockController {
 
     document.documentElement.style.setProperty("--v2-kicker-reserve", KICKER_RESERVE_DEFAULT);
     document.documentElement.style.removeProperty("--v2-map-dim");
+    document.documentElement.style.removeProperty("--v2-docked-frame-top");
     document.documentElement.style.setProperty("--whatimado-frame-top", `${openVh}vh`);
 
     this.frameEl.classList.remove("is-docked", "is-dragging", "is-animating", "is-gliding", "is-settling");
@@ -395,19 +338,25 @@ export class FrameDockController {
   }
 
   /** After hero dismiss — glide into Home Base */
-  enterDockedHome({ animate = true, skipYouNodeFloor = animate } = {}) {
+  enterDockedHome({ animate = true } = {}) {
     if (!this.mainEl) return;
 
     this._stopMotion();
     this._docked = true;
     this._dockTransition = Boolean(animate && this._motionEnabled);
-    this._skipYouNodeFloor = skipYouNodeFloor;
     this.activeSnap = SNAP.HOME;
     document.body.classList.add("is-hero-dismissing");
     this.frameEl.classList.add("is-docked");
 
     requestAnimationFrame(() => {
       this._captureDefaultMetrics();
+      /** Seed band height from live frame position before the glide begins */
+      if (this.mainEl) {
+        const mainRect = this.mainEl.getBoundingClientRect();
+        const frameRect = this.frameEl.getBoundingClientRect();
+        this._topPx = frameRect.top - mainRect.top;
+      }
+      this._syncMapBandLayout(this._topPx);
       const anchors = this._refreshAnchors();
       if (!anchors) return;
 
@@ -611,23 +560,13 @@ export class FrameDockController {
     }
   }
 
-  /** Gravity sync runs first; YOU-node nudge waits until the map has settled. */
+  /** Gravity sync runs first; map band height tracks frame top throughout. */
   _finishDockTransition() {
     this._dockTransition = false;
     document.body.classList.remove("is-hero-dismissing");
     document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");
+    this._syncMapBandLayout(this._topPx);
     this.onDockSettled();
-
-    requestAnimationFrame(() => {
-      this._skipYouNodeFloor = false;
-      if (!this._docked || this.activeSnap !== SNAP.HOME || !this.mainEl) return;
-
-      const anchors = this._refreshAnchors();
-      if (!anchors) return;
-
-      this._applyTop(anchors.homeBase, { snap: SNAP.HOME });
-      this.onDockSettled();
-    });
   }
 
   /**
@@ -689,6 +628,10 @@ export class FrameDockController {
 
     this._topPx = topPx;
     this.frameEl.style.top = `${topPx}px`;
+
+    if (this._docked) {
+      this._syncMapBandLayout(topPx);
+    }
 
     if (snap) {
       this.frameEl.dataset.snap = snap;

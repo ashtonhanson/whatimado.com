@@ -1,4 +1,5 @@
 import { FrameDockController } from "../frame-dock.js";
+import { FrameBreatheController } from "../frame-breathe.js";
 
 /** Example prompts cycled in the composer when empty */
 const EXAMPLE_PROMPTS = [
@@ -95,6 +96,8 @@ export class WhatimadoFrame extends HTMLElement {
     this._baseThumbHeight = 28;
     /** @type {FrameDockController|null} */
     this._dock = null;
+    /** @type {FrameBreatheController|null} */
+    this._breathe = null;
     /** @type {HTMLElement|null} */
     this._dragRail = null;
 
@@ -157,6 +160,7 @@ export class WhatimadoFrame extends HTMLElement {
     this.removeEventListener("pointercancel", this._onDragPointerUp);
     this._clearBounceReleaseTimer();
     this._clearSpringCleanupTimer();
+    this._breathe?.stop();
   }
 
   attributeChangedCallback(name) {
@@ -189,6 +193,7 @@ export class WhatimadoFrame extends HTMLElement {
 
   /** Hero dismissed — collapse kicker gap and slide to Home Base */
   onHeroDismissed({ animate = true } = {}) {
+    this._breathe?.stop();
     this._dock?.enterDockedHome({ animate });
   }
 
@@ -205,6 +210,7 @@ export class WhatimadoFrame extends HTMLElement {
   _initPhaseLayout() {
     const phase = document.body.dataset.phase || "open";
     if (phase === "open") {
+      this._breathe?.stop();
       this._dock?.enterOpenLayout();
     } else {
       this._dock?.enterDockedHome({ animate: false });
@@ -218,9 +224,14 @@ export class WhatimadoFrame extends HTMLElement {
         this.dispatchEvent(new CustomEvent("dock-progress", { bubbles: true, detail: { frameTop } }));
       },
       onDockSettled: () => {
+        this._breathe?.start();
         this.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
       }
     });
+    const inner = this.querySelector(".whatimado-frame__inner");
+    if (inner instanceof HTMLElement) {
+      this._breathe = new FrameBreatheController(this, inner);
+    }
     this._dragRail = this.querySelector(".whatimado-frame__drag-rail");
     this._dragRail?.addEventListener("pointerdown", this._onDragPointerDown);
     this.addEventListener("pointermove", this._onDragPointerMove);

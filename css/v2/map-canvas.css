@@ -21,21 +21,26 @@ body.v2-app.is-hero-dismissing {
   --v2-map-graph-shift-y: 0;
 }
 
-body.v2-app[data-phase="open"] whatimado-map,
-body.v2-app.is-hero-dismissing whatimado-map {
+body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
   --v2-map-svg-h: calc(
     var(--whatimado-frame-top-default) - var(--v2-kicker-reserve) - var(--v2-hero-node-gap)
       + var(--v2-map-band-offset-top)
   );
 }
 
-body.v2-app[data-phase="open"] whatimado-map .whatimado-map__stage,
-body.v2-app.is-hero-dismissing whatimado-map .whatimado-map__stage {
+body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map .whatimado-map__stage {
   top: var(--v2-map-band-offset-top);
 }
 
-body.v2-app:not([data-phase="open"]):not(.is-hero-dismissing) whatimado-map {
-  --v2-map-svg-h: var(--whatimado-frame-top-default);
+/** Dock + hero dismiss — map band tracks live frame top (set by frame-dock.js) */
+body.v2-app.is-hero-dismissing whatimado-map,
+body.v2-app:not([data-phase="open"]) whatimado-map {
+  --v2-map-svg-h: calc(var(--v2-docked-frame-top, 33.333vh) + var(--v2-map-band-offset-top));
+}
+
+body.v2-app.is-hero-dismissing whatimado-map .whatimado-map__stage,
+body.v2-app:not([data-phase="open"]) whatimado-map .whatimado-map__stage {
+  top: 0;
 }
 
 whatimado-map[data-mode="ghost"],
