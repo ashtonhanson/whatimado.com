@@ -1,10 +1,117 @@
-/* Frame shells — clean borders, no outer glow (content stacking only) */
+/* Neon frame borders — slim pulsing glow + border undulation */
 
-whatimado-frame .whatimado-frame__inner,
-.v2-rail--left,
-.v2-rail--right {
+:root {
+  --v2-neon-teal: #42fff0;
+  --v2-neon-teal-bright: #7dffef;
+  --v2-neon-glow-soft: rgba(66, 255, 240, 0.22);
+  --v2-neon-glow-mid: rgba(66, 255, 240, 0.38);
+  --v2-neon-glow-strong: rgba(66, 255, 240, 0.55);
+  --v2-neon-border-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  /* Tunable frame glow — slim/refined defaults */
+  --v2-frame-glow-pulse-duration: 5.5s;
+  --v2-frame-glow-pulse-ease: ease-in-out;
+  --v2-frame-glow-radius-near: 5px;
+  --v2-frame-glow-radius-far: 14px;
+  --v2-frame-glow-opacity-min: 0.14;
+  --v2-frame-glow-opacity-max: 0.28;
+  --v2-frame-border-wave-duration: 11s;
+  --v2-frame-border-stroke: 1px;
+}
+
+whatimado-frame .whatimado-frame__inner {
   position: relative;
+  border-width: var(--v2-frame-border-stroke);
+  border-color: var(--v2-neon-glow-mid);
+  animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
+}
+
+.v2-rail--right {
+  border-width: var(--v2-frame-border-stroke);
+  border-color: var(--v2-neon-glow-mid);
+  animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
+}
+
+.v2-rail--left {
   z-index: 50;
+  border-width: var(--v2-frame-border-stroke);
+  border-color: var(--v2-neon-glow-mid);
+  animation: v2-frame-glow-pulse var(--v2-frame-glow-pulse-duration) var(--v2-frame-glow-pulse-ease) infinite;
+}
+
+@keyframes v2-frame-glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 var(--v2-frame-glow-radius-near) rgba(66, 255, 240, var(--v2-frame-glow-opacity-min)),
+      0 0 var(--v2-frame-glow-radius-far) rgba(46, 232, 214, calc(var(--v2-frame-glow-opacity-min) * 0.6));
+  }
+  50% {
+    box-shadow:
+      0 0 calc(var(--v2-frame-glow-radius-near) + 3px) rgba(125, 255, 239, var(--v2-frame-glow-opacity-max)),
+      0 0 calc(var(--v2-frame-glow-radius-far) + 5px) rgba(46, 232, 214, calc(var(--v2-frame-glow-opacity-max) * 0.65));
+  }
+}
+
+whatimado-frame .whatimado-frame__inner::before,
+.v2-rail--left::before,
+.v2-rail--right::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(66, 255, 240, 0.06) 0%,
+    rgba(125, 255, 239, 0.32) 20%,
+    rgba(66, 255, 240, 0.08) 40%,
+    rgba(125, 255, 239, 0.26) 60%,
+    rgba(66, 255, 240, 0.06) 80%,
+    rgba(125, 255, 239, 0.3) 92%,
+    rgba(66, 255, 240, 0.06) 100%
+  );
+  background-size: 320% 100%;
+  -webkit-mask: var(--v2-neon-border-mask);
+  -webkit-mask-composite: xor;
+  mask: var(--v2-neon-border-mask);
+  mask-composite: exclude;
+  animation: v2-neon-wave-travel var(--v2-frame-border-wave-duration) ease-in-out infinite;
+}
+
+whatimado-frame .whatimado-frame__inner::after,
+.v2-rail--left::after,
+.v2-rail--right::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  padding: 1px;
+  background: linear-gradient(
+    100deg,
+    transparent 36%,
+    rgba(125, 255, 239, 0.12) 44%,
+    rgba(180, 255, 248, 0.55) 50%,
+    rgba(125, 255, 239, 0.12) 56%,
+    transparent 64%
+  );
+  background-size: 400% 100%;
+  background-position: 150% 0;
+  -webkit-mask: var(--v2-neon-border-mask);
+  -webkit-mask-composite: xor;
+  mask: var(--v2-neon-border-mask);
+  mask-composite: exclude;
+}
+
+whatimado-frame .whatimado-frame__inner.v2-neon-sweep-active::after,
+.v2-rail--left.v2-neon-sweep-active::after,
+.v2-rail--right.v2-neon-sweep-active::after {
+  opacity: 1;
+  animation: v2-neon-frame-sweep 6.5s cubic-bezier(0.45, 0.05, 0.2, 1) forwards;
 }
 
 whatimado-frame .whatimado-frame__body,
@@ -16,4 +123,59 @@ whatimado-frame .whatimado-frame__composer,
 .v2-rail--right > * {
   position: relative;
   z-index: 1;
+}
+
+@keyframes v2-neon-wave-travel {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    opacity: 0.45;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.62;
+  }
+}
+
+@keyframes v2-neon-frame-sweep {
+  0% {
+    background-position: 150% 0;
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.5;
+  }
+  94% {
+    opacity: 0.5;
+  }
+  100% {
+    background-position: -50% 0;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  whatimado-frame .whatimado-frame__inner,
+  .v2-rail--left,
+  .v2-rail--right {
+    animation: none;
+    box-shadow:
+      0 0 var(--v2-frame-glow-radius-near) rgba(66, 255, 240, 0.2),
+      0 0 var(--v2-frame-glow-radius-far) rgba(46, 232, 214, 0.1);
+  }
+
+  whatimado-frame .whatimado-frame__inner::before,
+  .v2-rail--left::before,
+  .v2-rail--right::before {
+    animation: none;
+    opacity: 0.5;
+    background-position: 50% 50%;
+  }
+
+  whatimado-frame .whatimado-frame__inner.v2-neon-sweep-active::after,
+  .v2-rail--left.v2-neon-sweep-active::after,
+  .v2-rail--right.v2-neon-sweep-active::after {
+    animation: none;
+    opacity: 0;
+  }
 }

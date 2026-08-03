@@ -325,7 +325,6 @@ export class WhatimadoMap extends HTMLElement {
   syncLiveFromStore() {
     this.loadLiveGraph(graphStore.nodes, graphStore.edges);
     this._applyAnchorStyles();
-    this.resetToYou({ animate: false });
   }
 
   /** Fade out ambient ghost (Step B — full personalize in Step D) */
@@ -883,7 +882,7 @@ export class WhatimadoMap extends HTMLElement {
       const isLayoutAnchor = id === this._anchorId;
       const graphNode = this._liveNodes.find((n) => n.id === id);
       const isStart = graphNode?.type === "start";
-      const isSelected = this._isNodeVisuallySelected(id);
+      const isSelected = id === this._selectedId;
 
       const group = node.groupEl;
       group.classList.toggle("is-anchor", isLayoutAnchor);
@@ -892,14 +891,6 @@ export class WhatimadoMap extends HTMLElement {
       group.classList.toggle("is-start", Boolean(isStart));
       group.classList.toggle("is-selected", isSelected);
     }
-  }
-
-  /** YOU stays yellow until a path is chosen */
-  /** @param {string} nodeId */
-  _isNodeVisuallySelected(nodeId) {
-    if (this._selectedId) return nodeId === this._selectedId;
-    const youId = this._liveNodes.find((n) => n.type === "start")?.id;
-    return Boolean(youId && nodeId === youId);
   }
 
   /**
@@ -1127,7 +1118,7 @@ export class WhatimadoMap extends HTMLElement {
         const cy = node.y * VIEW_H;
         const isLayoutAnchor = this._anchorId === node.id;
         const isStart = node.type === "start";
-        const isSelected = this._isNodeVisuallySelected(node.id);
+        const isSelected = node.id === this._selectedId;
         const r = nodeR;
         const classes = [
           "whatimado-map__node",
