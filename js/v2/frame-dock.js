@@ -148,17 +148,19 @@ export function measureMobileAnchors(mainEl, frameEl) {
   const vh = viewportHeight();
   const quarterIn = measureCssVarLength("--v2-mobile-quarter-in") || 24;
   const bottomInset = measureCssVarLength("--v2-mobile-bottom-inset") || 12;
+  const promptKickerGap = measureCssVarLength("--v2-mobile-prompt-kicker-gap") || 6;
   const composerOffset = measureMobileComposerOffset(frameEl);
   const chromeH = measureMobileFrameChrome(frameEl);
 
-  /** Prompt top sits 1/4in above viewport halfway, but never over the hero subheader */
-  let typingTop = Math.max(0, vh * 0.5 - quarterIn - mainRect.top - composerOffset);
   const kicker = document.getElementById("frame-kicker");
+  let homePromptTop = Math.max(0, vh * 0.5 - quarterIn - mainRect.top - composerOffset);
   if (kicker) {
     const kickerRect = kicker.getBoundingClientRect();
-    const kickerFloor = kickerRect.bottom - mainRect.top + 12;
-    typingTop = Math.max(typingTop, kickerFloor);
+    homePromptTop = kickerRect.bottom - mainRect.top + promptKickerGap;
   }
+
+  /** Typing/focus — same as home load: just below the subheader */
+  const typingTop = homePromptTop;
 
   const content = frameEl.querySelector(".whatimado-frame__body-content");
   const contentH = content?.scrollHeight ?? 0;
@@ -172,6 +174,7 @@ export function measureMobileAnchors(mainEl, frameEl) {
     maxGrowTop: typingTop,
     focusTop: typingTop,
     typingTop,
+    homePromptTop,
     collapsedTop: bottomTop,
     chromeH,
     bottomInset,
@@ -437,7 +440,7 @@ export class FrameDockController {
     this._mobileMode = true;
     this._stopMotion();
     this._docked = true;
-    this.activeSnap = SNAP.MOBILE_COLLAPSED;
+    this.activeSnap = SNAP.MOBILE_FOCUS;
     this._anchors = null;
     this._defaultFrameHeight = null;
     this._dockTransition = false;
@@ -453,9 +456,9 @@ export class FrameDockController {
     requestAnimationFrame(() => {
       const anchors = this._refreshAnchors();
       if (!anchors) return;
-      this._applyTop(anchors.collapsedTop, { snap: SNAP.MOBILE_COLLAPSED });
-      this.frameEl.classList.add("is-mobile-reading");
-      this.frameEl.classList.remove("is-mobile-typing");
+      this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
+      this.frameEl.classList.add("is-mobile-typing");
+      this.frameEl.classList.remove("is-mobile-reading");
       this._bindMobileViewportWatch();
       window.setTimeout(() => this.playMobileHint(), MOBILE_HINT_DELAY_MS);
       window.dispatchEvent(new Event("resize"));
@@ -495,10 +498,12 @@ export class FrameDockController {
     this.frameEl.classList.add("is-mobile-typing");
     this.frameEl.classList.remove("is-mobile-reading");
 
+    const target = anchors.homePromptTop;
+
     if (this._motionEnabled) {
-      this._easeToAnchor(anchors.typingTop, SNAP.MOBILE_FOCUS, { durationMs: MOBILE_GLIDE_EASE_MS });
+      this._easeToAnchor(target, SNAP.MOBILE_FOCUS, { durationMs: MOBILE_GLIDE_EASE_MS });
     } else {
-      this._applyTop(anchors.typingTop, { snap: SNAP.MOBILE_FOCUS });
+      this._applyTop(target, { snap: SNAP.MOBILE_FOCUS });
     }
   }
 
