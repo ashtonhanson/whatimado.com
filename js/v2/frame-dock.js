@@ -421,11 +421,12 @@ export class FrameDockController {
     const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 14;
     const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 0;
     const heroNudge = measureCssVarLength("--v2-mobile-focus-hero-nudge") || 22;
+    const bandRise = measureCssVarLength("--v2-mobile-focus-band-rise") || 0;
 
     const subEl = kicker.querySelector(".v2-kicker-sub");
     const brandEl = kicker.querySelector(".v2-kicker-brand");
     const keyboardOpen = measureKeyboardInset() > 48;
-    const bandTop = headerH + mapHeadGap;
+    const bandTop = headerH + mapHeadGap - bandRise;
 
     const applyStackLayout = () => {
       const freshKickerRect = kicker.getBoundingClientRect();
@@ -434,10 +435,10 @@ export class FrameDockController {
       let kickerShift = 0;
 
       if (youRect && brandEl) {
-        const brandTop = brandEl.getBoundingClientRect().top;
+        const brandTop = brandEl.getBoundingClientRect().top + bandRise;
         kickerShift = Math.round(youRect.bottom + youHeroGap - brandTop);
       } else if (youRect) {
-        kickerShift = Math.round(youRect.bottom + youHeroGap - freshKickerRect.top);
+        kickerShift = Math.round(youRect.bottom + youHeroGap - (freshKickerRect.top + bandRise));
       }
 
       document.documentElement.style.setProperty(
@@ -446,12 +447,15 @@ export class FrameDockController {
       );
 
       const subBottom =
-        (subEl ?? kicker).getBoundingClientRect().bottom + kickerShift - heroNudge;
+        (subEl ?? kicker).getBoundingClientRect().bottom + bandRise + kickerShift - heroNudge;
       const bandBottom = freshFrameRect.top - heroClearGap;
       let lift = Math.max(0, Math.ceil(subBottom - bandBottom));
 
       const brandTop =
-        (brandEl?.getBoundingClientRect().top ?? freshKickerRect.top) + kickerShift - heroNudge;
+        (brandEl?.getBoundingClientRect().top ?? freshKickerRect.top) +
+        bandRise +
+        kickerShift -
+        heroNudge;
       const maxLift = Math.max(0, Math.ceil(brandTop - bandTop));
       lift = Math.min(lift, maxLift);
 
@@ -1084,7 +1088,8 @@ export class FrameDockController {
 
     if (this._mobileMode) {
       const mainRect = this.mainEl.getBoundingClientRect();
-      this.frameEl.style.top = `${topPx + mainRect.top}px`;
+      const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
+      this.frameEl.style.top = `${topPx + mainRect.top + promptDrop}px`;
       this.frameEl.style.bottom = "auto";
     } else {
       this.frameEl.style.top = `${topPx}px`;

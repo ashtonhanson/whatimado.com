@@ -874,7 +874,8 @@ export class WhatimadoMap extends HTMLElement {
 
     const headerH = readCssVarLength("--v2-mobile-header-h") || 56;
     const mapHeadGap = readCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
-    const bandTop = headerH + mapHeadGap;
+    const bandRise = readCssVarLength("--v2-mobile-focus-band-rise") || 0;
+    const bandTop = headerH + mapHeadGap - bandRise;
 
     const panX = VIEW_W / 2 - bounds.cx;
     const panY = clampPanYForTopPad(
