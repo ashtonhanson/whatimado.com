@@ -194,12 +194,25 @@ export class WhatimadoFrame extends HTMLElement {
   /** Hero dismissed — collapse kicker gap and slide to Home Base */
   onHeroDismissed({ animate = true } = {}) {
     this._breathe?.stop();
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      this._dock?.enterMobileChatMode();
+      return;
+    }
     this._dock?.enterDockedHome({ animate });
   }
 
   /** Re-measure snap anchors on resize */
   remeasureDock() {
     this._dock?.remeasure();
+  }
+
+  /** Viewport crossed mobile breakpoint — re-init dock mode */
+  reinitLayoutForViewport() {
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      this._initPhaseLayout();
+      return;
+    }
+    this._dock?.exitMobileMode();
   }
 
   /** True while the frame is easing into dock after hero dismiss. */
@@ -211,7 +224,14 @@ export class WhatimadoFrame extends HTMLElement {
     const phase = document.body.dataset.phase || "open";
     if (phase === "open") {
       this._breathe?.stop();
-      this._dock?.enterOpenLayout();
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        this._dock?.enterMobileOpenLayout();
+      } else {
+        this._dock?.enterOpenLayout();
+      }
+    } else if (window.matchMedia("(max-width: 900px)").matches) {
+      this._dock?.enterMobileOpenLayout();
+      this._dock?.enterMobileChatMode();
     } else {
       this._dock?.enterDockedHome({ animate: false });
     }
@@ -652,6 +672,7 @@ export class WhatimadoFrame extends HTMLElement {
   /** Call after DOM updates inside the body (new messages, etc.) */
   notifyContentChange() {
     requestAnimationFrame(() => {
+      this._dock?.growForContent();
       this._dock?.remeasure();
       this._updateScrollState();
       if (this.classList.contains("is-scrollable") && this._body) {

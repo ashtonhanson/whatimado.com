@@ -2,8 +2,14 @@
 export const SNAP = {
   TOP: "top",
   HOME: "home",
-  BOTTOM: "bottom"
+  BOTTOM: "bottom",
+  MOBILE_COLLAPSED: "mobile-collapsed",
+  MOBILE_FOCUS: "mobile-focus"
 };
+
+const MOBILE_MQ = window.matchMedia("(max-width: 900px)");
+const MOBILE_GROW_EASE_MS = 420;
+const MOBILE_HINT_DELAY_MS = 380;
 
 /** Glide tuning — aligned with map node release physics */
 const GLIDE_VEL_SCALE = 0.52;
@@ -108,6 +114,57 @@ export function measureFrameBottomToComposerGap(frameEl) {
  * @param {HTMLElement} frameEl
  * @param {{ defaultFrameHeight?: number|null }} [cache]
  */
+/**
+ * Minimum collapsed panel chrome on mobile (drag handle + composer + inset).
+ * @param {HTMLElement} frameEl
+ */
+export function measureMobileFrameChrome(frameEl) {
+  const drag = frameEl.querySelector(".whatimado-frame__drag-rail");
+  const composer = frameEl.querySelector(".whatimado-frame__composer");
+  const dragH = drag?.getBoundingClientRect().height ?? 26;
+  const composerH = composer?.getBoundingClientRect().height ?? 68;
+  return Math.max(104, dragH + composerH + 14);
+}
+
+/**
+ * Mobile anchors — map/kicker stay fixed; frame slides between collapsed and focus.
+ * @param {HTMLElement} mainEl
+ * @param {HTMLElement} frameEl
+ */
+export function measureMobileAnchors(mainEl, frameEl) {
+  const mainRect = mainEl.getBoundingClientRect();
+  const mainH = mainEl.clientHeight;
+  const vh = viewportHeight();
+  const chromeH = measureMobileFrameChrome(frameEl);
+  const collapsedTop = Math.max(0, mainH - chromeH);
+
+  /** Cap auto-grow just above viewport halfway */
+  const maxGrowTop = Math.max(0, vh * 0.46 - mainRect.top);
+  const focusTop = Math.max(maxGrowTop, Math.min(collapsedTop - 20, mainH * 0.42));
+
+  return {
+    topLock: maxGrowTop,
+    homeBase: focusTop,
+    bottomCushion: collapsedTop,
+    maxGrowTop,
+    focusTop,
+    collapsedTop,
+    chromeH,
+    mainH
+  };
+}
+
+/**
+ * @param {number} topPx
+ * @param {number} velocityY
+ * @param {{ collapsedTop: number, focusTop: number }} anchors
+ */
+export function resolveMobileSnap(topPx, velocityY, anchors) {
+  const mid = (anchors.collapsedTop + anchors.focusTop) / 2;
+  const biasedTop = topPx + velocityY * FLICK_VEL_BIAS;
+  return biasedTop <= mid ? SNAP.MOBILE_FOCUS : SNAP.MOBILE_COLLAPSED;
+}
+
 export function measureAnchors(mainEl, frameEl, cache = {}) {
   const mainH = mainEl.clientHeight;
   const topLock = measureTopLock(mainEl);
@@ -260,6 +317,36 @@ export class FrameDockController {
     this._motionEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     /** @type {boolean} */
     this._dockTransition = false;
+    /** @type {boolean} */
+    this._mobileMode = false;
+    /** @type {(() => void)|null} */
+    this._mobileViewportHandler = null;
+  }
+
+  /** @returns {boolean} */
+  _isMobile() {
+    return MOBILE_MQ.matches;
+  }
+
+  _bindMobileViewportWatch() {
+    if (this._mobileViewportHandler || !window.visualViewport) return;
+
+    this._mobileViewportHandler = () => {
+      if (!this._mobileMode || !this.mainEl) return;
+      this._anchors = null;
+      this.growForContent();
+      this.remeasure();
+    };
+
+    window.visualViewport.addEventListener("resize", this._mobileViewportHandler);
+    window.visualViewport.addEventListener("scroll", this._mobileViewportHandler);
+  }
+
+  _unbindMobileViewportWatch() {
+    if (!this._mobileViewportHandler || !window.visualViewport) return;
+    window.visualViewport.removeEventListener("resize", this._mobileViewportHandler);
+    window.visualViewport.removeEventListener("scroll", this._mobileViewportHandler);
+    this._mobileViewportHandler = null;
   }
 
   /** @returns {number} */
@@ -283,7 +370,9 @@ export class FrameDockController {
 
   _refreshAnchors() {
     if (!this.mainEl) return null;
-    this._anchors = measureAnchors(this.mainEl, this.frameEl, this._anchorCache());
+    this._anchors = this._mobileMode
+      ? measureMobileAnchors(this.mainEl, this.frameEl)
+      : measureAnchors(this.mainEl, this.frameEl, this._anchorCache());
     return this._anchors;
   }
 
@@ -307,8 +396,102 @@ export class FrameDockController {
     this.frameEl.classList.remove("is-gliding", "is-settling");
   }
 
+  /** Mobile home — draggable sheet decoupled from map/kicker */
+  enterMobileOpenLayout() {
+    if (!this.mainEl || !this._isMobile()) return;
+
+    this._unbindMobileViewportWatch();
+    this._mobileMode = true;
+    this._stopMotion();
+    this._docked = true;
+    this.activeSnap = SNAP.MOBILE_COLLAPSED;
+    this._anchors = null;
+    this._defaultFrameHeight = null;
+    this._dockTransition = false;
+
+    document.documentElement.style.removeProperty("--v2-docked-frame-top");
+    document.documentElement.style.removeProperty("--whatimado-frame-top");
+    this.frameEl.style.removeProperty("top");
+    this.frameEl.classList.add("is-docked", "is-mobile-docked");
+    this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
+    this.frameEl.removeAttribute("data-snap");
+    document.body.classList.remove("is-hero-dismissing");
+
+    requestAnimationFrame(() => {
+      const anchors = this._refreshAnchors();
+      if (!anchors) return;
+      this._applyTop(anchors.collapsedTop, { snap: SNAP.MOBILE_COLLAPSED });
+      this._bindMobileViewportWatch();
+      window.setTimeout(() => this.playMobileHint(), MOBILE_HINT_DELAY_MS);
+    });
+  }
+
+  /** After hero copy fades on mobile — grow frame for messages, no map coupling */
+  enterMobileChatMode() {
+    if (!this.mainEl || !this._mobileMode) return;
+    this.growForContent();
+  }
+
+  /** Subtle pull-up hint that the sheet is draggable */
+  playMobileHint() {
+    if (!this._mobileMode || !this._motionEnabled || this._dragging) return;
+    this.frameEl.classList.remove("is-mobile-hint");
+    void this.frameEl.offsetWidth;
+    this.frameEl.classList.add("is-mobile-hint");
+    const cleanup = () => this.frameEl.classList.remove("is-mobile-hint");
+    this.frameEl.addEventListener("animationend", cleanup, { once: true });
+    window.setTimeout(cleanup, 1400);
+  }
+
+  /**
+   * Slide frame up as messages accumulate — capped just above halfway.
+   */
+  growForContent() {
+    if (!this._mobileMode || !this.mainEl || this._dragging || this._gliding || this._settling) {
+      return;
+    }
+
+    const anchors = this._refreshAnchors();
+    if (!anchors) return;
+
+    const content = this.frameEl.querySelector(".whatimado-frame__body-content");
+    if (!content) return;
+
+    const contentH = content.scrollHeight;
+    const neededH = anchors.chromeH + contentH + 10;
+    const naturalTop = anchors.mainH - neededH;
+    const targetTop = Math.max(anchors.maxGrowTop, Math.min(anchors.collapsedTop, naturalTop));
+
+    if (targetTop >= this._topPx - 0.75) return;
+
+    if (this._motionEnabled) {
+      this._easeToAnchor(targetTop, this.activeSnap, { durationMs: MOBILE_GROW_EASE_MS });
+    } else {
+      this._applyTop(targetTop, { snap: this.activeSnap });
+    }
+  }
+
+  /** Leave mobile sheet mode when viewport widens */
+  exitMobileMode() {
+    if (!this._mobileMode) return;
+    this._mobileMode = false;
+    this._unbindMobileViewportWatch();
+    this.frameEl.classList.remove("is-mobile-docked", "is-mobile-hint");
+    const phase = document.body.dataset.phase || "open";
+    if (phase === "open") {
+      this.enterOpenLayout();
+    } else {
+      this.enterDockedHome({ animate: false });
+    }
+  }
+
   /** Initial open layout — frame at default vh; map band stays independent */
   enterOpenLayout() {
+    if (this._mobileMode) {
+      this._mobileMode = false;
+      this._unbindMobileViewportWatch();
+      this.frameEl.classList.remove("is-mobile-docked", "is-mobile-hint");
+    }
     if (!this.mainEl) return;
 
     this._stopMotion();
@@ -405,6 +588,12 @@ export class FrameDockController {
 
     const anchors = this._refreshAnchors();
     if (!anchors) return;
+
+    if (this._mobileMode) {
+      this.growForContent();
+      this._applyTop(clampTop(this._topPx, anchors), { snap: this.activeSnap });
+      return;
+    }
 
     const target = {
       [SNAP.TOP]: anchors.topLock,
@@ -542,12 +731,20 @@ export class FrameDockController {
     const anchors = this._refreshAnchors();
     if (!anchors) return;
 
-    const snap = resolveSnap(this._topPx, velocityY, anchors);
-    const target = {
-      [SNAP.TOP]: anchors.topLock,
-      [SNAP.HOME]: anchors.homeBase,
-      [SNAP.BOTTOM]: anchors.bottomCushion
-    }[snap];
+    let snap;
+    let target;
+
+    if (this._mobileMode) {
+      snap = resolveMobileSnap(this._topPx, velocityY, anchors);
+      target = snap === SNAP.MOBILE_FOCUS ? anchors.focusTop : anchors.collapsedTop;
+    } else {
+      snap = resolveSnap(this._topPx, velocityY, anchors);
+      target = {
+        [SNAP.TOP]: anchors.topLock,
+        [SNAP.HOME]: anchors.homeBase,
+        [SNAP.BOTTOM]: anchors.bottomCushion
+      }[snap];
+    }
 
     this.activeSnap = snap;
 
@@ -573,7 +770,7 @@ export class FrameDockController {
    * @param {typeof SNAP[keyof typeof SNAP]} snapId
    * @param {{ finalizeDock?: boolean }} [options]
    */
-  _easeToAnchor(targetTop, snapId, { finalizeDock = false } = {}) {
+  _easeToAnchor(targetTop, snapId, { finalizeDock = false, durationMs = SNAP_EASE_MS } = {}) {
     this._stopMotion();
     this._settling = true;
     this.frameEl.classList.add("is-settling");
@@ -584,7 +781,7 @@ export class FrameDockController {
 
     const tick = (now) => {
       const elapsed = now - startTime;
-      const t = Math.min(1, elapsed / SNAP_EASE_MS);
+      const t = Math.min(1, elapsed / durationMs);
       const eased = easeOutQuint(t);
       const next = startTop + (targetTop - startTop) * eased;
 
@@ -632,7 +829,9 @@ export class FrameDockController {
       this.frameEl.dataset.snap = snap;
     }
 
-    this._setMapDim(mapDimStrength(topPx, this.mainEl));
+    if (!this._mobileMode) {
+      this._setMapDim(mapDimStrength(topPx, this.mainEl));
+    }
     if (layout) this.onLayout();
   }
 
