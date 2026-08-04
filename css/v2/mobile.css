@@ -7,13 +7,15 @@
 
 @media (max-width: 900px) {
   :root {
-    --v2-mobile-header-h: calc(3.15rem + env(safe-area-inset-top, 0px));
+    --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
     --v2-mobile-you-hero-gap: clamp(0.35rem, 1vh, 0.55rem);
     --whatimado-frame-top-default: 40vh;
     --v2-kicker-reserve: clamp(3.65rem, 9.5vh, 4.25rem);
     --v2-hero-node-gap: clamp(0.2rem, 0.55vh, 0.35rem);
     --v2-map-band-offset-top: calc(var(--v2-mobile-header-h) + 0.3rem);
     --v2-map-graph-top-pad: clamp(0.55rem, 1.5vh, 0.85rem);
+    --v2-map-node-lg: 11;
+    --v2-map-node-sm: 5.5;
   }
 
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
@@ -87,14 +89,23 @@
   }
 
   .v2-rail--left .v2-brand-word {
-    display: none;
+    display: inline-flex;
+    max-width: min(12.5rem, 58vw);
+    opacity: 1;
+    visibility: visible;
+    padding: 0.35rem 0.7rem;
+    font-size: clamp(0.72rem, 3.1vw, 0.92rem);
+    letter-spacing: 0.1em;
   }
 
   .v2-rail--left .v2-brand-mark {
-    display: inline-flex;
-    max-width: 2.35rem;
-    opacity: 1;
-    visibility: visible;
+    display: none;
+  }
+
+  .v2-rail--left .v2-brand {
+    justify-content: flex-start;
+    flex: 0 1 auto;
+    min-width: 0;
   }
 
   .v2-rail-toggle {
@@ -291,6 +302,19 @@
     font-size: clamp(0.72rem, 3.2vw, 0.84rem);
     line-height: 1.4;
     max-width: 100%;
+  }
+
+  .v2-kicker-sub-br {
+    display: block;
+  }
+
+  whatimado-map .whatimado-map__node--live text {
+    font-size: 8.5px;
+    letter-spacing: 0.09em;
+  }
+
+  whatimado-map .whatimado-map__node--live.is-support text {
+    font-size: 6.75px;
   }
 
   whatimado-frame {

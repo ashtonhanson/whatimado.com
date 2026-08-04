@@ -26,6 +26,12 @@ const HOME_SETTLE_SPEED = 0.028;
 const HOME_RETURN_KICK = 0.014;
 const HOME_RETURN_KICK_MAX = 1.35;
 
+/** Pinch zoom — scale around view center; focal point stays under fingers */
+const ZOOM_MIN = 0.72;
+const ZOOM_MAX = 2.45;
+const SCALE_CENTER_X = VIEW_W / 2;
+const SCALE_CENTER_Y = VIEW_H / 2;
+
 /** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
 function getMapBounds() {
   const { lg } = getNodeRadii();
@@ -280,6 +286,14 @@ export class WhatimadoMap extends HTMLElement {
     this._globalPanActive = false;
     /** While true, map pan/band follow hero dismiss; locked false after dock settles */
     this._frameCoupled = true;
+    /** @type {number} */
+    this._zoom = 1;
+    /** @type {{ startDist: number, startZoom: number, startPanX: number, startPanY: number, focalX: number, focalY: number }|null} */
+    this._pinch = null;
+
+    this._onPinchTouchStart = (event) => this._handlePinchTouchStart(event);
+    this._onPinchTouchMove = (event) => this._handlePinchTouchMove(event);
+    this._onPinchTouchEnd = (event) => this._handlePinchTouchEnd(event);
 
     this._onPointerMove = (event) => this._handlePointerMove(event);
     this._onPointerUp = (event) => this._handlePointerUp(event);
@@ -339,6 +353,10 @@ export class WhatimadoMap extends HTMLElement {
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
     this._detachGlobalPanListeners();
+    this._panSurface?.removeEventListener("touchstart", this._onPinchTouchStart);
+    this._panSurface?.removeEventListener("touchmove", this._onPinchTouchMove);
+    this._panSurface?.removeEventListener("touchend", this._onPinchTouchEnd);
+    this._panSurface?.removeEventListener("touchcancel", this._onPinchTouchEnd);
   }
 
   attributeChangedCallback(name) {
@@ -801,6 +819,7 @@ export class WhatimadoMap extends HTMLElement {
   resetToYou({ animate = true } = {}) {
     this._focalLocked = false;
     this._focalNodeId = null;
+    this._zoom = 1;
     if (this._frameCoupled) {
       this.syncFrameGravity({ animate });
       return;
@@ -809,11 +828,89 @@ export class WhatimadoMap extends HTMLElement {
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
-  /** Apply camera transform: built-in graph shift + user pan offset */
+  /** @param {TouchList} touches */
+  _touchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  /** @param {TouchList} touches */
+  _touchCenter(touches) {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+  }
+
+  /** @param {TouchEvent} event */
+  _handlePinchTouchStart(event) {
+    if (event.touches.length !== 2 || !this._panSurface) return;
+
+    event.preventDefault();
+    this._stopPanGlide();
+    if (this._panPointer) {
+      this._detachGlobalPanListeners();
+      this._panPointer = null;
+      this._panSamples = [];
+      this.classList.remove("is-panning");
+    }
+
+    const center = this._touchCenter(event.touches);
+    const focal = this._clientToSvg(center.x, center.y);
+
+    this._pinch = {
+      startDist: this._touchDistance(event.touches),
+      startZoom: this._zoom,
+      startPanX: this._panX,
+      startPanY: this._panY,
+      focalX: focal.x,
+      focalY: focal.y
+    };
+    this.classList.add("is-pinch-zooming");
+  }
+
+  /** @param {TouchEvent} event */
+  _handlePinchTouchMove(event) {
+    if (!this._pinch || event.touches.length < 2) return;
+
+    event.preventDefault();
+    const dist = this._touchDistance(event.touches);
+    if (this._pinch.startDist <= 0) return;
+
+    const nextZoom = Math.max(
+      ZOOM_MIN,
+      Math.min(ZOOM_MAX, this._pinch.startZoom * (dist / this._pinch.startDist))
+    );
+    const deltaZoom = this._pinch.startZoom - nextZoom;
+
+    this._zoom = nextZoom;
+    this._panX = this._pinch.startPanX + deltaZoom * (this._pinch.focalX - SCALE_CENTER_X);
+    this._panY = this._pinch.startPanY + deltaZoom * (this._pinch.focalY - SCALE_CENTER_Y);
+    this._applyPanTransform();
+  }
+
+  /** @param {TouchEvent} event */
+  _handlePinchTouchEnd(event) {
+    if (event.touches.length >= 2) return;
+
+    if (this._pinch) {
+      this._focalLocked = true;
+      this._focalNodeId = null;
+    }
+    this._pinch = null;
+    this.classList.remove("is-pinch-zooming");
+  }
+
+  /** Apply camera transform: built-in graph shift + user pan offset + pinch zoom */
   _applyPanTransform() {
     if (!this._panLayer) return;
     const shiftY = readGraphShiftY();
-    this._panLayer.setAttribute("transform", `translate(${this._panX}, ${shiftY + this._panY})`);
+    const z = this._zoom;
+    this._panLayer.setAttribute(
+      "transform",
+      `translate(${this._panX}, ${shiftY + this._panY}) translate(${SCALE_CENTER_X}, ${SCALE_CENTER_Y}) scale(${z}) translate(${-SCALE_CENTER_X}, ${-SCALE_CENTER_Y})`
+    );
   }
 
   _detachGlobalPanListeners() {
@@ -858,6 +955,7 @@ export class WhatimadoMap extends HTMLElement {
    */
   handleGlobalPanPointerDown(event) {
     if (event.button !== 0) return;
+    if (this._pinch) return;
     if (this.getAttribute("mode") === "hidden") return;
 
     const target = event.target;
@@ -904,6 +1002,10 @@ export class WhatimadoMap extends HTMLElement {
     }
     this._youBtn?.addEventListener("click", () => this.resetToYou());
     this._applyPanTransform();
+    this._panSurface?.addEventListener("touchstart", this._onPinchTouchStart, { passive: false });
+    this._panSurface?.addEventListener("touchmove", this._onPinchTouchMove, { passive: false });
+    this._panSurface?.addEventListener("touchend", this._onPinchTouchEnd, { passive: false });
+    this._panSurface?.addEventListener("touchcancel", this._onPinchTouchEnd, { passive: false });
     this.addEventListener("pointermove", this._onPointerMove);
     this.addEventListener("pointerup", this._onPointerUp);
     this.addEventListener("pointercancel", this._onPointerUp);
