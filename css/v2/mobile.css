@@ -70,9 +70,7 @@
   }
 
   whatimado-map {
-    transform: translateY(
-      calc(-1 * var(--v2-mobile-map-shift) - var(--v2-mobile-focus-lift, 0px))
-    );
+    transform: translateY(calc(-1 * var(--v2-mobile-map-shift)));
     transition: transform 0.38s var(--v2-hero-motion-ease);
   }
 
@@ -550,14 +548,7 @@
   }
 
   body.v2-app.is-mobile-composer-focus .v2-main {
-    overflow: hidden;
-  }
-
-  body.is-mobile-keyboard-open[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
-    --v2-map-svg-h: min(
-      calc(var(--v2-kicker-top) - var(--v2-mobile-map-head-gap, 0.45rem)),
-      calc(var(--v2-mobile-focus-band-h, 30vh) + var(--v2-map-band-offset-top))
-    );
+    overflow: visible;
   }
 
   /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */

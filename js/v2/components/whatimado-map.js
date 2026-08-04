@@ -849,7 +849,7 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** @returns {{ panX: number, panY: number }} */
-  _computeMobileFocusBandPan() {
+  _computeMobileFocusBandPan({ keyboardOpen = false } = {}) {
     const stage = this.querySelector(".whatimado-map__stage");
     const kicker = document.getElementById("frame-kicker");
     const frame = document.getElementById("dynamic-frame");
@@ -865,10 +865,16 @@ export class WhatimadoMap extends HTMLElement {
     const headerH = readCssVarLength("--v2-mobile-header-h") || 56;
     const bandTopGap = readCssVarLength("--v2-mobile-focus-band-top-gap") || 8;
     const kickerGap = readCssVarLength("--v2-mobile-you-hero-gap") || 8;
+    const kickerReserve = readCssVarLength("--v2-kicker-reserve") || 52;
 
     const bandTop = headerH + bandTopGap;
-    const kickerTop = kicker?.getBoundingClientRect().top ?? frame.getBoundingClientRect().top;
-    const mapBandBottom = kickerTop - kickerGap;
+    const frameTop = frame.getBoundingClientRect().top;
+    const kickerTop = kicker?.getBoundingClientRect().top ?? frameTop;
+    const mapBandBottom = keyboardOpen
+      ? frameTop - kickerReserve - kickerGap
+      : kickerTop - kickerGap;
+
+    if (mapBandBottom <= bandTop) return { panX: VIEW_W / 2 - bounds.cx, panY: this._panY };
 
     const panX = VIEW_W / 2 - bounds.cx;
 
@@ -894,12 +900,14 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** Pack node map into the band above the prompt while typing on mobile */
-  syncMobileFocusBand({ animate = true } = {}) {
+  syncMobileFocusBand({ animate = true, keyboardOpen = false } = {}) {
     if (!MOBILE_MQ.matches || !document.body.classList.contains("is-mobile-composer-focus")) {
       return;
     }
 
-    const target = this._computeMobileFocusBandPan();
+    const isKeyboard =
+      keyboardOpen || document.body.classList.contains("is-mobile-keyboard-open");
+    const target = this._computeMobileFocusBandPan({ keyboardOpen: isKeyboard });
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
