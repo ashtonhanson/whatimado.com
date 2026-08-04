@@ -500,10 +500,11 @@ export class FrameDockController {
 
     if (keyboardOpen && typing) {
       const gap = measureCssVarLength("--v2-mobile-keyboard-gap") || 6;
+      const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
       this._keyboardDocked = true;
       this.frameEl.classList.add("is-mobile-keyboard");
       this.frameEl.style.removeProperty("top");
-      this.frameEl.style.bottom = `${inset + gap}px`;
+      this.frameEl.style.bottom = `${Math.max(0, inset + gap - promptDrop)}px`;
       document.body.classList.add("is-mobile-keyboard-open");
       this._syncMobileFocusLift();
       return;
