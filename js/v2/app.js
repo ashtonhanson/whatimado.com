@@ -367,7 +367,9 @@ if (new URLSearchParams(window.location.search).has("demo")) {
   requestAnimationFrame(() => seedHypotheticalChat());
 }
 
-frameEl?.focusComposer();
+if (!MOBILE_LAYOUT_MQ.matches) {
+  frameEl?.focusComposer();
+}
 initNeonShine();
 initNavRailToggle();
 initMobileNav();

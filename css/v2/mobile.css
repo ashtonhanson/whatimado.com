@@ -9,14 +9,17 @@
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
     --v2-mobile-quarter-in: 0.25in;
-    --v2-mobile-hero-shift: 0.25in;
+    --v2-mobile-hero-shift: 0.38in;
+    --v2-mobile-map-shift: 0.1in;
     --v2-mobile-bottom-inset: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
-    --v2-mobile-you-hero-gap: clamp(0.35rem, 1vh, 0.55rem);
-    --whatimado-frame-top-default: 40vh;
-    --v2-kicker-reserve: clamp(3.65rem, 9.5vh, 4.25rem);
-    --v2-hero-node-gap: clamp(0.2rem, 0.55vh, 0.35rem);
-    --v2-map-band-offset-top: clamp(0.35rem, 1vh, 0.55rem);
-    --v2-map-graph-top-pad: clamp(1rem, 2.5vh, 1.45rem);
+    --v2-mobile-you-hero-gap: clamp(0.2rem, 0.55vh, 0.35rem);
+    --whatimado-frame-top-default: 26vh;
+    --v2-kicker-reserve: clamp(3rem, 8vh, 3.5rem);
+    --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
+    --v2-mobile-map-head-gap: clamp(0.35rem, 1vh, 0.55rem);
+    --v2-hero-node-gap: clamp(0.15rem, 0.45vh, 0.3rem);
+    --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
+    --v2-map-graph-top-pad: clamp(0.85rem, 2vh, 1.25rem);
     --v2-map-node-lg: 33;
     --v2-map-node-sm: 16.5;
   }
@@ -29,10 +32,7 @@
   }
 
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
-    --v2-map-svg-h: calc(
-      var(--whatimado-frame-top-default) - var(--v2-kicker-reserve) - var(--v2-hero-node-gap)
-        - var(--v2-mobile-you-hero-gap) + var(--v2-map-band-offset-top)
-    );
+    --v2-map-svg-h: calc(var(--v2-kicker-top) - var(--v2-mobile-map-head-gap));
   }
 
   .v2-shell {
@@ -54,7 +54,7 @@
   }
 
   whatimado-map {
-    transform: translateY(calc(-1 * var(--v2-mobile-hero-shift)));
+    transform: translateY(calc(-1 * var(--v2-mobile-map-shift)));
   }
 
   .v2-frame-kicker {

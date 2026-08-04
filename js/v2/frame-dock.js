@@ -151,8 +151,14 @@ export function measureMobileAnchors(mainEl, frameEl) {
   const composerOffset = measureMobileComposerOffset(frameEl);
   const chromeH = measureMobileFrameChrome(frameEl);
 
-  /** Prompt top sits 1/4in above viewport halfway */
-  const typingTop = Math.max(0, vh * 0.5 - quarterIn - mainRect.top - composerOffset);
+  /** Prompt top sits 1/4in above viewport halfway, but never over the hero subheader */
+  let typingTop = Math.max(0, vh * 0.5 - quarterIn - mainRect.top - composerOffset);
+  const kicker = document.getElementById("frame-kicker");
+  if (kicker) {
+    const kickerRect = kicker.getBoundingClientRect();
+    const kickerFloor = kickerRect.bottom - mainRect.top + 12;
+    typingTop = Math.max(typingTop, kickerFloor);
+  }
 
   const content = frameEl.querySelector(".whatimado-frame__body-content");
   const contentH = content?.scrollHeight ?? 0;
@@ -431,7 +437,7 @@ export class FrameDockController {
     this._mobileMode = true;
     this._stopMotion();
     this._docked = true;
-    this.activeSnap = SNAP.MOBILE_FOCUS;
+    this.activeSnap = SNAP.MOBILE_COLLAPSED;
     this._anchors = null;
     this._defaultFrameHeight = null;
     this._dockTransition = false;
@@ -447,11 +453,12 @@ export class FrameDockController {
     requestAnimationFrame(() => {
       const anchors = this._refreshAnchors();
       if (!anchors) return;
-      this._applyTop(anchors.typingTop, { snap: SNAP.MOBILE_FOCUS });
-      this.frameEl.classList.add("is-mobile-typing");
-      this.frameEl.classList.remove("is-mobile-reading");
+      this._applyTop(anchors.collapsedTop, { snap: SNAP.MOBILE_COLLAPSED });
+      this.frameEl.classList.add("is-mobile-reading");
+      this.frameEl.classList.remove("is-mobile-typing");
       this._bindMobileViewportWatch();
       window.setTimeout(() => this.playMobileHint(), MOBILE_HINT_DELAY_MS);
+      window.dispatchEvent(new Event("resize"));
     });
   }
 
