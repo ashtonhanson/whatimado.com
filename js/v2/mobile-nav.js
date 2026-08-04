@@ -30,6 +30,10 @@ export function initMobileNav() {
   const backdrop = document.getElementById("mobile-menu-backdrop");
   if (!rail || !toggle) return;
 
+  if (MOBILE_MQ.matches) {
+    rail.classList.remove("is-collapsed");
+  }
+
   toggle.addEventListener("click", () => {
     const opening = !rail.classList.contains("is-mobile-menu-open");
     setMobileMenuOpen(opening);

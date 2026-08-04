@@ -49,6 +49,15 @@ function getMapBounds() {
 /** Label sits above node body — keep in sync with renderNodeLayer text y */
 const NODE_LABEL_OFFSET = 6;
 const NODE_LABEL_CAP = 11;
+const MOBILE_MQ = window.matchMedia("(max-width: 900px)");
+
+/** @param {number} lg */
+function getNodeLabelMetrics(lg) {
+  return {
+    offset: Math.max(NODE_LABEL_OFFSET, lg * 0.55),
+    cap: Math.max(NODE_LABEL_CAP, lg * 1)
+  };
+}
 
 /** Read top inset for graph gravity from CSS token (screen px) */
 function readGraphTopPadPx() {
@@ -542,6 +551,7 @@ export class WhatimadoMap extends HTMLElement {
     }
 
     const { lg, sm } = getNodeRadii();
+    const { offset: labelOffset, cap: labelCap } = getNodeLabelMetrics(lg);
     let minX = Infinity;
     let maxX = -Infinity;
     let minY = Infinity;
@@ -553,7 +563,7 @@ export class WhatimadoMap extends HTMLElement {
       const r = node.type === "start" || node.type === "path" ? lg : sm;
       minX = Math.min(minX, cx - r);
       maxX = Math.max(maxX, cx + r);
-      minY = Math.min(minY, cy - r - NODE_LABEL_OFFSET - NODE_LABEL_CAP);
+      minY = Math.min(minY, cy - r - labelOffset - labelCap);
       maxY = Math.max(maxY, cy + r);
     }
 
@@ -609,7 +619,33 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** @returns {{ panX: number, panY: number }} */
+  _computeMobileOpenHomePan() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const stageCenter = this._getStageCenterInSvgCoords();
+    if (!stage || !stageCenter) return { panX: 0, panY: 0 };
+
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+
+    const bounds = this._getGraphBounds();
+    const shiftY = readGraphShiftY();
+    const panX = VIEW_W / 2 - bounds.cx;
+    const panY = clampPanYForTopPad(
+      stageCenter.y - shiftY - bounds.cy,
+      bounds,
+      stageRect,
+      shiftY
+    );
+
+    return { panX, panY };
+  }
+
+  /** @returns {{ panX: number, panY: number }} */
   _computeOpenHomeGravityPan() {
+    if (MOBILE_MQ.matches) {
+      return this._computeMobileOpenHomePan();
+    }
+
     const stage = this.querySelector(".whatimado-map__stage");
     const kicker = document.getElementById("frame-kicker");
     if (!stage) return { panX: 0, panY: 0 };
@@ -1578,7 +1614,7 @@ export class WhatimadoMap extends HTMLElement {
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}"${accentAttr}>
           <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
           <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
-          <text x="${cx}" y="${cy - r - 6}" text-anchor="middle">${escapeHtml(node.label)}</text>
+          <text x="${cx}" y="${cy - r - Math.max(6, r * 0.55)}" text-anchor="middle">${escapeHtml(node.label)}</text>
         </g>
       `
         });
