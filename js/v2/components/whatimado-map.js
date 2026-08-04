@@ -78,6 +78,11 @@ function readMobileFocusBandRise() {
   return readCssVarLength("--v2-mobile-focus-band-rise", document.body);
 }
 
+function readMobileFocusMapRise() {
+  if (!document.body.classList.contains("is-mobile-composer-focus")) return 0;
+  return readCssVarLength("--v2-mobile-focus-map-rise", document.body);
+}
+
 /** Read top inset for graph gravity from CSS token (screen px) */
 function readGraphTopPadPx() {
   const probe = document.createElement("div");
@@ -881,7 +886,8 @@ export class WhatimadoMap extends HTMLElement {
     const headerH = readCssVarLength("--v2-mobile-header-h") || 56;
     const mapHeadGap = readCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
     const bandRise = readMobileFocusBandRise();
-    const bandTop = headerH + mapHeadGap - bandRise;
+    const mapRise = readMobileFocusMapRise();
+    const bandTop = headerH + mapHeadGap - bandRise - mapRise;
 
     const panX = VIEW_W / 2 - bounds.cx;
     const panY = clampPanYForTopPad(

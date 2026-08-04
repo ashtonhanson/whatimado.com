@@ -74,6 +74,11 @@ function measureMobileFocusBandRise() {
   return measureCssVarLength("--v2-mobile-focus-band-rise", document.body);
 }
 
+function measureMobileFocusMapRise() {
+  if (!document.body.classList.contains("is-mobile-composer-focus")) return 0;
+  return measureCssVarLength("--v2-mobile-focus-map-rise", document.body);
+}
+
 /**
  * Top Lock — aligned with sidebar top edges in main coordinates.
  * @param {HTMLElement} mainEl
@@ -429,6 +434,7 @@ export class FrameDockController {
     const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 0;
     const heroNudge = measureCssVarLength("--v2-mobile-focus-hero-nudge") || 22;
     const bandRise = measureMobileFocusBandRise();
+    const mapRise = measureMobileFocusMapRise();
 
     const subEl = kicker.querySelector(".v2-kicker-sub");
     const brandEl = kicker.querySelector(".v2-kicker-brand");
@@ -443,9 +449,11 @@ export class FrameDockController {
 
       if (youRect && brandEl) {
         const brandTop = brandEl.getBoundingClientRect().top + bandRise;
-        kickerShift = Math.round(youRect.bottom + youHeroGap - brandTop);
+        kickerShift = Math.round(youRect.bottom + mapRise + youHeroGap - brandTop);
       } else if (youRect) {
-        kickerShift = Math.round(youRect.bottom + youHeroGap - (freshKickerRect.top + bandRise));
+        kickerShift = Math.round(
+          youRect.bottom + mapRise + youHeroGap - (freshKickerRect.top + bandRise)
+        );
       }
 
       document.documentElement.style.setProperty(
