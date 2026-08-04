@@ -432,6 +432,9 @@ export class FrameDockController {
 
     /** Lift hero/subheader only — map stays put and repans internally */
     let lift = Math.max(0, Math.ceil(kickerRect.bottom - bandBottomTarget));
+    const currentHeroGap = frameRect.top - kickerRect.bottom;
+    const liftForMinGap = Math.max(0, Math.ceil(heroClearGap - currentHeroGap));
+    lift = Math.max(lift, liftForMinGap);
     const maxLift = Math.max(0, Math.ceil(kickerRect.top - bandTop));
     lift = Math.min(lift, maxLift);
 
