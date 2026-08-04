@@ -6,6 +6,12 @@
 }
 
 @media (max-width: 900px) {
+  @property --v2-mobile-focus-lift {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+  }
+
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
     --v2-mobile-quarter-in: 0.25in;
@@ -19,6 +25,7 @@
     --v2-mobile-map-head-gap: clamp(0.35rem, 1vh, 0.55rem);
     --v2-mobile-prompt-kicker-gap: 0.35rem;
     --v2-mobile-keyboard-gap: 0.35rem;
+    --v2-mobile-focus-lift: 0px;
     --v2-hero-node-gap: clamp(0.15rem, 0.45vh, 0.3rem);
     --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
     --v2-map-graph-top-pad: clamp(0.85rem, 2vh, 1.25rem);
@@ -55,12 +62,22 @@
     right: var(--v2-main-gutter);
   }
 
+  html {
+    transition: --v2-mobile-focus-lift 0.38s var(--v2-hero-motion-ease);
+  }
+
   whatimado-map {
-    transform: translateY(calc(-1 * var(--v2-mobile-map-shift)));
+    transform: translateY(
+      calc(-1 * var(--v2-mobile-map-shift) - var(--v2-mobile-focus-lift, 0px))
+    );
+    transition: transform 0.38s var(--v2-hero-motion-ease);
   }
 
   .v2-frame-kicker {
-    transform: translateY(calc(-1 * var(--v2-mobile-hero-shift)));
+    transform: translateY(
+      calc(-1 * var(--v2-mobile-hero-shift) - var(--v2-mobile-focus-lift, 0px))
+    );
+    transition: transform 0.38s var(--v2-hero-motion-ease);
   }
 
   /* ── Fixed top bar: logo left, hamburger right ── */
@@ -594,6 +611,25 @@
     min-height: 0;
   }
 
+  whatimado-frame.is-mobile-docked.is-mobile-typing:not(.is-mobile-reading) .whatimado-frame__body-wrap {
+    flex: 0 0 0;
+    max-height: 0;
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-typing .whatimado-frame__drag-rail {
+    height: 10px;
+    padding: 0.22rem 0 0.08rem;
+    border-bottom: none;
+  }
+
+  body.is-mobile-composer-focus whatimado-frame.is-mobile-docked.is-mobile-typing .whatimado-frame__composer {
+    padding-top: 0.45rem;
+  }
+
   whatimado-frame.is-mobile-docked.is-mobile-keyboard {
     top: auto !important;
     transition: bottom 0.1s ease-out;
@@ -640,6 +676,9 @@
   .v2-mobile-menu-icon,
   .v2-mobile-menu-icon::before,
   .v2-mobile-menu-icon::after,
+  html,
+  whatimado-map,
+  .v2-frame-kicker,
   whatimado-frame.is-mobile-hint .whatimado-frame__inner {
     transition: none;
     animation: none;

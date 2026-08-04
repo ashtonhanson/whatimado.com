@@ -166,7 +166,13 @@ export function measureMobileAnchors(mainEl, frameEl) {
   let homePromptTop = Math.max(0, vh * 0.5 - quarterIn - mainRect.top - composerOffset);
   if (kicker) {
     const kickerRect = kicker.getBoundingClientRect();
-    homePromptTop = kickerRect.bottom - mainRect.top + promptKickerGap;
+    const composer = frameEl.querySelector(".whatimado-frame__composer");
+    const typingCompact =
+      frameEl.classList.contains("is-mobile-typing") &&
+      !frameEl.classList.contains("is-mobile-reading");
+    const anchorOffset =
+      typingCompact && composer ? Math.max(0, composer.offsetTop) : 0;
+    homePromptTop = kickerRect.bottom - mainRect.top + promptKickerGap - anchorOffset;
   }
 
   /** Typing/focus — same as home load: just below the subheader */
@@ -394,6 +400,25 @@ export class FrameDockController {
     this._mobileViewportHandler = null;
   }
 
+  _syncMobileFocusLift() {
+    if (!this._mobileMode) return;
+
+    if (!document.body.classList.contains("is-mobile-composer-focus")) {
+      document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
+      return;
+    }
+
+    const kicker = document.getElementById("frame-kicker");
+    if (!kicker) return;
+
+    const frameRect = this.frameEl.getBoundingClientRect();
+    const kickerRect = kicker.getBoundingClientRect();
+    const gap = measureCssVarLength("--v2-mobile-prompt-kicker-gap") || 6;
+    const overlap = frameRect.top - (kickerRect.bottom + gap);
+    const lift = Math.max(0, Math.ceil(overlap));
+    document.documentElement.style.setProperty("--v2-mobile-focus-lift", `${lift}px`);
+  }
+
   /** Pin prompt above the software keyboard via Visual Viewport — no page scroll */
   syncMobileKeyboard() {
     if (!this._mobileMode) return;
@@ -416,15 +441,18 @@ export class FrameDockController {
       this.frameEl.style.removeProperty("top");
       this.frameEl.style.bottom = `${inset + gap}px`;
       document.body.classList.add("is-mobile-keyboard-open");
+      this._syncMobileFocusLift();
       return;
     }
 
     this._clearKeyboardDock();
+    this._syncMobileFocusLift();
   }
 
   _clearKeyboardDock() {
     if (!this._keyboardDocked && !this.frameEl.classList.contains("is-mobile-keyboard")) {
       document.body.classList.remove("is-mobile-keyboard-open");
+      this._syncMobileFocusLift();
       return;
     }
 
@@ -441,6 +469,7 @@ export class FrameDockController {
     const target =
       this.activeSnap === SNAP.MOBILE_COLLAPSED ? anchors.collapsedTop : anchors.homePromptTop;
     this._applyTop(target, { snap: this.activeSnap });
+    this._syncMobileFocusLift();
   }
 
   /** @returns {number} */
@@ -546,6 +575,21 @@ export class FrameDockController {
       });
     } else {
       this._applyTop(anchors.collapsedTop, { snap: SNAP.MOBILE_COLLAPSED });
+    }
+  }
+
+  /** Re-anchor typing position after compact layout (composer flush below kicker) */
+  refreshMobileTypingPosition() {
+    if (!this._mobileMode || !this.mainEl || this._keyboardDocked) return;
+
+    this._anchors = null;
+    const anchors = this._refreshAnchors();
+    if (!anchors) return;
+
+    if (this._motionEnabled) {
+      this._easeToAnchor(anchors.homePromptTop, SNAP.MOBILE_FOCUS, { durationMs: MOBILE_GLIDE_EASE_MS });
+    } else {
+      this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
     }
   }
 
@@ -988,7 +1032,10 @@ export class FrameDockController {
     if (!this._mobileMode) {
       this._setMapDim(mapDimStrength(topPx, this.mainEl));
     }
-    if (layout) this.onLayout();
+    if (layout) {
+      this.onLayout();
+      if (this._mobileMode) this._syncMobileFocusLift();
+    }
   }
 
   /** @param {number} strength 0–1 */

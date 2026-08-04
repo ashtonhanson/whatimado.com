@@ -113,7 +113,10 @@ export class WhatimadoFrame extends HTMLElement {
         this._dock.syncMobileKeyboard();
         requestAnimationFrame(() => this._dock?.syncMobileKeyboard());
         window.setTimeout(() => this._dock?.syncMobileKeyboard(), 120);
-        if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) return;
+        if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) {
+          this._dock.refreshMobileTypingPosition();
+          return;
+        }
       }
       this._dock?.mobileGlideToTyping();
     };
