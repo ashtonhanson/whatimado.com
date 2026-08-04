@@ -11,6 +11,7 @@ import {
 import { appendMessage, escapeHtml } from "./ui.js";
 import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
+import { initMobileNav } from "./mobile-nav.js";
 
 /** @type {{ phase: import("./phases.js").Phase, messages: { role: "user"|"assistant", content: string }[], turnCount: number, ghostDismissed: boolean, pathsGenerated: boolean, pathsGenerating: boolean }} */
 const state = {
@@ -337,3 +338,4 @@ if (new URLSearchParams(window.location.search).has("demo")) {
 frameEl?.focusComposer();
 initNeonShine();
 initNavRailToggle();
+initMobileNav();
