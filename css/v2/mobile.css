@@ -27,7 +27,8 @@
     --v2-mobile-keyboard-gap: 0.35rem;
     --v2-mobile-focus-lift: 0px;
     --v2-mobile-focus-band-top-gap: clamp(0.3rem, 1vh, 0.55rem);
-    --v2-mobile-focus-hero-gap: clamp(0.9rem, 2.6vh, 1.35rem);
+    --v2-kicker-sub-line-h: calc(clamp(0.72rem, 3.2vw, 0.84rem) * 1.4);
+    --v2-mobile-focus-hero-gap: calc(clamp(0.9rem, 2.6vh, 1.35rem) + var(--v2-kicker-sub-line-h));
     --v2-mobile-focus-band-h: 30vh;
     --v2-hero-node-gap: clamp(0.15rem, 0.45vh, 0.3rem);
     --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
@@ -70,7 +71,9 @@
   }
 
   whatimado-map {
-    transform: translateY(calc(-1 * var(--v2-mobile-map-shift)));
+    transform: translateY(
+      calc(-1 * var(--v2-mobile-map-shift) - var(--v2-mobile-focus-lift, 0px))
+    );
     transition: transform 0.38s var(--v2-hero-motion-ease);
   }
 
