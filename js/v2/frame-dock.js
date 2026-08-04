@@ -405,18 +405,50 @@ export class FrameDockController {
 
     if (!document.body.classList.contains("is-mobile-composer-focus")) {
       document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
+      document.getElementById("possibility-map")?.resetMobileFocusBand?.({ animate: true });
       return;
     }
 
     const kicker = document.getElementById("frame-kicker");
+    const mapEl = document.getElementById("possibility-map");
     if (!kicker) return;
+
+    const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
+    const bandTopGap = measureCssVarLength("--v2-mobile-focus-band-top-gap") || 8;
+    const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 14;
+    const promptGap = measureCssVarLength("--v2-mobile-prompt-kicker-gap") || 6;
 
     const frameRect = this.frameEl.getBoundingClientRect();
     const kickerRect = kicker.getBoundingClientRect();
-    const gap = measureCssVarLength("--v2-mobile-prompt-kicker-gap") || 6;
-    const overlap = frameRect.top - (kickerRect.bottom + gap);
-    const lift = Math.max(0, Math.ceil(overlap));
+    const mapRect = mapEl?.getBoundingClientRect();
+
+    const bandTop = headerH + bandTopGap;
+    const bandBottom = frameRect.top - promptGap;
+    const bandBottomTarget = frameRect.top - heroClearGap;
+    const bandHeight = Math.max(0, bandBottomTarget - bandTop);
+
+    document.documentElement.style.setProperty("--v2-mobile-focus-band-h", `${bandHeight}px`);
+
+    const mapTop = mapRect?.top ?? bandTop;
+    const contentH = kickerRect.bottom - mapTop;
+    let lift = 0;
+
+    if (bandHeight > 0 && contentH <= bandHeight) {
+      lift = Math.max(0, Math.ceil(mapTop - bandTop));
+    } else {
+      lift = Math.max(0, Math.ceil(kickerRect.bottom - bandBottomTarget));
+    }
+
+    const overlap = frameRect.top - (kickerRect.bottom + promptGap);
+    if (overlap < 0) {
+      lift = Math.max(lift, Math.ceil(-overlap));
+    }
+
     document.documentElement.style.setProperty("--v2-mobile-focus-lift", `${lift}px`);
+
+    requestAnimationFrame(() => {
+      mapEl?.syncMobileFocusBand?.({ animate: true });
+    });
   }
 
   /** Pin prompt above the software keyboard via Visual Viewport — no page scroll */

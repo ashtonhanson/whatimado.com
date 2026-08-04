@@ -59,6 +59,19 @@ function getNodeLabelMetrics(lg) {
   };
 }
 
+/** Read a CSS length custom property in px */
+function readCssVarLength(varName) {
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;height:var(" +
+    varName +
+    ");width:0;";
+  document.documentElement.appendChild(probe);
+  const px = probe.getBoundingClientRect().height;
+  probe.remove();
+  return px;
+}
+
 /** Read top inset for graph gravity from CSS token (screen px) */
 function readGraphTopPadPx() {
   const probe = document.createElement("div");
@@ -833,6 +846,68 @@ export class WhatimadoMap extends HTMLElement {
     };
 
     this._gravityRaf = requestAnimationFrame(tick);
+  }
+
+  /** @returns {{ panX: number, panY: number }} */
+  _computeMobileFocusBandPan() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const kicker = document.getElementById("frame-kicker");
+    const frame = document.getElementById("dynamic-frame");
+    if (!stage || !frame) return { panX: 0, panY: 0 };
+
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+
+    const bounds = this._getGraphBounds();
+    const shiftY = readGraphShiftY();
+    const scaleY = VIEW_H / stageRect.height;
+
+    const headerH = readCssVarLength("--v2-mobile-header-h") || 56;
+    const bandTopGap = readCssVarLength("--v2-mobile-focus-band-top-gap") || 8;
+    const kickerGap = readCssVarLength("--v2-mobile-you-hero-gap") || 8;
+
+    const bandTop = headerH + bandTopGap;
+    const kickerTop = kicker?.getBoundingClientRect().top ?? frame.getBoundingClientRect().top;
+    const mapBandBottom = kickerTop - kickerGap;
+
+    const panX = VIEW_W / 2 - bounds.cx;
+
+    let panY = clampPanYForTopPad(
+      (bandTop - stageRect.top) * scaleY - shiftY - bounds.minY,
+      bounds,
+      stageRect,
+      shiftY
+    );
+
+    const graphBottomScreen =
+      stageRect.top + (bounds.maxY + shiftY + panY) * (stageRect.height / VIEW_H);
+    if (graphBottomScreen > mapBandBottom) {
+      panY = clampPanYForTopPad(
+        (mapBandBottom - stageRect.top) * scaleY - shiftY - bounds.maxY,
+        bounds,
+        stageRect,
+        shiftY
+      );
+    }
+
+    return { panX, panY };
+  }
+
+  /** Pack node map into the band above the prompt while typing on mobile */
+  syncMobileFocusBand({ animate = true } = {}) {
+    if (!MOBILE_MQ.matches || !document.body.classList.contains("is-mobile-composer-focus")) {
+      return;
+    }
+
+    const target = this._computeMobileFocusBandPan();
+    this._animatePanTo(target.panX, target.panY, animate);
+  }
+
+  /** Restore open-home map pan after composer blur */
+  resetMobileFocusBand({ animate = true } = {}) {
+    if (!MOBILE_MQ.matches || !this._isOpenHomePhase()) return;
+    const target = this._computeMobileOpenHomePan();
+    this._animatePanTo(target.panX, target.panY, animate);
   }
 
   /** Align map to hero/frame layout while coupled; no-op once dock has settled. */
