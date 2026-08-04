@@ -420,7 +420,7 @@ export class FrameDockController {
     const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
     const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 14;
     const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 0;
-    const heroNudge = measureCssVarLength("--v2-mobile-focus-hero-nudge") || 0;
+    const heroNudge = measureCssVarLength("--v2-mobile-focus-hero-nudge") || 22;
 
     const subEl = kicker.querySelector(".v2-kicker-sub");
     const brandEl = kicker.querySelector(".v2-kicker-brand");
@@ -446,12 +446,12 @@ export class FrameDockController {
       );
 
       const subBottom =
-        (subEl ?? kicker).getBoundingClientRect().bottom + kickerShift;
+        (subEl ?? kicker).getBoundingClientRect().bottom + kickerShift - heroNudge;
       const bandBottom = freshFrameRect.top - heroClearGap;
       let lift = Math.max(0, Math.ceil(subBottom - bandBottom));
 
       const brandTop =
-        (brandEl?.getBoundingClientRect().top ?? freshKickerRect.top) + kickerShift;
+        (brandEl?.getBoundingClientRect().top ?? freshKickerRect.top) + kickerShift - heroNudge;
       const maxLift = Math.max(0, Math.ceil(brandTop - bandTop));
       lift = Math.min(lift, maxLift);
 

@@ -20,7 +20,7 @@
     --v2-mobile-bottom-inset: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
     --v2-mobile-you-hero-gap: clamp(0.45rem, 1.2vh, 0.65rem);
     --v2-mobile-focus-you-hero-gap: 0px;
-    --v2-mobile-focus-hero-nudge: 0.3rem;
+    --v2-mobile-focus-hero-nudge: 1.35rem;
     --whatimado-frame-top-default: 32vh;
     --v2-kicker-reserve: clamp(3.1rem, 8.5vh, 3.65rem);
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
@@ -92,6 +92,12 @@
   }
 
   body.is-mobile-composer-focus .v2-frame-kicker {
+    transform: translateY(
+      calc(
+        -1 * var(--v2-mobile-hero-shift) - var(--v2-mobile-focus-lift, 0px) +
+          var(--v2-mobile-focus-kicker-shift, 0px) - var(--v2-mobile-focus-hero-nudge, 1.35rem)
+      )
+    );
     transition:
       transform 0.38s var(--v2-hero-motion-ease),
       top 0.38s var(--v2-hero-motion-ease);
