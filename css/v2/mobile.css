@@ -62,11 +62,19 @@
     flex-direction: row;
     align-items: stretch;
     border: none;
-    border-bottom: 1px solid rgba(46, 232, 214, 0.14);
+    border-bottom: none;
     border-radius: 0;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+    box-shadow: none;
     overflow: visible;
-    background: var(--v2-rail-bg);
+    background: transparent;
+    /* backdrop-filter on the rail traps position:fixed children in the header strip */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .v2-rail--left::before,
+  .v2-rail--left::after {
+    display: none;
   }
 
   .v2-rail-brand {
@@ -78,7 +86,11 @@
       calc(0.45rem + env(safe-area-inset-top, 0px))
       var(--v2-main-gutter)
       0.45rem;
-    border-bottom: none;
+    border-bottom: 1px solid rgba(46, 232, 214, 0.14);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+    background: var(--v2-rail-bg);
+    backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+    -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
   }
 
   .v2-rail-header,
@@ -211,10 +223,11 @@
     right: 0;
     bottom: 0;
     left: auto;
-    z-index: 75;
+    z-index: 80;
     width: min(17.5rem, 88vw);
     flex: none;
     min-height: 0;
+    display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
     align-items: stretch;
@@ -227,12 +240,15 @@
     border-left: 1px solid var(--v2-border);
     background: var(--v2-rail-bg);
     box-shadow: -8px 0 28px rgba(0, 0, 0, 0.35);
-    transform: translateX(105%);
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate3d(105%, 0, 0);
     transition: transform 0.32s var(--v2-rail-motion-ease);
   }
 
   .v2-rail--left.is-mobile-menu-open .v2-rail-body {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   .v2-rail-body > .v2-rail-foot {
@@ -242,6 +258,7 @@
     border-top: 1px solid rgba(46, 232, 214, 0.12);
     background: transparent;
     box-shadow: none;
+    position: static;
     transform: none;
   }
 
@@ -453,6 +470,11 @@
   .v2-rail--left.is-collapsed .v2-profile-avatar {
     width: 36px;
     height: 36px;
+  }
+
+  /* Beat neon-frames position:relative on drawer panel */
+  .v2-rail--left .v2-rail-body {
+    position: fixed;
   }
 
   body.v2-mobile-menu-open {
