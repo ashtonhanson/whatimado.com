@@ -54,17 +54,24 @@ function viewportHeight() {
 /**
  * Resolve a CSS custom property to pixels (handles clamp/calc via layout).
  * @param {string} varName e.g. "--v2-composer-content-gap"
+ * @param {HTMLElement} [contextEl]
  */
-function measureCssVarLength(varName) {
+function measureCssVarLength(varName, contextEl = document.documentElement) {
   const probe = document.createElement("div");
   probe.style.cssText =
     "position:absolute;visibility:hidden;pointer-events:none;height:var(" +
     varName +
     ");width:0;";
-  document.documentElement.appendChild(probe);
+  contextEl.appendChild(probe);
   const px = probe.getBoundingClientRect().height;
   probe.remove();
   return px;
+}
+
+/** Focus band rise is authored on body — :root fallback reads as 0. */
+function measureMobileFocusBandRise() {
+  if (!document.body.classList.contains("is-mobile-composer-focus")) return 0;
+  return measureCssVarLength("--v2-mobile-focus-band-rise", document.body);
 }
 
 /**
@@ -421,7 +428,7 @@ export class FrameDockController {
     const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 14;
     const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 0;
     const heroNudge = measureCssVarLength("--v2-mobile-focus-hero-nudge") || 22;
-    const bandRise = measureCssVarLength("--v2-mobile-focus-band-rise") || 0;
+    const bandRise = measureMobileFocusBandRise();
 
     const subEl = kicker.querySelector(".v2-kicker-sub");
     const brandEl = kicker.querySelector(".v2-kicker-brand");

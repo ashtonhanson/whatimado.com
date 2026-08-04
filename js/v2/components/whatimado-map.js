@@ -60,16 +60,22 @@ function getNodeLabelMetrics(lg) {
 }
 
 /** Read a CSS length custom property in px */
-function readCssVarLength(varName) {
+function readCssVarLength(varName, contextEl = document.documentElement) {
   const probe = document.createElement("div");
   probe.style.cssText =
     "position:absolute;visibility:hidden;pointer-events:none;height:var(" +
     varName +
     ");width:0;";
-  document.documentElement.appendChild(probe);
+  contextEl.appendChild(probe);
   const px = probe.getBoundingClientRect().height;
   probe.remove();
   return px;
+}
+
+/** Focus band rise is authored on body — :root fallback reads as 0. */
+function readMobileFocusBandRise() {
+  if (!document.body.classList.contains("is-mobile-composer-focus")) return 0;
+  return readCssVarLength("--v2-mobile-focus-band-rise", document.body);
 }
 
 /** Read top inset for graph gravity from CSS token (screen px) */
@@ -874,7 +880,7 @@ export class WhatimadoMap extends HTMLElement {
 
     const headerH = readCssVarLength("--v2-mobile-header-h") || 56;
     const mapHeadGap = readCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
-    const bandRise = readCssVarLength("--v2-mobile-focus-band-rise") || 0;
+    const bandRise = readMobileFocusBandRise();
     const bandTop = headerH + mapHeadGap - bandRise;
 
     const panX = VIEW_W / 2 - bounds.cx;
