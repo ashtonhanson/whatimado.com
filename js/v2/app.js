@@ -159,7 +159,11 @@ async function generateAdvisorPaths() {
   } finally {
     state.pathsGenerating = false;
     setComposerEnabled(true);
-    frameEl?.focusComposer();
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      frameEl?.composerInput?.blur();
+    } else {
+      frameEl?.focusComposer();
+    }
   }
 }
 
@@ -278,7 +282,11 @@ async function handleSubmit(text) {
     notifyFrameLayout();
   } finally {
     setComposerEnabled(true);
-    frameEl?.focusComposer();
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      frameEl?.composerInput?.blur();
+    } else {
+      frameEl?.focusComposer();
+    }
   }
 }
 

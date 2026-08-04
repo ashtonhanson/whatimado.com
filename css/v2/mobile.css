@@ -8,6 +8,9 @@
 @media (max-width: 900px) {
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
+    --v2-mobile-quarter-in: 0.25in;
+    --v2-mobile-hero-shift: 0.25in;
+    --v2-mobile-bottom-inset: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
     --v2-mobile-you-hero-gap: clamp(0.35rem, 1vh, 0.55rem);
     --whatimado-frame-top-default: 40vh;
     --v2-kicker-reserve: clamp(3.65rem, 9.5vh, 4.25rem);
@@ -16,6 +19,13 @@
     --v2-map-graph-top-pad: clamp(1rem, 2.5vh, 1.45rem);
     --v2-map-node-lg: 33;
     --v2-map-node-sm: 16.5;
+  }
+
+  html,
+  body.v2-app {
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
@@ -38,14 +48,17 @@
   }
 
   .v2-main > whatimado-map,
-  .v2-main > whatimado-frame,
   .v2-main > .v2-frame-kicker {
     left: var(--v2-main-gutter);
     right: var(--v2-main-gutter);
   }
 
-  .v2-main > whatimado-frame {
-    bottom: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
+  whatimado-map {
+    transform: translateY(calc(-1 * var(--v2-mobile-hero-shift)));
+  }
+
+  .v2-frame-kicker {
+    transform: translateY(calc(-1 * var(--v2-mobile-hero-shift)));
   }
 
   /* ── Fixed top bar: logo left, hamburger right ── */
@@ -508,26 +521,50 @@
     font-size: 20.25px;
   }
 
-  whatimado-frame {
-    width: auto;
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  /* ── Mobile draggable prompt sheet (decoupled from map + kicker) ── */
+  /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */
   whatimado-frame.is-mobile-docked {
-    top: auto;
-    bottom: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    bottom: auto;
+    z-index: 45;
     max-height: none;
     transition: none;
+    pointer-events: none;
+  }
+
+  whatimado-frame.is-mobile-docked .whatimado-frame__inner {
+    pointer-events: auto;
+    border: none;
+    border-top: 1px solid rgba(66, 255, 240, 0.28);
+    border-radius: 0;
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.32);
+    background: var(--v2-frame-glass-bg);
+    backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
+    -webkit-backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
+    max-height: calc(100dvh - var(--v2-mobile-header-h) - var(--v2-mobile-bottom-inset));
+  }
+
+  whatimado-frame.is-mobile-docked::before,
+  whatimado-frame.is-mobile-docked::after {
+    display: none;
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__drag-rail {
     display: flex;
-    height: 18px;
-    padding: 0.45rem 0 0.25rem;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 14px;
+    margin: 0;
+    padding: 0.35rem 0 0.2rem;
     cursor: grab;
     touch-action: none;
+    border-bottom: 1px solid rgba(46, 232, 214, 0.1);
+    background: linear-gradient(180deg, rgba(46, 232, 214, 0.08) 0%, transparent 100%);
   }
 
   whatimado-frame.is-mobile-docked.is-dragging .whatimado-frame__drag-rail {
@@ -535,19 +572,22 @@
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__drag-grip {
-    width: clamp(2.5rem, 14vw, 3.25rem);
-    height: 5px;
-    background: rgba(66, 255, 240, 0.42);
-    box-shadow: 0 0 12px rgba(46, 232, 214, 0.28);
-  }
-
-  whatimado-frame.is-mobile-docked .whatimado-frame__inner {
-    border-radius: var(--v2-shell-radius) var(--v2-shell-radius) 0 0;
-    max-height: calc(100dvh - var(--v2-mobile-header-h) - 3rem);
+    width: min(18vw, 4.5rem);
+    height: 4px;
+    background: rgba(66, 255, 240, 0.5);
+    box-shadow: 0 0 10px rgba(46, 232, 214, 0.32);
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__body-wrap {
     min-height: 0;
+  }
+
+  whatimado-frame.is-mobile-docked .whatimado-frame__composer-input {
+    font-size: 16px;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .whatimado-frame__body-wrap {
+    max-height: min(42vh, calc(100dvh - var(--v2-mobile-header-h) - 8.5rem));
   }
 
   whatimado-frame.is-mobile-hint .whatimado-frame__inner {

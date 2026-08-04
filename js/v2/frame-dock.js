@@ -9,6 +9,7 @@ export const SNAP = {
 
 const MOBILE_MQ = window.matchMedia("(max-width: 900px)");
 const MOBILE_GROW_EASE_MS = 420;
+const MOBILE_GLIDE_EASE_MS = 520;
 const MOBILE_HINT_DELAY_MS = 380;
 
 /** Glide tuning — aligned with map node release physics */
@@ -127,7 +128,17 @@ export function measureMobileFrameChrome(frameEl) {
 }
 
 /**
- * Mobile anchors — map/kicker stay fixed; frame slides between collapsed and focus.
+ * Distance from frame top edge to composer top (layout px).
+ * @param {HTMLElement} frameEl
+ */
+export function measureMobileComposerOffset(frameEl) {
+  const composer = frameEl.querySelector(".whatimado-frame__composer");
+  if (!composer) return measureMobileFrameChrome(frameEl) - 68;
+  return Math.max(0, composer.offsetTop);
+}
+
+/**
+ * Mobile anchors — map/kicker stay fixed; frame glides between typing and bottom reading.
  * @param {HTMLElement} mainEl
  * @param {HTMLElement} frameEl
  */
@@ -135,21 +146,29 @@ export function measureMobileAnchors(mainEl, frameEl) {
   const mainRect = mainEl.getBoundingClientRect();
   const mainH = mainEl.clientHeight;
   const vh = viewportHeight();
+  const quarterIn = measureCssVarLength("--v2-mobile-quarter-in") || 24;
+  const bottomInset = measureCssVarLength("--v2-mobile-bottom-inset") || 12;
+  const composerOffset = measureMobileComposerOffset(frameEl);
   const chromeH = measureMobileFrameChrome(frameEl);
-  const collapsedTop = Math.max(0, mainH - chromeH);
 
-  /** Cap auto-grow just above viewport halfway */
-  const maxGrowTop = Math.max(0, vh * 0.46 - mainRect.top);
-  const focusTop = Math.max(maxGrowTop, Math.min(collapsedTop - 20, mainH * 0.42));
+  /** Prompt top sits 1/4in above viewport halfway */
+  const typingTop = Math.max(0, vh * 0.5 - quarterIn - mainRect.top - composerOffset);
+
+  const content = frameEl.querySelector(".whatimado-frame__body-content");
+  const contentH = content?.scrollHeight ?? 0;
+  const frameH = Math.max(chromeH, chromeH + contentH + 8);
+  const bottomTop = Math.max(typingTop, mainH - frameH - bottomInset);
 
   return {
-    topLock: maxGrowTop,
-    homeBase: focusTop,
-    bottomCushion: collapsedTop,
-    maxGrowTop,
-    focusTop,
-    collapsedTop,
+    topLock: typingTop,
+    homeBase: typingTop,
+    bottomCushion: bottomTop,
+    maxGrowTop: typingTop,
+    focusTop: typingTop,
+    typingTop,
+    collapsedTop: bottomTop,
     chromeH,
+    bottomInset,
     mainH
   };
 }
@@ -160,7 +179,7 @@ export function measureMobileAnchors(mainEl, frameEl) {
  * @param {{ collapsedTop: number, focusTop: number }} anchors
  */
 export function resolveMobileSnap(topPx, velocityY, anchors) {
-  const mid = (anchors.collapsedTop + anchors.focusTop) / 2;
+  const mid = (anchors.collapsedTop + anchors.typingTop) / 2;
   const biasedTop = topPx + velocityY * FLICK_VEL_BIAS;
   return biasedTop <= mid ? SNAP.MOBILE_FOCUS : SNAP.MOBILE_COLLAPSED;
 }
@@ -334,8 +353,11 @@ export class FrameDockController {
     this._mobileViewportHandler = () => {
       if (!this._mobileMode || !this.mainEl) return;
       this._anchors = null;
-      this.growForContent();
-      this.remeasure();
+      if (this.activeSnap === SNAP.MOBILE_COLLAPSED) {
+        this.growForContent();
+      } else {
+        this.remeasure();
+      }
     };
 
     window.visualViewport.addEventListener("resize", this._mobileViewportHandler);
@@ -357,6 +379,11 @@ export class FrameDockController {
   /** True while the frame is easing into dock after hero dismiss. */
   get isInDockTransition() {
     return this._dockTransition || this._settling;
+  }
+
+  /** @returns {boolean} */
+  get mobileMode() {
+    return this._mobileMode;
   }
 
   /** Map band height — only during hero dismiss; frozen once dock settles */
@@ -404,7 +431,7 @@ export class FrameDockController {
     this._mobileMode = true;
     this._stopMotion();
     this._docked = true;
-    this.activeSnap = SNAP.MOBILE_COLLAPSED;
+    this.activeSnap = SNAP.MOBILE_FOCUS;
     this._anchors = null;
     this._defaultFrameHeight = null;
     this._dockTransition = false;
@@ -420,15 +447,58 @@ export class FrameDockController {
     requestAnimationFrame(() => {
       const anchors = this._refreshAnchors();
       if (!anchors) return;
-      this._applyTop(anchors.collapsedTop, { snap: SNAP.MOBILE_COLLAPSED });
+      this._applyTop(anchors.typingTop, { snap: SNAP.MOBILE_FOCUS });
+      this.frameEl.classList.add("is-mobile-typing");
+      this.frameEl.classList.remove("is-mobile-reading");
       this._bindMobileViewportWatch();
       window.setTimeout(() => this.playMobileHint(), MOBILE_HINT_DELAY_MS);
     });
   }
 
-  /** After hero copy fades on mobile — grow frame for messages, no map coupling */
+  /** Glide prompt to bottom after send — clears the view for the response */
+  mobileGlideToBottom() {
+    if (!this._mobileMode || !this.mainEl) return;
+
+    this._anchors = null;
+    const anchors = this._refreshAnchors();
+    if (!anchors) return;
+
+    this.activeSnap = SNAP.MOBILE_COLLAPSED;
+    this.frameEl.classList.add("is-mobile-reading");
+    this.frameEl.classList.remove("is-mobile-typing");
+
+    if (this._motionEnabled) {
+      this._easeToAnchor(anchors.collapsedTop, SNAP.MOBILE_COLLAPSED, {
+        durationMs: MOBILE_GLIDE_EASE_MS
+      });
+    } else {
+      this._applyTop(anchors.collapsedTop, { snap: SNAP.MOBILE_COLLAPSED });
+    }
+  }
+
+  /** Glide prompt back to typing position — composer top 1/4in above halfway */
+  mobileGlideToTyping() {
+    if (!this._mobileMode || !this.mainEl) return;
+
+    this._anchors = null;
+    const anchors = this._refreshAnchors();
+    if (!anchors) return;
+
+    this.activeSnap = SNAP.MOBILE_FOCUS;
+    this.frameEl.classList.add("is-mobile-typing");
+    this.frameEl.classList.remove("is-mobile-reading");
+
+    if (this._motionEnabled) {
+      this._easeToAnchor(anchors.typingTop, SNAP.MOBILE_FOCUS, { durationMs: MOBILE_GLIDE_EASE_MS });
+    } else {
+      this._applyTop(anchors.typingTop, { snap: SNAP.MOBILE_FOCUS });
+    }
+  }
+
+  /** After hero copy fades on mobile — expand reading sheet for messages */
   enterMobileChatMode() {
     if (!this.mainEl || !this._mobileMode) return;
+    this.mobileGlideToBottom();
     this.growForContent();
   }
 
@@ -444,30 +514,25 @@ export class FrameDockController {
   }
 
   /**
-   * Slide frame up as messages accumulate — capped just above halfway.
+   * Expand bottom-anchored reading sheet as messages accumulate.
    */
   growForContent() {
     if (!this._mobileMode || !this.mainEl || this._dragging || this._gliding || this._settling) {
       return;
     }
 
+    if (this.activeSnap !== SNAP.MOBILE_COLLAPSED) return;
+
     const anchors = this._refreshAnchors();
     if (!anchors) return;
 
-    const content = this.frameEl.querySelector(".whatimado-frame__body-content");
-    if (!content) return;
-
-    const contentH = content.scrollHeight;
-    const neededH = anchors.chromeH + contentH + 10;
-    const naturalTop = anchors.mainH - neededH;
-    const targetTop = Math.max(anchors.maxGrowTop, Math.min(anchors.collapsedTop, naturalTop));
-
-    if (targetTop >= this._topPx - 0.75) return;
+    const targetTop = anchors.collapsedTop;
+    if (Math.abs(targetTop - this._topPx) < 0.75) return;
 
     if (this._motionEnabled) {
-      this._easeToAnchor(targetTop, this.activeSnap, { durationMs: MOBILE_GROW_EASE_MS });
+      this._easeToAnchor(targetTop, SNAP.MOBILE_COLLAPSED, { durationMs: MOBILE_GROW_EASE_MS });
     } else {
-      this._applyTop(targetTop, { snap: this.activeSnap });
+      this._applyTop(targetTop, { snap: SNAP.MOBILE_COLLAPSED });
     }
   }
 
@@ -736,7 +801,9 @@ export class FrameDockController {
 
     if (this._mobileMode) {
       snap = resolveMobileSnap(this._topPx, velocityY, anchors);
-      target = snap === SNAP.MOBILE_FOCUS ? anchors.focusTop : anchors.collapsedTop;
+      target = snap === SNAP.MOBILE_FOCUS ? anchors.typingTop : anchors.collapsedTop;
+      this.frameEl.classList.toggle("is-mobile-typing", snap === SNAP.MOBILE_FOCUS);
+      this.frameEl.classList.toggle("is-mobile-reading", snap === SNAP.MOBILE_COLLAPSED);
     } else {
       snap = resolveSnap(this._topPx, velocityY, anchors);
       target = {
@@ -823,7 +890,14 @@ export class FrameDockController {
     if (!this.mainEl) return;
 
     this._topPx = topPx;
-    this.frameEl.style.top = `${topPx}px`;
+
+    if (this._mobileMode) {
+      const mainRect = this.mainEl.getBoundingClientRect();
+      this.frameEl.style.top = `${topPx + mainRect.top}px`;
+      this.frameEl.style.bottom = "auto";
+    } else {
+      this.frameEl.style.top = `${topPx}px`;
+    }
 
     if (snap) {
       this.frameEl.dataset.snap = snap;

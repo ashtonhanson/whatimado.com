@@ -101,7 +101,14 @@ export class WhatimadoFrame extends HTMLElement {
     /** @type {HTMLElement|null} */
     this._dragRail = null;
 
-    this._onComposerFocus = () => this._pausePlaceholderCycle();
+    /** @type {boolean} */
+    this._suppressMobileFocusGlide = false;
+
+    this._onComposerFocus = () => {
+      this._pausePlaceholderCycle();
+      if (this._suppressMobileFocusGlide) return;
+      this._dock?.mobileGlideToTyping();
+    };
     this._onComposerBlur = () => this._maybeResumePlaceholderCycle();
     this._onComposerInput = () => this._onComposerInputChange();
     this._onBodyScroll = () => {
@@ -181,8 +188,14 @@ export class WhatimadoFrame extends HTMLElement {
     return this._composerInput;
   }
 
-  focusComposer() {
-    this._composerInput?.focus();
+  focusComposer({ glideOnMobile = true } = {}) {
+    if (!glideOnMobile) this._suppressMobileFocusGlide = true;
+    this._composerInput?.focus({ preventScroll: true });
+    if (!glideOnMobile) {
+      requestAnimationFrame(() => {
+        this._suppressMobileFocusGlide = false;
+      });
+    }
   }
 
   setComposerEnabled(enabled) {
@@ -593,6 +606,10 @@ export class WhatimadoFrame extends HTMLElement {
     const text = this._composerInput?.value || "";
     if (this._composerInput) this._composerInput.value = "";
     this._maybeResumePlaceholderCycle();
+    if (this._dock?.mobileMode) {
+      this._composerInput?.blur();
+      this._dock.mobileGlideToBottom();
+    }
     this.dispatchEvent(
       new CustomEvent("composer-submit", {
         bubbles: true,
@@ -672,7 +689,9 @@ export class WhatimadoFrame extends HTMLElement {
   /** Call after DOM updates inside the body (new messages, etc.) */
   notifyContentChange() {
     requestAnimationFrame(() => {
-      this._dock?.growForContent();
+      if (this._dock?.mobileMode && this.classList.contains("is-mobile-reading")) {
+        this._dock.growForContent();
+      }
       this._dock?.remeasure();
       this._updateScrollState();
       if (this.classList.contains("is-scrollable") && this._body) {
