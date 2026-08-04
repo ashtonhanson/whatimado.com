@@ -419,7 +419,8 @@ export class FrameDockController {
     const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
     const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
     const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 14;
-    const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 4;
+    const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 0;
+    const heroNudge = measureCssVarLength("--v2-mobile-focus-hero-nudge") || 0;
 
     const subEl = kicker.querySelector(".v2-kicker-sub");
     const brandEl = kicker.querySelector(".v2-kicker-brand");
