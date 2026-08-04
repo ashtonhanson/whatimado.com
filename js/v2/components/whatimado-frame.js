@@ -4,10 +4,10 @@ import { FrameBreatheController } from "../frame-breathe.js";
 /** Example prompts cycled in the composer when empty */
 const EXAMPLE_PROMPTS = [
   "Share what's going on…",
-  "I just lost my job and need a plan…",
-  "Help me explore a career change…",
-  "I'm stuck — not sure what path fits me…",
-  "I want training options near me…"
+  "Lost my job — need a plan…",
+  "Explore a career change…",
+  "Stuck — what path fits me?",
+  "Training options near me…"
 ];
 
 const PLACEHOLDER_FADE_MS = 450;
