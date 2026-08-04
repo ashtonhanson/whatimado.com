@@ -365,6 +365,8 @@ export class FrameDockController {
     this._mobileMode = false;
     /** @type {boolean} */
     this._keyboardDocked = false;
+    /** @type {boolean} */
+    this._focusLiftResyncScheduled = false;
     /** @type {(() => void)|null} */
     this._mobileViewportHandler = null;
   }
@@ -400,7 +402,7 @@ export class FrameDockController {
     this._mobileViewportHandler = null;
   }
 
-  _syncMobileFocusLift() {
+  _syncMobileFocusLift({ allowResync = true } = {}) {
     if (!this._mobileMode) return;
 
     if (!document.body.classList.contains("is-mobile-composer-focus")) {
@@ -416,33 +418,55 @@ export class FrameDockController {
     const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
     const bandTopGap = measureCssVarLength("--v2-mobile-focus-band-top-gap") || 8;
     const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 14;
-    const kickerReserve = measureCssVarLength("--v2-kicker-reserve") || 52;
+    const mapGraphPad = measureCssVarLength("--v2-map-graph-top-pad") || 14;
+    const youHeroGap = measureCssVarLength("--v2-mobile-you-hero-gap") || 8;
 
     const frameRect = this.frameEl.getBoundingClientRect();
     const kickerRect = kicker.getBoundingClientRect();
+    const subEl = kicker.querySelector(".v2-kicker-sub");
+    const brandEl = kicker.querySelector(".v2-kicker-brand");
     const keyboardOpen = measureKeyboardInset() > 48;
+
     const bandTop = headerH + bandTopGap;
-    const bandBottomTarget = frameRect.top - heroClearGap;
-    const mapBandBottom = frameRect.top - kickerReserve - bandTopGap;
+    /** Frame top → subheader bottom must stay above this line */
+    const bandBottom = frameRect.top - heroClearGap;
+    const stackBottom = (subEl ?? kicker).getBoundingClientRect().bottom;
 
-    document.documentElement.style.setProperty(
-      "--v2-mobile-focus-band-h",
-      `${Math.max(0, mapBandBottom - bandTop)}px`
-    );
+    /** 1. Clear subheader above prompt frame (incl. drag-rail top edge) */
+    let lift = Math.max(0, Math.ceil(stackBottom - bandBottom));
 
-    /** Lift hero/subheader and map — map also repans internally */
-    let lift = Math.max(0, Math.ceil(kickerRect.bottom - bandBottomTarget));
-    const currentHeroGap = frameRect.top - kickerRect.bottom;
-    const liftForMinGap = Math.max(0, Math.ceil(heroClearGap - currentHeroGap));
-    lift = Math.max(lift, liftForMinGap);
-    const maxLift = Math.max(0, Math.ceil(kickerRect.top - bandTop));
+    /** 2. Reclaim dead space between header and map stage */
+    const mapStage = mapEl?.querySelector(".whatimado-map__stage");
+    const mapStageTop = mapStage?.getBoundingClientRect().top;
+    if (mapStageTop != null && mapStageTop > bandTop + mapGraphPad) {
+      lift = Math.max(lift, Math.ceil(mapStageTop - bandTop - mapGraphPad));
+    }
+
+    /** 3. Never lift hero brand under the menu bar */
+    const brandTop = brandEl?.getBoundingClientRect().top ?? kickerRect.top;
+    const maxLift = Math.max(0, Math.ceil(brandTop - bandTop));
     lift = Math.min(lift, maxLift);
 
+    const kickerTopAfterLift = kickerRect.top - lift;
+    document.documentElement.style.setProperty(
+      "--v2-mobile-focus-band-h",
+      `${Math.max(0, kickerTopAfterLift - youHeroGap - bandTop)}px`
+    );
     document.documentElement.style.setProperty("--v2-mobile-focus-lift", `${lift}px`);
 
-    requestAnimationFrame(() => {
-      mapEl?.syncMobileFocusBand?.({ animate: true, keyboardOpen });
-    });
+    const syncMap = () => {
+      mapEl?.syncMobileFocusBand?.({ animate: true, liftPx: lift });
+    };
+    requestAnimationFrame(syncMap);
+    if (keyboardOpen && allowResync && !this._focusLiftResyncScheduled) {
+      this._focusLiftResyncScheduled = true;
+      window.setTimeout(() => {
+        this._focusLiftResyncScheduled = false;
+        if (document.body.classList.contains("is-mobile-composer-focus")) {
+          this._syncMobileFocusLift({ allowResync: false });
+        }
+      }, 150);
+    }
   }
 
   /** Pin prompt above the software keyboard via Visual Viewport — no page scroll */

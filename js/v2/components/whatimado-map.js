@@ -849,11 +849,10 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** @returns {{ panX: number, panY: number }} */
-  _computeMobileFocusBandPan({ keyboardOpen = false } = {}) {
+  _computeMobileFocusBandPan({ liftPx = 0 } = {}) {
     const stage = this.querySelector(".whatimado-map__stage");
     const kicker = document.getElementById("frame-kicker");
-    const frame = document.getElementById("dynamic-frame");
-    if (!stage || !frame) return { panX: 0, panY: 0 };
+    if (!stage || !kicker) return { panX: 0, panY: 0 };
 
     const stageRect = stage.getBoundingClientRect();
     if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
@@ -864,15 +863,12 @@ export class WhatimadoMap extends HTMLElement {
 
     const headerH = readCssVarLength("--v2-mobile-header-h") || 56;
     const bandTopGap = readCssVarLength("--v2-mobile-focus-band-top-gap") || 8;
-    const kickerGap = readCssVarLength("--v2-mobile-you-hero-gap") || 8;
-    const kickerReserve = readCssVarLength("--v2-kicker-reserve") || 52;
+    const youHeroGap = readCssVarLength("--v2-mobile-you-hero-gap") || 8;
 
     const bandTop = headerH + bandTopGap;
-    const frameTop = frame.getBoundingClientRect().top;
-    const kickerTop = kicker?.getBoundingClientRect().top ?? frameTop;
-    const mapBandBottom = keyboardOpen
-      ? frameTop - kickerReserve - kickerGap
-      : kickerTop - kickerGap;
+    const kickerRect = kicker.getBoundingClientRect();
+    const kickerTopAfterLift = kickerRect.top - liftPx;
+    const mapBandBottom = kickerTopAfterLift - youHeroGap;
 
     if (mapBandBottom <= bandTop) return { panX: VIEW_W / 2 - bounds.cx, panY: this._panY };
 
@@ -900,14 +896,13 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** Pack node map into the band above the prompt while typing on mobile */
-  syncMobileFocusBand({ animate = true, keyboardOpen = false } = {}) {
+  syncMobileFocusBand({ animate = true, keyboardOpen = false, liftPx = 0 } = {}) {
     if (!MOBILE_MQ.matches || !document.body.classList.contains("is-mobile-composer-focus")) {
       return;
     }
 
-    const isKeyboard =
-      keyboardOpen || document.body.classList.contains("is-mobile-keyboard-open");
-    const target = this._computeMobileFocusBandPan({ keyboardOpen: isKeyboard });
+    void keyboardOpen;
+    const target = this._computeMobileFocusBandPan({ liftPx });
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
