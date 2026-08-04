@@ -28,6 +28,7 @@
     --v2-mobile-prompt-kicker-gap: 0.35rem;
     --v2-mobile-keyboard-gap: 0.35rem;
     --v2-mobile-prompt-drop: 8px;
+    --v2-mobile-you-btn-drop: 8px;
     --v2-mobile-focus-band-rise: 0px;
     --v2-mobile-focus-map-rise: 0px;
     --v2-mobile-focus-you-btn-drop: 0px;
@@ -578,7 +579,6 @@
   body.v2-app.is-mobile-composer-focus {
     --v2-mobile-focus-band-rise: 8px;
     --v2-mobile-focus-map-rise: 8px;
-    --v2-mobile-focus-you-btn-drop: 8px;
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -700,14 +700,10 @@
   }
 
   whatimado-map .whatimado-map__you-btn {
-    top: 0.35rem;
+    top: calc(0.35rem + var(--v2-mobile-you-btn-drop, 0px));
     right: 0.35rem;
     font-size: 0.62rem;
     padding: 0.28rem 0.55rem;
-  }
-
-  body.is-mobile-composer-focus whatimado-map .whatimado-map__you-btn {
-    top: calc(0.35rem + var(--v2-mobile-focus-you-btn-drop, 0px));
   }
 }
 

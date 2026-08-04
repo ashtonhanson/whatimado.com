@@ -234,6 +234,11 @@ export class WhatimadoFrame extends HTMLElement {
     this._dock?.remeasure();
   }
 
+  /** Re-pack map and hero after rotation while the mobile composer stays focused. */
+  scheduleMobileComposerFocusResync() {
+    this._dock?.scheduleMobileComposerFocusResync();
+  }
+
   /** Viewport crossed mobile breakpoint — re-init dock mode */
   reinitLayoutForViewport() {
     if (window.matchMedia("(max-width: 900px)").matches) {

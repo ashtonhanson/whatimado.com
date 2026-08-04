@@ -37,9 +37,19 @@ const PATHS_READY_TURN = 3;
 
 function notifyFrameLayout() {
   frameEl?.notifyContentChange();
-  if (!window.matchMedia("(max-width: 900px)").matches) {
+  const mobile = window.matchMedia("(max-width: 900px)").matches;
+  const composerFocus = document.body.classList.contains("is-mobile-composer-focus");
+
+  if (mobile) {
+    frameEl?.remeasureDock();
+    if (composerFocus) {
+      frameEl?.scheduleMobileComposerFocusResync();
+      return;
+    }
+  } else {
     frameEl?.remeasureDock();
   }
+
   if (!frameEl?.isDockSettling()) {
     mapEl?.syncFrameGravity({ animate: false });
   }
@@ -350,8 +360,12 @@ const MOBILE_LAYOUT_MQ = window.matchMedia("(max-width: 900px)");
 MOBILE_LAYOUT_MQ.addEventListener("change", () => {
   frameEl?.reinitLayoutForViewport();
   if (MOBILE_LAYOUT_MQ.matches) {
-    mapEl?.syncFrameGravity({ animate: false });
-    mapEl?.lockFromFrame();
+    if (document.body.classList.contains("is-mobile-composer-focus")) {
+      frameEl?.scheduleMobileComposerFocusResync();
+    } else {
+      mapEl?.syncFrameGravity({ animate: false });
+      mapEl?.lockFromFrame();
+    }
   }
   notifyFrameLayout();
 });

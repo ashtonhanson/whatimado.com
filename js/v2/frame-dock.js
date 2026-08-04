@@ -379,8 +379,14 @@ export class FrameDockController {
     this._keyboardDocked = false;
     /** @type {boolean} */
     this._focusLiftResyncScheduled = false;
+    /** @type {number|null} */
+    this._focusOrientationTimer = null;
+    /** @type {number|null} */
+    this._focusOrientationTimer2 = null;
     /** @type {(() => void)|null} */
     this._mobileViewportHandler = null;
+    /** @type {(() => void)|null} */
+    this._mobileOrientationHandler = null;
   }
 
   /** @returns {boolean} */
@@ -394,6 +400,9 @@ export class FrameDockController {
     this._mobileViewportHandler = () => {
       if (!this._mobileMode || !this.mainEl) return;
       this.syncMobileKeyboard();
+      if (document.body.classList.contains("is-mobile-composer-focus")) {
+        this.scheduleMobileComposerFocusResync();
+      }
       if (this._keyboardDocked) return;
       this._anchors = null;
       if (this.activeSnap === SNAP.MOBILE_COLLAPSED) {
@@ -403,8 +412,21 @@ export class FrameDockController {
       }
     };
 
+    this._mobileOrientationHandler = () => {
+      if (!this._mobileMode || !this.mainEl) return;
+      this.syncMobileKeyboard();
+      if (document.body.classList.contains("is-mobile-composer-focus")) {
+        this.scheduleMobileComposerFocusResync();
+        return;
+      }
+      this._anchors = null;
+      if (this._keyboardDocked) return;
+      this.remeasure();
+    };
+
     window.visualViewport.addEventListener("resize", this._mobileViewportHandler);
     window.visualViewport.addEventListener("scroll", this._mobileViewportHandler);
+    window.addEventListener("orientationchange", this._mobileOrientationHandler);
   }
 
   _unbindMobileViewportWatch() {
@@ -412,9 +434,43 @@ export class FrameDockController {
     window.visualViewport.removeEventListener("resize", this._mobileViewportHandler);
     window.visualViewport.removeEventListener("scroll", this._mobileViewportHandler);
     this._mobileViewportHandler = null;
+    if (this._mobileOrientationHandler) {
+      window.removeEventListener("orientationchange", this._mobileOrientationHandler);
+      this._mobileOrientationHandler = null;
+    }
+    this._clearFocusOrientationTimers();
   }
 
-  _syncMobileFocusLift({ allowResync = true } = {}) {
+  _clearFocusOrientationTimers() {
+    if (this._focusOrientationTimer !== null) {
+      window.clearTimeout(this._focusOrientationTimer);
+      this._focusOrientationTimer = null;
+    }
+    if (this._focusOrientationTimer2 !== null) {
+      window.clearTimeout(this._focusOrientationTimer2);
+      this._focusOrientationTimer2 = null;
+    }
+  }
+
+  /** Re-pack map + hero after rotation while the composer stays focused. */
+  scheduleMobileComposerFocusResync() {
+    if (!this._mobileMode || !document.body.classList.contains("is-mobile-composer-focus")) {
+      return;
+    }
+
+    const run = () => this._syncMobileFocusLift({ allowResync: false, animateMap: false });
+    run();
+    requestAnimationFrame(() => {
+      run();
+      requestAnimationFrame(run);
+    });
+
+    this._clearFocusOrientationTimers();
+    this._focusOrientationTimer = window.setTimeout(run, 150);
+    this._focusOrientationTimer2 = window.setTimeout(run, 420);
+  }
+
+  _syncMobileFocusLift({ allowResync = true, animateMap = true } = {}) {
     if (!this._mobileMode) return;
 
     if (!document.body.classList.contains("is-mobile-composer-focus")) {
@@ -485,7 +541,7 @@ export class FrameDockController {
       document.documentElement.style.setProperty("--v2-mobile-focus-lift", `${lift}px`);
     };
 
-    mapEl?.syncMobileFocusBand?.({ animate: true });
+    mapEl?.syncMobileFocusBand?.({ animate: animateMap });
     requestAnimationFrame(() => {
       applyStackLayout();
       requestAnimationFrame(applyStackLayout);
@@ -636,6 +692,9 @@ export class FrameDockController {
       this.frameEl.classList.add("is-mobile-typing");
       this.frameEl.classList.remove("is-mobile-reading");
       this._bindMobileViewportWatch();
+      if (document.body.classList.contains("is-mobile-composer-focus")) {
+        this.scheduleMobileComposerFocusResync();
+      }
       window.setTimeout(() => this.playMobileHint(), MOBILE_HINT_DELAY_MS);
       window.dispatchEvent(new Event("resize"));
     });
@@ -861,6 +920,9 @@ export class FrameDockController {
     if (this._mobileMode) {
       if (this._keyboardDocked) {
         this.syncMobileKeyboard();
+        if (document.body.classList.contains("is-mobile-composer-focus")) {
+          this.scheduleMobileComposerFocusResync();
+        }
         return;
       }
       this.growForContent();
