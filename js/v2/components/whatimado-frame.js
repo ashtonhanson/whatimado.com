@@ -1,4 +1,4 @@
-import { FrameDockController } from "../frame-dock.js";
+import { FrameDockController, SNAP } from "../frame-dock.js";
 import { FrameBreatheController } from "../frame-breathe.js";
 
 /** Example prompts cycled in the composer when empty */
@@ -107,9 +107,21 @@ export class WhatimadoFrame extends HTMLElement {
     this._onComposerFocus = () => {
       this._pausePlaceholderCycle();
       if (this._suppressMobileFocusGlide) return;
+      if (this._dock?.mobileMode) {
+        window.scrollTo(0, 0);
+        document.body.classList.add("is-mobile-composer-focus");
+        this._dock.syncMobileKeyboard();
+        requestAnimationFrame(() => this._dock?.syncMobileKeyboard());
+        window.setTimeout(() => this._dock?.syncMobileKeyboard(), 120);
+        if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) return;
+      }
       this._dock?.mobileGlideToTyping();
     };
-    this._onComposerBlur = () => this._maybeResumePlaceholderCycle();
+    this._onComposerBlur = () => {
+      document.body.classList.remove("is-mobile-composer-focus");
+      this._dock?.syncMobileKeyboard();
+      this._maybeResumePlaceholderCycle();
+    };
     this._onComposerInput = () => this._onComposerInputChange();
     this._onBodyScroll = () => {
       this._updateScrollFade();

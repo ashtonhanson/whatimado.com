@@ -18,6 +18,7 @@
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
     --v2-mobile-map-head-gap: clamp(0.35rem, 1vh, 0.55rem);
     --v2-mobile-prompt-kicker-gap: 0.35rem;
+    --v2-mobile-keyboard-gap: 0.35rem;
     --v2-hero-node-gap: clamp(0.15rem, 0.45vh, 0.3rem);
     --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
     --v2-map-graph-top-pad: clamp(0.85rem, 2vh, 1.25rem);
@@ -522,6 +523,16 @@
     font-size: 20.25px;
   }
 
+  html:has(body.is-mobile-composer-focus),
+  body.v2-app.is-mobile-composer-focus {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body.v2-app.is-mobile-composer-focus .v2-main {
+    overflow: hidden;
+  }
+
   /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */
   whatimado-frame.is-mobile-docked {
     position: fixed;
@@ -581,6 +592,11 @@
 
   whatimado-frame.is-mobile-docked .whatimado-frame__body-wrap {
     min-height: 0;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard {
+    top: auto !important;
+    transition: bottom 0.1s ease-out;
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__composer-input {

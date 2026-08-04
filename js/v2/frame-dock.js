@@ -34,11 +34,21 @@ const FLICK_VEL_BIAS = 0.38;
 const KICKER_RESERVE_DEFAULT = "clamp(4.5rem, 11.5vh, 5.75rem)";
 
 /**
- * Viewport height — resolution-independent anchor basis.
+ * Keyboard overlap above the layout viewport bottom (Visual Viewport API).
+ * @returns {number}
+ */
+function measureKeyboardInset() {
+  const vv = window.visualViewport;
+  if (!vv) return 0;
+  return Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+}
+
+/**
+ * Viewport height — layout viewport for anchor math; visual when keyboard is open.
  * @returns {number}
  */
 function viewportHeight() {
-  return window.visualViewport?.height ?? window.innerHeight;
+  return window.innerHeight;
 }
 
 /**
@@ -347,6 +357,8 @@ export class FrameDockController {
     this._dockTransition = false;
     /** @type {boolean} */
     this._mobileMode = false;
+    /** @type {boolean} */
+    this._keyboardDocked = false;
     /** @type {(() => void)|null} */
     this._mobileViewportHandler = null;
   }
@@ -361,6 +373,8 @@ export class FrameDockController {
 
     this._mobileViewportHandler = () => {
       if (!this._mobileMode || !this.mainEl) return;
+      this.syncMobileKeyboard();
+      if (this._keyboardDocked) return;
       this._anchors = null;
       if (this.activeSnap === SNAP.MOBILE_COLLAPSED) {
         this.growForContent();
@@ -378,6 +392,55 @@ export class FrameDockController {
     window.visualViewport.removeEventListener("resize", this._mobileViewportHandler);
     window.visualViewport.removeEventListener("scroll", this._mobileViewportHandler);
     this._mobileViewportHandler = null;
+  }
+
+  /** Pin prompt above the software keyboard via Visual Viewport — no page scroll */
+  syncMobileKeyboard() {
+    if (!this._mobileMode) return;
+
+    const inset = measureKeyboardInset();
+    document.documentElement.style.setProperty("--v2-keyboard-inset", `${inset}px`);
+
+    if (window.scrollX || window.scrollY) {
+      window.scrollTo(0, 0);
+    }
+
+    const keyboardOpen = inset > 48;
+    const typing =
+      this.activeSnap === SNAP.MOBILE_FOCUS || this.frameEl.classList.contains("is-mobile-typing");
+
+    if (keyboardOpen && typing) {
+      const gap = measureCssVarLength("--v2-mobile-keyboard-gap") || 6;
+      this._keyboardDocked = true;
+      this.frameEl.classList.add("is-mobile-keyboard");
+      this.frameEl.style.removeProperty("top");
+      this.frameEl.style.bottom = `${inset + gap}px`;
+      document.body.classList.add("is-mobile-keyboard-open");
+      return;
+    }
+
+    this._clearKeyboardDock();
+  }
+
+  _clearKeyboardDock() {
+    if (!this._keyboardDocked && !this.frameEl.classList.contains("is-mobile-keyboard")) {
+      document.body.classList.remove("is-mobile-keyboard-open");
+      return;
+    }
+
+    this._keyboardDocked = false;
+    this.frameEl.classList.remove("is-mobile-keyboard");
+    this.frameEl.style.removeProperty("bottom");
+    document.body.classList.remove("is-mobile-keyboard-open");
+
+    if (!this._mobileMode || !this.mainEl) return;
+
+    const anchors = this._refreshAnchors();
+    if (!anchors) return;
+
+    const target =
+      this.activeSnap === SNAP.MOBILE_COLLAPSED ? anchors.collapsedTop : anchors.homePromptTop;
+    this._applyTop(target, { snap: this.activeSnap });
   }
 
   /** @returns {number} */
@@ -551,6 +614,7 @@ export class FrameDockController {
   /** Leave mobile sheet mode when viewport widens */
   exitMobileMode() {
     if (!this._mobileMode) return;
+    this._clearKeyboardDock();
     this._mobileMode = false;
     this._unbindMobileViewportWatch();
     this.frameEl.classList.remove("is-mobile-docked", "is-mobile-hint");
@@ -667,6 +731,10 @@ export class FrameDockController {
     if (!anchors) return;
 
     if (this._mobileMode) {
+      if (this._keyboardDocked) {
+        this.syncMobileKeyboard();
+        return;
+      }
       this.growForContent();
       this._applyTop(clampTop(this._topPx, anchors), { snap: this.activeSnap });
       return;
@@ -900,6 +968,8 @@ export class FrameDockController {
    */
   _applyTop(topPx, { snap = null, layout = true } = {}) {
     if (!this.mainEl) return;
+
+    if (this._keyboardDocked) return;
 
     this._topPx = topPx;
 
