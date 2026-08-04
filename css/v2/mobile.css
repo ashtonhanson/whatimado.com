@@ -18,7 +18,7 @@
     --v2-mobile-hero-shift: 0.22in;
     --v2-mobile-map-shift: 0.08in;
     --v2-mobile-bottom-inset: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
-    --v2-mobile-you-hero-gap: clamp(0.35rem, 1vh, 0.55rem);
+    --v2-mobile-you-hero-gap: clamp(0.45rem, 1.2vh, 0.65rem);
     --whatimado-frame-top-default: 32vh;
     --v2-kicker-reserve: clamp(3.1rem, 8.5vh, 3.65rem);
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
@@ -27,9 +27,11 @@
     --v2-mobile-keyboard-gap: 0.35rem;
     --v2-mobile-focus-lift: 0px;
     --v2-mobile-focus-band-top-gap: clamp(0.3rem, 1vh, 0.55rem);
+    --v2-mobile-focus-map-head-gap: clamp(0.4rem, 1.1vh, 0.65rem);
     --v2-kicker-sub-line-h: calc(clamp(0.72rem, 3.2vw, 0.84rem) * 1.4);
     --v2-mobile-focus-hero-gap: calc(0.55rem + var(--v2-kicker-sub-line-h));
     --v2-mobile-focus-band-h: 30vh;
+    --v2-mobile-focus-kicker-shift: 0px;
     --v2-hero-node-gap: clamp(0.15rem, 0.45vh, 0.3rem);
     --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
     --v2-map-graph-top-pad: clamp(0.85rem, 2vh, 1.25rem);
@@ -79,9 +81,18 @@
 
   .v2-frame-kicker {
     transform: translateY(
-      calc(-1 * var(--v2-mobile-hero-shift) - var(--v2-mobile-focus-lift, 0px))
+      calc(
+        -1 * var(--v2-mobile-hero-shift) - var(--v2-mobile-focus-lift, 0px) +
+          var(--v2-mobile-focus-kicker-shift, 0px)
+      )
     );
     transition: transform 0.38s var(--v2-hero-motion-ease);
+  }
+
+  body.is-mobile-composer-focus .v2-frame-kicker {
+    transition:
+      transform 0.38s var(--v2-hero-motion-ease),
+      top 0.38s var(--v2-hero-motion-ease);
   }
 
   /* ── Fixed top bar: logo left, hamburger right ── */

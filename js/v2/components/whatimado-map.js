@@ -848,11 +848,22 @@ export class WhatimadoMap extends HTMLElement {
     this._gravityRaf = requestAnimationFrame(tick);
   }
 
+  /** @returns {DOMRect|null} */
+  getStartNodeScreenRect() {
+    const start = this._liveNodes.find((node) => node.type === "start");
+    if (!start) return null;
+
+    const group = this.querySelector(`.whatimado-map__node--live[data-node-id="${start.id}"]`);
+    if (!group) return null;
+
+    const body = group.querySelector(".whatimado-map__node-body") ?? group;
+    return body.getBoundingClientRect();
+  }
+
   /** @returns {{ panX: number, panY: number }} */
-  _computeMobileFocusBandPan({ liftPx = 0 } = {}) {
+  _computeMobileFocusBandPan() {
     const stage = this.querySelector(".whatimado-map__stage");
-    const kicker = document.getElementById("frame-kicker");
-    if (!stage || !kicker) return { panX: 0, panY: 0 };
+    if (!stage) return { panX: 0, panY: 0 };
 
     const stageRect = stage.getBoundingClientRect();
     if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
@@ -862,47 +873,27 @@ export class WhatimadoMap extends HTMLElement {
     const scaleY = VIEW_H / stageRect.height;
 
     const headerH = readCssVarLength("--v2-mobile-header-h") || 56;
-    const bandTopGap = readCssVarLength("--v2-mobile-focus-band-top-gap") || 8;
-    const youHeroGap = readCssVarLength("--v2-mobile-you-hero-gap") || 8;
-
-    const bandTop = headerH + bandTopGap;
-    const kickerRect = kicker.getBoundingClientRect();
-    const kickerTopAfterLift = kickerRect.top - liftPx;
-    const mapBandBottom = kickerTopAfterLift - youHeroGap;
-
-    if (mapBandBottom <= bandTop) return { panX: VIEW_W / 2 - bounds.cx, panY: this._panY };
+    const mapHeadGap = readCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
+    const bandTop = headerH + mapHeadGap;
 
     const panX = VIEW_W / 2 - bounds.cx;
-
-    let panY = clampPanYForTopPad(
+    const panY = clampPanYForTopPad(
       (bandTop - stageRect.top) * scaleY - shiftY - bounds.minY,
       bounds,
       stageRect,
       shiftY
     );
 
-    const graphBottomScreen =
-      stageRect.top + (bounds.maxY + shiftY + panY) * (stageRect.height / VIEW_H);
-    if (graphBottomScreen > mapBandBottom) {
-      panY = clampPanYForTopPad(
-        (mapBandBottom - stageRect.top) * scaleY - shiftY - bounds.maxY,
-        bounds,
-        stageRect,
-        shiftY
-      );
-    }
-
     return { panX, panY };
   }
 
-  /** Pack node map into the band above the prompt while typing on mobile */
-  syncMobileFocusBand({ animate = true, keyboardOpen = false, liftPx = 0 } = {}) {
+  /** Pack node map — top nodes just below menu, YOU node anchors hero below */
+  syncMobileFocusBand({ animate = true } = {}) {
     if (!MOBILE_MQ.matches || !document.body.classList.contains("is-mobile-composer-focus")) {
       return;
     }
 
-    void keyboardOpen;
-    const target = this._computeMobileFocusBandPan({ liftPx });
+    const target = this._computeMobileFocusBandPan();
     this._animatePanTo(target.panX, target.panY, animate);
   }
 

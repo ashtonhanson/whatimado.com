@@ -407,6 +407,7 @@ export class FrameDockController {
 
     if (!document.body.classList.contains("is-mobile-composer-focus")) {
       document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
+      document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
       document.getElementById("possibility-map")?.resetMobileFocusBand?.({ animate: true });
       return;
     }
@@ -416,48 +417,57 @@ export class FrameDockController {
     if (!kicker) return;
 
     const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
-    const bandTopGap = measureCssVarLength("--v2-mobile-focus-band-top-gap") || 8;
+    const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
     const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 14;
-    const mapGraphPad = measureCssVarLength("--v2-map-graph-top-pad") || 14;
-    const youHeroGap = measureCssVarLength("--v2-mobile-you-hero-gap") || 8;
+    const youHeroGap = measureCssVarLength("--v2-mobile-you-hero-gap") || 10;
 
-    const frameRect = this.frameEl.getBoundingClientRect();
-    const kickerRect = kicker.getBoundingClientRect();
     const subEl = kicker.querySelector(".v2-kicker-sub");
     const brandEl = kicker.querySelector(".v2-kicker-brand");
     const keyboardOpen = measureKeyboardInset() > 48;
+    const bandTop = headerH + mapHeadGap;
 
-    const bandTop = headerH + bandTopGap;
-    /** Frame top → subheader bottom must stay above this line */
-    const bandBottom = frameRect.top - heroClearGap;
-    const stackBottom = (subEl ?? kicker).getBoundingClientRect().bottom;
+    const applyStackLayout = () => {
+      const freshKickerRect = kicker.getBoundingClientRect();
+      const freshFrameRect = this.frameEl.getBoundingClientRect();
+      const youRect = mapEl?.getStartNodeScreenRect?.();
+      let kickerShift = 0;
 
-    /** 1. Clear subheader above prompt frame (incl. drag-rail top edge) */
-    let lift = Math.max(0, Math.ceil(stackBottom - bandBottom));
+      if (youRect) {
+        kickerShift = Math.round(youRect.bottom + youHeroGap - freshKickerRect.top);
+      }
 
-    /** 2. Reclaim dead space between header and map stage */
-    const mapStage = mapEl?.querySelector(".whatimado-map__stage");
-    const mapStageTop = mapStage?.getBoundingClientRect().top;
-    if (mapStageTop != null && mapStageTop > bandTop + mapGraphPad) {
-      lift = Math.max(lift, Math.ceil(mapStageTop - bandTop - mapGraphPad));
-    }
+      document.documentElement.style.setProperty(
+        "--v2-mobile-focus-kicker-shift",
+        `${kickerShift}px`
+      );
 
-    /** 3. Never lift hero brand under the menu bar */
-    const brandTop = brandEl?.getBoundingClientRect().top ?? kickerRect.top;
-    const maxLift = Math.max(0, Math.ceil(brandTop - bandTop));
-    lift = Math.min(lift, maxLift);
+      const subBottom =
+        (subEl ?? kicker).getBoundingClientRect().bottom + kickerShift;
+      const bandBottom = freshFrameRect.top - heroClearGap;
+      let lift = Math.max(0, Math.ceil(subBottom - bandBottom));
 
-    const kickerTopAfterLift = kickerRect.top - lift;
-    document.documentElement.style.setProperty(
-      "--v2-mobile-focus-band-h",
-      `${Math.max(0, kickerTopAfterLift - youHeroGap - bandTop)}px`
-    );
-    document.documentElement.style.setProperty("--v2-mobile-focus-lift", `${lift}px`);
+      const brandTop =
+        (brandEl?.getBoundingClientRect().top ?? freshKickerRect.top) + kickerShift;
+      const maxLift = Math.max(0, Math.ceil(brandTop - bandTop));
+      lift = Math.min(lift, maxLift);
 
-    const syncMap = () => {
-      mapEl?.syncMobileFocusBand?.({ animate: true, liftPx: lift });
+      if (youRect) {
+        const mapBandBottom = youRect.bottom + youHeroGap;
+        document.documentElement.style.setProperty(
+          "--v2-mobile-focus-band-h",
+          `${Math.max(0, mapBandBottom - bandTop)}px`
+        );
+      }
+
+      document.documentElement.style.setProperty("--v2-mobile-focus-lift", `${lift}px`);
     };
-    requestAnimationFrame(syncMap);
+
+    mapEl?.syncMobileFocusBand?.({ animate: true });
+    requestAnimationFrame(() => {
+      applyStackLayout();
+      requestAnimationFrame(applyStackLayout);
+    });
+
     if (keyboardOpen && allowResync && !this._focusLiftResyncScheduled) {
       this._focusLiftResyncScheduled = true;
       window.setTimeout(() => {
