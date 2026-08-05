@@ -91,8 +91,10 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
       bandRise +
       kickerShift -
       heroNudge;
-    const maxLift = Math.max(0, Math.ceil(brandTop - bandTop));
-    lift = Math.min(lift, maxLift);
+    const maxLift = Math.max(0, Math.ceil(brandTop - bandTop)) + bandRise + mapRise;
+    if (!keyboardOpen) {
+      lift = Math.min(lift, maxLift);
+    }
 
     if (youRect) {
       const mapBandBottom = youRect.bottom + youHeroGap;

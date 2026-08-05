@@ -15,12 +15,12 @@
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
     --v2-mobile-quarter-in: 0.25in;
-    --v2-mobile-hero-shift: 0.22in;
-    --v2-mobile-map-shift: 0.08in;
+    --v2-mobile-hero-shift: calc(0.22in + 10px);
+    --v2-mobile-map-shift: calc(0.08in + 8px);
     --v2-mobile-bottom-inset: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
     --v2-mobile-you-hero-gap: clamp(0.45rem, 1.2vh, 0.65rem);
     --v2-mobile-focus-you-hero-gap: 0px;
-    --v2-mobile-focus-hero-nudge: 1.35rem;
+    --v2-mobile-focus-hero-nudge: 1.1rem;
     --whatimado-frame-top-default: 32vh;
     --v2-kicker-reserve: clamp(3.1rem, 8.5vh, 3.65rem);
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
@@ -28,7 +28,7 @@
     --v2-mobile-prompt-kicker-gap: 0.35rem;
     --v2-mobile-keyboard-gap: 0.35rem;
     --v2-mobile-prompt-drop: 8px;
-    --v2-mobile-you-btn-drop: 8px;
+    --v2-mobile-you-btn-drop: 16px;
     --v2-mobile-focus-band-rise: 0px;
     --v2-mobile-focus-map-rise: 0px;
     --v2-mobile-focus-lift: 0px;
@@ -542,6 +542,7 @@
   }
 
   body.is-mobile-composer-focus .v2-frame-kicker {
+    z-index: 46;
     height: auto;
     min-height: 0;
     justify-content: flex-start;
@@ -576,8 +577,8 @@
 
   html:has(body.is-mobile-composer-focus),
   body.v2-app.is-mobile-composer-focus {
-    --v2-mobile-focus-band-rise: 8px;
-    --v2-mobile-focus-map-rise: 8px;
+    --v2-mobile-focus-band-rise: 16px;
+    --v2-mobile-focus-map-rise: 16px;
     overflow: hidden;
     overscroll-behavior: none;
   }
