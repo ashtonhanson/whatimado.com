@@ -1,11 +1,9 @@
 /**
- * Mobile composer focus — fight iOS Safari's focus scroll.
- *
- * Map/hero are position:absolute (scroll with the document). The prompt is
- * position:fixed. Safari scrolls the page on textarea focus, which ejects
- * map/hero off-screen while the prompt stays behind. Fix: lock scroll to 0
- * and pin map/hero as fixed at their landing screen rects for the focus session.
+ * Mobile composer focus — fight iOS Safari's focus scroll, then pack a
+ * deterministic stack: menu → 5px → map → hero/subtitle → prompt → keyboard.
  */
+
+import { measureCssVarLength } from "../layout/measure-css-var.js";
 
 function lockDocumentScroll() {
   if (window.scrollX || window.scrollY) {
@@ -29,33 +27,79 @@ function clearFocusPinStyles(el) {
   el.style.removeProperty("height");
   el.style.removeProperty("transform");
   el.style.removeProperty("z-index");
+  el.style.removeProperty("--v2-map-svg-h");
   delete el.dataset.focusPinned;
 }
 
-/** Freeze map + hero at their current on-screen rects so document scroll cannot move them. */
-export function pinMobileFocusChrome() {
+/**
+ * Pack map + hero into the band between the menu and the prompt frame.
+ * Re-runs on every sync so keyboard dock updates reflow the stack.
+ * @param {import("./frame-dock-controller.js").FrameDockController} controller
+ */
+export function pinMobileFocusChrome(controller) {
   lockDocumentScroll();
 
   const map = document.getElementById("possibility-map");
   const kicker = document.getElementById("frame-kicker");
+  if (!map || !kicker || !controller?.frameEl) return;
 
-  /** @param {HTMLElement|null} el @param {number} z */
-  const pin = (el, z) => {
-    if (!el || el.dataset.focusPinned === "1") return;
-    const rect = el.getBoundingClientRect();
-    el.style.position = "fixed";
-    el.style.top = `${Math.round(rect.top)}px`;
-    el.style.left = `${Math.round(rect.left)}px`;
-    el.style.width = `${Math.round(rect.width)}px`;
-    el.style.height = `${Math.round(rect.height)}px`;
-    el.style.right = "auto";
-    el.style.transform = "none";
-    el.style.zIndex = String(z);
-    el.dataset.focusPinned = "1";
-  };
+  const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
+  const mapHeadGap =
+    measureCssVarLength("--v2-mobile-focus-map-head-gap", document.body) || 5;
+  const heroGap =
+    measureCssVarLength("--v2-mobile-focus-hero-gap", document.body) || 8;
+  const mapHeroGap =
+    measureCssVarLength("--v2-mobile-focus-map-hero-gap", document.body) || 6;
 
-  pin(map, 40);
-  pin(kicker, 46);
+  const gutter = measureCssVarLength("--v2-main-gutter") || 14;
+  const frameRect = controller.frameEl.getBoundingClientRect();
+  const promptTop = frameRect.top;
+  const contentLeft = gutter;
+  const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
+
+  // Natural kicker height (content), fall back to reserve token
+  const kickerReserve = measureCssVarLength("--v2-kicker-reserve") || 56;
+  const kickerHeight = Math.max(
+    kickerReserve,
+    Math.ceil(kicker.scrollHeight || kicker.getBoundingClientRect().height || kickerReserve)
+  );
+
+  const mapTop = Math.round(headerH + mapHeadGap);
+  const kickerBottom = Math.round(promptTop - heroGap);
+  const available = kickerBottom - mapTop;
+
+  // Prefer keeping full kicker; give remaining band to the map.
+  let usedKickerH = Math.min(kickerHeight, Math.max(36, available - 72));
+  let mapHeight = Math.max(72, available - usedKickerH - mapHeroGap);
+  let kickerTop = mapTop + mapHeight + mapHeroGap;
+
+  // If prompt sits too high (keyboard), compress map first, then kicker.
+  if (kickerTop + usedKickerH > kickerBottom) {
+    usedKickerH = Math.max(36, kickerBottom - mapTop - mapHeroGap - 72);
+    mapHeight = Math.max(72, kickerBottom - mapTop - mapHeroGap - usedKickerH);
+    kickerTop = mapTop + mapHeight + mapHeroGap;
+  }
+
+  map.style.position = "fixed";
+  map.style.top = `${mapTop}px`;
+  map.style.left = `${contentLeft}px`;
+  map.style.width = `${contentWidth}px`;
+  map.style.height = `${Math.round(mapHeight)}px`;
+  map.style.right = "auto";
+  map.style.transform = "none";
+  map.style.zIndex = "40";
+  map.style.setProperty("--v2-map-svg-h", `${Math.round(mapHeight)}px`);
+  map.dataset.focusPinned = "1";
+
+  kicker.style.position = "fixed";
+  kicker.style.top = `${Math.round(kickerTop)}px`;
+  kicker.style.left = `${contentLeft}px`;
+  kicker.style.width = `${contentWidth}px`;
+  kicker.style.height = `${Math.round(usedKickerH)}px`;
+  kicker.style.right = "auto";
+  kicker.style.transform = "none";
+  kicker.style.zIndex = "46";
+  kicker.dataset.focusPinned = "1";
 }
 
 export function unpinMobileFocusChrome() {
@@ -77,7 +121,7 @@ export function clearFocusOrientationTimers(controller) {
   }
 }
 
-/** Keep scroll locked + chrome pinned while focused. */
+/** Keep scroll locked + chrome packed while focused. */
 export function scheduleMobileComposerFocusResync(controller) {
   syncMobileFocusLift(controller);
 }
@@ -106,8 +150,7 @@ export function releaseMobileComposerFocus(controller, { onComplete } = {}) {
 }
 
 /**
- * While focused: lock document scroll and keep map/hero pinned.
- * No translateY "lift" — that compounded Safari scroll and emptied the screen.
+ * While focused: lock scroll and pack map/hero between menu and prompt.
  */
 export function syncMobileFocusLift(controller) {
   if (!controller._mobileMode) return;
@@ -121,7 +164,7 @@ export function syncMobileFocusLift(controller) {
   }
 
   lockDocumentScroll();
-  pinMobileFocusChrome();
+  pinMobileFocusChrome(controller);
 
   const frameRect = controller.frameEl.getBoundingClientRect();
   document.body.style.setProperty("--v2-mobile-focus-prompt-top", `${frameRect.top}px`);
