@@ -573,16 +573,27 @@
     font-size: 20.25px;
   }
 
-  /* Focus: keep landing stack; only keyboard pin + lift vars (set in JS) */
+  /*
+   * Focus: lock page scroll. Map/hero are pinned fixed via JS at landing rects
+   * so Safari's textarea focus-scroll cannot eject them off-screen.
+   */
   html:has(body.is-mobile-composer-focus),
   body.v2-app.is-mobile-composer-focus {
     --v2-mobile-focus-hero-gap: 8px;
-    overflow: hidden;
+    --v2-mobile-focus-lift: 0px;
+    overflow: hidden !important;
     overscroll-behavior: none;
+    height: 100%;
+    touch-action: manipulation;
   }
 
   body.v2-app.is-mobile-composer-focus .v2-main {
-    overflow: hidden;
+    overflow: hidden !important;
+  }
+
+  body.v2-app.is-mobile-composer-focus whatimado-map[data-focus-pinned="1"],
+  body.v2-app.is-mobile-composer-focus .v2-frame-kicker[data-focus-pinned="1"] {
+    margin: 0;
   }
 
   /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */

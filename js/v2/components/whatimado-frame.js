@@ -70,8 +70,22 @@ export class WhatimadoFrame extends HTMLElement {
       if (this._suppressMobileFocusGlide) return;
       if (this._dock?.mobileMode) {
         this._dock.cancelMobileComposerFocusRelease?.();
+        window.scrollTo(0, 0);
         document.body.classList.add("is-mobile-composer-focus");
         this._dock.syncMobileKeyboard();
+        // iOS often scrolls after the focus event — re-lock on the next frames.
+        requestAnimationFrame(() => {
+          window.scrollTo(0, 0);
+          this._dock?.syncMobileKeyboard();
+        });
+        window.setTimeout(() => {
+          window.scrollTo(0, 0);
+          this._dock?.syncMobileKeyboard();
+        }, 50);
+        window.setTimeout(() => {
+          window.scrollTo(0, 0);
+          this._dock?.syncMobileKeyboard();
+        }, 250);
         if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) return;
       }
       this._dock?.mobileGlideToTyping();

@@ -102,13 +102,13 @@ export class FrameDockController {
 
     this._mobileViewportHandler = () => {
       if (!this._mobileMode || !this.mainEl) return;
-      this.syncMobileKeyboard();
-      if (
-        this._keyboardDocked ||
-        document.body.classList.contains("is-mobile-composer-focus")
-      ) {
+      if (document.body.classList.contains("is-mobile-composer-focus")) {
+        window.scrollTo(0, 0);
+        this.syncMobileKeyboard();
         return;
       }
+      this.syncMobileKeyboard();
+      if (this._keyboardDocked) return;
       this._anchors = null;
       if (this.activeSnap === SNAP.MOBILE_COLLAPSED) {
         this.growForContent();

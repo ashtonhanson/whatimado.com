@@ -1,4 +1,69 @@
-import { measureCssVarLength, measureKeyboardInset } from "../layout/measure-css-var.js";
+/**
+ * Mobile composer focus — fight iOS Safari's focus scroll.
+ *
+ * Map/hero are position:absolute (scroll with the document). The prompt is
+ * position:fixed. Safari scrolls the page on textarea focus, which ejects
+ * map/hero off-screen while the prompt stays behind. Fix: lock scroll to 0
+ * and pin map/hero as fixed at their landing screen rects for the focus session.
+ */
+
+function lockDocumentScroll() {
+  if (window.scrollX || window.scrollY) {
+    window.scrollTo(0, 0);
+  }
+  if (document.documentElement.scrollTop) {
+    document.documentElement.scrollTop = 0;
+  }
+  if (document.body.scrollTop) {
+    document.body.scrollTop = 0;
+  }
+}
+
+/** @param {HTMLElement} el */
+function clearFocusPinStyles(el) {
+  el.style.removeProperty("position");
+  el.style.removeProperty("top");
+  el.style.removeProperty("left");
+  el.style.removeProperty("right");
+  el.style.removeProperty("width");
+  el.style.removeProperty("height");
+  el.style.removeProperty("transform");
+  el.style.removeProperty("z-index");
+  delete el.dataset.focusPinned;
+}
+
+/** Freeze map + hero at their current on-screen rects so document scroll cannot move them. */
+export function pinMobileFocusChrome() {
+  lockDocumentScroll();
+
+  const map = document.getElementById("possibility-map");
+  const kicker = document.getElementById("frame-kicker");
+
+  /** @param {HTMLElement|null} el @param {number} z */
+  const pin = (el, z) => {
+    if (!el || el.dataset.focusPinned === "1") return;
+    const rect = el.getBoundingClientRect();
+    el.style.position = "fixed";
+    el.style.top = `${Math.round(rect.top)}px`;
+    el.style.left = `${Math.round(rect.left)}px`;
+    el.style.width = `${Math.round(rect.width)}px`;
+    el.style.height = `${Math.round(rect.height)}px`;
+    el.style.right = "auto";
+    el.style.transform = "none";
+    el.style.zIndex = String(z);
+    el.dataset.focusPinned = "1";
+  };
+
+  pin(map, 40);
+  pin(kicker, 46);
+}
+
+export function unpinMobileFocusChrome() {
+  const map = document.getElementById("possibility-map");
+  const kicker = document.getElementById("frame-kicker");
+  if (map) clearFocusPinStyles(map);
+  if (kicker) clearFocusPinStyles(kicker);
+}
 
 /** Clear leftover orientation timers from older focus resync storms. */
 export function clearFocusOrientationTimers(controller) {
@@ -12,7 +77,7 @@ export function clearFocusOrientationTimers(controller) {
   }
 }
 
-/** Viewport/orientation: one immediate lift sync — no timed retries. */
+/** Keep scroll locked + chrome pinned while focused. */
 export function scheduleMobileComposerFocusResync(controller) {
   syncMobileFocusLift(controller);
 }
@@ -26,24 +91,23 @@ export function cancelMobileComposerFocusRelease(controller) {
     cancelAnimationFrame(controller._focusReleaseRaf);
     controller._focusReleaseRaf = null;
   }
-  document.getElementById("frame-kicker")?.classList.remove("is-mobile-composer-unfocusing");
 }
 
-/** Instant blur — clear focus class + lift vars (keyboard dock cleared by syncMobileKeyboard). */
+/** Instant blur — restore landing absolute positioning. */
 export function releaseMobileComposerFocus(controller, { onComplete } = {}) {
   cancelMobileComposerFocusRelease(controller);
   document.body.classList.remove("is-mobile-composer-focus");
   document.body.style.removeProperty("--v2-mobile-focus-prompt-top");
   document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
   document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
+  unpinMobileFocusChrome();
+  lockDocumentScroll();
   onComplete?.();
 }
 
 /**
- * Deterministic focus lift only.
- * Landing map/hero transforms stay as baseline; when the keyboard is open and
- * the composer is focused, lift map+hero together so hero sits above the
- * keyboard-pinned prompt. No map pan, no scroll, no multi-pass timers.
+ * While focused: lock document scroll and keep map/hero pinned.
+ * No translateY "lift" — that compounded Safari scroll and emptied the screen.
  */
 export function syncMobileFocusLift(controller) {
   if (!controller._mobileMode) return;
@@ -52,26 +116,15 @@ export function syncMobileFocusLift(controller) {
     document.body.style.removeProperty("--v2-mobile-focus-prompt-top");
     document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
     document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
+    unpinMobileFocusChrome();
     return;
   }
 
-  const kicker = document.getElementById("frame-kicker");
-  if (!kicker) return;
+  lockDocumentScroll();
+  pinMobileFocusChrome();
 
   const frameRect = controller.frameEl.getBoundingClientRect();
   document.body.style.setProperty("--v2-mobile-focus-prompt-top", `${frameRect.top}px`);
+  document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
   document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
-
-  if (measureKeyboardInset() <= 48) {
-    document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
-    return;
-  }
-
-  const heroGap = measureCssVarLength("--v2-mobile-focus-hero-gap", document.body) || 8;
-  const currentLift = measureCssVarLength("--v2-mobile-focus-lift") || 0;
-  // Transform already includes -lift; recover landing (unlifted) kicker bottom.
-  const unliftedKickerBottom = kicker.getBoundingClientRect().bottom + currentLift;
-  const targetKickerBottom = frameRect.top - heroGap;
-  const lift = Math.max(0, Math.round(unliftedKickerBottom - targetKickerBottom));
-  document.documentElement.style.setProperty("--v2-mobile-focus-lift", `${lift}px`);
 }
