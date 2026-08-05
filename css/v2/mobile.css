@@ -12,6 +12,12 @@
     initial-value: 0px;
   }
 
+  @property --v2-mobile-focus-prompt-top {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+  }
+
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
     --v2-mobile-quarter-in: 0.25in;
@@ -78,6 +84,19 @@
     transition: --v2-mobile-focus-lift 0.38s var(--v2-hero-motion-ease);
   }
 
+  body.v2-app {
+    transition: --v2-mobile-focus-prompt-top 0.38s var(--v2-hero-motion-ease);
+  }
+
+  body.v2-app.is-mobile-layout-pending .v2-frame-kicker,
+  body.v2-app.is-mobile-layout-pending whatimado-map {
+    visibility: hidden;
+  }
+
+  body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
+    animation: none;
+  }
+
   whatimado-map {
     transform: translateY(
       calc(-1 * var(--v2-mobile-map-shift) - var(--v2-mobile-focus-lift, 0px))
@@ -101,7 +120,9 @@
           var(--v2-mobile-focus-kicker-shift, 0px) - var(--v2-mobile-focus-band-rise, 0px)
       )
     );
-    transition: transform 0.38s var(--v2-hero-motion-ease);
+    transition:
+      transform 0.38s var(--v2-hero-motion-ease),
+      opacity 0.22s var(--v2-hero-motion-ease);
   }
 
   body.is-mobile-composer-focus .v2-frame-kicker {
@@ -118,6 +139,16 @@
     justify-content: flex-end;
     text-align: center;
     pointer-events: none;
+    transition: bottom 0.38s var(--v2-hero-motion-ease), opacity 0.22s var(--v2-hero-motion-ease);
+  }
+
+  body.is-mobile-composer-unfocusing .v2-frame-kicker {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  whatimado-frame.is-mobile-docked:not(.is-mobile-keyboard):not(.is-dragging):not(.is-settling) {
+    transition: top 0.38s var(--v2-hero-motion-ease);
   }
 
   /* ── Fixed top bar: logo left, hamburger right ── */

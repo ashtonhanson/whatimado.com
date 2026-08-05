@@ -69,25 +69,27 @@ export class WhatimadoFrame extends HTMLElement {
       this._pausePlaceholderCycle();
       if (this._suppressMobileFocusGlide) return;
       if (this._dock?.mobileMode) {
-        window.scrollTo(0, 0);
+        this._dock.cancelMobileComposerFocusRelease?.();
         document.body.classList.add("is-mobile-composer-focus");
         this._dock.syncMobileKeyboard();
         requestAnimationFrame(() => {
           this._dock?.syncMobileKeyboard();
           this._dock?.scheduleMobileComposerFocusResync();
         });
-        window.setTimeout(() => {
-          this._dock?.syncMobileKeyboard();
-          this._dock?.scheduleMobileComposerFocusResync();
-        }, 120);
         if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) {
-          this._dock.refreshMobileTypingPosition();
+          if (this._dock.keyboardDocked) {
+            this._dock.refreshMobileTypingPosition();
+          }
           return;
         }
       }
       this._dock?.mobileGlideToTyping();
     };
     this._onComposerBlur = () => {
+      if (this._dock?.mobileMode && document.body.classList.contains("is-mobile-composer-focus")) {
+        this._dock.releaseMobileComposerFocus?.(() => this._maybeResumePlaceholderCycle());
+        return;
+      }
       document.body.classList.remove("is-mobile-composer-focus");
       this._dock?.syncMobileKeyboard();
       this._maybeResumePlaceholderCycle();

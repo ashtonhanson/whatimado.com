@@ -4,7 +4,6 @@ import {
   KICKER_RESERVE_DEFAULT,
   MOBILE_GLIDE_EASE_MS,
   MOBILE_GROW_EASE_MS,
-  MOBILE_HINT_DELAY_MS,
   MOBILE_MQ,
   SNAP,
   SNAP_EASE_MS
@@ -20,6 +19,8 @@ import {
 import { computeReleaseVelocity, easeOutQuint } from "./glide.js";
 import {
   clearFocusOrientationTimers,
+  cancelMobileComposerFocusRelease,
+  releaseMobileComposerFocus,
   scheduleMobileComposerFocusResync,
   syncMobileFocusLift
 } from "./mobile-focus-lift.js";
@@ -81,6 +82,10 @@ export class FrameDockController {
     this._focusOrientationTimer = null;
     /** @type {number|null} */
     this._focusOrientationTimer2 = null;
+    /** @type {number|null} */
+    this._focusReleaseTimer = null;
+    /** @type {number|null} */
+    this._focusReleaseRaf = null;
     /** @type {(() => void)|null} */
     this._mobileViewportHandler = null;
     /** @type {(() => void)|null} */
@@ -144,6 +149,14 @@ export class FrameDockController {
     scheduleMobileComposerFocusResync(this);
   }
 
+  cancelMobileComposerFocusRelease() {
+    cancelMobileComposerFocusRelease(this);
+  }
+
+  releaseMobileComposerFocus(onComplete) {
+    releaseMobileComposerFocus(this, { onComplete });
+  }
+
   _syncMobileFocusLift(options) {
     syncMobileFocusLift(this, options);
   }
@@ -170,6 +183,11 @@ export class FrameDockController {
   /** @returns {boolean} */
   get mobileMode() {
     return this._mobileMode;
+  }
+
+  /** @returns {boolean} */
+  get keyboardDocked() {
+    return this._keyboardDocked;
   }
 
   /** Map band height — only during hero dismiss; frozen once dock settles */
@@ -229,10 +247,14 @@ export class FrameDockController {
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
     this.frameEl.removeAttribute("data-snap");
     document.body.classList.remove("is-hero-dismissing");
+    document.body.classList.add("is-mobile-layout-pending");
 
     requestAnimationFrame(() => {
       const anchors = this._refreshAnchors();
-      if (!anchors) return;
+      if (!anchors) {
+        document.body.classList.remove("is-mobile-layout-pending");
+        return;
+      }
       this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
       this.frameEl.classList.add("is-mobile-typing");
       this.frameEl.classList.remove("is-mobile-reading");
@@ -240,8 +262,10 @@ export class FrameDockController {
       if (document.body.classList.contains("is-mobile-composer-focus")) {
         this.scheduleMobileComposerFocusResync();
       }
-      window.setTimeout(() => this.playMobileHint(), MOBILE_HINT_DELAY_MS);
-      window.dispatchEvent(new Event("resize"));
+      requestAnimationFrame(() => {
+        document.body.classList.remove("is-mobile-layout-pending");
+        window.dispatchEvent(new Event("resize"));
+      });
     });
   }
 
@@ -652,7 +676,7 @@ export class FrameDockController {
    * @param {typeof SNAP[keyof typeof SNAP]} snapId
    * @param {{ finalizeDock?: boolean }} [options]
    */
-  _easeToAnchor(targetTop, snapId, { finalizeDock = false, durationMs = SNAP_EASE_MS } = {}) {
+  _easeToAnchor(targetTop, snapId, { finalizeDock = false, durationMs = SNAP_EASE_MS, onTick, onComplete } = {}) {
     this._stopMotion();
     this._settling = true;
     this.frameEl.classList.add("is-settling");
@@ -678,6 +702,7 @@ export class FrameDockController {
       }
 
       this._applyTop(next, { layout: t >= 1, snap: t >= 1 ? snapId : null });
+      onTick?.(next, t);
 
       if (t < 1) {
         this._settleRaf = requestAnimationFrame(tick);
@@ -692,6 +717,8 @@ export class FrameDockController {
       if (finalizeDock) {
         this._finishDockTransition();
       }
+
+      onComplete?.();
     };
 
     this._settleRaf = requestAnimationFrame(tick);

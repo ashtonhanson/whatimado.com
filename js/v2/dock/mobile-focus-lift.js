@@ -1,3 +1,5 @@
+import { MOBILE_FOCUS_RELEASE_MS, MOBILE_LAYOUT_FADE_MS } from "./constants.js";
+import { clearKeyboardDock } from "./mobile-keyboard.js";
 import {
   measureCssVarLength,
   measureKeyboardInset,
@@ -23,15 +25,63 @@ export function scheduleMobileComposerFocusResync(controller) {
   }
 
   const run = () => syncMobileFocusLift(controller, { allowResync: false, animateMap: false });
-  run();
-  requestAnimationFrame(() => {
-    run();
-    requestAnimationFrame(run);
-  });
+
+  requestAnimationFrame(run);
 
   clearFocusOrientationTimers(controller);
   controller._focusOrientationTimer = window.setTimeout(run, 150);
-  controller._focusOrientationTimer2 = window.setTimeout(run, 420);
+}
+
+export function cancelMobileComposerFocusRelease(controller) {
+  if (controller._focusReleaseTimer !== null) {
+    window.clearTimeout(controller._focusReleaseTimer);
+    controller._focusReleaseTimer = null;
+  }
+  if (controller._focusReleaseRaf !== null) {
+    cancelAnimationFrame(controller._focusReleaseRaf);
+    controller._focusReleaseRaf = null;
+  }
+  document.getElementById("frame-kicker")?.classList.remove("is-mobile-composer-unfocusing");
+}
+
+/** Smoothly leave composer focus — crossfade kicker while frame eases off the keyboard. */
+export function releaseMobileComposerFocus(controller, { onComplete } = {}) {
+  if (!controller._mobileMode) {
+    onComplete?.();
+    return;
+  }
+
+  cancelMobileComposerFocusRelease(controller);
+
+  if (!document.body.classList.contains("is-mobile-composer-focus")) {
+    clearKeyboardDock(controller);
+    onComplete?.();
+    return;
+  }
+
+  const kicker = document.getElementById("frame-kicker");
+  const wasKeyboard = controller._keyboardDocked;
+  kicker?.classList.add("is-mobile-composer-unfocusing");
+
+  clearKeyboardDock(controller, {
+    animate: true,
+    keepFocusLayout: true,
+    durationMs: MOBILE_FOCUS_RELEASE_MS
+  });
+
+  const fadeMs =
+    wasKeyboard && controller._motionEnabled ? MOBILE_FOCUS_RELEASE_MS : MOBILE_LAYOUT_FADE_MS;
+
+  controller._focusReleaseTimer = window.setTimeout(() => {
+    document.body.classList.remove("is-mobile-composer-focus");
+    document.body.style.removeProperty("--v2-mobile-focus-prompt-top");
+    document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
+    document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
+    document.getElementById("possibility-map")?.resetMobileFocusBand?.({ animate: true });
+    kicker?.classList.remove("is-mobile-composer-unfocusing");
+    controller._focusReleaseTimer = null;
+    onComplete?.();
+  }, fadeMs);
 }
 
 export function syncMobileFocusLift(controller, { allowResync = true, animateMap = true } = {}) {
