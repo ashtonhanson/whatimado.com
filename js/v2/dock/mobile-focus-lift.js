@@ -1,9 +1,16 @@
 /**
  * Mobile composer focus — fight iOS Safari's focus scroll, then pack a
- * deterministic stack: menu → 5px → map → hero/subtitle → prompt → keyboard.
+ * deterministic stack: menu → gap → map → hero/subtitle → prompt → keyboard.
  */
 
 import { measureCssVarLength } from "../layout/measure-css-var.js";
+
+/** Menu → map gap while focused (px). Hardcoded — CSS var measurement was unreliable. */
+const FOCUS_MAP_HEAD_GAP_PX = 2;
+/** Map → hero gap while focused (px). */
+const FOCUS_MAP_HERO_GAP_PX = 6;
+/** Hero → prompt gap while focused (px). */
+const FOCUS_HERO_PROMPT_GAP_PX = 8;
 
 function lockDocumentScroll() {
   if (window.scrollX || window.scrollY) {
@@ -44,12 +51,9 @@ export function pinMobileFocusChrome(controller) {
   if (!map || !kicker || !controller?.frameEl) return;
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
-  const mapHeadGap =
-    measureCssVarLength("--v2-mobile-focus-map-head-gap", document.body) || 5;
-  const heroGap =
-    measureCssVarLength("--v2-mobile-focus-hero-gap", document.body) || 8;
-  const mapHeroGap =
-    measureCssVarLength("--v2-mobile-focus-map-hero-gap", document.body) || 6;
+  const mapHeadGap = FOCUS_MAP_HEAD_GAP_PX;
+  const heroGap = FOCUS_HERO_PROMPT_GAP_PX;
+  const mapHeroGap = FOCUS_MAP_HERO_GAP_PX;
 
   const gutter = measureCssVarLength("--v2-main-gutter") || 14;
   const frameRect = controller.frameEl.getBoundingClientRect();
