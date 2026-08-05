@@ -341,7 +341,7 @@ export function initChatFlow(ctx) {
     frameEl?.reinitLayoutForViewport();
     if (MOBILE_LAYOUT_MQ.matches) {
       if (document.body.classList.contains("is-mobile-composer-focus")) {
-        frameEl?.scheduleMobileComposerFocusResync();
+        frameEl?.syncMobileKeyboard();
       } else {
         mapEl?.syncFrameGravity({ animate: false });
         mapEl?.lockFromFrame();

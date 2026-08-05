@@ -513,22 +513,11 @@ export class WhatimadoMap extends HTMLElement {
     return computeMobileFocusBandPan(this);
   }
 
-  /** Pack node map — top nodes just below menu, YOU node anchors hero below */
-  syncMobileFocusBand({ animate = true } = {}) {
-    if (!MOBILE_MQ.matches || !document.body.classList.contains("is-mobile-composer-focus")) {
-      return;
-    }
+  /** Neutralized — focus must not repack / auto-pan the node map. */
+  syncMobileFocusBand() {}
 
-    const target = this._computeMobileFocusBandPan();
-    this._animatePanTo(target.panX, target.panY, animate);
-  }
-
-  /** Restore open-home map pan after composer blur */
-  resetMobileFocusBand({ animate = true } = {}) {
-    if (!MOBILE_MQ.matches || !isOpenHomePhase()) return;
-    const target = this._computeMobileOpenHomePan();
-    this._animatePanTo(target.panX, target.panY, animate);
-  }
+  /** Neutralized — focus/blur must not animate map pan back to home. */
+  resetMobileFocusBand() {}
 
   /** Align map to hero/frame layout while coupled; no-op once dock has settled. */
   syncFrameGravity({ animate = false } = {}) {

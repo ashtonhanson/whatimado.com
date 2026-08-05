@@ -6,18 +6,6 @@
 }
 
 @media (max-width: 900px) {
-  @property --v2-mobile-focus-lift {
-    syntax: "<length>";
-    inherits: true;
-    initial-value: 0px;
-  }
-
-  @property --v2-mobile-focus-prompt-top {
-    syntax: "<length>";
-    inherits: true;
-    initial-value: 0px;
-  }
-
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
     --v2-mobile-quarter-in: 0.25in;
@@ -80,36 +68,26 @@
     right: var(--v2-main-gutter);
   }
 
-  html {
-    transition: --v2-mobile-focus-lift 0.38s var(--v2-hero-motion-ease);
-  }
-
-  body.v2-app {
-    transition: --v2-mobile-focus-prompt-top 0.38s var(--v2-hero-motion-ease);
-  }
-
-  body.v2-app.is-mobile-layout-pending .v2-frame-kicker,
-  body.v2-app.is-mobile-layout-pending whatimado-map {
-    visibility: hidden;
-  }
-
+  /* Kill desktop kicker-enter on mobile — it fights landing anchors */
   body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
     animation: none;
   }
 
+  /*
+   * Load gate: hide map / hero / prompt until brand + mobile anchors settle,
+   * then one shared opacity fade into the final landing layout.
+   */
+  body.v2-app:not(.is-mobile-shell-ready) .v2-main > whatimado-map,
+  body.v2-app:not(.is-mobile-shell-ready) .v2-main > .v2-frame-kicker,
+  body.v2-app:not(.is-mobile-shell-ready) .v2-main > whatimado-frame {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Landing transforms + instant focus lift (no transform transitions) */
   whatimado-map {
     transform: translateY(
       calc(-1 * var(--v2-mobile-map-shift) - var(--v2-mobile-focus-lift, 0px))
-    );
-    transition: transform 0.38s var(--v2-hero-motion-ease);
-  }
-
-  body.is-mobile-composer-focus whatimado-map {
-    transform: translateY(
-      calc(
-        -1 * var(--v2-mobile-map-shift) - var(--v2-mobile-focus-lift, 0px) -
-          var(--v2-mobile-focus-band-rise, 0px) - var(--v2-mobile-focus-map-rise, 0px)
-      )
     );
   }
 
@@ -117,38 +95,22 @@
     transform: translateY(
       calc(
         -1 * var(--v2-mobile-hero-shift) - var(--v2-mobile-focus-lift, 0px) +
-          var(--v2-mobile-focus-kicker-shift, 0px) - var(--v2-mobile-focus-band-rise, 0px)
+          var(--v2-mobile-focus-kicker-shift, 0px)
       )
     );
-    transition:
-      transform 0.38s var(--v2-hero-motion-ease),
-      opacity 0.22s var(--v2-hero-motion-ease);
   }
 
-  body.is-mobile-composer-focus .v2-frame-kicker {
-    position: fixed;
-    top: auto;
-    left: var(--v2-main-gutter);
-    right: var(--v2-main-gutter);
-    width: auto;
-    bottom: calc(100dvh - var(--v2-mobile-focus-prompt-top, 55vh) + var(--v2-mobile-focus-hero-gap, 5px));
-    height: auto;
-    min-height: 0;
-    z-index: 46;
-    transform: none;
-    justify-content: flex-end;
-    text-align: center;
+  /* Intro fade only — never animate focus lift / transform */
+  body.v2-app.is-mobile-shell-ready .v2-main > whatimado-map,
+  body.v2-app.is-mobile-shell-ready .v2-main > .v2-frame-kicker,
+  body.v2-app.is-mobile-shell-ready .v2-main > whatimado-frame {
+    opacity: 1;
+    transition: opacity 0.45s var(--v2-hero-motion-ease);
+  }
+
+  /* Frame host stays non-interactive; inner handles hits (docked rule). */
+  body.v2-app.is-mobile-shell-ready .v2-main > whatimado-frame.is-mobile-docked {
     pointer-events: none;
-    transition: bottom 0.38s var(--v2-hero-motion-ease), opacity 0.22s var(--v2-hero-motion-ease);
-  }
-
-  body.is-mobile-composer-unfocusing .v2-frame-kicker {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  whatimado-frame.is-mobile-docked:not(.is-mobile-keyboard):not(.is-dragging):not(.is-settling) {
-    transition: top 0.38s var(--v2-hero-motion-ease);
   }
 
   /* ── Fixed top bar: logo left, hamburger right ── */
@@ -611,17 +573,16 @@
     font-size: 20.25px;
   }
 
+  /* Focus: keep landing stack; only keyboard pin + lift vars (set in JS) */
   html:has(body.is-mobile-composer-focus),
   body.v2-app.is-mobile-composer-focus {
-    --v2-mobile-focus-hero-gap: 5px;
-    --v2-mobile-focus-band-rise: 5px;
-    --v2-mobile-focus-map-rise: 0px;
+    --v2-mobile-focus-hero-gap: 8px;
     overflow: hidden;
     overscroll-behavior: none;
   }
 
   body.v2-app.is-mobile-composer-focus .v2-main {
-    overflow: visible;
+    overflow: hidden;
   }
 
   /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */
@@ -706,7 +667,7 @@
 
   whatimado-frame.is-mobile-docked.is-mobile-keyboard {
     top: auto !important;
-    transition: bottom 0.1s ease-out;
+    transition: none;
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__composer-input {
@@ -718,22 +679,7 @@
   }
 
   whatimado-frame.is-mobile-hint .whatimado-frame__inner {
-    animation: v2-mobile-frame-hint 1.05s cubic-bezier(0.32, 0.94, 0.42, 1) both;
-  }
-
-  @keyframes v2-mobile-frame-hint {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-
-    38% {
-      transform: translateY(-12px);
-    }
-
-    62% {
-      transform: translateY(-6px);
-    }
+    animation: none;
   }
 
   whatimado-map .whatimado-map__you-btn {
@@ -750,10 +696,9 @@
   .v2-mobile-menu-icon,
   .v2-mobile-menu-icon::before,
   .v2-mobile-menu-icon::after,
-  html,
-  whatimado-map,
-  .v2-frame-kicker,
-  whatimado-frame.is-mobile-hint .whatimado-frame__inner {
+  body.v2-app.is-mobile-shell-ready .v2-main > whatimado-map,
+  body.v2-app.is-mobile-shell-ready .v2-main > .v2-frame-kicker,
+  body.v2-app.is-mobile-shell-ready .v2-main > whatimado-frame {
     transition: none;
     animation: none;
   }

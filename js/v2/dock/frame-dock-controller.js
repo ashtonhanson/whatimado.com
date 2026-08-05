@@ -103,10 +103,12 @@ export class FrameDockController {
     this._mobileViewportHandler = () => {
       if (!this._mobileMode || !this.mainEl) return;
       this.syncMobileKeyboard();
-      if (document.body.classList.contains("is-mobile-composer-focus")) {
-        this.scheduleMobileComposerFocusResync();
+      if (
+        this._keyboardDocked ||
+        document.body.classList.contains("is-mobile-composer-focus")
+      ) {
+        return;
       }
-      if (this._keyboardDocked) return;
       this._anchors = null;
       if (this.activeSnap === SNAP.MOBILE_COLLAPSED) {
         this.growForContent();
@@ -118,12 +120,13 @@ export class FrameDockController {
     this._mobileOrientationHandler = () => {
       if (!this._mobileMode || !this.mainEl) return;
       this.syncMobileKeyboard();
-      if (document.body.classList.contains("is-mobile-composer-focus")) {
-        this.scheduleMobileComposerFocusResync();
+      if (
+        this._keyboardDocked ||
+        document.body.classList.contains("is-mobile-composer-focus")
+      ) {
         return;
       }
       this._anchors = null;
-      if (this._keyboardDocked) return;
       this.remeasure();
     };
 
@@ -247,23 +250,19 @@ export class FrameDockController {
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
     this.frameEl.removeAttribute("data-snap");
     document.body.classList.remove("is-hero-dismissing");
-    document.body.classList.add("is-mobile-layout-pending");
 
     requestAnimationFrame(() => {
       const anchors = this._refreshAnchors();
       if (!anchors) {
-        document.body.classList.remove("is-mobile-layout-pending");
+        document.body.classList.add("is-mobile-shell-ready");
         return;
       }
       this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
       this.frameEl.classList.add("is-mobile-typing");
       this.frameEl.classList.remove("is-mobile-reading");
       this._bindMobileViewportWatch();
-      if (document.body.classList.contains("is-mobile-composer-focus")) {
-        this.scheduleMobileComposerFocusResync();
-      }
       requestAnimationFrame(() => {
-        document.body.classList.remove("is-mobile-layout-pending");
+        document.body.classList.add("is-mobile-shell-ready");
         window.dispatchEvent(new Event("resize"));
       });
     });
@@ -487,11 +486,8 @@ export class FrameDockController {
     if (!anchors) return;
 
     if (this._mobileMode) {
-      if (this._keyboardDocked) {
+      if (this._keyboardDocked || document.body.classList.contains("is-mobile-composer-focus")) {
         this.syncMobileKeyboard();
-        if (document.body.classList.contains("is-mobile-composer-focus")) {
-          this.scheduleMobileComposerFocusResync();
-        }
         return;
       }
       this.growForContent();

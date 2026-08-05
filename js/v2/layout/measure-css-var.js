@@ -12,6 +12,11 @@ export function measureKeyboardInset() {
   return Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
 }
 
+/** Visual viewport scroll offset — iOS shifts layout when keyboard opens. */
+export function measureVisualViewportOffset() {
+  return window.visualViewport?.offsetTop ?? 0;
+}
+
 /** @returns {number} */
 export function viewportHeight() {
   return window.innerHeight;

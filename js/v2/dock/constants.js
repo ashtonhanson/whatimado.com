@@ -11,8 +11,6 @@ export const MOBILE_MQ = window.matchMedia("(max-width: 900px)");
 export const MOBILE_GROW_EASE_MS = 420;
 export const MOBILE_GLIDE_EASE_MS = 520;
 export const MOBILE_HINT_DELAY_MS = 380;
-export const MOBILE_FOCUS_RELEASE_MS = 380;
-export const MOBILE_LAYOUT_FADE_MS = 220;
 
 /** Glide tuning — aligned with map node release physics */
 export const GLIDE_VEL_SCALE = 0.52;

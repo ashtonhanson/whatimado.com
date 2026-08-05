@@ -72,22 +72,15 @@ export class WhatimadoFrame extends HTMLElement {
         this._dock.cancelMobileComposerFocusRelease?.();
         document.body.classList.add("is-mobile-composer-focus");
         this._dock.syncMobileKeyboard();
-        requestAnimationFrame(() => {
-          this._dock?.syncMobileKeyboard();
-          this._dock?.scheduleMobileComposerFocusResync();
-        });
-        if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) {
-          if (this._dock.keyboardDocked) {
-            this._dock.refreshMobileTypingPosition();
-          }
-          return;
-        }
+        if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) return;
       }
       this._dock?.mobileGlideToTyping();
     };
     this._onComposerBlur = () => {
-      if (this._dock?.mobileMode && document.body.classList.contains("is-mobile-composer-focus")) {
-        this._dock.releaseMobileComposerFocus?.(() => this._maybeResumePlaceholderCycle());
+      if (this._dock?.mobileMode) {
+        this._dock.releaseMobileComposerFocus?.();
+        this._dock.syncMobileKeyboard();
+        this._maybeResumePlaceholderCycle();
         return;
       }
       document.body.classList.remove("is-mobile-composer-focus");
@@ -203,9 +196,13 @@ export class WhatimadoFrame extends HTMLElement {
     this._dock?.remeasure();
   }
 
-  /** Re-pack map and hero after rotation while the mobile composer stays focused. */
+  /** Sync keyboard pin + focus lift (deterministic, no timed retries). */
   scheduleMobileComposerFocusResync() {
     this._dock?.scheduleMobileComposerFocusResync();
+  }
+
+  syncMobileKeyboard() {
+    this._dock?.syncMobileKeyboard();
   }
 
   /** Viewport crossed mobile breakpoint — re-init dock mode */

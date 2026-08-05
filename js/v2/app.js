@@ -26,3 +26,10 @@ initChatFlow({
 initNeonShine();
 initNavRailToggle();
 initMobileNav();
+
+/** Safety: never leave the mobile shell permanently hidden if dock init stalls. */
+if (window.matchMedia("(max-width: 900px)").matches) {
+  window.setTimeout(() => {
+    document.body.classList.add("is-mobile-shell-ready");
+  }, 1200);
+}

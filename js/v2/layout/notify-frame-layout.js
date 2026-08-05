@@ -10,15 +10,12 @@ export function notifyFrameLayout({ frameEl, mapEl }) {
   const mobile = window.matchMedia("(max-width: 900px)").matches;
   const composerFocus = document.body.classList.contains("is-mobile-composer-focus");
 
-  if (mobile) {
-    frameEl?.remeasureDock();
-    if (composerFocus) {
-      frameEl?.scheduleMobileComposerFocusResync();
-      return;
-    }
-  } else {
-    frameEl?.remeasureDock();
+  if (mobile && composerFocus) {
+    frameEl?.syncMobileKeyboard();
+    return;
   }
+
+  frameEl?.remeasureDock();
 
   if (!frameEl?.isDockSettling()) {
     mapEl?.syncFrameGravity({ animate: false });
