@@ -72,8 +72,14 @@ export class WhatimadoFrame extends HTMLElement {
         window.scrollTo(0, 0);
         document.body.classList.add("is-mobile-composer-focus");
         this._dock.syncMobileKeyboard();
-        requestAnimationFrame(() => this._dock?.syncMobileKeyboard());
-        window.setTimeout(() => this._dock?.syncMobileKeyboard(), 120);
+        requestAnimationFrame(() => {
+          this._dock?.syncMobileKeyboard();
+          this._dock?.scheduleMobileComposerFocusResync();
+        });
+        window.setTimeout(() => {
+          this._dock?.syncMobileKeyboard();
+          this._dock?.scheduleMobileComposerFocusResync();
+        }, 120);
         if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) {
           this._dock.refreshMobileTypingPosition();
           return;

@@ -38,6 +38,7 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
   if (!controller._mobileMode) return;
 
   if (!document.body.classList.contains("is-mobile-composer-focus")) {
+    document.body.style.removeProperty("--v2-mobile-focus-prompt-top");
     document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
     document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
     document.getElementById("possibility-map")?.resetMobileFocusBand?.({ animate: true });
@@ -50,28 +51,28 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
-  const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 5;
   const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 0;
   const bandRise = measureMobileFocusBandRise();
   const mapRise = measureMobileFocusMapRise();
-
-  const subEl = kicker.querySelector(".v2-kicker-sub");
-  const brandEl = kicker.querySelector(".v2-kicker-brand");
   const keyboardOpen = measureKeyboardInset() > 48;
   const bandTop = headerH + mapHeadGap;
 
   const applyStackLayout = () => {
-    const freshKickerRect = kicker.getBoundingClientRect();
-    const freshFrameRect = controller.frameEl.getBoundingClientRect();
+    const frameRect = controller.frameEl.getBoundingClientRect();
+    const brandEl = kicker.querySelector(".v2-kicker-brand");
     const youRect = mapEl?.getStartNodeScreenRect?.();
     let kickerShift = 0;
+
+    /** Anchor hero stack from the prompt frame top — updated every layout pass */
+    document.body.style.setProperty("--v2-mobile-focus-prompt-top", `${frameRect.top}px`);
 
     if (youRect && brandEl) {
       const brandTop = brandEl.getBoundingClientRect().top + bandRise;
       kickerShift = Math.round(youRect.bottom + mapRise + youHeroGap - brandTop);
     } else if (youRect) {
+      const kickerRect = kicker.getBoundingClientRect();
       kickerShift = Math.round(
-        youRect.bottom + mapRise + youHeroGap - (freshKickerRect.top + bandRise)
+        youRect.bottom + mapRise + youHeroGap - (kickerRect.top + bandRise)
       );
     }
 
@@ -79,12 +80,7 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
       "--v2-mobile-focus-kicker-shift",
       `${kickerShift}px`
     );
-
-    const composer = controller.frameEl.querySelector(".whatimado-frame__composer");
-    const promptTop = composer?.getBoundingClientRect().top ?? freshFrameRect.top;
-    const subBottom = (subEl ?? kicker).getBoundingClientRect().bottom;
-    const bandBottom = promptTop - heroClearGap;
-    const lift = Math.max(0, Math.ceil(subBottom - bandBottom));
+    document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
 
     if (youRect) {
       const mapBandBottom = youRect.bottom + youHeroGap;
@@ -93,11 +89,10 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
         `${Math.max(0, mapBandBottom - bandTop)}px`
       );
     }
-
-    document.documentElement.style.setProperty("--v2-mobile-focus-lift", `${lift}px`);
   };
 
   mapEl?.syncMobileFocusBand?.({ animate: animateMap });
+  applyStackLayout();
   requestAnimationFrame(() => {
     applyStackLayout();
     requestAnimationFrame(applyStackLayout);
