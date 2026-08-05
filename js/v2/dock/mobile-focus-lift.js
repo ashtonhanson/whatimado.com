@@ -1,9 +1,4 @@
-import {
-  measureCssVarLength,
-  measureKeyboardInset,
-  measureMobileFocusBandRise,
-  measureMobileFocusMapRise
-} from "../layout/measure-css-var.js";
+import { measureCssVarLength, measureKeyboardInset } from "../layout/measure-css-var.js";
 
 export function clearFocusOrientationTimers(controller) {
   if (controller._focusOrientationTimer !== null) {
@@ -40,7 +35,6 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
   if (!document.body.classList.contains("is-mobile-composer-focus")) {
     document.body.style.removeProperty("--v2-mobile-focus-prompt-top");
     document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
-    document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
     document.getElementById("possibility-map")?.resetMobileFocusBand?.({ animate: true });
     return;
   }
@@ -51,51 +45,33 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
-  const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 0;
-  const bandRise = measureMobileFocusBandRise();
-  const mapRise = measureMobileFocusMapRise();
+  const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap", document.body) || 5;
   const keyboardOpen = measureKeyboardInset() > 48;
   const bandTop = headerH + mapHeadGap;
 
-  const applyStackLayout = () => {
+  const applyHeroAnchor = () => {
     const frameRect = controller.frameEl.getBoundingClientRect();
-    const brandEl = kicker.querySelector(".v2-kicker-brand");
-    const youRect = mapEl?.getStartNodeScreenRect?.();
-    let kickerShift = 0;
-
-    /** Anchor hero stack from the prompt frame top — updated every layout pass */
     document.body.style.setProperty("--v2-mobile-focus-prompt-top", `${frameRect.top}px`);
-
-    if (youRect && brandEl) {
-      const brandTop = brandEl.getBoundingClientRect().top + bandRise;
-      kickerShift = Math.round(youRect.bottom + mapRise + youHeroGap - brandTop);
-    } else if (youRect) {
-      const kickerRect = kicker.getBoundingClientRect();
-      kickerShift = Math.round(
-        youRect.bottom + mapRise + youHeroGap - (kickerRect.top + bandRise)
-      );
-    }
-
-    document.documentElement.style.setProperty(
-      "--v2-mobile-focus-kicker-shift",
-      `${kickerShift}px`
-    );
     document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
 
+    const youRect = mapEl?.getStartNodeScreenRect?.();
     if (youRect) {
-      const mapBandBottom = youRect.bottom + youHeroGap;
       document.documentElement.style.setProperty(
         "--v2-mobile-focus-band-h",
-        `${Math.max(0, mapBandBottom - bandTop)}px`
+        `${Math.max(0, youRect.bottom + youHeroGap - bandTop)}px`
       );
     }
   };
 
-  mapEl?.syncMobileFocusBand?.({ animate: animateMap });
-  applyStackLayout();
+  const resyncMap = (animate) => {
+    applyHeroAnchor();
+    mapEl?.syncMobileFocusBand?.({ animate });
+  };
+
+  resyncMap(animateMap);
   requestAnimationFrame(() => {
-    applyStackLayout();
-    requestAnimationFrame(applyStackLayout);
+    resyncMap(false);
+    requestAnimationFrame(() => resyncMap(false));
   });
 
   if (keyboardOpen && allowResync && !controller._focusLiftResyncScheduled) {

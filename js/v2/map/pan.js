@@ -267,12 +267,31 @@ export function computeMobileFocusBandPan(mapEl) {
   const bounds = getGraphBounds(mapEl);
   const shiftY = readGraphShiftY();
   const scaleY = VIEW_H / stageRect.height;
+  const panX = VIEW_W / 2 - bounds.cx;
+
+  const kicker = document.getElementById("frame-kicker");
+  const brandEl = kicker?.querySelector(".v2-kicker-brand");
+  const start = mapEl._liveNodes.find((node) => node.type === "start");
+
+  if (brandEl && start) {
+    const youHeroGap =
+      measureCssVarLength("--v2-mobile-focus-you-hero-gap", document.body) || 5;
+    const brandTop = brandEl.getBoundingClientRect().top;
+    const targetYouBottom = brandTop - youHeroGap;
+    const { lg } = getNodeRadii();
+    const nodeBottomSvg = start.y * VIEW_H + lg;
+    const panY = clampPanYForTopPad(
+      (targetYouBottom - stageRect.top) * scaleY - shiftY - nodeBottomSvg,
+      bounds,
+      stageRect,
+      shiftY
+    );
+    return { panX, panY };
+  }
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
   const bandTop = headerH + mapHeadGap;
-
-  const panX = VIEW_W / 2 - bounds.cx;
   const panY = clampPanYForTopPad(
     (bandTop - stageRect.top) * scaleY - shiftY - bounds.minY,
     bounds,
