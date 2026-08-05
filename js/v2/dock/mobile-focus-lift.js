@@ -59,7 +59,7 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
   const subEl = kicker.querySelector(".v2-kicker-sub");
   const brandEl = kicker.querySelector(".v2-kicker-brand");
   const keyboardOpen = measureKeyboardInset() > 48;
-  const bandTop = headerH + mapHeadGap - bandRise;
+  const bandTop = headerH + mapHeadGap;
 
   const applyStackLayout = () => {
     const freshKickerRect = kicker.getBoundingClientRect();
@@ -81,8 +81,7 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
       `${kickerShift}px`
     );
 
-    const subBottom =
-      (subEl ?? kicker).getBoundingClientRect().bottom + bandRise + kickerShift - heroNudge;
+    const subBottom = (subEl ?? kicker).getBoundingClientRect().bottom;
     const bandBottom = freshFrameRect.top - heroClearGap;
     let lift = Math.max(0, Math.ceil(subBottom - bandBottom));
 

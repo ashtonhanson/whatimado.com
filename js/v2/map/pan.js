@@ -1,8 +1,4 @@
-import {
-  measureCssVarLength,
-  measureMobileFocusBandRise,
-  measureMobileFocusMapRise
-} from "../layout/measure-css-var.js";
+import { measureCssVarLength } from "../layout/measure-css-var.js";
 import { MOBILE_MQ, VIEW_H, VIEW_W } from "./constants.js";
 import { clampPanYForTopPad, getNodeLabelMetrics, getNodeRadii, readGraphShiftY } from "./geometry.js";
 
@@ -274,9 +270,7 @@ export function computeMobileFocusBandPan(mapEl) {
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
-  const bandRise = measureMobileFocusBandRise();
-  const mapRise = measureMobileFocusMapRise();
-  const bandTop = headerH + mapHeadGap - bandRise - mapRise;
+  const bandTop = headerH + mapHeadGap;
 
   const panX = VIEW_W / 2 - bounds.cx;
   const panY = clampPanYForTopPad(

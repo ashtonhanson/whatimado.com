@@ -85,6 +85,15 @@
     transition: transform 0.38s var(--v2-hero-motion-ease);
   }
 
+  body.is-mobile-composer-focus whatimado-map {
+    transform: translateY(
+      calc(
+        -1 * var(--v2-mobile-map-shift) - var(--v2-mobile-focus-lift, 0px) -
+          var(--v2-mobile-focus-band-rise, 0px) - var(--v2-mobile-focus-map-rise, 0px)
+      )
+    );
+  }
+
   .v2-frame-kicker {
     transform: translateY(
       calc(
@@ -99,7 +108,7 @@
     transform: translateY(
       calc(
         -1 * var(--v2-mobile-hero-shift) - var(--v2-mobile-focus-lift, 0px) +
-          var(--v2-mobile-focus-kicker-shift, 0px) - var(--v2-mobile-focus-hero-nudge, 1.35rem) -
+          var(--v2-mobile-focus-kicker-shift, 0px) - var(--v2-mobile-focus-hero-nudge, 1.1rem) -
           var(--v2-mobile-focus-band-rise, 0px)
       )
     );
@@ -577,8 +586,9 @@
 
   html:has(body.is-mobile-composer-focus),
   body.v2-app.is-mobile-composer-focus {
-    --v2-mobile-focus-band-rise: 16px;
-    --v2-mobile-focus-map-rise: 16px;
+    --v2-mobile-focus-hero-gap: 10px;
+    --v2-mobile-focus-band-rise: 10px;
+    --v2-mobile-focus-map-rise: 0px;
     overflow: hidden;
     overscroll-behavior: none;
   }
