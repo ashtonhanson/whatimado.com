@@ -646,6 +646,14 @@
     pointer-events: none;
   }
 
+  /*
+   * Chat sheet: top snaps (expanded / reading / map-focus), bottom stays floored
+   * so the composer never rides up with the drag handle.
+   */
+  whatimado-frame.is-mobile-docked.is-mobile-sheet-floored {
+    bottom: var(--v2-mobile-bottom-inset);
+  }
+
   whatimado-frame.is-mobile-docked .whatimado-frame__inner {
     pointer-events: auto;
     border: none;
@@ -656,6 +664,11 @@
     backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
     -webkit-backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
     max-height: calc(100dvh - var(--v2-mobile-header-h) - var(--v2-mobile-bottom-inset));
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-sheet-floored .whatimado-frame__inner {
+    height: 100%;
+    max-height: none;
   }
 
   whatimado-frame.is-mobile-docked::before,
@@ -701,10 +714,11 @@
     pointer-events: none;
   }
 
-  /* Top snap — conversation sheet under the menu, map covered */
+  /* Top / mid snaps — conversation fills between handle and floor-pinned composer */
+  whatimado-frame.is-mobile-docked.is-mobile-sheet-floored.is-mobile-reading .whatimado-frame__body-wrap,
   whatimado-frame.is-mobile-docked.is-mobile-expanded .whatimado-frame__body-wrap {
     flex: 1 1 auto;
-    max-height: min(68vh, calc(100dvh - var(--v2-mobile-header-h) - 7.5rem));
+    max-height: none;
     min-height: 0;
     overflow: hidden;
     opacity: 1;
@@ -733,10 +747,6 @@
 
   whatimado-frame.is-mobile-docked .whatimado-frame__composer-input {
     font-size: 16px;
-  }
-
-  whatimado-frame.is-mobile-docked.is-mobile-reading .whatimado-frame__body-wrap {
-    max-height: min(42vh, calc(100dvh - var(--v2-mobile-header-h) - 8.5rem));
   }
 
   whatimado-frame.is-mobile-hint .whatimado-frame__inner {

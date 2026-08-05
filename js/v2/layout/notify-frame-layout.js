@@ -17,6 +17,9 @@ export function notifyFrameLayout({ frameEl, mapEl }) {
 
   frameEl?.remeasureDock();
 
+  // Mobile sheet snaps are independent of the node map — don't re-lay it out.
+  if (mobile) return;
+
   if (!frameEl?.isDockSettling()) {
     mapEl?.syncFrameGravity({ animate: false });
   }

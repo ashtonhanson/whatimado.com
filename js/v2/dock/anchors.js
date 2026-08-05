@@ -113,15 +113,19 @@ export function measureMobileAnchors(mainEl, frameEl) {
 
   /**
    * Three mobile sheet tops (screen Y via _applyTop + mainRect.top + promptDrop):
-   * - expanded: under menu (conversation)
-   * - reading: ¼ viewport (sheet covers lower ¾, map in gap)
-   * - mapFocus/typing: landing composer — map dominates above
+   * - expanded: under menu (conversation; composer stays floor-pinned)
+   * - reading: ¼ viewport (sheet covers lower ¾; composer floor-pinned)
+   * - mapFocus: low strip — frame top just above floor-pinned composer
+   * Landing (pre-chat) still uses homePromptTop under the kicker.
    */
   const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const expandedTop = Math.max(0, headerH + 4 - mainRect.top - promptDrop);
   const readingTop = Math.max(expandedTop + 24, vh * 0.25 - mainRect.top - promptDrop);
-  const mapFocusTop = Math.max(readingTop + 24, homePromptTop);
+  const mapFocusTop = Math.max(
+    readingTop + 24,
+    mainH - chromeH - bottomInset - promptDrop
+  );
 
   return {
     topLock: expandedTop,
@@ -130,7 +134,7 @@ export function measureMobileAnchors(mainEl, frameEl) {
     maxGrowTop: readingTop,
     focusTop: mapFocusTop,
     typingTop: mapFocusTop,
-    homePromptTop: mapFocusTop,
+    homePromptTop,
     expandedTop,
     readingTop,
     collapsedTop: readingTop,

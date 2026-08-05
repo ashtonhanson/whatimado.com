@@ -61,7 +61,6 @@ export function clearKeyboardDock(controller, { keepFocusLayout = false } = {}) 
 
   controller._keyboardDocked = false;
   controller.frameEl.classList.remove("is-mobile-keyboard");
-  controller.frameEl.style.removeProperty("bottom");
   document.body.classList.remove("is-mobile-keyboard-open");
 
   if (!controller._mobileMode || !controller.mainEl) {
@@ -72,8 +71,14 @@ export function clearKeyboardDock(controller, { keepFocusLayout = false } = {}) 
   const anchors = controller._refreshAnchors();
   if (!anchors) return;
 
-  const target =
-    controller.activeSnap === SNAP.MOBILE_COLLAPSED ? anchors.collapsedTop : anchors.homePromptTop;
+  const target = {
+    [SNAP.MOBILE_EXPANDED]: anchors.expandedTop ?? anchors.topLock,
+    [SNAP.MOBILE_COLLAPSED]: anchors.readingTop ?? anchors.collapsedTop,
+    [SNAP.MOBILE_FOCUS]: controller._mobileChatSheet
+      ? anchors.mapFocusTop ?? anchors.typingTop
+      : anchors.homePromptTop
+  }[controller.activeSnap] ?? anchors.homePromptTop;
+
   controller._applyTop(target, { snap: controller.activeSnap });
   if (!keepFocusLayout) syncMobileFocusLift(controller);
 }

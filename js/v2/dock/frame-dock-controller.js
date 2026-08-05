@@ -23,7 +23,6 @@ import {
   releaseMobileComposerFocus,
   scheduleMobileComposerFocusResync,
   syncMobileFocusLift,
-  syncMobileReadingMap,
   unpinMobileReadingMap
 } from "./mobile-focus-lift.js";
 import { clearKeyboardDock, syncMobileKeyboard } from "./mobile-keyboard.js";
@@ -76,6 +75,12 @@ export class FrameDockController {
     this._dockTransition = false;
     /** @type {boolean} */
     this._mobileMode = false;
+    /**
+     * After first send — sheet is floor-pinned (composer at screen bottom)
+     * through the three chat snaps. Landing stays a compact mid bar.
+     * @type {boolean}
+     */
+    this._mobileChatSheet = false;
     /** @type {boolean} */
     this._keyboardDocked = false;
     /** @type {boolean} */
@@ -259,9 +264,10 @@ export class FrameDockController {
         document.body.classList.add("is-mobile-shell-ready");
         return;
       }
+      this._mobileChatSheet = false;
       this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
       this.frameEl.classList.add("is-mobile-typing");
-      this.frameEl.classList.remove("is-mobile-reading");
+      this.frameEl.classList.remove("is-mobile-reading", "is-mobile-sheet-floored");
       document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
       this.frameEl.classList.remove("is-mobile-expanded");
       unpinMobileReadingMap();
@@ -273,9 +279,19 @@ export class FrameDockController {
     });
   }
 
-  /** After send — park at mid reading (sheet covers lower ¾); map in the band above */
+  /** After send — floor the composer, park at mid reading (sheet covers lower ¾) */
   mobileGlideToBottom() {
     if (!this._mobileMode || !this.mainEl) return;
+
+    this._mobileChatSheet = true;
+    // Drop keyboard pin + focus packing so the sheet can settle to the floor.
+    if (this._keyboardDocked) {
+      this._keyboardDocked = false;
+      this.frameEl.classList.remove("is-mobile-keyboard");
+      document.body.classList.remove("is-mobile-keyboard-open");
+    }
+    unpinMobileReadingMap();
+    releaseMobileComposerFocus(this);
 
     this._anchors = null;
     const anchors = this._refreshAnchors();
@@ -285,17 +301,13 @@ export class FrameDockController {
     this._applyMobileSnapClasses(SNAP.MOBILE_COLLAPSED);
 
     const target = anchors.readingTop ?? anchors.collapsedTop;
-    const syncMap = () => this._syncMobileSheetChrome();
 
     if (this._motionEnabled) {
       this._easeToAnchor(target, SNAP.MOBILE_COLLAPSED, {
-        durationMs: MOBILE_GLIDE_EASE_MS,
-        onTick: syncMap,
-        onComplete: syncMap
+        durationMs: MOBILE_GLIDE_EASE_MS
       });
     } else {
       this._applyTop(target, { snap: SNAP.MOBILE_COLLAPSED });
-      syncMap();
     }
   }
 
@@ -314,7 +326,7 @@ export class FrameDockController {
     }
   }
 
-  /** Glide prompt back to typing position — composer top 1/4in above halfway */
+  /** Glide to typing / map-focus strip (landing mid-bar, or floor strip after chat) */
   mobileGlideToTyping() {
     if (!this._mobileMode || !this.mainEl) return;
 
@@ -326,16 +338,16 @@ export class FrameDockController {
     this._applyMobileSnapClasses(SNAP.MOBILE_FOCUS);
     unpinMobileReadingMap();
 
-    const target = anchors.typingTop ?? anchors.homePromptTop;
+    const target = this._mobileChatSheet
+      ? anchors.mapFocusTop ?? anchors.typingTop
+      : anchors.homePromptTop;
 
     if (this._motionEnabled) {
       this._easeToAnchor(target, SNAP.MOBILE_FOCUS, {
-        durationMs: MOBILE_GLIDE_EASE_MS,
-        onComplete: () => this._syncMobileSheetChrome()
+        durationMs: MOBILE_GLIDE_EASE_MS
       });
     } else {
       this._applyTop(target, { snap: SNAP.MOBILE_FOCUS });
-      this._syncMobileSheetChrome();
     }
   }
 
@@ -371,21 +383,14 @@ export class FrameDockController {
     if (!anchors) return;
 
     const targetTop = anchors.collapsedTop;
-    if (Math.abs(targetTop - this._topPx) < 0.75) {
-      syncMobileReadingMap(this);
-      return;
-    }
+    if (Math.abs(targetTop - this._topPx) < 0.75) return;
 
-    const syncMap = () => syncMobileReadingMap(this);
     if (this._motionEnabled) {
       this._easeToAnchor(targetTop, SNAP.MOBILE_COLLAPSED, {
-        durationMs: MOBILE_GROW_EASE_MS,
-        onTick: syncMap,
-        onComplete: syncMap
+        durationMs: MOBILE_GROW_EASE_MS
       });
     } else {
       this._applyTop(targetTop, { snap: SNAP.MOBILE_COLLAPSED });
-      syncMap();
     }
   }
 
@@ -395,11 +400,13 @@ export class FrameDockController {
     this._clearKeyboardDock();
     this._mobileMode = false;
     this._unbindMobileViewportWatch();
+    this._mobileChatSheet = false;
     this.frameEl.classList.remove(
       "is-mobile-docked",
       "is-mobile-hint",
       "is-mobile-reading",
-      "is-mobile-expanded"
+      "is-mobile-expanded",
+      "is-mobile-sheet-floored"
     );
     document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
     unpinMobileReadingMap();
@@ -584,18 +591,20 @@ export class FrameDockController {
     const dy = this._pendingClientY - this._pointer.startY;
     const next = clampTop(this._pointer.startTop + dy, this._anchors);
     this._applyTop(next, { layout: false });
-    if (this._mobileMode) {
-      // Live-update map band while dragging through the mid reading zone.
+    if (this._mobileMode && this._mobileChatSheet) {
+      // Preview chat chrome while dragging — map stays put.
       const anchors = this._anchors;
       const readingTop = anchors.readingTop ?? anchors.collapsedTop;
       const expandedTop = anchors.expandedTop ?? anchors.topLock;
+      const mapFocusTop = anchors.mapFocusTop ?? anchors.typingTop;
       const midExpandRead = (expandedTop + readingTop) / 2;
-      const midReadMap = (readingTop + anchors.typingTop) / 2;
-      if (next > midExpandRead && next <= midReadMap) {
-        this.frameEl.classList.add("is-mobile-reading");
-        syncMobileReadingMap(this);
+      const midReadMap = (readingTop + mapFocusTop) / 2;
+      if (next <= midExpandRead) {
+        this._applyMobileSnapClasses(SNAP.MOBILE_EXPANDED);
+      } else if (next <= midReadMap) {
+        this._applyMobileSnapClasses(SNAP.MOBILE_COLLAPSED);
       } else {
-        unpinMobileReadingMap();
+        this._applyMobileSnapClasses(SNAP.MOBILE_FOCUS);
       }
     }
   }
@@ -656,7 +665,6 @@ export class FrameDockController {
       }
 
       this._applyTop(next, { layout: false });
-      if (this._mobileMode) this._syncMobileSheetChrome();
 
       if (Math.abs(this._velocityY) < GLIDE_MIN_SPEED) {
         this._gliding = false;
@@ -679,12 +687,17 @@ export class FrameDockController {
     let snap;
     let target;
 
-    if (this._mobileMode) {
+    if (this._mobileMode && !this._mobileChatSheet) {
+      // Pre-chat landing — stay under the kicker as a compact bar.
+      snap = SNAP.MOBILE_FOCUS;
+      target = anchors.homePromptTop;
+      this._applyMobileSnapClasses(snap);
+    } else if (this._mobileMode) {
       snap = resolveMobileSnap(this._topPx, velocityY, anchors);
       target = {
         [SNAP.MOBILE_EXPANDED]: anchors.expandedTop ?? anchors.topLock,
         [SNAP.MOBILE_COLLAPSED]: anchors.readingTop ?? anchors.collapsedTop,
-        [SNAP.MOBILE_FOCUS]: anchors.typingTop
+        [SNAP.MOBILE_FOCUS]: anchors.mapFocusTop ?? anchors.typingTop
       }[snap];
       this._applyMobileSnapClasses(snap);
     } else {
@@ -699,18 +712,11 @@ export class FrameDockController {
     this.activeSnap = snap;
 
     if (this._motionEnabled) {
-      if (this._mobileMode) {
-        this._easeToAnchor(target, snap, {
-          durationMs: MOBILE_GLIDE_EASE_MS,
-          onTick: () => this._syncMobileSheetChrome(),
-          onComplete: () => this._syncMobileSheetChrome()
-        });
-      } else {
-        this._easeToAnchor(target, snap);
-      }
+      this._easeToAnchor(target, snap, {
+        durationMs: this._mobileMode ? MOBILE_GLIDE_EASE_MS : SNAP_EASE_MS
+      });
     } else {
       this._applyTop(target, { snap });
-      if (this._mobileMode) this._syncMobileSheetChrome();
     }
   }
 
@@ -719,20 +725,16 @@ export class FrameDockController {
     const expanded = snap === SNAP.MOBILE_EXPANDED;
     const reading = snap === SNAP.MOBILE_COLLAPSED || expanded;
     const mapFocus = snap === SNAP.MOBILE_FOCUS;
+    const floored =
+      this._mobileChatSheet &&
+      (expanded || snap === SNAP.MOBILE_COLLAPSED || mapFocus);
     this.frameEl.classList.toggle("is-mobile-typing", mapFocus);
     this.frameEl.classList.toggle("is-mobile-reading", reading);
     this.frameEl.classList.toggle("is-mobile-expanded", expanded);
+    this.frameEl.classList.toggle("is-mobile-sheet-floored", floored);
     document.body.classList.toggle("is-mobile-reading", reading);
     document.body.classList.toggle("is-mobile-expanded", expanded);
-  }
-
-  /** Map band for mid reading; clear pins when expanded or map-focus. */
-  _syncMobileSheetChrome() {
-    if (!this._mobileMode) return;
-    if (this.activeSnap === SNAP.MOBILE_COLLAPSED) {
-      syncMobileReadingMap(this);
-      return;
-    }
+    // Map stays independent of sheet position.
     unpinMobileReadingMap();
   }
 
@@ -813,8 +815,21 @@ export class FrameDockController {
     if (this._mobileMode) {
       const mainRect = this.mainEl.getBoundingClientRect();
       const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
+      const bottomInset = measureCssVarLength("--v2-mobile-bottom-inset") || 0;
+      const floored =
+        this._mobileChatSheet &&
+        (this.frameEl.classList.contains("is-mobile-sheet-floored") ||
+          this.frameEl.classList.contains("is-mobile-reading") ||
+          this.frameEl.classList.contains("is-mobile-expanded") ||
+          this.activeSnap === SNAP.MOBILE_FOCUS);
       this.frameEl.style.top = `${topPx + mainRect.top + promptDrop}px`;
-      this.frameEl.style.bottom = "auto";
+      if (floored) {
+        this.frameEl.classList.add("is-mobile-sheet-floored");
+        this.frameEl.style.bottom = `${bottomInset}px`;
+      } else {
+        this.frameEl.classList.remove("is-mobile-sheet-floored");
+        this.frameEl.style.bottom = "auto";
+      }
     } else {
       this.frameEl.style.top = `${topPx}px`;
     }
