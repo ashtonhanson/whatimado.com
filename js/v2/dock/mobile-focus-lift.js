@@ -9,8 +9,11 @@ import { measureCssVarLength } from "../layout/measure-css-var.js";
 const FOCUS_MAP_HEAD_GAP_PX = -6;
 /** Map → hero gap while focused (px). */
 const FOCUS_MAP_HERO_GAP_PX = 6;
-/** Hero → prompt gap while focused (px). */
-const FOCUS_HERO_PROMPT_GAP_PX = 8;
+/**
+ * Hero/subtitle → prompt gap while focused (px).
+ * Raising this moves hero+subtitle up (map-head nudges alone only grew the map).
+ */
+const FOCUS_HERO_PROMPT_GAP_PX = 13;
 
 function lockDocumentScroll() {
   if (window.scrollX || window.scrollY) {
