@@ -3,7 +3,11 @@ export const SNAP = {
   TOP: "top",
   HOME: "home",
   BOTTOM: "bottom",
+  /** Mobile: sheet under menu — max conversation */
+  MOBILE_EXPANDED: "mobile-expanded",
+  /** Mobile: sheet covers lower ¾ — map in band above */
   MOBILE_COLLAPSED: "mobile-collapsed",
+  /** Mobile: low sheet — map-focus / composer strip */
   MOBILE_FOCUS: "mobile-focus"
 };
 

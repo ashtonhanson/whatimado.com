@@ -701,6 +701,21 @@
     pointer-events: none;
   }
 
+  /* Top snap — conversation sheet under the menu, map covered */
+  whatimado-frame.is-mobile-docked.is-mobile-expanded .whatimado-frame__body-wrap {
+    flex: 1 1 auto;
+    max-height: min(68vh, calc(100dvh - var(--v2-mobile-header-h) - 7.5rem));
+    min-height: 0;
+    overflow: hidden;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  whatimado-frame.is-mobile-docked.is-settling,
+  whatimado-frame.is-mobile-docked.is-gliding {
+    transition: none;
+  }
+
   whatimado-frame.is-mobile-docked.is-mobile-typing .whatimado-frame__drag-rail {
     height: 10px;
     padding: 0.22rem 0 0.08rem;

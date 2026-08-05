@@ -31,6 +31,12 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerForm = null;
     /** @type {HTMLTextAreaElement|null} */
     this._composerInput = null;
+    /** @type {HTMLButtonElement|null} */
+    this._sendBtn = null;
+    /** @type {(event: Event) => void} */
+    this._onSendPointerDown = (event) => {
+      event.preventDefault();
+    };
     /** @type {ResizeObserver|null} */
     this._resizeObserver = null;
     /** @type {boolean} */
@@ -64,6 +70,8 @@ export class WhatimadoFrame extends HTMLElement {
 
     /** @type {boolean} */
     this._suppressMobileFocusGlide = false;
+    /** @type {boolean} */
+    this._submittingComposer = false;
 
     this._onComposerFocus = () => {
       this._pausePlaceholderCycle();
@@ -90,7 +98,13 @@ export class WhatimadoFrame extends HTMLElement {
       }
       this._dock?.mobileGlideToTyping();
     };
-    this._onComposerBlur = () => {
+    this._onComposerBlur = (event) => {
+      // Clicking Send blurs the textarea first and can steal the click — ignore.
+      const next = /** @type {Event & { relatedTarget?: EventTarget|null }} */ (event).relatedTarget;
+      if (next instanceof Element && next.closest(".whatimado-frame__composer-send")) {
+        return;
+      }
+      if (this._submittingComposer) return;
       if (this._dock?.mobileMode) {
         this._dock.releaseMobileComposerFocus?.();
         this._dock.syncMobileKeyboard();
@@ -146,6 +160,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput?.removeEventListener("focus", this._onComposerFocus);
     this._composerInput?.removeEventListener("blur", this._onComposerBlur);
     this._composerInput?.removeEventListener("input", this._onComposerInput);
+    this._sendBtn?.removeEventListener("pointerdown", this._onSendPointerDown);
     this._body?.removeEventListener("scroll", this._onBodyScroll);
     this._body?.removeEventListener("wheel", this._onWheel);
     this._body?.removeEventListener("touchstart", this._onTouchStart);
@@ -311,6 +326,11 @@ export class WhatimadoFrame extends HTMLElement {
     this._scrollThumb = this.querySelector(".whatimado-frame__scroll-thumb");
     this._composerForm = this.querySelector(".whatimado-frame__composer");
     this._composerInput = this.querySelector(".whatimado-frame__composer-input");
+    this._sendBtn = /** @type {HTMLButtonElement|null} */ (
+      this._composerForm?.querySelector("button[type=submit]") ?? null
+    );
+    // Prevent textarea blur before the click lands (mobile double-tap Send).
+    this._sendBtn?.addEventListener("pointerdown", this._onSendPointerDown);
     this._autosizeComposer();
 
     const contentTarget = this._bodyContent || this._body;
@@ -608,19 +628,29 @@ export class WhatimadoFrame extends HTMLElement {
   _onSubmit = (event) => {
     event.preventDefault();
     const text = this._composerInput?.value || "";
+    if (!text.trim()) return;
+
+    this._submittingComposer = true;
     if (this._composerInput) this._composerInput.value = "";
     this._autosizeComposer();
     this._maybeResumePlaceholderCycle();
-    if (this._dock?.mobileMode) {
-      this._composerInput?.blur();
-      this._dock.mobileGlideToBottom();
-    }
+
     this.dispatchEvent(
       new CustomEvent("composer-submit", {
         bubbles: true,
         detail: { text }
       })
     );
+
+    if (this._dock?.mobileMode) {
+      this._dock.mobileGlideToBottom();
+      window.setTimeout(() => {
+        this._submittingComposer = false;
+        this._composerInput?.blur();
+      }, 80);
+    } else {
+      this._submittingComposer = false;
+    }
   };
 
   _initPlaceholderCycle() {

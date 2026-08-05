@@ -112,36 +112,54 @@ export function measureMobileAnchors(mainEl, frameEl) {
   const bottomTop = Math.max(typingTop, mainH - frameH - bottomInset);
 
   /**
-   * Reading — prompt frame top at ¼ viewport so the sheet covers the lower ¾.
-   * Node map sits in the remaining band under the menu.
+   * Three mobile sheet tops (screen Y via _applyTop + mainRect.top + promptDrop):
+   * - expanded: under menu (conversation)
+   * - reading: ¼ viewport (sheet covers lower ¾, map in gap)
+   * - mapFocus/typing: landing composer — map dominates above
    */
   const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
-  const readingTop = Math.max(0, vh * 0.25 - mainRect.top - promptDrop);
+  const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
+  const expandedTop = Math.max(0, headerH + 4 - mainRect.top - promptDrop);
+  const readingTop = Math.max(expandedTop + 24, vh * 0.25 - mainRect.top - promptDrop);
+  const mapFocusTop = Math.max(readingTop + 24, homePromptTop);
 
   return {
-    topLock: typingTop,
-    homeBase: typingTop,
-    bottomCushion: bottomTop,
-    maxGrowTop: typingTop,
-    focusTop: typingTop,
-    typingTop,
-    homePromptTop,
+    topLock: expandedTop,
+    homeBase: readingTop,
+    bottomCushion: mapFocusTop,
+    maxGrowTop: readingTop,
+    focusTop: mapFocusTop,
+    typingTop: mapFocusTop,
+    homePromptTop: mapFocusTop,
+    expandedTop,
+    readingTop,
     collapsedTop: readingTop,
+    mapFocusTop,
     chromeH,
     bottomInset,
-    mainH
+    mainH,
+    /** legacy alias used by bottom-dock heuristics */
+    legacyBottomTop: bottomTop
   };
 }
 
 /**
+ * Nearest of three mobile sheet anchors (expanded / reading / map-focus).
  * @param {number} topPx
  * @param {number} velocityY
- * @param {{ collapsedTop: number, focusTop: number }} anchors
+ * @param {{ expandedTop: number, readingTop: number, typingTop: number }} anchors
  */
 export function resolveMobileSnap(topPx, velocityY, anchors) {
-  const mid = (anchors.collapsedTop + anchors.typingTop) / 2;
+  const expandedTop = anchors.expandedTop ?? anchors.topLock;
+  const readingTop = anchors.readingTop ?? anchors.collapsedTop;
+  const mapFocusTop = anchors.typingTop ?? anchors.mapFocusTop;
+  const midExpandRead = (expandedTop + readingTop) / 2;
+  const midReadMap = (readingTop + mapFocusTop) / 2;
   const biasedTop = topPx + velocityY * FLICK_VEL_BIAS;
-  return biasedTop <= mid ? SNAP.MOBILE_FOCUS : SNAP.MOBILE_COLLAPSED;
+
+  if (biasedTop <= midExpandRead) return SNAP.MOBILE_EXPANDED;
+  if (biasedTop <= midReadMap) return SNAP.MOBILE_COLLAPSED;
+  return SNAP.MOBILE_FOCUS;
 }
 
 export function measureAnchors(mainEl, frameEl, cache = {}) {

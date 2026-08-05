@@ -262,7 +262,8 @@ export class FrameDockController {
       this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
       this.frameEl.classList.add("is-mobile-typing");
       this.frameEl.classList.remove("is-mobile-reading");
-      document.body.classList.remove("is-mobile-reading");
+      document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
+      this.frameEl.classList.remove("is-mobile-expanded");
       unpinMobileReadingMap();
       this._bindMobileViewportWatch();
       requestAnimationFrame(() => {
@@ -272,7 +273,7 @@ export class FrameDockController {
     });
   }
 
-  /** After send — park prompt at ¼ viewport (sheet covers lower ¾); map above it */
+  /** After send — park at mid reading (sheet covers lower ¾); map in the band above */
   mobileGlideToBottom() {
     if (!this._mobileMode || !this.mainEl) return;
 
@@ -281,20 +282,19 @@ export class FrameDockController {
     if (!anchors) return;
 
     this.activeSnap = SNAP.MOBILE_COLLAPSED;
-    this.frameEl.classList.add("is-mobile-reading");
-    this.frameEl.classList.remove("is-mobile-typing");
-    document.body.classList.add("is-mobile-reading");
+    this._applyMobileSnapClasses(SNAP.MOBILE_COLLAPSED);
 
-    const syncMap = () => syncMobileReadingMap(this);
+    const target = anchors.readingTop ?? anchors.collapsedTop;
+    const syncMap = () => this._syncMobileSheetChrome();
 
     if (this._motionEnabled) {
-      this._easeToAnchor(anchors.collapsedTop, SNAP.MOBILE_COLLAPSED, {
+      this._easeToAnchor(target, SNAP.MOBILE_COLLAPSED, {
         durationMs: MOBILE_GLIDE_EASE_MS,
         onTick: syncMap,
         onComplete: syncMap
       });
     } else {
-      this._applyTop(anchors.collapsedTop, { snap: SNAP.MOBILE_COLLAPSED });
+      this._applyTop(target, { snap: SNAP.MOBILE_COLLAPSED });
       syncMap();
     }
   }
@@ -323,17 +323,19 @@ export class FrameDockController {
     if (!anchors) return;
 
     this.activeSnap = SNAP.MOBILE_FOCUS;
-    this.frameEl.classList.add("is-mobile-typing");
-    this.frameEl.classList.remove("is-mobile-reading");
-    document.body.classList.remove("is-mobile-reading");
+    this._applyMobileSnapClasses(SNAP.MOBILE_FOCUS);
     unpinMobileReadingMap();
 
-    const target = anchors.homePromptTop;
+    const target = anchors.typingTop ?? anchors.homePromptTop;
 
     if (this._motionEnabled) {
-      this._easeToAnchor(target, SNAP.MOBILE_FOCUS, { durationMs: MOBILE_GLIDE_EASE_MS });
+      this._easeToAnchor(target, SNAP.MOBILE_FOCUS, {
+        durationMs: MOBILE_GLIDE_EASE_MS,
+        onComplete: () => this._syncMobileSheetChrome()
+      });
     } else {
       this._applyTop(target, { snap: SNAP.MOBILE_FOCUS });
+      this._syncMobileSheetChrome();
     }
   }
 
@@ -393,8 +395,13 @@ export class FrameDockController {
     this._clearKeyboardDock();
     this._mobileMode = false;
     this._unbindMobileViewportWatch();
-    this.frameEl.classList.remove("is-mobile-docked", "is-mobile-hint", "is-mobile-reading");
-    document.body.classList.remove("is-mobile-reading");
+    this.frameEl.classList.remove(
+      "is-mobile-docked",
+      "is-mobile-hint",
+      "is-mobile-reading",
+      "is-mobile-expanded"
+    );
+    document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
     unpinMobileReadingMap();
     const phase = document.body.dataset.phase || "open";
     if (phase === "open") {
@@ -577,6 +584,20 @@ export class FrameDockController {
     const dy = this._pendingClientY - this._pointer.startY;
     const next = clampTop(this._pointer.startTop + dy, this._anchors);
     this._applyTop(next, { layout: false });
+    if (this._mobileMode) {
+      // Live-update map band while dragging through the mid reading zone.
+      const anchors = this._anchors;
+      const readingTop = anchors.readingTop ?? anchors.collapsedTop;
+      const expandedTop = anchors.expandedTop ?? anchors.topLock;
+      const midExpandRead = (expandedTop + readingTop) / 2;
+      const midReadMap = (readingTop + anchors.typingTop) / 2;
+      if (next > midExpandRead && next <= midReadMap) {
+        this.frameEl.classList.add("is-mobile-reading");
+        syncMobileReadingMap(this);
+      } else {
+        unpinMobileReadingMap();
+      }
+    }
   }
 
   /**
@@ -635,6 +656,7 @@ export class FrameDockController {
       }
 
       this._applyTop(next, { layout: false });
+      if (this._mobileMode) this._syncMobileSheetChrome();
 
       if (Math.abs(this._velocityY) < GLIDE_MIN_SPEED) {
         this._gliding = false;
@@ -659,9 +681,12 @@ export class FrameDockController {
 
     if (this._mobileMode) {
       snap = resolveMobileSnap(this._topPx, velocityY, anchors);
-      target = snap === SNAP.MOBILE_FOCUS ? anchors.typingTop : anchors.collapsedTop;
-      this.frameEl.classList.toggle("is-mobile-typing", snap === SNAP.MOBILE_FOCUS);
-      this.frameEl.classList.toggle("is-mobile-reading", snap === SNAP.MOBILE_COLLAPSED);
+      target = {
+        [SNAP.MOBILE_EXPANDED]: anchors.expandedTop ?? anchors.topLock,
+        [SNAP.MOBILE_COLLAPSED]: anchors.readingTop ?? anchors.collapsedTop,
+        [SNAP.MOBILE_FOCUS]: anchors.typingTop
+      }[snap];
+      this._applyMobileSnapClasses(snap);
     } else {
       snap = resolveSnap(this._topPx, velocityY, anchors);
       target = {
@@ -674,10 +699,41 @@ export class FrameDockController {
     this.activeSnap = snap;
 
     if (this._motionEnabled) {
-      this._easeToAnchor(target, snap);
+      if (this._mobileMode) {
+        this._easeToAnchor(target, snap, {
+          durationMs: MOBILE_GLIDE_EASE_MS,
+          onTick: () => this._syncMobileSheetChrome(),
+          onComplete: () => this._syncMobileSheetChrome()
+        });
+      } else {
+        this._easeToAnchor(target, snap);
+      }
     } else {
       this._applyTop(target, { snap });
+      if (this._mobileMode) this._syncMobileSheetChrome();
     }
+  }
+
+  /** @param {typeof SNAP[keyof typeof SNAP]} snap */
+  _applyMobileSnapClasses(snap) {
+    const expanded = snap === SNAP.MOBILE_EXPANDED;
+    const reading = snap === SNAP.MOBILE_COLLAPSED || expanded;
+    const mapFocus = snap === SNAP.MOBILE_FOCUS;
+    this.frameEl.classList.toggle("is-mobile-typing", mapFocus);
+    this.frameEl.classList.toggle("is-mobile-reading", reading);
+    this.frameEl.classList.toggle("is-mobile-expanded", expanded);
+    document.body.classList.toggle("is-mobile-reading", reading);
+    document.body.classList.toggle("is-mobile-expanded", expanded);
+  }
+
+  /** Map band for mid reading; clear pins when expanded or map-focus. */
+  _syncMobileSheetChrome() {
+    if (!this._mobileMode) return;
+    if (this.activeSnap === SNAP.MOBILE_COLLAPSED) {
+      syncMobileReadingMap(this);
+      return;
+    }
+    unpinMobileReadingMap();
   }
 
   /** Finalize hero dismiss — sync map band once, then map locks from frame. */

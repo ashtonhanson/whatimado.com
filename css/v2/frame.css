@@ -448,8 +448,57 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-msg--typing {
-  opacity: 0.65;
-  font-style: italic;
+  opacity: 1;
+  font-style: normal;
+}
+
+.v2-msg-body--typing {
+  min-height: 1.2em;
+  letter-spacing: 0.02em;
+}
+
+.v2-typing-dots {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.02em;
+  font-size: 1.35em;
+  line-height: 1;
+  color: var(--v2-text-muted);
+}
+
+.v2-typing-dots__dot {
+  display: inline-block;
+  animation: v2-typing-dot-wave 1.05s ease-in-out infinite;
+  will-change: transform;
+}
+
+.v2-typing-dots__dot:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.v2-typing-dots__dot:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+@keyframes v2-typing-dot-wave {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+
+  30% {
+    transform: translateY(-0.28em);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-typing-dots__dot {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 .v2-selection {
