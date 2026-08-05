@@ -105,20 +105,19 @@
   }
 
   body.is-mobile-composer-focus .v2-frame-kicker {
-    z-index: 46;
+    position: fixed;
+    top: auto;
+    left: var(--v2-main-gutter);
+    right: var(--v2-main-gutter);
+    width: auto;
+    bottom: calc(100dvh - var(--v2-mobile-focus-prompt-top, 55vh) + var(--v2-mobile-focus-hero-gap, 5px));
     height: auto;
     min-height: 0;
-    justify-content: flex-start;
-    transform: translateY(
-      calc(
-        -1 * var(--v2-mobile-hero-shift) - var(--v2-mobile-focus-lift, 0px) +
-          var(--v2-mobile-focus-kicker-shift, 0px) - var(--v2-mobile-focus-hero-nudge, 1.1rem) -
-          var(--v2-mobile-focus-band-rise, 0px)
-      )
-    );
-    transition:
-      transform 0.38s var(--v2-hero-motion-ease),
-      top 0.38s var(--v2-hero-motion-ease);
+    z-index: 46;
+    transform: none;
+    justify-content: flex-end;
+    text-align: center;
+    pointer-events: none;
   }
 
   /* ── Fixed top bar: logo left, hamburger right ── */
@@ -583,8 +582,7 @@
 
   html:has(body.is-mobile-composer-focus),
   body.v2-app.is-mobile-composer-focus {
-    --v2-mobile-focus-hero-gap: 10px;
-    --v2-mobile-focus-you-hero-gap: 5px;
+    --v2-mobile-focus-hero-gap: 5px;
     --v2-mobile-focus-band-rise: 5px;
     --v2-mobile-focus-map-rise: 0px;
     overflow: hidden;
