@@ -111,9 +111,12 @@ export function measureMobileAnchors(mainEl, frameEl) {
   const frameH = Math.max(chromeH, chromeH + contentH + 8);
   const bottomTop = Math.max(typingTop, mainH - frameH - bottomInset);
 
-  /** Reading — prompt frame top at ¾ of the viewport (does not collapse to bottom). */
+  /**
+   * Reading — prompt frame top at ¼ viewport so the sheet covers the lower ¾.
+   * Node map sits in the remaining band under the menu.
+   */
   const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
-  const readingTop = Math.max(0, vh * 0.75 - mainRect.top - promptDrop);
+  const readingTop = Math.max(0, vh * 0.25 - mainRect.top - promptDrop);
 
   return {
     topLock: typingTop,

@@ -272,7 +272,7 @@ export class FrameDockController {
     });
   }
 
-  /** After send — park prompt at ¾ viewport; center map in the band above it */
+  /** After send — park prompt at ¼ viewport (sheet covers lower ¾); map above it */
   mobileGlideToBottom() {
     if (!this._mobileMode || !this.mainEl) return;
 

@@ -119,7 +119,7 @@ export function unpinMobileFocusChrome() {
 
 /**
  * After send — center the node map in the band between the menu and the
- * reading prompt frame (top at ~¾ viewport).
+ * reading prompt frame (frame top at ~¼ viewport; sheet covers lower ¾).
  * @param {import("./frame-dock-controller.js").FrameDockController} controller
  */
 export function syncMobileReadingMap(controller) {
