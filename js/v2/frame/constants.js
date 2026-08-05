@@ -1,0 +1,6 @@
+export const PLACEHOLDER_FADE_MS = 450;
+export const PLACEHOLDER_CYCLE_MS_MIN = 5000;
+export const PLACEHOLDER_CYCLE_MS_MAX = 7000;
+export const SCROLL_BOUNCE_MAX = 12;
+export const SCROLL_BOUNCE_RELEASE_MS = 480;
+export const SCROLL_THUMB_MIN_SCALE = 0.52;

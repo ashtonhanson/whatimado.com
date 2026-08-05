@@ -43,17 +43,7 @@ function driftOffsetY(elapsedMs, delaySec, durationSec) {
   return 0;
 }
 
-function measureCssVarLength(varName) {
-  const probe = document.createElement("div");
-  probe.style.cssText =
-    "position:absolute;visibility:hidden;pointer-events:none;height:var(" +
-    varName +
-    ");width:0;";
-  document.documentElement.appendChild(probe);
-  const px = probe.getBoundingClientRect().height;
-  probe.remove();
-  return px;
-}
+import { measureCssVarLength } from "./layout/measure-css-var.js";
 
 export class FrameBreatheController {
   /**

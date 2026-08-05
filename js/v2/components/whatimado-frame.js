@@ -1,55 +1,16 @@
 import { FrameDockController, SNAP } from "../frame-dock.js";
 import { FrameBreatheController } from "../frame-breathe.js";
 
-/** Example prompts cycled in the composer when empty */
-const EXAMPLE_PROMPTS = [
-  "Share what's going on…",
-  "Lost my job — need a plan…",
-  "Explore a career change…",
-  "Stuck — what path fits me?",
-  "Training options near me…"
-];
-
-const PLACEHOLDER_FADE_MS = 450;
-const PLACEHOLDER_CYCLE_MS_MIN = 5000;
-const PLACEHOLDER_CYCLE_MS_MAX = 7000;
-const SCROLL_BOUNCE_MAX = 12;
-const SCROLL_BOUNCE_RELEASE_MS = 480;
-const SCROLL_THUMB_MIN_SCALE = 0.52;
-
-const FRAME_TEMPLATE = `
-  <div class="whatimado-frame__inner">
-    <div
-      class="whatimado-frame__drag-rail"
-      part="drag-rail"
-      role="separator"
-      aria-orientation="horizontal"
-      aria-label="Drag to reposition chat panel"
-      tabindex="0"
-    >
-      <span class="whatimado-frame__drag-grip" aria-hidden="true"></span>
-    </div>
-    <div class="whatimado-frame__body-wrap">
-      <div class="whatimado-frame__body" part="body">
-        <div class="whatimado-frame__body-content"></div>
-      </div>
-      <div class="whatimado-frame__scroll-rail" aria-hidden="true">
-        <div class="whatimado-frame__scroll-thumb"></div>
-      </div>
-    </div>
-    <form class="whatimado-frame__composer" part="composer" novalidate>
-      <label class="sr-only" for="whatimado-composer-input">Your message</label>
-      <textarea
-        id="whatimado-composer-input"
-        class="whatimado-frame__composer-input"
-        rows="1"
-        placeholder=""
-        autocomplete="off"
-      ></textarea>
-      <button type="submit" class="whatimado-frame__composer-send">Send</button>
-    </form>
-  </div>
-`;
+import { buildFrameTemplate } from "../frame/template.js";
+import {
+  PLACEHOLDER_FADE_MS,
+  PLACEHOLDER_CYCLE_MS_MIN,
+  PLACEHOLDER_CYCLE_MS_MAX,
+  SCROLL_BOUNCE_MAX,
+  SCROLL_BOUNCE_RELEASE_MS,
+  SCROLL_THUMB_MIN_SCALE
+} from "../frame/constants.js";
+import { getBrand, getExamplePrompts } from "../config.js";
 
 export class WhatimadoFrame extends HTMLElement {
   static get observedAttributes() {
@@ -320,7 +281,10 @@ export class WhatimadoFrame extends HTMLElement {
     this._built = true;
 
     const initialChildren = [...this.childNodes];
-    this.innerHTML = FRAME_TEMPLATE;
+    const composer = /** @type {{ inputLabel?: string, sendLabel?: string }|undefined} */ (
+      getBrand()?.composer
+    );
+    this.innerHTML = buildFrameTemplate(composer);
 
     this._body = this.querySelector(".whatimado-frame__body");
     this._bodyContent = this.querySelector(".whatimado-frame__body-content");
@@ -639,14 +603,15 @@ export class WhatimadoFrame extends HTMLElement {
   };
 
   _initPlaceholderCycle() {
+    const examplePrompts = getExamplePrompts();
     if (!this._composerInput || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       if (this._composerInput) {
-        this._composerInput.placeholder = EXAMPLE_PROMPTS[0];
+        this._composerInput.placeholder = examplePrompts[0];
       }
       return;
     }
     this._placeholderIndex = 0;
-    this._composerInput.placeholder = EXAMPLE_PROMPTS[0];
+    this._composerInput.placeholder = examplePrompts[0];
     this._schedulePlaceholderCycle();
   }
 
@@ -692,8 +657,8 @@ export class WhatimadoFrame extends HTMLElement {
     window.setTimeout(() => {
       if (!this._composerInput || this._placeholderPaused || this._composerInput.value.trim()) return;
 
-      this._placeholderIndex = (this._placeholderIndex + 1) % EXAMPLE_PROMPTS.length;
-      this._composerInput.placeholder = EXAMPLE_PROMPTS[this._placeholderIndex];
+      this._placeholderIndex = (this._placeholderIndex + 1) % getExamplePrompts().length;
+      this._composerInput.placeholder = getExamplePrompts()[this._placeholderIndex];
       this._composerInput.classList.remove("is-placeholder-fading");
       this._schedulePlaceholderCycle();
     }, PLACEHOLDER_FADE_MS);
