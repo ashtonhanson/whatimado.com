@@ -227,7 +227,7 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
 whatimado-frame.is-docked .whatimado-frame__composer,
 whatimado-frame .whatimado-frame__composer {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 0.5rem;
   flex-shrink: 0;
   position: relative;
@@ -266,15 +266,19 @@ whatimado-frame .whatimado-frame__composer-input.is-placeholder-fading::placehol
 }
 
 whatimado-frame .whatimado-frame__composer-send {
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  align-self: stretch;
+  min-height: 40px;
   padding: 0 0.95rem;
   border: 1px solid var(--v2-border);
+  border-radius: var(--v2-prompt-radius);
   background: transparent;
   color: var(--v2-teal);
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 whatimado-frame .whatimado-frame__composer-send:disabled {
