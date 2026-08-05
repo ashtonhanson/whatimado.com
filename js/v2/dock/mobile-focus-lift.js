@@ -6,7 +6,7 @@
 import { measureCssVarLength } from "../layout/measure-css-var.js";
 
 /** Menu → map gap while focused (px). Hardcoded — CSS var measurement was unreliable. */
-const FOCUS_MAP_HEAD_GAP_PX = 2;
+const FOCUS_MAP_HEAD_GAP_PX = -1;
 /** Map → hero gap while focused (px). */
 const FOCUS_MAP_HERO_GAP_PX = 6;
 /** Hero → prompt gap while focused (px). */
