@@ -311,6 +311,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._scrollThumb = this.querySelector(".whatimado-frame__scroll-thumb");
     this._composerForm = this.querySelector(".whatimado-frame__composer");
     this._composerInput = this.querySelector(".whatimado-frame__composer-input");
+    this._autosizeComposer();
 
     const contentTarget = this._bodyContent || this._body;
     initialChildren.forEach((node) => {
@@ -608,6 +609,7 @@ export class WhatimadoFrame extends HTMLElement {
     event.preventDefault();
     const text = this._composerInput?.value || "";
     if (this._composerInput) this._composerInput.value = "";
+    this._autosizeComposer();
     this._maybeResumePlaceholderCycle();
     if (this._dock?.mobileMode) {
       this._composerInput?.blur();
@@ -666,6 +668,30 @@ export class WhatimadoFrame extends HTMLElement {
       this._pausePlaceholderCycle();
     } else if (document.activeElement !== this._composerInput) {
       this._maybeResumePlaceholderCycle();
+    }
+    this._autosizeComposer();
+  }
+
+  /** Grow the prompt textarea with content — expands downward line by line. */
+  _autosizeComposer() {
+    const el = this._composerInput;
+    if (!el) return;
+
+    el.style.height = "auto";
+    const styles = window.getComputedStyle(el);
+    const maxH = Number.parseFloat(styles.maxHeight);
+    const next = el.scrollHeight;
+    if (Number.isFinite(maxH) && maxH > 0) {
+      el.style.height = `${Math.min(next, maxH)}px`;
+      el.style.overflowY = next > maxH ? "auto" : "hidden";
+    } else {
+      el.style.height = `${next}px`;
+      el.style.overflowY = "hidden";
+    }
+
+    // Keyboard-docked mobile frame grows; re-pin so hero stays above prompt.
+    if (this._dock?.mobileMode && document.body.classList.contains("is-mobile-composer-focus")) {
+      this._dock.syncMobileKeyboard();
     }
   }
 
