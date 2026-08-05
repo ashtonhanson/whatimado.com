@@ -23,6 +23,7 @@ import {
   releaseMobileComposerFocus,
   scheduleMobileComposerFocusResync,
   syncMobileFocusLift,
+  syncMobileReadingMap,
   unpinMobileReadingMap
 } from "./mobile-focus-lift.js";
 import { clearKeyboardDock, syncMobileKeyboard } from "./mobile-keyboard.js";
@@ -301,13 +302,17 @@ export class FrameDockController {
     this._applyMobileSnapClasses(SNAP.MOBILE_COLLAPSED);
 
     const target = anchors.readingTop ?? anchors.collapsedTop;
+    const syncMap = () => this._syncMobileSheetMap();
 
     if (this._motionEnabled) {
       this._easeToAnchor(target, SNAP.MOBILE_COLLAPSED, {
-        durationMs: MOBILE_GLIDE_EASE_MS
+        durationMs: MOBILE_GLIDE_EASE_MS,
+        onTick: syncMap,
+        onComplete: syncMap
       });
     } else {
       this._applyTop(target, { snap: SNAP.MOBILE_COLLAPSED });
+      syncMap();
     }
   }
 
@@ -336,18 +341,21 @@ export class FrameDockController {
 
     this.activeSnap = SNAP.MOBILE_FOCUS;
     this._applyMobileSnapClasses(SNAP.MOBILE_FOCUS);
-    unpinMobileReadingMap();
 
     const target = this._mobileChatSheet
       ? anchors.mapFocusTop ?? anchors.typingTop
       : anchors.homePromptTop;
+    const syncMap = () => this._syncMobileSheetMap();
 
     if (this._motionEnabled) {
       this._easeToAnchor(target, SNAP.MOBILE_FOCUS, {
-        durationMs: MOBILE_GLIDE_EASE_MS
+        durationMs: MOBILE_GLIDE_EASE_MS,
+        onTick: syncMap,
+        onComplete: syncMap
       });
     } else {
       this._applyTop(target, { snap: SNAP.MOBILE_FOCUS });
+      syncMap();
     }
   }
 
@@ -383,14 +391,21 @@ export class FrameDockController {
     if (!anchors) return;
 
     const targetTop = anchors.collapsedTop;
-    if (Math.abs(targetTop - this._topPx) < 0.75) return;
+    const syncMap = () => this._syncMobileSheetMap();
+    if (Math.abs(targetTop - this._topPx) < 0.75) {
+      syncMap();
+      return;
+    }
 
     if (this._motionEnabled) {
       this._easeToAnchor(targetTop, SNAP.MOBILE_COLLAPSED, {
-        durationMs: MOBILE_GROW_EASE_MS
+        durationMs: MOBILE_GROW_EASE_MS,
+        onTick: syncMap,
+        onComplete: syncMap
       });
     } else {
       this._applyTop(targetTop, { snap: SNAP.MOBILE_COLLAPSED });
+      syncMap();
     }
   }
 
@@ -592,7 +607,6 @@ export class FrameDockController {
     const next = clampTop(this._pointer.startTop + dy, this._anchors);
     this._applyTop(next, { layout: false });
     if (this._mobileMode && this._mobileChatSheet) {
-      // Preview chat chrome while dragging — map stays put.
       const anchors = this._anchors;
       const readingTop = anchors.readingTop ?? anchors.collapsedTop;
       const expandedTop = anchors.expandedTop ?? anchors.topLock;
@@ -606,6 +620,7 @@ export class FrameDockController {
       } else {
         this._applyMobileSnapClasses(SNAP.MOBILE_FOCUS);
       }
+      this._syncMobileSheetMap();
     }
   }
 
@@ -665,6 +680,7 @@ export class FrameDockController {
       }
 
       this._applyTop(next, { layout: false });
+      if (this._mobileMode) this._syncMobileSheetMap();
 
       if (Math.abs(this._velocityY) < GLIDE_MIN_SPEED) {
         this._gliding = false;
@@ -713,10 +729,13 @@ export class FrameDockController {
 
     if (this._motionEnabled) {
       this._easeToAnchor(target, snap, {
-        durationMs: this._mobileMode ? MOBILE_GLIDE_EASE_MS : SNAP_EASE_MS
+        durationMs: this._mobileMode ? MOBILE_GLIDE_EASE_MS : SNAP_EASE_MS,
+        onTick: this._mobileMode ? () => this._syncMobileSheetMap() : undefined,
+        onComplete: this._mobileMode ? () => this._syncMobileSheetMap() : undefined
       });
     } else {
       this._applyTop(target, { snap });
+      if (this._mobileMode) this._syncMobileSheetMap();
     }
   }
 
@@ -734,8 +753,16 @@ export class FrameDockController {
     this.frameEl.classList.toggle("is-mobile-sheet-floored", floored);
     document.body.classList.toggle("is-mobile-reading", reading);
     document.body.classList.toggle("is-mobile-expanded", expanded);
-    // Map stays independent of sheet position.
-    unpinMobileReadingMap();
+  }
+
+  /**
+   * Mid snap: fit map in menu→frame gap.
+   * Bottom snap: fill the screen above the composer strip.
+   * Top snap: leave map frozen (no resize).
+   */
+  _syncMobileSheetMap() {
+    if (!this._mobileMode) return;
+    syncMobileReadingMap(this);
   }
 
   /** Finalize hero dismiss — sync map band once, then map locks from frame. */

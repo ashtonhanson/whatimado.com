@@ -118,8 +118,10 @@ export function unpinMobileFocusChrome() {
 }
 
 /**
- * After send — center the node map in the band between the menu and the
- * reading prompt frame (frame top at ~¼ viewport; sheet covers lower ¾).
+ * Fit / fill the node map for mobile chat sheet snaps.
+ * - mid (¾): fit in the gap between menu and frame top
+ * - bottom: scale to fill the screen above the composer strip
+ * - top: leave the map alone (frozen under the expanded sheet)
  * @param {import("./frame-dock-controller.js").FrameDockController} controller
  */
 export function syncMobileReadingMap(controller) {
@@ -128,10 +130,22 @@ export function syncMobileReadingMap(controller) {
   const map = document.getElementById("possibility-map");
   if (!map) return;
 
-  if (!controller.frameEl.classList.contains("is-mobile-reading")) {
-    if (map.dataset.readingPinned === "1") {
-      clearPinStyles(map);
-    }
+  if (!controller._mobileChatSheet) {
+    if (map.dataset.readingPinned === "1") clearPinStyles(map);
+    return;
+  }
+
+  // Prefer live frame classes (drag preview updates these before activeSnap).
+  const expanded = controller.frameEl.classList.contains("is-mobile-expanded");
+  const fillScreen = controller.frameEl.classList.contains("is-mobile-typing");
+  const midReading =
+    controller.frameEl.classList.contains("is-mobile-reading") && !expanded;
+
+  // Top snap — do not move or resize the map.
+  if (expanded) return;
+
+  if (!fillScreen && !midReading) {
+    if (map.dataset.readingPinned === "1") clearPinStyles(map);
     return;
   }
 
@@ -144,7 +158,8 @@ export function syncMobileReadingMap(controller) {
 
   const contentLeft = gutter;
   const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
-  const mapH = Math.max(96, Math.round(bandH * 0.82));
+  const edgePad = fillScreen ? 6 : Math.round(bandH * 0.09);
+  const mapH = Math.max(fillScreen ? 120 : 96, Math.round(bandH - edgePad * 2));
   const mapTop = Math.round(bandTop + (bandH - mapH) / 2);
 
   map.style.position = "fixed";
