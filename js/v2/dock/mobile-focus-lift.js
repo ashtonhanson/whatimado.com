@@ -50,9 +50,8 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;
-  const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 14;
+  const heroClearGap = measureCssVarLength("--v2-mobile-focus-hero-gap") || 5;
   const youHeroGap = measureCssVarLength("--v2-mobile-focus-you-hero-gap") || 0;
-  const heroNudge = measureCssVarLength("--v2-mobile-focus-hero-nudge") || 22;
   const bandRise = measureMobileFocusBandRise();
   const mapRise = measureMobileFocusMapRise();
 
@@ -81,19 +80,11 @@ export function syncMobileFocusLift(controller, { allowResync = true, animateMap
       `${kickerShift}px`
     );
 
+    const composer = controller.frameEl.querySelector(".whatimado-frame__composer");
+    const promptTop = composer?.getBoundingClientRect().top ?? freshFrameRect.top;
     const subBottom = (subEl ?? kicker).getBoundingClientRect().bottom;
-    const bandBottom = freshFrameRect.top - heroClearGap;
-    let lift = Math.max(0, Math.ceil(subBottom - bandBottom));
-
-    const brandTop =
-      (brandEl?.getBoundingClientRect().top ?? freshKickerRect.top) +
-      bandRise +
-      kickerShift -
-      heroNudge;
-    const maxLift = Math.max(0, Math.ceil(brandTop - bandTop)) + bandRise + mapRise;
-    if (!keyboardOpen) {
-      lift = Math.min(lift, maxLift);
-    }
+    const bandBottom = promptTop - heroClearGap;
+    const lift = Math.max(0, Math.ceil(subBottom - bandBottom));
 
     if (youRect) {
       const mapBandBottom = youRect.bottom + youHeroGap;
