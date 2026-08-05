@@ -111,6 +111,10 @@ export function measureMobileAnchors(mainEl, frameEl) {
   const frameH = Math.max(chromeH, chromeH + contentH + 8);
   const bottomTop = Math.max(typingTop, mainH - frameH - bottomInset);
 
+  /** Reading — prompt frame top at ¾ of the viewport (does not collapse to bottom). */
+  const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
+  const readingTop = Math.max(0, vh * 0.75 - mainRect.top - promptDrop);
+
   return {
     topLock: typingTop,
     homeBase: typingTop,
@@ -119,7 +123,7 @@ export function measureMobileAnchors(mainEl, frameEl) {
     focusTop: typingTop,
     typingTop,
     homePromptTop,
-    collapsedTop: bottomTop,
+    collapsedTop: readingTop,
     chromeH,
     bottomInset,
     mainH

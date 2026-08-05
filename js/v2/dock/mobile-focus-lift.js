@@ -28,7 +28,7 @@ function lockDocumentScroll() {
 }
 
 /** @param {HTMLElement} el */
-function clearFocusPinStyles(el) {
+function clearPinStyles(el) {
   el.style.removeProperty("position");
   el.style.removeProperty("top");
   el.style.removeProperty("left");
@@ -39,6 +39,7 @@ function clearFocusPinStyles(el) {
   el.style.removeProperty("z-index");
   el.style.removeProperty("--v2-map-svg-h");
   delete el.dataset.focusPinned;
+  delete el.dataset.readingPinned;
 }
 
 /**
@@ -112,8 +113,58 @@ export function pinMobileFocusChrome(controller) {
 export function unpinMobileFocusChrome() {
   const map = document.getElementById("possibility-map");
   const kicker = document.getElementById("frame-kicker");
-  if (map) clearFocusPinStyles(map);
-  if (kicker) clearFocusPinStyles(kicker);
+  if (map) clearPinStyles(map);
+  if (kicker) clearPinStyles(kicker);
+}
+
+/**
+ * After send — center the node map in the band between the menu and the
+ * reading prompt frame (top at ~¾ viewport).
+ * @param {import("./frame-dock-controller.js").FrameDockController} controller
+ */
+export function syncMobileReadingMap(controller) {
+  if (!controller?._mobileMode || !controller.frameEl) return;
+
+  const map = document.getElementById("possibility-map");
+  if (!map) return;
+
+  if (!controller.frameEl.classList.contains("is-mobile-reading")) {
+    if (map.dataset.readingPinned === "1") {
+      clearPinStyles(map);
+    }
+    return;
+  }
+
+  const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
+  const gutter = measureCssVarLength("--v2-main-gutter") || 14;
+  const frameTop = controller.frameEl.getBoundingClientRect().top;
+  const bandTop = headerH;
+  const bandH = Math.max(0, frameTop - bandTop);
+  if (bandH < 48) return;
+
+  const contentLeft = gutter;
+  const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
+  const mapH = Math.max(96, Math.round(bandH * 0.82));
+  const mapTop = Math.round(bandTop + (bandH - mapH) / 2);
+
+  map.style.position = "fixed";
+  map.style.top = `${mapTop}px`;
+  map.style.left = `${contentLeft}px`;
+  map.style.width = `${contentWidth}px`;
+  map.style.height = `${mapH}px`;
+  map.style.right = "auto";
+  map.style.transform = "none";
+  map.style.zIndex = "40";
+  map.style.setProperty("--v2-map-svg-h", `${mapH}px`);
+  map.dataset.readingPinned = "1";
+  delete map.dataset.focusPinned;
+}
+
+export function unpinMobileReadingMap() {
+  const map = document.getElementById("possibility-map");
+  if (map?.dataset.readingPinned === "1") {
+    clearPinStyles(map);
+  }
 }
 
 /** Clear leftover orientation timers from older focus resync storms. */

@@ -22,7 +22,9 @@ import {
   cancelMobileComposerFocusRelease,
   releaseMobileComposerFocus,
   scheduleMobileComposerFocusResync,
-  syncMobileFocusLift
+  syncMobileFocusLift,
+  syncMobileReadingMap,
+  unpinMobileReadingMap
 } from "./mobile-focus-lift.js";
 import { clearKeyboardDock, syncMobileKeyboard } from "./mobile-keyboard.js";
 import { measureCssVarLength } from "../layout/measure-css-var.js";
@@ -260,6 +262,8 @@ export class FrameDockController {
       this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
       this.frameEl.classList.add("is-mobile-typing");
       this.frameEl.classList.remove("is-mobile-reading");
+      document.body.classList.remove("is-mobile-reading");
+      unpinMobileReadingMap();
       this._bindMobileViewportWatch();
       requestAnimationFrame(() => {
         document.body.classList.add("is-mobile-shell-ready");
@@ -268,7 +272,7 @@ export class FrameDockController {
     });
   }
 
-  /** Glide prompt to bottom after send — clears the view for the response */
+  /** After send — park prompt at ¾ viewport; center map in the band above it */
   mobileGlideToBottom() {
     if (!this._mobileMode || !this.mainEl) return;
 
@@ -279,13 +283,19 @@ export class FrameDockController {
     this.activeSnap = SNAP.MOBILE_COLLAPSED;
     this.frameEl.classList.add("is-mobile-reading");
     this.frameEl.classList.remove("is-mobile-typing");
+    document.body.classList.add("is-mobile-reading");
+
+    const syncMap = () => syncMobileReadingMap(this);
 
     if (this._motionEnabled) {
       this._easeToAnchor(anchors.collapsedTop, SNAP.MOBILE_COLLAPSED, {
-        durationMs: MOBILE_GLIDE_EASE_MS
+        durationMs: MOBILE_GLIDE_EASE_MS,
+        onTick: syncMap,
+        onComplete: syncMap
       });
     } else {
       this._applyTop(anchors.collapsedTop, { snap: SNAP.MOBILE_COLLAPSED });
+      syncMap();
     }
   }
 
@@ -315,6 +325,8 @@ export class FrameDockController {
     this.activeSnap = SNAP.MOBILE_FOCUS;
     this.frameEl.classList.add("is-mobile-typing");
     this.frameEl.classList.remove("is-mobile-reading");
+    document.body.classList.remove("is-mobile-reading");
+    unpinMobileReadingMap();
 
     const target = anchors.homePromptTop;
 
@@ -357,12 +369,21 @@ export class FrameDockController {
     if (!anchors) return;
 
     const targetTop = anchors.collapsedTop;
-    if (Math.abs(targetTop - this._topPx) < 0.75) return;
+    if (Math.abs(targetTop - this._topPx) < 0.75) {
+      syncMobileReadingMap(this);
+      return;
+    }
 
+    const syncMap = () => syncMobileReadingMap(this);
     if (this._motionEnabled) {
-      this._easeToAnchor(targetTop, SNAP.MOBILE_COLLAPSED, { durationMs: MOBILE_GROW_EASE_MS });
+      this._easeToAnchor(targetTop, SNAP.MOBILE_COLLAPSED, {
+        durationMs: MOBILE_GROW_EASE_MS,
+        onTick: syncMap,
+        onComplete: syncMap
+      });
     } else {
       this._applyTop(targetTop, { snap: SNAP.MOBILE_COLLAPSED });
+      syncMap();
     }
   }
 
@@ -372,7 +393,9 @@ export class FrameDockController {
     this._clearKeyboardDock();
     this._mobileMode = false;
     this._unbindMobileViewportWatch();
-    this.frameEl.classList.remove("is-mobile-docked", "is-mobile-hint");
+    this.frameEl.classList.remove("is-mobile-docked", "is-mobile-hint", "is-mobile-reading");
+    document.body.classList.remove("is-mobile-reading");
+    unpinMobileReadingMap();
     const phase = document.body.dataset.phase || "open";
     if (phase === "open") {
       this.enterOpenLayout();
