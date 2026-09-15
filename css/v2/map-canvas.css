@@ -283,24 +283,23 @@ whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__
   }
 }
 
-whatimado-map .whatimado-map__node--live.is-support:hover:not(.is-path-preview) .whatimado-map__node-body {
-  fill: var(--v2-teal-dim);
-}
-
-/* Path-card hover mirror — same accent + glow as chat button */
-whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-map__node-body {
-  fill: var(--node-accent, var(--v2-teal));
+/* Node hover + path-card hover mirror — accent lift, glow, breathing aura */
+whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-body {
+  fill: var(--node-accent, #3df0de);
   transform: scale(0.58);
   filter:
     drop-shadow(0 0 4px color-mix(in srgb, var(--node-accent, var(--v2-teal)) 72%, transparent))
     drop-shadow(0 0 10px color-mix(in srgb, var(--node-accent, var(--v2-teal)) 42%, transparent));
 }
 
-whatimado-map .whatimado-map__node--live.is-support.is-path-preview text {
-  fill: var(--node-accent, var(--v2-teal));
+whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover text,
+whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) text {
+  fill: var(--node-accent, #3df0de);
 }
 
-whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-map__node-aura {
+whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-aura,
+whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-aura {
   fill: var(--node-accent, var(--v2-teal));
   opacity: 0.52;
   animation: whatimado-path-preview-aura 2.4s ease-in-out infinite;
@@ -337,7 +336,8 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-m
     opacity: 0.62;
   }
 
-  whatimado-map .whatimado-map__node--live.is-support.is-path-preview .whatimado-map__node-aura {
+  whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-aura,
+  whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-aura {
     animation: none;
     opacity: 0.5;
   }

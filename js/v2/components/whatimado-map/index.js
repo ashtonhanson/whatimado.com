@@ -1235,6 +1235,16 @@ export class WhatimadoMap extends HTMLElement {
       if (!id) return;
 
       el.addEventListener("pointerdown", (event) => this._onNodePointerDown(event, id));
+      el.addEventListener("pointerenter", (event) => {
+        if (event.pointerType === "touch") return;
+        if (this._pointer) return;
+        const node = this._liveNodes.find((entry) => entry.id === id);
+        if (!node || node.type === "start" || id === this._selectedId) return;
+        this.setPathPreview(id);
+      });
+      el.addEventListener("pointerleave", () => {
+        if (this._pathPreviewId === id) this.setPathPreview(null);
+      });
     });
   }
 
