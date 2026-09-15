@@ -61,10 +61,15 @@ whatimado-map.is-panning .whatimado-map__pan-surface {
   cursor: grabbing;
 }
 
+/*
+ * Stage/SVG must accept pointer events so node :hover works.
+ * Pan-surface stays under the stage for the lower map band only;
+ * empty space inside the stage still pans via main's global pan handler.
+ */
 whatimado-map[data-mode="ghost"] .whatimado-map__stage,
 whatimado-map[data-mode="faint"] .whatimado-map__stage,
 whatimado-map[data-mode="visible"] .whatimado-map__stage {
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 whatimado-map .whatimado-map__pan-surface {
@@ -76,6 +81,12 @@ whatimado-map .whatimado-map__pan-surface {
 whatimado-map[data-mode="ghost"] .whatimado-map__svg,
 whatimado-map[data-mode="faint"] .whatimado-map__svg,
 whatimado-map[data-mode="visible"] .whatimado-map__svg {
+  pointer-events: auto;
+}
+
+whatimado-map .whatimado-map__layer--ghost,
+whatimado-map .whatimado-map__edge--ghost,
+whatimado-map .whatimado-map__edge--live {
   pointer-events: none;
 }
 
