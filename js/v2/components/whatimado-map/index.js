@@ -183,10 +183,13 @@ export class WhatimadoMap extends HTMLElement {
     this._onPointerUp = (event) => this._handlePointerUp(event);
     this._onGlobalPanMove = (event) => this._handlePanMove(event);
     this._onGlobalPanUp = (event) => this._finishPanPointer(event);
+    /** Hover via geometry — SVG :hover is unreliable under pan-surface stacking */
+    this._onHoverPointerMove = (event) => this._handleHoverPointerMove(event);
   }
 
   connectedCallback() {
     if (!this._built) this._build();
+    document.addEventListener("pointermove", this._onHoverPointerMove, { passive: true });
     this._applyMode();
     if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
@@ -236,6 +239,7 @@ export class WhatimadoMap extends HTMLElement {
     this.removeEventListener("pointermove", this._onPointerMove);
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
+    document.removeEventListener("pointermove", this._onHoverPointerMove);
     this._detachGlobalPanListeners();
     this._panSurface?.removeEventListener("touchstart", this._onPinchTouchStart);
     this._panSurface?.removeEventListener("touchmove", this._onPinchTouchMove);
@@ -741,6 +745,80 @@ export class WhatimadoMap extends HTMLElement {
     this.addEventListener("pointermove", this._onPointerMove);
     this.addEventListener("pointerup", this._onPointerUp);
     this.addEventListener("pointercancel", this._onPointerUp);
+  }
+
+  /**
+   * Drive path-node hover from screen geometry so pan-surface / SVG PE stacking
+   * cannot swallow :hover / pointerenter.
+   * @param {PointerEvent} event
+   */
+  _handleHoverPointerMove(event) {
+    if (event.pointerType === "touch") return;
+    if (this._pointer || this._panPointer || this._pinch) return;
+    if (this.getAttribute("mode") === "hidden") return;
+
+    const id = this._hitTestHoverNodeId(event.clientX, event.clientY);
+    if (id) {
+      this.setPathPreview(id);
+      return;
+    }
+    if (this._pathPreviewId) this.setPathPreview(null);
+  }
+
+  /**
+   * @param {number} clientX
+   * @param {number} clientY
+   * @returns {string|null}
+   */
+  _hitTestHoverNodeId(clientX, clientY) {
+    const top = document.elementFromPoint(clientX, clientY);
+    if (top instanceof Element) {
+      if (
+        top.closest("whatimado-frame") ||
+        top.closest(".v2-rail") ||
+        top.closest(".v2-mobile-menu-btn") ||
+        top.closest(".whatimado-map__you-btn")
+      ) {
+        return null;
+      }
+    }
+
+    /** @type {string|null} */
+    let bestId = null;
+    let bestDist = Infinity;
+
+    for (const [id, drift] of this._driftNodes) {
+      const graphNode = this._liveNodes.find((entry) => entry.id === id);
+      if (!graphNode || graphNode.type === "start") continue;
+      if (id === this._selectedId) continue;
+
+      const hit =
+        drift.groupEl.querySelector(".whatimado-map__node-hit") ??
+        drift.circleEl;
+      if (!hit) continue;
+
+      const rect = hit.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) continue;
+
+      const pad = 6;
+      const left = rect.left - pad;
+      const right = rect.right + pad;
+      const topY = rect.top - pad;
+      const bottom = rect.bottom + pad;
+      if (clientX < left || clientX > right || clientY < topY || clientY > bottom) {
+        continue;
+      }
+
+      const cx = (rect.left + rect.right) / 2;
+      const cy = (rect.top + rect.bottom) / 2;
+      const dist = Math.hypot(clientX - cx, clientY - cy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestId = id;
+      }
+    }
+
+    return bestId;
   }
 
   /**
