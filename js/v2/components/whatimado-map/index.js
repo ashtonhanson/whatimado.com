@@ -1235,16 +1235,6 @@ export class WhatimadoMap extends HTMLElement {
       if (!id) return;
 
       el.addEventListener("pointerdown", (event) => this._onNodePointerDown(event, id));
-      el.addEventListener("pointerenter", (event) => {
-        if (event.pointerType === "touch") return;
-        if (this._pointer) return;
-        const node = this._liveNodes.find((entry) => entry.id === id);
-        if (!node || node.type === "start" || id === this._selectedId) return;
-        this.setPathPreview(id);
-      });
-      el.addEventListener("pointerleave", () => {
-        if (this._pathPreviewId === id) this.setPathPreview(null);
-      });
     });
   }
 
@@ -1311,7 +1301,6 @@ export class WhatimadoMap extends HTMLElement {
           isAnchor: isLayoutAnchor,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}"${accentAttr}>
-          <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r * 2.6, 22)}" />
           <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
           <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
           <text x="${cx}" y="${cy - r - Math.max(6, r * 0.55)}" text-anchor="middle">${escapeHtml(node.label)}</text>
