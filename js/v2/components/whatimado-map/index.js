@@ -127,12 +127,6 @@ export class WhatimadoMap extends HTMLElement {
     /** @type {string|null} */
     this._pathPreviewId = null;
     /** @type {string|null} */
-    this._hoverNodeId = null;
-    /** @type {number|null} */
-    this._hoverRaf = null;
-    /** @type {{ x: number, y: number }} */
-    this._lastHoverClient = { x: 0, y: 0 };
-    /** @type {string|null} */
     this._anchorId = "ghost-start";
     /** @type {(nodeId: string) => void|null} */
     this._onSelect = null;
@@ -191,13 +185,11 @@ export class WhatimadoMap extends HTMLElement {
     this._onGlobalPanUp = (event) => this._finishPanPointer(event);
     /** Hover via geometry — SVG :hover is unreliable under pan-surface stacking */
     this._onHoverPointerMove = (event) => this._handleHoverPointerMove(event);
-    this._onHoverMouseMove = (event) => this._handleHoverPointerMove(event);
   }
 
   connectedCallback() {
     if (!this._built) this._build();
-    window.addEventListener("pointermove", this._onHoverPointerMove, { passive: true, capture: true });
-    window.addEventListener("mousemove", this._onHoverMouseMove, { passive: true, capture: true });
+    document.addEventListener("pointermove", this._onHoverPointerMove, { passive: true });
     this._applyMode();
     if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
@@ -247,12 +239,7 @@ export class WhatimadoMap extends HTMLElement {
     this.removeEventListener("pointermove", this._onPointerMove);
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
-    window.removeEventListener("pointermove", this._onHoverPointerMove, true);
-    window.removeEventListener("mousemove", this._onHoverMouseMove, true);
-    if (this._hoverRaf !== null) {
-      cancelAnimationFrame(this._hoverRaf);
-      this._hoverRaf = null;
-    }
+    document.removeEventListener("pointermove", this._onHoverPointerMove);
     this._detachGlobalPanListeners();
     this._panSurface?.removeEventListener("touchstart", this._onPinchTouchStart);
     this._panSurface?.removeEventListener("touchmove", this._onPinchTouchMove);
@@ -348,26 +335,6 @@ export class WhatimadoMap extends HTMLElement {
 
     const group = this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`);
     group?.classList.add("is-path-preview");
-  }
-
-  /** Direct map hover — geometry-driven, separate from path-card preview */
-  /** @param {string|null} id */
-  setNodeHover(id) {
-    if (this._hoverNodeId === id) return;
-
-    if (this._hoverNodeId) {
-      const prev = this.querySelector(
-        `.whatimado-map__node--live[data-node-id="${this._hoverNodeId}"]`
-      );
-      prev?.classList.remove("is-hover");
-    }
-
-    this._hoverNodeId = id;
-
-    if (!id) return;
-
-    const group = this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`);
-    group?.classList.add("is-hover");
   }
 
   /** @param {string} id */
@@ -783,56 +750,28 @@ export class WhatimadoMap extends HTMLElement {
   /**
    * Drive path-node hover from screen geometry so pan-surface / frame stacking
    * cannot swallow :hover / pointerenter.
-   * @param {PointerEvent|MouseEvent} event
+   * @param {PointerEvent} event
    */
   _handleHoverPointerMove(event) {
-    if ("pointerType" in event && event.pointerType === "touch") return;
-    this._lastHoverClient.x = event.clientX;
-    this._lastHoverClient.y = event.clientY;
-    if (this._hoverRaf !== null) return;
-    this._hoverRaf = requestAnimationFrame(() => {
-      this._hoverRaf = null;
-      this._syncNodeHover(this._lastHoverClient.x, this._lastHoverClient.y);
-    });
+    if (event.pointerType === "touch") return;
+    if (this._pointer || this._panPointer || this._pinch) return;
+    if (this.getAttribute("mode") === "hidden") return;
+
+    const id = this._hitTestHoverNodeId(event.clientX, event.clientY);
+    if (id) {
+      this.setPathPreview(id);
+      return;
+    }
+    if (this._pathPreviewId) this.setPathPreview(null);
   }
 
   /**
-   * @param {number} clientX
-   * @param {number} clientY
-   */
-  _syncNodeHover(clientX, clientY) {
-    if (this._pointer || this._panPointer || this._pinch) {
-      if (this._hoverNodeId) this.setNodeHover(null);
-      return;
-    }
-    if (this.getAttribute("mode") === "hidden") {
-      if (this._hoverNodeId) this.setNodeHover(null);
-      return;
-    }
-
-    const id = this._hitTestHoverNodeId(clientX, clientY);
-    this.setNodeHover(id);
-  }
-
-  /**
+   * Pure geometry hit test — never blocked by transparent frame overlays.
    * @param {number} clientX
    * @param {number} clientY
    * @returns {string|null}
    */
   _hitTestHoverNodeId(clientX, clientY) {
-    const top = document.elementFromPoint(clientX, clientY);
-    if (top instanceof Element) {
-      if (
-        top.closest(".v2-rail") ||
-        top.closest(".v2-mobile-menu-btn") ||
-        top.closest(".v2-mobile-menu-backdrop") ||
-        top.closest(".whatimado-map__you-btn") ||
-        top.closest("input, textarea, button, a, select, label")
-      ) {
-        return null;
-      }
-    }
-
     /** @type {string|null} */
     let bestId = null;
     let bestDist = Infinity;
@@ -850,12 +789,18 @@ export class WhatimadoMap extends HTMLElement {
       const rect = hit.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) continue;
 
+      const pad = 6;
+      const left = rect.left - pad;
+      const right = rect.right + pad;
+      const topY = rect.top - pad;
+      const bottom = rect.bottom + pad;
+      if (clientX < left || clientX > right || clientY < topY || clientY > bottom) {
+        continue;
+      }
+
       const cx = (rect.left + rect.right) / 2;
       const cy = (rect.top + rect.bottom) / 2;
-      const radius = Math.max(rect.width, rect.height) / 2 + 8;
       const dist = Math.hypot(clientX - cx, clientY - cy);
-      if (dist > radius) continue;
-
       if (dist < bestDist) {
         bestDist = dist;
         bestId = id;
@@ -1363,6 +1308,16 @@ export class WhatimadoMap extends HTMLElement {
       if (!id) return;
 
       el.addEventListener("pointerdown", (event) => this._onNodePointerDown(event, id));
+      el.addEventListener("pointerenter", (event) => {
+        if (event.pointerType === "touch") return;
+        if (this._pointer || this._panPointer) return;
+        const node = this._liveNodes.find((entry) => entry.id === id);
+        if (!node || node.type === "start" || id === this._selectedId) return;
+        this.setPathPreview(id);
+      });
+      el.addEventListener("pointerleave", () => {
+        if (this._pathPreviewId === id) this.setPathPreview(null);
+      });
     });
   }
 
@@ -1460,12 +1415,6 @@ export class WhatimadoMap extends HTMLElement {
       const previewId = this._pathPreviewId;
       this._pathPreviewId = null;
       this.setPathPreview(previewId);
-    }
-
-    if (options.layer === "live" && this._hoverNodeId) {
-      const hoverId = this._hoverNodeId;
-      this._hoverNodeId = null;
-      this.setNodeHover(hoverId);
     }
   }
 }

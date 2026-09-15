@@ -212,6 +212,7 @@ whatimado-map .whatimado-map__node--live text {
 whatimado-map .whatimado-map__node-body {
   stroke: none;
   outline: none;
+  pointer-events: none;
   transform-box: fill-box;
   transform-origin: center;
   transition:
@@ -304,34 +305,31 @@ whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__
 
 /*
  * Hover / path-card preview — spring pop from rest scale(0.5) + breathing glow.
- * Driven by .is-hover (map geometry) and .is-path-preview (path cards).
+ * Driven by .is-path-preview (map geometry + path cards) and native :hover.
  */
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-body,
-whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) .whatimado-map__node-body,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-body {
   fill: var(--node-accent, #7dffef);
-  transform: scale(1);
-  stroke: color-mix(in srgb, var(--node-accent, #7dffef) 82%, white);
-  stroke-width: 1.25;
+  transform: scale(0.92);
+  stroke: color-mix(in srgb, var(--node-accent, #7dffef) 70%, white);
+  stroke-width: 1.05;
   filter:
-    drop-shadow(0 0 6px color-mix(in srgb, var(--node-accent, #42fff0) 95%, transparent))
-    drop-shadow(0 0 16px color-mix(in srgb, var(--node-accent, #2ee8d6) 78%, transparent))
-    drop-shadow(0 0 28px color-mix(in srgb, var(--node-accent, #2ee8d6) 52%, transparent));
+    drop-shadow(0 0 5px color-mix(in srgb, var(--node-accent, #42fff0) 90%, transparent))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--node-accent, #2ee8d6) 65%, transparent))
+    drop-shadow(0 0 22px color-mix(in srgb, var(--node-accent, #2ee8d6) 40%, transparent));
 }
 
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover text,
-whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) text,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) text {
   fill: var(--node-accent, #7dffef);
   font-weight: 600;
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--node-accent, #42fff0) 70%, transparent));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--node-accent, #42fff0) 55%, transparent));
 }
 
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-aura,
-whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) .whatimado-map__node-aura,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-aura {
   fill: var(--node-accent, #42fff0);
-  opacity: 0.88;
+  opacity: 0.72;
   animation: whatimado-path-preview-aura 2.4s ease-in-out infinite;
 }
 
@@ -367,13 +365,11 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-star
   }
 
   whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-body,
-  whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) .whatimado-map__node-body,
   whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-body {
-    transform: scale(0.82);
+    transform: scale(0.72);
   }
 
   whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-aura,
-  whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) .whatimado-map__node-aura,
   whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-aura {
     animation: none;
     opacity: 0.55;
