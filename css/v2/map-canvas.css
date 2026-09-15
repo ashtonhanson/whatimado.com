@@ -197,10 +197,19 @@ whatimado-map .whatimado-map__node-body {
   transform-box: fill-box;
   transform-origin: center;
   transition:
-    fill 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    stroke 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    stroke-width 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    fill 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1),
+    filter 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Invisible hit pad — desktop-sized nodes are tiny on screen */
+whatimado-map .whatimado-map__node-hit {
+  fill: transparent;
+  stroke: none;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 whatimado-map .whatimado-map__node--live.is-support .whatimado-map__node-body {
@@ -283,36 +292,41 @@ whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__
   }
 }
 
-/* Node hover + path-card hover mirror — accent lift, glow, breathing aura */
+/* Node hover + path-card hover — clear pop from rest scale(0.5) */
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-body,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-body {
-  fill: var(--node-accent, #3df0de);
-  transform: scale(0.58);
+  fill: var(--node-accent, #7dffef);
+  transform: scale(0.95);
+  stroke: color-mix(in srgb, var(--node-accent, #7dffef) 70%, white);
+  stroke-width: 1.1;
   filter:
-    drop-shadow(0 0 4px color-mix(in srgb, var(--node-accent, var(--v2-teal)) 72%, transparent))
-    drop-shadow(0 0 10px color-mix(in srgb, var(--node-accent, var(--v2-teal)) 42%, transparent));
+    drop-shadow(0 0 5px color-mix(in srgb, var(--node-accent, #42fff0) 90%, transparent))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--node-accent, #2ee8d6) 65%, transparent))
+    drop-shadow(0 0 22px color-mix(in srgb, var(--node-accent, #2ee8d6) 40%, transparent));
 }
 
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover text,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) text {
-  fill: var(--node-accent, #3df0de);
+  fill: var(--node-accent, #7dffef);
+  font-weight: 600;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--node-accent, #42fff0) 55%, transparent));
 }
 
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-aura,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-aura {
-  fill: var(--node-accent, var(--v2-teal));
-  opacity: 0.52;
+  fill: var(--node-accent, #42fff0);
+  opacity: 0.72;
   animation: whatimado-path-preview-aura 2.4s ease-in-out infinite;
 }
 
 @keyframes whatimado-path-preview-aura {
   0%,
   100% {
-    opacity: 0.38;
+    opacity: 0.45;
   }
 
   50% {
-    opacity: 0.62;
+    opacity: 0.85;
   }
 }
 
