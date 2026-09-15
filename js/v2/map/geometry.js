@@ -33,17 +33,74 @@ function readGraphTopPadPx() {
   return px > 0 ? px : 16;
 }
 
-/** Prevent upward pan from clipping the topmost node labels */
-export function clampPanYForTopPad(panY, bounds, stageRect, shiftY) {
+/**
+ * Viewport Y that topmost labels must stay below (fixed mobile header + pad).
+ * Desktop returns 0 so stage-relative top pad alone applies.
+ */
+function readMenuClearanceScreenY() {
+  if (!window.matchMedia("(max-width: 900px)").matches) return 0;
+  const brand = document.querySelector(".v2-rail-brand");
+  if (brand) {
+    const bottom = brand.getBoundingClientRect().bottom;
+    if (bottom > 0) return bottom + 8;
+  }
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;height:var(--v2-mobile-header-h);width:0;";
+  document.documentElement.appendChild(probe);
+  const headerH = probe.getBoundingClientRect().height;
+  probe.remove();
+  return (headerH > 0 ? headerH : 56) + 8;
+}
+
+/** Pan floor so bounds.minY stays below the menu / stage top pad */
+function panFloorForTopClearance(bounds, stageRect, shiftY) {
   const scaleY = VIEW_H / stageRect.height;
   const topPadSvg = readGraphTopPadPx() * scaleY;
-  const panFloor = topPadSvg - bounds.minY - shiftY;
-  return Math.max(panY, panFloor);
+  /* Ambient drift peaks ~7svg up — keep labels from tucking under the menu mid-cycle */
+  const driftSlackSvg = 10;
+  let panFloor = topPadSvg + driftSlackSvg - bounds.minY - shiftY;
+
+  const menuClearY = readMenuClearanceScreenY();
+  if (menuClearY > 0) {
+    const absFloor =
+      (menuClearY - stageRect.top) * scaleY + driftSlackSvg - bounds.minY - shiftY;
+    panFloor = Math.max(panFloor, absFloor);
+  }
+  return panFloor;
+}
+
+/** Prevent upward pan from clipping the topmost node labels (incl. under menu) */
+export function clampPanYForTopPad(panY, bounds, stageRect, shiftY) {
+  return Math.max(panY, panFloorForTopClearance(bounds, stageRect, shiftY));
+}
+
+/**
+ * Open-home pan clamp: keep top labels clear of the menu, and YOU clear of
+ * Path Finder when the band allows both. Never clip under the menu bar.
+ * @param {number} panY
+ * @param {{ minY: number, maxY: number }} bounds
+ * @param {DOMRect} stageRect
+ * @param {number} shiftY
+ * @param {number} maxScreenY Ceiling for graph bottom edge (screen Y)
+ */
+export function clampPanYForOpenHome(panY, bounds, stageRect, shiftY, maxScreenY) {
+  const scaleY = VIEW_H / stageRect.height;
+  const panFloor = panFloorForTopClearance(bounds, stageRect, shiftY);
+  const panCeil = (maxScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY;
+
+  if (panFloor <= panCeil) {
+    return Math.min(Math.max(panY, panFloor), panCeil);
+  }
+  // Band too short for both — never let nodes tuck under the menu.
+  return panFloor;
 }
 
 /** Read global upward graph shift from CSS token (fraction of view height) */
 export function readGraphShiftY() {
-  const style = getComputedStyle(document.documentElement);
+  /* Prefer body — open phase zeros the shift there; :root alone stays at 0.08 */
+  const el = document.body || document.documentElement;
+  const style = getComputedStyle(el);
   const frac = Number.parseFloat(style.getPropertyValue("--v2-map-graph-shift-y")) || 0.15;
   return -frac * VIEW_H;
 }

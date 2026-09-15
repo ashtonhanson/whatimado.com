@@ -74,7 +74,12 @@ export function applyPhaseToDom(doc, phase, options = {}) {
   }
 
   if (phase === PHASE.OPEN) {
-    doc.documentElement.style.setProperty("--v2-kicker-reserve", "clamp(4.5rem, 11.5vh, 5.75rem)");
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      doc.documentElement.style.removeProperty("--v2-kicker-reserve");
+      doc.documentElement.style.removeProperty("--whatimado-frame-top-default");
+    } else {
+      doc.documentElement.style.setProperty("--v2-kicker-reserve", "clamp(4.5rem, 11.5vh, 5.75rem)");
+    }
   }
 
   const possibilities = doc.getElementById("possibilities");

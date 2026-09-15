@@ -528,6 +528,9 @@ export class WhatimadoMap extends HTMLElement {
       target = this._computePanForFocalNode(this._focalNodeId);
     } else if (isOpenHomePhase()) {
       target = this._computeOpenHomeGravityPan();
+      if (typeof target.zoom === "number") {
+        this._zoom = target.zoom;
+      }
     } else {
       target = this._computeChatFrameGravityPan();
     }

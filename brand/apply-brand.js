@@ -38,8 +38,11 @@ export function applyBrand(brand, doc = document) {
   }
 
   if (layout && typeof layout === "object") {
-    if (layout.frameTopDefault != null) {
+    // Desktop brand layout only — mobile CSS owns frame top (inline would override ≤900px)
+    if (layout.frameTopDefault != null && !window.matchMedia("(max-width: 900px)").matches) {
       root.style.setProperty("--whatimado-frame-top-default", String(layout.frameTopDefault));
+    } else if (layout.frameTopDefault != null) {
+      root.style.removeProperty("--whatimado-frame-top-default");
     }
     if (layout.frameMaxWidth != null) {
       root.style.setProperty("--v2-frame-max-width", String(layout.frameMaxWidth));

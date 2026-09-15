@@ -453,7 +453,12 @@ export class FrameDockController {
     this._anchors = null;
     this._defaultFrameHeight = null;
 
-    document.documentElement.style.setProperty("--v2-kicker-reserve", KICKER_RESERVE_DEFAULT);
+    if (MOBILE_MQ.matches) {
+      document.documentElement.style.removeProperty("--v2-kicker-reserve");
+      document.documentElement.style.removeProperty("--whatimado-frame-top-default");
+    } else {
+      document.documentElement.style.setProperty("--v2-kicker-reserve", KICKER_RESERVE_DEFAULT);
+    }
     document.documentElement.style.removeProperty("--v2-map-dim");
     document.documentElement.style.removeProperty("--v2-docked-frame-top");
     document.documentElement.style.setProperty("--whatimado-frame-top", `${openVh}vh`);

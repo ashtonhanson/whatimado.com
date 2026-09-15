@@ -86,7 +86,8 @@ whatimado-map .whatimado-map__you-btn {
   z-index: 6;
   padding: 0.35rem 0.75rem;
   border: 1px solid var(--v2-border);
-  border-radius: var(--v2-btn-radius);
+  /* Horizontally flipped — square sits top-right */
+  border-radius: var(--v2-prompt-radius);
   background: var(--v2-glass-bg);
   backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
   -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
@@ -172,14 +173,14 @@ whatimado-map .whatimado-map__layer--live {
   isolation: isolate;
 }
 
-/* Delicate dotted connectors */
+/* Dotted connectors between path nodes */
 whatimado-map .whatimado-map__edge--ghost,
 whatimado-map .whatimado-map__edge--live {
   fill: none;
   stroke: var(--v2-teal);
-  stroke-width: var(--v2-map-edge-width, 0.65);
+  stroke-width: var(--v2-map-edge-width, 1.45);
   stroke-linecap: round;
-  stroke-dasharray: 0.75 5.5;
+  stroke-dasharray: 1.35 5.75;
   opacity: 1;
 }
 

@@ -1,6 +1,12 @@
 import { measureCssVarLength } from "../layout/measure-css-var.js";
-import { MOBILE_MQ, VIEW_H, VIEW_W } from "./constants.js";
-import { clampPanYForTopPad, getNodeLabelMetrics, getNodeRadii, readGraphShiftY } from "./geometry.js";
+import { MOBILE_MQ, SCALE_CENTER_Y, VIEW_H, VIEW_W, ZOOM_MIN } from "./constants.js";
+import {
+  clampPanYForOpenHome,
+  clampPanYForTopPad,
+  getNodeLabelMetrics,
+  getNodeRadii,
+  readGraphShiftY
+} from "./geometry.js";
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
 export function getGraphBounds(mapEl) {
@@ -83,26 +89,66 @@ export function isOpenHomePhase() {
   return document.body.dataset.phase === "open";
 }
 
-/** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
-export function computeMobileOpenHomePan(mapEl) {
+
+/**
+ * Open-home camera: pan + optional fit-zoom so the constellation clears both
+ * the menu bar and Path Finder without changing relative node proportions.
+ * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ * @param {number} gapPx
+ * @param {number} driftSlackPx
+ */
+function computeOpenHomeCamera(mapEl, gapPx, driftSlackPx) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
-  const stageCenter = getStageCenterInSvgCoords(mapEl);
-  if (!stage || !stageCenter) return { panX: 0, panY: 0 };
+  const kicker = document.getElementById("frame-kicker");
+  const brand = kicker?.querySelector(".v2-kicker-brand");
+  if (!stage) return { panX: 0, panY: 0, zoom: 1 };
 
   const stageRect = stage.getBoundingClientRect();
-  if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
+  if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
 
   const bounds = getGraphBounds(mapEl);
   const shiftY = readGraphShiftY();
-  const panX = VIEW_W / 2 - bounds.cx;
-  const panY = clampPanYForTopPad(
-    stageCenter.y - shiftY - bounds.cy,
-    bounds,
-    stageRect,
-    shiftY
-  );
+  const scaleY = VIEW_H / stageRect.height;
 
-  return { panX, panY };
+  const brandRect = brand?.getBoundingClientRect();
+  const kickerRect = kicker?.getBoundingClientRect();
+  const textTop = brandRect?.top ?? kickerRect?.top ?? stageRect.bottom;
+  const anchorScreenY = textTop - gapPx - driftSlackPx;
+
+  const menuClearY = (() => {
+    if (!MOBILE_MQ.matches) {
+      return stageRect.top + (measureCssVarLength("--v2-map-graph-top-pad") || 16);
+    }
+    const rail = document.querySelector(".v2-rail-brand");
+    if (rail) {
+      const bottom = rail.getBoundingClientRect().bottom;
+      if (bottom > 0) return bottom + 8;
+    }
+    return (measureCssVarLength("--v2-mobile-header-h") || 56) + 8;
+  })();
+
+  const span = Math.max(1, bounds.maxY - bounds.minY);
+  const availablePx = Math.max(48, anchorScreenY - menuClearY);
+  const naturalPx = (span * stageRect.height) / VIEW_H;
+  /* Open-home may need to shrink below pinch-min so both menu + Path Finder clear */
+  const zoom = Math.max(0.55, Math.min(1, (availablePx / naturalPx) * 0.94));
+
+  // Pin top of graph to menu clearance at this zoom (scale around SCALE_CENTER_Y)
+  const panY =
+    (menuClearY - stageRect.top) * scaleY -
+    shiftY -
+    zoom * bounds.minY -
+    (1 - zoom) * SCALE_CENTER_Y;
+  const panX = VIEW_W / 2 - bounds.cx;
+
+  return { panX, panY, zoom };
+}
+
+/** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
+export function computeMobileOpenHomePan(mapEl) {
+  const gapPx = Math.max(14, measureCssVarLength("--v2-mobile-you-hero-gap") || 14);
+  const driftSlackPx = 10;
+  return computeOpenHomeCamera(mapEl, gapPx, driftSlackPx);
 }
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
@@ -111,31 +157,8 @@ export function computeOpenHomeGravityPan(mapEl) {
     return computeMobileOpenHomePan(mapEl);
   }
 
-  const stage = mapEl.querySelector(".whatimado-map__stage");
-  const kicker = document.getElementById("frame-kicker");
-  if (!stage) return { panX: 0, panY: 0 };
-
-  const stageRect = stage.getBoundingClientRect();
-  if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
-
-  const bounds = getGraphBounds(mapEl);
-  const shiftY = readGraphShiftY();
-  const scaleY = VIEW_H / stageRect.height;
-
-  const gapPx = 10;
-  const anchorScreenY = kicker
-    ? kicker.getBoundingClientRect().top - gapPx
-    : stageRect.bottom - gapPx;
-
-  const panY = clampPanYForTopPad(
-    (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
-    bounds,
-    stageRect,
-    shiftY
-  );
-  const panX = VIEW_W / 2 - bounds.cx;
-
-  return { panX, panY };
+  const gapPx = Math.max(14, measureCssVarLength("--v2-hero-node-gap") || 14);
+  return computeOpenHomeCamera(mapEl, gapPx, 0);
 }
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */

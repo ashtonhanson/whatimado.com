@@ -9,16 +9,26 @@
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
     --v2-mobile-quarter-in: 0.25in;
-    --v2-mobile-hero-shift: calc(0.22in + 15px); /* landing: hero/subtitle up 5px */
-    --v2-mobile-map-shift: calc(0.08in + 8px);
+    /* Softer hero rise so YOU + Path Finder both clear the menu band */
+    --v2-mobile-hero-shift: calc(0.12in + 8px);
+    /* Keep map below the fixed header — any upward shift clips top node labels */
+    --v2-mobile-map-shift: 0px;
     --v2-mobile-bottom-inset: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
-    --v2-mobile-you-hero-gap: clamp(0.45rem, 1.2vh, 0.65rem);
+    --v2-mobile-you-hero-gap: clamp(0.9rem, 2.2vh, 1.25rem);
+    /* Hero still shifts up; reserve that delta + gap so YOU stays above Path Finder */
+    --v2-mobile-map-kicker-clearance: calc(
+      var(--v2-mobile-hero-shift) - var(--v2-mobile-map-shift) + var(--v2-mobile-you-hero-gap)
+    );
     --v2-mobile-focus-you-hero-gap: 0px;
     --v2-mobile-focus-hero-nudge: 1.1rem;
-    --whatimado-frame-top-default: 32vh;
+    /*
+     * Small tablets need a taller map band so YOU stays above Path Finder
+     * without crushing constellation proportions (phone stays near 32vh).
+     */
+    --whatimado-frame-top-default: clamp(32vh, 26vh + 5vw, 38vh);
     --v2-kicker-reserve: clamp(3.9rem, 10.5vh, 4.75rem); /* room for 1.5× hero type */
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
-    --v2-mobile-map-head-gap: clamp(0.35rem, 1vh, 0.55rem);
+    --v2-mobile-map-head-gap: clamp(0.55rem, 1.4vh, 0.85rem);
     --v2-mobile-prompt-kicker-gap: 0.35rem;
     --v2-mobile-keyboard-gap: 0.35rem;
     --v2-mobile-prompt-drop: 8px;
@@ -34,9 +44,44 @@
     --v2-mobile-focus-kicker-shift: 0px;
     --v2-hero-node-gap: clamp(0.15rem, 0.45vh, 0.3rem);
     --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
-    --v2-map-graph-top-pad: clamp(0.85rem, 2vh, 1.25rem);
+    /* Room for top labels under the menu after open-home gravity */
+    --v2-map-graph-top-pad: clamp(1.1rem, 2.4vh, 1.6rem);
     --v2-map-node-lg: 33;
     --v2-map-node-sm: 16.5;
+    --v2-map-edge-width: 2.6;
+  }
+
+  /* Large phones / small tablets — smaller nodes so menu + Path Finder both clear */
+  @media (min-width: 480px) {
+    :root {
+      --v2-map-node-lg: 24;
+      --v2-map-node-sm: 12;
+    }
+  }
+
+  @media (min-width: 600px) {
+    :root {
+      --v2-map-node-lg: 22;
+      --v2-map-node-sm: 11;
+      --whatimado-frame-top-default: clamp(33vh, 27vh + 4vw, 38vh);
+    }
+  }
+
+  @media (min-width: 600px) and (max-height: 820px) {
+    :root {
+      --v2-map-node-lg: 20;
+      --v2-map-node-sm: 10;
+      --whatimado-frame-top-default: clamp(34vh, 28vh + 4vw, 40vh);
+    }
+  }
+
+  @media (max-height: 640px) {
+    :root {
+      --v2-map-node-lg: 20;
+      --v2-map-node-sm: 10;
+      --whatimado-frame-top-default: clamp(36vh, 32vh + 3vw, 44vh);
+      --v2-mobile-you-hero-gap: clamp(0.55rem, 1.4vh, 0.85rem);
+    }
   }
 
   html,
@@ -47,7 +92,10 @@
   }
 
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
-    --v2-map-svg-h: calc(var(--v2-kicker-top) - var(--v2-mobile-map-head-gap, 0.45rem));
+    --v2-map-svg-h: calc(
+      var(--v2-kicker-top) - var(--v2-mobile-map-head-gap, 0.45rem) -
+        var(--v2-mobile-map-kicker-clearance)
+    );
   }
 
   .v2-shell {
