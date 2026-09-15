@@ -773,6 +773,7 @@ export class WhatimadoMap extends HTMLElement {
       const id = groupEl.getAttribute("data-node-id");
       const circle = groupEl.querySelector(".whatimado-map__node-body");
       const aura = groupEl.querySelector(".whatimado-map__node-aura");
+      const hit = groupEl.querySelector(".whatimado-map__node-hit");
       const text = groupEl.querySelector("text");
       if (!id || !circle) return;
 
@@ -801,6 +802,7 @@ export class WhatimadoMap extends HTMLElement {
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
+        hitEl: hit ? /** @type {SVGCircleElement} */ (hit) : null,
         textEl: text ? /** @type {SVGTextElement} */ (text) : null
       });
     });
@@ -957,6 +959,10 @@ export class WhatimadoMap extends HTMLElement {
   _syncNodePosition(node) {
     node.circleEl.setAttribute("cx", String(node.baseX));
     node.circleEl.setAttribute("cy", String(node.baseY));
+    if (node.hitEl) {
+      node.hitEl.setAttribute("cx", String(node.baseX));
+      node.hitEl.setAttribute("cy", String(node.baseY));
+    }
     if (node.auraEl) {
       node.auraEl.setAttribute("cx", String(node.baseX));
       node.auraEl.setAttribute("cy", String(node.baseY));
@@ -1235,6 +1241,13 @@ export class WhatimadoMap extends HTMLElement {
       if (!id) return;
 
       el.addEventListener("pointerdown", (event) => this._onNodePointerDown(event, id));
+      el.addEventListener("pointerenter", (event) => {
+        if (event.pointerType === "touch") return;
+        el.classList.add("is-hover");
+      });
+      el.addEventListener("pointerleave", () => {
+        el.classList.remove("is-hover");
+      });
     });
   }
 
@@ -1301,6 +1314,7 @@ export class WhatimadoMap extends HTMLElement {
           isAnchor: isLayoutAnchor,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}"${accentAttr}>
+          <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r * 2.6, 22)}" />
           <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
           <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
           <text x="${cx}" y="${cy - r - Math.max(6, r * 0.55)}" text-anchor="middle">${escapeHtml(node.label)}</text>
