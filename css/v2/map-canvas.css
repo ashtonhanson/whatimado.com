@@ -145,6 +145,41 @@ whatimado-map .whatimado-map__node-hit {
   cursor: pointer;
 }
 
+/*
+ * Idle float — CSS only, no pointer required. Lives on a wrapper so hover/select
+ * scale (transform on .whatimado-map__node-body) cannot replace this animation.
+ */
+whatimado-map .whatimado-map__node-float {
+  --node-float-amp: -12px;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: whatimado-node-float;
+  animation-duration: var(--node-float-duration, 4.2s);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-delay: var(--node-float-delay, 0s);
+  animation-play-state: running;
+}
+
+whatimado-map .whatimado-map__node--live:hover .whatimado-map__node-float,
+whatimado-map .whatimado-map__node--live.is-hover .whatimado-map__node-float,
+whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-float,
+whatimado-map .whatimado-map__node--live.is-dragging .whatimado-map__node-float,
+whatimado-map .whatimado-map__node--live.is-path-preview .whatimado-map__node-float {
+  animation-play-state: running;
+}
+
+@keyframes whatimado-node-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, var(--node-float-amp, -12px), 0);
+  }
+}
+
 whatimado-map.is-dismissing-ghost .whatimado-map__layer--ghost {
   opacity: 0;
   transition: opacity 0.45s ease;
@@ -303,11 +338,13 @@ whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__
 }
 
 /*
- * Hover / path-card preview — spring pop from rest scale(0.5) + breathing glow.
- * Driven by .is-hover (map geometry) and .is-path-preview (path cards).
+ * Hover / drag / path-card preview — spring pop from rest scale(0.5) + breathing glow.
+ * Driven by .is-hover (map geometry), .is-dragging (touch pull) and .is-path-preview
+ * (path cards). A pulled node stays lit for the whole drag and spring back home.
  */
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-body,
 whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-support.is-dragging:not(.is-start):not(.is-selected) .whatimado-map__node-body,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-body {
   fill: var(--node-accent, #7dffef);
   /* Stays below the selected scale(1) so selection remains visually dominant */
@@ -322,6 +359,7 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-star
 
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover text,
 whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) text,
+whatimado-map .whatimado-map__node--live.is-support.is-dragging:not(.is-start):not(.is-selected) text,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) text {
   fill: var(--node-accent, #7dffef);
   font-weight: 600;
@@ -330,6 +368,7 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-star
 
 whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-aura,
 whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) .whatimado-map__node-aura,
+whatimado-map .whatimado-map__node--live.is-support.is-dragging:not(.is-start):not(.is-selected) .whatimado-map__node-aura,
 whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-aura {
   fill: var(--node-accent, #42fff0);
   opacity: 0.88;
@@ -345,6 +384,36 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-star
   50% {
     opacity: 0.85;
   }
+}
+
+/*
+ * Selection inherits the hover bloom in yellow, so the glow raised on hover carries
+ * through the click instead of snapping off. Yellow stays reserved for selection.
+ */
+whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, var(--v2-yellow) 95%, transparent))
+    drop-shadow(0 0 16px color-mix(in srgb, var(--v2-yellow) 72%, transparent))
+    drop-shadow(0 0 28px color-mix(in srgb, var(--v2-yellow) 48%, transparent));
+}
+
+/* Hovering or pulling the selected node lifts that same glow rather than replacing it */
+whatimado-map .whatimado-map__node--live.is-selected.is-hover .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-selected.is-dragging .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-selected.is-path-preview .whatimado-map__node-body {
+  stroke: color-mix(in srgb, var(--v2-yellow) 80%, white);
+  stroke-width: 1.25;
+  filter:
+    drop-shadow(0 0 9px var(--v2-yellow))
+    drop-shadow(0 0 24px color-mix(in srgb, var(--v2-yellow) 85%, transparent))
+    drop-shadow(0 0 40px color-mix(in srgb, var(--v2-yellow) 55%, transparent));
+}
+
+whatimado-map .whatimado-map__node--live.is-selected.is-hover .whatimado-map__node-aura,
+whatimado-map .whatimado-map__node--live.is-selected.is-dragging .whatimado-map__node-aura,
+whatimado-map .whatimado-map__node--live.is-selected.is-path-preview .whatimado-map__node-aura {
+  animation-name: whatimado-path-preview-aura;
+  animation-duration: 2.4s;
 }
 
 /*
@@ -378,13 +447,26 @@ whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-star
 
   whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-body,
   whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) .whatimado-map__node-body,
+  whatimado-map .whatimado-map__node--live.is-support.is-dragging:not(.is-start):not(.is-selected) .whatimado-map__node-body,
   whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-body {
     transform: scale(0.78);
   }
 
   whatimado-map .whatimado-map__node--live.is-support:not(.is-start):not(.is-selected):hover .whatimado-map__node-aura,
   whatimado-map .whatimado-map__node--live.is-support.is-hover:not(.is-start):not(.is-selected) .whatimado-map__node-aura,
+  whatimado-map .whatimado-map__node--live.is-support.is-dragging:not(.is-start):not(.is-selected) .whatimado-map__node-aura,
   whatimado-map .whatimado-map__node--live.is-support.is-path-preview:not(.is-start):not(.is-selected) .whatimado-map__node-aura {
     animation-duration: 4.2s;
+  }
+
+  whatimado-map .whatimado-map__node--live.is-selected.is-hover .whatimado-map__node-aura,
+  whatimado-map .whatimado-map__node--live.is-selected.is-dragging .whatimado-map__node-aura,
+  whatimado-map .whatimado-map__node--live.is-selected.is-path-preview .whatimado-map__node-aura {
+    animation-duration: 4.2s;
+  }
+
+  /* Keep the idle bob running; only shorten travel so it is not a large pan */
+  whatimado-map .whatimado-map__node-float {
+    --node-float-amp: -8px;
   }
 }

@@ -29,8 +29,8 @@ export const BOTTOM_CONTENT_CUSHION = 36;
 /** Minimum vertical band between Home Base and Bottom Cushion (fraction of main height) */
 export const HOME_BOTTOM_MIN_SEP = 0.2;
 
-/** Final ease into anchor after glide settles */
-export const SNAP_EASE_MS = 680;
+/** Final ease into anchor after glide settles — short so the snap is slight, not a long slide */
+export const SNAP_EASE_MS = 420;
 
 /** Flick bias shifts midway thresholds in the direction of travel (px equivalent) */
 export const FLICK_VEL_BIAS = 0.38;

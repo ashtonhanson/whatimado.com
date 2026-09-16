@@ -156,7 +156,8 @@ export class WhatimadoMap extends HTMLElement {
      *   homeVx: number, homeVy: number,
      *   driftAnchorX: number, driftAnchorY: number,
      *   groupEl: SVGGElement,
-     *   circleEl: SVGCircleElement, auraEl: SVGCircleElement|null, textEl: SVGTextElement|null
+     *   circleEl: SVGCircleElement, auraEl: SVGCircleElement|null,
+     *   hitEl: SVGCircleElement|null, textEl: SVGTextElement|null
      * }>}
      */
     this._driftNodes = new Map();
@@ -801,7 +802,12 @@ export class WhatimadoMap extends HTMLElement {
    * @param {number} clientY
    */
   _syncNodeHover(clientX, clientY) {
-    if (this._pointer || this._panPointer || this._pinch) {
+    /** Pulling a node apart keeps it lit — the glow rides the drag and the spring back */
+    if (this._pointer) {
+      this.setNodeHover(this._pointer.nodeId);
+      return;
+    }
+    if (this._panPointer || this._pinch) {
       if (this._hoverNodeId) this.setNodeHover(null);
       return;
     }
@@ -840,7 +846,6 @@ export class WhatimadoMap extends HTMLElement {
     for (const [id, drift] of this._driftNodes) {
       const graphNode = this._liveNodes.find((entry) => entry.id === id);
       if (!graphNode || graphNode.type === "start") continue;
-      if (id === this._selectedId) continue;
 
       const hit =
         drift.groupEl.querySelector(".whatimado-map__node-hit") ??
@@ -1095,6 +1100,33 @@ export class WhatimadoMap extends HTMLElement {
     }
   }
 
+  /**
+   * Line endpoints follow the painted node (JS drift + CSS idle float), not the
+   * un-floated layout center. Hit pad stays put so drag targets do not bob.
+   * @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node
+   * @param {number} ox
+   * @param {number} oy
+   * @param {number} fallbackR
+   */
+  _visualCenterForEdge(node, ox, oy, fallbackR) {
+    const x = node.baseX + ox;
+    const y = node.baseY + oy;
+    const body = node.circleEl;
+    const hit = node.hitEl ?? body;
+    if (!body || !hit) return { x, y, r: fallbackR };
+
+    const bodyRect = body.getBoundingClientRect();
+    const hitRect = hit.getBoundingClientRect();
+    if (bodyRect.width <= 0 || hitRect.width <= 0) return { x, y, r: fallbackR };
+
+    const scale = svgScale(this._svg);
+    return {
+      x: x + ((bodyRect.left + bodyRect.right) / 2 - (hitRect.left + hitRect.right) / 2) * scale,
+      y: y + ((bodyRect.top + bodyRect.bottom) / 2 - (hitRect.top + hitRect.bottom) / 2) * scale,
+      r: Math.max(fallbackR * 0.45, (Math.max(bodyRect.width, bodyRect.height) / 2) * scale)
+    };
+  }
+
   /** @param {number} timestamp */
   _tickDrift(timestamp) {
     if (!this._driftStartMs) this._driftStartMs = timestamp;
@@ -1142,11 +1174,7 @@ export class WhatimadoMap extends HTMLElement {
       }
 
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
-      centers.set(id, {
-        x: node.baseX + ox,
-        y: node.baseY + oy,
-        r: trimRadius
-      });
+      centers.set(id, this._visualCenterForEdge(node, ox, oy, trimRadius));
     }
 
     for (const edge of this._driftEdges) {
@@ -1296,6 +1324,16 @@ export class WhatimadoMap extends HTMLElement {
 
         this._syncNodePosition(driftNode);
 
+        /*
+         * The drag offset has just moved from the group transform into baseX/baseY.
+         * Collapse the transform to drift-only now instead of waiting for the next
+         * drift tick, so the node does not render (and hit-test) at double offset
+         * for a frame.
+         */
+        const elapsed = performance.now() - this._driftStartMs;
+        const drift = this._driftTransform(elapsed, driftNode);
+        driftNode.groupEl.setAttribute("transform", `translate(${drift.x}, ${drift.y})`);
+
         this._syncGraphNode(nodeId);
       } else {
         driftNode.dragX = 0;
@@ -1312,6 +1350,14 @@ export class WhatimadoMap extends HTMLElement {
     }
 
     this._pointer = null;
+    /** Re-test under a stationary cursor so the glow does not wait for the next move */
+    if (event.pointerType !== "touch") {
+      this._lastHoverClient.x = event.clientX;
+      this._lastHoverClient.y = event.clientY;
+      this._syncNodeHover(event.clientX, event.clientY);
+    } else {
+      this.setNodeHover(null);
+    }
   }
 
   /** @param {PointerEvent} event */
@@ -1420,19 +1466,24 @@ export class WhatimadoMap extends HTMLElement {
 
         const driftDelay = (index * 0.85) % 5;
         const driftDuration = 9 + (index % 4) * 1.2;
-        const accentAttr =
-          node.type === "path" && node.accent
-            ? ` style="--node-accent: ${node.accent}"`
-            : "";
+        const styleVars = [
+          node.type === "path" && node.accent ? `--node-accent: ${node.accent}` : "",
+          `--node-float-delay: ${(index * 0.65) % 3.4}s`,
+          `--node-float-duration: ${3.4 + (index % 4) * 0.55}s`
+        ]
+          .filter(Boolean)
+          .join("; ");
 
         nodeParts.push({
           isAnchor: isLayoutAnchor,
           html: `
-        <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}"${accentAttr}>
+        <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}" style="${styleVars}">
           <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r * 2.6, 22)}" />
-          <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
-          <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
-          <text x="${cx}" y="${cy - r - Math.max(6, r * 0.55)}" text-anchor="middle">${escapeHtml(node.label)}</text>
+          <g class="whatimado-map__node-float">
+            <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
+            <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
+            <text x="${cx}" y="${cy - r - Math.max(6, r * 0.55)}" text-anchor="middle">${escapeHtml(node.label)}</text>
+          </g>
         </g>
       `
         });
