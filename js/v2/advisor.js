@@ -80,12 +80,14 @@ Return ONLY valid JSON — no markdown fences, no commentary:
 
 /**
  * @param {{ role: "user"|"assistant", content: string }[]} messages
+ * @param {string} [contextBlock]
  */
-export function buildPathsPrompt(messages) {
+export function buildPathsPrompt(messages, contextBlock = "") {
   const transcript = messages
     .map((m) => `${m.role === "user" ? "User" : "Advisor"}: ${m.content}`)
     .join("\n\n");
-  return `${PATHS_SYSTEM}\n\nConversation:\n${transcript}\n\nGenerate the JSON now.`;
+  const extra = contextBlock ? `\n${contextBlock}\n` : "";
+  return `${PATHS_SYSTEM}${extra}\nConversation:\n${transcript}\n\nGenerate the JSON now.`;
 }
 
 /**
