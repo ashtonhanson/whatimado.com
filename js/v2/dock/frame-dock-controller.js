@@ -474,29 +474,31 @@ export class FrameDockController {
     this._setMapDim(0);
   }
 
-  /** After hero dismiss — glide into Home Base */
+  /** After first prompt — fade home copy; stay at landing so the map stays fully visible */
   enterDockedHome({ animate = true } = {}) {
     if (!this.mainEl) return;
 
     this._stopMotion();
     this._docked = true;
+    this.frameEl.classList.add("is-docked");
+
+    const mainRect = this.mainEl.getBoundingClientRect();
+    const frameRect = this.frameEl.getBoundingClientRect();
+    this._topPx = frameRect.top - mainRect.top;
+    this._syncMapBandLayout(this._topPx);
+
     this._dockTransition = Boolean(animate && this._motionEnabled);
     this.activeSnap = SNAP.HOME;
     document.body.classList.add("is-hero-dismissing");
-    this.frameEl.classList.add("is-docked");
 
     requestAnimationFrame(() => {
       this._captureDefaultMetrics();
-      if (this.mainEl) {
-        const mainRect = this.mainEl.getBoundingClientRect();
-        const frameRect = this.frameEl.getBoundingClientRect();
-        this._topPx = frameRect.top - mainRect.top;
-      }
-      this._syncMapBandLayout(this._topPx);
       const anchors = this._refreshAnchors();
       if (!anchors) return;
 
-      if (animate && this._motionEnabled) {
+      const alreadyHome = Math.abs(this._topPx - anchors.homeBase) < 8;
+
+      if (animate && this._motionEnabled && !alreadyHome) {
         this._easeToAnchor(anchors.homeBase, SNAP.HOME, { finalizeDock: true });
       } else {
         document.documentElement.style.setProperty("--v2-kicker-reserve", "0px");

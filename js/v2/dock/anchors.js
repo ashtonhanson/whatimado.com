@@ -17,14 +17,29 @@ export function measureTopLock(mainEl) {
 }
 
 /**
- * Home Base — one-third from viewport top (hero-covered position after dismiss).
+ * Home Base — landing height so the full node map and home copy stay in view.
+ * Uses the kicker’s bottom while the home page text is showing; after it fades,
+ * keep the same default frame-top so the constellation is not covered.
  * @param {HTMLElement} mainEl
  */
 export function measureHomeBase(mainEl) {
   const mainRect = mainEl.getBoundingClientRect();
-  const vh = viewportHeight();
-  const viewportHome = vh / 3;
-  return viewportHome - mainRect.top;
+  const kicker = document.getElementById("frame-kicker");
+  const kickerVisible =
+    Boolean(kicker) &&
+    !kicker.classList.contains("hidden") &&
+    !kicker.classList.contains("is-dismissing");
+
+  if (kickerVisible) {
+    const gap = measureCssVarLength("--v2-hero-node-gap") || 4;
+    return Math.max(0, kicker.getBoundingClientRect().bottom - mainRect.top + gap);
+  }
+
+  const defaultVh =
+    Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--whatimado-frame-top-default")
+    ) || 47;
+  return (viewportHeight() * defaultVh) / 100 - mainRect.top;
 }
 
 /**
