@@ -17,7 +17,8 @@ import { PHASE } from "../phases.js";
  *   profileIntakeStep: string | null,
  *   clarifyingQuestionsAsked: number,
  *   locationConfirmed: boolean,
- *   intakeComplete: boolean
+ *   intakeComplete: boolean,
+ *   completedIntakeSteps: string[]
  * }} Journey */
 
 const PHASE_VALUES = new Set(Object.values(PHASE));
@@ -39,7 +40,8 @@ export function createEmptyJourney() {
     profileIntakeStep: null,
     clarifyingQuestionsAsked: 0,
     locationConfirmed: false,
-    intakeComplete: false
+    intakeComplete: false,
+    completedIntakeSteps: []
   };
 }
 
@@ -111,7 +113,10 @@ export function normalizeJourney(raw) {
     profileIntakeStep: typeof source.profileIntakeStep === "string" && source.profileIntakeStep ? source.profileIntakeStep : null,
     clarifyingQuestionsAsked: Number(source.clarifyingQuestionsAsked) || 0,
     locationConfirmed: Boolean(source.locationConfirmed),
-    intakeComplete: Boolean(source.intakeComplete)
+    intakeComplete: Boolean(source.intakeComplete),
+    completedIntakeSteps: Array.isArray(source.completedIntakeSteps)
+      ? source.completedIntakeSteps.map((step) => String(step || "")).filter(Boolean)
+      : []
   };
 }
 

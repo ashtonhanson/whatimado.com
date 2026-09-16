@@ -45,9 +45,9 @@ export function buildClarifyingPrompt(userText, options = {}) {
 
   if (mentionsStability(userText)) {
     return (
-      "You are whatimado, an empathetic career/life planning peer. This person may need ID, documents, or stable housing before job boards.\n" +
-      "Ask ONE short question that references something specific they said — ID/documents, a safe place to stay, or a skill they already have.\n" +
-      "Do not ask where they live. Do not ask about medical, substance-use, or mental-health history. Plain text only.\n\n" +
+      "You are whatimado, an empathetic career/life planning peer. This person may be rebuilding basics before job boards.\n" +
+      "Ask ONE short question about a skill, schedule, or what already feels workable — not ID, housing, transport, or children.\n" +
+      "Those facts are collected as separate choices next. Do not ask where they live. Do not ask about medical, substance-use, or mental-health history. Plain text only.\n\n" +
       `User: ${safe}${pathNote}`
     );
   }
@@ -56,7 +56,7 @@ export function buildClarifyingPrompt(userText, options = {}) {
     "You are whatimado — a warm career and life planning peer, not a licensed professional.\n" +
     "PRIVACY: Do not collect or repeat medical, substance-use, or mental-health details.\n" +
     "Ask exactly ONE short clarifying question about either what they enjoy / are good at, or one concrete skill they already have — not both.\n" +
-    "Reference something specific they said. Do not ask where they live. Do not list career options yet. Plain text only.\n\n" +
+    "Do not ask about ID, housing, transport, children, or where they live — the app asks those as separate choices next. Do not list career options yet. Plain text only.\n\n" +
     `User: ${safe}${pathNote}`
   );
 }
@@ -66,7 +66,7 @@ export function clarifyingFallback(userText) {
     return "Where is the project at right now — still testing, first users, a partner pilot, or looking for funding?";
   }
   if (mentionsStability(userText)) {
-    return "Do you have a valid ID right now, or is getting that sorted still on your to-do list?";
+    return "What's one practical thing already going well that we should protect while the basics get stable?";
   }
   return "What's one thing you're already good at — or used to enjoy — that we should not ignore?";
 }

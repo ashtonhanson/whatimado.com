@@ -160,32 +160,89 @@ export function profilePathIsOwnBusiness(profile) {
   return normalizeUserProfile(profile).pathPreference === "business";
 }
 
+function chipSequence(ctx = {}) {
+  const founder = Boolean(ctx.founder);
+  const ownBusiness = profilePathIsOwnBusiness(ctx.profile);
+  /** @type {string[]} */
+  const steps = [
+    INTAKE_STEP.ID,
+    INTAKE_STEP.HOUSING,
+    INTAKE_STEP.TRANSPORT,
+    INTAKE_STEP.DEPENDENTS,
+    INTAKE_STEP.INCOME,
+    INTAKE_STEP.PATH
+  ];
+  if (founder) {
+    steps.push(INTAKE_STEP.FOUNDER);
+    return steps;
+  }
+  steps.push(ownBusiness ? INTAKE_STEP.BUSINESS_SETUP : INTAKE_STEP.WORK_MODE);
+  steps.push(INTAKE_STEP.SKILLS);
+  if (!ownBusiness && ctx.profile?.pathPreference === "employment") steps.push(INTAKE_STEP.RELOCATE);
+  return steps;
+}
+
+/** @param {import("../state/user-profile.js").UserProfile} profile @param {string} step */
+export function chipStepAnswered(profile, step) {
+  const p = normalizeUserProfile(profile);
+  switch (step) {
+    case INTAKE_STEP.ID:
+      return p.idStatus === "has" || p.idStatus === "needs";
+    case INTAKE_STEP.HOUSING:
+      return p.housingStatus === "has" || p.housingStatus === "needs";
+    case INTAKE_STEP.TRANSPORT:
+      return p.transportStatus === "has" || p.transportStatus === "limited" || p.transportStatus === "needs";
+    case INTAKE_STEP.DEPENDENTS:
+      return p.dependentSupport === "none" || p.dependentSupport === "no_help" || p.dependentSupport === "needs_help";
+    case INTAKE_STEP.INCOME:
+      return Boolean(p.incomeUrgency);
+    case INTAKE_STEP.PATH:
+      return Boolean(p.pathPreference);
+    case INTAKE_STEP.FOUNDER:
+      return Boolean(p.founderStage);
+    case INTAKE_STEP.WORK_MODE:
+    case INTAKE_STEP.BUSINESS_SETUP:
+      return Boolean(p.workMode);
+    case INTAKE_STEP.SKILLS:
+      return Boolean(p.skills);
+    case INTAKE_STEP.RELOCATE:
+      return Boolean(p.willingToRelocate);
+    default:
+      return false;
+  }
+}
+
 /**
  * Next chip step that is still unknown. Location/name are handled separately.
+ * Completed steps are skipped even if a parser missed the field, so we never loop.
  * @param {import("../state/user-profile.js").UserProfile} profile
- * @param {{ founder?: boolean }} [ctx]
+ * @param {{ founder?: boolean, completedSteps?: string[], skipStep?: string }} [ctx]
  */
 export function nextChipStep(profile, ctx = {}) {
   const p = normalizeUserProfile(profile);
-  const founder = Boolean(ctx.founder);
-  if (!p.idStatus) return INTAKE_STEP.ID;
-  if (!p.housingStatus) return INTAKE_STEP.HOUSING;
-  if (!p.transportStatus) return INTAKE_STEP.TRANSPORT;
-  if (!p.dependentSupport) return INTAKE_STEP.DEPENDENTS;
-  if (!p.incomeUrgency) return INTAKE_STEP.INCOME;
-  if (!p.pathPreference) return INTAKE_STEP.PATH;
-  if (founder && !p.founderStage) return INTAKE_STEP.FOUNDER;
-  if (founder) return null;
-  if (!p.workMode) return profilePathIsOwnBusiness(p) ? INTAKE_STEP.BUSINESS_SETUP : INTAKE_STEP.WORK_MODE;
-  if (!p.skills) return INTAKE_STEP.SKILLS;
-  if (p.pathPreference === "employment" && !p.willingToRelocate) return INTAKE_STEP.RELOCATE;
+  const completed = new Set(ctx.completedSteps || []);
+  if (ctx.skipStep) completed.add(ctx.skipStep);
+  for (const step of chipSequence({ ...ctx, profile: p })) {
+    if (completed.has(step)) continue;
+    if (chipStepAnswered(p, step)) continue;
+    return step;
+  }
   return null;
 }
 
 export function parseIdStatus(text) {
-  const q = String(text || "").toLowerCase();
-  if (/\b(yes|yeah|yep|have (?:my )?(?:id|license)|valid id)\b/.test(q) && !/\b(no|don'?t|need)\b/.test(q)) return "has";
-  if (/\b(no|nope|not yet|don'?t have|need to get|lost|missing|no id|not sure|unsure|working on)\b/.test(q)) return "needs";
+  const q = String(text || "").toLowerCase().trim();
+  if (!q) return "";
+  if (/^(no|nope|nah)([!.?\s].*)?$/.test(q)) return "needs";
+  if (/^(yes|yeah|yep)([!.?\s].*)?$/.test(q)) return "has";
+  if (/\b(yes|yeah|yep|have (?:my )?(?:id|license)|valid id)\b/.test(q) && !/\b(no|don'?t|do not|need)\b/.test(q)) {
+    return "has";
+  }
+  if (
+    /\b(no|nope|nah|not yet|don'?t have|do not have|need to get|lost|missing|no id|not sure|unsure|working on)\b/.test(q)
+  ) {
+    return "needs";
+  }
   return "";
 }
 

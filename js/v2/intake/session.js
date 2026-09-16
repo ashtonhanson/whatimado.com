@@ -11,7 +11,10 @@ import {
   getChipStep,
   isChipStep,
   nextChipStep,
-  parseChipAnswer
+  parseChipAnswer,
+  parseHousingStatus,
+  parseIdStatus,
+  chipStepAnswered
 } from "./profile-chips.js";
 import { applyLocationAnswer, isLocationStep, locationPrompt } from "./location.js";
 
@@ -59,6 +62,47 @@ export function createIntakeController(ui) {
     appStore.journey.awaitingPathModeChoice = step === INTAKE_STEP.PATH_MODE;
     touchJourney();
     flush();
+  }
+
+  function completedSteps() {
+    return Array.isArray(appStore.journey.completedIntakeSteps) ? appStore.journey.completedIntakeSteps : [];
+  }
+
+  function markStepComplete(step) {
+    if (!step) return;
+    const list = completedSteps();
+    if (!list.includes(step)) list.push(step);
+    appStore.journey.completedIntakeSteps = list;
+  }
+
+  function chipCtx(extra = {}) {
+    return { founder: founderMode(), completedSteps: completedSteps(), ...extra };
+  }
+
+  function lastAssistantText() {
+    const msgs = appStore.journey.messages;
+    for (let i = msgs.length - 1; i >= 0; i -= 1) {
+      if (msgs[i].role === "assistant") return msgs[i].content;
+    }
+    return "";
+  }
+
+  function absorbClarifyingAnswer(text) {
+    const asked = lastAssistantText().toLowerCase();
+    if (/\b(id|driver'?s? license|state id|photo id|birth certificate|identification)\b/.test(asked)) {
+      const value = parseIdStatus(text);
+      if (value) {
+        appStore.profile = setUserProfileField(appStore.profile, "idStatus", value);
+        markStepComplete(INTAKE_STEP.ID);
+      }
+    }
+    if (/\b(safe place|housing|shelter|stay for)\b/.test(asked)) {
+      const value = parseHousingStatus(text);
+      if (value) {
+        appStore.profile = setUserProfileField(appStore.profile, "housingStatus", value);
+        markStepComplete(INTAKE_STEP.HOUSING);
+      }
+    }
   }
 
   function showChipsForStep(step) {
@@ -112,18 +156,22 @@ export function createIntakeController(ui) {
   }
 
   function askChipStep(step) {
-    const spec = getChipStep(step, { founder: founderMode() });
-    if (!spec) {
+    const resolved =
+      chipStepAnswered(appStore.profile, step) || completedSteps().includes(step)
+        ? nextChipStep(appStore.profile, chipCtx({ skipStep: step }))
+        : step;
+    const spec = getChipStep(resolved, { founder: founderMode() });
+    if (!resolved || !spec) {
       void continueAfterChips();
       return;
     }
-    setStep(step);
+    setStep(resolved);
     pushAdvisor(spec.prompt);
-    showChipsForStep(step);
+    showChipsForStep(resolved);
   }
 
   function beginChipIntake() {
-    const step = nextChipStep(appStore.profile, { founder: founderMode() });
+    const step = nextChipStep(appStore.profile, chipCtx());
     if (!step) {
       void continueAfterChips();
       return;
@@ -189,8 +237,9 @@ export function createIntakeController(ui) {
     }
     if (!option.field || option.value == null || option.value === "") return false;
     if (!alreadyLogged) pushUser(option.label);
+    markStepComplete(step);
     appStore.profile = setUserProfileField(appStore.profile, option.field, option.value);
-    const next = nextChipStep(appStore.profile, { founder: founderMode() });
+    const next = nextChipStep(appStore.profile, chipCtx({ skipStep: step }));
     if (next) askChipStep(next);
     else await continueAfterChips();
     return true;
@@ -213,6 +262,7 @@ export function createIntakeController(ui) {
     }
 
     if (step === INTAKE_STEP.CLARIFYING) {
+      absorbClarifyingAnswer(trimmed);
       beginChipIntake();
       return true;
     }
