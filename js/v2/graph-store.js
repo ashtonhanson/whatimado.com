@@ -13,6 +13,33 @@ export function resetGraph() {
   graphStore.selectedId = null;
 }
 
+/** Snapshot for guest persistence. */
+export function serializeGraph() {
+  return {
+    nodes: graphStore.nodes.map((node) => ({ ...node })),
+    edges: graphStore.edges.map((edge) => ({ ...edge })),
+    selectedId: graphStore.selectedId
+  };
+}
+
+/** @param {unknown} graph */
+export function hydrateGraph(graph) {
+  const source = graph && typeof graph === "object" ? /** @type {{ nodes?: unknown, edges?: unknown, selectedId?: unknown }} */ (graph) : {};
+  if (!Array.isArray(source.nodes) || source.nodes.length === 0) {
+    resetGraph();
+    return;
+  }
+  graphStore.nodes = source.nodes
+    .filter((node) => node && typeof node === "object")
+    .map((node) => ({ .../** @type {GraphNode} */ (node) }));
+  graphStore.edges = Array.isArray(source.edges)
+    ? source.edges
+        .filter((edge) => edge && typeof edge === "object")
+        .map((edge) => ({ .../** @type {GraphEdge} */ (edge) }))
+    : [];
+  graphStore.selectedId = typeof source.selectedId === "string" ? source.selectedId : null;
+}
+
 /** @param {string} id @param {number} index */
 function sanitizePathId(id, index) {
   const base = String(id || "")

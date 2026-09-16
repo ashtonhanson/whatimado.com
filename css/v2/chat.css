@@ -1,0 +1,90 @@
+/* Intake chips + path-mode cards — stay inside the 720px chat column */
+
+.v2-intake-chips {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0.15rem;
+  pointer-events: auto;
+}
+
+.v2-intake-chips__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.v2-intake-chip {
+  cursor: pointer;
+  appearance: none;
+  padding: 0.42rem 0.78rem;
+  color: var(--v2-teal);
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
+  border-color: color-mix(in srgb, var(--v2-neon-teal) 55%, transparent);
+  box-shadow: none;
+  font-family: var(--v2-font-hero);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  text-transform: none;
+}
+
+.v2-intake-chip:hover:not(:disabled) {
+  border-color: var(--v2-neon-teal);
+  background: color-mix(in srgb, var(--v2-teal) 16%, transparent);
+  color: var(--v2-yellow);
+}
+
+.v2-intake-chip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.v2-intake-chips--path-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.v2-path-mode-card {
+  cursor: pointer;
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.28rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  color: var(--v2-text);
+  background: color-mix(in srgb, var(--v2-teal) 6%, transparent);
+  box-shadow: none;
+}
+
+.v2-path-mode-card:hover:not(:disabled) {
+  border-color: var(--v2-neon-teal);
+  background: color-mix(in srgb, var(--v2-teal) 14%, transparent);
+}
+
+.v2-path-mode-card:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.v2-path-mode-card__title {
+  font-family: var(--v2-font-hero);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--v2-yellow);
+}
+
+.v2-path-mode-card__desc {
+  font-family: var(--v2-font);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--v2-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}

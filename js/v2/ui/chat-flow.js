@@ -8,6 +8,19 @@ import {
 } from "../advisor.js";
 import { appendMessage, escapeHtml } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
+import { appStore, resetAppStore, touchJourney } from "../state/store.js";
+import { ensureJourneyStarted } from "../state/journey.js";
+import {
+  bindPersistLifecycle,
+  clearGuestJourney,
+  flushPersist,
+  restoreGuestJourney,
+  schedulePersist,
+  setPersistEnabled
+} from "../state/persistence.js";
+import { formatUserLocation } from "../state/location.js";
+import { createIntakeController } from "../intake/session.js";
+import { buildIntakeContextBlock } from "../intake/stability-gates.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -56,37 +69,41 @@ const DEMO_CHAT = [
  */
 export function initChatFlow(ctx) {
   const { frameEl, mapEl, mainEl, messagesEl, activePathEl, selectionPanel, pathCardsEl } = ctx;
+  const isDemo = new URLSearchParams(window.location.search).has("demo");
 
-  /** @type {{ phase: import("../phases.js").Phase, messages: { role: "user"|"assistant", content: string }[], turnCount: number, ghostDismissed: boolean, pathsGenerated: boolean, pathsGenerating: boolean }} */
-  const state = {
-    phase: PHASE.OPEN,
-    messages: [],
-    turnCount: 0,
-    ghostDismissed: false,
-    pathsGenerated: false,
-    pathsGenerating: false
-  };
+  setPersistEnabled(!isDemo);
+  bindPersistLifecycle();
 
   const layout = () => notifyFrameLayout({ frameEl, mapEl });
 
-  function setPhase(phase) {
-    const wasOpen = state.phase === PHASE.OPEN;
-    state.phase = phase;
-    applyPhaseToDom(document, phase, { ghostDismissed: state.ghostDismissed });
+  /**
+   * @param {import("../phases.js").Phase} phase
+   * @param {{ animate?: boolean, instant?: boolean }} [options]
+   */
+  function setPhase(phase, { animate = true, instant = false } = {}) {
+    const wasOpen =
+      appStore.journey.phase === PHASE.OPEN || document.body.dataset.phase === PHASE.OPEN;
+    appStore.journey.phase = phase;
+    touchJourney();
+    applyPhaseToDom(document, phase, {
+      ghostDismissed: appStore.journey.ghostDismissed,
+      instant
+    });
     if (wasOpen && phase !== PHASE.OPEN) {
-      frameEl?.onHeroDismissed({ animate: true });
+      frameEl?.onHeroDismissed({ animate });
     }
+    schedulePersist();
   }
 
   function setComposerEnabled(enabled) {
     frameEl?.setComposerEnabled(enabled);
   }
 
-  function dismissGhostMap() {
-    if (state.ghostDismissed) return;
-    state.ghostDismissed = true;
-    mapEl?.dismissGhost();
-    setPhase(state.phase);
+  function dismissGhostMap({ instant = false } = {}) {
+    if (appStore.journey.ghostDismissed && !instant) return;
+    appStore.journey.ghostDismissed = true;
+    mapEl?.dismissGhost({ instant });
+    setPhase(appStore.journey.phase, { animate: !instant, instant });
   }
 
   function renderPathCards() {
@@ -120,6 +137,22 @@ export function initChatFlow(ctx) {
         handleNodeSelect(id);
       });
     });
+
+    if (graphStore.selectedId) {
+      pathCardsEl.querySelector(`[data-path-id="${CSS.escape(graphStore.selectedId)}"]`)?.classList.add("is-selected");
+    }
+  }
+
+  /** @param {import("../graph-store.js").GraphNode} node */
+  function showSelectedPath(node) {
+    const displayTitle = node.title || node.label;
+    if (selectionPanel) {
+      selectionPanel.classList.remove("hidden");
+      selectionPanel.innerHTML = `<h2 class="v2-section-label">Selected path</h2><p><strong>${escapeHtml(displayTitle)}</strong>${node.description ? ` — ${escapeHtml(node.description)}` : ""}</p>`;
+    }
+    if (activePathEl) {
+      activePathEl.innerHTML = `<strong>${escapeHtml(displayTitle)}</strong>Ready for missions next.`;
+    }
   }
 
   function applyPathsToMap() {
@@ -149,26 +182,38 @@ export function initChatFlow(ctx) {
   }
 
   async function generateAdvisorPaths() {
-    if (state.pathsGenerated || state.pathsGenerating) return;
-    state.pathsGenerating = true;
+    if (appStore.journey.pathsGenerated || appStore.pathsGenerating) return;
+    appStore.pathsGenerating = true;
     setComposerEnabled(false);
 
     const typingEl = appendMessage(messagesEl, "advisor", "Mapping a few paths that could fit…", { typing: true });
     layout();
 
     try {
-      const raw = await callAdvisor(buildPathsPrompt(state.messages), {
-        maxTokens: 700,
-        feature: "v2_paths"
-      });
+      const raw = await callAdvisor(
+        buildPathsPrompt(
+          appStore.journey.messages,
+          buildIntakeContextBlock(
+            appStore.profile,
+            formatUserLocation(appStore.location),
+            appStore.journey.pathMode
+          )
+        ),
+        {
+          maxTokens: 700,
+          feature: "v2_paths"
+        }
+      );
       const { intro, paths } = parseAdvisorPathsResponse(raw);
 
       typingEl.remove();
       loadAdvisorPaths(paths);
       applyPathsToMap();
       appendMessage(messagesEl, "advisor", intro);
-      state.messages.push({ role: "assistant", content: intro });
-      state.pathsGenerated = true;
+      appStore.journey.messages.push({ role: "assistant", content: intro });
+      appStore.journey.pathsGenerated = true;
+      touchJourney();
+      flushPersist();
       layout();
     } catch (error) {
       typingEl.remove();
@@ -179,9 +224,11 @@ export function initChatFlow(ctx) {
       );
       layout();
       fallbackPaths();
-      state.pathsGenerated = true;
+      appStore.journey.pathsGenerated = true;
+      touchJourney();
+      flushPersist();
     } finally {
-      state.pathsGenerating = false;
+      appStore.pathsGenerating = false;
       setComposerEnabled(true);
       if (window.matchMedia("(max-width: 900px)").matches) {
         frameEl?.composerInput?.blur();
@@ -191,87 +238,162 @@ export function initChatFlow(ctx) {
     }
   }
 
+  const intake = createIntakeController({
+    messagesEl,
+    layout,
+    flush: flushPersist,
+    setComposerEnabled,
+    onComplete: async () => {
+      if (appStore.journey.phase === PHASE.EXPLORING) setPhase(PHASE.COACHING);
+      if (!appStore.journey.pathsGenerated) await generateAdvisorPaths();
+    }
+  });
+
   /** @param {string} nodeId */
   function handleNodeSelect(nodeId) {
     const node = graphStore.nodes.find((n) => n.id === nodeId);
     if (!node || node.type === "start") return;
     selectGraphNode(nodeId);
     mapEl?.setSelectedNode(nodeId);
+    appStore.journey.selectedPathId = nodeId;
     setPhase(PHASE.PATH_SELECTED);
-    const displayTitle = node.title || node.label;
-    if (selectionPanel) {
-      selectionPanel.classList.remove("hidden");
-      selectionPanel.innerHTML = `<h2 class="v2-section-label">Selected path</h2><p><strong>${escapeHtml(displayTitle)}</strong>${node.description ? ` — ${escapeHtml(node.description)}` : ""}</p>`;
-    }
-    if (activePathEl) {
-      activePathEl.innerHTML = `<strong>${escapeHtml(displayTitle)}</strong>Ready for missions next.`;
-    }
+    showSelectedPath(node);
     layout();
   }
 
   function seedHypotheticalChat() {
     if (!messagesEl) return;
 
+    ensureJourneyStarted(appStore.journey);
     for (const turn of DEMO_CHAT) {
       appendMessage(messagesEl, turn.role, turn.content);
-      state.messages.push({
+      appStore.journey.messages.push({
         role: turn.role === "user" ? "user" : "assistant",
         content: turn.content
       });
     }
 
-    state.turnCount = 3;
-    state.ghostDismissed = true;
+    appStore.journey.turnCount = 3;
+    appStore.journey.ghostDismissed = true;
+    appStore.journey.intakeComplete = true;
     mapEl?.dismissGhost();
     setPhase(PHASE.COACHING);
     layout();
     void generateAdvisorPaths();
   }
 
+  function restoreSessionUi() {
+    if (!messagesEl) return false;
+    const journey = appStore.journey;
+    if (!journey.messages.length) return false;
+
+    for (const turn of journey.messages) {
+      appendMessage(messagesEl, turn.role === "user" ? "user" : "advisor", turn.content);
+    }
+
+    if (journey.ghostDismissed) {
+      mapEl?.dismissGhost({ instant: true });
+    }
+
+    const hasPaths = graphStore.nodes.some((node) => node.type === "path");
+    if (hasPaths) {
+      mapEl?.syncLiveFromStore();
+      renderPathCards();
+    }
+
+    const selected =
+      graphStore.nodes.find((node) => node.id === (journey.selectedPathId || graphStore.selectedId)) ||
+      null;
+    if (selected && selected.type !== "start") {
+      selectGraphNode(selected.id);
+      mapEl?.setSelectedNode(selected.id);
+      showSelectedPath(selected);
+    } else if (hasPaths && activePathEl) {
+      activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
+    }
+
+    setPhase(journey.phase, { animate: false, instant: true });
+    intake.restoreChips();
+    layout();
+    return true;
+  }
+
+  function startNewJourney() {
+    setPersistEnabled(true);
+    clearGuestJourney();
+    resetAppStore();
+    const url = new URL(window.location.href);
+    url.searchParams.delete("demo");
+    window.location.assign(`${url.pathname}${url.hash}`);
+  }
+
   async function handleSubmit(text) {
     const trimmed = text.trim();
     if (!trimmed) return;
 
+    ensureJourneyStarted(appStore.journey);
     dismissGhostMap();
     setComposerEnabled(false);
 
-    if (state.phase === PHASE.OPEN) {
+    if (appStore.journey.phase === PHASE.OPEN) {
       setPhase(PHASE.EXPLORING);
     }
 
     appendMessage(messagesEl, "user", trimmed);
     layout();
-    state.messages.push({ role: "user", content: trimmed });
-    state.turnCount += 1;
-
-    const typingEl = appendMessage(messagesEl, "advisor", "…", { typing: true });
-    layout();
+    appStore.journey.messages.push({ role: "user", content: trimmed });
+    appStore.journey.turnCount += 1;
+    touchJourney();
+    flushPersist();
 
     try {
-      const reply = await callAdvisor(buildExplorationPrompt(state.messages), {
-        maxTokens: 450,
-        feature: "v2_exploration"
-      });
-      typingEl.remove();
-      const finalText = reply || "I'm here — tell me a bit more about what you're hoping changes.";
-      appendMessage(messagesEl, "advisor", finalText);
-      layout();
-      state.messages.push({ role: "assistant", content: finalText });
+      if (intake.isBlocking()) {
+        const handled = await intake.handleTypedAnswer(trimmed);
+        if (handled) return;
+      }
 
-      if (state.turnCount >= 2 && state.phase === PHASE.EXPLORING) {
-        setPhase(PHASE.COACHING);
+      if (!appStore.journey.intakeComplete && !appStore.journey.pathMode) {
+        intake.startAfterFirstPrompt();
+        return;
       }
-      if (state.turnCount >= PATHS_READY_TURN && state.phase === PHASE.COACHING && !state.pathsGenerated) {
-        await generateAdvisorPaths();
-      }
-    } catch (error) {
-      typingEl.remove();
-      appendMessage(
-        messagesEl,
-        "advisor",
-        `I couldn't reach the advisor right now (${error?.message || "unknown error"}). Check your connection or OpenRouter balance.`
-      );
+
+      const typingEl = appendMessage(messagesEl, "advisor", "…", { typing: true });
       layout();
+
+      try {
+        const reply = await callAdvisor(buildExplorationPrompt(appStore.journey.messages), {
+          maxTokens: 450,
+          feature: "v2_exploration"
+        });
+        typingEl.remove();
+        const finalText = reply || "I'm here — tell me a bit more about what you're hoping changes.";
+        appendMessage(messagesEl, "advisor", finalText);
+        layout();
+        appStore.journey.messages.push({ role: "assistant", content: finalText });
+        touchJourney();
+        flushPersist();
+
+        if (appStore.journey.turnCount >= 2 && appStore.journey.phase === PHASE.EXPLORING) {
+          setPhase(PHASE.COACHING);
+        }
+        if (
+          appStore.journey.intakeComplete &&
+          appStore.journey.turnCount >= PATHS_READY_TURN &&
+          appStore.journey.phase === PHASE.COACHING &&
+          !appStore.journey.pathsGenerated
+        ) {
+          await generateAdvisorPaths();
+        }
+      } catch (error) {
+        typingEl.remove();
+        appendMessage(
+          messagesEl,
+          "advisor",
+          `I couldn't reach the advisor right now (${error?.message || "unknown error"}). Check your connection or OpenRouter balance.`
+        );
+        layout();
+        flushPersist();
+      }
     } finally {
       setComposerEnabled(true);
       if (window.matchMedia("(max-width: 900px)").matches) {
@@ -329,12 +451,15 @@ export function initChatFlow(ctx) {
   });
 
   document.getElementById("nav-home")?.addEventListener("click", () => {
-    window.location.reload();
+    startNewJourney();
   });
 
   window.addEventListener("resize", () => layout());
 
-  applyPhaseToDom(document, PHASE.OPEN, { ghostDismissed: false });
+  const restored = !isDemo && restoreGuestJourney() && restoreSessionUi();
+  if (!restored) {
+    applyPhaseToDom(document, PHASE.OPEN, { ghostDismissed: false });
+  }
 
   const MOBILE_LAYOUT_MQ = window.matchMedia("(max-width: 900px)");
   MOBILE_LAYOUT_MQ.addEventListener("change", () => {
@@ -357,7 +482,7 @@ export function initChatFlow(ctx) {
     });
   }
 
-  if (new URLSearchParams(window.location.search).has("demo")) {
+  if (isDemo) {
     requestAnimationFrame(() => seedHypotheticalChat());
   }
 
@@ -365,5 +490,5 @@ export function initChatFlow(ctx) {
     frameEl?.focusComposer();
   }
 
-  return { state, handleSubmit, handleNodeSelect };
+  return { store: appStore, handleSubmit, handleNodeSelect, startNewJourney };
 }

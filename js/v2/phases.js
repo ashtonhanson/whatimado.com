@@ -43,9 +43,10 @@ export function getPhaseVisibility(phase, options = {}) {
 /**
  * @param {Document} doc
  * @param {Phase} phase
- * @param {{ ghostDismissed?: boolean }} [options]
+ * @param {{ ghostDismissed?: boolean, instant?: boolean }} [options]
  */
 export function applyPhaseToDom(doc, phase, options = {}) {
+  const { instant = false } = options;
   const body = doc.body;
   body.dataset.phase = phase;
   const vis = getPhaseVisibility(phase, options);
@@ -61,10 +62,13 @@ export function applyPhaseToDom(doc, phase, options = {}) {
   const kicker = doc.getElementById("frame-kicker");
   if (kicker) {
     const showKicker = phase === PHASE.OPEN;
-    kicker.classList.toggle("is-dismissing", !showKicker);
     if (showKicker) {
-      kicker.classList.remove("hidden");
+      kicker.classList.remove("hidden", "is-dismissing");
+    } else if (instant) {
+      kicker.classList.remove("is-dismissing");
+      kicker.classList.add("hidden");
     } else {
+      kicker.classList.add("is-dismissing");
       window.setTimeout(() => {
         if (doc.body.dataset.phase !== PHASE.OPEN) {
           kicker.classList.add("hidden");

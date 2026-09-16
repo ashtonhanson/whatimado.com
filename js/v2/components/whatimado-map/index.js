@@ -306,9 +306,17 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** Fade out ambient ghost (Step B — full personalize in Step D) */
-  dismissGhost() {
-    if (this._ghostDismissed) return;
+  dismissGhost({ instant = false } = {}) {
+    if (this._ghostDismissed && !instant) return;
     this._ghostDismissed = true;
+    if (instant) {
+      this.classList.remove("is-dismissing-ghost");
+      this.classList.add("is-ghost-dismissed");
+      if (this.getAttribute("mode") === "ghost") {
+        this.setAttribute("mode", "faint");
+      }
+      return;
+    }
     this.classList.add("is-dismissing-ghost");
     window.setTimeout(() => {
       this.classList.add("is-ghost-dismissed");
