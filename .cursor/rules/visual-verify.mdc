@@ -1,0 +1,24 @@
+---
+description: Require before/after screenshots of the live UI before claiming a visual change is done
+alwaysApply: true
+---
+
+# Visual verify (whatimado)
+
+Do not call a UI change done from computed styles, class names, or a single rest-state screenshot.
+
+## Required evidence
+
+For hover, glow, selection, motion, or layout:
+
+1. Screenshot the **rest** state of the affected element (crop to the map/node/control, not only the full page).
+2. Drive a **real pointer** (`browser_mouse_click_xy` / drag) to the visible pixels of that element. Synthetic `MouseEvent` / `setNodeHover` is not enough.
+3. Screenshot the **after** state of the same crop.
+4. Look at both images. If a human cannot tell them apart, the change is **not done**.
+5. Click coordinate tools use **screenshot pixels**, not `getBoundingClientRect` CSS pixels. Take a fresh screenshot immediately before each click.
+
+## Fail closed
+
+- Styles say `is-hover` / `scale(0.78)` / drop-shadow, but the after screenshot looks like rest → keep working.
+- Full-page screenshot hides 15px nodes → crop to `whatimado-map .whatimado-map__stage`.
+- Cursor embedded browser has `prefers-reduced-motion: reduce`; still require a visible glow/size change, and say so if spring travel is flattened.

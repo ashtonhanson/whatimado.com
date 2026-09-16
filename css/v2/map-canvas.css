@@ -145,6 +145,41 @@ whatimado-map .whatimado-map__node-hit {
   cursor: pointer;
 }
 
+/*
+ * Idle float — CSS only, no pointer required. Lives on a wrapper so hover/select
+ * scale (transform on .whatimado-map__node-body) cannot replace this animation.
+ */
+whatimado-map .whatimado-map__node-float {
+  --node-float-amp: -12px;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: whatimado-node-float;
+  animation-duration: var(--node-float-duration, 4.2s);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-delay: var(--node-float-delay, 0s);
+  animation-play-state: running;
+}
+
+whatimado-map .whatimado-map__node--live:hover .whatimado-map__node-float,
+whatimado-map .whatimado-map__node--live.is-hover .whatimado-map__node-float,
+whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-float,
+whatimado-map .whatimado-map__node--live.is-dragging .whatimado-map__node-float,
+whatimado-map .whatimado-map__node--live.is-path-preview .whatimado-map__node-float {
+  animation-play-state: running;
+}
+
+@keyframes whatimado-node-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, var(--node-float-amp, -12px), 0);
+  }
+}
+
 whatimado-map.is-dismissing-ghost .whatimado-map__layer--ghost {
   opacity: 0;
   transition: opacity 0.45s ease;
@@ -428,5 +463,10 @@ whatimado-map .whatimado-map__node--live.is-selected.is-path-preview .whatimado-
   whatimado-map .whatimado-map__node--live.is-selected.is-dragging .whatimado-map__node-aura,
   whatimado-map .whatimado-map__node--live.is-selected.is-path-preview .whatimado-map__node-aura {
     animation-duration: 4.2s;
+  }
+
+  /* Keep the idle bob running; only shorten travel so it is not a large pan */
+  whatimado-map .whatimado-map__node-float {
+    --node-float-amp: -8px;
   }
 }

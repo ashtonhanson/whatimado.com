@@ -171,6 +171,9 @@ export class WhatimadoFrame extends HTMLElement {
     this.removeEventListener("pointermove", this._onDragPointerMove);
     this.removeEventListener("pointerup", this._onDragPointerUp);
     this.removeEventListener("pointercancel", this._onDragPointerUp);
+    document.removeEventListener("pointermove", this._onDragPointerMove);
+    document.removeEventListener("pointerup", this._onDragPointerUp);
+    document.removeEventListener("pointercancel", this._onDragPointerUp);
     this._clearBounceReleaseTimer();
     this._clearSpringCleanupTimer();
     this._breathe?.stop();
@@ -291,6 +294,9 @@ export class WhatimadoFrame extends HTMLElement {
     if (!this._dock?.onDragStart(event)) return;
     event.preventDefault();
     this._dragRail?.setPointerCapture(event.pointerId);
+    document.addEventListener("pointermove", this._onDragPointerMove);
+    document.addEventListener("pointerup", this._onDragPointerUp);
+    document.addEventListener("pointercancel", this._onDragPointerUp);
   }
 
   /** @param {PointerEvent} event */
@@ -300,6 +306,9 @@ export class WhatimadoFrame extends HTMLElement {
 
   /** @param {PointerEvent} event */
   _handleDragPointerUp(event) {
+    document.removeEventListener("pointermove", this._onDragPointerMove);
+    document.removeEventListener("pointerup", this._onDragPointerUp);
+    document.removeEventListener("pointercancel", this._onDragPointerUp);
     if (this._dragRail?.hasPointerCapture(event.pointerId)) {
       try {
         this._dragRail.releasePointerCapture(event.pointerId);

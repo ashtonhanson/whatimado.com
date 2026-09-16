@@ -448,7 +448,8 @@ export class FrameDockController {
         getComputedStyle(document.documentElement).getPropertyValue("--whatimado-frame-top-default")
       ) || 42;
 
-    this._docked = false;
+    /** Draggable from landing — stay at the current vh until the user actually pulls */
+    this._docked = true;
     this.activeSnap = SNAP.HOME;
     this._anchors = null;
     this._defaultFrameHeight = null;
@@ -463,7 +464,8 @@ export class FrameDockController {
     document.documentElement.style.removeProperty("--v2-docked-frame-top");
     document.documentElement.style.setProperty("--whatimado-frame-top", `${openVh}vh`);
 
-    this.frameEl.classList.remove("is-docked", "is-dragging", "is-animating", "is-gliding", "is-settling");
+    this.frameEl.classList.add("is-docked");
+    this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
     this.frameEl.removeAttribute("data-snap");
     this.frameEl.style.removeProperty("top");
     document.body.classList.remove("is-hero-dismissing");
@@ -572,6 +574,11 @@ export class FrameDockController {
     this._dragSamples = [{ y: event.clientY, t: performance.now() }];
     this._refreshAnchors();
 
+    /** Bake CSS vh top into main-relative px so the first move is 1:1 */
+    const mainRect = this.mainEl.getBoundingClientRect();
+    const frameRect = this.frameEl.getBoundingClientRect();
+    this._topPx = frameRect.top - mainRect.top;
+
     this._pointer = {
       pointerId: event.pointerId,
       startY: event.clientY,
@@ -644,11 +651,17 @@ export class FrameDockController {
     }
 
     this._dragging = false;
+    const startTop = this._pointer.startTop;
     this._pointer = null;
     this.frameEl.classList.remove("is-dragging");
 
     const releaseVelocity = this._motionEnabled ? computeReleaseVelocity(this._dragSamples) : 0;
     this._dragSamples = [];
+
+    /** Clicking the rail without a real pull must not snap away from the landing spot */
+    if (Math.abs(this._topPx - startTop) < 6 && Math.abs(releaseVelocity) < GLIDE_MIN_SPEED) {
+      return;
+    }
 
     if (Math.abs(releaseVelocity) < GLIDE_MIN_SPEED || !this._motionEnabled) {
       this._finalizeSnap(releaseVelocity);
