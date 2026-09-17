@@ -50,6 +50,8 @@ export class FrameDockController {
     this._docked = false;
     /** @type {boolean} */
     this._dragging = false;
+    /** @type {number|null} */
+    this._dimMapBottom = null;
     /** @type {boolean} */
     this._gliding = false;
     /** @type {boolean} */
@@ -256,6 +258,7 @@ export class FrameDockController {
     this.frameEl.style.removeProperty("top");
     this.frameEl.classList.add("is-docked", "is-mobile-docked");
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
+    document.body.classList.remove("is-frame-dragging");
     this.frameEl.removeAttribute("data-snap");
     document.body.classList.remove("is-hero-dismissing");
 
@@ -466,6 +469,7 @@ export class FrameDockController {
 
     this.frameEl.classList.add("is-docked");
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
+    document.body.classList.remove("is-frame-dragging");
     this.frameEl.removeAttribute("data-snap");
     this.frameEl.style.removeProperty("top");
     document.body.classList.remove("is-hero-dismissing");
@@ -581,6 +585,12 @@ export class FrameDockController {
     const frameRect = this.frameEl.getBoundingClientRect();
     this._topPx = frameRect.top - mainRect.top;
 
+    const mapEl = document.getElementById("possibility-map");
+    const mapStage = mapEl?.querySelector(".whatimado-map__stage");
+    this._dimMapBottom = mapStage
+      ? mapStage.getBoundingClientRect().bottom - mainRect.top
+      : this.mainEl.clientHeight * 0.42;
+
     this._pointer = {
       pointerId: event.pointerId,
       startY: event.clientY,
@@ -590,6 +600,8 @@ export class FrameDockController {
 
     this.frameEl.classList.add("is-dragging");
     this.frameEl.classList.remove("is-animating");
+    document.body.classList.add("is-frame-dragging");
+    this.frameEl.dispatchEvent(new CustomEvent("frame-drag-start", { bubbles: true }));
     return true;
   }
 
@@ -656,6 +668,9 @@ export class FrameDockController {
     const startTop = this._pointer.startTop;
     this._pointer = null;
     this.frameEl.classList.remove("is-dragging");
+    document.body.classList.remove("is-frame-dragging");
+    this.frameEl.dispatchEvent(new CustomEvent("frame-drag-end", { bubbles: true }));
+    this._dimMapBottom = null;
 
     const releaseVelocity = this._motionEnabled ? computeReleaseVelocity(this._dragSamples) : 0;
     this._dragSamples = [];
@@ -886,7 +901,9 @@ export class FrameDockController {
     }
 
     if (!this._mobileMode) {
-      this._setMapDim(mapDimStrength(topPx, this.mainEl));
+      this._setMapDim(
+        mapDimStrength(topPx, this.mainEl, this._dragging ? this._dimMapBottom ?? undefined : undefined)
+      );
     }
     if (layout) {
       this.onLayout();

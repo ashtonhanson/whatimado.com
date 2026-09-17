@@ -246,6 +246,11 @@ export class WhatimadoFrame extends HTMLElement {
     this._dock?.exitMobileMode();
   }
 
+  /** True while the user is dragging the prompt frame. */
+  isDragging() {
+    return Boolean(this._dock?._dragging);
+  }
+
   /** True while the frame is easing into dock after hero dismiss. */
   isDockSettling() {
     return this._dock?.isInDockTransition ?? false;
@@ -293,6 +298,7 @@ export class WhatimadoFrame extends HTMLElement {
   _handleDragPointerDown(event) {
     if (!this._dock?.onDragStart(event)) return;
     event.preventDefault();
+    event.stopPropagation();
     this._dragRail?.setPointerCapture(event.pointerId);
     document.addEventListener("pointermove", this._onDragPointerMove);
     document.addEventListener("pointerup", this._onDragPointerUp);
@@ -400,7 +406,6 @@ export class WhatimadoFrame extends HTMLElement {
     this._resizeObserver = new ResizeObserver(() => this.notifyContentChange());
     this._resizeObserver.observe(this._body);
     if (this._bodyContent) this._resizeObserver.observe(this._bodyContent);
-    this._resizeObserver.observe(this);
   }
 
   _clearBounceReleaseTimer() {

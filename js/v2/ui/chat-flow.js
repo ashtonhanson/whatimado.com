@@ -346,6 +346,7 @@ export function initChatFlow(ctx) {
 
   mainEl?.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
+    if (document.body.classList.contains("is-frame-dragging") || frameEl?.isDragging?.()) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (target.closest("whatimado-frame")) return;
@@ -370,20 +371,11 @@ export function initChatFlow(ctx) {
     void handleSubmit(detail?.text || "");
   });
 
-  frameEl?.addEventListener("dock-progress", (event) => {
-    if (window.matchMedia("(max-width: 900px)").matches) return;
-    const frameTop = /** @type {CustomEvent<{ frameTop: number }>} */ (event).detail?.frameTop;
-    if (typeof frameTop === "number") {
-      mapEl?.syncGravityForFrameTop(frameTop, { animate: false });
-    }
+  frameEl?.addEventListener("frame-drag-start", () => {
+    mapEl?.cancelPanFromFrameDrag();
   });
 
   frameEl?.addEventListener("dock-settled", () => {
-    if (window.matchMedia("(max-width: 900px)").matches) {
-      mapEl?.lockFromFrame();
-      return;
-    }
-    mapEl?.syncFrameGravity({ animate: false });
     mapEl?.lockFromFrame();
   });
 

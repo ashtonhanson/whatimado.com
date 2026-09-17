@@ -30,6 +30,7 @@ import {
   getNodeRadii,
   readGraphShiftY,
   svgScale,
+  svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
 import {
@@ -106,8 +107,16 @@ export class WhatimadoMap extends HTMLElement {
     this._panGliding = false;
     /** @type {number|null} */
     this._panGlideRaf = null;
-    /** @type {{ pointerId: number, startPanX: number, startPanY: number, startClientX: number, startClientY: number }|null} */
+    /** @type {{ pointerId: number, startPanX: number, startPanY: number, startClientX: number, startClientY: number, scaleX: number, scaleY: number }|null} */
     this._panPointer = null;
+    /** @type {number|null} */
+    this._panMoveRaf = null;
+    /** @type {number} */
+    this._panPendingClientX = 0;
+    /** @type {number} */
+    this._panPendingClientY = 0;
+    /** @type {Element|null} */
+    this._panCaptureEl = null;
     /** @type {number|null} */
     this._panResetRaf = null;
     /** @type {number|null} */
@@ -207,14 +216,7 @@ export class WhatimadoMap extends HTMLElement {
       this.loadAmbientLiveGraph();
     }
     this._refreshDrift();
-    const isOpen = document.body.dataset.phase === "open";
-    this._frameCoupled = isOpen;
     requestAnimationFrame(() => {
-      if (isOpen) {
-        this.syncFrameGravity({ animate: false });
-        return;
-      }
-      /** Mid-session reload — align once, then freeze */
       this._frameCoupled = true;
       this.syncFrameGravity({ animate: false });
       this.lockFromFrame();
@@ -230,11 +232,31 @@ export class WhatimadoMap extends HTMLElement {
   unlockFrameCoupling() {
     this._frameCoupled = true;
     this.syncFrameGravity({ animate: false });
+    this.lockFromFrame();
+  }
+
+  /** Frame slide must not take the constellation with it. */
+  cancelPanFromFrameDrag() {
+    this._cancelPanMoveFrame();
+    this._stopPanGlide();
+    if (this._gravityRaf !== null) {
+      cancelAnimationFrame(this._gravityRaf);
+      this._gravityRaf = null;
+    }
+    this._releasePanCapture();
+    if (this._globalPanActive) {
+      this._detachGlobalPanListeners();
+    }
+    this._panPointer = null;
+    this._panSamples = [];
+    this.classList.remove("is-panning");
+    this.setNodeHover(null);
   }
 
   disconnectedCallback() {
     this._stopDriftLoop();
     this._stopPanGlide();
+    this.cancelPanFromFrameDrag();
     if (this._panResetRaf !== null) {
       cancelAnimationFrame(this._panResetRaf);
       this._panResetRaf = null;
@@ -409,9 +431,10 @@ export class WhatimadoMap extends HTMLElement {
   /**
    * Release velocity for canvas pan — same friction family as frame/node glide.
    * @param {{ x: number, y: number, t: number }[]} samples
-   * @param {number} scale svg units per pixel
+   * @param {number} scaleX svg units per pixel
+   * @param {number} [scaleY]
    */
-  _computePanReleaseVelocity(samples, scale) {
+  _computePanReleaseVelocity(samples, scaleX, scaleY = scaleX) {
     if (samples.length < 2) return { vx: 0, vy: 0 };
 
     const last = samples[samples.length - 1];
@@ -421,8 +444,8 @@ export class WhatimadoMap extends HTMLElement {
 
     const pxPerMsX = (last.x - prev.x) / dt;
     const pxPerMsY = (last.y - prev.y) / dt;
-    const pxPerFrameX = pxPerMsX * (1000 / 60) * scale;
-    const pxPerFrameY = pxPerMsY * (1000 / 60) * scale;
+    const pxPerFrameX = pxPerMsX * (1000 / 60) * scaleX;
+    const pxPerFrameY = pxPerMsY * (1000 / 60) * scaleY;
 
     let vx = pxPerFrameX * GLIDE_VEL_SCALE;
     let vy = pxPerFrameY * GLIDE_VEL_SCALE;
@@ -619,10 +642,7 @@ export class WhatimadoMap extends HTMLElement {
     event.preventDefault();
     this._stopPanGlide();
     if (this._panPointer) {
-      this._detachGlobalPanListeners();
-      this._panPointer = null;
-      this._panSamples = [];
-      this.classList.remove("is-panning");
+      this.cancelPanFromFrameDrag();
     }
 
     const center = this._touchCenter(event.touches);
@@ -689,19 +709,45 @@ export class WhatimadoMap extends HTMLElement {
     this._globalPanActive = false;
   }
 
+  _releasePanCapture() {
+    const el = this._panCaptureEl;
+    const pointer = this._panPointer;
+    this._panCaptureEl = null;
+    if (!el || !pointer) return;
+    try {
+      if (el.hasPointerCapture?.(pointer.pointerId)) {
+        el.releasePointerCapture(pointer.pointerId);
+      }
+    } catch {
+      /* already released */
+    }
+  }
+
+  _cancelPanMoveFrame() {
+    if (this._panMoveRaf !== null) {
+      cancelAnimationFrame(this._panMoveRaf);
+      this._panMoveRaf = null;
+    }
+  }
+
   /** @param {PointerEvent} event */
   _finishPanPointer(event) {
     if (!this._panPointer || event.pointerId !== this._panPointer.pointerId) return;
 
+    this._flushPanMove();
+    this._cancelPanMoveFrame();
+
     const startPanX = this._panPointer.startPanX;
     const startPanY = this._panPointer.startPanY;
+    const scaleX = this._panPointer.scaleX;
+    const scaleY = this._panPointer.scaleY;
 
+    this._releasePanCapture();
     if (this._globalPanActive) {
       this._detachGlobalPanListeners();
     }
 
-    const scale = svgScale(this._svg);
-    const { vx, vy } = this._computePanReleaseVelocity(this._panSamples, scale);
+    const { vx, vy } = this._computePanReleaseVelocity(this._panSamples, scaleX, scaleY);
     this._panSamples = [];
     this._panPointer = null;
     this.classList.remove("is-panning");
@@ -726,9 +772,11 @@ export class WhatimadoMap extends HTMLElement {
     if (event.button !== 0) return;
     if (this._pinch) return;
     if (this.getAttribute("mode") === "hidden") return;
+    if (document.body.classList.contains("is-frame-dragging")) return;
 
     const target = event.target;
     if (!(target instanceof Element)) return;
+    if (target.closest("whatimado-frame")) return;
     if (target.closest(".whatimado-map__node")) return;
     if (target.closest(".whatimado-map__you-btn")) return;
 
@@ -739,6 +787,10 @@ export class WhatimadoMap extends HTMLElement {
   _beginPanPointer(event) {
     event.preventDefault();
     this._stopPanGlide();
+    this._cancelPanMoveFrame();
+
+    const { x: scaleX, y: scaleY } = svgScaleXY(this._svg);
+    const captureEl = event.target instanceof Element ? event.target : this._panSurface;
 
     this._globalPanActive = true;
     document.addEventListener("pointermove", this._onGlobalPanMove);
@@ -746,13 +798,23 @@ export class WhatimadoMap extends HTMLElement {
     document.addEventListener("pointercancel", this._onGlobalPanUp);
 
     this._panSamples = [{ x: event.clientX, y: event.clientY, t: performance.now() }];
+    this._panPendingClientX = event.clientX;
+    this._panPendingClientY = event.clientY;
     this._panPointer = {
       pointerId: event.pointerId,
       startPanX: this._panX,
       startPanY: this._panY,
       startClientX: event.clientX,
-      startClientY: event.clientY
+      startClientY: event.clientY,
+      scaleX,
+      scaleY
     };
+    this._panCaptureEl = captureEl;
+    try {
+      captureEl?.setPointerCapture?.(event.pointerId);
+    } catch {
+      this._panCaptureEl = null;
+    }
     this.classList.add("is-panning");
   }
 
@@ -796,6 +858,10 @@ export class WhatimadoMap extends HTMLElement {
    */
   _handleHoverPointerMove(event) {
     if ("pointerType" in event && event.pointerType === "touch") return;
+    if (document.body.classList.contains("is-frame-dragging") || this._panPointer || this._pinch) {
+      if (this._hoverNodeId) this.setNodeHover(null);
+      return;
+    }
     this._lastHoverClient.x = event.clientX;
     this._lastHoverClient.y = event.clientY;
     if (this._hoverRaf !== null) return;
@@ -1370,17 +1436,32 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {PointerEvent} event */
   _handlePanMove(event) {
-    if (!this._panPointer) return;
+    if (!this._panPointer || event.pointerId !== this._panPointer.pointerId) return;
+    if (document.body.classList.contains("is-frame-dragging")) {
+      this.cancelPanFromFrameDrag();
+      return;
+    }
 
+    this._panPendingClientX = event.clientX;
+    this._panPendingClientY = event.clientY;
     this._panSamples.push({ x: event.clientX, y: event.clientY, t: performance.now() });
     if (this._panSamples.length > 8) this._panSamples.shift();
 
-    const scale = svgScale(this._svg);
-    const dx = (event.clientX - this._panPointer.startClientX) * scale;
-    const dy = (event.clientY - this._panPointer.startClientY) * scale;
+    if (this._panMoveRaf !== null) return;
+    this._panMoveRaf = requestAnimationFrame(() => {
+      this._panMoveRaf = null;
+      this._flushPanMove();
+    });
+  }
 
-    this._panX = this._panPointer.startPanX + dx;
-    this._panY = this._panPointer.startPanY + dy;
+  _flushPanMove() {
+    const pointer = this._panPointer;
+    if (!pointer) return;
+
+    const dx = (this._panPendingClientX - pointer.startClientX) * pointer.scaleX;
+    const dy = (this._panPendingClientY - pointer.startClientY) * pointer.scaleY;
+    this._panX = pointer.startPanX + dx;
+    this._panY = pointer.startPanY + dy;
     this._applyPanTransform();
   }
 

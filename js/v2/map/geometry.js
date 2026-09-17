@@ -105,12 +105,27 @@ export function readGraphShiftY() {
   return -frac * VIEW_H;
 }
 
+/**
+ * SVG units per screen pixel from the live CTM (handles letterboxing).
+ * @param {SVGSVGElement|null} svg
+ * @returns {{ x: number, y: number }}
+ */
+export function svgScaleXY(svg) {
+  if (!svg) return { x: 1, y: 1 };
+  const ctm = svg.getScreenCTM();
+  if (ctm && Math.abs(ctm.a) > 1e-6 && Math.abs(ctm.d) > 1e-6) {
+    return { x: 1 / Math.abs(ctm.a), y: 1 / Math.abs(ctm.d) };
+  }
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: rect.width > 0 ? VIEW_W / rect.width : 1,
+    y: rect.height > 0 ? VIEW_H / rect.height : 1
+  };
+}
+
 /** SVG units per screen pixel — used for hand-tool canvas panning */
 export function svgScale(svg) {
-  if (!svg) return 1;
-  const rect = svg.getBoundingClientRect();
-  if (rect.width <= 0) return 1;
-  return VIEW_W / rect.width;
+  return svgScaleXY(svg).x;
 }
 
 /** Read node radii from CSS tokens so sizing stays consistent across breakpoints */

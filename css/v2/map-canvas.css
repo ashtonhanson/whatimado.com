@@ -57,8 +57,21 @@ whatimado-map[data-mode="visible"] .whatimado-map__pan-surface {
   touch-action: none;
 }
 
+whatimado-map .whatimado-map__pan {
+  will-change: transform;
+}
+
 whatimado-map.is-panning .whatimado-map__pan-surface {
   cursor: grabbing;
+}
+
+body.v2-app.is-frame-dragging whatimado-map,
+body.v2-app.is-frame-dragging whatimado-map * {
+  pointer-events: none !important;
+}
+
+body.v2-app.is-frame-dragging whatimado-map .whatimado-map__stage {
+  transition: none;
 }
 
 /*
