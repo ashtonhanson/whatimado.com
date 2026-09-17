@@ -2,6 +2,9 @@
   --v2-left-rail-w: var(--v2-rail-w);
   --v2-left-sidebar-offset: calc(var(--v2-rail-inset) + var(--v2-left-rail-w) + var(--v2-rail-gap));
   min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   padding: var(--v2-rail-inset);
   padding-left: var(--v2-left-sidebar-offset);
   padding-right: var(--v2-rail-inset);
@@ -27,9 +30,11 @@
   position: relative;
   z-index: 1;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
   height: calc(100dvh - 2 * var(--v2-rail-inset));
   min-height: calc(100dvh - 2 * var(--v2-rail-inset));
-  overflow: visible;
+  overflow-x: clip;
 }
 
 /* Center column — shared horizontal bounds for map, kicker, and prompt frame */

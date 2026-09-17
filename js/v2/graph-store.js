@@ -1,6 +1,6 @@
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"action", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"action", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
-/** @typedef {{ id?: string, label: string, title: string, description: string }} AdvisorPath */
+/** @typedef {{ id?: string, label: string, title: string, description?: string, type?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} AdvisorPath */
 export const graphStore = {
   nodes: [],
   edges: [],
@@ -64,46 +64,98 @@ export function pathAccentForIndex(index) {
   return PATH_ACCENT_PALETTE[index % PATH_ACCENT_PALETTE.length];
 }
 
-/** Layout slots for up to four path nodes above YOU */
+/** Layout slots for up to six path nodes above YOU */
 const PATH_LAYOUT_SLOTS = [
   { x: 0.18, y: 0.5 },
   { x: 0.38, y: 0.3 },
   { x: 0.62, y: 0.3 },
-  { x: 0.82, y: 0.5 }
+  { x: 0.82, y: 0.5 },
+  { x: 0.08, y: 0.4 },
+  { x: 0.92, y: 0.4 }
 ];
+
+export const MAX_PATH_NODES = PATH_LAYOUT_SLOTS.length;
+
+/** @param {AdvisorPath} path @param {number} index */
+function pathNodeFromAdvisor(path, index) {
+  const slot = PATH_LAYOUT_SLOTS[index] ?? PATH_LAYOUT_SLOTS[PATH_LAYOUT_SLOTS.length - 1];
+  const title = String(path.title || path.label || `Path ${index + 1}`).trim();
+  const tagline = String(path.tagline || path.description || "").trim();
+  return {
+    id: sanitizePathId(path.id, index),
+    type: "path",
+    label: shortenMapLabel(path.label || title, 14),
+    title,
+    description: tagline,
+    ideaType: String(path.type || "").trim(),
+    tagline,
+    why: String(path.why || "").trim(),
+    cost: String(path.cost || "").trim(),
+    timeline: String(path.timeline || "").trim(),
+    income: String(path.income || "").trim(),
+    x: slot.x,
+    y: slot.y,
+    parentId: "start",
+    accent: pathAccentForIndex(index)
+  };
+}
 
 /**
  * Populate live graph from advisor path proposals.
  * @param {AdvisorPath[]} paths
+ * @param {{ keepSelectedId?: string | null }} [options]
  */
-export function loadAdvisorPaths(paths) {
-  const trimmed = paths.slice(0, 4);
+export function loadAdvisorPaths(paths, options = {}) {
+  const trimmed = paths.slice(0, MAX_PATH_NODES);
   /** @type {GraphNode[]} */
   const nodes = [{ id: "start", type: "start", label: "You", x: 0.5, y: 0.82 }];
   /** @type {GraphEdge[]} */
   const edges = [];
+  const used = new Set(["start"]);
 
   trimmed.forEach((path, index) => {
-    const slot = PATH_LAYOUT_SLOTS[index] ?? PATH_LAYOUT_SLOTS[PATH_LAYOUT_SLOTS.length - 1];
-    const id = sanitizePathId(path.id, index);
-    const title = String(path.title || path.label || `Path ${index + 1}`).trim();
-    nodes.push({
-      id,
-      type: "path",
-      label: shortenMapLabel(path.label || title, 14),
-      title,
-      description: String(path.description || "").trim(),
-      x: slot.x,
-      y: slot.y,
-      parentId: "start",
-      accent: pathAccentForIndex(index)
-    });
+    const node = pathNodeFromAdvisor(path, index);
+    let id = node.id;
+    if (used.has(id)) id = sanitizePathId(`${id}-${index + 1}`, index);
+    used.add(id);
+    node.id = id;
+    nodes.push(node);
     edges.push({ from: "start", to: id });
   });
 
   graphStore.nodes = nodes;
   graphStore.edges = edges;
-  graphStore.selectedId = null;
+  const keep = options.keepSelectedId;
+  graphStore.selectedId = keep && nodes.some((node) => node.id === keep) ? keep : null;
+}
+
+/**
+ * Append extra path nodes without rebuilding the rest of the map.
+ * @param {AdvisorPath[]} paths
+ */
+export function appendAdvisorPaths(paths) {
+  const existingPaths = graphStore.nodes.filter((node) => node.type === "path");
+  const startIndex = existingPaths.length;
+  const room = MAX_PATH_NODES - startIndex;
+  if (room <= 0) return [];
+
+  const used = new Set(graphStore.nodes.map((node) => node.id));
+  /** @type {GraphNode[]} */
+  const added = [];
+
+  paths.slice(0, room).forEach((path, offset) => {
+    const index = startIndex + offset;
+    const node = pathNodeFromAdvisor(path, index);
+    let id = node.id;
+    if (used.has(id)) id = sanitizePathId(`${id}-${index + 1}`, index);
+    used.add(id);
+    node.id = id;
+    graphStore.nodes.push(node);
+    graphStore.edges.push({ from: "start", to: id });
+    added.push(node);
+  });
+
+  return added;
 }
 
 /** Placeholder possibility nodes for scaffold demo */

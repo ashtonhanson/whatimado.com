@@ -18,7 +18,14 @@ import { PHASE } from "../phases.js";
  *   clarifyingQuestionsAsked: number,
  *   locationConfirmed: boolean,
  *   intakeComplete: boolean,
- *   completedIntakeSteps: string[]
+ *   completedIntakeSteps: string[],
+ *   mapChatType: "discuss"|"alter"|null,
+ *   mapChatPathId: string | null,
+ *   mapFeedbackGiven: boolean,
+ *   mapFeedbackSentiment: "yes"|"no"|null,
+ *   planConfirmed: boolean,
+ *   planBullets: string[],
+ *   confirmGateAwaitingRevision: boolean
  * }} Journey */
 
 const PHASE_VALUES = new Set(Object.values(PHASE));
@@ -41,7 +48,14 @@ export function createEmptyJourney() {
     clarifyingQuestionsAsked: 0,
     locationConfirmed: false,
     intakeComplete: false,
-    completedIntakeSteps: []
+    completedIntakeSteps: [],
+    mapChatType: null,
+    mapChatPathId: null,
+    mapFeedbackGiven: false,
+    mapFeedbackSentiment: null,
+    planConfirmed: false,
+    planBullets: [],
+    confirmGateAwaitingRevision: false
   };
 }
 
@@ -116,7 +130,16 @@ export function normalizeJourney(raw) {
     intakeComplete: Boolean(source.intakeComplete),
     completedIntakeSteps: Array.isArray(source.completedIntakeSteps)
       ? source.completedIntakeSteps.map((step) => String(step || "")).filter(Boolean)
-      : []
+      : [],
+    mapChatType: source.mapChatType === "discuss" || source.mapChatType === "alter" ? source.mapChatType : null,
+    mapChatPathId: typeof source.mapChatPathId === "string" && source.mapChatPathId ? source.mapChatPathId : null,
+    mapFeedbackGiven: Boolean(source.mapFeedbackGiven),
+    mapFeedbackSentiment: source.mapFeedbackSentiment === "yes" || source.mapFeedbackSentiment === "no" ? source.mapFeedbackSentiment : null,
+    planConfirmed: Boolean(source.planConfirmed),
+    planBullets: Array.isArray(source.planBullets)
+      ? source.planBullets.map((bullet) => String(bullet || "").trim()).filter(Boolean).slice(0, 7)
+      : [],
+    confirmGateAwaitingRevision: Boolean(source.confirmGateAwaitingRevision)
   };
 }
 

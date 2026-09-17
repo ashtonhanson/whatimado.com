@@ -1,11 +1,6 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
-import { loadAdvisorPaths, graphStore, selectGraphNode, seedPossibilityNodes } from "../graph-store.js";
-import {
-  callAdvisor,
-  buildExplorationPrompt,
-  buildPathsPrompt,
-  parseAdvisorPathsResponse
-} from "../advisor.js";
+import { graphStore, selectGraphNode } from "../graph-store.js";
+import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import { appendMessage, escapeHtml } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
@@ -18,9 +13,9 @@ import {
   schedulePersist,
   setPersistEnabled
 } from "../state/persistence.js";
-import { formatUserLocation } from "../state/location.js";
 import { createIntakeController } from "../intake/session.js";
-import { buildIntakeContextBlock } from "../intake/stability-gates.js";
+import { createPathMapController } from "../map/session.js";
+import { createConfirmGateController } from "../roadmap/session.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -107,136 +102,60 @@ export function initChatFlow(ctx) {
   }
 
   function renderPathCards() {
-    if (!pathCardsEl) return;
-
-    const paths = graphStore.nodes.filter((node) => node.type === "path");
-    pathCardsEl.innerHTML = paths
-      .map(
-        (path) => `
-    <button type="button" class="v2-path-card" data-path-id="${escapeHtml(path.id)}" style="--path-accent: ${escapeHtml(path.accent || "#2ee8d6")}">
-      <h3>${escapeHtml(path.title || path.label)}</h3>
-      <p>${escapeHtml(path.description || "")}</p>
-    </button>`
-      )
-      .join("");
-
-    pathCardsEl.querySelectorAll(".v2-path-card").forEach((btn) => {
-      const id = btn.getAttribute("data-path-id");
-      if (!id) return;
-
-      btn.addEventListener("mouseenter", () => {
-        mapEl?.setPathPreview(id);
-      });
-      btn.addEventListener("mouseleave", () => {
-        mapEl?.setPathPreview(null);
-      });
-      btn.addEventListener("click", () => {
-        mapEl?.setPathPreview(null);
-        pathCardsEl.querySelectorAll(".v2-path-card").forEach((b) => b.classList.remove("is-selected"));
-        btn.classList.add("is-selected");
-        handleNodeSelect(id);
-      });
-    });
-
-    if (graphStore.selectedId) {
-      pathCardsEl.querySelector(`[data-path-id="${CSS.escape(graphStore.selectedId)}"]`)?.classList.add("is-selected");
-    }
+    pathMap.render();
   }
 
-  /** @param {import("../graph-store.js").GraphNode} node */
   function showSelectedPath(node) {
     const displayTitle = node.title || node.label;
     if (selectionPanel) {
       selectionPanel.classList.remove("hidden");
-      selectionPanel.innerHTML = `<h2 class="v2-section-label">Selected path</h2><p><strong>${escapeHtml(displayTitle)}</strong>${node.description ? ` — ${escapeHtml(node.description)}` : ""}</p>`;
+      const bits = [node.ideaType, node.cost, node.timeline].filter(Boolean);
+      selectionPanel.innerHTML = `<h2 class="v2-section-label">Selected path</h2><p><strong>${escapeHtml(displayTitle)}</strong>${node.tagline ? ` — ${escapeHtml(node.tagline)}` : node.description ? ` — ${escapeHtml(node.description)}` : ""}</p>${bits.length ? `<p class="v2-selection-meta">${bits.map((bit) => escapeHtml(bit)).join(" · ")}</p>` : ""}`;
     }
     if (activePathEl) {
-      activePathEl.innerHTML = `<strong>${escapeHtml(displayTitle)}</strong>Ready for missions next.`;
+      activePathEl.innerHTML = `<strong>${escapeHtml(displayTitle)}</strong>${appStore.journey.planConfirmed ? "Plan confirmed — missions next." : "Confirm this plan in chat, or discuss / alter below."}`;
     }
   }
 
   function applyPathsToMap() {
     mapEl?.syncLiveFromStore();
-    setPhase(PHASE.POSSIBILITIES);
-    if (activePathEl) {
+    setPhase(appStore.journey.selectedPathId ? PHASE.PATH_SELECTED : PHASE.POSSIBILITIES);
+    const selected =
+      graphStore.nodes.find((node) => node.id === (appStore.journey.selectedPathId || graphStore.selectedId)) || null;
+    if (selected && selected.type !== "start") {
+      showSelectedPath(selected);
+    } else if (activePathEl) {
       activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
+      confirmGate.hide();
     }
     renderPathCards();
     layout();
   }
 
-  function fallbackPaths() {
-    seedPossibilityNodes();
-    const seeded = graphStore.nodes.filter((node) => node.type === "path");
-    seeded.forEach((node, index) => {
-      const titles = ["Rebuild with your skills", "Train into a trade", "Freelance / self-employed"];
-      const descs = [
-        "Use what you already know while stabilizing basics.",
-        "Structured certification route with clear milestones.",
-        "Small projects first, then repeat clients."
-      ];
-      node.title = titles[index] || node.label;
-      node.description = descs[index] || "";
-    });
-    applyPathsToMap();
-  }
+  const pathMap = createPathMapController({
+    messagesEl,
+    pathCardsEl,
+    mapEl,
+    layout,
+    flush: flushPersist,
+    setComposerEnabled,
+    setPhasePossibilities: applyPathsToMap,
+    onSelectPath: (id, options) => handleNodeSelect(id, options)
+  });
 
-  async function generateAdvisorPaths() {
-    if (appStore.journey.pathsGenerated || appStore.pathsGenerating) return;
-    appStore.pathsGenerating = true;
-    setComposerEnabled(false);
-
-    const typingEl = appendMessage(messagesEl, "advisor", "Mapping a few paths that could fit…", { typing: true });
-    layout();
-
-    try {
-      const raw = await callAdvisor(
-        buildPathsPrompt(
-          appStore.journey.messages,
-          buildIntakeContextBlock(
-            appStore.profile,
-            formatUserLocation(appStore.location),
-            appStore.journey.pathMode
-          )
-        ),
-        {
-          maxTokens: 700,
-          feature: "v2_paths"
-        }
-      );
-      const { intro, paths } = parseAdvisorPathsResponse(raw);
-
-      typingEl.remove();
-      loadAdvisorPaths(paths);
-      applyPathsToMap();
-      appendMessage(messagesEl, "advisor", intro);
-      appStore.journey.messages.push({ role: "assistant", content: intro });
-      appStore.journey.pathsGenerated = true;
-      touchJourney();
-      flushPersist();
+  const confirmGate = createConfirmGateController({
+    messagesEl,
+    layout,
+    flush: flushPersist,
+    setComposerEnabled,
+    setPhase,
+    onConfirmed: () => {
+      const selected =
+        graphStore.nodes.find((node) => node.id === appStore.journey.selectedPathId) || null;
+      if (selected && selected.type !== "start") showSelectedPath(selected);
       layout();
-    } catch (error) {
-      typingEl.remove();
-      appendMessage(
-        messagesEl,
-        "advisor",
-        "I couldn't map custom paths just now — here are starter directions you can explore."
-      );
-      layout();
-      fallbackPaths();
-      appStore.journey.pathsGenerated = true;
-      touchJourney();
-      flushPersist();
-    } finally {
-      appStore.pathsGenerating = false;
-      setComposerEnabled(true);
-      if (window.matchMedia("(max-width: 900px)").matches) {
-        frameEl?.composerInput?.blur();
-      } else {
-        frameEl?.focusComposer();
-      }
     }
-  }
+  });
 
   const intake = createIntakeController({
     messagesEl,
@@ -245,20 +164,24 @@ export function initChatFlow(ctx) {
     setComposerEnabled,
     onComplete: async () => {
       if (appStore.journey.phase === PHASE.EXPLORING) setPhase(PHASE.COACHING);
-      if (!appStore.journey.pathsGenerated) await generateAdvisorPaths();
+      if (!appStore.journey.pathsGenerated) await pathMap.generate();
     }
   });
 
-  /** @param {string} nodeId */
-  function handleNodeSelect(nodeId) {
+  /** @param {string} nodeId @param {{ startConfirm?: boolean }} [options] */
+  function handleNodeSelect(nodeId, { startConfirm = true } = {}) {
     const node = graphStore.nodes.find((n) => n.id === nodeId);
     if (!node || node.type === "start") return;
     selectGraphNode(nodeId);
     mapEl?.setSelectedNode(nodeId);
     appStore.journey.selectedPathId = nodeId;
+    if (startConfirm) appStore.journey.planConfirmed = false;
     setPhase(PHASE.PATH_SELECTED);
     showSelectedPath(node);
+    renderPathCards();
     layout();
+    if (startConfirm) void confirmGate.begin(node);
+    else confirmGate.hide();
   }
 
   function seedHypotheticalChat() {
@@ -279,7 +202,7 @@ export function initChatFlow(ctx) {
     mapEl?.dismissGhost();
     setPhase(PHASE.COACHING);
     layout();
-    void generateAdvisorPaths();
+    void pathMap.generate();
   }
 
   function restoreSessionUi() {
@@ -314,6 +237,8 @@ export function initChatFlow(ctx) {
 
     setPhase(journey.phase, { animate: false, instant: true });
     intake.restoreChips();
+    if (hasPaths) pathMap.restore();
+    if (selected && selected.type !== "start") confirmGate.restore(selected);
     layout();
     return true;
   }
@@ -352,6 +277,18 @@ export function initChatFlow(ctx) {
         if (handled) return;
       }
 
+      if (pathMap.isBlocking()) {
+        const handled = await pathMap.handleTypedAnswer(trimmed);
+        if (handled) return;
+      }
+
+      if (confirmGate.isBlocking()) {
+        const idea =
+          graphStore.nodes.find((node) => node.id === appStore.journey.selectedPathId) || null;
+        const handled = await confirmGate.handleTypedAnswer(trimmed, idea);
+        if (handled) return;
+      }
+
       if (!appStore.journey.intakeComplete && !appStore.journey.pathMode) {
         intake.startAfterFirstPrompt();
         return;
@@ -382,7 +319,7 @@ export function initChatFlow(ctx) {
           appStore.journey.phase === PHASE.COACHING &&
           !appStore.journey.pathsGenerated
         ) {
-          await generateAdvisorPaths();
+          await pathMap.generate();
         }
       } catch (error) {
         typingEl.remove();
