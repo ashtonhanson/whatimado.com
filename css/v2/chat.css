@@ -1,19 +1,38 @@
 /* Intake chips + path-mode cards — stay inside the 720px chat column */
 
 .v2-intake-chips {
+  position: relative;
+  z-index: 6;
   width: 100%;
   max-width: 100%;
   margin-top: 0.15rem;
   pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .v2-intake-chips__list {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
   gap: 0.45rem;
+  pointer-events: auto;
 }
 
 .v2-intake-chip {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  min-height: 44px;
+  isolation: isolate;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   cursor: pointer;
   appearance: none;
   padding: 0.42rem 0.78rem;

@@ -1869,6 +1869,7 @@
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box.has-intake-chips .reply-actions {
       margin-top: 0;
+      pointer-events: none;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box.has-intake-chips {
@@ -1878,16 +1879,23 @@
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active #bubble-chain .profile-intake-chips {
       align-self: flex-start;
+      position: relative;
+      z-index: 6;
       width: 100%;
       max-width: min(100%, 540px);
       margin: 0 0 1rem;
       padding: 0;
+      pointer-events: auto;
+      touch-action: manipulation;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active #bubble-chain .profile-intake-chips-list {
       display: flex;
       flex-wrap: wrap;
+      align-items: flex-start;
+      align-content: flex-start;
       gap: .45rem;
+      pointer-events: auto;
     }
 
     html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box.surface-card {
@@ -7411,10 +7419,25 @@
     .profile-intake-chips-list {
       display: flex;
       flex-wrap: wrap;
+      align-items: flex-start;
+      align-content: flex-start;
       gap: .4rem;
     }
 
     .profile-intake-chip {
+      position: relative;
+      z-index: 1;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      max-width: 100%;
+      min-height: 44px;
+      isolation: isolate;
+      pointer-events: auto;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       border: 1px solid color-mix(in srgb, var(--purple) 72%, transparent);
       border-radius: 999px;
       padding: .42rem .78rem;
@@ -16956,6 +16979,14 @@
         background: transparent;
         box-shadow: none;
         pointer-events: none;
+      }
+
+      html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box.has-intake-chips {
+        transform: none;
+        left: var(--mobile-gutter, 1.5rem);
+        right: var(--mobile-gutter, 1.5rem);
+        width: auto;
+        pointer-events: none !important;
       }
 
       html[data-color-scheme="adult"] #screen-main.is-chat-active .reply-box .reply-inner,
@@ -50615,29 +50646,27 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         openTaskAlterPath(alterBtn.dataset.taskAlterPath);
       });
 
+      const activateProfileChip = (event) => {
+        const chip = event.target instanceof Element ? event.target.closest(".profile-intake-chip") : null;
+        if (!chip) return false;
+        event.preventDefault();
+        handleProfileChipClick(chip);
+        return true;
+      };
+      $("#bubble-chain")?.addEventListener("pointerup", activateProfileChip);
       $("#bubble-chain")?.addEventListener("click", (event) => {
-        const chip = event.target.closest(".profile-intake-chip");
-        if (chip) {
-          event.preventDefault();
-          handleProfileChipClick(chip);
-          return;
-        }
+        if (activateProfileChip(event)) return;
         const editBtn = event.target.closest(".bubble-edit-btn");
         if (editBtn) {
           event.preventDefault();
           const idx = Number(editBtn.dataset.historyIndex);
           if (Number.isFinite(idx)) editIntakeAnswer(idx);
-          return;
         }
       });
 
       $("#reply-send-btn").addEventListener("click", submitReply);
-      $("#reply-box")?.addEventListener("click", (event) => {
-        const chip = event.target.closest(".profile-intake-chip");
-        if (!chip) return;
-        event.preventDefault();
-        handleProfileChipClick(chip);
-      });
+      $("#reply-box")?.addEventListener("pointerup", activateProfileChip);
+      $("#reply-box")?.addEventListener("click", activateProfileChip);
       $("#reply-textarea").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();

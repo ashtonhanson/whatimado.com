@@ -166,6 +166,12 @@ whatimado-frame.is-scrollable .whatimado-frame__body {
   );
 }
 
+/* Masked fade steals Android taps on the last chip row — keep chips fully hittable */
+whatimado-frame.has-intake-chips.is-scrollable .whatimado-frame__body {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2.75rem, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 2.75rem, #000 100%);
+}
+
 whatimado-frame.is-scrollable .whatimado-frame__body::-webkit-scrollbar {
   width: 0;
   height: 0;

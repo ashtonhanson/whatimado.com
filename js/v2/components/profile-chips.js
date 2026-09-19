@@ -12,9 +12,14 @@ function scrollMessages(container) {
   }
 }
 
+function frameFor(container) {
+  return container?.closest?.("whatimado-frame") ?? null;
+}
+
 /** @param {HTMLElement | null} container */
 export function hideIntakeChips(container) {
   container?.querySelector(`#${CHIPS_ID}`)?.remove();
+  frameFor(container)?.classList.remove("has-intake-chips");
 }
 
 /**
@@ -55,17 +60,21 @@ export function renderIntakeChips(container, spec) {
       .join("")}</div>`;
   }
 
-  wrap.addEventListener("click", (event) => {
+  const activate = (event) => {
     const button = event.target instanceof Element ? event.target.closest("button[data-value]") : null;
     if (!button || button.hasAttribute("disabled")) return;
+    event.preventDefault();
     wrap.querySelectorAll("button").forEach((el) => el.setAttribute("disabled", "true"));
     spec.onSelect({
       field: button.getAttribute("data-field") || "",
       value: button.getAttribute("data-value") || "",
       label: button.querySelector(".v2-path-mode-card__title")?.textContent?.trim() || button.textContent?.trim() || ""
     });
-  });
+  };
+  wrap.addEventListener("pointerup", activate);
+  wrap.addEventListener("click", activate);
 
   container.appendChild(wrap);
+  frameFor(container)?.classList.add("has-intake-chips");
   scrollMessages(container);
 }
