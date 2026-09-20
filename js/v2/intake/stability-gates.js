@@ -1,13 +1,26 @@
 import { normalizeUserProfile } from "../state/user-profile.js";
+import { STABILITY_CONTEXT } from "./persona-signals.js";
 
-/** Stability-first gates used later by roadmap generate/finalize. */
+/**
+ * Stability-first gates used later by roadmap generate/finalize.
+ *
+ * Unknown status only gates when the conversation actually signalled a need.
+ * Otherwise a suppressed ID question would quietly push a senior engineer into
+ * a shelter-and-documents roadmap.
+ */
 
 export function needsIdFirst(profile) {
-  return normalizeUserProfile(profile).idStatus !== "has";
+  const p = normalizeUserProfile(profile);
+  if (p.idStatus === "needs") return true;
+  if (p.idStatus === "has") return false;
+  return p.stabilityContext === STABILITY_CONTEXT.SIGNALS;
 }
 
 export function needsHousingFirst(profile) {
-  return normalizeUserProfile(profile).housingStatus !== "has";
+  const p = normalizeUserProfile(profile);
+  if (p.housingStatus === "needs") return true;
+  if (p.housingStatus === "has") return false;
+  return p.stabilityContext === STABILITY_CONTEXT.SIGNALS;
 }
 
 /** If ID or housing is not confirmed `has`, never open with job boards. */
@@ -43,9 +56,17 @@ export function buildIntakeContextBlock(profile, location = "", pathMode = null)
     lines.push(
       "STABILITY FIRST: ID or housing is not confirmed as has.",
       "Do NOT propose Indeed, Google Jobs, job-board hunting, or a Contact Tracking Spreadsheet as early steps.",
-      "Prefer shelter, ID, documents, and local stability resources first."
+      "Prefer shelter, ID, documents, and local stability resources first.",
+      p.idStatus === "needs"
+        ? "They said ID is not sorted yet. Include getting ID as a concrete, supportive step — never as a prerequisite that stalls everything else."
+        : ""
+    );
+  } else if (p.stabilityContext === STABILITY_CONTEXT.PROFESSIONAL) {
+    lines.push(
+      "This person presents as an experienced professional or operator.",
+      "ID and housing were intentionally not asked. Do NOT raise ID, shelter, or basic-needs steps unless they bring it up."
     );
   }
 
-  return lines.join("\n");
+  return lines.filter(Boolean).join("\n");
 }

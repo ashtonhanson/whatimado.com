@@ -28512,7 +28512,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function getStabilityFollowUpQuestion(latest = getLatestUserMessage()) {
       if (!conversationHousingStatusKnown()) {
         return withExplorationAcknowledgment(
-          "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+          "Housing changes which resources we can unlock and how we order your first steps. Do you have a safe place you can reliably stay for at least the next week, or should finding that be part of the plan?",
           latest
         );
       }
@@ -37396,17 +37396,17 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       }
       if (step === "id_status") {
         renderProfileIntakeChips([
-          { field: "idStatus", value: "has", label: "Yes, I have valid ID" },
-          { field: "idStatus", value: "needs", label: "No — I still need to get ID sorted" },
-          { field: "idStatus", value: "needs", label: "Not sure / working on it" }
+          { field: "idStatus", value: "has", label: "I have one on hand" },
+          { field: "idStatus", value: "needs", label: "Not yet — add it to my roadmap" },
+          { field: "idStatus", value: "needs", label: "Not sure / mine is expired" }
         ]);
         return;
       }
       if (step === "housing_status") {
         renderProfileIntakeChips([
-          { field: "housingStatus", value: "has", label: "Yes — I have a safe, reliable place" },
-          { field: "housingStatus", value: "needs", label: "Only temporary / not reliable" },
-          { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
+          { field: "housingStatus", value: "has", label: "I have a reliable place" },
+          { field: "housingStatus", value: "needs", label: "Only temporary — keep that in the plan" },
+          { field: "housingStatus", value: "needs", label: "Not right now — help me find housing" }
         ]);
         return;
       }
@@ -40296,12 +40296,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
     function askProfileIdStatusStep() {
       state.profileIntakeStep = "id_status";
       pushProfileIntakeAssistantMessage(
-        "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?"
+        "Some of the local resources we can unlock for you — benefits, housing help, and most hiring — need a state ID. Is that something you have on hand, or should we add getting that sorted to your roadmap?"
       );
       renderProfileIntakeChips([
-        { field: "idStatus", value: "has", label: "Yes, I have valid ID" },
-        { field: "idStatus", value: "needs", label: "No — I still need to get ID sorted" },
-        { field: "idStatus", value: "needs", label: "Not sure / working on it" }
+        { field: "idStatus", value: "has", label: "I have one on hand" },
+        { field: "idStatus", value: "needs", label: "Not yet — add it to my roadmap" },
+        { field: "idStatus", value: "needs", label: "Not sure / mine is expired" }
       ]);
       trackEvent("profile_intake_step_shown", { step: "id_status" });
     }
@@ -40310,13 +40310,13 @@ If you're curious, try https://whatimado.com and tell me what would make it more
       state.profileIntakeStep = "housing_status";
       pushProfileIntakeAssistantMessage(
         options.clarify
-          ? "I want to make sure I understand before building your map. Do you have a safe place you can reliably stay for at least the next week?"
-          : "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?"
+          ? "I want to make sure I have this right before building your map. Do you have a safe place you can reliably stay for at least the next week, or should finding that be part of the plan?"
+          : "Housing changes which resources we can unlock and how we order your first steps. Do you have a safe place you can reliably stay for at least the next week, or should finding that be part of the plan?"
       );
       renderProfileIntakeChips([
-        { field: "housingStatus", value: "has", label: "Yes — I have a safe, reliable place" },
-        { field: "housingStatus", value: "needs", label: "Only temporary / not reliable" },
-        { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
+        { field: "housingStatus", value: "has", label: "I have a reliable place" },
+        { field: "housingStatus", value: "needs", label: "Only temporary — keep that in the plan" },
+        { field: "housingStatus", value: "needs", label: "Not right now — help me find housing" }
       ]);
       trackEvent("profile_intake_step_shown", { step: "housing_status" });
     }
@@ -41837,7 +41837,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         )
       ) {
         return withExplorationAcknowledgment(
-          "Do you have a valid ID right now, or is getting that sorted the first thing you need to tackle?",
+          "A lot of the local resources we can line up need a state ID. Do you have one on hand, or should getting that sorted be part of your roadmap?",
           userText
         );
       }
@@ -42003,7 +42003,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && !conversationIdStatusKnown(blob)
       ) {
         return withExplorationAcknowledgment(
-          "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
+          "Some of the local resources we can unlock for you — benefits, housing help, and most hiring — need a state ID. Is that something you have on hand, or should we add getting that sorted to your roadmap?",
           latest
         );
       }
@@ -42013,7 +42013,7 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         && !conversationHousingStatusKnown(blob)
       ) {
         return withExplorationAcknowledgment(
-          "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+          "Housing changes which resources we can unlock and how we order your first steps. Do you have a safe place you can reliably stay for at least the next week, or should finding that be part of the plan?",
           latest
         );
       }
@@ -42148,12 +42148,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
         );
         if (needsIdQuestion && !looksLikeClarifyingQuestion(finalAnswer) && !/\b(id|identification|birth certificate|driver'?s license|state id|documents)\b/i.test(finalAnswer || "")) {
           finalAnswer = withExplorationAcknowledgment(
-            "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
+            "Some of the local resources we can unlock for you — benefits, housing help, and most hiring — need a state ID. Is that something you have on hand, or should we add getting that sorted to your roadmap?",
             latest
           );
         } else if (stabilityRebuild && idAlreadyDiscussed && !housingAlreadyDiscussed && !looksLikeClarifyingQuestion(finalAnswer)) {
           finalAnswer = withExplorationAcknowledgment(
-            "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+            "Housing changes which resources we can unlock and how we order your first steps. Do you have a safe place you can reliably stay for at least the next week, or should finding that be part of the plan?",
             latest
           );
         } else if (
@@ -43922,12 +43922,12 @@ If you're curious, try https://whatimado.com and tell me what would make it more
           const housingKnown = conversationHousingStatusKnown(userText);
           if (!idKnown) {
             finalAnswer = withExplorationAcknowledgment(
-              "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
+              "Some of the local resources we can unlock for you — benefits, housing help, and most hiring — need a state ID. Is that something you have on hand, or should we add getting that sorted to your roadmap?",
               userText
             );
           } else if (!housingKnown) {
             finalAnswer = withExplorationAcknowledgment(
-              "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+              "Housing changes which resources we can unlock and how we order your first steps. Do you have a safe place you can reliably stay for at least the next week, or should finding that be part of the plan?",
               userText
             );
           }

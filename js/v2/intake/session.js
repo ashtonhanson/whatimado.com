@@ -17,9 +17,23 @@ import {
   chipStepAnswered
 } from "./profile-chips.js";
 import { applyLocationAnswer, isLocationStep, locationPrompt } from "./location.js";
+import {
+  classifyStabilityContext,
+  shouldSuppressHousingStep,
+  shouldSuppressIdStep
+} from "./persona-signals.js";
 
 function firstUserText() {
   return appStore.journey.messages.find((m) => m.role === "user")?.content || "";
+}
+
+/** Everything the user has said so far — a later turn can still reveal a need. */
+function userBlob() {
+  return appStore.journey.messages
+    .filter((m) => m.role === "user")
+    .map((m) => m.content)
+    .join("\n")
+    .slice(0, 6000);
 }
 
 function founderMode() {
@@ -76,7 +90,23 @@ export function createIntakeController(ui) {
   }
 
   function chipCtx(extra = {}) {
-    return { founder: founderMode(), completedSteps: completedSteps(), ...extra };
+    const blob = userBlob();
+    const founder = founderMode();
+    return {
+      founder,
+      completedSteps: completedSteps(),
+      suppressId: shouldSuppressIdStep(blob, { founder }),
+      suppressHousing: shouldSuppressHousingStep(blob, { founder }),
+      ...extra
+    };
+  }
+
+  /** Record why we did or did not ask, so roadmap gates can read it later. */
+  function recordStabilityContext() {
+    const value = classifyStabilityContext(userBlob(), { founder: founderMode() });
+    if (appStore.profile.stabilityContext === value) return;
+    appStore.profile = setUserProfileField(appStore.profile, "stabilityContext", value);
+    flush();
   }
 
   function lastAssistantText() {
@@ -102,6 +132,19 @@ export function createIntakeController(ui) {
         appStore.profile = setUserProfileField(appStore.profile, "housingStatus", value);
         markStepComplete(INTAKE_STEP.HOUSING);
       }
+    }
+  }
+
+  /** "Not yet" is a task we plan around, never a reason to withhold the rest. */
+  function acknowledgeStabilityAnswer(field, value) {
+    if (value !== "needs") return;
+    if (field === "idStatus") {
+      pushAdvisor(
+        "Good to know — getting ID sorted goes in the roadmap as its own step, with the local office and what to bring. Everything else still moves forward while that's in motion."
+      );
+    } else if (field === "housingStatus") {
+      pushAdvisor(
+        "Thanks for telling me. I'll put somewhere stable near the front of the plan and keep the rest of your options open alongside it.");
     }
   }
 
@@ -171,6 +214,7 @@ export function createIntakeController(ui) {
   }
 
   function beginChipIntake() {
+    recordStabilityContext();
     const step = nextChipStep(appStore.profile, chipCtx());
     if (!step) {
       void continueAfterChips();
@@ -239,6 +283,7 @@ export function createIntakeController(ui) {
     if (!alreadyLogged) pushUser(option.label);
     markStepComplete(step);
     appStore.profile = setUserProfileField(appStore.profile, option.field, option.value);
+    acknowledgeStabilityAnswer(option.field, option.value);
     const next = nextChipStep(appStore.profile, chipCtx({ skipStep: step }));
     if (next) askChipStep(next);
     else await continueAfterChips();
@@ -309,6 +354,7 @@ export function createIntakeController(ui) {
   }
 
   function startAfterFirstPrompt() {
+    recordStabilityContext();
     setStep(INTAKE_STEP.PATH_MODE);
     pushAdvisor("How do you want to explore your options?");
     showPathMode();
