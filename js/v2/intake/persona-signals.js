@@ -48,8 +48,15 @@ export function confirmsHasHousing(text = "") {
 
 export function mentionsReentryHardship(text = "") {
   const blob = String(text || "").toLowerCase();
-  return /\b(re-?entry|incarcerat|in prison|in jail|got out|just released|released from|on parole|on probation|halfway house|felony|my record|justice[- ]involved)\b/.test(
-    blob
+  // Same shape as the monolith (index.html conversationMentionsReentryHardship).
+  // Do NOT use bare "got out" / "just released" / "my record" — those fire on
+  // product language ("just released a beta") and override a pro persona.
+  return (
+    /\b(re-?enter(?:ing)?|reentry|incarcerat|jail|prison|parole|probation|second chance|record expung|just got out|just getting out|(?:got|getting) out of (?:jail|prison)|after incarceration|formerly incarcerat|rebuilding after release|criminal record|felony(?: conviction)?|(?:recently|newly|just) released(?: from)? (?:jail|prison|custody|incarceration|detention)|halfway house|justice[- ]involved)\b/.test(
+      blob
+    ) ||
+    /\b(background check).{0,48}\b(record|felony|conviction|jail|prison)\b/.test(blob) ||
+    /\b(record|felony|conviction|jail|prison).{0,48}\b(background check)\b/.test(blob)
   );
 }
 

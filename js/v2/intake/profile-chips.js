@@ -334,7 +334,13 @@ export function parseRelocatePreference(text) {
 
 export function parseFounderStage(text) {
   const q = String(text || "").toLowerCase();
-  if (/\b(beta|test if it works|just testing)\b/.test(q)) return "beta";
+  if (
+    /\b(beta|still testing|still in test|in testing|testing phase|testing (?:the |if it |it )?works|test if it works|just testing)\b/.test(
+      q
+    )
+  ) {
+    return "beta";
+  }
   if (/\b(first (real )?strangers|validation|early users)\b/.test(q)) return "validation";
   if (/\b(pilot|partner)\b/.test(q)) return "pilot";
   if (/\b(grant|sponsor|scale|growth)\b/.test(q)) return "growth";

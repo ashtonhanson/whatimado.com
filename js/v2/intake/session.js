@@ -12,6 +12,7 @@ import {
   isChipStep,
   nextChipStep,
   parseChipAnswer,
+  parseFounderStage,
   parseHousingStatus,
   parseIdStatus,
   chipStepAnswered
@@ -37,7 +38,7 @@ function userBlob() {
 }
 
 function founderMode() {
-  return isFounderOrProjectPrompt(firstUserText());
+  return isFounderOrProjectPrompt(firstUserText()) || Boolean(appStore.profile.founderStage);
 }
 
 /**
@@ -131,6 +132,16 @@ export function createIntakeController(ui) {
       if (value) {
         appStore.profile = setUserProfileField(appStore.profile, "housingStatus", value);
         markStepComplete(INTAKE_STEP.HOUSING);
+      }
+    }
+    const askedStage =
+      /\b(still testing|first (?:real )?users|partner pilot|where is (?:the |this )?project|funding)\b/.test(asked) ||
+      isFounderOrProjectPrompt(firstUserText());
+    if (askedStage) {
+      const founderStage = parseFounderStage(text);
+      if (founderStage) {
+        appStore.profile = setUserProfileField(appStore.profile, "founderStage", founderStage);
+        markStepComplete(INTAKE_STEP.FOUNDER);
       }
     }
   }
