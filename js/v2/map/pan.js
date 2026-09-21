@@ -91,8 +91,55 @@ export function isOpenHomePhase() {
 
 
 /**
- * Open-home camera: pan + optional fit-zoom so the constellation clears both
- * the menu bar and Path Finder without changing relative node proportions.
+ * Screen Y the constellation must stay below (menu bar on mobile, top pad on desktop).
+ * @param {DOMRect} stageRect
+ */
+function menuClearScreenY(stageRect) {
+  if (!MOBILE_MQ.matches) {
+    return stageRect.top + (measureCssVarLength("--v2-map-graph-top-pad") || 16);
+  }
+  const rail = document.querySelector(".v2-rail-brand");
+  if (rail) {
+    const bottom = rail.getBoundingClientRect().bottom;
+    if (bottom > 0) return bottom + 8;
+  }
+  return (measureCssVarLength("--v2-mobile-header-h") || 56) + 8;
+}
+
+/**
+ * Fit the constellation in a screen band and center it there.
+ * Bottom of the graph stays at or above bottomScreenY.
+ * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ * @param {number} topScreenY
+ * @param {number} bottomScreenY
+ * @returns {{ panX: number, panY: number, zoom: number }}
+ */
+function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY) {
+  const stage = mapEl.querySelector(".whatimado-map__stage");
+  if (!stage) return { panX: 0, panY: 0, zoom: 1 };
+
+  const stageRect = stage.getBoundingClientRect();
+  if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
+
+  const bounds = getGraphBounds(mapEl);
+  const shiftY = readGraphShiftY();
+  const scaleY = VIEW_H / stageRect.height;
+  const span = Math.max(1, bounds.maxY - bounds.minY);
+  const availablePx = Math.max(48, bottomScreenY - topScreenY);
+  const naturalPx = (span * stageRect.height) / VIEW_H;
+  const zoom = Math.max(0.55, Math.min(1, (availablePx / naturalPx) * 0.88));
+  const fittedPx = naturalPx * zoom;
+  let graphTop = topScreenY + Math.max(0, availablePx - fittedPx) / 2;
+  if (graphTop + fittedPx > bottomScreenY) graphTop = bottomScreenY - fittedPx;
+
+  const yPrime = (graphTop - stageRect.top) * scaleY;
+  const panY = yPrime - shiftY - SCALE_CENTER_Y - zoom * (bounds.minY - SCALE_CENTER_Y);
+  const panX = VIEW_W / 2 - bounds.cx;
+  return { panX, panY, zoom };
+}
+
+/**
+ * Open-home camera: center the constellation between the menu and Path Finder.
  * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
  * @param {number} gapPx
  * @param {number} driftSlackPx
@@ -106,42 +153,11 @@ function computeOpenHomeCamera(mapEl, gapPx, driftSlackPx) {
   const stageRect = stage.getBoundingClientRect();
   if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
 
-  const bounds = getGraphBounds(mapEl);
-  const shiftY = readGraphShiftY();
-  const scaleY = VIEW_H / stageRect.height;
-
   const brandRect = brand?.getBoundingClientRect();
   const kickerRect = kicker?.getBoundingClientRect();
   const textTop = brandRect?.top ?? kickerRect?.top ?? stageRect.bottom;
-  const anchorScreenY = textTop - gapPx - driftSlackPx;
-
-  const menuClearY = (() => {
-    if (!MOBILE_MQ.matches) {
-      return stageRect.top + (measureCssVarLength("--v2-map-graph-top-pad") || 16);
-    }
-    const rail = document.querySelector(".v2-rail-brand");
-    if (rail) {
-      const bottom = rail.getBoundingClientRect().bottom;
-      if (bottom > 0) return bottom + 8;
-    }
-    return (measureCssVarLength("--v2-mobile-header-h") || 56) + 8;
-  })();
-
-  const span = Math.max(1, bounds.maxY - bounds.minY);
-  const availablePx = Math.max(48, anchorScreenY - menuClearY);
-  const naturalPx = (span * stageRect.height) / VIEW_H;
-  /* Open-home may need to shrink below pinch-min so both menu + Path Finder clear */
-  const zoom = Math.max(0.55, Math.min(1, (availablePx / naturalPx) * 0.94));
-
-  // Pin top of graph to menu clearance at this zoom (scale around SCALE_CENTER_Y)
-  const panY =
-    (menuClearY - stageRect.top) * scaleY -
-    shiftY -
-    zoom * bounds.minY -
-    (1 - zoom) * SCALE_CENTER_Y;
-  const panX = VIEW_W / 2 - bounds.cx;
-
-  return { panX, panY, zoom };
+  const bottom = textTop - gapPx - driftSlackPx;
+  return computeCenteredBandCamera(mapEl, menuClearScreenY(stageRect), bottom);
 }
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
@@ -171,22 +187,12 @@ export function computeChatFrameGravityPan(mapEl) {
   const frameRect = frame.getBoundingClientRect();
   if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
 
-  const bounds = getGraphBounds(mapEl);
-  const shiftY = readGraphShiftY();
-  const scaleY = VIEW_H / stageRect.height;
-  const pinnedUnderGlass =
-    mapEl.dataset.readingPinned === "1" || mapEl.dataset.focusPinned === "1";
-  /* Mobile chat: lower nodes sit inside the frosted frame; the rest stay in the clear band. */
-  const anchorScreenY = pinnedUnderGlass ? frameRect.top + 64 : frameRect.top - 52;
-  const panY = clampPanYForTopPad(
-    (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
-    bounds,
-    stageRect,
-    shiftY
+  const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
+  return computeCenteredBandCamera(
+    mapEl,
+    menuClearScreenY(stageRect),
+    frameRect.top - clearance
   );
-  const panX = VIEW_W / 2 - bounds.cx;
-
-  return { panX, panY };
 }
 
 /**
@@ -203,20 +209,12 @@ export function computeChatFrameGravityPanAtMainTop(mapEl, frameTopMainPx) {
   const stageRect = stage.getBoundingClientRect();
   if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0 };
 
-  const bounds = getGraphBounds(mapEl);
-  const shiftY = readGraphShiftY();
-  const scaleY = VIEW_H / stageRect.height;
-  const gapPx = 12;
-  const anchorScreenY = mainRect.top + frameTopMainPx - gapPx;
-  const panY = clampPanYForTopPad(
-    (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
-    bounds,
-    stageRect,
-    shiftY
+  const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
+  return computeCenteredBandCamera(
+    mapEl,
+    menuClearScreenY(stageRect),
+    mainRect.top + frameTopMainPx - clearance
   );
-  const panX = VIEW_W / 2 - bounds.cx;
-
-  return { panX, panY };
 }
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */

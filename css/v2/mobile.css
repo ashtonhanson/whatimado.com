@@ -22,8 +22,9 @@
     --v2-mobile-focus-you-hero-gap: 0px;
     --v2-mobile-focus-hero-nudge: 1.1rem;
     /*
-     * Small tablets need a taller map band so YOU stays above Path Finder
-     * without crushing constellation proportions (phone stays near 32vh).
+     * Mobile prompt frame. Stays a top-third sheet so the band between the
+     * menu bar and this top edge is where the node map is centered.
+     * Desktop uses 25vh (tokens.css). Do not inherit that here.
      */
     --whatimado-frame-top-default: clamp(32vh, 26vh + 5vw, 38vh);
     --v2-kicker-reserve: clamp(3.9rem, 10.5vh, 4.75rem); /* room for 1.5× hero type */
@@ -101,11 +102,20 @@
     touch-action: none;
   }
 
+  /*
+   * Home map stage: the open band between the menu bar and Path Finder.
+   * Chat pins the same band in mobile-focus-lift.js (frame top minus clearance).
+   */
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
     --v2-map-svg-h: calc(
       var(--v2-kicker-top) - var(--v2-mobile-map-head-gap, 0.45rem) -
         var(--v2-mobile-map-kicker-clearance)
     );
+  }
+
+  /* Chat sheet: map box ends above the frame. Inline pin height matches this. */
+  body.v2-app:not([data-phase="open"]) whatimado-map {
+    height: calc(var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) - var(--v2-map-frame-clearance));
   }
 
   .v2-shell {

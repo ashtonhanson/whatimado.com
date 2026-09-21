@@ -38,7 +38,7 @@ export function measureHomeBase(mainEl) {
   const defaultVh =
     Number.parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue("--whatimado-frame-top-default")
-    ) || 47;
+    ) || 25;
   return (viewportHeight() * defaultVh) / 100 - mainRect.top;
 }
 

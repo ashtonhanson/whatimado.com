@@ -190,8 +190,8 @@ export function unpinMobileFocusChrome(controller) {
 }
 
 /**
- * Fit the node map from the menu through the chat frame.
- * The constellation continues under the glass so nodes stay visible, blurred, behind the prompt.
+ * Fit the node map in the gap between the menu bar and the prompt frame.
+ * The constellation stays above the frame.
  * @param {import("./frame-dock-controller.js").FrameDockController} controller
  */
 export function syncMobileReadingMap(controller) {
@@ -210,11 +210,10 @@ export function syncMobileReadingMap(controller) {
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const gutter = measureCssVarLength("--v2-main-gutter") || 14;
+  const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
   const frameTop = controller.frameEl.getBoundingClientRect().top;
   const mapTop = headerH;
-  const mapH = Math.max(160, window.innerHeight - mapTop);
-  const tuck = 110;
-  const svgH = Math.max(140, Math.round(frameTop - mapTop + tuck));
+  const svgH = Math.max(120, Math.round(frameTop - mapTop - clearance));
   const contentLeft = gutter;
   const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
 
@@ -222,7 +221,7 @@ export function syncMobileReadingMap(controller) {
     top: mapTop,
     left: contentLeft,
     width: contentWidth,
-    height: mapH,
+    height: svgH,
     svgHeight: svgH,
     zIndex: "40"
   });

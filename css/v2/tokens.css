@@ -62,8 +62,15 @@
   --v2-main-gutter: clamp(0.85rem, 2.2vw, 1.5rem);
   --v2-shell-radius: 0 var(--v2-frame-radius) var(--v2-frame-radius) var(--v2-frame-radius);
   --v2-shell-radius-right: var(--v2-frame-radius) 0 var(--v2-frame-radius) var(--v2-frame-radius);
-  --whatimado-frame-top-default: 47vh;
+  /*
+   * Desktop prompt frame. Top edge at 25vh, so the frame is the lower three
+   * quarters of the viewport and the node map has the band above it.
+   * Mobile overrides this inside css/v2/mobile.css (max-width: 900px).
+   */
+  --whatimado-frame-top-default: 25vh;
   --whatimado-frame-top: var(--whatimado-frame-top-default);
+  /* Gap that keeps the constellation above the prompt frame, not inside the glass. */
+  --v2-map-frame-clearance: clamp(0.85rem, 2.2vh, 1.35rem);
   --whatimado-scroll-thumb-h: 3.25rem;
   --v2-kicker-reserve: clamp(4.5rem, 11.5vh, 5.75rem);
   --v2-hero-node-gap: clamp(0.3rem, 0.75vh, 0.5rem);
@@ -86,7 +93,7 @@
   --v2-map-dim: 0;
   --v2-frame-elevation: 0;
   /** Docked frame top (px) — set during hero dismiss; frozen after dock settles */
-  --v2-docked-frame-top: 33.333vh;
+  --v2-docked-frame-top: var(--whatimado-frame-top-default);
   /** Visual-only float on docked prompt frame (transform, not layout) */
   --v2-frame-breathe-amplitude: clamp(2px, 0.35vh, 4px);
   /** Global upward shift for the node graph (fraction of SVG view height) */

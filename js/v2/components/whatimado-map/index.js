@@ -521,6 +521,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!this._frameCoupled || (this._focalLocked && !this._focalNodeId)) return;
 
     const target = this._computeChatFrameGravityPanAtMainTop(frameTopMainPx);
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
@@ -532,8 +533,8 @@ export class WhatimadoMap extends HTMLElement {
   /** Recenter a locked constellation after the mobile map band is resized. */
   fitLockedScene({ animate = false } = {}) {
     const chatPinned = this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1";
-    if (chatPinned) this._zoom = 1;
     const target = chatPinned ? this._computeChatFrameGravityPan() : this._computeDefaultScenePan();
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
@@ -617,13 +618,11 @@ export class WhatimadoMap extends HTMLElement {
       target = this._computePanForFocalNode(this._focalNodeId);
     } else if (isOpenHomePhase()) {
       target = this._computeOpenHomeGravityPan();
-      if (typeof target.zoom === "number") {
-        this._zoom = target.zoom;
-      }
     } else {
       target = this._computeChatFrameGravityPan();
     }
 
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
