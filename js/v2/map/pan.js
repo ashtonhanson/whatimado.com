@@ -174,7 +174,7 @@ export function computeChatFrameGravityPan(mapEl) {
   const bounds = getGraphBounds(mapEl);
   const shiftY = readGraphShiftY();
   const scaleY = VIEW_H / stageRect.height;
-  const gapPx = 12;
+  const gapPx = 52;
 
   const anchorScreenY = frameRect.top - gapPx;
   const panY = clampPanYForTopPad(

@@ -76,7 +76,6 @@ function applyMapYouButton(doc, map) {
   if (!map || typeof map !== "object") return;
 
   const youBtn = doc.querySelector(".whatimado-map__you-btn");
-  if (youBtn && map.youButtonLabel) youBtn.textContent = String(map.youButtonLabel);
   if (youBtn && map.youButtonAriaLabel) {
     youBtn.setAttribute("aria-label", String(map.youButtonAriaLabel));
   }

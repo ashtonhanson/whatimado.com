@@ -48,7 +48,13 @@ import {
 const MAP_TEMPLATE = `
   <div class="whatimado-map__pan-surface" part="pan-surface" aria-hidden="true"></div>
   <div class="whatimado-map__stage">
-    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center on You">YOU</button>
+    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center on You">
+      <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
+        <path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" />
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+      </svg>
+    </button>
     <svg class="whatimado-map__svg" part="svg" role="img" aria-label="Possibility map">
       <defs>
         <filter id="whatimado-node-shadow" x="-80%" y="-80%" width="260%" height="260%">
@@ -199,6 +205,9 @@ export class WhatimadoMap extends HTMLElement {
     this._onPointerUp = (event) => this._handlePointerUp(event);
     this._onGlobalPanMove = (event) => this._handlePanMove(event);
     this._onGlobalPanUp = (event) => this._finishPanPointer(event);
+    this._onPanTouchMove = (event) => {
+      if (this._panPointer || this._pinch) event.preventDefault();
+    };
     /** Hover via geometry — SVG :hover is unreliable under pan-surface stacking */
     this._onHoverPointerMove = (event) => this._handleHoverPointerMove(event);
     this._onHoverMouseMove = (event) => this._handleHoverPointerMove(event);
@@ -325,6 +334,9 @@ export class WhatimadoMap extends HTMLElement {
   syncLiveFromStore() {
     this.loadLiveGraph(graphStore.nodes, graphStore.edges);
     this._applyAnchorStyles();
+    if (this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1") {
+      this.fitLockedScene({ animate: false });
+    }
   }
 
   /** Fade out ambient ghost (Step B — full personalize in Step D) */
@@ -519,7 +531,8 @@ export class WhatimadoMap extends HTMLElement {
 
   /** Recenter a locked constellation after the mobile map band is resized. */
   fitLockedScene({ animate = false } = {}) {
-    const target = this._computeDefaultScenePan();
+    const chatPinned = this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1";
+    const target = chatPinned ? this._computeChatFrameGravityPan() : this._computeDefaultScenePan();
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
@@ -643,6 +656,10 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {TouchEvent} event */
   _handlePinchTouchStart(event) {
+    if (event.touches.length === 1) {
+      event.preventDefault();
+      return;
+    }
     if (event.touches.length !== 2 || !this._panSurface) return;
 
     event.preventDefault();
@@ -667,9 +684,8 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {TouchEvent} event */
   _handlePinchTouchMove(event) {
-    if (!this._pinch || event.touches.length < 2) return;
-
     event.preventDefault();
+    if (!this._pinch || event.touches.length < 2) return;
     const dist = this._touchDistance(event.touches);
     if (this._pinch.startDist <= 0) return;
 
@@ -712,6 +728,8 @@ export class WhatimadoMap extends HTMLElement {
     document.removeEventListener("pointermove", this._onGlobalPanMove);
     document.removeEventListener("pointerup", this._onGlobalPanUp);
     document.removeEventListener("pointercancel", this._onGlobalPanUp);
+    document.removeEventListener("touchmove", this._onPanTouchMove);
+    document.body.classList.remove("is-map-panning");
     this._globalPanActive = false;
   }
 
@@ -799,9 +817,11 @@ export class WhatimadoMap extends HTMLElement {
     const captureEl = event.target instanceof Element ? event.target : this._panSurface;
 
     this._globalPanActive = true;
+    document.body.classList.add("is-map-panning");
     document.addEventListener("pointermove", this._onGlobalPanMove);
     document.addEventListener("pointerup", this._onGlobalPanUp);
     document.addEventListener("pointercancel", this._onGlobalPanUp);
+    document.addEventListener("touchmove", this._onPanTouchMove, { passive: false });
 
     this._panSamples = [{ x: event.clientX, y: event.clientY, t: performance.now() }];
     this._panPendingClientX = event.clientX;
@@ -834,12 +854,9 @@ export class WhatimadoMap extends HTMLElement {
     this._ghostLayer = this.querySelector(".whatimado-map__layer--ghost");
     this._liveLayer = this.querySelector(".whatimado-map__layer--live");
     this._youBtn = this.querySelector(".whatimado-map__you-btn");
-    const mapBrand = /** @type {{ youButtonLabel?: string, youButtonAriaLabel?: string }|undefined} */ (
+    const mapBrand = /** @type {{ youButtonAriaLabel?: string }|undefined} */ (
       getBrand()?.map
     );
-    if (this._youBtn && mapBrand?.youButtonLabel) {
-      this._youBtn.textContent = mapBrand.youButtonLabel;
-    }
     if (this._youBtn && mapBrand?.youButtonAriaLabel) {
       this._youBtn.setAttribute("aria-label", mapBrand.youButtonAriaLabel);
     }

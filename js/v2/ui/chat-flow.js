@@ -356,6 +356,21 @@ export function initChatFlow(ctx) {
     mapEl?.handleGlobalPanPointerDown(event);
   });
 
+  mainEl?.addEventListener(
+    "touchstart",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("whatimado-frame")) return;
+      if (target.closest(".v2-rail")) return;
+      if (target.closest(".whatimado-map__you-btn")) return;
+      if (target.closest("whatimado-map") || target === mainEl) {
+        event.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
   mapEl?.addEventListener("map-node-select", (event) => {
     const detail = /** @type {CustomEvent<{ nodeId: string, promptEmpty?: boolean }>} */ (event).detail;
     if (!detail?.nodeId || detail.promptEmpty) return;

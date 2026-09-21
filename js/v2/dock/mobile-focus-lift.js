@@ -42,11 +42,12 @@ function clearPinStyles(el) {
   delete el.dataset.focusPinned;
   delete el.dataset.readingPinned;
   delete el.dataset.pinH;
+  delete el.dataset.sceneFit;
 }
 
 /**
  * @param {HTMLElement} map
- * @param {{ top: number, left: number, width: number, height: number, zIndex: string }} box
+ * @param {{ top: number, left: number, width: number, height: number, svgHeight?: number, zIndex: string }} box
  */
 function applyMapPin(map, box) {
   map.style.position = "fixed";
@@ -58,19 +59,25 @@ function applyMapPin(map, box) {
   map.style.transform = "none";
   map.style.overflow = "hidden";
   map.style.zIndex = box.zIndex;
-  map.style.setProperty("--v2-map-svg-h", `${Math.round(box.height)}px`);
+  const svgH = Math.round(box.svgHeight ?? box.height);
+  map.style.setProperty("--v2-map-svg-h", `${svgH}px`);
 }
 
 /** Recenter the constellation in the pinned stage when height changes. */
 function fitPinnedMap(map) {
-  const nextH = Math.round(map.getBoundingClientRect().height);
+  const nextH = Math.round(
+    Number.parseFloat(map.style.getPropertyValue("--v2-map-svg-h")) ||
+      map.getBoundingClientRect().height
+  );
   const prevH = Number(map.dataset.pinH || 0);
-  if (Math.abs(nextH - prevH) < 6) return;
+  const heightChanged = Math.abs(nextH - prevH) >= 6;
   map.dataset.pinH = String(nextH);
   const host = /** @type {HTMLElement & { fitLockedScene?: (opts?: { animate?: boolean }) => void }} */ (map);
-  requestAnimationFrame(() => {
-    host.fitLockedScene?.({ animate: false });
-  });
+  const run = () => host.fitLockedScene?.({ animate: false });
+  if (heightChanged || map.dataset.sceneFit !== "1") {
+    map.dataset.sceneFit = "1";
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  }
 }
 
 /**
@@ -103,14 +110,16 @@ export function pinMobileFocusChrome(controller) {
     !kicker.classList.contains("is-dismissing");
 
   if (!kickerVisible) {
-    const mapBottom = Math.round(promptTop - 10);
-    const mapHeight = Math.max(72, mapBottom - mapTop);
+    const mapH = Math.max(160, window.innerHeight - mapTop);
+    const glassOverlap = Math.max(96, Math.round((window.innerHeight - promptTop) * 0.22));
+    const svgH = Math.max(120, Math.round(promptTop - mapTop + glassOverlap));
     applyMapPin(map, {
       top: mapTop,
       left: contentLeft,
       width: contentWidth,
-      height: mapHeight,
-      zIndex: "42"
+      height: mapH,
+      svgHeight: svgH,
+      zIndex: "40"
     });
     map.dataset.focusPinned = "1";
     delete map.dataset.readingPinned;
@@ -198,24 +207,20 @@ export function syncMobileReadingMap(controller) {
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const gutter = measureCssVarLength("--v2-main-gutter") || 14;
   const frameTop = controller.frameEl.getBoundingClientRect().top;
-  const bandTop = headerH + 4;
-  const gapAboveFrame = 14;
-  const bandH = Math.max(0, frameTop - bandTop - gapAboveFrame);
-  if (bandH < 40) return;
-
-  const fillScreen = controller.frameEl.classList.contains("is-mobile-typing");
+  const mapTop = headerH;
+  const mapH = Math.max(160, window.innerHeight - mapTop);
+  const glassOverlap = Math.max(96, Math.round((window.innerHeight - frameTop) * 0.22));
+  const svgH = Math.max(120, Math.round(frameTop - mapTop + glassOverlap));
   const contentLeft = gutter;
   const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
-  const edgePad = fillScreen ? 4 : Math.max(8, Math.round(bandH * 0.06));
-  const mapH = Math.max(fillScreen ? 88 : 72, Math.round(bandH - edgePad * 2));
-  const mapTop = Math.round(bandTop + Math.max(0, (bandH - mapH) / 2));
 
   applyMapPin(map, {
     top: mapTop,
     left: contentLeft,
     width: contentWidth,
     height: mapH,
-    zIndex: "42"
+    svgHeight: svgH,
+    zIndex: "40"
   });
   map.dataset.readingPinned = "1";
   delete map.dataset.focusPinned;

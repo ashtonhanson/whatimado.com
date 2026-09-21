@@ -89,6 +89,16 @@
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+  }
+
+  body.v2-app.is-map-panning {
+    overflow: hidden;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    touch-action: none;
   }
 
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
@@ -108,6 +118,9 @@
   .v2-main {
     height: calc(100dvh - var(--v2-mobile-header-h) - env(safe-area-inset-bottom, 0px));
     min-height: calc(100dvh - var(--v2-mobile-header-h) - env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
   }
 
   .v2-main > whatimado-map,
@@ -672,13 +685,15 @@
   body.v2-app.is-mobile-composer-focus whatimado-map[data-focus-pinned="1"] .whatimado-map__stage,
   body.v2-app whatimado-map[data-reading-pinned="1"] .whatimado-map__stage {
     top: 0;
-    height: 100%;
+    height: var(--v2-map-svg-h);
+    overflow: visible;
   }
 
   body.v2-app whatimado-map[data-reading-pinned="1"],
   body.v2-app whatimado-map[data-focus-pinned="1"] {
     margin: 0;
     overflow: hidden;
+    touch-action: none;
   }
 
   /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */
@@ -821,10 +836,11 @@
   }
 
   whatimado-map .whatimado-map__you-btn {
-    top: calc(0.35rem + var(--v2-mobile-you-btn-drop, 0px));
-    right: 0.35rem;
-    font-size: 0.62rem;
-    padding: 0.28rem 0.55rem;
+    top: 0.4rem;
+    right: 0.45rem;
+    width: 2.05rem;
+    height: 2.05rem;
+    z-index: 6;
   }
 
   /* Three path cards must fit in the ¾ reading sheet above the composer */
