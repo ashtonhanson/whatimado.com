@@ -35,7 +35,7 @@ export function getPhaseVisibility(phase, options = {}) {
     case PHASE.PATH_SELECTED:
       return { map: "visible", resources: false, possibilities: true, homePrompt: false };
     case PHASE.MISSIONS:
-      return { map: "visible", resources: false, possibilities: true, homePrompt: false };
+      return { map: "visible", resources: true, possibilities: true, homePrompt: false };
     default:
       return { map: "ghost", resources: false, possibilities: false, homePrompt: true };
   }

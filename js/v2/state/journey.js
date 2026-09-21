@@ -1,4 +1,5 @@
 import { PHASE } from "../phases.js";
+import { normalizeResources } from "../roadmap/resources.js";
 
 /** @typedef {import("../phases.js").Phase} Phase */
 /** @typedef {{ role: "user"|"assistant", content: string }} JourneyMessage */
@@ -28,7 +29,8 @@ import { PHASE } from "../phases.js";
  *   planBullets: string[],
  *   confirmGateAwaitingRevision: boolean,
  *   threadBreak: number | null,
- *   missionsStages: { label: string, desc: string, missions: { title: string, text: string }[] }[]
+ *   missionsStages: { label: string, desc: string, missions: { title: string, text: string }[] }[],
+ *   missionResources: { name: string, org: string, details: string, url: string, phone: string }[]
  * }} Journey */
 
 const PHASE_VALUES = new Set(Object.values(PHASE));
@@ -61,7 +63,8 @@ export function createEmptyJourney() {
     planBullets: [],
     confirmGateAwaitingRevision: false,
     threadBreak: null,
-    missionsStages: []
+    missionsStages: [],
+    missionResources: []
   };
 }
 
@@ -151,7 +154,8 @@ export function normalizeJourney(raw) {
       : [],
     confirmGateAwaitingRevision: Boolean(source.confirmGateAwaitingRevision),
     threadBreak: Number.isInteger(source.threadBreak) ? source.threadBreak : null,
-    missionsStages: normalizeStages(source.missionsStages)
+    missionsStages: normalizeStages(source.missionsStages),
+    missionResources: normalizeResources(source.missionResources)
   };
 }
 

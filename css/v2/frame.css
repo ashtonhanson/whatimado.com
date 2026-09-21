@@ -17,6 +17,18 @@ whatimado-frame {
   isolation: isolate;
 }
 
+/* Desktop: fill the center column so the glass meets the rail gap, not a centered 720px box. */
+@media (min-width: 901px) {
+  .v2-main > whatimado-frame {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
 whatimado-frame.is-dragging,
 whatimado-frame.is-gliding,
 whatimado-frame.is-settling {

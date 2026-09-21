@@ -3,6 +3,7 @@ import { callAdvisor } from "../advisor.js";
 import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { buildIntakeContextBlock, shouldBlockJobBoards } from "../intake/stability-gates.js";
 import { formatUserLocation } from "../state/location.js";
+import { fallbackResources, mergeResources, parseResourcesResponse, renderResourcesRail } from "./resources.js";
 
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
@@ -100,8 +101,8 @@ function buildMissionsPrompt(idea, bullets) {
   return (
     `You are whatimado. Write the FIRST roadmap for "${idea.title || idea.label}".\n` +
     `Return ONLY JSON:\n` +
-    `{"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences"}]}]}\n` +
-    `Exactly 2 stages, 2 missions each. Middle-school reading level. No job-board filler.\n` +
+    `{"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences"}]}],"resources":[{"name":"organization","details":"one sentence of what to ask them","url":"https://official-site","phone":""}]}\n` +
+    `Exactly 2 stages, 2 missions each. Also 2 to 4 real organizations in the user's city. Use official sites you are sure about, and leave url empty if you are not sure. Do not invent phone numbers. Middle-school reading level. No job-board filler.\n` +
     `${stability}\n\n` +
     `Path: ${idea.title || idea.label}\n` +
     `Why: ${idea.why || idea.tagline || idea.description || ""}\n` +
@@ -158,9 +159,21 @@ export function createMissionsController(ui) {
     if (!sectionEl) return;
     sectionEl.classList.remove("hidden");
     renderMissionStages(listEl, stages);
+    renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
     setStatusMessage(statusEl(), "");
     scrollFrameChildIntoView(sectionEl);
     layout();
+  }
+
+  function remember(stages, resources) {
+    appStore.journey.missionsStages = stages;
+    appStore.journey.missionResources = mergeResources(
+      resources,
+      fallbackResources(appStore.location, appStore.profile)
+    );
+    touchJourney();
+    flush();
+    show(stages);
   }
 
   /**
@@ -176,25 +189,20 @@ export function createMissionsController(ui) {
     pending = true;
     sectionEl?.classList.remove("hidden");
     if (listEl) listEl.innerHTML = "";
+    renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
     setStatusMessage(statusEl(), "Generating your missions");
     scrollFrameChildIntoView(sectionEl);
     layout();
     const fallback = fallbackStages(idea, appStore.profile);
     try {
       const raw = await callAdvisor(buildMissionsPrompt(idea, bullets), {
-        maxTokens: 900,
+        maxTokens: 1200,
         feature: "v2_missions"
       });
       const stages = parseStagesResponse(raw, fallback);
-      appStore.journey.missionsStages = stages;
-      touchJourney();
-      flush();
-      show(stages);
+      remember(stages, parseResourcesResponse(raw));
     } catch {
-      appStore.journey.missionsStages = fallback;
-      touchJourney();
-      flush();
-      show(fallback);
+      remember(fallback, []);
     } finally {
       pending = false;
       setStatusMessage(statusEl(), "");
