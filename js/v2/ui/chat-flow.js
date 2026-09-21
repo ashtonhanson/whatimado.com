@@ -1,7 +1,7 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
 import { graphStore, selectGraphNode } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
-import { appendMessage, escapeHtml } from "../ui.js";
+import { appendMessage, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
 import { ensureJourneyStarted } from "../state/journey.js";
@@ -105,12 +105,30 @@ export function initChatFlow(ctx) {
     pathMap.render();
   }
 
-  function showSelectedPath(node) {
+  function showSelectedPath(node, { generating = false } = {}) {
     const displayTitle = node.title || node.label;
     if (selectionPanel) {
       selectionPanel.classList.remove("hidden");
-      const bits = [node.ideaType, node.cost, node.timeline].filter(Boolean);
-      selectionPanel.innerHTML = `<h2 class="v2-section-label">Selected path</h2><p><strong>${escapeHtml(displayTitle)}</strong>${node.tagline ? ` — ${escapeHtml(node.tagline)}` : node.description ? ` — ${escapeHtml(node.description)}` : ""}</p>${bits.length ? `<p class="v2-selection-meta">${bits.map((bit) => escapeHtml(bit)).join(" · ")}</p>` : ""}`;
+      const meta = [node.cost, node.timeline, node.income].filter(Boolean);
+      const gateHost = selectionPanel.querySelector("#selection-gate-host");
+      const existingGate = gateHost?.querySelector("#v2-confirm-gate") || null;
+      selectionPanel.innerHTML = `
+        <h2 class="v2-section-label">Selected path</h2>
+        ${node.ideaType ? `<p class="v2-selection__type">${escapeHtml(node.ideaType)}</p>` : ""}
+        <h3 class="v2-selection__title">${escapeHtml(displayTitle)}</h3>
+        ${node.tagline || node.description ? `<p class="v2-selection__tagline">${escapeHtml(node.tagline || node.description || "")}</p>` : ""}
+        ${meta.length ? `<p class="v2-selection-meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</p>` : ""}
+        ${node.why ? `<p class="v2-selection__why">${escapeHtml(node.why)}</p>` : ""}
+        <p class="v2-status${generating ? "" : " hidden"}" id="selection-status" role="status" aria-live="polite"></p>
+        <div id="selection-gate-host"></div>
+      `;
+      if (generating) {
+        setStatusMessage(selectionPanel.querySelector("#selection-status"), "Generating this roadmap");
+      }
+      if (existingGate) {
+        selectionPanel.querySelector("#selection-gate-host")?.appendChild(existingGate);
+      }
+      scrollFrameChildIntoView(selectionPanel);
     }
     if (activePathEl) {
       activePathEl.innerHTML = `<strong>${escapeHtml(displayTitle)}</strong>${appStore.journey.planConfirmed ? "Plan confirmed — missions next." : "Confirm this plan in chat, or discuss / alter below."}`;
@@ -124,8 +142,11 @@ export function initChatFlow(ctx) {
       graphStore.nodes.find((node) => node.id === (appStore.journey.selectedPathId || graphStore.selectedId)) || null;
     if (selected && selected.type !== "start") {
       showSelectedPath(selected);
-    } else if (activePathEl) {
-      activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
+    } else {
+      selectionPanel?.classList.add("hidden");
+      if (activePathEl) {
+        activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
+      }
       confirmGate.hide();
     }
     renderPathCards();
@@ -140,15 +161,22 @@ export function initChatFlow(ctx) {
     flush: flushPersist,
     setComposerEnabled,
     setPhasePossibilities: applyPathsToMap,
-    onSelectPath: (id, options) => handleNodeSelect(id, options)
+    onSelectPath: (id, options) => handleNodeSelect(id, options),
+    onShowChat: () => {
+      layout();
+      scrollFrameChildIntoView(messagesEl, { toEnd: true });
+      frameEl?.focusComposer({ glideOnMobile: false });
+    }
   });
 
   const confirmGate = createConfirmGateController({
     messagesEl,
+    panelEl: selectionPanel,
     layout,
     flush: flushPersist,
     setComposerEnabled,
     setPhase,
+    renderDetail: (node, options) => showSelectedPath(node, options),
     onConfirmed: () => {
       const selected =
         graphStore.nodes.find((node) => node.id === appStore.journey.selectedPathId) || null;
@@ -177,7 +205,7 @@ export function initChatFlow(ctx) {
     appStore.journey.selectedPathId = nodeId;
     if (startConfirm) appStore.journey.planConfirmed = false;
     setPhase(PHASE.PATH_SELECTED);
-    showSelectedPath(node);
+    showSelectedPath(node, { generating: startConfirm });
     renderPathCards();
     layout();
     if (startConfirm) void confirmGate.begin(node);

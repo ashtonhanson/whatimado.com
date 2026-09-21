@@ -1,4 +1,4 @@
-import { escapeHtml } from "../ui.js";
+import { escapeHtml, scrollFrameChildIntoView } from "../ui.js";
 import { shouldBlockJobBoards } from "../intake/stability-gates.js";
 
 const GATE_ID = "v2-confirm-gate";
@@ -135,10 +135,5 @@ export function renderConfirmGate(container, spec) {
     else spec.onRevise();
   });
   container.appendChild(wrap);
-  const frameBody = container.closest(".whatimado-frame__body");
-  if (frameBody) {
-    requestAnimationFrame(() => {
-      frameBody.scrollTop = frameBody.scrollHeight;
-    });
-  }
+  scrollFrameChildIntoView(wrap);
 }

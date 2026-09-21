@@ -771,10 +771,7 @@ export class WhatimadoFrame extends HTMLElement {
       }
       this._dock?.remeasure();
       this._updateScrollState();
-      if (this.classList.contains("is-scrollable") && this._body) {
-        this._body.scrollTop = this._body.scrollHeight;
-        this._updateScrollFade();
-      }
+      this._updateScrollFade();
     });
   }
 }

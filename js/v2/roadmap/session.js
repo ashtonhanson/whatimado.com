@@ -1,6 +1,6 @@
 import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
-import { appendMessage } from "../ui.js";
+import { appendMessage, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { hideIntakeChips } from "../components/profile-chips.js";
 import { PHASE } from "../phases.js";
 import { buildIntakeContextBlock } from "../intake/stability-gates.js";
@@ -16,21 +16,31 @@ import {
 /**
  * @param {{
  *   messagesEl: HTMLElement | null,
+ *   panelEl: HTMLElement | null,
  *   layout: () => void,
  *   flush: () => void,
  *   setComposerEnabled: (enabled: boolean) => void,
  *   setPhase: (phase: import("../phases.js").Phase) => void,
+ *   renderDetail?: (idea: import("../graph-store.js").GraphNode, options?: { generating?: boolean }) => void,
  *   onConfirmed: (idea: import("../graph-store.js").GraphNode, bullets: string[]) => void
  * }} ui
  */
 export function createConfirmGateController(ui) {
-  const { messagesEl, layout, flush, setComposerEnabled, setPhase, onConfirmed } = ui;
+  const { messagesEl, panelEl, layout, flush, setComposerEnabled, setPhase, renderDetail, onConfirmed } = ui;
   let visible = false;
   let pending = false;
 
-  function pushAdvisor(text) {
+  function gateHost() {
+    return panelEl?.querySelector("#selection-gate-host") || panelEl || messagesEl;
+  }
+
+  function statusEl() {
+    return panelEl?.querySelector("#selection-status") || null;
+  }
+
+  function pushAdvisor(text, { skipScroll = false } = {}) {
     if (!messagesEl) return;
-    appendMessage(messagesEl, "advisor", text);
+    appendMessage(messagesEl, "advisor", text, { skipScroll });
     appStore.journey.messages.push({ role: "assistant", content: text });
     touchJourney();
     layout();
@@ -39,7 +49,9 @@ export function createConfirmGateController(ui) {
 
   function hide() {
     visible = false;
+    hideConfirmGate(gateHost());
     hideConfirmGate(messagesEl);
+    setStatusMessage(statusEl(), "");
     appStore.journey.confirmGateAwaitingRevision = false;
   }
 
@@ -48,7 +60,7 @@ export function createConfirmGateController(ui) {
     appStore.journey.planBullets = bullets.slice();
     appStore.journey.confirmGateAwaitingRevision = false;
     touchJourney();
-    renderConfirmGate(messagesEl, {
+    renderConfirmGate(gateHost(), {
       label: update
         ? "Here's the updated plan based on what you shared. Does this look right before I build your roadmap?"
         : "Here's the plan I'd suggest — does this look right?",
@@ -56,6 +68,8 @@ export function createConfirmGateController(ui) {
       onConfirm: () => accept(),
       onRevise: () => requestRevision()
     });
+    setStatusMessage(statusEl(), "");
+    scrollFrameChildIntoView(panelEl || messagesEl);
     layout();
     flush();
   }
@@ -96,40 +110,43 @@ export function createConfirmGateController(ui) {
     }
 
     pending = true;
+    visible = false;
     hideIntakeChips(messagesEl);
-    hide();
+    hideConfirmGate(gateHost());
+    hideConfirmGate(messagesEl);
     appStore.journey.mapChatType = null;
     appStore.journey.mapChatPathId = null;
     appStore.journey.planConfirmed = false;
     appStore.journey.selectedPathId = idea.id;
     setPhase(PHASE.PATH_SELECTED);
+    renderDetail?.(idea, { generating: true });
+    setStatusMessage(statusEl(), options.revision ? "Updating this roadmap" : "Generating this roadmap");
     setComposerEnabled(false);
-    const typingEl = messagesEl
-      ? appendMessage(messagesEl, "advisor", options.revision ? "Updating the plan…" : "Reviewing your situation…", {
-          typing: true
-        })
-      : null;
     layout();
+    scrollFrameChildIntoView(panelEl || messagesEl);
 
     try {
       const summary = await requestSummary(idea, options.revision || "");
-      typingEl?.remove();
-      pushAdvisor(summary.intro);
+      renderDetail?.(idea, { generating: false });
+      pushAdvisor(summary.intro, { skipScroll: true });
       showGate(summary.bullets, { update: Boolean(options.update || options.revision) });
     } finally {
       pending = false;
       setComposerEnabled(true);
+      setStatusMessage(statusEl(), "");
     }
   }
 
   function requestRevision() {
     visible = false;
+    hideConfirmGate(gateHost());
     hideConfirmGate(messagesEl);
     appStore.journey.confirmGateAwaitingRevision = true;
     touchJourney();
     flush();
     setComposerEnabled(true);
     pushAdvisor("What would you like to change about this plan? Tell me what's missing, out of order, or not realistic for you.");
+    scrollFrameChildIntoView(messagesEl, { toEnd: true });
   }
 
   function accept() {

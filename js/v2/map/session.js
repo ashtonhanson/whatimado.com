@@ -1,6 +1,6 @@
 import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
-import { appendMessage } from "../ui.js";
+import { appendMessage, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { hideIntakeChips, renderIntakeChips } from "../components/profile-chips.js";
 import { renderPathCards } from "../components/path-cards.js";
 import {
@@ -55,17 +55,33 @@ function contextBlock() {
  *   flush: () => void,
  *   setComposerEnabled: (enabled: boolean) => void,
  *   setPhasePossibilities: () => void,
- *   onSelectPath: (id: string, options?: { startConfirm?: boolean }) => void
+ *   onSelectPath: (id: string, options?: { startConfirm?: boolean }) => void,
+ *   onShowChat?: () => void
  * }} ui
  */
 export function createPathMapController(ui) {
-  const { messagesEl, pathCardsEl, mapEl, layout, flush, setComposerEnabled, setPhasePossibilities, onSelectPath } = ui;
+  const { messagesEl, pathCardsEl, mapEl, layout, flush, setComposerEnabled, setPhasePossibilities, onSelectPath, onShowChat } = ui;
   let moreBusy = false;
   let regenBusy = false;
 
-  function pushAdvisor(text) {
+  function pathStatusEl() {
+    return document.getElementById("path-status");
+  }
+
+  function possibilitiesEl() {
+    return document.getElementById("possibilities");
+  }
+
+  function setPathBusy(text) {
+    const section = possibilitiesEl();
+    if (text) section?.classList.remove("hidden");
+    setStatusMessage(pathStatusEl(), text);
+    layout();
+  }
+
+  function pushAdvisor(text, { skipScroll = false } = {}) {
     if (!messagesEl) return;
-    appendMessage(messagesEl, "advisor", text);
+    appendMessage(messagesEl, "advisor", text, { skipScroll });
     appStore.journey.messages.push({ role: "assistant", content: text });
     touchJourney();
     layout();
@@ -140,19 +156,25 @@ export function createPathMapController(ui) {
     if (appStore.journey.pathsGenerated || appStore.pathsGenerating) return;
     appStore.pathsGenerating = true;
     setComposerEnabled(false);
-    const typingEl = messagesEl ? appendMessage(messagesEl, "advisor", "Mapping a few paths that could fit…", { typing: true }) : null;
+    setPathBusy("Generating your roadmaps");
+    setPhasePossibilities();
+    const typingEl = messagesEl
+      ? appendMessage(messagesEl, "advisor", "Generating your roadmaps…", { typing: true, skipScroll: true })
+      : null;
     layout();
+    scrollFrameChildIntoView(possibilitiesEl());
     const count = ideaCountForMode(appStore.journey.pathMode);
     try {
       const { intro, ideas } = await requestIdeas({ count, mode: "generate", feature: "v2_paths" });
       typingEl?.remove();
       applyIdeasToMap(ideas.slice(0, count), { keepSelectedId: null });
-      pushAdvisor(intro);
+      pushAdvisor(intro, { skipScroll: true });
       appStore.journey.pathsGenerated = true;
       appStore.journey.mapChatType = null;
       appStore.journey.mapChatPathId = null;
       touchJourney();
       flush();
+      scrollFrameChildIntoView(possibilitiesEl());
     } catch (error) {
       typingEl?.remove();
       applyIdeasToMap(fallbackIdeas(appStore.profile, appStore.journey.pathMode), { keepSelectedId: null });
@@ -160,10 +182,14 @@ export function createPathMapController(ui) {
       touchJourney();
       flush();
       if (!silentFail) {
-        pushAdvisor("I couldn't map custom paths just now — here are starter directions you can explore.");
+        pushAdvisor("I couldn't map custom paths just now — here are starter directions you can explore.", {
+          skipScroll: true
+        });
       }
+      scrollFrameChildIntoView(possibilitiesEl());
     } finally {
       appStore.pathsGenerating = false;
+      setPathBusy("");
       setComposerEnabled(true);
     }
   }
@@ -205,13 +231,18 @@ export function createPathMapController(ui) {
     }
   }
 
-  async function regenerateAll() {
+  async function regenerateAll({ fromRedirect = false } = {}) {
     if (regenBusy) return;
     regenBusy = true;
+    appStore.journey.selectedPathId = null;
     render();
     setComposerEnabled(false);
-    const typingEl = messagesEl ? appendMessage(messagesEl, "advisor", "Refreshing your map…", { typing: true }) : null;
+    const status = fromRedirect ? "Calculating adjustments to your paths" : "Generating new roadmaps";
+    setPathBusy(status);
+    setPhasePossibilities();
+    const typingEl = messagesEl ? appendMessage(messagesEl, "advisor", `${status}…`, { typing: true }) : null;
     layout();
+    if (fromRedirect) scrollFrameChildIntoView(messagesEl, { toEnd: true });
     const count = ideaCountForMode(appStore.journey.pathMode);
     const previous = pathNodes().map((node) => node.title || node.label);
     try {
@@ -227,12 +258,14 @@ export function createPathMapController(ui) {
       appStore.journey.mapChatType = null;
       appStore.journey.mapChatPathId = null;
       touchJourney();
-      pushAdvisor(intro || "Here's a refreshed map based on what you've said.");
+      pushAdvisor(intro || "Here's a refreshed map based on what you've said.", { skipScroll: true });
+      scrollFrameChildIntoView(possibilitiesEl());
     } catch {
       typingEl?.remove();
       pushAdvisor("I couldn't regenerate the map just now — your current paths are unchanged.");
     } finally {
       regenBusy = false;
+      setPathBusy("");
       setComposerEnabled(true);
       render();
     }
@@ -308,6 +341,7 @@ export function createPathMapController(ui) {
       `Let's talk about "${idea.title || idea.label}". What questions do you have — fit, timing, money, or how you'd actually start? Tap Update this path when you want a revised version on the map.`
     );
     showUpdateChip("Update this path", () => void replacePath(pathId));
+    onShowChat?.();
   }
 
   function startAlter(pathId) {
@@ -323,6 +357,7 @@ export function createPathMapController(ui) {
       `Let's fix "${idea.title || idea.label}". Tell me what's off — too generic, wrong focus, timing, or budget — then tap Update this path.`
     );
     showUpdateChip("Update this path", () => void replacePath(pathId));
+    onShowChat?.();
   }
 
   function startRedirect() {
@@ -334,6 +369,7 @@ export function createPathMapController(ui) {
     pushAdvisor(
       "What direction should these paths take instead? For example: more employment, less teaching, closer to your current skills, faster income, or a different field entirely."
     );
+    onShowChat?.();
   }
 
   function handleFeedback(sentiment) {
@@ -362,7 +398,7 @@ export function createPathMapController(ui) {
       appStore.journey.mapChatPathId = null;
       touchJourney();
       flush();
-      await regenerateAll();
+      await regenerateAll({ fromRedirect: true });
       return true;
     }
     const idea = pathNodes().find((node) => node.id === pathId);

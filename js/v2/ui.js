@@ -26,7 +26,7 @@ const TYPING_DOTS_HTML =
  * @param {HTMLElement} container
  * @param {"user"|"advisor"} role
  * @param {string} content
- * @param {{ typing?: boolean }} [options]
+ * @param {{ typing?: boolean, skipScroll?: boolean }} [options]
  */
 export function appendMessage(container, role, content, options = {}) {
   const wrap = document.createElement("div");
@@ -44,14 +44,58 @@ export function appendMessage(container, role, content, options = {}) {
 
   container.appendChild(wrap);
 
-  const frameBody = container.closest(".whatimado-frame__body");
-  if (frameBody) {
-    requestAnimationFrame(() => {
-      frameBody.scrollTop = frameBody.scrollHeight;
-    });
-  } else {
-    wrap.scrollIntoView({ behavior: "smooth", block: "end" });
+  if (!options.skipScroll) {
+    scrollFrameChildIntoView(wrap, { toEnd: true });
   }
 
   return wrap;
+}
+
+/**
+ * Scroll a child into the prompt frame body (cards, details, or latest chat).
+ * @param {HTMLElement | null} el
+ * @param {{ toEnd?: boolean }} [options]
+ */
+export function scrollFrameChildIntoView(el, { toEnd = false } = {}) {
+  if (!el) return;
+  const frameBody = el.closest(".whatimado-frame__body");
+  const run = () => {
+    if (!el.isConnected) return;
+    if (frameBody) {
+      if (toEnd) {
+        frameBody.scrollTop = frameBody.scrollHeight;
+        return;
+      }
+      const bodyTop = frameBody.getBoundingClientRect().top;
+      const childTop = el.getBoundingClientRect().top;
+      frameBody.scrollTop = Math.max(0, frameBody.scrollTop + (childTop - bodyTop) - 10);
+      return;
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  requestAnimationFrame(() => requestAnimationFrame(run));
+}
+
+/**
+ * @param {HTMLElement | null} el
+ * @param {string} text
+ */
+export function setStatusMessage(el, text) {
+  if (!el) return;
+  const value = String(text || "").trim();
+  if (!value) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    el.removeAttribute("aria-busy");
+    return;
+  }
+  el.classList.remove("hidden");
+  el.setAttribute("aria-busy", "true");
+  el.innerHTML =
+    `${escapeHtml(value)} ` +
+    `<span class="v2-typing-dots" aria-hidden="true">` +
+    `<span class="v2-typing-dots__dot">.</span>` +
+    `<span class="v2-typing-dots__dot">.</span>` +
+    `<span class="v2-typing-dots__dot">.</span>` +
+    `</span>`;
 }
