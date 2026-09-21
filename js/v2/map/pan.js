@@ -174,9 +174,10 @@ export function computeChatFrameGravityPan(mapEl) {
   const bounds = getGraphBounds(mapEl);
   const shiftY = readGraphShiftY();
   const scaleY = VIEW_H / stageRect.height;
-  const gapPx = 52;
-
-  const anchorScreenY = frameRect.top - gapPx;
+  const pinnedUnderGlass =
+    mapEl.dataset.readingPinned === "1" || mapEl.dataset.focusPinned === "1";
+  /* Mobile chat: lower nodes sit inside the frosted frame; the rest stay in the clear band. */
+  const anchorScreenY = pinnedUnderGlass ? frameRect.top + 64 : frameRect.top - 52;
   const panY = clampPanYForTopPad(
     (anchorScreenY - stageRect.top) * scaleY - shiftY - bounds.maxY,
     bounds,

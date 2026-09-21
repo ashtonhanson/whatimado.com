@@ -52,6 +52,19 @@ export function appendMessage(container, role, content, options = {}) {
 }
 
 /**
+ * Once path cards are on screen, new chat belongs under them — not back in the intake transcript.
+ * @param {HTMLElement | null} [primary]
+ * @returns {HTMLElement | null}
+ */
+export function continuationThread(primary) {
+  const tail = document.getElementById("messages-tail");
+  const cards = document.getElementById("possibilities");
+  const pathsShown = Boolean(cards && !cards.classList.contains("hidden") && tail);
+  if (pathsShown) return tail;
+  return primary || document.getElementById("messages");
+}
+
+/**
  * Scroll a child into the prompt frame body (cards, details, or latest chat).
  * @param {HTMLElement | null} el
  * @param {{ toEnd?: boolean }} [options]

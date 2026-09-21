@@ -26,7 +26,9 @@ import { PHASE } from "../phases.js";
  *   mapFeedbackSentiment: "yes"|"no"|null,
  *   planConfirmed: boolean,
  *   planBullets: string[],
- *   confirmGateAwaitingRevision: boolean
+ *   confirmGateAwaitingRevision: boolean,
+ *   threadBreak: number | null,
+ *   missionsStages: { label: string, desc: string, missions: { title: string, text: string }[] }[]
  * }} Journey */
 
 const PHASE_VALUES = new Set(Object.values(PHASE));
@@ -57,7 +59,9 @@ export function createEmptyJourney() {
     mapFeedbackSentiment: null,
     planConfirmed: false,
     planBullets: [],
-    confirmGateAwaitingRevision: false
+    confirmGateAwaitingRevision: false,
+    threadBreak: null,
+    missionsStages: []
   };
 }
 
@@ -145,8 +149,35 @@ export function normalizeJourney(raw) {
     planBullets: Array.isArray(source.planBullets)
       ? source.planBullets.map((bullet) => String(bullet || "").trim()).filter(Boolean).slice(0, 7)
       : [],
-    confirmGateAwaitingRevision: Boolean(source.confirmGateAwaitingRevision)
+    confirmGateAwaitingRevision: Boolean(source.confirmGateAwaitingRevision),
+    threadBreak: Number.isInteger(source.threadBreak) ? source.threadBreak : null,
+    missionsStages: normalizeStages(source.missionsStages)
   };
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {{ label: string, desc: string, missions: { title: string, text: string }[] }[]}
+ */
+function normalizeStages(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 4)
+    .map((stage) => {
+      const missions = Array.isArray(stage?.missions) ? stage.missions : Array.isArray(stage?.tasks) ? stage.tasks : [];
+      return {
+        label: String(stage?.label || "").trim().slice(0, 80),
+        desc: String(stage?.desc || "").trim().slice(0, 320),
+        missions: missions
+          .slice(0, 4)
+          .map((mission) => ({
+            title: String(mission?.title || mission?.mission || "").trim().slice(0, 140),
+            text: String(mission?.text || "").trim().slice(0, 600)
+          }))
+          .filter((mission) => mission.title)
+      };
+    })
+    .filter((stage) => stage.label && stage.missions.length);
 }
 
 export function isRestorableJourney(journey) {

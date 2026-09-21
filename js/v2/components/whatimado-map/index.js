@@ -532,6 +532,7 @@ export class WhatimadoMap extends HTMLElement {
   /** Recenter a locked constellation after the mobile map band is resized. */
   fitLockedScene({ animate = false } = {}) {
     const chatPinned = this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1";
+    if (chatPinned) this._zoom = 1;
     const target = chatPinned ? this._computeChatFrameGravityPan() : this._computeDefaultScenePan();
     this._animatePanTo(target.panX, target.panY, animate);
   }

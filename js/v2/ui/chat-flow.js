@@ -1,7 +1,7 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
 import { graphStore, selectGraphNode } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
-import { appendMessage, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
+import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
 import { ensureJourneyStarted } from "../state/journey.js";
@@ -16,6 +16,7 @@ import {
 import { createIntakeController } from "../intake/session.js";
 import { createPathMapController } from "../map/session.js";
 import { createConfirmGateController } from "../roadmap/session.js";
+import { createMissionsController } from "../roadmap/missions.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -105,7 +106,7 @@ export function initChatFlow(ctx) {
     pathMap.render();
   }
 
-  function showSelectedPath(node, { generating = false } = {}) {
+  function showSelectedPath(node, { generating = false, scroll = true } = {}) {
     const displayTitle = node.title || node.label;
     if (selectionPanel) {
       selectionPanel.classList.remove("hidden");
@@ -128,7 +129,7 @@ export function initChatFlow(ctx) {
       if (existingGate) {
         selectionPanel.querySelector("#selection-gate-host")?.appendChild(existingGate);
       }
-      scrollFrameChildIntoView(selectionPanel);
+      if (scroll) scrollFrameChildIntoView(selectionPanel);
     }
     if (activePathEl) {
       activePathEl.innerHTML = `<strong>${escapeHtml(displayTitle)}</strong>${appStore.journey.planConfirmed ? "Plan confirmed — missions next." : "Confirm this plan in chat, or discuss / alter below."}`;
@@ -141,7 +142,7 @@ export function initChatFlow(ctx) {
     const selected =
       graphStore.nodes.find((node) => node.id === (appStore.journey.selectedPathId || graphStore.selectedId)) || null;
     if (selected && selected.type !== "start") {
-      showSelectedPath(selected);
+      showSelectedPath(selected, { scroll: false });
     } else {
       selectionPanel?.classList.add("hidden");
       if (activePathEl) {
@@ -164,9 +165,16 @@ export function initChatFlow(ctx) {
     onSelectPath: (id, options) => handleNodeSelect(id, options),
     onShowChat: () => {
       layout();
-      scrollFrameChildIntoView(messagesEl, { toEnd: true });
+      scrollFrameChildIntoView(continuationThread(messagesEl), { toEnd: true });
       frameEl?.focusComposer({ glideOnMobile: false });
     }
+  });
+
+  const missions = createMissionsController({
+    sectionEl: document.getElementById("missions"),
+    listEl: document.getElementById("mission-stages"),
+    layout,
+    flush: flushPersist
   });
 
   const confirmGate = createConfirmGateController({
@@ -177,11 +185,12 @@ export function initChatFlow(ctx) {
     setComposerEnabled,
     setPhase,
     renderDetail: (node, options) => showSelectedPath(node, options),
-    onConfirmed: () => {
+    onConfirmed: (_idea, bullets) => {
       const selected =
         graphStore.nodes.find((node) => node.id === appStore.journey.selectedPathId) || null;
-      if (selected && selected.type !== "start") showSelectedPath(selected);
+      if (selected && selected.type !== "start") showSelectedPath(selected, { scroll: false });
       layout();
+      void missions.begin(selected, bullets);
     }
   });
 
@@ -238,9 +247,14 @@ export function initChatFlow(ctx) {
     const journey = appStore.journey;
     if (!journey.messages.length) return false;
 
-    for (const turn of journey.messages) {
-      appendMessage(messagesEl, turn.role === "user" ? "user" : "advisor", turn.content);
-    }
+    const breakAt = Number.isInteger(journey.threadBreak) ? journey.threadBreak : journey.messages.length;
+    const tailEl = document.getElementById("messages-tail");
+    journey.messages.slice(0, breakAt).forEach((turn) => {
+      appendMessage(messagesEl, turn.role === "user" ? "user" : "advisor", turn.content, { skipScroll: true });
+    });
+    journey.messages.slice(breakAt).forEach((turn) => {
+      appendMessage(tailEl || messagesEl, turn.role === "user" ? "user" : "advisor", turn.content, { skipScroll: true });
+    });
 
     if (journey.ghostDismissed) {
       mapEl?.dismissGhost({ instant: true });
@@ -258,7 +272,7 @@ export function initChatFlow(ctx) {
     if (selected && selected.type !== "start") {
       selectGraphNode(selected.id);
       mapEl?.setSelectedNode(selected.id);
-      showSelectedPath(selected);
+      showSelectedPath(selected, { scroll: false });
     } else if (hasPaths && activePathEl) {
       activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
     }
@@ -267,7 +281,14 @@ export function initChatFlow(ctx) {
     intake.restoreChips();
     if (hasPaths) pathMap.restore();
     if (selected && selected.type !== "start") confirmGate.restore(selected);
+    if (journey.planConfirmed) missions.restore();
     layout();
+    const endEl = journey.planConfirmed
+      ? document.getElementById("missions")
+      : tailEl?.childElementCount
+        ? tailEl
+        : null;
+    if (endEl) scrollFrameChildIntoView(endEl, { toEnd: !journey.planConfirmed });
     return true;
   }
 
@@ -292,7 +313,8 @@ export function initChatFlow(ctx) {
       setPhase(PHASE.EXPLORING);
     }
 
-    appendMessage(messagesEl, "user", trimmed);
+    const thread = continuationThread(messagesEl);
+    appendMessage(thread, "user", trimmed);
     layout();
     appStore.journey.messages.push({ role: "user", content: trimmed });
     appStore.journey.turnCount += 1;
@@ -322,7 +344,7 @@ export function initChatFlow(ctx) {
         return;
       }
 
-      const typingEl = appendMessage(messagesEl, "advisor", "…", { typing: true });
+      const typingEl = appendMessage(thread, "advisor", "…", { typing: true });
       layout();
 
       try {
@@ -332,7 +354,7 @@ export function initChatFlow(ctx) {
         });
         typingEl.remove();
         const finalText = reply || "I'm here — tell me a bit more about what you're hoping changes.";
-        appendMessage(messagesEl, "advisor", finalText);
+        appendMessage(thread, "advisor", finalText);
         layout();
         appStore.journey.messages.push({ role: "assistant", content: finalText });
         touchJourney();
@@ -352,7 +374,7 @@ export function initChatFlow(ctx) {
       } catch (error) {
         typingEl.remove();
         appendMessage(
-          messagesEl,
+          thread,
           "advisor",
           `I couldn't reach the advisor right now (${error?.message || "unknown error"}). Check your connection or OpenRouter balance.`
         );

@@ -69,12 +69,16 @@ function fitPinnedMap(map) {
     Number.parseFloat(map.style.getPropertyValue("--v2-map-svg-h")) ||
       map.getBoundingClientRect().height
   );
+  const frameTop = Math.round(document.getElementById("dynamic-frame")?.getBoundingClientRect().top || 0);
   const prevH = Number(map.dataset.pinH || 0);
+  const prevTop = Number(map.dataset.pinFrameTop || 0);
   const heightChanged = Math.abs(nextH - prevH) >= 6;
+  const frameMoved = Math.abs(frameTop - prevTop) >= 8;
   map.dataset.pinH = String(nextH);
+  map.dataset.pinFrameTop = String(frameTop);
   const host = /** @type {HTMLElement & { fitLockedScene?: (opts?: { animate?: boolean }) => void }} */ (map);
   const run = () => host.fitLockedScene?.({ animate: false });
-  if (heightChanged || map.dataset.sceneFit !== "1") {
+  if (heightChanged || frameMoved || map.dataset.sceneFit !== "1") {
     map.dataset.sceneFit = "1";
     requestAnimationFrame(() => requestAnimationFrame(run));
   }
@@ -111,8 +115,8 @@ export function pinMobileFocusChrome(controller) {
 
   if (!kickerVisible) {
     const mapH = Math.max(160, window.innerHeight - mapTop);
-    const glassOverlap = Math.max(96, Math.round((window.innerHeight - promptTop) * 0.22));
-    const svgH = Math.max(120, Math.round(promptTop - mapTop + glassOverlap));
+    const tuck = 110;
+    const svgH = Math.max(140, Math.round(promptTop - mapTop + tuck));
     applyMapPin(map, {
       top: mapTop,
       left: contentLeft,
@@ -186,8 +190,8 @@ export function unpinMobileFocusChrome(controller) {
 }
 
 /**
- * Fit the node map in the band between the menu and the chat frame.
- * Chat ¾ snap: constellation lives above the glass, not under it.
+ * Fit the node map from the menu through the chat frame.
+ * The constellation continues under the glass so nodes stay visible, blurred, behind the prompt.
  * @param {import("./frame-dock-controller.js").FrameDockController} controller
  */
 export function syncMobileReadingMap(controller) {
@@ -209,8 +213,8 @@ export function syncMobileReadingMap(controller) {
   const frameTop = controller.frameEl.getBoundingClientRect().top;
   const mapTop = headerH;
   const mapH = Math.max(160, window.innerHeight - mapTop);
-  const glassOverlap = Math.max(96, Math.round((window.innerHeight - frameTop) * 0.22));
-  const svgH = Math.max(120, Math.round(frameTop - mapTop + glassOverlap));
+  const tuck = 110;
+  const svgH = Math.max(140, Math.round(frameTop - mapTop + tuck));
   const contentLeft = gutter;
   const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
 

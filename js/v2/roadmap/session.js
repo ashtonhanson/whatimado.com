@@ -1,6 +1,6 @@
 import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
-import { appendMessage, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
+import { appendMessage, continuationThread, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { hideIntakeChips } from "../components/profile-chips.js";
 import { PHASE } from "../phases.js";
 import { buildIntakeContextBlock } from "../intake/stability-gates.js";
@@ -39,8 +39,9 @@ export function createConfirmGateController(ui) {
   }
 
   function pushAdvisor(text, { skipScroll = false } = {}) {
-    if (!messagesEl) return;
-    appendMessage(messagesEl, "advisor", text, { skipScroll });
+    const thread = continuationThread(messagesEl);
+    if (!thread) return;
+    appendMessage(thread, "advisor", text, { skipScroll });
     appStore.journey.messages.push({ role: "assistant", content: text });
     touchJourney();
     layout();
@@ -146,7 +147,7 @@ export function createConfirmGateController(ui) {
     flush();
     setComposerEnabled(true);
     pushAdvisor("What would you like to change about this plan? Tell me what's missing, out of order, or not realistic for you.");
-    scrollFrameChildIntoView(messagesEl, { toEnd: true });
+    scrollFrameChildIntoView(continuationThread(messagesEl), { toEnd: true });
   }
 
   function accept() {
@@ -159,8 +160,7 @@ export function createConfirmGateController(ui) {
     setPhase(PHASE.MISSIONS);
     touchJourney();
     flush();
-    pushAdvisor("Locked in. I'll turn this into missions next — for now this is the plan we're building from.");
-    const idea = { id: ideaId };
+    const idea = { id: ideaId, title: "", label: "" };
     onConfirmed(idea, bullets);
   }
 

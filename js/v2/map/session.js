@@ -1,6 +1,6 @@
 import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
-import { appendMessage, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
+import { appendMessage, continuationThread, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { hideIntakeChips, renderIntakeChips } from "../components/profile-chips.js";
 import { renderPathCards } from "../components/path-cards.js";
 import {
@@ -79,9 +79,20 @@ export function createPathMapController(ui) {
     layout();
   }
 
-  function pushAdvisor(text, { skipScroll = false } = {}) {
-    if (!messagesEl) return;
-    appendMessage(messagesEl, "advisor", text, { skipScroll });
+  function threadEl() {
+    return continuationThread(messagesEl);
+  }
+
+  function closeIntakeThread() {
+    if (appStore.journey.threadBreak == null) {
+      appStore.journey.threadBreak = appStore.journey.messages.length;
+    }
+  }
+
+  function pushAdvisor(text, { skipScroll = false, head = false } = {}) {
+    const thread = head ? messagesEl : threadEl();
+    if (!thread) return;
+    appendMessage(thread, "advisor", text, { skipScroll });
     appStore.journey.messages.push({ role: "assistant", content: text });
     touchJourney();
     layout();
@@ -89,8 +100,9 @@ export function createPathMapController(ui) {
   }
 
   function pushUser(text) {
-    if (!messagesEl) return;
-    appendMessage(messagesEl, "user", text);
+    const thread = threadEl();
+    if (!thread) return;
+    appendMessage(thread, "user", text);
     appStore.journey.messages.push({ role: "user", content: text });
     appStore.journey.turnCount += 1;
     touchJourney();
@@ -168,7 +180,8 @@ export function createPathMapController(ui) {
       const { intro, ideas } = await requestIdeas({ count, mode: "generate", feature: "v2_paths" });
       typingEl?.remove();
       applyIdeasToMap(ideas.slice(0, count), { keepSelectedId: null });
-      pushAdvisor(intro, { skipScroll: true });
+      pushAdvisor(intro, { skipScroll: true, head: true });
+      closeIntakeThread();
       appStore.journey.pathsGenerated = true;
       appStore.journey.mapChatType = null;
       appStore.journey.mapChatPathId = null;
@@ -183,9 +196,11 @@ export function createPathMapController(ui) {
       flush();
       if (!silentFail) {
         pushAdvisor("I couldn't map custom paths just now — here are starter directions you can explore.", {
-          skipScroll: true
+          skipScroll: true,
+          head: true
         });
       }
+      closeIntakeThread();
       scrollFrameChildIntoView(possibilitiesEl());
     } finally {
       appStore.pathsGenerating = false;
@@ -240,7 +255,8 @@ export function createPathMapController(ui) {
     const status = fromRedirect ? "Calculating adjustments to your paths" : "Generating new roadmaps";
     setPathBusy(status);
     setPhasePossibilities();
-    const typingEl = messagesEl ? appendMessage(messagesEl, "advisor", `${status}…`, { typing: true }) : null;
+    const typingHost = threadEl();
+    const typingEl = typingHost ? appendMessage(typingHost, "advisor", `${status}…`, { typing: true }) : null;
     layout();
     if (fromRedirect) scrollFrameChildIntoView(messagesEl, { toEnd: true });
     const count = ideaCountForMode(appStore.journey.pathMode);
@@ -276,7 +292,8 @@ export function createPathMapController(ui) {
     const target = current.find((node) => node.id === pathId);
     if (!target) return;
     setComposerEnabled(false);
-    const typingEl = messagesEl ? appendMessage(messagesEl, "advisor", "Updating that path…", { typing: true }) : null;
+    const typingHost = threadEl();
+    const typingEl = typingHost ? appendMessage(typingHost, "advisor", "Updating that path…", { typing: true }) : null;
     layout();
     try {
       const { ideas } = await requestIdeas({
@@ -415,7 +432,8 @@ export function createPathMapController(ui) {
     }
 
     setComposerEnabled(false);
-    const typingEl = messagesEl ? appendMessage(messagesEl, "advisor", "…", { typing: true }) : null;
+    const typingHost = threadEl();
+    const typingEl = typingHost ? appendMessage(typingHost, "advisor", "…", { typing: true }) : null;
     layout();
     const paths = pathNodes().map((node) => ({
       title: node.title || node.label,
