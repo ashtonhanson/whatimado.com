@@ -19,8 +19,9 @@ import { PHASE } from "../phases.js";
  *   locationConfirmed: boolean,
  *   intakeComplete: boolean,
  *   completedIntakeSteps: string[],
- *   mapChatType: "discuss"|"alter"|null,
+ *   mapChatType: "discuss"|"alter"|"redirect"|null,
  *   mapChatPathId: string | null,
+ *   pathDirectionNote: string,
  *   mapFeedbackGiven: boolean,
  *   mapFeedbackSentiment: "yes"|"no"|null,
  *   planConfirmed: boolean,
@@ -51,6 +52,7 @@ export function createEmptyJourney() {
     completedIntakeSteps: [],
     mapChatType: null,
     mapChatPathId: null,
+    pathDirectionNote: "",
     mapFeedbackGiven: false,
     mapFeedbackSentiment: null,
     planConfirmed: false,
@@ -131,8 +133,12 @@ export function normalizeJourney(raw) {
     completedIntakeSteps: Array.isArray(source.completedIntakeSteps)
       ? source.completedIntakeSteps.map((step) => String(step || "")).filter(Boolean)
       : [],
-    mapChatType: source.mapChatType === "discuss" || source.mapChatType === "alter" ? source.mapChatType : null,
+    mapChatType:
+      source.mapChatType === "discuss" || source.mapChatType === "alter" || source.mapChatType === "redirect"
+        ? source.mapChatType
+        : null,
     mapChatPathId: typeof source.mapChatPathId === "string" && source.mapChatPathId ? source.mapChatPathId : null,
+    pathDirectionNote: typeof source.pathDirectionNote === "string" ? source.pathDirectionNote.slice(0, 400) : "",
     mapFeedbackGiven: Boolean(source.mapFeedbackGiven),
     mapFeedbackSentiment: source.mapFeedbackSentiment === "yes" || source.mapFeedbackSentiment === "no" ? source.mapFeedbackSentiment : null,
     planConfirmed: Boolean(source.planConfirmed),

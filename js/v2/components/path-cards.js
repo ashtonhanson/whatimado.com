@@ -15,6 +15,7 @@ import { escapeHtml } from "../ui.js";
  *   onAlter: (id: string) => void,
  *   onMore: () => void,
  *   onRegenerate: () => void,
+ *   onAlterDirection: () => void,
  *   onFeedback: (sentiment: "yes" | "no") => void
  * }} spec
  */
@@ -53,6 +54,7 @@ export function renderPathCards(container, spec) {
           : ""
       }
       <button type="button" class="v2-path-toolbar__btn v2-text-box v2-text-box--chrome" data-path-regen ${spec.regenBusy ? "disabled" : ""}>${regenLabel}</button>
+      <button type="button" class="v2-path-toolbar__btn v2-text-box v2-text-box--chrome" data-path-redirect ${spec.regenBusy ? "disabled" : ""}>Alter path direction</button>
     </div>
     <div class="v2-path-feedback" ${spec.feedbackGiven ? "hidden" : ""}>
       <p class="v2-path-feedback__title">Did this help so far?</p>
@@ -89,6 +91,11 @@ export function renderPathCards(container, spec) {
     const regen = target.closest("[data-path-regen]");
     if (regen && !regen.hasAttribute("disabled")) {
       current.onRegenerate();
+      return;
+    }
+    const redirect = target.closest("[data-path-redirect]");
+    if (redirect && !redirect.hasAttribute("disabled")) {
+      current.onAlterDirection?.();
       return;
     }
     const feedback = target.closest("[data-path-feedback]");

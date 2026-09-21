@@ -30,7 +30,7 @@
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
     --v2-mobile-map-head-gap: clamp(0.55rem, 1.4vh, 0.85rem);
     --v2-mobile-prompt-kicker-gap: 0.35rem;
-    --v2-mobile-keyboard-gap: 0.35rem;
+    --v2-mobile-keyboard-gap: 0.85rem;
     --v2-mobile-prompt-drop: 8px;
     --v2-mobile-you-btn-drop: 26px; /* landing: YOU button down 10px */
     --v2-mobile-focus-band-rise: 0px;
@@ -675,8 +675,10 @@
     height: 100%;
   }
 
-  body.v2-app whatimado-map[data-reading-pinned="1"] {
+  body.v2-app whatimado-map[data-reading-pinned="1"],
+  body.v2-app whatimado-map[data-focus-pinned="1"] {
     margin: 0;
+    overflow: hidden;
   }
 
   /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */
@@ -788,9 +790,26 @@
     padding-top: 0.45rem;
   }
 
-  whatimado-frame.is-mobile-docked.is-mobile-keyboard {
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard:not(.is-mobile-reading) {
     top: auto !important;
     transition: none;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard {
+    z-index: 80;
+    transition: none;
+  }
+
+  body.is-mobile-keyboard-open .v2-rail--left {
+    z-index: 40;
+  }
+
+  body.is-mobile-keyboard-open .v2-rail-brand {
+    pointer-events: none;
+  }
+
+  body.is-mobile-keyboard-open .v2-brand-word {
+    opacity: 0;
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__composer-input {
@@ -806,6 +825,74 @@
     right: 0.35rem;
     font-size: 0.62rem;
     padding: 0.28rem 0.55rem;
+  }
+
+  /* Three path cards must fit in the ¾ reading sheet above the composer */
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-possibilities {
+    margin-top: 0.45rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-possibilities .v2-section-label {
+    margin: 0 0 0.35rem;
+    font-size: 0.68rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-cards {
+    gap: 0.35rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card {
+    padding: 0.45rem 0.6rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card h3 {
+    margin: 0 0 0.08rem;
+    font-size: 0.74rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__type {
+    margin: 0 0 0.08rem;
+    font-size: 0.58rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__tagline {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.7rem;
+    line-height: 1.3;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__why {
+    display: none;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__meta {
+    margin: 0.2rem 0 0;
+    font-size: 0.64rem;
+    gap: 0.2rem 0.5rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__actions {
+    margin-top: 0.35rem;
+    gap: 0.3rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__action,
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-toolbar__btn {
+    padding: 0.28rem 0.52rem;
+    font-size: 0.62rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-toolbar,
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-feedback {
+    margin-top: 0.45rem;
+    gap: 0.35rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-sync {
+    display: none;
   }
 }
 

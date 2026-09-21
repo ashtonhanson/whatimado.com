@@ -517,6 +517,12 @@ export class WhatimadoMap extends HTMLElement {
     return computeDefaultScenePan(this);
   }
 
+  /** Recenter a locked constellation after the mobile map band is resized. */
+  fitLockedScene({ animate = false } = {}) {
+    const target = this._computeDefaultScenePan();
+    this._animatePanTo(target.panX, target.panY, animate);
+  }
+
   /**
    * @param {string} nodeId
    * @returns {{ panX: number, panY: number }}

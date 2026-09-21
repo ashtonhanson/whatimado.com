@@ -212,6 +212,7 @@ export function buildIdeasPrompt(messages, contextBlock, spec) {
     "Each path must use a different primary strategy (employment, self-employment, short training, gig/local work, or community route) unless stability-first rules say otherwise.\n" +
     "Every set must include at least one $0 path. Keep income projections modest and realistic.\n" +
     "Titles, taglines, and first steps should feel specific to what THIS person said — not generic hustle templates.\n" +
+    "Keep tagline and why short enough to scan on a phone.\n" +
     `${modeNote}${excludeBlock}${replaceBlock}` +
     extra +
     "\nConversation:\n" +
@@ -225,8 +226,8 @@ export function buildIdeasPrompt(messages, contextBlock, spec) {
     '      "label": "Short map label (max 14 chars)",\n' +
     '      "title": "Clear path name",\n' +
     '      "type": "Employment | Training | Self-employment | Stability | Opportunity",\n' +
-    '      "tagline": "one specific sentence in plain English",\n' +
-    '      "why": "one sentence referencing what THEY said",\n' +
+      '      "tagline": "one specific sentence, max 12 words",\n' +
+      '      "why": "one short clause referencing what THEY said, max 10 words",\n' +
     '      "cost": "e.g. $0",\n' +
     '      "timeline": "e.g. 2-4 weeks",\n' +
     '      "income": "e.g. part-time to start"\n' +
@@ -277,5 +278,6 @@ export function detectMapChatIntent(text) {
   }
   if (/\b(regenerat|redo|refresh|new|another|different)\b.*\b(path|option|map)\b/.test(q)) return "regenerate";
   if (/^(regenerate|redo|refresh)\b/.test(q) && q.length < 100) return "regenerate";
+  if (/\b(alter|change|shift|new)\b.*\b(direction|focus|lane)\b/.test(q)) return "regenerate";
   return null;
 }

@@ -30,11 +30,20 @@ function pathNodes() {
 }
 
 function contextBlock() {
-  return buildIntakeContextBlock(
+  const extras = [];
+  const direction = String(appStore.journey.pathDirectionNote || "").trim();
+  if (direction) {
+    extras.push(
+      `The user wants a different overall direction for the map: ${direction}`,
+      "Regenerate paths that follow this new direction. Do not recycle the previous titles or strategy mix."
+    );
+  }
+  const base = buildIntakeContextBlock(
     appStore.profile,
     formatUserLocation(appStore.location),
     appStore.journey.pathMode
   );
+  return extras.length ? `${base}\n${extras.join("\n")}` : base;
 }
 
 /**
@@ -111,6 +120,7 @@ export function createPathMapController(ui) {
       onAlter: (id) => void startAlter(id),
       onMore: () => void fetchMore(),
       onRegenerate: () => void regenerateAll(),
+      onAlterDirection: () => startRedirect(),
       onFeedback: (sentiment) => handleFeedback(sentiment)
     });
     layout();
@@ -315,6 +325,17 @@ export function createPathMapController(ui) {
     showUpdateChip("Update this path", () => void replacePath(pathId));
   }
 
+  function startRedirect() {
+    hideIntakeChips(messagesEl);
+    appStore.journey.mapChatType = "redirect";
+    appStore.journey.mapChatPathId = null;
+    touchJourney();
+    flush();
+    pushAdvisor(
+      "What direction should these paths take instead? For example: more employment, less teaching, closer to your current skills, faster income, or a different field entirely."
+    );
+  }
+
   function handleFeedback(sentiment) {
     appStore.journey.mapFeedbackGiven = true;
     appStore.journey.mapFeedbackSentiment = sentiment;
@@ -335,6 +356,15 @@ export function createPathMapController(ui) {
     if (!trimmed) return true;
     hideIntakeChips(messagesEl);
     const pathId = appStore.journey.mapChatPathId;
+    if (type === "redirect") {
+      appStore.journey.pathDirectionNote = trimmed;
+      appStore.journey.mapChatType = null;
+      appStore.journey.mapChatPathId = null;
+      touchJourney();
+      flush();
+      await regenerateAll();
+      return true;
+    }
     const idea = pathNodes().find((node) => node.id === pathId);
     const intent = detectMapChatIntent(trimmed);
     if (intent === "regenerate") {

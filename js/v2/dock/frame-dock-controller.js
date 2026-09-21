@@ -294,7 +294,6 @@ export class FrameDockController {
       this.frameEl.classList.remove("is-mobile-keyboard");
       document.body.classList.remove("is-mobile-keyboard-open");
     }
-    unpinMobileReadingMap();
     releaseMobileComposerFocus(this);
 
     this._anchors = null;

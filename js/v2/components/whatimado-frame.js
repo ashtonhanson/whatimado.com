@@ -95,6 +95,9 @@ export class WhatimadoFrame extends HTMLElement {
           this._dock?.syncMobileKeyboard();
         }, 250);
         if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) return;
+        // Chat stays at the ¾ reading snap so the constellation stays above
+        // the frame and the sheet does not drop to the floor while typing.
+        if (this._dock._mobileChatSheet) return;
       }
       this._dock?.mobileGlideToTyping();
     };
