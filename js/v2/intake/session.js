@@ -20,6 +20,7 @@ import {
 import { applyLocationAnswer, isLocationStep, locationPrompt } from "./location.js";
 import {
   classifyStabilityContext,
+  isClosedTestingFlow,
   shouldSuppressHousingStep,
   shouldSuppressIdStep
 } from "./persona-signals.js";
@@ -38,7 +39,12 @@ function userBlob() {
 }
 
 function founderMode() {
-  return isFounderOrProjectPrompt(firstUserText()) || Boolean(appStore.profile.founderStage);
+  return (
+    isFounderOrProjectPrompt(firstUserText()) ||
+    Boolean(appStore.profile.founderStage) ||
+    isClosedTestingFlow(firstUserText()) ||
+    isClosedTestingFlow(userBlob())
+  );
 }
 
 /**

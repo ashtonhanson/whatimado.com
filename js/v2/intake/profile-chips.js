@@ -335,7 +335,7 @@ export function parseRelocatePreference(text) {
 export function parseFounderStage(text) {
   const q = String(text || "").toLowerCase();
   if (
-    /\b(beta|still testing|still in test|in testing|testing phase|testing (?:the |if it |it )?works|test if it works|just testing)\b/.test(
+    /\b(beta|still testing|still in test|in testing|testing phase|testing (?:the |if it |it )?works|test if it works|just testing|closed (?:data|beta)|functionality test|functional test)\b/.test(
       q
     )
   ) {

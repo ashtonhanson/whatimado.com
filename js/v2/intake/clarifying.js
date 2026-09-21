@@ -1,5 +1,7 @@
 /** One-question clarifying prompts. Skip PHI. Chips collect structured facts separately. */
 
+import { isClosedTestingFlow } from "./persona-signals.js";
+
 export function isFounderOrProjectPrompt(text) {
   const raw = String(text || "");
   const q = raw.toLowerCase();
@@ -10,7 +12,9 @@ export function isFounderOrProjectPrompt(text) {
     /\b(mobile )?(application|app|platform|startup)\b/,
     /\btarget (?:audience|market)\b/,
     /\b(grant|sponsor|nonprofit|workforce program)\b/,
-    /\bpossibility map\b/
+    /\bpossibility map\b/,
+    /\b(closed (?:data|beta|alpha)|functionality test|functional test|founding users|beta test)\b/,
+    /\b(go[- ]to[- ]market|monetization|early users)\b/
   ].filter((pattern) => pattern.test(q)).length;
   return score >= 2 || (/\bwhatimado\b/.test(q) && raw.length > 350);
 }
@@ -34,7 +38,7 @@ export function buildClarifyingPrompt(userText, options = {}) {
         ? " They chose a Flexible Path — they will pick between options at every step."
         : "";
 
-  if (isFounderOrProjectPrompt(userText)) {
+  if (isFounderOrProjectPrompt(userText) || isClosedTestingFlow(userText)) {
     return (
       "You are whatimado, a practical advisor helping someone grow a product or site — not a personal job hunt.\n" +
       "Ask ONE short follow-up about stage: still testing, first real users, a partner pilot, or funding.\n" +
@@ -62,7 +66,7 @@ export function buildClarifyingPrompt(userText, options = {}) {
 }
 
 export function clarifyingFallback(userText) {
-  if (isFounderOrProjectPrompt(userText)) {
+  if (isFounderOrProjectPrompt(userText) || isClosedTestingFlow(userText)) {
     return "Where is the project at right now — still testing, first users, a partner pilot, or looking for funding?";
   }
   if (mentionsStability(userText)) {

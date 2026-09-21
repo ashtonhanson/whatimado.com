@@ -1,10 +1,10 @@
 /**
  * Who should be asked the ID / housing questions.
  *
- * Stability signals always win: if the user's own words show ID or housing is
- * live for them, we ask regardless of how professional the rest reads.
- * Regexes ported from the monolith so both surfaces classify the same text
- * the same way (index.html ~28323-28499).
+ * Main (index.html profileIntakeNeedsIdStep) is opt-in: ask only when a
+ * personal stability need is present. Founder / career-pivot / closed-testing
+ * flows skip ID unless the user is talking about their own documents or
+ * housing. v2 keeps its own modules but follows that same precedence.
  */
 
 export const STABILITY_CONTEXT = {
@@ -97,19 +97,86 @@ export function mentionsStabilityRebuild(text = "") {
 }
 
 /**
- * Anything that makes ID / housing a live constraint for this person.
+ * Closed beta / closed-data / functionality testing — a product stage, not a
+ * personal audit. Main treats this as founder-stage "beta".
  * @param {string} text
  */
-export function hasStabilitySignals(text = "") {
+export function isClosedTestingFlow(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(closed (?:data|beta|alpha)(?:[ -]?test(?:ing)?)?|functionality test|functional test|trusted testers?|3\s*[-–]?\s*5 testers?|watching sessions|bug watch)\b/.test(
+    blob
+  );
+}
+
+/**
+ * Talking ABOUT reentry as a product audience, not saying "I just got out".
+ * Mirrors main isReentrySituation's founder / beta / whatimado exception.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function isProductAudienceReentry(text = "", ctx = {}) {
+  const blob = String(text || "").toLowerCase();
+  if (ctx.founder || isClosedTestingFlow(blob)) return true;
+  return (
+    /\bre-?entry\b/.test(blob) &&
+    /\b(reentry program|mutual[- ]?aid|beta|pilot|cohort|invite|users from|partner|whatimado|functionality test|validation sprint|platform|product|closed (?:data|beta))\b/.test(
+      blob
+    )
+  );
+}
+
+/** First-person custody / justice language — the person themselves. */
+export function mentionsFirstPersonReentry(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(i|i'?m|i am)\b[^.!?]{0,80}\b(just got out of (?:jail|prison)|on parole|on probation|in jail|in prison|criminal record|felony|halfway house)\b/.test(
+    blob
+  );
+}
+
+/**
+ * Personal reentry need. Product-audience mentions do not count.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function mentionsPersonalReentry(text = "", ctx = {}) {
+  if (!mentionsReentryHardship(text)) return false;
+  if (isProductAudienceReentry(text, ctx)) return mentionsFirstPersonReentry(text);
+  return true;
+}
+
+/**
+ * A live, personal constraint — not the product's target users.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function hasPersonalStabilityNeed(text = "", ctx = {}) {
   const blob = String(text || "").toLowerCase();
   if (!blob.trim()) return false;
   return (
     mentionsIdNeed(blob) ||
     mentionsHousingInstability(blob) ||
-    mentionsReentryHardship(blob) ||
-    mentionsStabilityRebuild(blob) ||
-    asksForLocalServices(blob)
+    asksForLocalServices(blob) ||
+    mentionsPersonalReentry(blob, ctx) ||
+    (!isTrustedProfessionalFlow(blob, ctx) && mentionsStabilityRebuild(blob))
   );
+}
+
+/** @deprecated use hasPersonalStabilityNeed — kept for existing callers */
+export function hasStabilitySignals(text = "", ctx = {}) {
+  return hasPersonalStabilityNeed(text, ctx);
+}
+
+/**
+ * Trusted lane: founder, closed testing, scored professional, or career pivot.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function isTrustedProfessionalFlow(text = "", ctx = {}) {
+  if (ctx.founder) return true;
+  if (isClosedTestingFlow(text)) return true;
+  if (looksProfessional(text)) return true;
+  if (looksLikeCareerPivot(text)) return true;
+  return false;
 }
 
 const PROFESSIONAL_PATTERNS = [
@@ -151,21 +218,22 @@ export function looksProfessional(text = "") {
  * @returns {string} one of STABILITY_CONTEXT
  */
 export function classifyStabilityContext(text = "", ctx = {}) {
-  if (hasStabilitySignals(text)) return STABILITY_CONTEXT.SIGNALS;
-  if (ctx.founder) return STABILITY_CONTEXT.PROFESSIONAL;
-  if (looksProfessional(text)) return STABILITY_CONTEXT.PROFESSIONAL;
-  if (looksLikeCareerPivot(text)) return STABILITY_CONTEXT.PROFESSIONAL;
+  const personalNeed = hasPersonalStabilityNeed(text, ctx);
+  if (personalNeed) return STABILITY_CONTEXT.SIGNALS;
+  if (isTrustedProfessionalFlow(text, ctx)) return STABILITY_CONTEXT.PROFESSIONAL;
   return STABILITY_CONTEXT.NEUTRAL;
 }
 
 /**
- * Skip the ID chip unless the conversation gives a reason to ask.
+ * Main is opt-in: skip ID unless a personal stability need is live.
+ * Trusted / closed-testing / founder flows skip even if the product mentions
+ * reentry or jail as an audience.
  * @param {string} text
  * @param {{ founder?: boolean }} [ctx]
  */
 export function shouldSuppressIdStep(text = "", ctx = {}) {
   if (confirmsHasId(text)) return true;
-  return classifyStabilityContext(text, ctx) === STABILITY_CONTEXT.PROFESSIONAL;
+  return !hasPersonalStabilityNeed(text, ctx);
 }
 
 /**
@@ -174,5 +242,8 @@ export function shouldSuppressIdStep(text = "", ctx = {}) {
  */
 export function shouldSuppressHousingStep(text = "", ctx = {}) {
   if (confirmsHasHousing(text)) return true;
-  return classifyStabilityContext(text, ctx) === STABILITY_CONTEXT.PROFESSIONAL;
+  if (ctx.founder || isClosedTestingFlow(text)) {
+    return !mentionsHousingInstability(text);
+  }
+  return !hasPersonalStabilityNeed(text, ctx);
 }
