@@ -8,6 +8,18 @@
       "dev": true
     }
   },
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "dev.whatimado.com" }],
+      "destination": "/app.html",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    { "source": "/app", "destination": "/app.html" },
+    { "source": "/app/", "destination": "/app.html" }
+  ],
   "headers": [
     {
       "source": "/(.*).html",
