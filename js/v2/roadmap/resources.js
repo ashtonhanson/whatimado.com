@@ -157,20 +157,25 @@ export function mergeResources(primary, extra) {
 }
 
 /**
+ * The list the desktop rail shows for this roadmap.
  * @param {LocalResource[]} resources
  * @param {import("../state/location.js").UserLocation | null | undefined} location
  * @param {import("../state/user-profile.js").UserProfile | null | undefined} profile
+ * @returns {LocalResource[]}
  */
-export function renderResourcesRail(resources, location, profile) {
-  const list = document.getElementById("resources-list");
-  const region = document.getElementById("resources-region");
-  if (!list) return;
+export function resourcesForRail(resources, location, profile) {
+  return mergeResources(resources, fallbackResources(location, profile));
+}
+
+/** @param {import("../state/location.js").UserLocation | null | undefined} location */
+export function resourcePlaceLabel(location) {
   const place = formatUserLocation(location);
-  if (region) {
-    region.textContent = place ? `Local resources in ${place}` : "Resources near you";
-  }
-  const items = mergeResources(resources, fallbackResources(location, profile));
-  list.innerHTML = items
+  return place ? `Local resources in ${place}` : "Resources near you";
+}
+
+/** @param {LocalResource[]} items */
+export function renderResourceListHtml(items) {
+  return (items || [])
     .map((item) => {
       const title = item.org && item.org.toLowerCase() !== item.name.toLowerCase() ? `${item.name} — ${item.org}` : item.name;
       const link = item.url
@@ -185,4 +190,17 @@ export function renderResourcesRail(resources, location, profile) {
       </li>`;
     })
     .join("");
+}
+
+/**
+ * @param {LocalResource[]} resources
+ * @param {import("../state/location.js").UserLocation | null | undefined} location
+ * @param {import("../state/user-profile.js").UserProfile | null | undefined} profile
+ */
+export function renderResourcesRail(resources, location, profile) {
+  const list = document.getElementById("resources-list");
+  const region = document.getElementById("resources-region");
+  if (!list) return;
+  if (region) region.textContent = resourcePlaceLabel(location);
+  list.innerHTML = renderResourceListHtml(resourcesForRail(resources, location, profile));
 }

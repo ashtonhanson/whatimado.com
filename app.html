@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual" />
-  <meta name="whatimado-build" content="v2-map-band-2026-09-21" />
+  <meta name="whatimado-build" content="v2-drafts-2026-09-21" />
   <title>whatimado — v2</title>
   <link rel="icon" href="/favicon.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,10 +14,11 @@
   <link rel="stylesheet" href="/css/v2/text-box.css" />
   <link rel="stylesheet" href="/css/v2/shell.css?v=20260921-columns" />
   <link rel="stylesheet" href="/css/v2/sidebar.css" />
-  <link rel="stylesheet" href="/css/v2/resources.css?v=20260921-columns" />
+  <link rel="stylesheet" href="/css/v2/resources.css?v=20260921-taskacc2" />
   <link rel="stylesheet" href="/css/v2/map-canvas.css?v=20260921-mapband" />
-  <link rel="stylesheet" href="/css/v2/frame.css?v=20260921-mapband" />
+  <link rel="stylesheet" href="/css/v2/frame.css?v=20260921-drafts" />
   <link rel="stylesheet" href="/css/v2/chat.css?v=20260921-pathdetails" />
+  <link rel="stylesheet" href="/css/v2/drafts.css?v=20260921-drafts2" />
   <link rel="stylesheet" href="/css/v2/neon-frames.css" />
   <link rel="stylesheet" href="/css/v2/mobile.css?v=20260921-mapband" />
 </head>
@@ -149,7 +150,10 @@
         <section class="v2-selection hidden" id="selection-panel"></section>
         <div class="v2-messages" id="messages-tail" aria-live="polite"></div>
         <section class="v2-missions hidden" id="missions" aria-live="polite">
-          <h2 class="v2-section-label">Missions</h2>
+          <div class="v2-missions__head">
+            <h2 class="v2-section-label">Missions</h2>
+            <button type="button" class="v2-drafts-open hidden" id="drafts-open">Drafts</button>
+          </div>
           <p class="v2-status hidden" id="missions-status" role="status"></p>
           <div id="mission-stages"></div>
         </section>
@@ -165,6 +169,6 @@
     </aside>
   </div>
 
-  <script type="module" src="/js/v2/app.js?v=20260921-mapband"></script>
+  <script type="module" src="/js/v2/app.js?v=20260921-taskacc3"></script>
 </body>
 </html>

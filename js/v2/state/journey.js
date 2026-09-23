@@ -30,7 +30,8 @@ import { normalizeResources } from "../roadmap/resources.js";
  *   confirmGateAwaitingRevision: boolean,
  *   threadBreak: number | null,
  *   missionsStages: { label: string, desc: string, missions: { title: string, text: string }[] }[],
- *   missionResources: { name: string, org: string, details: string, url: string, phone: string }[]
+ *   missionResources: { name: string, org: string, details: string, url: string, phone: string }[],
+ *   missionDrafts: { id: string, kind: string, label: string, missionTitle: string, body: string }[]
  * }} Journey */
 
 const PHASE_VALUES = new Set(Object.values(PHASE));
@@ -64,7 +65,8 @@ export function createEmptyJourney() {
     confirmGateAwaitingRevision: false,
     threadBreak: null,
     missionsStages: [],
-    missionResources: []
+    missionResources: [],
+    missionDrafts: []
   };
 }
 
@@ -155,7 +157,8 @@ export function normalizeJourney(raw) {
     confirmGateAwaitingRevision: Boolean(source.confirmGateAwaitingRevision),
     threadBreak: Number.isInteger(source.threadBreak) ? source.threadBreak : null,
     missionsStages: normalizeStages(source.missionsStages),
-    missionResources: normalizeResources(source.missionResources)
+    missionResources: normalizeResources(source.missionResources),
+    missionDrafts: normalizeDrafts(source.missionDrafts)
   };
 }
 
@@ -163,6 +166,33 @@ export function normalizeJourney(raw) {
  * @param {unknown} raw
  * @returns {{ label: string, desc: string, missions: { title: string, text: string }[] }[]}
  */
+const DRAFT_KINDS = new Set(["phone_script", "outreach_email", "notes"]);
+
+/**
+ * @param {unknown} raw
+ * @returns {{ id: string, kind: string, label: string, missionTitle: string, body: string }[]}
+ */
+function normalizeDrafts(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 8)
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const kind = DRAFT_KINDS.has(item.kind) ? item.kind : "";
+      const id = String(item.id || "").trim().slice(0, 80);
+      const body = String(item.body || "").trim().slice(0, 2500);
+      if (!kind || !id || !body) return null;
+      return {
+        id,
+        kind,
+        label: String(item.label || "").trim().slice(0, 40),
+        missionTitle: String(item.missionTitle || "").trim().slice(0, 140),
+        body
+      };
+    })
+    .filter(Boolean);
+}
+
 function normalizeStages(raw) {
   if (!Array.isArray(raw)) return [];
   return raw

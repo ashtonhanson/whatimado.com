@@ -106,3 +106,75 @@
     display: none !important;
   }
 }
+
+/* In-task resources accordion — every viewport. The desktop rail stays separate. */
+.v2-resources-acc {
+  margin-top: 0.55rem;
+}
+
+.v2-resources-acc__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0.35rem 0.7rem;
+  appearance: none;
+  cursor: pointer;
+  font-family: var(--v2-font-hero);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--v2-teal);
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--v2-neon-teal) 55%, transparent);
+  border-radius: var(--v2-btn-radius);
+}
+
+.v2-resources-acc__trigger:hover {
+  color: var(--v2-yellow);
+  border-color: var(--v2-neon-teal);
+}
+
+.v2-resources-acc__chevron {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  transition: transform 0.2s ease;
+}
+
+.v2-resources-acc__trigger[aria-expanded="true"] .v2-resources-acc__chevron {
+  transform: rotate(180deg);
+}
+
+.v2-resources-acc__panel {
+  margin-top: 0.35rem;
+}
+
+.v2-resources-acc__panel.is-collapsed {
+  height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.v2-resources-acc__scroll {
+  max-height: 14rem;
+  padding: 0.15rem 0.15rem 0.35rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.v2-resources-acc .v2-resource-name,
+.v2-resources-acc .v2-resource-desc {
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-resources-acc__chevron {
+    transition: none;
+  }
+}

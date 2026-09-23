@@ -3,7 +3,9 @@ import { callAdvisor } from "../advisor.js";
 import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { buildIntakeContextBlock, shouldBlockJobBoards } from "../intake/stability-gates.js";
 import { formatUserLocation } from "../state/location.js";
-import { fallbackResources, mergeResources, parseResourcesResponse, renderResourcesRail } from "./resources.js";
+import { fallbackResources, mergeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail } from "./resources.js";
+import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, resourcesForTask } from "./resources-accordion.js";
+import { catalogForStages } from "./drafts.js";
 
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
@@ -114,9 +116,13 @@ function buildMissionsPrompt(idea, bullets) {
 /**
  * @param {HTMLElement | null} root
  * @param {{ label: string, desc: string, missions: { title: string, text: string }[] }[]} stages
+ * @param {{ id: string, label: string, missionTitle: string }[]} [catalog]
+ * @param {import("./resources.js").LocalResource[]} [sharedResources]
+ * @param {string} [place]
  */
-export function renderMissionStages(root, stages) {
+export function renderMissionStages(root, stages, catalog = [], sharedResources = [], place = "") {
   if (!root) return;
+  const byTitle = new Map(catalog.map((item) => [item.missionTitle, item]));
   root.innerHTML = stages
     .map(
       (stage, index) => `
@@ -125,18 +131,30 @@ export function renderMissionStages(root, stages) {
           ${stage.desc ? `<p class="v2-stage__desc">${escapeHtml(stage.desc)}</p>` : ""}
           <ol class="v2-mission-list">
             ${stage.missions
-              .map(
-                (mission) => `
+              .map((mission, missionIndex) => {
+                const draft = byTitle.get(mission.title);
+                const action = draft
+                  ? `<button type="button" class="v2-draft-open" data-draft-id="${escapeHtml(draft.id)}">${escapeHtml(draft.label)}</button>`
+                  : "";
+                const resources = renderResourcesAccordion({
+                  id: `task-resources-${index}-${missionIndex}`,
+                  resources: resourcesForTask(mission.resources, sharedResources),
+                  place
+                });
+                return `
                   <li class="v2-mission">
                     <p class="v2-mission__title">${escapeHtml(mission.title)}</p>
                     <p class="v2-mission__text">${escapeHtml(mission.text)}</p>
-                  </li>`
-              )
+                    ${resources}
+                    ${action}
+                  </li>`;
+              })
               .join("")}
           </ol>
         </article>`
     )
     .join("");
+  bindResourcesAccordions(root);
 }
 
 /**
@@ -144,11 +162,12 @@ export function renderMissionStages(root, stages) {
  *   sectionEl: HTMLElement | null,
  *   listEl: HTMLElement | null,
  *   layout: () => void,
- *   flush: () => void
+ *   flush: () => void,
+ *   onShown?: (stages: { label: string, desc: string, missions: { title: string, text: string }[] }[]) => void
  * }} ui
  */
 export function createMissionsController(ui) {
-  const { sectionEl, listEl, layout, flush } = ui;
+  const { sectionEl, listEl, layout, flush, onShown } = ui;
   let pending = false;
 
   function statusEl() {
@@ -158,7 +177,14 @@ export function createMissionsController(ui) {
   function show(stages) {
     if (!sectionEl) return;
     sectionEl.classList.remove("hidden");
-    renderMissionStages(listEl, stages);
+    const catalog = catalogForStages(stages, appStore.profile);
+    const sharedResources = resourcesForRail(
+      appStore.journey.missionResources,
+      appStore.location,
+      appStore.profile
+    );
+    renderMissionStages(listEl, stages, catalog, sharedResources, resourcePlaceLabel(appStore.location));
+    onShown?.(stages);
     renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
     setStatusMessage(statusEl(), "");
     scrollFrameChildIntoView(sectionEl);

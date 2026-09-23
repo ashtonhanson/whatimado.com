@@ -17,6 +17,7 @@ import { createIntakeController } from "../intake/session.js";
 import { createPathMapController } from "../map/session.js";
 import { createConfirmGateController } from "../roadmap/session.js";
 import { createMissionsController } from "../roadmap/missions.js";
+import { createDraftsController } from "../roadmap/drafts.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -170,11 +171,18 @@ export function initChatFlow(ctx) {
     }
   });
 
+  const drafts = createDraftsController({
+    frameEl: document.getElementById("dynamic-frame"),
+    openBtn: /** @type {HTMLButtonElement | null} */ (document.getElementById("drafts-open")),
+    flush: flushPersist
+  });
+
   const missions = createMissionsController({
     sectionEl: document.getElementById("missions"),
     listEl: document.getElementById("mission-stages"),
     layout,
-    flush: flushPersist
+    flush: flushPersist,
+    onShown: (stages) => drafts.sync(stages)
   });
 
   const confirmGate = createConfirmGateController({
