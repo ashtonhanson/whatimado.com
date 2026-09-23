@@ -2,7 +2,7 @@ import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
 import { escapeHtml } from "../ui.js";
 import { formatUserLocation } from "../state/location.js";
-import { buildIntakeContextBlock, shouldBlockJobBoards } from "../intake/stability-gates.js";
+import { buildIntakeContextBlock, shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
 
 /** @typedef {"phone_script"|"outreach_email"|"notes"} DraftKind */
 /** @typedef {{ id: string, kind: DraftKind, label: string, missionTitle: string, missionText: string }} DraftCatalogItem */
@@ -72,48 +72,83 @@ export function catalogForStages(stages, profile) {
 /**
  * @param {DraftCatalogItem} item
  * @param {import("../state/location.js").UserLocation | null | undefined} location
+ * @param {import("../state/user-profile.js").UserProfile | null | undefined} [profile]
  */
-export function fallbackDraft(item, location) {
+export function fallbackDraft(item, location, profile) {
   const place = formatUserLocation(location) || "[your city]";
+  const stability = shouldBlockJobBoards(profile);
   if (item.kind === "phone_script") {
+    if (stability) {
+      const lines = [
+        `Hi, this is [your name]. I'm in ${place}, and I'll keep this short.`,
+        "",
+        `I'm calling about ${item.missionTitle.toLowerCase()}.`
+      ];
+      if (item.missionText) lines.push(item.missionText);
+      lines.push(
+        "",
+        "What I need from you:",
+        "- whether you can help with this, or who can",
+        "- what I should bring or have ready",
+        "- the next time I can come in or call back",
+        "",
+        "Before I hang up I'll repeat your name and the next step."
+      );
+      return lines.join("\n");
+    }
     return [
-      `Hi, my name is [your name]. I'm calling from ${place}.`,
+      `Hi [name], this is [your name] in ${place}. I'll be brief.`,
       "",
-      `I'm working on this: ${item.missionTitle}.`,
+      `I'm calling about ${item.missionTitle}. ${item.missionText || ""}`.trim(),
       "",
-      "Can you tell me:",
-      "- what I should bring",
-      "- what it costs",
-      "- the next time I can come in or call back",
+      "If you have a minute, two things:",
+      "- the decision or introduction I actually need",
+      "- who I should talk to if you're not the right person",
       "",
-      "I'll write down your name and the next step before I hang up."
+      "I'll repeat the next step back to you before we hang up."
     ].join("\n");
   }
   if (item.kind === "outreach_email") {
     return [
-      "Subject: [one line about why you're writing]",
+      `Subject: ${item.missionTitle}`,
       "",
-      "Hello [name],",
+      "[Name] —",
       "",
-      `I'm in ${place}. ${item.missionText || item.missionTitle}`,
+      `I'm [your name], in ${place}. ${item.missionText || item.missionTitle}`,
       "",
-      "Could we talk for a few minutes this week? I'm free [two times].",
+      "If you have twenty minutes in the next couple of weeks, I'd like to compare notes on that specifically — not a general catch-up. I'm free [two times].",
       "",
-      "Thank you,",
       "[your name]"
+    ].join("\n");
+  }
+  if (stability) {
+    return [
+      item.missionTitle,
+      "",
+      "Who I talked to",
+      "[name, and where they work]",
+      "",
+      "What they told me to do",
+      "[the concrete instruction, including what to bring]",
+      "",
+      "Next step",
+      "[the one thing I'll do, and when]"
     ].join("\n");
   }
   return [
     item.missionTitle,
     "",
-    "Who I reached:",
-    "[name and place]",
+    "Who I spoke with",
+    "[name, role, organization]",
     "",
-    "What they said:",
-    "[one or two sentences]",
+    "What actually changed the plan",
+    "[the specific thing they said — not a recap of the whole call]",
     "",
-    "Next step:",
-    "[the single thing I'll do next, and when]"
+    "What I brought or offered",
+    "[the question, intro, or proof I showed up with]",
+    "",
+    "Next step",
+    "[the one action, who owns it, and the date]"
   ].join("\n");
 }
 
@@ -127,15 +162,16 @@ function buildDraftPrompt(item) {
     : "Do not add shelter or ID steps unless the profile needs them.";
   const shape =
     item.kind === "phone_script"
-      ? "Write a short phone script they can read out loud. Include what to ask and a line for writing down the answer."
+      ? "Write a phone script they can read out loud. Open with who they are and the specific reason for the call. Include the two questions worth asking, and a line to repeat the next step before hanging up."
       : item.kind === "outreach_email"
-        ? "Write a short email with a subject line. Put details they must personalize in [brackets]."
-        : "Write a notes sheet with blank lines for who they reached, what was said, and the next step.";
+        ? "Write an email they would actually send to a peer. Subject line first. One specific reason for writing, tied to this mission. A concrete ask with a time box. No warm-up paragraph."
+        : "Write a notes sheet they will fill after a real conversation. Leave blanks for who they spoke with, what changed the plan, what they brought, and the next step with a date. Do not pre-fill those blanks with invented outcomes.";
   return (
     `You are whatimado. Write one draft the user can copy and edit.\n` +
     `Return only the draft. No title, no JSON, no advice before it.\n` +
     `${shape}\n` +
-    `Middle-school reading level. Under 160 words.\n` +
+    `${writingVoice(appStore.profile)}\n` +
+    `Under 180 words.\n` +
     `${stability}\n\n` +
     `Mission: ${item.missionTitle}\n` +
     `Details: ${item.missionText}\n` +
@@ -293,12 +329,12 @@ export function createDraftsController(ui) {
     renderReader(el, { ...item, body: "" }, "Writing your draft");
     try {
       const raw = await callAdvisor(buildDraftPrompt(item), { maxTokens: 500, feature: "v2_draft" });
-      const body = String(raw || "").trim().slice(0, 2500) || fallbackDraft(item, appStore.location);
+      const body = String(raw || "").trim().slice(0, 2500) || fallbackDraft(item, appStore.location, appStore.profile);
       const draft = { ...item, body };
       remember(draft);
       renderReader(el, draft, "");
     } catch {
-      const draft = { ...item, body: fallbackDraft(item, appStore.location) };
+      const draft = { ...item, body: fallbackDraft(item, appStore.location, appStore.profile) };
       remember(draft);
       renderReader(el, draft, "");
     } finally {

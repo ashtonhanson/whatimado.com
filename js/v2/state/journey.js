@@ -206,7 +206,8 @@ function normalizeStages(raw) {
           .slice(0, 4)
           .map((mission) => ({
             title: String(mission?.title || mission?.mission || "").trim().slice(0, 140),
-            text: String(mission?.text || "").trim().slice(0, 600)
+            text: String(mission?.text || "").trim().slice(0, 600),
+            resources: normalizeResources(mission?.resources)
           }))
           .filter((mission) => mission.title)
       };

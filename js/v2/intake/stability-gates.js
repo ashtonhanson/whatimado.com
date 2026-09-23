@@ -29,6 +29,24 @@ export function shouldBlockJobBoards(profile) {
 }
 
 /**
+ * How missions, resources, and drafts should sound.
+ * Professional paths default to a mid- or senior-level peer, not an entry-level template.
+ * @param {import("../state/user-profile.js").UserProfile | null | undefined} profile
+ */
+export function writingVoice(profile) {
+  if (shouldBlockJobBoards(profile)) {
+    return "Write in plain, respectful language someone can use the same day. Be specific about what to ask and what to write down. Do not sound like a job application or a form letter.";
+  }
+  return [
+    "Default to a mid- or senior-level professional unless the profile clearly describes someone earlier in their career.",
+    "Sound like a thoughtful person writing to a peer: conversational, specific, and brief.",
+    "Use their real place, skills, and path. Do not invent employers, titles, or metrics.",
+    "No corporate boilerplate, no “I hope this email finds you well,” no talk of being eager to learn, and no entry-level placeholders.",
+    "Leave only unknown names and times in [brackets]."
+  ].join(" ");
+}
+
+/**
  * @param {import("../state/user-profile.js").UserProfile} profile
  * @param {string} [location]
  * @param {string | null} [pathMode]

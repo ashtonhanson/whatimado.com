@@ -72,28 +72,28 @@ const AUSTIN_RESOURCES = [
   {
     name: "SBA Local Assistance",
     org: "U.S. Small Business Administration",
-    details: "District offices and partner centers for coaching near Austin.",
+    details: "A district office or SCORE advisor for someone who already runs client work and wants a local sounding board.",
     url: "https://www.sba.gov/local-assistance",
     phone: ""
   },
   {
     name: "Austin Community Foundation",
     org: "Austin Community Foundation",
-    details: "Community funding and local nonprofit programs in Central Texas.",
+    details: "Which Central Texas funders and program officers meet with people doing community or creative work.",
     url: "https://www.austincf.org/",
     phone: "512-472-4486"
   },
   {
     name: "Mission Capital",
     org: "Mission Capital",
-    details: "Nonprofit capacity support for mission-driven work in Austin.",
+    details: "Peer rooms for people already leading mission-driven organizations in Austin.",
     url: "https://missioncapital.org/",
     phone: "512-477-5955"
   },
   {
     name: "Austin Public Library",
     org: "Austin Public Library",
-    details: "Free learning, community programs, and job help at local branches.",
+    details: "Research databases and a quiet branch when you need a place to work a plan.",
     url: "https://library.austintexas.gov/",
     phone: "512-974-7400"
   }
@@ -104,14 +104,14 @@ const STABILITY_RESOURCES = [
   {
     name: "211",
     org: "211",
-    details: "Ask for shelter, food, ID help, and what to bring. Search or call by city.",
+    details: "Tell them your city and whether you need a bed, food, or help replacing ID tonight. Write down who to call next.",
     url: "https://www.211.org/",
     phone: "211"
   },
   {
     name: "Findhelp",
     org: "Findhelp",
-    details: "Search housing, documents, and basic-needs programs near you.",
+    details: "Search your ZIP, then open the listing that names a real office and a phone number.",
     url: "https://www.findhelp.org/",
     phone: ""
   }
@@ -122,14 +122,14 @@ const GENERAL_RESOURCES = [
   {
     name: "211",
     org: "211",
-    details: "Local programs for work, training, and basic needs. Search by city.",
+    details: "Name your city and the specific kind of help you need. Write down the program that has a person attached to it.",
     url: "https://www.211.org/",
     phone: "211"
   },
   {
     name: "SBA Local Assistance",
     org: "U.S. Small Business Administration",
-    details: "Find a district office or partner center for free business coaching.",
+    details: "A district office or partner advisor for someone who already has a practice, not a first-business class.",
     url: "https://www.sba.gov/local-assistance",
     phone: ""
   }

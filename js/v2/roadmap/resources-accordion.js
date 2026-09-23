@@ -2,29 +2,31 @@ import { escapeHtml } from "../ui.js";
 import { normalizeResources, renderResourceListHtml, resourcePlaceLabel } from "./resources.js";
 
 /**
- * Same organizations the desktop rail shows. A task with its own list uses that
- * list; otherwise it uses the roadmap list. An empty list means no toggle.
+ * Organizations that belong on this mission card.
+ * Anything already on the path list stays there, so a card does not repeat it.
  * @param {import("./resources.js").LocalResource[] | undefined} taskResources
  * @param {import("./resources.js").LocalResource[]} shared
  * @returns {import("./resources.js").LocalResource[]}
  */
 export function resourcesForTask(taskResources, shared) {
   const own = normalizeResources(taskResources);
-  if (own.length) return own;
-  return shared || [];
+  if (!own.length) return [];
+  const master = new Set((shared || []).map((item) => item.name.trim().toLowerCase()));
+  return own.filter((item) => !master.has(item.name.trim().toLowerCase()));
 }
 
 /**
- * @param {{ id: string, resources: import("./resources.js").LocalResource[], place: string }} spec
+ * @param {{ id: string, resources: import("./resources.js").LocalResource[], place: string, label?: string }} spec
  * @returns {string}
  */
 export function renderResourcesAccordion(spec) {
   const resources = spec.resources || [];
   if (!resources.length) return "";
   const panelId = escapeHtml(spec.id);
+  const label = escapeHtml(spec.label || "Resources");
   return `<div class="v2-resources-acc">
     <button type="button" class="v2-resources-acc__trigger" aria-expanded="false" aria-controls="${panelId}">
-      <span>Resources</span>
+      <span>${label}</span>
       <svg class="v2-resources-acc__chevron" viewBox="0 0 16 16" aria-hidden="true">
         <path d="M4 6.5 8 10.5 12 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg>

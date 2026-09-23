@@ -1,9 +1,9 @@
 import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
 import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
-import { buildIntakeContextBlock, shouldBlockJobBoards } from "../intake/stability-gates.js";
+import { buildIntakeContextBlock, shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
 import { formatUserLocation } from "../state/location.js";
-import { fallbackResources, mergeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail } from "./resources.js";
+import { fallbackResources, mergeResources, normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail } from "./resources.js";
 import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, resourcesForTask } from "./resources-accordion.js";
 import { catalogForStages } from "./drafts.js";
 
@@ -37,12 +37,12 @@ export function fallbackStages(idea, profile) {
       desc: `The first concrete moves on “${title}”.`,
       missions: [
         {
-          title: `Take the first practical step on ${title}`,
-          text: "Pick the smallest action you can finish in the next few days — a message, a call, or a short piece of proof. Do that before you add more training or applications."
+          title: `Open one real conversation about ${title}`,
+          text: "Write to someone who already does this work and name the specific overlap with what you do. Ask for a short conversation, not a favor or a job. Send it before you collect more research."
         },
         {
-          title: "Write down what happened and the next move",
-          text: "Note who you reached, what they said, and the single next action. That record is what the following stage builds on."
+          title: "Keep what changes the plan",
+          text: "After you talk, write down the one thing that changes how you'll proceed, and the next move with a date. Set aside advice that doesn't fit how you already work."
         }
       ]
     }
@@ -74,7 +74,8 @@ export function parseStagesResponse(raw, fallback) {
             .slice(0, 3)
             .map((mission) => ({
               title: String(mission?.title || mission?.mission || "").trim(),
-              text: String(mission?.text || "").trim()
+              text: String(mission?.text || "").trim(),
+              resources: normalizeResources(mission?.resources)
             }))
             .filter((mission) => mission.title && mission.text)
         };
@@ -103,8 +104,11 @@ function buildMissionsPrompt(idea, bullets) {
   return (
     `You are whatimado. Write the FIRST roadmap for "${idea.title || idea.label}".\n` +
     `Return ONLY JSON:\n` +
-    `{"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences"}]}],"resources":[{"name":"organization","details":"one sentence of what to ask them","url":"https://official-site","phone":""}]}\n` +
-    `Exactly 2 stages, 2 missions each. Also 2 to 4 real organizations in the user's city. Use official sites you are sure about, and leave url empty if you are not sure. Do not invent phone numbers. Middle-school reading level. No job-board filler.\n` +
+    `{"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"organization","details":"one sentence of what to ask them in this situation","url":"https://official-site","phone":""}]}\n` +
+    `Exactly 2 stages, 2 missions each.\n` +
+    `The top-level "resources" array is the single list for the whole path: 2 to 4 real organizations in the user's city that someone at their level would actually contact. Each details sentence says what to ask them in this situation, not a brochure line about the organization. Use official sites you are sure about, and leave url empty if you are not sure. Do not invent phone numbers.\n` +
+    `A mission "resources" array is only for an organization this mission needs that is not already in the path list. If it would repeat the path list, use "resources":[].\n` +
+    `${writingVoice(appStore.profile)} No job-board filler.\n` +
     `${stability}\n\n` +
     `Path: ${idea.title || idea.label}\n` +
     `Why: ${idea.why || idea.tagline || idea.description || ""}\n` +
@@ -123,7 +127,14 @@ function buildMissionsPrompt(idea, bullets) {
 export function renderMissionStages(root, stages, catalog = [], sharedResources = [], place = "") {
   if (!root) return;
   const byTitle = new Map(catalog.map((item) => [item.missionTitle, item]));
-  root.innerHTML = stages
+  const master = sharedResources.length
+    ? `<div class="v2-resources-master">${renderResourcesAccordion({
+        id: "path-resources",
+        resources: sharedResources,
+        place
+      })}</div>`
+    : "";
+  root.innerHTML = master + stages
     .map(
       (stage, index) => `
         <article class="v2-stage">
