@@ -41,11 +41,12 @@ body.v2-app:not([data-phase="open"]) whatimado-map {
   --v2-map-svg-h: calc(var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) - var(--v2-map-frame-clearance));
 }
 
-/* Desktop: clip the map to that gap so nodes cannot paint into the frame. */
+/* Desktop: the map fills the column and slides under the frosted prompt. */
 @media (min-width: 901px) {
   body.v2-app:not([data-phase="open"]) whatimado-map,
   body.v2-app.is-hero-dismissing whatimado-map {
-    height: calc(var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) - var(--v2-map-frame-clearance));
+    height: 100%;
+    --v2-map-svg-h: 100%;
   }
 }
 

@@ -13,6 +13,7 @@ import { normalizeResources } from "../roadmap/resources.js";
  *   ghostDismissed: boolean,
  *   pathsGenerated: boolean,
  *   selectedPathId: string | null,
+ *   roadmapPathId: string | null,
  *   pathMode: "direct"|"flexible"|null,
  *   awaitingPathModeChoice: boolean,
  *   profileIntakeStep: string | null,
@@ -48,6 +49,7 @@ export function createEmptyJourney() {
     ghostDismissed: false,
     pathsGenerated: false,
     selectedPathId: null,
+    roadmapPathId: null,
     pathMode: null,
     awaitingPathModeChoice: false,
     profileIntakeStep: null,
@@ -133,6 +135,12 @@ export function normalizeJourney(raw) {
     ghostDismissed: Boolean(source.ghostDismissed),
     pathsGenerated: Boolean(source.pathsGenerated),
     selectedPathId: typeof source.selectedPathId === "string" ? source.selectedPathId : null,
+    roadmapPathId:
+      typeof source.roadmapPathId === "string"
+        ? source.roadmapPathId
+        : source.planConfirmed && typeof source.selectedPathId === "string"
+          ? source.selectedPathId
+          : null,
     pathMode: source.pathMode === "direct" || source.pathMode === "flexible" ? source.pathMode : null,
     awaitingPathModeChoice: Boolean(source.awaitingPathModeChoice),
     profileIntakeStep: typeof source.profileIntakeStep === "string" && source.profileIntakeStep ? source.profileIntakeStep : null,

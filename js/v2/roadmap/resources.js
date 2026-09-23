@@ -68,38 +68,6 @@ export function parseResourcesResponse(raw) {
 }
 
 /** @type {LocalResource[]} */
-const AUSTIN_RESOURCES = [
-  {
-    name: "SBA Local Assistance",
-    org: "U.S. Small Business Administration",
-    details: "A district office or SCORE advisor for someone who already runs client work and wants a local sounding board.",
-    url: "https://www.sba.gov/local-assistance",
-    phone: ""
-  },
-  {
-    name: "Austin Community Foundation",
-    org: "Austin Community Foundation",
-    details: "Which Central Texas funders and program officers meet with people doing community or creative work.",
-    url: "https://www.austincf.org/",
-    phone: "512-472-4486"
-  },
-  {
-    name: "Mission Capital",
-    org: "Mission Capital",
-    details: "Peer rooms for people already leading mission-driven organizations in Austin.",
-    url: "https://missioncapital.org/",
-    phone: "512-477-5955"
-  },
-  {
-    name: "Austin Public Library",
-    org: "Austin Public Library",
-    details: "Research databases and a quiet branch when you need a place to work a plan.",
-    url: "https://library.austintexas.gov/",
-    phone: "512-974-7400"
-  }
-];
-
-/** @type {LocalResource[]} */
 const STABILITY_RESOURCES = [
   {
     name: "211",
@@ -117,34 +85,14 @@ const STABILITY_RESOURCES = [
   }
 ];
 
-/** @type {LocalResource[]} */
-const GENERAL_RESOURCES = [
-  {
-    name: "211",
-    org: "211",
-    details: "Name your city and the specific kind of help you need. Write down the program that has a person attached to it.",
-    url: "https://www.211.org/",
-    phone: "211"
-  },
-  {
-    name: "SBA Local Assistance",
-    org: "U.S. Small Business Administration",
-    details: "A district office or partner advisor for someone who already has a practice, not a first-business class.",
-    url: "https://www.sba.gov/local-assistance",
-    phone: ""
-  }
-];
-
 /**
  * @param {import("../state/location.js").UserLocation | null | undefined} location
  * @param {import("../state/user-profile.js").UserProfile | null | undefined} profile
  * @returns {LocalResource[]}
  */
-export function fallbackResources(location, profile) {
+export function fallbackResources(_location, profile) {
   if (shouldBlockJobBoards(profile)) return STABILITY_RESOURCES.map((item) => ({ ...item }));
-  const place = `${location?.city || ""} ${location?.raw || ""}`.toLowerCase();
-  if (place.includes("austin")) return AUSTIN_RESOURCES.map((item) => ({ ...item }));
-  return GENERAL_RESOURCES.map((item) => ({ ...item }));
+  return [];
 }
 
 /**
@@ -164,7 +112,9 @@ export function mergeResources(primary, extra) {
  * @returns {LocalResource[]}
  */
 export function resourcesForRail(resources, location, profile) {
-  return mergeResources(resources, fallbackResources(location, profile));
+  const own = normalizeResources(resources);
+  if (own.length) return own;
+  return fallbackResources(location, profile);
 }
 
 /** @param {import("../state/location.js").UserLocation | null | undefined} location */

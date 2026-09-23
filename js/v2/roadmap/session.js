@@ -29,6 +29,8 @@ export function createConfirmGateController(ui) {
   const { messagesEl, panelEl, layout, flush, setComposerEnabled, setPhase, renderDetail, onConfirmed } = ui;
   let visible = false;
   let pending = false;
+  let pendingFor = null;
+  let requestSerial = 0;
 
   function gateHost() {
     return panelEl?.querySelector("#selection-gate-host") || panelEl || messagesEl;
@@ -56,8 +58,9 @@ export function createConfirmGateController(ui) {
     appStore.journey.confirmGateAwaitingRevision = false;
   }
 
-  function showGate(bullets, { update = false } = {}) {
+  function showGate(bullets, { update = false, pathId = null } = {}) {
     visible = true;
+    if (pathId) appStore.journey.roadmapPathId = pathId;
     appStore.journey.planBullets = bullets.slice();
     appStore.journey.confirmGateAwaitingRevision = false;
     touchJourney();
@@ -99,10 +102,12 @@ export function createConfirmGateController(ui) {
    */
   async function begin(idea, options = {}) {
     if (!idea || idea.type === "start") return;
-    if (pending && appStore.journey.selectedPathId === idea.id && !options.revision) return;
+    if (pending && pendingFor === idea.id && !options.revision) return;
+    const serial = ++requestSerial;
+    pendingFor = idea.id;
     if (
       visible &&
-      appStore.journey.selectedPathId === idea.id &&
+      appStore.journey.roadmapPathId === idea.id &&
       !options.update &&
       !options.revision &&
       !appStore.journey.confirmGateAwaitingRevision
@@ -128,11 +133,17 @@ export function createConfirmGateController(ui) {
 
     try {
       const summary = await requestSummary(idea, options.revision || "");
+      if (serial !== requestSerial) return;
       renderDetail?.(idea, { generating: false });
       pushAdvisor(summary.intro, { skipScroll: true });
-      showGate(summary.bullets, { update: Boolean(options.update || options.revision) });
+      showGate(summary.bullets, {
+        update: Boolean(options.update || options.revision),
+        pathId: idea.id
+      });
     } finally {
+      if (serial !== requestSerial) return;
       pending = false;
+      pendingFor = null;
       setComposerEnabled(true);
       setStatusMessage(statusEl(), "");
     }

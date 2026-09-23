@@ -1,5 +1,5 @@
 import { measureCssVarLength } from "../layout/measure-css-var.js";
-import { MOBILE_MQ, SCALE_CENTER_Y, VIEW_H, VIEW_W, ZOOM_MIN } from "./constants.js";
+import { MOBILE_MQ, SCALE_CENTER_X, SCALE_CENTER_Y, VIEW_H, VIEW_W, ZOOM_MIN } from "./constants.js";
 import {
   clampPanYForOpenHome,
   clampPanYForTopPad,
@@ -7,6 +7,21 @@ import {
   getNodeRadii,
   readGraphShiftY
 } from "./geometry.js";
+
+/**
+ * SVG units per screen pixel. Uses the live viewBox so a tall desktop stage
+ * stays uniformly scaled instead of assuming the 800×240 box is stretched.
+ * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ * @param {DOMRect} stageRect
+ */
+function unitsPerPixel(mapEl, stageRect) {
+  const svg = mapEl._svg || mapEl.querySelector(".whatimado-map__svg");
+  const box = svg?.viewBox?.baseVal;
+  return {
+    scaleX: box?.width > 0 && stageRect.width > 0 ? box.width / stageRect.width : VIEW_W / stageRect.width,
+    scaleY: box?.height > 0 && stageRect.height > 0 ? box.height / stageRect.height : VIEW_H / stageRect.height
+  };
+}
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
 export function getGraphBounds(mapEl) {
@@ -58,8 +73,7 @@ export function getFrameCenterInSvgCoords(mapEl) {
   const stageRect = stage.getBoundingClientRect();
   if (stageRect.width <= 0 || stageRect.height <= 0) return null;
 
-  const scaleX = VIEW_W / stageRect.width;
-  const scaleY = VIEW_H / stageRect.height;
+  const { scaleX, scaleY } = unitsPerPixel(mapEl, stageRect);
   const centerScreenX = (frameRect.left + frameRect.right) / 2;
   const centerScreenY = (frameRect.top + frameRect.bottom) / 2;
 
@@ -77,7 +91,7 @@ export function getStageCenterInSvgCoords(mapEl) {
   const stageRect = stage.getBoundingClientRect();
   if (stageRect.width <= 0 || stageRect.height <= 0) return null;
 
-  const scaleY = VIEW_H / stageRect.height;
+  const { scaleY } = unitsPerPixel(mapEl, stageRect);
   return {
     x: VIEW_W / 2,
     y: (stageRect.height / 2) * scaleY
@@ -123,10 +137,10 @@ function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY) {
 
   const bounds = getGraphBounds(mapEl);
   const shiftY = readGraphShiftY();
-  const scaleY = VIEW_H / stageRect.height;
+  const { scaleY } = unitsPerPixel(mapEl, stageRect);
   const span = Math.max(1, bounds.maxY - bounds.minY);
   const availablePx = Math.max(48, bottomScreenY - topScreenY);
-  const naturalPx = (span * stageRect.height) / VIEW_H;
+  const naturalPx = span / scaleY;
   const zoom = Math.max(0.55, Math.min(1, (availablePx / naturalPx) * 0.88));
   const fittedPx = naturalPx * zoom;
   let graphTop = topScreenY + Math.max(0, availablePx - fittedPx) / 2;
@@ -253,6 +267,38 @@ export function computeDefaultScenePan(mapEl) {
 }
 
 /**
+ * Place one node in the middle of the open gap above the prompt, not the frame's center.
+ * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ * @param {string} nodeId
+ * @returns {{ panX: number, panY: number }}
+ */
+export function computePanForNodeAboveFrame(mapEl, nodeId) {
+  const node = mapEl._liveNodes.find((entry) => entry.id === nodeId);
+  const stage = mapEl.querySelector(".whatimado-map__stage");
+  const frame = document.getElementById("dynamic-frame");
+  if (!node || !stage || !frame) return computeChatFrameGravityPan(mapEl);
+
+  const stageRect = stage.getBoundingClientRect();
+  const frameRect = frame.getBoundingClientRect();
+  if (stageRect.width <= 0 || stageRect.height <= 0) return computeChatFrameGravityPan(mapEl);
+
+  const top = menuClearScreenY(stageRect);
+  const bottom = Math.max(top + 48, frameRect.top);
+  const { scaleX, scaleY } = unitsPerPixel(mapEl, stageRect);
+  const shiftY = readGraphShiftY();
+  const zoom = mapEl._zoom || 1;
+  const nodeX = node.x * VIEW_W;
+  const nodeY = node.y * VIEW_H;
+  const anchorX = (stageRect.width / 2) * scaleX;
+  const anchorY = ((top + bottom) / 2 - stageRect.top) * scaleY;
+
+  return {
+    panX: anchorX - SCALE_CENTER_X - zoom * (nodeX - SCALE_CENTER_X),
+    panY: anchorY - shiftY - SCALE_CENTER_Y - zoom * (nodeY - SCALE_CENTER_Y)
+  };
+}
+
+/**
  * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
  * @param {string} nodeId
  * @returns {{ panX: number, panY: number }}
@@ -288,7 +334,7 @@ export function computeMobileFocusBandPan(mapEl) {
 
   const bounds = getGraphBounds(mapEl);
   const shiftY = readGraphShiftY();
-  const scaleY = VIEW_H / stageRect.height;
+  const { scaleY } = unitsPerPixel(mapEl, stageRect);
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const mapHeadGap = measureCssVarLength("--v2-mobile-focus-map-head-gap") || 10;

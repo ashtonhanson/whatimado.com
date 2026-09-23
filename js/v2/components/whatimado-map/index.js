@@ -42,13 +42,14 @@ import {
   computeMobileOpenHomePan,
   computeOpenHomeGravityPan,
   computePanForFocalNode,
+  computePanForNodeAboveFrame,
   isOpenHomePhase
 } from "../../map/pan.js";
 
 const MAP_TEMPLATE = `
   <div class="whatimado-map__pan-surface" part="pan-surface" aria-hidden="true"></div>
   <div class="whatimado-map__stage">
-    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center on You">
+    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center the map">
       <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
         <path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" />
@@ -103,6 +104,8 @@ export class WhatimadoMap extends HTMLElement {
     this._panX = 0;
     /** @type {number} */
     this._panY = 0;
+    /** @type {boolean} */
+    this._userPanned = false;
     /** @type {{ x: number, y: number, t: number }[]} */
     this._panSamples = [];
     /** @type {number} */
@@ -225,6 +228,16 @@ export class WhatimadoMap extends HTMLElement {
       this.loadAmbientLiveGraph();
     }
     this._refreshDrift();
+    this._onViewportResize = () => {
+      if (this._userPanned || window.matchMedia("(max-width: 900px)").matches || isOpenHomePhase()) {
+        this.syncDesktopViewBox();
+        return;
+      }
+      const target = this._computeChatFrameGravityPan();
+      if (typeof target.zoom === "number") this._zoom = target.zoom;
+      this._animatePanTo(target.panX, target.panY, false);
+    };
+    window.addEventListener("resize", this._onViewportResize);
     requestAnimationFrame(() => {
       this._frameCoupled = true;
       this.syncFrameGravity({ animate: false });
@@ -279,6 +292,7 @@ export class WhatimadoMap extends HTMLElement {
     this.removeEventListener("pointermove", this._onPointerMove);
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
+    window.removeEventListener("resize", this._onViewportResize);
     window.removeEventListener("pointermove", this._onHoverPointerMove, true);
     window.removeEventListener("mousemove", this._onHoverMouseMove, true);
     if (this._hoverRaf !== null) {
@@ -336,7 +350,13 @@ export class WhatimadoMap extends HTMLElement {
     this._applyAnchorStyles();
     if (this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1") {
       this.fitLockedScene({ animate: false });
+      return;
     }
+    if (window.matchMedia("(max-width: 900px)").matches || isOpenHomePhase()) return;
+    this._userPanned = false;
+    const target = this._computeChatFrameGravityPan();
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
+    this._animatePanTo(target.panX, target.panY, false);
   }
 
   /** Fade out ambient ghost (Step B — full personalize in Step D) */
@@ -366,7 +386,9 @@ export class WhatimadoMap extends HTMLElement {
     if (id) {
       this._focalLocked = true;
       this._focalNodeId = id;
-      const target = this._computePanForFocalNode(id);
+      const desktop = !window.matchMedia("(max-width: 900px)").matches;
+      if (desktop) this.syncDesktopViewBox();
+      const target = desktop ? computePanForNodeAboveFrame(this, id) : this._computePanForFocalNode(id);
       this._animatePanTo(target.panX, target.panY, true);
     }
     this._applyAnchorStyles();
@@ -503,8 +525,30 @@ export class WhatimadoMap extends HTMLElement {
     return computeOpenHomeGravityPan(this);
   }
 
+  /**
+   * Desktop chat uses a viewBox as tall as the column so nodes stay round
+   * and can pan through the space behind the prompt.
+   */
+  syncDesktopViewBox() {
+    if (!this._svg) return;
+    const openHome =
+      document.body.dataset.phase === "open" && !document.body.classList.contains("is-hero-dismissing");
+    if (window.matchMedia("(max-width: 900px)").matches || openHome) {
+      this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
+      this._svg.removeAttribute("preserveAspectRatio");
+      return;
+    }
+    const stage = this.querySelector(".whatimado-map__stage");
+    const rect = stage?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) return;
+    const vbH = VIEW_W * (rect.height / rect.width);
+    this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${vbH}`);
+    this._svg.setAttribute("preserveAspectRatio", "xMidYMin meet");
+  }
+
   /** @returns {{ panX: number, panY: number }} */
   _computeChatFrameGravityPan() {
+    this.syncDesktopViewBox();
     return computeChatFrameGravityPan(this);
   }
 
@@ -626,16 +670,16 @@ export class WhatimadoMap extends HTMLElement {
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
-  /** Reset pan — follows frame while coupled, stage-centered when locked. */
+  /** Center the You node, or the selected path node, in the gap above the prompt. */
   resetToYou({ animate = true } = {}) {
     this._focalLocked = false;
     this._focalNodeId = null;
-    this._zoom = 1;
-    if (this._frameCoupled) {
-      this.syncFrameGravity({ animate });
-      return;
-    }
-    const target = this._computeDefaultScenePan();
+    this._userPanned = false;
+    this.syncDesktopViewBox();
+    const selected = this._liveNodes.find((node) => node.id === this._selectedId && node.type !== "start");
+    const you = this._liveNodes.find((node) => node.type === "start");
+    const focal = selected || you;
+    const target = focal ? computePanForNodeAboveFrame(this, focal.id) : this._computeChatFrameGravityPan();
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
@@ -779,6 +823,7 @@ export class WhatimadoMap extends HTMLElement {
     if (Math.hypot(this._panX - startPanX, this._panY - startPanY) > 6) {
       this._focalLocked = true;
       this._focalNodeId = null;
+      this._userPanned = true;
     }
 
     if (!this._driftReducedMotion && Math.hypot(vx, vy) >= GLIDE_MIN_SPEED) {

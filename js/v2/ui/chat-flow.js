@@ -107,7 +107,7 @@ export function initChatFlow(ctx) {
     pathMap.render();
   }
 
-  function showSelectedPath(node, { generating = false, scroll = true } = {}) {
+  function showSelectedPath(node, { generating = false, scroll = true, keepGate = true } = {}) {
     const displayTitle = node.title || node.label;
     if (selectionPanel) {
       selectionPanel.classList.remove("hidden");
@@ -127,7 +127,7 @@ export function initChatFlow(ctx) {
       if (generating) {
         setStatusMessage(selectionPanel.querySelector("#selection-status"), "Generating this roadmap");
       }
-      if (existingGate) {
+      if (existingGate && keepGate) {
         selectionPanel.querySelector("#selection-gate-host")?.appendChild(existingGate);
       }
       if (scroll) scrollFrameChildIntoView(selectionPanel);
@@ -217,12 +217,14 @@ export function initChatFlow(ctx) {
   function handleNodeSelect(nodeId, { startConfirm = true } = {}) {
     const node = graphStore.nodes.find((n) => n.id === nodeId);
     if (!node || node.type === "start") return;
+    const switching = Boolean(appStore.journey.roadmapPathId && appStore.journey.roadmapPathId !== nodeId);
+    if (switching) missions.clear();
     selectGraphNode(nodeId);
     mapEl?.setSelectedNode(nodeId);
     appStore.journey.selectedPathId = nodeId;
     if (startConfirm) appStore.journey.planConfirmed = false;
     setPhase(PHASE.PATH_SELECTED);
-    showSelectedPath(node, { generating: startConfirm });
+    showSelectedPath(node, { generating: startConfirm, keepGate: !switching });
     renderPathCards();
     layout();
     if (startConfirm) void confirmGate.begin(node);

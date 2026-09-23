@@ -3,7 +3,7 @@ import { callAdvisor } from "../advisor.js";
 import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { buildIntakeContextBlock, shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
 import { formatUserLocation } from "../state/location.js";
-import { fallbackResources, mergeResources, normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail } from "./resources.js";
+import { normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail } from "./resources.js";
 import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, resourcesForTask } from "./resources-accordion.js";
 import { catalogForStages } from "./drafts.js";
 
@@ -106,7 +106,7 @@ function buildMissionsPrompt(idea, bullets) {
     `Return ONLY JSON:\n` +
     `{"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"organization","details":"one sentence of what to ask them in this situation","url":"https://official-site","phone":""}]}\n` +
     `Exactly 2 stages, 2 missions each.\n` +
-    `The top-level "resources" array is the single list for the whole path: 2 to 4 real organizations in the user's city that someone at their level would actually contact. Each details sentence says what to ask them in this situation, not a brochure line about the organization. Use official sites you are sure about, and leave url empty if you are not sure. Do not invent phone numbers.\n` +
+    `The top-level "resources" array is the single list for THIS path, not a generic city directory. Name 2 to 4 real organizations, programs, or rooms that a person at this seniority would contact for "${idea.title || idea.label}" specifically. Do not repeat a civic catch-all (public library, 211, SBA, community foundation) unless this path is actually about that kind of help. Each details sentence says what to ask them about this path. Use official sites you are sure about, and leave url empty if you are not sure. Do not invent phone numbers.\n` +
     `A mission "resources" array is only for an organization this mission needs that is not already in the path list. If it would repeat the path list, use "resources":[].\n` +
     `${writingVoice(appStore.profile)} No job-board filler.\n` +
     `${stability}\n\n` +
@@ -180,9 +180,27 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
 export function createMissionsController(ui) {
   const { sectionEl, listEl, layout, flush, onShown } = ui;
   let pending = false;
+  let serial = 0;
 
   function statusEl() {
     return sectionEl?.querySelector("#missions-status") || null;
+  }
+
+  function clear() {
+    serial += 1;
+    pending = false;
+    appStore.journey.missionsStages = [];
+    appStore.journey.missionResources = [];
+    appStore.journey.missionDrafts = [];
+    appStore.journey.planBullets = [];
+    appStore.journey.roadmapPathId = null;
+    appStore.journey.planConfirmed = false;
+    if (listEl) listEl.innerHTML = "";
+    sectionEl?.classList.add("hidden");
+    renderResourcesRail([], appStore.location, appStore.profile);
+    onShown?.([]);
+    touchJourney();
+    flush();
   }
 
   function show(stages) {
@@ -202,12 +220,10 @@ export function createMissionsController(ui) {
     layout();
   }
 
-  function remember(stages, resources) {
+  function remember(stages, resources, pathId) {
     appStore.journey.missionsStages = stages;
-    appStore.journey.missionResources = mergeResources(
-      resources,
-      fallbackResources(appStore.location, appStore.profile)
-    );
+    appStore.journey.missionResources = normalizeResources(resources);
+    if (pathId) appStore.journey.roadmapPathId = pathId;
     touchJourney();
     flush();
     show(stages);
@@ -219,14 +235,20 @@ export function createMissionsController(ui) {
    */
   async function begin(idea, bullets = []) {
     if (!idea || pending) return;
-    if (appStore.journey.missionsStages?.length && appStore.journey.selectedPathId === idea.id) {
+    const samePath = appStore.journey.roadmapPathId === idea.id;
+    if (samePath && appStore.journey.missionsStages?.length) {
       show(appStore.journey.missionsStages);
       return;
     }
+    const ticket = ++serial;
     pending = true;
+    appStore.journey.missionsStages = [];
+    appStore.journey.missionResources = [];
+    appStore.journey.missionDrafts = [];
     sectionEl?.classList.remove("hidden");
     if (listEl) listEl.innerHTML = "";
-    renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
+    renderResourcesRail([], appStore.location, appStore.profile);
+    onShown?.([]);
     setStatusMessage(statusEl(), "Generating your missions");
     scrollFrameChildIntoView(sectionEl);
     layout();
@@ -236,11 +258,14 @@ export function createMissionsController(ui) {
         maxTokens: 1200,
         feature: "v2_missions"
       });
+      if (ticket !== serial) return;
       const stages = parseStagesResponse(raw, fallback);
-      remember(stages, parseResourcesResponse(raw));
+      remember(stages, parseResourcesResponse(raw), idea.id);
     } catch {
-      remember(fallback, []);
+      if (ticket !== serial) return;
+      remember(fallback, [], idea.id);
     } finally {
+      if (ticket !== serial) return;
       pending = false;
       setStatusMessage(statusEl(), "");
     }
@@ -252,5 +277,5 @@ export function createMissionsController(ui) {
     show(stages);
   }
 
-  return { begin, restore };
+  return { begin, restore, clear };
 }
