@@ -183,7 +183,7 @@ const DRAFT_KINDS = new Set(["phone_script", "outreach_email", "notes"]);
 function normalizeDrafts(raw) {
   if (!Array.isArray(raw)) return [];
   return raw
-    .slice(0, 8)
+    .slice(0, 24)
     .map((item) => {
       if (!item || typeof item !== "object") return null;
       const kind = DRAFT_KINDS.has(item.kind) ? item.kind : "";
@@ -195,7 +195,9 @@ function normalizeDrafts(raw) {
         kind,
         label: String(item.label || "").trim().slice(0, 40),
         missionTitle: String(item.missionTitle || "").trim().slice(0, 140),
-        body
+        body,
+        pathId: typeof item.pathId === "string" ? item.pathId.slice(0, 80) : "",
+        createdAt: Number(item.createdAt) || 0
       };
     })
     .filter(Boolean);
@@ -204,19 +206,25 @@ function normalizeDrafts(raw) {
 function normalizeStages(raw) {
   if (!Array.isArray(raw)) return [];
   return raw
-    .slice(0, 4)
+    .slice(0, 8)
     .map((stage) => {
       const missions = Array.isArray(stage?.missions) ? stage.missions : Array.isArray(stage?.tasks) ? stage.tasks : [];
       return {
         label: String(stage?.label || "").trim().slice(0, 80),
         desc: String(stage?.desc || "").trim().slice(0, 320),
         missions: missions
-          .slice(0, 4)
-          .map((mission) => ({
-            title: String(mission?.title || mission?.mission || "").trim().slice(0, 140),
-            text: String(mission?.text || "").trim().slice(0, 600),
-            resources: normalizeResources(mission?.resources)
-          }))
+          .slice(0, 6)
+          .map((mission, missionIndex) => {
+            const title = String(mission?.title || mission?.mission || "").trim().slice(0, 140);
+            const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+            return {
+              id: typeof mission?.id === "string" && mission.id ? String(mission.id).slice(0, 64) : `m-${slug || missionIndex}`,
+              title,
+              text: String(mission?.text || "").trim().slice(0, 600),
+              done: Boolean(mission?.done),
+              resources: normalizeResources(mission?.resources)
+            };
+          })
           .filter((mission) => mission.title)
       };
     })

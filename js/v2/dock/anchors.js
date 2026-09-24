@@ -250,22 +250,10 @@ export function resolveSnap(topPx, velocityY, anchors) {
  * @param {HTMLElement} mainEl
  * @param {number} [cachedMapBottom] Skip live map layout reads (frame drag)
  */
-export function mapDimStrength(frameTop, mainEl, cachedMapBottom) {
-  const mapEl = document.getElementById("possibility-map");
-  const mainRect = mainEl.getBoundingClientRect();
-
-  /** Graph band only — not the full-height pan surface (which caused constant dimming) */
-  const mapStage = mapEl?.querySelector(".whatimado-map__stage");
-  const mapBottom =
-    typeof cachedMapBottom === "number"
-      ? cachedMapBottom
-      : mapStage
-        ? mapStage.getBoundingClientRect().bottom - mainRect.top
-        : mapEl
-          ? mapEl.getBoundingClientRect().bottom - mainRect.top
-          : mainEl.clientHeight * 0.42;
-
-  if (frameTop >= mapBottom) return 0;
-  const overlap = mapBottom - frameTop;
-  return Math.min(1, overlap / Math.max(mapBottom * 0.85, 120));
+export function mapDimStrength(frameTop, mainEl, _cachedMapBottom) {
+  /* Three-quarter home and anything lower stay clear. The frame frost covers the overlap. */
+  const homeLine = mainEl.clientHeight * 0.22;
+  if (frameTop >= homeLine) return 0;
+  const overlap = homeLine - frameTop;
+  return Math.min(1, overlap / Math.max(homeLine * 0.85, 120));
 }

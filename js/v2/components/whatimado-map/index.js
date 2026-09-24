@@ -106,6 +106,8 @@ export class WhatimadoMap extends HTMLElement {
     this._panY = 0;
     /** @type {boolean} */
     this._userPanned = false;
+    /** @type {boolean} */
+    this._expandedSnap = false;
     /** @type {{ x: number, y: number, t: number }[]} */
     this._panSamples = [];
     /** @type {number} */
@@ -670,15 +672,45 @@ export class WhatimadoMap extends HTMLElement {
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
+  /**
+   * Frame pulled to the bottom: enlarge the constellation and center the active node.
+   * Home and three-quarter snaps keep the legible baseline camera.
+   */
+  syncSnapCamera() {
+    if (window.matchMedia("(max-width: 900px)").matches) return;
+    const frame = document.getElementById("dynamic-frame");
+    const expanded = frame?.dataset.snap === "bottom";
+    if (!expanded) {
+      if (this._expandedSnap) {
+        this._expandedSnap = false;
+        this._userPanned = false;
+        const target = this._computeChatFrameGravityPan();
+        if (typeof target.zoom === "number") this._zoom = target.zoom;
+        this._animatePanTo(target.panX, target.panY, false);
+      }
+      return;
+    }
+    this._expandedSnap = true;
+    this.syncDesktopViewBox();
+    this._zoom = 1.6;
+    const active =
+      this._liveNodes.find((node) => node.id === this._selectedId && node.type !== "more") ||
+      this._liveNodes.find((node) => node.type === "path") ||
+      this._liveNodes.find((node) => node.type === "start");
+    const target = active ? computePanForNodeAboveFrame(this, active.id) : this._computeChatFrameGravityPan();
+    this._animatePanTo(target.panX, target.panY, false);
+  }
+
   /** Center the You node, or the selected path node, in the gap above the prompt. */
   resetToYou({ animate = true } = {}) {
     this._focalLocked = false;
     this._focalNodeId = null;
     this._userPanned = false;
     this.syncDesktopViewBox();
-    const selected = this._liveNodes.find((node) => node.id === this._selectedId && node.type !== "start");
+    const selected = this._liveNodes.find((node) => node.id === this._selectedId && node.type !== "start" && node.type !== "more");
+    const anchor = this._liveNodes.find((node) => node.type === "path");
     const you = this._liveNodes.find((node) => node.type === "start");
-    const focal = selected || you;
+    const focal = selected || anchor || you;
     const target = focal ? computePanForNodeAboveFrame(this, focal.id) : this._computeChatFrameGravityPan();
     this._animatePanTo(target.panX, target.panY, animate);
   }
@@ -1346,6 +1378,10 @@ export class WhatimadoMap extends HTMLElement {
       group.classList.toggle("is-support", !isSelected);
       group.classList.toggle("is-primary", isLayoutAnchor);
       group.classList.toggle("is-start", Boolean(isStart));
+      group.classList.toggle("is-roadmap", graphNode?.type === "path");
+      group.classList.toggle("is-mission", graphNode?.type === "mission");
+      group.classList.toggle("is-more", graphNode?.type === "more");
+      group.classList.toggle("is-complete", Boolean(graphNode?.done));
       group.classList.toggle("is-selected", isSelected);
     }
   }
@@ -1614,6 +1650,10 @@ export class WhatimadoMap extends HTMLElement {
           "whatimado-map__node",
           `whatimado-map__node--${options.layer}`,
           isStart ? "is-start" : "",
+          node.type === "path" ? "is-roadmap" : "",
+          node.type === "mission" ? "is-mission" : "",
+          node.type === "more" ? "is-more" : "",
+          node.done ? "is-complete" : "",
           isLayoutAnchor ? "is-anchor is-primary" : "",
           !isSelected ? "is-support" : "",
           isSelected ? "is-selected" : ""

@@ -2,7 +2,7 @@ import { escapeHtml } from "../ui.js";
 import { formatUserLocation } from "../state/location.js";
 import { shouldBlockJobBoards } from "../intake/stability-gates.js";
 
-/** @typedef {{ name: string, org: string, details: string, url: string, phone: string }} LocalResource */
+/** @typedef {{ name: string, org: string, details: string, url: string, phone: string, address: string, contact: string, notes: string, draft: string }} LocalResource */
 
 /**
  * @param {unknown} value
@@ -42,7 +42,11 @@ export function normalizeResources(raw) {
       org: String(record.org || "").trim().slice(0, 80),
       details: String(record.details || record.desc || record.text || "").trim().slice(0, 240),
       url: safeHttpUrl(record.url || record.href),
-      phone: String(record.phone || "").trim().slice(0, 32)
+      phone: String(record.phone || "").trim().slice(0, 40),
+      address: String(record.address || "").trim().slice(0, 160),
+      contact: String(record.contact || "").trim().slice(0, 120),
+      notes: String(record.notes || "").trim().slice(0, 2000),
+      draft: String(record.draft || "").trim().slice(0, 2500)
     });
     if (list.length >= 6) break;
   }
@@ -133,10 +137,19 @@ export function renderResourceListHtml(items) {
         : "";
       const phone = item.phone ? `<span class="v2-resource-phone">${escapeHtml(item.phone)}</span>` : "";
       const meta = link || phone ? `<div class="v2-resource-meta">${link}${phone}</div>` : "";
-      return `<li class="v2-resource-item">
+      const key = escapeHtml(item.name);
+      return `<li class="v2-resource-item" data-resource-name="${key}">
         <span class="v2-resource-name">${escapeHtml(title)}</span>
         ${item.details ? `<p class="v2-resource-desc">${escapeHtml(item.details)}</p>` : ""}
+        ${item.address ? `<p class="v2-resource-address">${escapeHtml(item.address)}</p>` : ""}
+        ${item.contact ? `<p class="v2-resource-contact">${escapeHtml(item.contact)}</p>` : ""}
         ${meta}
+        <label class="v2-resource-notes">Notes
+          <textarea rows="3" data-resource-notes="${key}">${escapeHtml(item.notes || "")}</textarea>
+        </label>
+        <button type="button" class="v2-resource-draft-btn" data-resource-draft="${key}">Draft</button>
+        <pre class="v2-resource-draft${item.draft ? "" : " hidden"}" data-resource-draft-body="${key}">${escapeHtml(item.draft || "")}</pre>
+        ${item.draft ? `<button type="button" class="v2-resource-copy" data-resource-copy="${key}">Copy</button>` : ""}
       </li>`;
     })
     .join("");

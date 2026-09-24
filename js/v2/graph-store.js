@@ -1,4 +1,4 @@
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"action", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
 /** @typedef {{ id?: string, label: string, title: string, description?: string, type?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} AdvisorPath */
 export const graphStore = {
@@ -123,6 +123,8 @@ export function loadAdvisorPaths(paths, options = {}) {
     edges.push({ from: "start", to: id });
   });
 
+  possibilityNodes = null;
+  possibilityEdges = null;
   graphStore.nodes = nodes;
   graphStore.edges = edges;
   const keep = options.keepSelectedId;
@@ -221,4 +223,74 @@ export const GHOST_GRAPH = {
 /** @param {string} id */
 export function selectGraphNode(id) {
   graphStore.selectedId = id;
+}
+
+/** Possibility constellation, kept while a roadmap branch is on screen. */
+let possibilityNodes = null;
+let possibilityEdges = null;
+
+export const ROADMAP_MORE_ID = "roadmap-more";
+
+function rememberPossibilities() {
+  if (possibilityNodes) return;
+  possibilityNodes = graphStore.nodes.map((node) => ({ ...node }));
+  possibilityEdges = graphStore.edges.map((edge) => ({ ...edge }));
+}
+
+export function restorePossibilityMap() {
+  if (!possibilityNodes) return;
+  graphStore.nodes = possibilityNodes.map((node) => ({ ...node }));
+  graphStore.edges = possibilityEdges.map((edge) => ({ ...edge }));
+  possibilityNodes = null;
+  possibilityEdges = null;
+}
+
+/**
+ * Selected roadmap at the center, missions branching out, plus a “+” for the next batch.
+ * @param {string} pathId
+ * @param {{ id?: string, title: string, done?: boolean }[]} missions
+ */
+export function showRoadmapBranch(pathId, missions) {
+  rememberPossibilities();
+  const source = possibilityNodes || graphStore.nodes;
+  const path = source.find((node) => node.id === pathId && node.type === "path");
+  if (!path) return;
+
+  const anchor = { ...path, x: 0.5, y: 0.56, parentId: undefined };
+  /** @type {GraphNode[]} */
+  const nodes = [anchor];
+  /** @type {GraphEdge[]} */
+  const edges = [];
+  const count = missions.length;
+
+  missions.forEach((mission, index) => {
+    const t = count === 1 ? 0.5 : index / Math.max(1, count - 1);
+    const angle = Math.PI * (0.12 + 0.76 * t);
+    const id = mission.id || `m-${index}`;
+    nodes.push({
+      id,
+      type: "mission",
+      label: shortenMapLabel(mission.title, 16),
+      title: mission.title,
+      x: 0.5 + Math.cos(angle) * 0.34,
+      y: 0.5 - Math.sin(angle) * 0.34,
+      parentId: path.id,
+      done: Boolean(mission.done)
+    });
+    edges.push({ from: path.id, to: id });
+  });
+
+  const last = nodes[nodes.length - 1];
+  nodes.push({
+    id: ROADMAP_MORE_ID,
+    type: "more",
+    label: "+",
+    x: Math.min(0.92, (last?.x || 0.5) + 0.16),
+    y: Math.max(0.08, (last?.y || 0.2) - 0.12),
+    parentId: last?.id || path.id
+  });
+  edges.push({ from: last?.id || path.id, to: ROADMAP_MORE_ID });
+
+  graphStore.nodes = nodes;
+  graphStore.edges = edges;
 }

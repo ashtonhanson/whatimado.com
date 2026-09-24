@@ -6,6 +6,7 @@ import { formatUserLocation } from "../state/location.js";
 import { normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail } from "./resources.js";
 import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, resourcesForTask } from "./resources-accordion.js";
 import { catalogForStages } from "./drafts.js";
+import { graphStore } from "../graph-store.js";
 
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
@@ -49,6 +50,16 @@ export function fallbackStages(idea, profile) {
   ];
 }
 
+/** @param {string} title @param {number} index */
+export function missionId(title, index) {
+  const slug = String(title || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48);
+  return `m-${slug || index}`;
+}
+
 /**
  * @param {string} raw
  * @param {{ label: string, desc: string, missions: { title: string, text: string }[] }[]} fallback
@@ -64,7 +75,7 @@ export function parseStagesResponse(raw, fallback) {
     const list = Array.isArray(parsed) ? parsed : parsed.stages || parsed.roadmap;
     if (!Array.isArray(list)) return fallback;
     const stages = list
-      .slice(0, 3)
+      .slice(0, 8)
       .map((stage) => {
         const missions = Array.isArray(stage?.missions) ? stage.missions : stage?.tasks;
         return {
@@ -72,11 +83,16 @@ export function parseStagesResponse(raw, fallback) {
           desc: String(stage?.desc || "").trim(),
           missions: (Array.isArray(missions) ? missions : [])
             .slice(0, 3)
-            .map((mission) => ({
-              title: String(mission?.title || mission?.mission || "").trim(),
-              text: String(mission?.text || "").trim(),
-              resources: normalizeResources(mission?.resources)
-            }))
+            .map((mission, missionIndex) => {
+              const title = String(mission?.title || mission?.mission || "").trim();
+              return {
+                id: missionId(title, missionIndex),
+                title,
+                text: String(mission?.text || "").trim(),
+                done: Boolean(mission?.done),
+                resources: normalizeResources(mission?.resources)
+              };
+            })
             .filter((mission) => mission.title && mission.text)
         };
       })
@@ -104,9 +120,9 @@ function buildMissionsPrompt(idea, bullets) {
   return (
     `You are whatimado. Write the FIRST roadmap for "${idea.title || idea.label}".\n` +
     `Return ONLY JSON:\n` +
-    `{"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"organization","details":"one sentence of what to ask them in this situation","url":"https://official-site","phone":""}]}\n` +
+    `{"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"organization","org":"parent org","details":"what to ask them about this path","url":"https://official-site","phone":"","address":"","contact":"who to ask for"}]}\n` +
     `Exactly 2 stages, 2 missions each.\n` +
-    `The top-level "resources" array is the single list for THIS path, not a generic city directory. Name 2 to 4 real organizations, programs, or rooms that a person at this seniority would contact for "${idea.title || idea.label}" specifically. Do not repeat a civic catch-all (public library, 211, SBA, community foundation) unless this path is actually about that kind of help. Each details sentence says what to ask them about this path. Use official sites you are sure about, and leave url empty if you are not sure. Do not invent phone numbers.\n` +
+    `The top-level "resources" array is the single list for THIS path, not a generic city directory. Name 2 to 4 real organizations a mid- or senior-level person would contact for "${idea.title || idea.label}" specifically. Do not repeat a civic catch-all (public library, 211, SBA, community foundation) unless this path is actually about that kind of help. Include the official phone, street address, and who to ask for when you know them. Leave phone, address, or url empty when you are not sure. Do not invent contact details.\n` +
     `A mission "resources" array is only for an organization this mission needs that is not already in the path list. If it would repeat the path list, use "resources":[].\n` +
     `${writingVoice(appStore.profile)} No job-board filler.\n` +
     `${stability}\n\n` +
@@ -138,7 +154,10 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
     .map(
       (stage, index) => `
         <article class="v2-stage">
-          <h3 class="v2-stage__label">${index + 1}. ${escapeHtml(stage.label)}</h3>
+          <label class="v2-check v2-stage__label">
+            <input type="checkbox" data-stage-index="${index}" ${stage.missions.every((mission) => mission.done) ? "checked" : ""} />
+            <span>${index + 1}. ${escapeHtml(stage.label)}</span>
+          </label>
           ${stage.desc ? `<p class="v2-stage__desc">${escapeHtml(stage.desc)}</p>` : ""}
           <ol class="v2-mission-list">
             ${stage.missions
@@ -152,9 +171,13 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                   resources: resourcesForTask(mission.resources, sharedResources),
                   place
                 });
+                const id = mission.id || missionId(mission.title, missionIndex);
                 return `
-                  <li class="v2-mission">
-                    <p class="v2-mission__title">${escapeHtml(mission.title)}</p>
+                  <li class="v2-mission${mission.done ? " is-done" : ""}" id="mission-${escapeHtml(id)}">
+                    <label class="v2-check v2-mission__title">
+                      <input type="checkbox" data-mission-id="${escapeHtml(id)}" ${mission.done ? "checked" : ""} />
+                      <span>${escapeHtml(mission.title)}</span>
+                    </label>
                     <p class="v2-mission__text">${escapeHtml(mission.text)}</p>
                     ${resources}
                     ${action}
@@ -205,6 +228,11 @@ export function createMissionsController(ui) {
 
   function show(stages) {
     if (!sectionEl) return;
+    stages.forEach((stage) => {
+      stage.missions.forEach((mission, index) => {
+        if (!mission.id) mission.id = missionId(mission.title, index);
+      });
+    });
     sectionEl.classList.remove("hidden");
     const catalog = catalogForStages(stages, appStore.profile);
     const sharedResources = resourcesForRail(
@@ -215,6 +243,7 @@ export function createMissionsController(ui) {
     renderMissionStages(listEl, stages, catalog, sharedResources, resourcePlaceLabel(appStore.location));
     onShown?.(stages);
     renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
+    bindProgress(listEl);
     setStatusMessage(statusEl(), "");
     scrollFrameChildIntoView(sectionEl);
     layout();
@@ -271,11 +300,68 @@ export function createMissionsController(ui) {
     }
   }
 
+  function flatMissions() {
+    return (appStore.journey.missionsStages || []).flatMap((stage) => stage.missions || []);
+  }
+
+  function bindProgress(root) {
+    if (!root || root.dataset.progressBound === "1") return;
+    root.dataset.progressBound = "1";
+    root.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const stages = appStore.journey.missionsStages || [];
+      if (target.dataset.missionId) {
+        for (const stage of stages) {
+          const mission = stage.missions.find((item) => item.id === target.dataset.missionId);
+          if (mission) mission.done = target.checked;
+        }
+      } else if (target.dataset.stageIndex != null) {
+        const stage = stages[Number(target.dataset.stageIndex)];
+        stage?.missions.forEach((mission) => {
+          mission.done = target.checked;
+        });
+      } else return;
+      touchJourney();
+      flush();
+      show(stages);
+    });
+  }
+
+  async function extend() {
+    const pathNode = graphStore.nodes.find((node) => node.id === appStore.journey.roadmapPathId);
+    if (!pathNode || pending) return;
+    const ticket = ++serial;
+    pending = true;
+    setStatusMessage(statusEl(), "Adding the next missions");
+    const existing = flatMissions().map((mission) => mission.title);
+    const prompt =
+      `You are whatimado. Add the NEXT batch of missions for "${pathNode.title || pathNode.label}". Do not repeat: ${existing.join("; ") || "none"}.\n` +
+      `Return ONLY JSON: {"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}]}\n` +
+      `Exactly 1 stage, 2 missions. ${writingVoice(appStore.profile)}`;
+    try {
+      const raw = await callAdvisor(prompt, { maxTokens: 700, feature: "v2_missions_more" });
+      if (ticket !== serial) return;
+      const added = parseStagesResponse(raw, []);
+      if (!added.length) return;
+      appStore.journey.missionsStages = [...(appStore.journey.missionsStages || []), ...added].slice(0, 8);
+      touchJourney();
+      flush();
+      show(appStore.journey.missionsStages);
+    } catch {
+      if (ticket !== serial) return;
+    } finally {
+      if (ticket !== serial) return;
+      pending = false;
+      setStatusMessage(statusEl(), "");
+    }
+  }
+
   function restore() {
     const stages = appStore.journey.missionsStages || [];
     if (!stages.length || !appStore.journey.planConfirmed) return;
     show(stages);
   }
 
-  return { begin, restore, clear };
+  return { begin, restore, clear, extend };
 }

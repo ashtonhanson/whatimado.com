@@ -1,5 +1,5 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
-import { graphStore, selectGraphNode } from "../graph-store.js";
+import { graphStore, restorePossibilityMap, selectGraphNode, showRoadmapBranch } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
@@ -182,7 +182,21 @@ export function initChatFlow(ctx) {
     listEl: document.getElementById("mission-stages"),
     layout,
     flush: flushPersist,
-    onShown: (stages) => drafts.sync(stages)
+    onShown: (stages) => {
+      drafts.sync(stages);
+      const pathId = appStore.journey.roadmapPathId;
+      if (stages?.length && pathId) {
+        const missionsFlat = stages.flatMap((stage) => stage.missions || []);
+        showRoadmapBranch(pathId, missionsFlat);
+        const keep = mapEl?._selectedId;
+        mapEl?.syncLiveFromStore();
+        const still = keep && graphStore.nodes.some((node) => node.id === keep);
+        mapEl?.setSelectedNode(still ? keep : pathId);
+      } else if (!stages?.length) {
+        restorePossibilityMap();
+        mapEl?.syncLiveFromStore();
+      }
+    }
   });
 
   const confirmGate = createConfirmGateController({
@@ -217,7 +231,17 @@ export function initChatFlow(ctx) {
   function handleNodeSelect(nodeId, { startConfirm = true } = {}) {
     const node = graphStore.nodes.find((n) => n.id === nodeId);
     if (!node || node.type === "start") return;
+    if (node.type === "more") {
+      void missions.extend();
+      return;
+    }
+    if (node.type === "mission") {
+      mapEl?.setSelectedNode(nodeId);
+      document.getElementById(`mission-${nodeId}`)?.scrollIntoView({ block: "nearest" });
+      return;
+    }
     const switching = Boolean(appStore.journey.roadmapPathId && appStore.journey.roadmapPathId !== nodeId);
+    if (appStore.journey.selectedPathId && appStore.journey.selectedPathId !== nodeId) clearPathThread();
     if (switching) missions.clear();
     selectGraphNode(nodeId);
     mapEl?.setSelectedNode(nodeId);
@@ -229,6 +253,13 @@ export function initChatFlow(ctx) {
     layout();
     if (startConfirm) void confirmGate.begin(node);
     else confirmGate.hide();
+  }
+
+  function clearPathThread() {
+    const tail = document.getElementById("messages-tail");
+    if (tail) tail.innerHTML = "";
+    const breakAt = appStore.journey.threadBreak;
+    if (Number.isInteger(breakAt)) appStore.journey.messages = appStore.journey.messages.slice(0, breakAt);
   }
 
   function seedHypotheticalChat() {
@@ -433,8 +464,10 @@ export function initChatFlow(ctx) {
 
   mapEl?.addEventListener("map-node-select", (event) => {
     const detail = /** @type {CustomEvent<{ nodeId: string, promptEmpty?: boolean }>} */ (event).detail;
-    if (!detail?.nodeId || detail.promptEmpty) return;
-    handleNodeSelect(detail.nodeId);
+    if (!detail?.nodeId) return;
+    if (detail.node?.type === "mission" || detail.node?.type === "more" || !detail.promptEmpty) {
+      handleNodeSelect(detail.nodeId);
+    }
   });
 
   frameEl?.composerInput?.addEventListener("input", () => {
@@ -452,6 +485,7 @@ export function initChatFlow(ctx) {
 
   frameEl?.addEventListener("dock-settled", () => {
     mapEl?.lockFromFrame();
+    mapEl?.syncSnapCamera();
   });
 
   document.getElementById("nav-home")?.addEventListener("click", () => {

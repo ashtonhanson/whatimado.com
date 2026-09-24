@@ -141,7 +141,7 @@ function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY) {
   const span = Math.max(1, bounds.maxY - bounds.minY);
   const availablePx = Math.max(48, bottomScreenY - topScreenY);
   const naturalPx = span / scaleY;
-  const zoom = Math.max(0.55, Math.min(1, (availablePx / naturalPx) * 0.88));
+  const zoom = Math.max(1, Math.min(1.15, (availablePx / naturalPx) * 1.05));
   const fittedPx = naturalPx * zoom;
   let graphTop = topScreenY + Math.max(0, availablePx - fittedPx) / 2;
   if (graphTop + fittedPx > bottomScreenY) graphTop = bottomScreenY - fittedPx;

@@ -24,7 +24,8 @@ function draftId(title, kind) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 48);
-  return `${kind}:${slug || "mission"}`;
+  const path = appStore.journey.roadmapPathId || "path";
+  return `${path}:${kind}:${slug || "mission"}`;
 }
 
 /**
@@ -192,15 +193,23 @@ function renderCatalog(drawer, catalog, saved) {
   if (!body || !title || !back) return;
   title.textContent = "Drafts";
   back.classList.add("hidden");
-  const savedIds = new Set(saved.map((draft) => draft.id));
-  body.innerHTML = catalog.length
-    ? `<ul class="v2-drafts__list">${catalog
+  const pathId = appStore.journey.roadmapPathId;
+  const current = (saved || []).filter((draft) => !pathId || draft.pathId === pathId || draft.id.startsWith(`${pathId}:`));
+  const newest = [...current].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const savedIds = new Set(newest.map((draft) => draft.id));
+  const pending = catalog.filter((item) => !savedIds.has(item.id));
+  const rows = [
+    ...newest.map((draft) => ({ ...draft, ready: true })),
+    ...pending.map((item) => ({ ...item, ready: false }))
+  ];
+  body.innerHTML = rows.length
+    ? `<ul class="v2-drafts__list">${rows
         .map(
           (item) => `<li>
             <button type="button" class="v2-drafts__item" data-draft-open="${escapeHtml(item.id)}">
               <span class="v2-drafts__kind">${escapeHtml(item.label)}</span>
               <span class="v2-drafts__mission">${escapeHtml(item.missionTitle)}</span>
-              <span class="v2-drafts__state">${savedIds.has(item.id) ? "Ready" : "Write"}</span>
+              <span class="v2-drafts__state">${item.ready ? "Ready" : "Write"}</span>
             </button>
           </li>`
         )
@@ -305,9 +314,11 @@ export function createDraftsController(ui) {
       kind: draft.kind,
       label: draft.label,
       missionTitle: draft.missionTitle,
-      body: draft.body
+      body: draft.body,
+      pathId: appStore.journey.roadmapPathId || "",
+      createdAt: Date.now()
     });
-    appStore.journey.missionDrafts = next.slice(-8);
+    appStore.journey.missionDrafts = next.slice(-24);
     touchJourney();
     flush();
   }
@@ -347,8 +358,11 @@ export function createDraftsController(ui) {
    */
   function sync(stages) {
     catalog = catalogForStages(stages, appStore.profile);
+    const pathId = appStore.journey.roadmapPathId;
     const ids = new Set(catalog.map((item) => item.id));
-    const kept = (appStore.journey.missionDrafts || []).filter((draft) => ids.has(draft.id));
+    const kept = (appStore.journey.missionDrafts || []).filter(
+      (draft) => ids.has(draft.id) && (!pathId || draft.pathId === pathId || draft.id.startsWith(`${pathId}:`))
+    );
     if (kept.length !== (appStore.journey.missionDrafts || []).length) {
       appStore.journey.missionDrafts = kept;
       touchJourney();
@@ -374,12 +388,105 @@ export function createDraftsController(ui) {
     const catalogButton = target.closest("[data-draft-open]");
     if (catalogButton instanceof HTMLElement && catalogButton.dataset.draftOpen) {
       void open(catalogButton.dataset.draftOpen);
+      return;
     }
+    const resourceDraft = target.closest("[data-resource-draft]");
+    if (resourceDraft instanceof HTMLElement && resourceDraft.dataset.resourceDraft) {
+      void writeResourceDraft(resourceDraft.dataset.resourceDraft);
+      return;
+    }
+    const copyBtn = target.closest("[data-resource-copy]");
+    if (copyBtn instanceof HTMLElement && copyBtn.dataset.resourceCopy) {
+      const item = (appStore.journey.missionResources || []).find((entry) => entry.name === copyBtn.dataset.resourceCopy);
+      if (item?.draft) {
+        navigator.clipboard.writeText(item.draft).then(() => {
+          copyBtn.textContent = "Copied";
+        }).catch(() => {
+          copyBtn.textContent = "Select the draft to copy";
+        });
+      }
+    }
+  });
+
+  document.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLTextAreaElement) || !target.dataset.resourceNotes) return;
+    const item = (appStore.journey.missionResources || []).find((entry) => entry.name === target.dataset.resourceNotes);
+    if (!item) return;
+    item.notes = target.value.slice(0, 2000);
+    touchJourney();
+    flush();
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") close();
   });
 
+  /**
+   * @param {string} name
+   */
+  async function writeResourceDraft(name) {
+    const item = (appStore.journey.missionResources || []).find((entry) => entry.name === name);
+    const card = document.querySelector(`[data-resource-draft-body="${CSS.escape(name)}"]`);
+    if (!item || writing) return;
+    if (item.draft && card) {
+      card.textContent = item.draft;
+      card.classList.remove("hidden");
+      return;
+    }
+    writing = true;
+    const path = graphPathTitle();
+    const kind = item.phone ? "a short phone script" : "a short email";
+    const prompt =
+      `You are whatimado. Write ${kind} the user can copy.\n` +
+      `Return only the draft. No JSON.\n` +
+      `${writingVoice(appStore.profile)}\n` +
+      `Under 160 words. Senior, specific, about this organization and this path.\n\n` +
+      `Path: ${path}\n` +
+      `Organization: ${item.name}${item.org ? ` (${item.org})` : ""}\n` +
+      `Why: ${item.details}\n` +
+      `Phone: ${item.phone || "unknown"}\n` +
+      `Address: ${item.address || "unknown"}\n` +
+      `Ask for: ${item.contact || "the right person"}`;
+    try {
+      const raw = await callAdvisor(prompt, { maxTokens: 450, feature: "v2_resource_draft" });
+      item.draft = String(raw || "").trim().slice(0, 2500) || fallbackResourceDraft(item, path);
+    } catch {
+      item.draft = fallbackResourceDraft(item, path);
+    } finally {
+      writing = false;
+    }
+    touchJourney();
+    flush();
+    if (card) {
+      card.textContent = item.draft;
+      card.classList.remove("hidden");
+    }
+    const host = card?.parentElement;
+    if (host && !host.querySelector("[data-resource-copy]")) {
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "v2-resource-copy";
+      copy.dataset.resourceCopy = name;
+      copy.textContent = "Copy";
+      host.appendChild(copy);
+    }
+  }
+
   return { sync, open, close };
+}
+
+function graphPathTitle() {
+  return appStore.journey.roadmapPathId || "this path";
+}
+
+/**
+ * @param {{ name: string, details?: string, phone?: string }} item
+ * @param {string} path
+ */
+function fallbackResourceDraft(item, path) {
+  if (item.phone) {
+    return `Hi, this is [your name]. I'm calling ${item.name} about ${path}.\n\n${item.details || ""}\n\nWho should I speak with, and what's the next step?`;
+  }
+  return `Subject: ${path}\n\nHello —\n\nI'm [your name]. I'm writing ${item.name} about ${path}. ${item.details || ""}\n\nIf you have twenty minutes, I'd like to talk through the specific next step. I'm free [two times].`;
 }
