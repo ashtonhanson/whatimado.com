@@ -267,9 +267,9 @@ const EXPLORE_OPTIONS = [
 const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 180, y: 188 };
-const PATH_REACH = 68;
-const PLUS_REACH = 102;
-const OPTION_REACH = 128;
+const PATH_REACH = 168;
+const PLUS_REACH = 204;
+const OPTION_REACH = 72;
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
 export let mapSpread = 1;
@@ -341,8 +341,9 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     const t = count === 1 ? 0.5 : index / (count - 1);
     const fan = -Math.PI * (0.78 - t * 0.5);
     const angle = rotation + fan;
-    node.x = (originX + Math.cos(angle) * reach) / MAP_W;
-    node.y = (originY + Math.sin(angle) * reach) / MAP_H;
+    const optionReach = OPTION_REACH * spread;
+    node.x = (originX + Math.cos(angle) * optionReach) / MAP_W;
+    node.y = (originY + Math.sin(angle) * optionReach) / MAP_H;
   });
 }
 
