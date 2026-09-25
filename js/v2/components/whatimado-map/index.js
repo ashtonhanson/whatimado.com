@@ -66,10 +66,17 @@ function wrapTitle(title) {
   return lines;
 }
 
-/** @param {number} cx @param {number} cy @param {number} r @param {string} title */
-function labelMarkup(cx, cy, r, title) {
+/** @param {number} cx @param {number} cy @param {number} r @param {string} title @param {string} [side] */
+function labelMarkup(cx, cy, r, title, side) {
   const lines = wrapTitle(title);
   const lineH = 13;
+  if (side === "nw") {
+    const x = cx - r - 6;
+    const start = cy - ((lines.length - 1) * lineH) / 2;
+    return `<text class="whatimado-map__label" text-anchor="end">${lines
+      .map((line, index) => `<tspan x="${x}" y="${start + index * lineH}">${escapeHtml(line)}</tspan>`)
+      .join("")}</text>`;
+  }
   const start = cy - r - 8 - (lines.length - 1) * lineH;
   return `<text class="whatimado-map__label" text-anchor="middle">${lines
     .map((line, index) => `<tspan x="${cx}" y="${start + index * lineH}">${escapeHtml(line)}</tspan>`)
@@ -1824,7 +1831,7 @@ export class WhatimadoMap extends HTMLElement {
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
-            ${labelMarkup(cx, cy, r, node.title || node.label)}
+            ${labelMarkup(cx, cy, r, node.title || node.label, node.type === "action" || (node.type === "path" && !isSelected) ? "nw" : "")}
           </g>
         </g>
       `

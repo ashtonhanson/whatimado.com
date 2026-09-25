@@ -266,10 +266,10 @@ const EXPLORE_OPTIONS = [
 /** You on the left, selected spoke pointing right, in SVG units of the 800×240 map. */
 const MAP_W = 800;
 const MAP_H = 240;
-const YOU_LINKED = { x: 150, y: 150 };
-const PATH_REACH = 150;
-const PLUS_REACH = 230;
-const OPTION_REACH = 78;
+const YOU_LINKED = { x: 108, y: 156 };
+const PATH_REACH = 196;
+const PLUS_REACH = 292;
+const OPTION_REACH = 128;
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
 export let mapSpread = 1;
@@ -333,14 +333,13 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       node.y = (pathY + Math.sin(rotation) * (PLUS_REACH - PATH_REACH) * spread) / MAP_H;
       return;
     }
-    const index = satellites.findIndex((entry) => entry.id === node.id);
-    const count = Math.max(1, satellites.length);
-    const t = count === 1 ? 0.35 : index / (count - 1);
-    const fan = -Math.PI / 2 - t * (Math.PI / 2);
-    const angle = rotation + fan;
-    const reach = OPTION_REACH * spread * (1 + index * 0.08);
-    node.x = (pathX + Math.cos(angle) * reach) / MAP_W;
-    node.y = (pathY + Math.sin(angle) * reach) / MAP_H;
+    const index = Math.max(0, satellites.findIndex((entry) => entry.id === node.id));
+    const dx = -78 * spread;
+    const dy = (-132 + index * 38) * spread;
+    const rx = dx * Math.cos(rotation) - dy * Math.sin(rotation);
+    const ry = dx * Math.sin(rotation) + dy * Math.cos(rotation);
+    node.x = (pathX + rx) / MAP_W;
+    node.y = (pathY + ry) / MAP_H;
   });
 }
 
@@ -416,8 +415,8 @@ export function showRoadmapBranch(pathId) {
     edges.push({ from: chosen.id, to: ROADMAP_MORE_ID });
   }
 
-  const target = -((chosen && chosen.homeAngle) || 0);
-  const from = Number.isFinite(graphStore.focusRotation) ? graphStore.focusRotation : target;
+  const target = 0;
+  const from = Number.isFinite(graphStore.focusRotation) ? graphStore.focusRotation : 0;
   let delta = target - from;
   while (delta > Math.PI) delta -= Math.PI * 2;
   while (delta < -Math.PI) delta += Math.PI * 2;
