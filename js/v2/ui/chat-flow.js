@@ -489,6 +489,11 @@ export function initChatFlow(ctx) {
 
   mapEl?.addEventListener("map-new-roadmap", () => startNewJourney());
 
+  frameEl?.addEventListener("dock-progress", (event) => {
+    const frameTop = /** @type {CustomEvent<{ frameTop?: number }>} */ (event).detail?.frameTop;
+    if (typeof frameTop === "number") mapEl?.syncSpreadForFrame(frameTop);
+  });
+
   frameEl?.addEventListener("dock-settled", () => {
     mapEl?.lockFromFrame();
     mapEl?.syncSnapCamera();

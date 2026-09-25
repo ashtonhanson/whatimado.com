@@ -1,5 +1,5 @@
-import { GHOST_GRAPH, graphStore, placeLinkedBranch, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch } from "../../graph-store.js";
-import { getBrand } from "../../config.js";
+import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setMapSpread, setRoadmapFocusLinked, showRoadmapBranch } from "../../graph-store.js";
+import { measureAnchors } from "../../dock/anchors.js";
 import {
   BOUND_GLIDE_DAMP,
   BOUND_PULL,
@@ -786,32 +786,55 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Frame pulled to the bottom: enlarge the constellation and center the active node.
-   * Home and three-quarter snaps keep the legible baseline camera.
+   * Three-quarter frame keeps a compact fan in the gap.
+   * Top and bottom use the same expanded figure.
+   * @param {number} [frameTop]
+   */
+  syncSpreadForFrame(frameTop) {
+    if (window.matchMedia("(max-width: 900px)").matches || !roadmapFocusLinked) return;
+    const frame = document.getElementById("dynamic-frame");
+    const main = document.querySelector(".v2-main");
+    if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return;
+    const anchors = measureAnchors(main, frame);
+    const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
+    const up = (anchors.homeBase - top) / Math.max(1, anchors.homeBase - anchors.topLock);
+    const down = (top - anchors.homeBase) / Math.max(1, anchors.bottomCushion - anchors.homeBase);
+    const expand = Math.max(0, Math.min(1, Math.max(up, down)));
+    const next = 1 + expand * 0.62;
+    if (Math.abs(next - (this._mapSpread || 1)) < 0.02 && this._spreadReady) return;
+    this._mapSpread = next;
+    this._spreadReady = true;
+    setMapSpread(next);
+    if (!relayoutLinkedSpread()) return;
+    this._liveNodes = graphStore.nodes;
+    this._renderLayer(this._liveLayer, graphStore.nodes, graphStore.edges, { layer: "live" });
+    this._applyAnchorStyles();
+    const expanded = expand > 0.82;
+    if (expanded) {
+      this.syncDesktopViewBox();
+      const target = this._computeChatFrameGravityPanAtMainTop(anchors.bottomCushion);
+      if (typeof target.zoom === "number") this._zoom = target.zoom;
+      this._animatePanTo(target.panX, target.panY, false);
+      return;
+    }
+    this._userPanned = false;
+    const target = this._computeChatFrameGravityPan();
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
+    this._animatePanTo(target.panX, target.panY, false);
+  }
+
+  /**
+   * Frame pulled to the bottom or the top: same expanded map.
+   * The three-quarter snap keeps the compact fan in the gap.
    */
   syncSnapCamera() {
     if (window.matchMedia("(max-width: 900px)").matches) return;
     const frame = document.getElementById("dynamic-frame");
-    const expanded = frame?.dataset.snap === "bottom";
-    if (!expanded) {
-      if (this._expandedSnap) {
-        this._expandedSnap = false;
-        this._userPanned = false;
-        const target = this._computeChatFrameGravityPan();
-        if (typeof target.zoom === "number") this._zoom = target.zoom;
-        this._animatePanTo(target.panX, target.panY, false);
-      }
-      return;
-    }
-    this._expandedSnap = true;
-    this.syncDesktopViewBox();
-    this._zoom = 1.6;
-    const active =
-      this._liveNodes.find((node) => node.id === this._selectedId && node.type !== "more") ||
-      this._liveNodes.find((node) => node.type === "path") ||
-      this._liveNodes.find((node) => node.type === "start");
-    const target = active ? computePanForNodeAboveFrame(this, active.id) : this._computeChatFrameGravityPan();
-    this._animatePanTo(target.panX, target.panY, false);
+    const main = document.querySelector(".v2-main");
+    if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return;
+    const top = frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
+    this._spreadReady = false;
+    this.syncSpreadForFrame(top);
   }
 
   /** Center the You node, or the selected path node, in the gap above the prompt. */

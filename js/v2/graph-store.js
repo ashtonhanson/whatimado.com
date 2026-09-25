@@ -266,10 +266,19 @@ const EXPLORE_OPTIONS = [
 /** You on the left, selected spoke pointing right, in SVG units of the 800×240 map. */
 const MAP_W = 800;
 const MAP_H = 240;
-const YOU_LINKED = { x: 168, y: 120 };
-const PATH_REACH = 220;
-const PLUS_REACH = 340;
-const OPTION_REACH = 108;
+const YOU_LINKED = { x: 150, y: 150 };
+const PATH_REACH = 150;
+const PLUS_REACH = 230;
+const OPTION_REACH = 78;
+
+/** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
+export let mapSpread = 1;
+
+/** @param {number} spread */
+export function setMapSpread(spread) {
+  mapSpread = Math.max(1, Math.min(1.7, spread));
+  return mapSpread;
+}
 
 /** @type {Map<string, number>} */
 const homeAngles = new Map();
@@ -296,27 +305,54 @@ function angleFor(id, index, count) {
 }
 
 /**
- * Place spokes around You. rotation 0 points the home-angle-0 spoke to the right.
- * The chosen roadmap uses the long reach; everything else stays on the short ring.
+ * You on the left, the chosen roadmap to the right, and the other nodes fanned
+ * upward and to the left of that roadmap. spread grows the same figure.
  * @param {GraphNode[]} nodes
  * @param {number} rotation
  * @param {string} chosenId
  */
 export function placeLinkedBranch(nodes, rotation, chosenId) {
+  const spread = mapSpread;
+  const pathX = YOU_LINKED.x + Math.cos(rotation) * PATH_REACH * spread;
+  const pathY = YOU_LINKED.y + Math.sin(rotation) * PATH_REACH * spread;
+  const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
+
   nodes.forEach((node) => {
     if (node.type === "start") {
       node.x = YOU_LINKED.x / MAP_W;
       node.y = YOU_LINKED.y / MAP_H;
       return;
     }
-    const follow = node.type === "more" ? chosenId : node.id;
-    const home = node.type === "more" ? homeAngles.get(chosenId) || 0 : node.homeAngle || 0;
-    const angle = home + rotation;
-    const reach = follow === chosenId ? (node.type === "more" ? PLUS_REACH : PATH_REACH) : OPTION_REACH;
-    node.x = (YOU_LINKED.x + Math.cos(angle) * reach) / MAP_W;
-    node.y = (YOU_LINKED.y + Math.sin(angle) * reach) / MAP_H;
-    if (follow !== node.id) node.homeAngle = home;
+    if (node.id === chosenId) {
+      node.x = pathX / MAP_W;
+      node.y = pathY / MAP_H;
+      return;
+    }
+    if (node.type === "more") {
+      node.x = (pathX + Math.cos(rotation) * (PLUS_REACH - PATH_REACH) * spread) / MAP_W;
+      node.y = (pathY + Math.sin(rotation) * (PLUS_REACH - PATH_REACH) * spread) / MAP_H;
+      return;
+    }
+    const index = satellites.findIndex((entry) => entry.id === node.id);
+    const count = Math.max(1, satellites.length);
+    const t = count === 1 ? 0.35 : index / (count - 1);
+    const fan = -Math.PI / 2 - t * (Math.PI / 2);
+    const angle = rotation + fan;
+    const reach = OPTION_REACH * spread * (1 + index * 0.08);
+    node.x = (pathX + Math.cos(angle) * reach) / MAP_W;
+    node.y = (pathY + Math.sin(angle) * reach) / MAP_H;
   });
+}
+
+/** Re-place the linked figure after the prompt frame moves. */
+export function relayoutLinkedSpread() {
+  if (!roadmapFocusLinked) return false;
+  const chosen =
+    graphStore.nodes.find((node) => node.type === "path" && node.id === graphStore.selectedId) ||
+    graphStore.nodes.find((node) => node.type === "path");
+  if (!chosen) return false;
+  placeLinkedBranch(graphStore.nodes, graphStore.focusRotation || 0, chosen.id);
+  return true;
 }
 
 /**
@@ -359,7 +395,11 @@ export function showRoadmapBranch(pathId) {
   spokes.forEach((node, index) => {
     const slot = BRANCH_SLOTS[index] ?? BRANCH_SLOTS[BRANCH_SLOTS.length - 1];
     nodes.push({ ...node, x: slot.x, y: slot.y });
-    edges.push({ from: "start", to: node.id });
+    if (!roadmapFocusLinked || node.id === chosenSource.id) {
+      edges.push({ from: "start", to: node.id });
+    } else {
+      edges.push({ from: chosenSource.id, to: node.id });
+    }
   });
 
   const chosen = nodes.find((node) => node.id === chosenSource.id);
