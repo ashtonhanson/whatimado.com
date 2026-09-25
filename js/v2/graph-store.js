@@ -244,62 +244,52 @@ export function restorePossibilityMap() {
 }
 
 /**
- * One line: You, the roadmap, each mission, then its tasks, then “+” on the last task only.
+ * Keep the constellation: You at the bottom, paths in an arc above.
+ * The + sits just past the chosen path, continuing that same ray, so it stays clear of neighbors.
  * @param {string} pathId
- * @param {{ label: string, missions?: { id?: string, title: string, done?: boolean }[] }[]} stages
  */
-export function showRoadmapBranch(pathId, stages) {
+export function showRoadmapBranch(pathId) {
   rememberPossibilities();
   const source = possibilityNodes || graphStore.nodes;
-  const path = source.find((node) => node.id === pathId && node.type === "path");
+  const paths = source.filter((node) => node.type === "path");
+  const path = paths.find((node) => node.id === pathId);
   if (!path) return;
 
+  const start = source.find((node) => node.type === "start");
+  const alreadyConstellation = Boolean(start && Math.abs(start.y - 0.82) < 0.08);
+
   /** @type {GraphNode[]} */
-  const chain = [{ id: "start", type: "start", label: "You", title: "You", x: 0, y: 0 }];
-  chain.push({
-    ...path,
-    label: path.title || path.label,
-    title: path.title || path.label,
-    x: 0,
-    y: 0
+  const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.82 }];
+  /** @type {GraphEdge[]} */
+  const edges = [];
+  paths.forEach((node, index) => {
+    const slot = PATH_LAYOUT_SLOTS[index] ?? PATH_LAYOUT_SLOTS[PATH_LAYOUT_SLOTS.length - 1];
+    const placed = {
+      ...node,
+      x: alreadyConstellation ? node.x : slot.x,
+      y: alreadyConstellation ? node.y : slot.y
+    };
+    nodes.push(placed);
+    edges.push({ from: "start", to: placed.id });
   });
 
-  (stages || []).forEach((stage, stageIndex) => {
-    const tasks = stage.missions || [];
-    chain.push({
-      id: `stage-${stageIndex}`,
-      type: "mission",
-      label: stage.label,
-      title: stage.label,
-      x: 0,
-      y: 0,
-      done: tasks.length > 0 && tasks.every((task) => task.done)
+  const chosen = nodes.find((node) => node.id === pathId);
+  if (chosen) {
+    const dx = chosen.x - 0.5;
+    const dy = chosen.y - 0.82;
+    const len = Math.hypot(dx, dy) || 1;
+    const step = 0.1;
+    nodes.push({
+      id: ROADMAP_MORE_ID,
+      type: "more",
+      label: "+",
+      title: "+",
+      x: Math.min(0.94, Math.max(0.06, chosen.x + (dx / len) * step)),
+      y: Math.min(0.76, Math.max(0.04, chosen.y + (dy / len) * step))
     });
-    tasks.forEach((task, taskIndex) => {
-      chain.push({
-        id: task.id || `task-${stageIndex}-${taskIndex}`,
-        type: "task",
-        label: task.title,
-        title: task.title,
-        x: 0,
-        y: 0,
-        done: Boolean(task.done)
-      });
-    });
-  });
-
-  const lastTask = [...chain].reverse().find((node) => node.type === "task");
-  if (lastTask) {
-    chain.push({ id: ROADMAP_MORE_ID, type: "more", label: "+", title: "+", x: 0, y: 0 });
+    edges.push({ from: chosen.id, to: ROADMAP_MORE_ID });
   }
 
-  const count = chain.length;
-  chain.forEach((node, index) => {
-    const t = count <= 1 ? 0 : index / (count - 1);
-    node.x = 0.07 + t * 0.86;
-    node.y = 0.5 - Math.sin(t * Math.PI) * 0.14 + (index % 2 === 0 ? -0.05 : 0.05);
-  });
-
-  graphStore.nodes = chain;
-  graphStore.edges = chain.slice(1).map((node, index) => ({ from: chain[index].id, to: node.id }));
+  graphStore.nodes = nodes;
+  graphStore.edges = edges;
 }
