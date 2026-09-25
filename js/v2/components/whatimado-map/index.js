@@ -846,19 +846,23 @@ export class WhatimadoMap extends HTMLElement {
     this.syncSpreadForFrame(top);
   }
 
-  /** Slide the whole map so the selected node sits in the gap above the prompt. */
+  /** Slide the whole map so the selected roadmap sits in the gap above the prompt. */
   resetToYou({ animate = true } = {}) {
-    this._focalLocked = false;
-    this._focalNodeId = null;
     this._userPanned = false;
     this.syncDesktopViewBox();
+    const selectedId = this._selectedId || graphStore.selectedId;
     const selected = this._liveNodes.find(
-      (node) => node.id === (this._selectedId || graphStore.selectedId) && node.type !== "more"
+      (node) => node.id === selectedId && node.type !== "more" && node.type !== "start"
     );
     const roadmap = this._liveNodes.find((node) => node.type === "path");
     const you = this._liveNodes.find((node) => node.type === "start");
-    const focal = (selected && selected.type !== "start" ? selected : null) || roadmap || you;
-    const target = focal ? computePanForNodeAboveFrame(this, focal.id) : this._computeChatFrameGravityPan();
+    const focal = selected || roadmap || you;
+    if (!focal) return;
+    this._selectedId = focal.type === "start" ? this._selectedId : focal.id;
+    this._focalLocked = true;
+    this._focalNodeId = focal.id;
+    this._zoom = Math.max(this._zoom || 1, 1.12);
+    const target = computePanForNodeAboveFrame(this, focal.id);
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
@@ -1834,8 +1838,10 @@ export class WhatimadoMap extends HTMLElement {
           <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r * 2.6, 22)}" />
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
-            <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
-            ${labelMarkup(cx, cy, r, node.title || node.label)}
+            <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${node.type === "more" ? r * 1.45 : r}" />
+            ${node.type === "more"
+              ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.62}" y1="${cy}" x2="${cx + r * 0.62}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.62}" x2="${cx}" y2="${cy + r * 0.62}" /></g>`
+              : labelMarkup(cx, cy, r, node.title || node.label)}
           </g>
         </g>
       `
