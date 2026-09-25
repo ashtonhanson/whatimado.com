@@ -387,23 +387,23 @@ export class WhatimadoMap extends HTMLElement {
     const linked = roadmapFocusLinked;
     this._linkBtn?.classList.toggle("is-linked", linked);
     this._linkBtn?.setAttribute("aria-pressed", linked ? "true" : "false");
-    this._linkBtn?.setAttribute(
-      "aria-label",
-      linked
-        ? "Linked. The selected roadmap runs left to right. Unlink to keep the constellation."
-        : "Unlinked. The constellation stays put. Link to spin the selected roadmap left to right."
-    );
+    const label = linked
+      ? "Linked. The map follows the selected roadmap and keeps it running to the right of You. Click to unlink and leave the map where it is."
+      : "Unlinked. The map stays put when you change roadmaps. Click to link it so the selected roadmap runs to the right of You.";
+    this._linkBtn?.setAttribute("aria-label", label);
+    this._linkBtn?.setAttribute("title", label);
   }
 
   _toggleFocusLink() {
     setRoadmapFocusLinked(!roadmapFocusLinked);
     this._syncLinkButton();
     const chosen =
-      this._liveNodes.find((node) => node.id === this._selectedId && node.type === "path") ||
+      this._liveNodes.find((node) => node.id === (this._selectedId || graphStore.selectedId) && node.type === "path") ||
       this._liveNodes.find((node) => node.type === "path");
     if (!chosen) return;
     showRoadmapBranch(chosen.id);
     this.syncLiveFromStore();
+    if (roadmapFocusLinked) this.resetToYou({ animate: true });
   }
 
   _cancelLayoutSpin() {
@@ -724,7 +724,9 @@ export class WhatimadoMap extends HTMLElement {
       this._gravityRaf = null;
     }
 
-    if (!animate || this._driftReducedMotion) {
+    const distance = Math.hypot(targetX - this._panX, targetY - this._panY);
+    const slide = animate && (distance > 1.5 || !this._driftReducedMotion);
+    if (!slide) {
       this._panX = targetX;
       this._panY = targetY;
       this._applyPanTransform();
@@ -807,7 +809,7 @@ export class WhatimadoMap extends HTMLElement {
     const up = (anchors.homeBase - top) / Math.max(1, anchors.homeBase - anchors.topLock);
     const down = (top - anchors.homeBase) / Math.max(1, anchors.bottomCushion - anchors.homeBase);
     const expand = Math.max(0, Math.min(1, Math.max(up, down)));
-    const next = 1 + expand * 0.62;
+    const next = 1 + expand * 0.28;
     if (Math.abs(next - (this._mapSpread || 1)) < 0.02 && this._spreadReady) return;
     this._mapSpread = next;
     this._spreadReady = true;
@@ -844,16 +846,18 @@ export class WhatimadoMap extends HTMLElement {
     this.syncSpreadForFrame(top);
   }
 
-  /** Center the You node, or the selected path node, in the gap above the prompt. */
+  /** Slide the whole map so the selected node sits in the gap above the prompt. */
   resetToYou({ animate = true } = {}) {
     this._focalLocked = false;
     this._focalNodeId = null;
     this._userPanned = false;
     this.syncDesktopViewBox();
-    const selected = this._liveNodes.find((node) => node.id === this._selectedId && node.type !== "start" && node.type !== "more");
-    const anchor = this._liveNodes.find((node) => node.type === "path");
+    const selected = this._liveNodes.find(
+      (node) => node.id === (this._selectedId || graphStore.selectedId) && node.type !== "more"
+    );
+    const roadmap = this._liveNodes.find((node) => node.type === "path");
     const you = this._liveNodes.find((node) => node.type === "start");
-    const focal = selected || anchor || you;
+    const focal = (selected && selected.type !== "start" ? selected : null) || roadmap || you;
     const target = focal ? computePanForNodeAboveFrame(this, focal.id) : this._computeChatFrameGravityPan();
     this._animatePanTo(target.panX, target.panY, animate);
   }

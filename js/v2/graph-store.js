@@ -267,8 +267,8 @@ const EXPLORE_OPTIONS = [
 const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 180, y: 188 };
-const PATH_REACH = 112;
-const PLUS_REACH = 188;
+const PATH_REACH = 68;
+const PLUS_REACH = 102;
 const OPTION_REACH = 128;
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
