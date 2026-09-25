@@ -419,13 +419,16 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {string|null} id */
   setSelectedNode(id) {
     this._selectedId = id;
-    if (id) {
+    if (id && this._liveNodes.length <= 2) {
       this._focalLocked = true;
       this._focalNodeId = id;
       const desktop = !window.matchMedia("(max-width: 900px)").matches;
       if (desktop) this.syncDesktopViewBox();
       const target = desktop ? computePanForNodeAboveFrame(this, id) : this._computePanForFocalNode(id);
       this._animatePanTo(target.panX, target.panY, true);
+    } else {
+      this._focalLocked = false;
+      this._focalNodeId = null;
     }
     this._applyAnchorStyles();
     this.setPathPreview(null);

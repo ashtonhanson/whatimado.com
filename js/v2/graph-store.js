@@ -62,14 +62,14 @@ export function pathAccentForIndex(index) {
   return PATH_ACCENT_PALETTE[index % PATH_ACCENT_PALETTE.length];
 }
 
-/** Layout slots for up to six path nodes above YOU */
+/** Compact arc above YOU — short connectors, matching the constellation silhouette. */
 const PATH_LAYOUT_SLOTS = [
-  { x: 0.18, y: 0.5 },
-  { x: 0.38, y: 0.3 },
-  { x: 0.62, y: 0.3 },
-  { x: 0.82, y: 0.5 },
-  { x: 0.08, y: 0.4 },
-  { x: 0.92, y: 0.4 }
+  { x: 0.28, y: 0.52 },
+  { x: 0.39, y: 0.38 },
+  { x: 0.5, y: 0.28 },
+  { x: 0.61, y: 0.38 },
+  { x: 0.72, y: 0.52 },
+  { x: 0.5, y: 0.44 }
 ];
 
 export const MAX_PATH_NODES = PATH_LAYOUT_SLOTS.length;
@@ -106,7 +106,7 @@ function pathNodeFromAdvisor(path, index) {
 export function loadAdvisorPaths(paths, options = {}) {
   const trimmed = paths.slice(0, MAX_PATH_NODES);
   /** @type {GraphNode[]} */
-  const nodes = [{ id: "start", type: "start", label: "You", x: 0.5, y: 0.82 }];
+  const nodes = [{ id: "start", type: "start", label: "You", x: 0.5, y: 0.7 }];
   /** @type {GraphEdge[]} */
   const edges = [];
   const used = new Set(["start"]);
@@ -255,37 +255,25 @@ export function showRoadmapBranch(pathId) {
   const path = paths.find((node) => node.id === pathId);
   if (!path) return;
 
-  const start = source.find((node) => node.type === "start");
-  const alreadyConstellation = Boolean(start && Math.abs(start.y - 0.82) < 0.08);
-
-  /** @type {GraphNode[]} */
-  const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.82 }];
+  const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.7 }];
   /** @type {GraphEdge[]} */
   const edges = [];
   paths.forEach((node, index) => {
     const slot = PATH_LAYOUT_SLOTS[index] ?? PATH_LAYOUT_SLOTS[PATH_LAYOUT_SLOTS.length - 1];
-    const placed = {
-      ...node,
-      x: alreadyConstellation ? node.x : slot.x,
-      y: alreadyConstellation ? node.y : slot.y
-    };
+    const placed = { ...node, x: slot.x, y: slot.y };
     nodes.push(placed);
     edges.push({ from: "start", to: placed.id });
   });
 
   const chosen = nodes.find((node) => node.id === pathId);
   if (chosen) {
-    const dx = chosen.x - 0.5;
-    const dy = chosen.y - 0.82;
-    const len = Math.hypot(dx, dy) || 1;
-    const step = 0.1;
     nodes.push({
       id: ROADMAP_MORE_ID,
       type: "more",
       label: "+",
       title: "+",
-      x: Math.min(0.94, Math.max(0.06, chosen.x + (dx / len) * step)),
-      y: Math.min(0.76, Math.max(0.04, chosen.y + (dy / len) * step))
+      x: chosen.x,
+      y: Math.max(0.1, chosen.y - 0.16)
     });
     edges.push({ from: chosen.id, to: ROADMAP_MORE_ID });
   }
