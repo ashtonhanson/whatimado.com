@@ -234,6 +234,10 @@ export function initChatFlow(ctx) {
       void missions.extend();
       return;
     }
+    if (node.type === "action") {
+      mapEl?.setSelectedNode(nodeId);
+      return;
+    }
     if (node.type === "mission" || node.type === "task") {
       mapEl?.setSelectedNode(nodeId);
       const card = document.getElementById(node.type === "task" ? `mission-${nodeId}` : nodeId);
@@ -465,7 +469,7 @@ export function initChatFlow(ctx) {
   mapEl?.addEventListener("map-node-select", (event) => {
     const detail = /** @type {CustomEvent<{ nodeId: string, promptEmpty?: boolean }>} */ (event).detail;
     if (!detail?.nodeId) return;
-    if (detail.node?.type === "mission" || detail.node?.type === "more" || !detail.promptEmpty) {
+    if (detail.node?.type === "mission" || detail.node?.type === "more" || detail.node?.type === "action" || !detail.promptEmpty) {
       handleNodeSelect(detail.nodeId);
     }
   });

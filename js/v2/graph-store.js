@@ -243,29 +243,61 @@ export function restorePossibilityMap() {
   possibilityEdges = null;
 }
 
+/** Extra spokes so a single chosen roadmap never collapses into one line. */
+const EXPLORE_OPTIONS = [
+  { id: "option-settings", label: "Settings" },
+  { id: "option-notes", label: "Notes" },
+  { id: "option-roadmaps", label: "Roadmaps" }
+];
+
+/** Chosen path sits on the short center spoke. Siblings and options fill the arc. */
+const BRANCH_SLOTS = [
+  { x: 0.5, y: 0.42 },
+  { x: 0.32, y: 0.52 },
+  { x: 0.68, y: 0.52 },
+  { x: 0.24, y: 0.62 },
+  { x: 0.76, y: 0.62 }
+];
+
 /**
- * Keep the constellation: You at the bottom, paths in an arc above.
- * The + sits just past the chosen path, continuing that same ray, so it stays clear of neighbors.
+ * You stays at the bottom of a short arc. The chosen roadmap is the center spoke,
+ * other paths and settings-style options stay around it, and + sits above that spoke.
  * @param {string} pathId
  */
 export function showRoadmapBranch(pathId) {
   rememberPossibilities();
   const source = possibilityNodes || graphStore.nodes;
   const paths = source.filter((node) => node.type === "path");
-  const path = paths.find((node) => node.id === pathId);
-  if (!path) return;
+  const chosenSource = paths.find((node) => node.id === pathId) || paths[0];
+  if (!chosenSource) return;
 
-  const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.7 }];
-  /** @type {GraphEdge[]} */
-  const edges = [];
-  paths.forEach((node, index) => {
-    const slot = PATH_LAYOUT_SLOTS[index] ?? PATH_LAYOUT_SLOTS[PATH_LAYOUT_SLOTS.length - 1];
-    const placed = { ...node, x: slot.x, y: slot.y };
-    nodes.push(placed);
-    edges.push({ from: "start", to: placed.id });
+  /** @type {GraphNode[]} */
+  const spokes = [chosenSource];
+  paths.forEach((node) => {
+    if (node.id !== chosenSource.id) spokes.push(node);
+  });
+  EXPLORE_OPTIONS.forEach((option) => {
+    if (spokes.length >= BRANCH_SLOTS.length) return;
+    if (spokes.some((node) => node.id === option.id)) return;
+    spokes.push({
+      id: option.id,
+      type: "action",
+      label: option.label,
+      title: option.label
+    });
   });
 
-  const chosen = nodes.find((node) => node.id === pathId);
+  /** @type {GraphNode[]} */
+  const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.76 }];
+  /** @type {GraphEdge[]} */
+  const edges = [];
+  spokes.forEach((node, index) => {
+    const slot = BRANCH_SLOTS[index] ?? BRANCH_SLOTS[BRANCH_SLOTS.length - 1];
+    nodes.push({ ...node, x: slot.x, y: slot.y });
+    edges.push({ from: "start", to: node.id });
+  });
+
+  const chosen = nodes.find((node) => node.id === chosenSource.id);
   if (chosen) {
     nodes.push({
       id: ROADMAP_MORE_ID,
@@ -273,7 +305,7 @@ export function showRoadmapBranch(pathId) {
       label: "+",
       title: "+",
       x: chosen.x,
-      y: Math.max(0.1, chosen.y - 0.16)
+      y: chosen.y - 0.16
     });
     edges.push({ from: chosen.id, to: ROADMAP_MORE_ID });
   }
