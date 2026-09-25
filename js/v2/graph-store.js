@@ -266,9 +266,9 @@ const EXPLORE_OPTIONS = [
 /** You on the left, selected spoke pointing right, in SVG units of the 800×240 map. */
 const MAP_W = 800;
 const MAP_H = 240;
-const YOU_LINKED = { x: 108, y: 156 };
-const PATH_REACH = 196;
-const PLUS_REACH = 292;
+const YOU_LINKED = { x: 180, y: 188 };
+const PATH_REACH = 112;
+const PLUS_REACH = 188;
 const OPTION_REACH = 128;
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
@@ -305,41 +305,44 @@ function angleFor(id, index, count) {
 }
 
 /**
- * You on the left, the chosen roadmap to the right, and the other nodes fanned
- * upward and to the left of that roadmap. spread grows the same figure.
+ * You sits low in the three-quarter gap. The chosen roadmap runs right.
+ * Every other first-ring node leaves You at that same distance, spaced evenly
+ * across the upper arc.
  * @param {GraphNode[]} nodes
  * @param {number} rotation
  * @param {string} chosenId
  */
 export function placeLinkedBranch(nodes, rotation, chosenId) {
   const spread = mapSpread;
-  const pathX = YOU_LINKED.x + Math.cos(rotation) * PATH_REACH * spread;
-  const pathY = YOU_LINKED.y + Math.sin(rotation) * PATH_REACH * spread;
+  const reach = PATH_REACH * spread;
+  const originX = YOU_LINKED.x;
+  const originY = YOU_LINKED.y;
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
 
   nodes.forEach((node) => {
     if (node.type === "start") {
-      node.x = YOU_LINKED.x / MAP_W;
-      node.y = YOU_LINKED.y / MAP_H;
+      node.x = originX / MAP_W;
+      node.y = originY / MAP_H;
       return;
     }
     if (node.id === chosenId) {
-      node.x = pathX / MAP_W;
-      node.y = pathY / MAP_H;
+      node.x = (originX + Math.cos(rotation) * reach) / MAP_W;
+      node.y = (originY + Math.sin(rotation) * reach) / MAP_H;
       return;
     }
     if (node.type === "more") {
-      node.x = (pathX + Math.cos(rotation) * (PLUS_REACH - PATH_REACH) * spread) / MAP_W;
-      node.y = (pathY + Math.sin(rotation) * (PLUS_REACH - PATH_REACH) * spread) / MAP_H;
+      const plus = PLUS_REACH * spread;
+      node.x = (originX + Math.cos(rotation) * plus) / MAP_W;
+      node.y = (originY + Math.sin(rotation) * plus) / MAP_H;
       return;
     }
     const index = Math.max(0, satellites.findIndex((entry) => entry.id === node.id));
-    const dx = -78 * spread;
-    const dy = (-132 + index * 38) * spread;
-    const rx = dx * Math.cos(rotation) - dy * Math.sin(rotation);
-    const ry = dx * Math.sin(rotation) + dy * Math.cos(rotation);
-    node.x = (pathX + rx) / MAP_W;
-    node.y = (pathY + ry) / MAP_H;
+    const count = Math.max(1, satellites.length);
+    const t = count === 1 ? 0.5 : index / (count - 1);
+    const fan = -Math.PI * (0.78 - t * 0.5);
+    const angle = rotation + fan;
+    node.x = (originX + Math.cos(angle) * reach) / MAP_W;
+    node.y = (originY + Math.sin(angle) * reach) / MAP_H;
   });
 }
 
@@ -394,11 +397,7 @@ export function showRoadmapBranch(pathId) {
   spokes.forEach((node, index) => {
     const slot = BRANCH_SLOTS[index] ?? BRANCH_SLOTS[BRANCH_SLOTS.length - 1];
     nodes.push({ ...node, x: slot.x, y: slot.y });
-    if (!roadmapFocusLinked || node.id === chosenSource.id) {
-      edges.push({ from: "start", to: node.id });
-    } else {
-      edges.push({ from: chosenSource.id, to: node.id });
-    }
+    edges.push({ from: "start", to: node.id });
   });
 
   const chosen = nodes.find((node) => node.id === chosenSource.id);

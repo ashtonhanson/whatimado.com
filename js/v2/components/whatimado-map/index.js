@@ -1831,7 +1831,7 @@ export class WhatimadoMap extends HTMLElement {
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
-            ${labelMarkup(cx, cy, r, node.title || node.label, node.type === "action" || (node.type === "path" && !isSelected) ? "nw" : "")}
+            ${labelMarkup(cx, cy, r, node.title || node.label)}
           </g>
         </g>
       `
