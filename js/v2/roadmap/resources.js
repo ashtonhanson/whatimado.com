@@ -31,6 +31,36 @@ function safeHttpUrl(value) {
 }
 
 /**
+ * Published switchboard lines only. Fills a card when the model left the field blank.
+ * @type {{ match: RegExp, phone: string, email: string, address: string, url: string }[]}
+ */
+const VERIFIED_CONTACTS = [
+  {
+    match: /austin chamber/i,
+    phone: "(512) 478-9383",
+    email: "join@austinchamber.com",
+    address: "535 East 5th Street, Austin, TX 78701",
+    url: "https://www.austinchamber.com/about/contact"
+  }
+];
+
+/**
+ * @param {LocalResource} item
+ * @returns {LocalResource}
+ */
+function withVerifiedContact(item) {
+  const hit = VERIFIED_CONTACTS.find((row) => row.match.test(item.name) || row.match.test(item.org || ""));
+  if (!hit) return item;
+  return {
+    ...item,
+    phone: item.phone || hit.phone,
+    email: safeEmail(item.email || hit.email),
+    address: item.address || hit.address,
+    url: item.url || hit.url
+  };
+}
+
+/**
  * @param {unknown} raw
  * @returns {LocalResource[]}
  */
@@ -47,7 +77,7 @@ export function normalizeResources(raw) {
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    list.push({
+    list.push(withVerifiedContact({
       name,
       org: String(record.org || "").trim().slice(0, 80),
       kind: String(record.kind || record.type || "organization").trim().slice(0, 40),
@@ -65,7 +95,7 @@ export function normalizeResources(raw) {
       emailDraft: String(record.emailDraft || "").trim().slice(0, 2500),
       phoneDraft: String(record.phoneDraft || "").trim().slice(0, 2500),
       draft: String(record.draft || "").trim().slice(0, 2500)
-    });
+    }));
     if (list.length >= 6) break;
   }
   return list;
@@ -112,9 +142,61 @@ const STABILITY_RESOURCES = [
  * @param {import("../state/user-profile.js").UserProfile | null | undefined} profile
  * @returns {LocalResource[]}
  */
-export function fallbackResources(_location, profile) {
+/**
+ * Real switchboards for an empty professional rail. Phone and email only where published.
+ * @type {Record<string, LocalResource[]>}
+ */
+const COMMUNICATION_BY_CITY = {
+  austin: [
+    {
+      name: "Austin Chamber of Commerce",
+      org: "Austin Chamber of Commerce",
+      kind: "organization",
+      place: "Austin, TX",
+      why: "Main desk for introductions to local businesses when you are building a design practice here.",
+      offers: "General inquiries and membership.",
+      nextStep: "Call the main line or email membership and name the introduction you want.",
+      url: "https://www.austinchamber.com/about/contact",
+      email: "join@austinchamber.com",
+      phone: "(512) 478-9383",
+      address: "535 East 5th Street, Austin, TX 78701",
+      contact: "Membership",
+      notes: "",
+      emailDraft: "",
+      phoneDraft: "",
+      draft: ""
+    },
+    {
+      name: "AIGA Austin",
+      org: "AIGA Austin",
+      kind: "organization",
+      place: "Austin, TX",
+      why: "The local design association. Reach the board through their contact form.",
+      offers: "Community questions and event promotion.",
+      nextStep: "Paste the message draft into the form on their contact page.",
+      url: "https://austin.aiga.org/contact/",
+      email: "",
+      phone: "",
+      address: "",
+      contact: "Board",
+      notes: "",
+      emailDraft: "",
+      phoneDraft: "",
+      draft: ""
+    }
+  ]
+};
+
+/**
+ * @param {import("../state/location.js").UserLocation | null | undefined} location
+ * @param {import("../state/user-profile.js").UserProfile | null | undefined} profile
+ * @returns {LocalResource[]}
+ */
+export function fallbackResources(location, profile) {
   if (shouldBlockJobBoards(profile)) return STABILITY_RESOURCES.map((item) => ({ ...item }));
-  return [];
+  const city = String(location?.city || "").trim().toLowerCase();
+  const pack = COMMUNICATION_BY_CITY[city];
+  return pack ? pack.map((item) => ({ ...item })) : [];
 }
 
 /**
@@ -161,11 +243,13 @@ export function renderResourceListHtml(items) {
       const key = escapeHtml(item.name);
       const emailBtn = item.email ? actionButton("Email Draft", "email", item.name) : "";
       const phoneBtn = item.phone ? actionButton("Phone Script", "phone", item.name) : "";
+      const formBtn = actionButton(item.url ? "Contact form" : "Message", "message", item.name);
       const notesBtn = actionButton("Notes", "notes", item.name);
+      const phoneHref = item.phone ? item.phone.replace(/[^\d+]/g, "") : "";
       const contact = [
         item.email ? `Email ${escapeHtml(item.email)}${item.contact ? ` (${escapeHtml(item.contact)})` : ""}` : "",
         item.phone ? `Phone ${escapeHtml(item.phone)}` : "",
-        !item.email && !item.phone && item.url ? `Use the official contact form` : ""
+        item.url ? `Official contact form` : ""
       ].filter(Boolean);
       return `<li class="v2-resource-item" data-resource-name="${key}">
         <span class="v2-resource-kind">${escapeHtml(item.kind || "Resource")}${item.place ? ` · ${escapeHtml(item.place)}` : ""}</span>
@@ -175,8 +259,12 @@ export function renderResourceListHtml(items) {
         ${item.nextStep ? `<p class="v2-resource-next"><strong>Next step.</strong> ${escapeHtml(item.nextStep)}</p>` : ""}
         ${item.address ? `<p class="v2-resource-address">${escapeHtml(item.address)}</p>` : ""}
         ${contact.length ? `<p class="v2-resource-contact">${contact.join("<br>")}</p>` : ""}
-        ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Official site</a>` : ""}
-        <div class="v2-resource-actions">${emailBtn}${phoneBtn}${notesBtn}</div>
+        <div class="v2-resource-meta">
+          ${item.email ? `<a href="mailto:${escapeHtml(item.email)}">Email</a>` : ""}
+          ${phoneHref ? `<a href="tel:${escapeHtml(phoneHref)}">Call</a>` : ""}
+          ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Official site</a>` : ""}
+        </div>
+        <div class="v2-resource-actions">${emailBtn}${phoneBtn}${formBtn}${notesBtn}</div>
         <div class="v2-resource-panel hidden" data-resource-panel="${key}"></div>
       </li>`;
     })

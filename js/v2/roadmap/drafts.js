@@ -1,4 +1,5 @@
 import { appStore, touchJourney } from "../state/store.js";
+import { resourcesForRail } from "./resources.js";
 import { callAdvisor } from "../advisor.js";
 import { escapeHtml } from "../ui.js";
 import { formatUserLocation } from "../state/location.js";
@@ -397,8 +398,12 @@ export function createDraftsController(ui) {
     }
     const copyBtn = target.closest("[data-resource-copy]");
     if (copyBtn instanceof HTMLElement && copyBtn.dataset.resourceCopy) {
-      const item = (appStore.journey.missionResources || []).find((entry) => entry.name === copyBtn.dataset.resourceCopy);
-      const text = copyBtn.dataset.resourceKind === "phone" ? item?.phoneDraft : item?.emailDraft;
+      const item = resourceByName(copyBtn.dataset.resourceCopy);
+      const text = copyBtn.dataset.resourceKind === "phone"
+        ? item?.phoneDraft
+        : copyBtn.dataset.resourceKind === "message"
+          ? item?.draft
+          : item?.emailDraft;
       if (text) {
         navigator.clipboard.writeText(text).then(() => {
           copyBtn.textContent = "Copied";
@@ -412,7 +417,7 @@ export function createDraftsController(ui) {
   document.addEventListener("input", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLTextAreaElement) || !target.dataset.resourceNotes) return;
-    const item = (appStore.journey.missionResources || []).find((entry) => entry.name === target.dataset.resourceNotes);
+    const item = resourceByName(target.dataset.resourceNotes);
     if (!item) return;
     item.notes = target.value.slice(0, 2000);
     touchJourney();
@@ -445,13 +450,13 @@ export function createDraftsController(ui) {
     button.classList.add("is-open");
     button.setAttribute("aria-expanded", "true");
     panel.classList.remove("hidden");
-    const item = (appStore.journey.missionResources || []).find((entry) => entry.name === name);
+    const item = resourceByName(name);
     if (!item) return;
     if (kind === "notes") {
       panel.innerHTML = `<textarea class="v2-resource-notes-box" rows="5" data-resource-notes="${escapeHtml(name)}" placeholder="What happened when you reached out, and what you will do next.">${escapeHtml(item.notes || "")}</textarea>`;
       return;
     }
-    const saved = kind === "phone" ? item.phoneDraft : item.emailDraft;
+    const saved = kind === "phone" ? item.phoneDraft : kind === "message" ? item.draft : item.emailDraft;
     if (saved) {
       panel.innerHTML = draftBox(saved, name, kind);
       return;
@@ -462,7 +467,9 @@ export function createDraftsController(ui) {
     const path = graphPathTitle();
     const shape = kind === "phone"
       ? "Write a phone script."
-      : `Write an email to ${item.email}.`;
+      : kind === "message"
+        ? `Write a message to paste into the official contact form${item.url ? ` at ${item.url}` : ""}. Do not invent an email address or phone number.`
+        : `Write an email to ${item.email}.`;
     const prompt =
       `You are whatimado. ${shape}\n` +
       `The sender is a creative director and designer introducing their studio. Write in that voice: visual thinking, a long-term practice, artistic judgment, and a clear ask. Not a generic brand strategist.\n` +
@@ -472,21 +479,37 @@ export function createDraftsController(ui) {
       const raw = await callAdvisor(prompt, { maxTokens: 450, feature: "v2_resource_draft" });
       const body = String(raw || "").trim().slice(0, 2500) || fallbackResourceDraft(item, path, kind);
       if (kind === "phone") item.phoneDraft = body;
+      else if (kind === "message") item.draft = body;
       else item.emailDraft = body;
     } catch {
       const body = fallbackResourceDraft(item, path, kind);
       if (kind === "phone") item.phoneDraft = body;
+      else if (kind === "message") item.draft = body;
       else item.emailDraft = body;
     } finally {
       writing = false;
     }
     touchJourney();
     flush();
-    const body = kind === "phone" ? item.phoneDraft : item.emailDraft;
+    const body = kind === "phone" ? item.phoneDraft : kind === "message" ? item.draft : item.emailDraft;
     if (button.classList.contains("is-open")) panel.innerHTML = draftBox(body, name, kind);
   }
 
   return { sync, open, close };
+}
+
+/**
+ * The card on screen, including a city communication fallback that is not stored yet.
+ * @param {string} name
+ */
+function resourceByName(name) {
+  const stored = (appStore.journey.missionResources || []).find((entry) => entry.name === name);
+  if (stored) return stored;
+  const fallback = resourcesForRail([], appStore.location, appStore.profile).find((entry) => entry.name === name);
+  if (!fallback) return null;
+  appStore.journey.missionResources = [...(appStore.journey.missionResources || []), { ...fallback }];
+  touchJourney();
+  return appStore.journey.missionResources.find((entry) => entry.name === name) || null;
 }
 
 function graphPathTitle() {
@@ -515,6 +538,9 @@ function fallbackResourceDraft(item, path, kind) {
   const why = item.why || item.details || path;
   if (kind === "phone") {
     return `Hi, this is [your name]. I direct a design studio, and I'm calling about ${path}.\n\n${why}\n\nI'd like to talk through one concrete next step. Who should I ask for?`;
+  }
+  if (kind === "message") {
+    return `Hello —\n\nI'm [your name], a creative director and designer. I'm writing through your contact form because ${why}\n\nIf you have twenty minutes, I'd like to show the work and talk about a specific next step. I'm free [two times].\n\n[your name]`;
   }
   return `Subject: ${path}\n\nHello —\n\nI'm [your name], a creative director and designer. I'm writing because ${why}\n\nIf you have twenty minutes, I'd like to show the work and talk about a specific next step. I'm free [two times].\n\n[your name]`;
 }

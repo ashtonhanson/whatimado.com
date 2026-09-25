@@ -86,23 +86,6 @@ function labelMarkup(cx, cy, r, title, side) {
 const MAP_TEMPLATE = `
   <div class="whatimado-map__pan-surface" part="pan-surface" aria-hidden="true"></div>
   <div class="whatimado-map__stage">
-    <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
-    <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
-      <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-1.92 1.92a5 5 0 0 0 7.07 7.07l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-      </svg>
-      <svg class="whatimado-map__link-icon whatimado-map__link-icon--off" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-      </svg>
-    </button>
-    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center the map">
-      <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
-        <path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" />
-        <circle cx="12" cy="12" r="1.2" fill="currentColor" />
-      </svg>
-    </button>
     <svg class="whatimado-map__svg" part="svg" role="img" aria-label="Possibility map">
       <defs>
         <filter id="whatimado-node-shadow" x="-80%" y="-80%" width="260%" height="260%">
@@ -127,6 +110,23 @@ const MAP_TEMPLATE = `
         <g class="whatimado-map__layer whatimado-map__layer--live"></g>
       </g>
     </svg>
+    <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
+    <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
+      <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-1.92 1.92a5 5 0 0 0 7.07 7.07l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
+      <svg class="whatimado-map__link-icon whatimado-map__link-icon--off" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
+    </button>
+    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-pressed="false" aria-label="Center the map">
+      <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
+        <path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" />
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+      </svg>
+    </button>
   </div>
 `;
 
@@ -863,6 +863,9 @@ export class WhatimadoMap extends HTMLElement {
     this._focalNodeId = focal.id;
     this._zoom = Math.max(this._zoom || 1, 1.12);
     const target = computePanForNodeAboveFrame(this, focal.id);
+    this._youBtn?.classList.add("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "true");
+    this._applyAnchorStyles();
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
@@ -1038,6 +1041,8 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {PointerEvent} event */
   _beginPanPointer(event) {
     event.preventDefault();
+    this._youBtn?.classList.remove("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "false");
     this._stopPanGlide();
     this._cancelPanMoveFrame();
 
@@ -1082,16 +1087,20 @@ export class WhatimadoMap extends HTMLElement {
     this._ghostLayer = this.querySelector(".whatimado-map__layer--ghost");
     this._liveLayer = this.querySelector(".whatimado-map__layer--live");
     this._youBtn = this.querySelector(".whatimado-map__you-btn");
-    const mapBrand = /** @type {{ youButtonAriaLabel?: string }|undefined} */ (
-      getBrand()?.map
-    );
-    if (this._youBtn && mapBrand?.youButtonAriaLabel) {
-      this._youBtn.setAttribute("aria-label", mapBrand.youButtonAriaLabel);
-    }
     if (this._svg) {
       this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
     }
-    this._youBtn?.addEventListener("click", () => this.resetToYou());
+    const focusSelected = (event) => {
+      if (typeof event.button === "number" && event.button > 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const now = performance.now();
+      if (now - (this._crosshairAt || 0) < 350) return;
+      this._crosshairAt = now;
+      this.resetToYou();
+    };
+    this._youBtn?.addEventListener("pointerdown", focusSelected);
+    this._youBtn?.addEventListener("click", focusSelected);
     this._linkBtn = this.querySelector(".whatimado-map__link-btn");
     this._syncLinkButton();
     this._linkBtn?.addEventListener("click", () => this._toggleFocusLink());
@@ -1838,9 +1847,9 @@ export class WhatimadoMap extends HTMLElement {
           <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r * 2.6, 22)}" />
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
-            <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${node.type === "more" ? r * 1.45 : r}" />
+            <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${node.type === "more" ? r * 0.72 : r}" />
             ${node.type === "more"
-              ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.62}" y1="${cy}" x2="${cx + r * 0.62}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.62}" x2="${cx}" y2="${cy + r * 0.62}" /></g>`
+              ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.3}" y1="${cy}" x2="${cx + r * 0.3}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.3}" x2="${cx}" y2="${cy + r * 0.3}" /></g>`
               : labelMarkup(cx, cy, r, node.title || node.label)}
           </g>
         </g>

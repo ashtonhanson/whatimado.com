@@ -122,7 +122,7 @@ function buildMissionsPrompt(idea, bullets) {
     `Return ONLY JSON:\n` +
     `{"stages":[{"label":"mission name","desc":"one sentence","missions":[{"title":"task the person does","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"","kind":"organization|platform|person|event","place":"city or online","why":"why this fits THIS path","offers":"the specific program or service","nextStep":"one action to take","url":"https://official-site","email":"","phone":"","address":"","contact":"department or role"}]}\n` +
     `Exactly 2 stages. Each stage is one mission with 2 tasks.\n` +
-    `Resources are for THIS path only. Use official sites you trust. Include email or phone only when you know that exact current address or number. If you do not, leave it empty and say to use the official contact form in nextStep. Never invent an email or phone number.\n` +
+    `Resources are ways to reach people on THIS path. Return 4 organizations: an association, a chamber or directory, a program or venue, and a peer community. For each, give the official site. Include email or phone only when you know that exact current address or number. If you do not, leave it empty and put the official contact-page URL in url. Never invent an email or phone number.\n` +
     `A mission "resources" array is only for an organization this mission needs that is not already in the path list. If it would repeat the path list, use "resources":[].\n` +
     `${writingVoice(appStore.profile)} No job-board filler.\n` +
     `${stability}\n\n` +

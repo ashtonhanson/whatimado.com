@@ -63,7 +63,13 @@ whatimado-map[data-mode="visible"] {
 
 whatimado-map[data-mode="ghost"] .whatimado-map__pan-surface,
 whatimado-map[data-mode="faint"] .whatimado-map__pan-surface,
-whatimado-map[data-mode="visible"] .whatimado-map__pan-surface {
+whatimado-map[data-mode="visible"] .whatimado-map__pan-surface,
+whatimado-map[data-mode="ghost"] .whatimado-map__stage,
+whatimado-map[data-mode="faint"] .whatimado-map__stage,
+whatimado-map[data-mode="visible"] .whatimado-map__stage,
+whatimado-map[data-mode="ghost"] .whatimado-map__svg,
+whatimado-map[data-mode="faint"] .whatimado-map__svg,
+whatimado-map[data-mode="visible"] .whatimado-map__svg {
   pointer-events: auto;
   cursor: grab;
   touch-action: none;
@@ -73,7 +79,10 @@ whatimado-map .whatimado-map__pan {
   will-change: transform;
 }
 
-whatimado-map.is-panning .whatimado-map__pan-surface {
+whatimado-map.is-panning,
+whatimado-map.is-panning .whatimado-map__pan-surface,
+whatimado-map.is-panning .whatimado-map__stage,
+whatimado-map.is-panning .whatimado-map__svg {
   cursor: grabbing;
 }
 
@@ -118,7 +127,7 @@ whatimado-map .whatimado-map__new-roadmap {
   position: absolute;
   top: 0.7rem;
   left: 0.7rem;
-  z-index: 6;
+  z-index: 8;
   pointer-events: auto;
   border: 1px solid rgba(245, 213, 71, 0.55);
   border-radius: 999px;
@@ -136,7 +145,7 @@ whatimado-map .whatimado-map__you-btn {
   position: absolute;
   top: 0.55rem;
   right: 0.65rem;
-  z-index: 6;
+  z-index: 8;
   width: 2.2rem;
   height: 2.2rem;
   padding: 0;
@@ -163,16 +172,18 @@ whatimado-map .whatimado-map__you-crosshair {
   height: 1.12rem;
 }
 
-whatimado-map .whatimado-map__you-btn:hover {
+whatimado-map .whatimado-map__you-btn:hover,
+whatimado-map .whatimado-map__you-btn.is-active {
   background: rgba(4, 12, 14, calc(var(--v2-glass-alpha) + 0.12));
   color: var(--v2-yellow-bright);
+  border-color: rgba(245, 213, 71, 0.7);
 }
 
 whatimado-map .whatimado-map__link-btn {
   position: absolute;
   top: 0.55rem;
   right: calc(0.65rem + 2.2rem + 0.4rem);
-  z-index: 6;
+  z-index: 8;
   width: 2.2rem;
   height: 2.2rem;
   padding: 0;
@@ -312,6 +323,9 @@ whatimado-map .whatimado-map__svg {
 }
 
 whatimado-map .whatimado-map__svg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   height: 100%;
   overflow: visible;
 }
@@ -400,6 +414,14 @@ whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
   transform: scale(1.22);
   stroke: none;
   stroke-width: 0;
+}
+
+whatimado-map .whatimado-map__node--live.is-more .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-more.is-selected .whatimado-map__node-body {
+  fill: transparent;
+  stroke: var(--v2-teal);
+  stroke-width: 1.2;
+  transform: none;
 }
 
 whatimado-map .whatimado-map__node--live text {
