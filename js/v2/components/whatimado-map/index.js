@@ -46,9 +46,40 @@ import {
   isOpenHomePhase
 } from "../../map/pan.js";
 
+/** @param {string} title */
+function wrapTitle(title) {
+  const words = String(title || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+  /** @type {string[]} */
+  const lines = [];
+  let line = "";
+  words.forEach((word) => {
+    const next = line ? `${line} ${word}` : word;
+    if (next.length > 18 && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+/** @param {number} cx @param {number} cy @param {number} r @param {string} title */
+function labelMarkup(cx, cy, r, title) {
+  const lines = wrapTitle(title);
+  const lineH = 13;
+  const start = cy - r - 8 - (lines.length - 1) * lineH;
+  return `<text class="whatimado-map__label" text-anchor="middle">${lines
+    .map((line, index) => `<tspan x="${cx}" y="${start + index * lineH}">${escapeHtml(line)}</tspan>`)
+    .join("")}</text>`;
+}
+
 const MAP_TEMPLATE = `
   <div class="whatimado-map__pan-surface" part="pan-surface" aria-hidden="true"></div>
   <div class="whatimado-map__stage">
+    <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
     <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center the map">
       <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
@@ -354,6 +385,9 @@ export class WhatimadoMap extends HTMLElement {
       this.fitLockedScene({ animate: false });
       return;
     }
+    const fresh = this.querySelector(".whatimado-map__new-roadmap");
+    const onRoadmap = this._liveNodes.some((node) => node.type === "path" || node.type === "task");
+    fresh?.classList.toggle("hidden", !onRoadmap);
     if (window.matchMedia("(max-width: 900px)").matches || isOpenHomePhase()) return;
     this._userPanned = false;
     const target = this._computeChatFrameGravityPan();
@@ -879,7 +913,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!(target instanceof Element)) return;
     if (target.closest("whatimado-frame")) return;
     if (target.closest(".whatimado-map__node")) return;
-    if (target.closest(".whatimado-map__you-btn")) return;
+    if (target.closest(".whatimado-map__you-btn, .whatimado-map__new-roadmap")) return;
 
     this._beginPanPointer(event);
   }
@@ -941,6 +975,9 @@ export class WhatimadoMap extends HTMLElement {
       this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
     }
     this._youBtn?.addEventListener("click", () => this.resetToYou());
+    this.querySelector(".whatimado-map__new-roadmap")?.addEventListener("click", () => {
+      this.dispatchEvent(new CustomEvent("map-new-roadmap", { bubbles: true }));
+    });
     this._applyPanTransform();
     this._panSurface?.addEventListener("touchstart", this._onPinchTouchStart, { passive: false });
     this._panSurface?.addEventListener("touchmove", this._onPinchTouchMove, { passive: false });
@@ -1380,6 +1417,7 @@ export class WhatimadoMap extends HTMLElement {
       group.classList.toggle("is-start", Boolean(isStart));
       group.classList.toggle("is-roadmap", graphNode?.type === "path");
       group.classList.toggle("is-mission", graphNode?.type === "mission");
+      group.classList.toggle("is-task", graphNode?.type === "task");
       group.classList.toggle("is-more", graphNode?.type === "more");
       group.classList.toggle("is-complete", Boolean(graphNode?.done));
       group.classList.toggle("is-selected", isSelected);
@@ -1652,6 +1690,7 @@ export class WhatimadoMap extends HTMLElement {
           isStart ? "is-start" : "",
           node.type === "path" ? "is-roadmap" : "",
           node.type === "mission" ? "is-mission" : "",
+          node.type === "task" ? "is-task" : "",
           node.type === "more" ? "is-more" : "",
           node.done ? "is-complete" : "",
           isLayoutAnchor ? "is-anchor is-primary" : "",
@@ -1679,7 +1718,7 @@ export class WhatimadoMap extends HTMLElement {
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
-            <text x="${cx}" y="${cy - r - Math.max(6, r * 0.55)}" text-anchor="middle">${escapeHtml(node.label)}</text>
+            ${labelMarkup(cx, cy, r, node.title || node.label)}
           </g>
         </g>
       `

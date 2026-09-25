@@ -186,8 +186,7 @@ export function initChatFlow(ctx) {
       drafts.sync(stages);
       const pathId = appStore.journey.roadmapPathId;
       if (stages?.length && pathId) {
-        const missionsFlat = stages.flatMap((stage) => stage.missions || []);
-        showRoadmapBranch(pathId, missionsFlat);
+        showRoadmapBranch(pathId, stages);
         const keep = mapEl?._selectedId;
         mapEl?.syncLiveFromStore();
         const still = keep && graphStore.nodes.some((node) => node.id === keep);
@@ -235,9 +234,10 @@ export function initChatFlow(ctx) {
       void missions.extend();
       return;
     }
-    if (node.type === "mission") {
+    if (node.type === "mission" || node.type === "task") {
       mapEl?.setSelectedNode(nodeId);
-      document.getElementById(`mission-${nodeId}`)?.scrollIntoView({ block: "nearest" });
+      const card = document.getElementById(node.type === "task" ? `mission-${nodeId}` : nodeId);
+      card?.scrollIntoView({ block: "nearest" });
       return;
     }
     const switching = Boolean(appStore.journey.roadmapPathId && appStore.journey.roadmapPathId !== nodeId);
@@ -482,6 +482,8 @@ export function initChatFlow(ctx) {
   frameEl?.addEventListener("frame-drag-start", () => {
     mapEl?.cancelPanFromFrameDrag();
   });
+
+  mapEl?.addEventListener("map-new-roadmap", () => startNewJourney());
 
   frameEl?.addEventListener("dock-settled", () => {
     mapEl?.lockFromFrame();

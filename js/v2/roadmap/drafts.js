@@ -390,16 +390,17 @@ export function createDraftsController(ui) {
       void open(catalogButton.dataset.draftOpen);
       return;
     }
-    const resourceDraft = target.closest("[data-resource-draft]");
-    if (resourceDraft instanceof HTMLElement && resourceDraft.dataset.resourceDraft) {
-      void writeResourceDraft(resourceDraft.dataset.resourceDraft);
+    const resourceAction = target.closest("[data-resource-action]");
+    if (resourceAction instanceof HTMLButtonElement && resourceAction.dataset.resourceName) {
+      void toggleResourceAction(resourceAction, resourceAction.dataset.resourceAction || "notes", resourceAction.dataset.resourceName);
       return;
     }
     const copyBtn = target.closest("[data-resource-copy]");
     if (copyBtn instanceof HTMLElement && copyBtn.dataset.resourceCopy) {
       const item = (appStore.journey.missionResources || []).find((entry) => entry.name === copyBtn.dataset.resourceCopy);
-      if (item?.draft) {
-        navigator.clipboard.writeText(item.draft).then(() => {
+      const text = copyBtn.dataset.resourceKind === "phone" ? item?.phoneDraft : item?.emailDraft;
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => {
           copyBtn.textContent = "Copied";
         }).catch(() => {
           copyBtn.textContent = "Select the draft to copy";
@@ -423,54 +424,66 @@ export function createDraftsController(ui) {
   });
 
   /**
+   * @param {HTMLButtonElement} button
+   * @param {string} kind
    * @param {string} name
    */
-  async function writeResourceDraft(name) {
-    const item = (appStore.journey.missionResources || []).find((entry) => entry.name === name);
-    const card = document.querySelector(`[data-resource-draft-body="${CSS.escape(name)}"]`);
-    if (!item || writing) return;
-    if (item.draft && card) {
-      card.textContent = item.draft;
-      card.classList.remove("hidden");
+  async function toggleResourceAction(button, kind, name) {
+    const card = button.closest(".v2-resource-item");
+    const panel = card?.querySelector("[data-resource-panel]");
+    if (!(panel instanceof HTMLElement)) return;
+    const open = button.classList.contains("is-open");
+    card?.querySelectorAll(".v2-resource-action").forEach((el) => {
+      el.classList.remove("is-open");
+      el.setAttribute("aria-expanded", "false");
+    });
+    if (open) {
+      panel.classList.add("hidden");
+      panel.innerHTML = "";
       return;
     }
+    button.classList.add("is-open");
+    button.setAttribute("aria-expanded", "true");
+    panel.classList.remove("hidden");
+    const item = (appStore.journey.missionResources || []).find((entry) => entry.name === name);
+    if (!item) return;
+    if (kind === "notes") {
+      panel.innerHTML = `<textarea class="v2-resource-notes-box" rows="5" data-resource-notes="${escapeHtml(name)}" placeholder="What happened when you reached out, and what you will do next.">${escapeHtml(item.notes || "")}</textarea>`;
+      return;
+    }
+    const saved = kind === "phone" ? item.phoneDraft : item.emailDraft;
+    if (saved) {
+      panel.innerHTML = draftBox(saved, name, kind);
+      return;
+    }
+    panel.innerHTML = `<p class="v2-wave" role="status">Writing<span></span><span></span><span></span></p>`;
+    if (writing) return;
     writing = true;
     const path = graphPathTitle();
-    const kind = item.phone ? "a short phone script" : "a short email";
+    const shape = kind === "phone"
+      ? "Write a phone script."
+      : `Write an email to ${item.email}.`;
     const prompt =
-      `You are whatimado. Write ${kind} the user can copy.\n` +
-      `Return only the draft. No JSON.\n` +
-      `${writingVoice(appStore.profile)}\n` +
-      `Under 160 words. Senior, specific, about this organization and this path.\n\n` +
-      `Path: ${path}\n` +
-      `Organization: ${item.name}${item.org ? ` (${item.org})` : ""}\n` +
-      `Why: ${item.details}\n` +
-      `Phone: ${item.phone || "unknown"}\n` +
-      `Address: ${item.address || "unknown"}\n` +
-      `Ask for: ${item.contact || "the right person"}`;
+      `You are whatimado. ${shape}\n` +
+      `The sender is a creative director and designer introducing their studio. Write in that voice: visual thinking, a long-term practice, artistic judgment, and a clear ask. Not a generic brand strategist.\n` +
+      `Return only the draft. Under 160 words.\n\n` +
+      `Path: ${path}\nResource: ${item.name}\nWhy it fits: ${item.why || item.details}\nNext step: ${item.nextStep || ""}\n`;
     try {
       const raw = await callAdvisor(prompt, { maxTokens: 450, feature: "v2_resource_draft" });
-      item.draft = String(raw || "").trim().slice(0, 2500) || fallbackResourceDraft(item, path);
+      const body = String(raw || "").trim().slice(0, 2500) || fallbackResourceDraft(item, path, kind);
+      if (kind === "phone") item.phoneDraft = body;
+      else item.emailDraft = body;
     } catch {
-      item.draft = fallbackResourceDraft(item, path);
+      const body = fallbackResourceDraft(item, path, kind);
+      if (kind === "phone") item.phoneDraft = body;
+      else item.emailDraft = body;
     } finally {
       writing = false;
     }
     touchJourney();
     flush();
-    if (card) {
-      card.textContent = item.draft;
-      card.classList.remove("hidden");
-    }
-    const host = card?.parentElement;
-    if (host && !host.querySelector("[data-resource-copy]")) {
-      const copy = document.createElement("button");
-      copy.type = "button";
-      copy.className = "v2-resource-copy";
-      copy.dataset.resourceCopy = name;
-      copy.textContent = "Copy";
-      host.appendChild(copy);
-    }
+    const body = kind === "phone" ? item.phoneDraft : item.emailDraft;
+    if (button.classList.contains("is-open")) panel.innerHTML = draftBox(body, name, kind);
   }
 
   return { sync, open, close };
@@ -484,9 +497,24 @@ function graphPathTitle() {
  * @param {{ name: string, details?: string, phone?: string }} item
  * @param {string} path
  */
-function fallbackResourceDraft(item, path) {
-  if (item.phone) {
-    return `Hi, this is [your name]. I'm calling ${item.name} about ${path}.\n\n${item.details || ""}\n\nWho should I speak with, and what's the next step?`;
+/**
+ * @param {string} body
+ * @param {string} name
+ * @param {string} kind
+ */
+function draftBox(body, name, kind) {
+  return `<pre class="v2-resource-draft">${escapeHtml(body)}</pre><button type="button" class="v2-resource-copy" data-resource-copy="${escapeHtml(name)}" data-resource-kind="${escapeHtml(kind)}">Copy</button>`;
+}
+
+/**
+ * @param {{ name: string, why?: string, details?: string, email?: string }} item
+ * @param {string} path
+ * @param {string} kind
+ */
+function fallbackResourceDraft(item, path, kind) {
+  const why = item.why || item.details || path;
+  if (kind === "phone") {
+    return `Hi, this is [your name]. I direct a design studio, and I'm calling about ${path}.\n\n${why}\n\nI'd like to talk through one concrete next step. Who should I ask for?`;
   }
-  return `Subject: ${path}\n\nHello —\n\nI'm [your name]. I'm writing ${item.name} about ${path}. ${item.details || ""}\n\nIf you have twenty minutes, I'd like to talk through the specific next step. I'm free [two times].`;
+  return `Subject: ${path}\n\nHello —\n\nI'm [your name], a creative director and designer. I'm writing because ${why}\n\nIf you have twenty minutes, I'd like to show the work and talk about a specific next step. I'm free [two times].\n\n[your name]`;
 }

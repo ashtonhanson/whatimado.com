@@ -114,6 +114,24 @@ whatimado-map .whatimado-map__edge--live {
   pointer-events: none;
 }
 
+whatimado-map .whatimado-map__new-roadmap {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.7rem;
+  z-index: 6;
+  pointer-events: auto;
+  border: 1px solid rgba(245, 213, 71, 0.55);
+  border-radius: 999px;
+  background: rgba(6, 10, 12, 0.72);
+  color: var(--v2-yellow);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+
 whatimado-map .whatimado-map__you-btn {
   position: absolute;
   top: 0.55rem;
@@ -313,7 +331,11 @@ whatimado-map .whatimado-map__node--live.is-roadmap .whatimado-map__node-body {
 }
 
 whatimado-map .whatimado-map__node--live.is-mission .whatimado-map__node-body {
-  transform: scale(0.72);
+  transform: scale(0.84);
+}
+
+whatimado-map .whatimado-map__node--live.is-task .whatimado-map__node-body {
+  transform: scale(0.7);
 }
 
 whatimado-map .whatimado-map__node--live.is-more .whatimado-map__node-body {
@@ -341,6 +363,10 @@ whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
 
 whatimado-map .whatimado-map__node--live text {
   font-size: 11px;
+  stroke: #060a0c;
+  stroke-width: 5px;
+  paint-order: stroke fill;
+  stroke-linejoin: round;
   font-family: var(--v2-font-hero);
   font-weight: 500;
   letter-spacing: 0.08em;

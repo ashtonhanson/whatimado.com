@@ -2,7 +2,17 @@ import { escapeHtml } from "../ui.js";
 import { formatUserLocation } from "../state/location.js";
 import { shouldBlockJobBoards } from "../intake/stability-gates.js";
 
-/** @typedef {{ name: string, org: string, details: string, url: string, phone: string, address: string, contact: string, notes: string, draft: string }} LocalResource */
+/** @typedef {{ name: string, org: string, kind: string, place: string, why: string, offers: string, nextStep: string, details: string, url: string, email: string, phone: string, address: string, contact: string, notes: string, emailDraft: string, phoneDraft: string, draft: string }} LocalResource */
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+/** @param {unknown} value */
+function safeEmail(value) {
+  const raw = String(value || "").trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw) ? raw.slice(0, 80) : "";
+}
 
 /**
  * @param {unknown} value
@@ -40,12 +50,20 @@ export function normalizeResources(raw) {
     list.push({
       name,
       org: String(record.org || "").trim().slice(0, 80),
-      details: String(record.details || record.desc || record.text || "").trim().slice(0, 240),
+      kind: String(record.kind || record.type || "organization").trim().slice(0, 40),
+      place: String(record.place || record.location || "").trim().slice(0, 80),
+      why: String(record.why || record.details || record.desc || "").trim().slice(0, 320),
+      offers: String(record.offers || "").trim().slice(0, 320),
+      nextStep: String(record.nextStep || record.next || "").trim().slice(0, 200),
+      details: String(record.details || record.why || record.desc || record.text || "").trim().slice(0, 320),
       url: safeHttpUrl(record.url || record.href),
+      email: safeEmail(record.email),
       phone: String(record.phone || "").trim().slice(0, 40),
       address: String(record.address || "").trim().slice(0, 160),
       contact: String(record.contact || "").trim().slice(0, 120),
       notes: String(record.notes || "").trim().slice(0, 2000),
+      emailDraft: String(record.emailDraft || "").trim().slice(0, 2500),
+      phoneDraft: String(record.phoneDraft || "").trim().slice(0, 2500),
       draft: String(record.draft || "").trim().slice(0, 2500)
     });
     if (list.length >= 6) break;
@@ -127,29 +145,39 @@ export function resourcePlaceLabel(location) {
   return place ? `Local resources in ${place}` : "Resources near you";
 }
 
+/** @param {string} label @param {string} kind @param {string} name */
+function actionButton(label, kind, name) {
+  return `<button type="button" class="v2-resource-action" data-resource-action="${kind}" data-resource-name="${escapeHtml(name)}" aria-expanded="false">
+    <span>${label}</span>
+    <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5 8 6 4 9.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>`;
+}
+
 /** @param {LocalResource[]} items */
 export function renderResourceListHtml(items) {
   return (items || [])
     .map((item) => {
       const title = item.org && item.org.toLowerCase() !== item.name.toLowerCase() ? `${item.name} — ${item.org}` : item.name;
-      const link = item.url
-        ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Website</a>`
-        : "";
-      const phone = item.phone ? `<span class="v2-resource-phone">${escapeHtml(item.phone)}</span>` : "";
-      const meta = link || phone ? `<div class="v2-resource-meta">${link}${phone}</div>` : "";
       const key = escapeHtml(item.name);
+      const emailBtn = item.email ? actionButton("Email Draft", "email", item.name) : "";
+      const phoneBtn = item.phone ? actionButton("Phone Script", "phone", item.name) : "";
+      const notesBtn = actionButton("Notes", "notes", item.name);
+      const contact = [
+        item.email ? `Email ${escapeHtml(item.email)}${item.contact ? ` (${escapeHtml(item.contact)})` : ""}` : "",
+        item.phone ? `Phone ${escapeHtml(item.phone)}` : "",
+        !item.email && !item.phone && item.url ? `Use the official contact form` : ""
+      ].filter(Boolean);
       return `<li class="v2-resource-item" data-resource-name="${key}">
+        <span class="v2-resource-kind">${escapeHtml(item.kind || "Resource")}${item.place ? ` · ${escapeHtml(item.place)}` : ""}</span>
         <span class="v2-resource-name">${escapeHtml(title)}</span>
-        ${item.details ? `<p class="v2-resource-desc">${escapeHtml(item.details)}</p>` : ""}
+        ${item.why || item.details ? `<p class="v2-resource-desc">${escapeHtml(item.why || item.details)}</p>` : ""}
+        ${item.offers ? `<p class="v2-resource-offers">${escapeHtml(item.offers)}</p>` : ""}
+        ${item.nextStep ? `<p class="v2-resource-next"><strong>Next step.</strong> ${escapeHtml(item.nextStep)}</p>` : ""}
         ${item.address ? `<p class="v2-resource-address">${escapeHtml(item.address)}</p>` : ""}
-        ${item.contact ? `<p class="v2-resource-contact">${escapeHtml(item.contact)}</p>` : ""}
-        ${meta}
-        <label class="v2-resource-notes">Notes
-          <textarea rows="3" data-resource-notes="${key}">${escapeHtml(item.notes || "")}</textarea>
-        </label>
-        <button type="button" class="v2-resource-draft-btn" data-resource-draft="${key}">Draft</button>
-        <pre class="v2-resource-draft${item.draft ? "" : " hidden"}" data-resource-draft-body="${key}">${escapeHtml(item.draft || "")}</pre>
-        ${item.draft ? `<button type="button" class="v2-resource-copy" data-resource-copy="${key}">Copy</button>` : ""}
+        ${contact.length ? `<p class="v2-resource-contact">${contact.join("<br>")}</p>` : ""}
+        ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Official site</a>` : ""}
+        <div class="v2-resource-actions">${emailBtn}${phoneBtn}${notesBtn}</div>
+        <div class="v2-resource-panel hidden" data-resource-panel="${key}"></div>
       </li>`;
     })
     .join("");

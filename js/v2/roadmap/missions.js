@@ -120,9 +120,9 @@ function buildMissionsPrompt(idea, bullets) {
   return (
     `You are whatimado. Write the FIRST roadmap for "${idea.title || idea.label}".\n` +
     `Return ONLY JSON:\n` +
-    `{"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"organization","org":"parent org","details":"what to ask them about this path","url":"https://official-site","phone":"","address":"","contact":"who to ask for"}]}\n` +
-    `Exactly 2 stages, 2 missions each.\n` +
-    `The top-level "resources" array is the single list for THIS path, not a generic city directory. Name 2 to 4 real organizations a mid- or senior-level person would contact for "${idea.title || idea.label}" specifically. Do not repeat a civic catch-all (public library, 211, SBA, community foundation) unless this path is actually about that kind of help. Include the official phone, street address, and who to ask for when you know them. Leave phone, address, or url empty when you are not sure. Do not invent contact details.\n` +
+    `{"stages":[{"label":"mission name","desc":"one sentence","missions":[{"title":"task the person does","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"","kind":"organization|platform|person|event","place":"city or online","why":"why this fits THIS path","offers":"the specific program or service","nextStep":"one action to take","url":"https://official-site","email":"","phone":"","address":"","contact":"department or role"}]}\n` +
+    `Exactly 2 stages. Each stage is one mission with 2 tasks.\n` +
+    `Resources are for THIS path only. Use official sites you trust. Include email or phone only when you know that exact current address or number. If you do not, leave it empty and say to use the official contact form in nextStep. Never invent an email or phone number.\n` +
     `A mission "resources" array is only for an organization this mission needs that is not already in the path list. If it would repeat the path list, use "resources":[].\n` +
     `${writingVoice(appStore.profile)} No job-board filler.\n` +
     `${stability}\n\n` +
@@ -153,7 +153,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
   root.innerHTML = master + stages
     .map(
       (stage, index) => `
-        <article class="v2-stage">
+        <article class="v2-stage" id="stage-${index}">
           <label class="v2-check v2-stage__label">
             <input type="checkbox" data-stage-index="${index}" ${stage.missions.every((mission) => mission.done) ? "checked" : ""} />
             <span>${index + 1}. ${escapeHtml(stage.label)}</span>

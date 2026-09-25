@@ -104,7 +104,115 @@
   padding: 0.4rem 0.5rem;
 }
 
-.v2-resource-draft-btn,
+.v2-resource-kind {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v2-teal);
+}
+
+.v2-resource-next,
+.v2-resource-offers {
+  margin: 0 0 0.35rem;
+}
+
+.v2-resource-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.v2-resource-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid rgba(46, 232, 214, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--v2-text);
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.28rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.v2-resource-action svg {
+  width: 0.7rem;
+  height: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.v2-resource-action.is-open svg {
+  transform: rotate(90deg);
+}
+
+@media (hover: hover) {
+  .v2-resource-action:hover {
+    background: rgba(46, 232, 214, 0.12);
+    border-color: var(--v2-teal);
+    box-shadow: 0 0 12px rgba(46, 232, 214, 0.18);
+  }
+}
+
+.v2-resource-action.is-open {
+  background: rgba(245, 213, 71, 0.16);
+  border-color: var(--v2-yellow);
+  color: var(--v2-yellow);
+  font-weight: 600;
+  box-shadow: 0 0 14px rgba(245, 213, 71, 0.22);
+}
+
+.v2-resource-panel {
+  margin-top: 0.45rem;
+}
+
+.v2-resource-notes-box,
+.v2-resource-draft {
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 11rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  margin: 0;
+  padding: 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(46, 232, 214, 0.22);
+  background: rgba(4, 12, 14, 0.72);
+  color: var(--v2-text);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.v2-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.28rem;
+  min-height: 2.4rem;
+  margin: 0;
+  color: var(--v2-teal);
+  font-size: 0.78rem;
+}
+
+.v2-wave span {
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: v2-wave 0.9s ease-in-out infinite;
+}
+
+.v2-wave span:nth-child(2) { animation-delay: 0.15s; }
+.v2-wave span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes v2-wave {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
 .v2-resource-copy {
   margin-top: 0.4rem;
   margin-right: 0.4rem;
