@@ -1,10 +1,14 @@
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, homeAngle?: number }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
 /** @typedef {{ id?: string, label: string, title: string, description?: string, type?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} AdvisorPath */
 export const graphStore = {
   nodes: [],
   edges: [],
-  selectedId: null
+  selectedId: null,
+  /** @type {number|undefined} */
+  focusRotation: undefined,
+  /** @type {{ from: number, to: number, chosenId: string }|null} */
+  focusSpin: null
 };
 
 export function resetGraph() {
@@ -243,12 +247,32 @@ export function restorePossibilityMap() {
   possibilityEdges = null;
 }
 
+/** When linked, the selected roadmap is the left-to-right spoke and the map can spin to it. */
+export let roadmapFocusLinked = true;
+
+/** @param {boolean} linked */
+export function setRoadmapFocusLinked(linked) {
+  roadmapFocusLinked = Boolean(linked);
+  return roadmapFocusLinked;
+}
+
 /** Extra spokes so a single chosen roadmap never collapses into one line. */
 const EXPLORE_OPTIONS = [
   { id: "option-settings", label: "Settings" },
   { id: "option-notes", label: "Notes" },
   { id: "option-roadmaps", label: "Roadmaps" }
 ];
+
+/** You on the left, selected spoke pointing right, in SVG units of the 800×240 map. */
+const MAP_W = 800;
+const MAP_H = 240;
+const YOU_LINKED = { x: 168, y: 120 };
+const PATH_REACH = 220;
+const PLUS_REACH = 340;
+const OPTION_REACH = 108;
+
+/** @type {Map<string, number>} */
+const homeAngles = new Map();
 
 /** Chosen path sits on the short center spoke. Siblings and options fill the arc. */
 const BRANCH_SLOTS = [
@@ -260,8 +284,44 @@ const BRANCH_SLOTS = [
 ];
 
 /**
- * You stays at the bottom of a short arc. The chosen roadmap is the center spoke,
- * other paths and settings-style options stay around it, and + sits above that spoke.
+ * @param {string} id
+ * @param {number} index
+ * @param {number} count
+ */
+function angleFor(id, index, count) {
+  if (!homeAngles.has(id)) {
+    homeAngles.set(id, count <= 1 ? 0 : (index / count) * Math.PI * 2);
+  }
+  return homeAngles.get(id) || 0;
+}
+
+/**
+ * Place spokes around You. rotation 0 points the home-angle-0 spoke to the right.
+ * The chosen roadmap uses the long reach; everything else stays on the short ring.
+ * @param {GraphNode[]} nodes
+ * @param {number} rotation
+ * @param {string} chosenId
+ */
+export function placeLinkedBranch(nodes, rotation, chosenId) {
+  nodes.forEach((node) => {
+    if (node.type === "start") {
+      node.x = YOU_LINKED.x / MAP_W;
+      node.y = YOU_LINKED.y / MAP_H;
+      return;
+    }
+    const follow = node.type === "more" ? chosenId : node.id;
+    const home = node.type === "more" ? homeAngles.get(chosenId) || 0 : node.homeAngle || 0;
+    const angle = home + rotation;
+    const reach = follow === chosenId ? (node.type === "more" ? PLUS_REACH : PATH_REACH) : OPTION_REACH;
+    node.x = (YOU_LINKED.x + Math.cos(angle) * reach) / MAP_W;
+    node.y = (YOU_LINKED.y + Math.sin(angle) * reach) / MAP_H;
+    if (follow !== node.id) node.homeAngle = home;
+  });
+}
+
+/**
+ * Linked: You on the left, selected roadmap to the right, other options around You.
+ * Unlinked: the compact constellation, with no spin into that left-to-right focus.
  * @param {string} pathId
  */
 export function showRoadmapBranch(pathId) {
@@ -287,6 +347,11 @@ export function showRoadmapBranch(pathId) {
     });
   });
 
+  const ordered = [...spokes].sort((a, b) => a.id.localeCompare(b.id));
+  ordered.forEach((node, index) => {
+    node.homeAngle = angleFor(node.id, index, ordered.length);
+  });
+
   /** @type {GraphNode[]} */
   const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.76 }];
   /** @type {GraphEdge[]} */
@@ -305,9 +370,22 @@ export function showRoadmapBranch(pathId) {
       label: "+",
       title: "+",
       x: chosen.x,
-      y: chosen.y - 0.16
+      y: chosen.y - 0.16,
+      homeAngle: chosen.homeAngle
     });
     edges.push({ from: chosen.id, to: ROADMAP_MORE_ID });
+  }
+
+  const target = -((chosen && chosen.homeAngle) || 0);
+  const from = Number.isFinite(graphStore.focusRotation) ? graphStore.focusRotation : target;
+  let delta = target - from;
+  while (delta > Math.PI) delta -= Math.PI * 2;
+  while (delta < -Math.PI) delta += Math.PI * 2;
+  const to = from + delta;
+  graphStore.focusSpin = roadmapFocusLinked && Math.abs(delta) > 0.04 ? { from, to, chosenId: chosenSource.id } : null;
+  if (roadmapFocusLinked) {
+    placeLinkedBranch(nodes, to, chosenSource.id);
+    graphStore.focusRotation = to;
   }
 
   graphStore.nodes = nodes;

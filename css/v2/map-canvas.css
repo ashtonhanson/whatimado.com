@@ -168,6 +168,47 @@ whatimado-map .whatimado-map__you-btn:hover {
   color: var(--v2-yellow-bright);
 }
 
+whatimado-map .whatimado-map__link-btn {
+  position: absolute;
+  top: 0.55rem;
+  right: calc(0.65rem + 2.2rem + 0.4rem);
+  z-index: 6;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--v2-border);
+  border-radius: 50%;
+  background: var(--v2-glass-bg);
+  backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+  color: rgba(232, 244, 242, 0.72);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+whatimado-map .whatimado-map__link-icon {
+  display: none;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+whatimado-map .whatimado-map__link-btn.is-linked {
+  color: var(--v2-yellow);
+  border-color: rgba(245, 213, 71, 0.7);
+}
+
+whatimado-map .whatimado-map__link-btn.is-linked .whatimado-map__link-icon--on,
+whatimado-map .whatimado-map__link-btn:not(.is-linked) .whatimado-map__link-icon--off {
+  display: block;
+}
+
+whatimado-map .whatimado-map__link-btn:hover {
+  color: var(--v2-yellow-bright);
+}
+
 whatimado-map[data-mode="ghost"],
 whatimado-map[data-mode="faint"],
 whatimado-map[data-mode="visible"] {

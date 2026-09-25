@@ -447,7 +447,7 @@ export function initChatFlow(ctx) {
     if (target.closest("whatimado-frame")) return;
     if (target.closest(".v2-rail")) return;
     if (target.closest(".whatimado-map__node--live")) return;
-    if (target.closest(".whatimado-map__you-btn")) return;
+    if (target.closest(".whatimado-map__you-btn, .whatimado-map__link-btn")) return;
     mapEl?.handleGlobalPanPointerDown(event);
   });
 
@@ -458,7 +458,7 @@ export function initChatFlow(ctx) {
       if (!(target instanceof Element)) return;
       if (target.closest("whatimado-frame")) return;
       if (target.closest(".v2-rail")) return;
-      if (target.closest(".whatimado-map__you-btn")) return;
+      if (target.closest(".whatimado-map__you-btn, .whatimado-map__link-btn")) return;
       if (target.closest("whatimado-map") || target === mainEl) {
         event.preventDefault();
       }

@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, placeLinkedBranch, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch } from "../../graph-store.js";
 import { getBrand } from "../../config.js";
 import {
   BOUND_GLIDE_DAMP,
@@ -80,6 +80,15 @@ const MAP_TEMPLATE = `
   <div class="whatimado-map__pan-surface" part="pan-surface" aria-hidden="true"></div>
   <div class="whatimado-map__stage">
     <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
+    <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
+      <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-1.92 1.92a5 5 0 0 0 7.07 7.07l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
+      <svg class="whatimado-map__link-icon whatimado-map__link-icon--off" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </svg>
+    </button>
     <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center the map">
       <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
@@ -367,14 +376,81 @@ export class WhatimadoMap extends HTMLElement {
     this._applyAnchorStyles();
   }
 
+  _syncLinkButton() {
+    const linked = roadmapFocusLinked;
+    this._linkBtn?.classList.toggle("is-linked", linked);
+    this._linkBtn?.setAttribute("aria-pressed", linked ? "true" : "false");
+    this._linkBtn?.setAttribute(
+      "aria-label",
+      linked
+        ? "Linked. The selected roadmap runs left to right. Unlink to keep the constellation."
+        : "Unlinked. The constellation stays put. Link to spin the selected roadmap left to right."
+    );
+  }
+
+  _toggleFocusLink() {
+    setRoadmapFocusLinked(!roadmapFocusLinked);
+    this._syncLinkButton();
+    const chosen =
+      this._liveNodes.find((node) => node.id === this._selectedId && node.type === "path") ||
+      this._liveNodes.find((node) => node.type === "path");
+    if (!chosen) return;
+    showRoadmapBranch(chosen.id);
+    this.syncLiveFromStore();
+  }
+
+  _cancelLayoutSpin() {
+    if (this._layoutSpinRaf) cancelAnimationFrame(this._layoutSpinRaf);
+    this._layoutSpinRaf = 0;
+  }
+
+  /**
+   * Spin spokes around You so the selected roadmap lands pointing right.
+   * @param {GraphNode[]} nodes
+   * @param {GraphEdge[]} edges
+   * @param {{ id: string, x: number, y: number }[]} prev
+   * @param {{ from: number, to: number, chosenId: string }} spin
+   */
+  _animateLinkedSpin(nodes, edges, prev, spin) {
+    const started = performance.now();
+    const duration = 680;
+    const step = (now) => {
+      const t = Math.min(1, (now - started) / duration);
+      const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+      placeLinkedBranch(nodes, spin.from + (spin.to - spin.from) * eased, spin.chosenId);
+      this._renderLayer(this._liveLayer, nodes, edges, { layer: "live" });
+      this._applyAnchorStyles();
+      if (t < 1) {
+        this._layoutSpinRaf = requestAnimationFrame(step);
+        return;
+      }
+      this._layoutSpinRaf = 0;
+      graphStore.focusRotation = spin.to;
+    };
+    placeLinkedBranch(nodes, spin.from, spin.chosenId);
+    this._renderLayer(this._liveLayer, nodes, edges, { layer: "live" });
+    this._layoutSpinRaf = requestAnimationFrame(step);
+  }
+
   /** @param {GraphNode[]} nodes @param {GraphEdge[]} edges */
   loadLiveGraph(nodes, edges) {
+    const prev = this._liveNodes.map((node) => ({ id: node.id, x: node.x, y: node.y }));
+    const spin = graphStore.focusSpin;
+    graphStore.focusSpin = null;
+    this._cancelLayoutSpin();
     this._liveNodes = nodes;
     const start = nodes.find((n) => n.type === "start");
     this._anchorId = start?.id ?? nodes[0]?.id ?? this._anchorId;
-    this._renderLayer(this._liveLayer, nodes, edges, {
-      layer: "live"
+    const moved = prev.some((node) => {
+      const next = nodes.find((entry) => entry.id === node.id);
+      return next && Math.hypot(next.x - node.x, next.y - node.y) > 0.03;
     });
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (roadmapFocusLinked && spin && moved && !reduce) {
+      this._animateLinkedSpin(nodes, edges, prev, spin);
+      return;
+    }
+    this._renderLayer(this._liveLayer, nodes, edges, { layer: "live" });
   }
 
   /** Sync live layer from graph-store */
@@ -916,7 +992,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!(target instanceof Element)) return;
     if (target.closest("whatimado-frame")) return;
     if (target.closest(".whatimado-map__node")) return;
-    if (target.closest(".whatimado-map__you-btn, .whatimado-map__new-roadmap")) return;
+    if (target.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap")) return;
 
     this._beginPanPointer(event);
   }
@@ -978,6 +1054,9 @@ export class WhatimadoMap extends HTMLElement {
       this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
     }
     this._youBtn?.addEventListener("click", () => this.resetToYou());
+    this._linkBtn = this.querySelector(".whatimado-map__link-btn");
+    this._syncLinkButton();
+    this._linkBtn?.addEventListener("click", () => this._toggleFocusLink());
     this.querySelector(".whatimado-map__new-roadmap")?.addEventListener("click", () => {
       this.dispatchEvent(new CustomEvent("map-new-roadmap", { bubbles: true }));
     });
@@ -1047,6 +1126,7 @@ export class WhatimadoMap extends HTMLElement {
         top.closest(".v2-mobile-menu-btn") ||
         top.closest(".v2-mobile-menu-backdrop") ||
         top.closest(".whatimado-map__you-btn") ||
+        top.closest(".whatimado-map__link-btn") ||
         top.closest("input, textarea, button, a, select, label")
       ) {
         return null;
