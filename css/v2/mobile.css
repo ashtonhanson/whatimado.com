@@ -118,7 +118,9 @@
     height: calc(var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) - var(--v2-map-frame-clearance));
   }
 
-  .v2-shell {
+  .v2-shell,
+  .v2-shell:has(#resources-rail:not(.hidden)),
+  .v2-shell:has(#resources-rail.hidden) {
     --v2-left-sidebar-offset: 0px;
     padding: 0;
     padding-top: var(--v2-mobile-header-h);

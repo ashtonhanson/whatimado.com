@@ -68,77 +68,93 @@ function screenBoxesOverlap(a, b, pad) {
 }
 
 /**
- * Keep one-line titles off each other, off the dots, and off the map controls.
- * @param {Array<{ left: number, top: number, w: number, h: number, locked?: boolean }>} items
- * @param {Array<{ left: number, right: number, top: number, bottom: number }>} obstacles
- * @param {{ left: number, right: number, top: number, bottom: number }} bounds
+ * Title sits on the node the way the constellation reference does:
+ * above the dot, or beside it when the branch runs out to the side.
+ * @param {{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string }} item
+ * @param {{ nx: number, ny: number } | undefined} you
  */
-function separateScreenLabels(items, obstacles, bounds) {
-  const pad = 5;
-  for (let pass = 0; pass < 30; pass++) {
+/**
+ * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, side?: string }>} items
+ */
+function placeTitleBesideNode(items) {
+  const you = items.find((item) => item.kind === "start");
+  const placeAbove = (item) => {
+    item.side = "above";
+    item.left = item.nx - item.w / 2;
+    item.top = item.ny - item.nr - 16 - item.h;
+  };
+  const placeSide = (item, dx) => {
+    if (dx < 0) {
+      item.side = "left";
+      item.left = item.nx - item.nr - 8 - item.w;
+    } else {
+      item.side = "right";
+      item.left = item.nx + item.nr + 8;
+    }
+    item.top = item.ny - item.h / 2;
+  };
+  if (you) placeAbove(you);
+  const others = items.filter((item) => item !== you);
+  const top = others.reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
+  others.forEach((item) => {
+    if (item === top) placeAbove(item);
+    else placeSide(item, item.nx - (you?.nx ?? item.nx));
+  });
+}
+
+/**
+ * If two titles touch, lift the higher node's title. Horizontal position stays on that node.
+ * @param {Array<{ left: number, top: number, w: number, h: number, nx: number, ny: number, side?: string }>} items
+ */
+function holdTitlesOnNodes(items) {
+  const homeTop = new Map(items.map((item) => [item, item.top]));
+  for (let pass = 0; pass < 8; pass++) {
     let hit = false;
-    const move = (item, dx, dy) => {
-      if (!item || item.locked) return;
-      if (dx) item.left += dx;
-      if (dy) item.top += dy;
-      hit = true;
-    };
     for (let i = 0; i < items.length; i++) {
       for (let j = i + 1; j < items.length; j++) {
         const a = items[i];
         const b = items[j];
         const ba = { left: a.left, right: a.left + a.w, top: a.top, bottom: a.top + a.h };
         const bb = { left: b.left, right: b.left + b.w, top: b.top, bottom: b.top + b.h };
-        if (!screenBoxesOverlap(ba, bb, pad)) continue;
-        const overlapX = Math.min(ba.right, bb.right) - Math.max(ba.left, bb.left);
-        const overlapY = Math.min(ba.bottom, bb.bottom) - Math.max(ba.top, bb.top);
-        const vertical = overlapY <= overlapX;
-        const amount = (vertical ? overlapY : overlapX) + pad;
-        const sign = vertical ? (ba.top <= bb.top ? -1 : 1) : (ba.left <= bb.left ? -1 : 1);
-        const dx = vertical ? 0 : sign * amount;
-        const dy = vertical ? sign * amount : 0;
-        if (a.locked && !b.locked) move(b, -dx, -dy);
-        else if (b.locked && !a.locked) move(a, dx, dy);
-        else {
-          move(a, dx * 0.5, dy * 0.5);
-          move(b, -dx * 0.5, -dy * 0.5);
-        }
-      }
-    }
-    for (const item of items) {
-      const box = { left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h };
-      if (!item.locked) {
-        for (const obs of obstacles) {
-          if (!screenBoxesOverlap(box, obs, 1)) continue;
-          const overlapX = Math.min(box.right, obs.right) - Math.max(box.left, obs.left);
-          const overlapY = Math.min(box.bottom, obs.bottom) - Math.max(box.top, obs.top);
-          const icx = (box.left + box.right) / 2;
-          const ocx = (obs.left + obs.right) / 2;
-          const icy = (box.top + box.bottom) / 2;
-          const ocy = (obs.top + obs.bottom) / 2;
-          if (overlapX <= overlapY) move(item, Math.sign(icx - ocx || 1) * (overlapX + 4), 0);
-          else move(item, 0, Math.sign(icy - ocy || -1) * (overlapY + 4));
-          break;
-        }
-      }
-      if (item.left < bounds.left) {
-        item.left = bounds.left;
-        hit = true;
-      }
-      if (item.top < bounds.top) {
-        item.top = bounds.top;
-        hit = true;
-      }
-      if (item.left + item.w > bounds.right) {
-        item.left = bounds.right - item.w;
-        hit = true;
-      }
-      if (item.top + item.h > bounds.bottom) {
-        item.top = bounds.bottom - item.h;
+        if (!screenBoxesOverlap(ba, bb, 3)) continue;
+        const mover = a.ny <= b.ny ? a : b;
+        if (mover.side === "left" || mover.side === "right") continue;
+        const ceiling = homeTop.get(mover) - (mover.h + 2);
+        if (mover.top <= ceiling + 1) continue;
+        mover.top = Math.max(ceiling, mover.top - (mover.h + 2));
+        mover.left = mover.nx - mover.w / 2;
         hit = true;
       }
     }
     if (!hit) break;
+  }
+}
+
+/**
+ * Step a title past a neighboring dot without leaving its side of the node.
+ * @param {{ left: number, top: number, w: number, h: number, nx: number, ny: number, side?: string }} item
+ * @param {Array<{ nx: number, ny: number, nr: number }>} nodes
+ */
+function clearTitleFromNodes(item, nodes) {
+  for (let pass = 0; pass < 5; pass++) {
+    let moved = false;
+    for (const node of nodes) {
+      const apart = Math.hypot(node.nx - item.nx, node.ny - item.ny);
+      if (apart < 2 || apart > item.nr + node.nr + 36) continue;
+      const box = { left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h };
+      const obs = {
+        left: node.nx - node.nr - 3,
+        right: node.nx + node.nr + 3,
+        top: node.ny - node.nr - 3,
+        bottom: node.ny + node.nr + 3
+      };
+      if (!screenBoxesOverlap(box, obs, 1)) continue;
+      if (item.side === "right") item.left = obs.right + 6;
+      else if (item.side === "left") item.left = obs.left - item.w - 6;
+      else item.top = obs.top - item.h - 6;
+      moved = true;
+    }
+    if (!moved) break;
   }
 }
 
@@ -1856,8 +1872,7 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Place each title on its own line in open space, then pin it back
-   * onto its node so it stays with the dot while the map pans.
+   * Place each title beside its own node, then pin it so it stays with the dot while the map pans.
    */
   _layoutCallouts() {
     if (this._layingOut) return;
@@ -1875,29 +1890,6 @@ export class WhatimadoMap extends HTMLElement {
     try {
       this._fitLabelFont(texts);
 
-      const bounds = {
-        left: stageRect.left + 6,
-        top: stageRect.top + 4,
-        right: stageRect.right - 6,
-        bottom: stageRect.bottom - 4
-      };
-      const frame = document.querySelector("whatimado-frame")?.getBoundingClientRect();
-      if (frame && frame.top > stageRect.top + 48 && frame.top < stageRect.bottom) {
-        bounds.bottom = Math.min(bounds.bottom, frame.top - 6);
-      }
-
-      /** @type {Array<{ left: number, right: number, top: number, bottom: number }>} */
-      const obstacles = [];
-      this.querySelectorAll(".whatimado-map__new-roadmap, .whatimado-map__you-btn, .whatimado-map__link-btn").forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (rect.width < 2 || el.classList.contains("hidden")) return;
-        obstacles.push({
-          left: rect.left - 6,
-          right: rect.right + 6,
-          top: rect.top - 4,
-          bottom: rect.bottom + 6
-        });
-      });
       const restCenter = (body) => {
         const host = body?.closest(".whatimado-map__node");
         const ctm = host?.getScreenCTM();
@@ -1924,17 +1916,6 @@ export class WhatimadoMap extends HTMLElement {
         };
       };
 
-      layer.querySelectorAll(".whatimado-map__node-body").forEach((el) => {
-        const rest = restCenter(el);
-        if (!rest) return;
-        obstacles.push({
-          left: rest.nodeLeft - 4,
-          right: rest.nodeRight + 4,
-          top: rest.nodeTop - 4,
-          bottom: rest.ny + rest.nr + 4
-        });
-      });
-
       const items = texts.map((text) => {
         const group = text.closest(".whatimado-map__node");
         const body = group?.querySelector(".whatimado-map__node-body");
@@ -1953,7 +1934,7 @@ export class WhatimadoMap extends HTMLElement {
           group: text.parentElement,
           leader: group?.querySelector(".whatimado-map__leader"),
           kind,
-          locked: kind === "start",
+          locked: false,
           w: Math.max(12, rect.width),
           h: Math.max(10, rect.height),
           left: rect.left,
@@ -1969,131 +1950,19 @@ export class WhatimadoMap extends HTMLElement {
 
       if (!items.length) return;
 
-      const selectedPath = items.find((item) => item.kind === "main");
-      if (!selectedPath) {
-        const paths = items.filter((item) => item.kind === "path");
-        if (paths.length) {
-          const you = items.find((item) => item.kind === "start");
-          let best = paths[0];
-          let bestDist = -1;
-          paths.forEach((item) => {
-            const dist = Math.hypot(item.nx - (you?.nx ?? item.nx), item.ny - (you?.ny ?? item.ny));
-            if (dist > bestDist) {
-              best = item;
-              bestDist = dist;
-            }
-          });
-          best.kind = "main";
-        }
-      }
-
-      const youItem = items.find((item) => item.kind === "start");
-      items.forEach((item) => {
-        const gap = 14;
-        if (item.kind === "start") {
-          item.left = item.nx - item.w / 2;
-          item.top = item.ny + item.nr + 8;
-          item.locked = true;
-          return;
-        }
-        if (item.kind === "main") {
-          const rightEdge = obstacles.reduce((max, obs) => {
-            const midY = (obs.top + obs.bottom) / 2;
-            if (Math.abs(midY - item.ny) > 28) return max;
-            return Math.max(max, obs.right);
-          }, item.nx + item.nr);
-          item.left = rightEdge + 8;
-          item.top = item.ny - item.h / 2;
-          if (item.left + item.w > bounds.right - 2) {
-            item.left = item.nx - item.w / 2;
-            item.top = item.ny - item.nr - gap - item.h;
-          }
-          if (youItem) {
-            const youBox = {
-              left: youItem.nx - youItem.w / 2,
-              right: youItem.nx + youItem.w / 2,
-              top: youItem.ny + youItem.nr,
-              bottom: youItem.ny + youItem.nr + youItem.h + gap
-            };
-            const mine = { left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h };
-            if (screenBoxesOverlap(mine, youBox, 4)) {
-              item.left = item.nx >= youItem.nx ? youBox.right + 8 : youBox.left - item.w - 8;
-            }
-          }
-        }
+      const dots = [];
+      layer.querySelectorAll(".whatimado-map__node-body").forEach((el) => {
+        const rest = restCenter(el);
+        if (rest) dots.push(rest);
       });
-
-      const sats = items.filter((item) => item.kind !== "start" && item.kind !== "main");
-      this._placeSatelliteTitles(sats, items, bounds, obstacles);
-      separateScreenLabels(items, obstacles, bounds);
+      placeTitleBesideNode(items);
+      items.forEach((item) => clearTitleFromNodes(item, dots));
+      holdTitlesOnNodes(items);
+      items.forEach((item) => clearTitleFromNodes(item, dots));
       this._writeCallouts(items);
     } finally {
       this._layingOut = false;
     }
-  }
-
-  /**
-   * @param {Array<{ left: number, top: number, w: number, h: number, nx: number, ny: number, nodeLeft: number, nodeRight: number, nodeTop: number }>} sats
-   * @param {Array<{ nx: number, nodeLeft: number, nodeRight: number }>} items
-   * @param {{ left: number, right: number, top: number, bottom: number }} bounds
-   * @param {Array<{ left: number, right: number, top: number, bottom: number }>} obstacles
-   */
-  _placeSatelliteTitles(sats, items, bounds, obstacles) {
-    if (!sats.length) return;
-    const gap = 12;
-    const sortedX = [...sats].sort((a, b) => a.nx - b.nx);
-    const rowWidth = sortedX.reduce((sum, item) => sum + item.w, 0) + gap * (sortedX.length - 1);
-    const rowH = Math.max(...sats.map((item) => item.h));
-    const clusterLeft = Math.min(...sats.map((item) => item.nx));
-    const clusterRight = Math.max(...sats.map((item) => item.nx));
-    let rowLeft = (clusterLeft + clusterRight) / 2 - rowWidth / 2;
-    rowLeft = Math.max(bounds.left, Math.min(rowLeft, bounds.right - rowWidth));
-    let rowTop = Math.min(...sats.map((item) => item.nodeTop)) - 12 - rowH;
-    const rowBox = () => ({ left: rowLeft, right: rowLeft + rowWidth, top: rowTop, bottom: rowTop + rowH });
-    for (const obs of obstacles) {
-      if (!screenBoxesOverlap(rowBox(), obs, 2)) continue;
-      const small = obs.bottom - obs.top < 36 && obs.right - obs.left < 36;
-      if (small) rowTop = Math.min(rowTop, obs.top - rowH - 8);
-      else if (obs.top <= rowTop + 2) rowTop = obs.bottom + 6;
-      else if (obs.left < rowLeft + 10) rowLeft = obs.right + 8;
-    }
-    const rowFits =
-      rowWidth <= bounds.right - bounds.left &&
-      rowTop >= bounds.top &&
-      rowLeft >= bounds.left - 1 &&
-      rowLeft + rowWidth <= bounds.right + 1;
-    if (rowFits) {
-      let left = rowLeft;
-      sortedX.forEach((item) => {
-        item.left = left;
-        item.top = rowTop;
-        left += item.w + gap;
-      });
-      return;
-    }
-
-    const nodesLeft = Math.min(...items.map((item) => item.nodeLeft));
-    const nodesRight = Math.max(...items.map((item) => item.nodeRight));
-    const leftGap = nodesLeft - bounds.left;
-    const rightGap = bounds.right - nodesRight;
-    const widest = Math.max(...sats.map((item) => item.w));
-    const useLeft = leftGap >= widest + 4 && leftGap >= rightGap;
-    const useRight = !useLeft && rightGap >= widest * 0.92;
-    const ordered = [...sats].sort((a, b) => a.ny - b.ny || a.nx - b.nx);
-    let top = bounds.top;
-    obstacles.forEach((obs) => {
-      if (obs.bottom > bounds.top && obs.top < bounds.top + rowH * ordered.length + 20) {
-        const laneLeft = useRight ? bounds.right - widest : bounds.left;
-        const laneRight = useRight ? bounds.right : bounds.left + widest;
-        if (obs.right > laneLeft && obs.left < laneRight) top = Math.max(top, obs.bottom + 4);
-      }
-    });
-    ordered.forEach((item) => {
-      item.top = top;
-      if (useRight) item.left = bounds.right - item.w;
-      else item.left = bounds.left;
-      top += item.h + 5;
-    });
   }
 
   /**
@@ -2288,8 +2157,7 @@ export class WhatimadoMap extends HTMLElement {
               : ""}
           </g>
             ${title
-              ? `<line class="whatimado-map__leader" x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy}" />
-            <text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`
+              ? `<text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`
               : ""}
         </g>
       `
