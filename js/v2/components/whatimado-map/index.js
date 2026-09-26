@@ -69,7 +69,7 @@ function wrapTitle(title) {
 /** @param {number} cx @param {number} cy @param {number} r @param {string} title @param {string} [side] */
 function labelMarkup(cx, cy, r, title, side) {
   const lines = wrapTitle(title);
-  const lineH = 13;
+  const lineH = MOBILE_MQ.matches ? 10 : 13;
   if (side === "nw") {
     const x = cx - r - 6;
     const start = cy - ((lines.length - 1) * lineH) / 2;
@@ -77,7 +77,8 @@ function labelMarkup(cx, cy, r, title, side) {
       .map((line, index) => `<tspan x="${x}" y="${start + index * lineH}">${escapeHtml(line)}</tspan>`)
       .join("")}</text>`;
   }
-  const start = cy - r - 8 - (lines.length - 1) * lineH;
+  const lift = MOBILE_MQ.matches ? Math.max(r + 8, 26) : r + 8;
+  const start = cy - lift - (lines.length - 1) * lineH;
   return `<text class="whatimado-map__label" text-anchor="middle">${lines
     .map((line, index) => `<tspan x="${cx}" y="${start + index * lineH}">${escapeHtml(line)}</tspan>`)
     .join("")}</text>`;

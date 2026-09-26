@@ -47,42 +47,47 @@
     --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
     /* Room for top labels under the menu after open-home gravity */
     --v2-map-graph-top-pad: clamp(1.1rem, 2.4vh, 1.6rem);
-    --v2-map-node-lg: 33;
-    --v2-map-node-sm: 16.5;
+    --v2-map-node-lg: 8.25;
+    --v2-map-node-sm: 4.125;
     --v2-map-edge-width: 2.6;
   }
 
   /* Large phones / small tablets — smaller nodes so menu + Path Finder both clear */
   @media (min-width: 480px) {
     :root {
-      --v2-map-node-lg: 24;
-      --v2-map-node-sm: 12;
+      --v2-map-node-lg: 6;
+      --v2-map-node-sm: 3;
     }
   }
 
   @media (min-width: 600px) {
     :root {
-      --v2-map-node-lg: 22;
-      --v2-map-node-sm: 11;
+      --v2-map-node-lg: 5.5;
+      --v2-map-node-sm: 2.75;
       --whatimado-frame-top-default: clamp(33vh, 27vh + 4vw, 38vh);
     }
   }
 
   @media (min-width: 600px) and (max-height: 820px) {
     :root {
-      --v2-map-node-lg: 20;
-      --v2-map-node-sm: 10;
+      --v2-map-node-lg: 5;
+      --v2-map-node-sm: 2.5;
       --whatimado-frame-top-default: clamp(34vh, 28vh + 4vw, 40vh);
     }
   }
 
   @media (max-height: 640px) {
     :root {
-      --v2-map-node-lg: 20;
-      --v2-map-node-sm: 10;
+      --v2-map-node-lg: 5;
+      --v2-map-node-sm: 2.5;
       --whatimado-frame-top-default: clamp(36vh, 32vh + 3vw, 44vh);
       --v2-mobile-you-hero-gap: clamp(0.55rem, 1.4vh, 0.85rem);
     }
+  }
+
+  whatimado-map .whatimado-map__node--live text {
+    font-size: 8px;
+    letter-spacing: 0.04em;
   }
 
   html,
