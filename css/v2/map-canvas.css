@@ -425,17 +425,31 @@ whatimado-map .whatimado-map__node--live.is-more.is-selected .whatimado-map__nod
 }
 
 whatimado-map .whatimado-map__node--live text {
-  font-size: 11px;
+  font-size: 12.5px;
   stroke: #060a0c;
-  stroke-width: 5px;
+  stroke-width: 1px;
   paint-order: stroke fill;
   stroke-linejoin: round;
   font-family: var(--v2-font-hero);
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   pointer-events: none;
   transition: fill 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+whatimado-map .whatimado-map__leader {
+  stroke: rgba(46, 232, 214, 0.55);
+  stroke-width: 1px;
+  stroke-dasharray: 2 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  fill: none;
+  pointer-events: none;
+}
+
+whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__leader {
+  stroke: rgba(245, 213, 71, 0.75);
 }
 
 whatimado-map .whatimado-map__node--live.is-support text {

@@ -15,7 +15,6 @@ import {
   HOME_SPRING_DAMP,
   HOME_SPRING_DAMP_SETTLE,
   HOME_SPRING_K,
-  MOBILE_MQ,
   SCALE_CENTER_X,
   SCALE_CENTER_Y,
   VIEW_H,
@@ -46,42 +45,101 @@ import {
   isOpenHomePhase
 } from "../../map/pan.js";
 
-/** @param {string} title */
-function wrapTitle(title) {
-  const words = String(title || "").trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return [""];
-  /** @type {string[]} */
-  const lines = [];
-  let line = "";
-  words.forEach((word) => {
-    const next = line ? `${line} ${word}` : word;
-    if (next.length > 18 && line) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = next;
-    }
-  });
-  if (line) lines.push(line);
-  return lines;
+/** @param {import("../../graph-store.js").GraphNode} node */
+function nodeMapTitle(node) {
+  if (!node || node.type === "more") return "";
+  if (node.type === "start") return node.label || "You";
+  return shortenMapLabel(node.title || node.label);
 }
 
-/** @param {number} cx @param {number} cy @param {number} r @param {string} title @param {string} [side] */
-function labelMarkup(cx, cy, r, title, side) {
-  const lines = wrapTitle(title);
-  const lineH = MOBILE_MQ.matches ? 10 : 13;
-  if (side === "nw") {
-    const x = cx - r - 6;
-    const start = cy - ((lines.length - 1) * lineH) / 2;
-    return `<text class="whatimado-map__label" text-anchor="end">${lines
-      .map((line, index) => `<tspan x="${x}" y="${start + index * lineH}">${escapeHtml(line)}</tspan>`)
-      .join("")}</text>`;
+/** @param {DOMMatrix|null|undefined} ctm */
+function invertCtm(ctm) {
+  if (!ctm) return null;
+  try {
+    return ctm.inverse();
+  } catch {
+    return null;
   }
-  const lift = MOBILE_MQ.matches ? Math.max(r + 8, 26) : r + 8;
-  const start = cy - lift - (lines.length - 1) * lineH;
-  return `<text class="whatimado-map__label" text-anchor="middle">${lines
-    .map((line, index) => `<tspan x="${cx}" y="${start + index * lineH}">${escapeHtml(line)}</tspan>`)
-    .join("")}</text>`;
+}
+
+/** @param {{ left: number, right: number, top: number, bottom: number }} a @param {{ left: number, right: number, top: number, bottom: number }} b */
+function screenBoxesOverlap(a, b, pad) {
+  return a.left - pad < b.right && a.right + pad > b.left && a.top - pad < b.bottom && a.bottom + pad > b.top;
+}
+
+/**
+ * Keep one-line titles off each other, off the dots, and off the map controls.
+ * @param {Array<{ left: number, top: number, w: number, h: number, locked?: boolean }>} items
+ * @param {Array<{ left: number, right: number, top: number, bottom: number }>} obstacles
+ * @param {{ left: number, right: number, top: number, bottom: number }} bounds
+ */
+function separateScreenLabels(items, obstacles, bounds) {
+  const pad = 5;
+  for (let pass = 0; pass < 30; pass++) {
+    let hit = false;
+    const move = (item, dx, dy) => {
+      if (!item || item.locked) return;
+      if (dx) item.left += dx;
+      if (dy) item.top += dy;
+      hit = true;
+    };
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i];
+        const b = items[j];
+        const ba = { left: a.left, right: a.left + a.w, top: a.top, bottom: a.top + a.h };
+        const bb = { left: b.left, right: b.left + b.w, top: b.top, bottom: b.top + b.h };
+        if (!screenBoxesOverlap(ba, bb, pad)) continue;
+        const overlapX = Math.min(ba.right, bb.right) - Math.max(ba.left, bb.left);
+        const overlapY = Math.min(ba.bottom, bb.bottom) - Math.max(ba.top, bb.top);
+        const vertical = overlapY <= overlapX;
+        const amount = (vertical ? overlapY : overlapX) + pad;
+        const sign = vertical ? (ba.top <= bb.top ? -1 : 1) : (ba.left <= bb.left ? -1 : 1);
+        const dx = vertical ? 0 : sign * amount;
+        const dy = vertical ? sign * amount : 0;
+        if (a.locked && !b.locked) move(b, -dx, -dy);
+        else if (b.locked && !a.locked) move(a, dx, dy);
+        else {
+          move(a, dx * 0.5, dy * 0.5);
+          move(b, -dx * 0.5, -dy * 0.5);
+        }
+      }
+    }
+    for (const item of items) {
+      const box = { left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h };
+      if (!item.locked) {
+        for (const obs of obstacles) {
+          if (!screenBoxesOverlap(box, obs, 1)) continue;
+          const overlapX = Math.min(box.right, obs.right) - Math.max(box.left, obs.left);
+          const overlapY = Math.min(box.bottom, obs.bottom) - Math.max(box.top, obs.top);
+          const icx = (box.left + box.right) / 2;
+          const ocx = (obs.left + obs.right) / 2;
+          const icy = (box.top + box.bottom) / 2;
+          const ocy = (obs.top + obs.bottom) / 2;
+          if (overlapX <= overlapY) move(item, Math.sign(icx - ocx || 1) * (overlapX + 4), 0);
+          else move(item, 0, Math.sign(icy - ocy || -1) * (overlapY + 4));
+          break;
+        }
+      }
+      if (item.left < bounds.left) {
+        item.left = bounds.left;
+        hit = true;
+      }
+      if (item.top < bounds.top) {
+        item.top = bounds.top;
+        hit = true;
+      }
+      if (item.left + item.w > bounds.right) {
+        item.left = bounds.right - item.w;
+        hit = true;
+      }
+      if (item.top + item.h > bounds.bottom) {
+        item.top = bounds.bottom - item.h;
+        hit = true;
+      }
+    }
+    if (!hit) break;
+  }
 }
 
 const MAP_TEMPLATE = `
@@ -953,6 +1011,7 @@ export class WhatimadoMap extends HTMLElement {
       "transform",
       `translate(${this._panX}, ${shiftY + this._panY}) translate(${SCALE_CENTER_X}, ${SCALE_CENTER_Y}) scale(${z}) translate(${-SCALE_CENTER_X}, ${-SCALE_CENTER_Y})`
     );
+    this._layoutCallouts();
   }
 
   _detachGlobalPanListeners() {
@@ -1775,6 +1834,380 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
+   * SVG text is scaled by the viewBox, so probe the painted height and
+   * choose a font that lands near 13px on screen.
+   * @param {SVGTextElement[]} texts
+   */
+  _fitLabelFont(texts) {
+    const target = 13;
+    const probe = 20;
+    texts.forEach((text) => {
+      text.style.fontSize = `${probe}px`;
+    });
+    const painted = texts[0].getBoundingClientRect().height || target;
+    const scale = painted / probe;
+    const fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
+    texts.forEach((text) => {
+      text.style.fontSize = `${fontPx}px`;
+      text.style.letterSpacing = "0.04em";
+      text.style.strokeWidth = "1px";
+    });
+    return fontPx;
+  }
+
+  /**
+   * Place each title on its own line in open space, then pin it back
+   * onto its node so it stays with the dot while the map pans.
+   */
+  _layoutCallouts() {
+    if (this._layingOut) return;
+    const layer = this._liveLayer;
+    const svg = this._svg;
+    if (!layer || !svg) return;
+    const texts = [...layer.querySelectorAll(".whatimado-map__label")];
+    if (!texts.length) return;
+    const stage = this.querySelector(".whatimado-map__stage");
+    if (!stage) return;
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.width < 40 || stageRect.height < 40) return;
+
+    this._layingOut = true;
+    try {
+      this._fitLabelFont(texts);
+
+      const bounds = {
+        left: stageRect.left + 6,
+        top: stageRect.top + 4,
+        right: stageRect.right - 6,
+        bottom: stageRect.bottom - 4
+      };
+      const frame = document.querySelector("whatimado-frame")?.getBoundingClientRect();
+      if (frame && frame.top > stageRect.top + 48 && frame.top < stageRect.bottom) {
+        bounds.bottom = Math.min(bounds.bottom, frame.top - 6);
+      }
+
+      /** @type {Array<{ left: number, right: number, top: number, bottom: number }>} */
+      const obstacles = [];
+      this.querySelectorAll(".whatimado-map__new-roadmap, .whatimado-map__you-btn, .whatimado-map__link-btn").forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width < 2 || el.classList.contains("hidden")) return;
+        obstacles.push({
+          left: rect.left - 6,
+          right: rect.right + 6,
+          top: rect.top - 4,
+          bottom: rect.bottom + 6
+        });
+      });
+      const restCenter = (body) => {
+        const host = body?.closest(".whatimado-map__node");
+        const ctm = host?.getScreenCTM();
+        if (!body || !ctm) return null;
+        const cx = parseFloat(body.getAttribute("cx") || "0");
+        const cy = parseFloat(body.getAttribute("cy") || "0");
+        const r = parseFloat(body.getAttribute("r") || "6");
+        const center = svg.createSVGPoint();
+        center.x = cx;
+        center.y = cy;
+        const edge = svg.createSVGPoint();
+        edge.x = cx + r;
+        edge.y = cy;
+        const screen = center.matrixTransform(ctm);
+        const edgeScreen = edge.matrixTransform(ctm);
+        const nr = Math.hypot(edgeScreen.x - screen.x, edgeScreen.y - screen.y);
+        return {
+          nx: screen.x,
+          ny: screen.y,
+          nr,
+          nodeLeft: screen.x - nr,
+          nodeRight: screen.x + nr,
+          nodeTop: screen.y - nr
+        };
+      };
+
+      layer.querySelectorAll(".whatimado-map__node-body").forEach((el) => {
+        const rest = restCenter(el);
+        if (!rest) return;
+        obstacles.push({
+          left: rest.nodeLeft - 4,
+          right: rest.nodeRight + 4,
+          top: rest.nodeTop - 4,
+          bottom: rest.ny + rest.nr + 4
+        });
+      });
+
+      const items = texts.map((text) => {
+        const group = text.closest(".whatimado-map__node");
+        const body = group?.querySelector(".whatimado-map__node-body");
+        const rect = text.getBoundingClientRect();
+        const rest = restCenter(body);
+        const kind = group?.classList.contains("is-start")
+          ? "start"
+          : group?.classList.contains("is-roadmap") && group.classList.contains("is-selected")
+            ? "main"
+            : group?.classList.contains("is-roadmap")
+              ? "path"
+              : "sat";
+        return {
+          text,
+          tspan: text.querySelector("tspan"),
+          group: text.parentElement,
+          leader: group?.querySelector(".whatimado-map__leader"),
+          kind,
+          locked: kind === "start",
+          w: Math.max(12, rect.width),
+          h: Math.max(10, rect.height),
+          left: rect.left,
+          top: rect.top,
+          nx: rest?.nx ?? rect.left,
+          ny: rest?.ny ?? rect.top,
+          nr: rest?.nr ?? 6,
+          nodeLeft: rest?.nodeLeft ?? rect.left,
+          nodeRight: rest?.nodeRight ?? rect.right,
+          nodeTop: rest?.nodeTop ?? rect.top
+        };
+      }).filter((item) => item.tspan && item.group);
+
+      if (!items.length) return;
+
+      const selectedPath = items.find((item) => item.kind === "main");
+      if (!selectedPath) {
+        const paths = items.filter((item) => item.kind === "path");
+        if (paths.length) {
+          const you = items.find((item) => item.kind === "start");
+          let best = paths[0];
+          let bestDist = -1;
+          paths.forEach((item) => {
+            const dist = Math.hypot(item.nx - (you?.nx ?? item.nx), item.ny - (you?.ny ?? item.ny));
+            if (dist > bestDist) {
+              best = item;
+              bestDist = dist;
+            }
+          });
+          best.kind = "main";
+        }
+      }
+
+      const youItem = items.find((item) => item.kind === "start");
+      items.forEach((item) => {
+        const gap = 14;
+        if (item.kind === "start") {
+          item.left = item.nx - item.w / 2;
+          item.top = item.ny + item.nr + 8;
+          item.locked = true;
+          return;
+        }
+        if (item.kind === "main") {
+          const rightEdge = obstacles.reduce((max, obs) => {
+            const midY = (obs.top + obs.bottom) / 2;
+            if (Math.abs(midY - item.ny) > 28) return max;
+            return Math.max(max, obs.right);
+          }, item.nx + item.nr);
+          item.left = rightEdge + 8;
+          item.top = item.ny - item.h / 2;
+          if (item.left + item.w > bounds.right - 2) {
+            item.left = item.nx - item.w / 2;
+            item.top = item.ny - item.nr - gap - item.h;
+          }
+          if (youItem) {
+            const youBox = {
+              left: youItem.nx - youItem.w / 2,
+              right: youItem.nx + youItem.w / 2,
+              top: youItem.ny + youItem.nr,
+              bottom: youItem.ny + youItem.nr + youItem.h + gap
+            };
+            const mine = { left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h };
+            if (screenBoxesOverlap(mine, youBox, 4)) {
+              item.left = item.nx >= youItem.nx ? youBox.right + 8 : youBox.left - item.w - 8;
+            }
+          }
+        }
+      });
+
+      const sats = items.filter((item) => item.kind !== "start" && item.kind !== "main");
+      this._placeSatelliteTitles(sats, items, bounds, obstacles);
+      separateScreenLabels(items, obstacles, bounds);
+      this._writeCallouts(items);
+    } finally {
+      this._layingOut = false;
+    }
+  }
+
+  /**
+   * @param {Array<{ left: number, top: number, w: number, h: number, nx: number, ny: number, nodeLeft: number, nodeRight: number, nodeTop: number }>} sats
+   * @param {Array<{ nx: number, nodeLeft: number, nodeRight: number }>} items
+   * @param {{ left: number, right: number, top: number, bottom: number }} bounds
+   * @param {Array<{ left: number, right: number, top: number, bottom: number }>} obstacles
+   */
+  _placeSatelliteTitles(sats, items, bounds, obstacles) {
+    if (!sats.length) return;
+    const gap = 12;
+    const sortedX = [...sats].sort((a, b) => a.nx - b.nx);
+    const rowWidth = sortedX.reduce((sum, item) => sum + item.w, 0) + gap * (sortedX.length - 1);
+    const rowH = Math.max(...sats.map((item) => item.h));
+    const clusterLeft = Math.min(...sats.map((item) => item.nx));
+    const clusterRight = Math.max(...sats.map((item) => item.nx));
+    let rowLeft = (clusterLeft + clusterRight) / 2 - rowWidth / 2;
+    rowLeft = Math.max(bounds.left, Math.min(rowLeft, bounds.right - rowWidth));
+    let rowTop = Math.min(...sats.map((item) => item.nodeTop)) - 12 - rowH;
+    const rowBox = () => ({ left: rowLeft, right: rowLeft + rowWidth, top: rowTop, bottom: rowTop + rowH });
+    for (const obs of obstacles) {
+      if (!screenBoxesOverlap(rowBox(), obs, 2)) continue;
+      const small = obs.bottom - obs.top < 36 && obs.right - obs.left < 36;
+      if (small) rowTop = Math.min(rowTop, obs.top - rowH - 8);
+      else if (obs.top <= rowTop + 2) rowTop = obs.bottom + 6;
+      else if (obs.left < rowLeft + 10) rowLeft = obs.right + 8;
+    }
+    const rowFits =
+      rowWidth <= bounds.right - bounds.left &&
+      rowTop >= bounds.top &&
+      rowLeft >= bounds.left - 1 &&
+      rowLeft + rowWidth <= bounds.right + 1;
+    if (rowFits) {
+      let left = rowLeft;
+      sortedX.forEach((item) => {
+        item.left = left;
+        item.top = rowTop;
+        left += item.w + gap;
+      });
+      return;
+    }
+
+    const nodesLeft = Math.min(...items.map((item) => item.nodeLeft));
+    const nodesRight = Math.max(...items.map((item) => item.nodeRight));
+    const leftGap = nodesLeft - bounds.left;
+    const rightGap = bounds.right - nodesRight;
+    const widest = Math.max(...sats.map((item) => item.w));
+    const useLeft = leftGap >= widest + 4 && leftGap >= rightGap;
+    const useRight = !useLeft && rightGap >= widest * 0.92;
+    const ordered = [...sats].sort((a, b) => a.ny - b.ny || a.nx - b.nx);
+    let top = bounds.top;
+    obstacles.forEach((obs) => {
+      if (obs.bottom > bounds.top && obs.top < bounds.top + rowH * ordered.length + 20) {
+        const laneLeft = useRight ? bounds.right - widest : bounds.left;
+        const laneRight = useRight ? bounds.right : bounds.left + widest;
+        if (obs.right > laneLeft && obs.left < laneRight) top = Math.max(top, obs.bottom + 4);
+      }
+    });
+    ordered.forEach((item) => {
+      item.top = top;
+      if (useRight) item.left = bounds.right - item.w;
+      else item.left = bounds.left;
+      top += item.h + 5;
+    });
+  }
+
+  /**
+   * @param {Array<{ text: SVGTextElement, tspan: SVGTSpanElement, group: SVGGElement, leader: SVGLineElement|null, left: number, top: number, w: number, h: number, nx: number, ny: number, nr: number }>} items
+   */
+  _writeCallouts(items) {
+    const svg = this._svg;
+    if (!svg) return;
+    items.forEach((item) => {
+      const ctm = item.group.getScreenCTM();
+      if (!ctm) return;
+      const point = svg.createSVGPoint();
+      point.x = item.left + item.w / 2;
+      point.y = item.top + item.h * 0.86;
+      const inv0 = invertCtm(ctm);
+      if (!inv0) return;
+      const local = point.matrixTransform(inv0);
+      item.tspan.setAttribute("x", local.x.toFixed(1));
+      item.tspan.setAttribute("y", local.y.toFixed(1));
+    });
+
+    items.forEach((item) => {
+      const actual = item.text.getBoundingClientRect();
+      const ctm = item.group.getScreenCTM();
+      if (!ctm || actual.width < 1) return;
+      const dx = item.left - actual.left;
+      const dy = item.top - actual.top;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+      const origin = svg.createSVGPoint();
+      origin.x = 0;
+      origin.y = 0;
+      const shifted = svg.createSVGPoint();
+      shifted.x = dx;
+      shifted.y = dy;
+      const inv = invertCtm(ctm);
+      if (!inv) return;
+      const a = origin.matrixTransform(inv);
+      const b = shifted.matrixTransform(inv);
+      const x = parseFloat(item.tspan.getAttribute("x") || "0") + (b.x - a.x);
+      const y = parseFloat(item.tspan.getAttribute("y") || "0") + (b.y - a.y);
+      item.tspan.setAttribute("x", x.toFixed(1));
+      item.tspan.setAttribute("y", y.toFixed(1));
+    });
+
+    items.forEach((item) => {
+      const line = item.leader;
+      if (!line) return;
+      const textRect = item.text.getBoundingClientRect();
+      const gap = 8;
+      const near =
+        textRect.left - gap < item.nx + item.nr &&
+        textRect.right + gap > item.nx - item.nr &&
+        textRect.top - gap < item.ny + item.nr &&
+        textRect.bottom + gap > item.ny - item.nr;
+      if (item.kind === "start" || near) {
+        line.setAttribute("x1", "0");
+        line.setAttribute("y1", "0");
+        line.setAttribute("x2", "0");
+        line.setAttribute("y2", "0");
+        return;
+      }
+      const ctm = item.group.getScreenCTM();
+      if (!ctm) return;
+      const end = this._leaderEnd(item.nx, item.ny, textRect);
+      const crosses = items.some((other) => {
+        if (other === item) return false;
+        const box = other.text.getBoundingClientRect();
+        for (let t = 0.2; t <= 0.9; t += 0.1) {
+          const x = item.nx + (end.x - item.nx) * t;
+          const y = item.ny + (end.y - item.ny) * t;
+          if (x > box.left && x < box.right && y > box.top && y < box.bottom) return true;
+        }
+        return false;
+      });
+      if (crosses) {
+        line.setAttribute("x1", "0");
+        line.setAttribute("y1", "0");
+        line.setAttribute("x2", "0");
+        line.setAttribute("y2", "0");
+        return;
+      }
+      const ldx = end.x - item.nx;
+      const ldy = end.y - item.ny;
+      const llen = Math.hypot(ldx, ldy) || 1;
+      const inv = invertCtm(ctm);
+      if (!inv) return;
+      const from = svg.createSVGPoint();
+      from.x = item.nx + (ldx / llen) * (item.nr + 3);
+      from.y = item.ny + (ldy / llen) * (item.nr + 3);
+      const to = svg.createSVGPoint();
+      to.x = end.x;
+      to.y = end.y;
+      const a = from.matrixTransform(inv);
+      const b = to.matrixTransform(inv);
+      line.setAttribute("x1", a.x.toFixed(1));
+      line.setAttribute("y1", a.y.toFixed(1));
+      line.setAttribute("x2", b.x.toFixed(1));
+      line.setAttribute("y2", b.y.toFixed(1));
+    });
+  }
+
+  /**
+   * Point on the title box closest to the node, so the leader stops at the words.
+   * @param {number} nx
+   * @param {number} ny
+   * @param {DOMRect} rect
+   */
+  _leaderEnd(nx, ny, rect) {
+    const cx = Math.max(rect.left, Math.min(nx, rect.right));
+    const cy = Math.max(rect.top, Math.min(ny, rect.bottom));
+    return { x: cx, y: cy };
+  }
+
+  /**
    * @param {SVGGElement|null} layer
    * @param {GraphNode[]} nodes
    * @param {GraphEdge[]} edges
@@ -1831,6 +2264,7 @@ export class WhatimadoMap extends HTMLElement {
           .filter(Boolean)
           .join(" ");
 
+        const title = options.layer === "live" ? nodeMapTitle(node) : "";
         const driftDelay = (index * 0.85) % 5;
         const driftDuration = 9 + (index % 4) * 1.2;
         const styleVars = [
@@ -1851,8 +2285,12 @@ export class WhatimadoMap extends HTMLElement {
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${node.type === "more" ? r * 0.72 : r}" />
             ${node.type === "more"
               ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.3}" y1="${cy}" x2="${cx + r * 0.3}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.3}" x2="${cx}" y2="${cy + r * 0.3}" /></g>`
-              : labelMarkup(cx, cy, r, node.type === "start" ? (node.label || "You") : shortenMapLabel(node.title || node.label))}
+              : ""}
           </g>
+            ${title
+              ? `<line class="whatimado-map__leader" x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy}" />
+            <text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`
+              : ""}
         </g>
       `
         });
@@ -1874,6 +2312,7 @@ export class WhatimadoMap extends HTMLElement {
 
     if (options.layer === "live") {
       this._applyAnchorStyles();
+      this._layoutCallouts();
     }
 
     if (options.layer === "live" && this._pathPreviewId) {
