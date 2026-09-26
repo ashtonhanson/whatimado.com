@@ -327,6 +327,7 @@ export class WhatimadoMap extends HTMLElement {
     this._onPinchTouchStart = (event) => this._handlePinchTouchStart(event);
     this._onPinchTouchMove = (event) => this._handlePinchTouchMove(event);
     this._onPinchTouchEnd = (event) => this._handlePinchTouchEnd(event);
+    this._onWheel = (event) => this._handleWheel(event);
 
     this._onPointerMove = (event) => this._handlePointerMove(event);
     this._onPointerUp = (event) => this._handlePointerUp(event);
@@ -344,6 +345,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!this._built) this._build();
     window.addEventListener("pointermove", this._onHoverPointerMove, { passive: true, capture: true });
     window.addEventListener("mousemove", this._onHoverMouseMove, { passive: true, capture: true });
+    window.addEventListener("wheel", this._onWheel, { passive: false, capture: true });
     this._applyMode();
     if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
@@ -419,15 +421,16 @@ export class WhatimadoMap extends HTMLElement {
     window.removeEventListener("resize", this._onViewportResize);
     window.removeEventListener("pointermove", this._onHoverPointerMove, true);
     window.removeEventListener("mousemove", this._onHoverMouseMove, true);
+    window.removeEventListener("wheel", this._onWheel, true);
     if (this._hoverRaf !== null) {
       cancelAnimationFrame(this._hoverRaf);
       this._hoverRaf = null;
     }
     this._detachGlobalPanListeners();
-    this._panSurface?.removeEventListener("touchstart", this._onPinchTouchStart);
-    this._panSurface?.removeEventListener("touchmove", this._onPinchTouchMove);
-    this._panSurface?.removeEventListener("touchend", this._onPinchTouchEnd);
-    this._panSurface?.removeEventListener("touchcancel", this._onPinchTouchEnd);
+    this.removeEventListener("touchstart", this._onPinchTouchStart);
+    this.removeEventListener("touchmove", this._onPinchTouchMove);
+    this.removeEventListener("touchend", this._onPinchTouchEnd);
+    this.removeEventListener("touchcancel", this._onPinchTouchEnd);
   }
 
   attributeChangedCallback(name) {
@@ -959,13 +962,110 @@ export class WhatimadoMap extends HTMLElement {
     };
   }
 
-  /** @param {TouchEvent} event */
-  _handlePinchTouchStart(event) {
-    if (event.touches.length === 1) {
-      event.preventDefault();
+  /**
+   * Keep the viewBox point under the cursor/pinch while zoom changes.
+   * @param {number} focalX
+   * @param {number} focalY
+   * @param {number} fromZoom
+   * @param {number} fromPanX
+   * @param {number} fromPanY
+   * @param {number} nextZoom
+   */
+  _applyZoomKeepingPoint(focalX, focalY, fromZoom, fromPanX, fromPanY, nextZoom) {
+    const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, nextZoom));
+    if (!(fromZoom > 0) || zoom === fromZoom) return false;
+    const ratio = zoom / fromZoom;
+    this._zoom = zoom;
+    this._panX = ratio * fromPanX + (1 - ratio) * (focalX - SCALE_CENTER_X);
+    this._panY = ratio * fromPanY + (1 - ratio) * (focalY - SCALE_CENTER_Y);
+    this._focalLocked = true;
+    this._focalNodeId = null;
+    this._userPanned = true;
+    this._youBtn?.classList.remove("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "false");
+    this._applyPanTransform();
+    return true;
+  }
+
+  /**
+   * The constellation band: the map stage, cut off where the prompt frame begins.
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _mapBandContains(clientX, clientY) {
+    const stage = this.querySelector(".whatimado-map__stage");
+    if (!stage) return false;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width < 40 || rect.height < 40) return false;
+    const frame = document.getElementById("dynamic-frame");
+    let bottom = rect.bottom;
+    if (frame instanceof HTMLElement) {
+      const frameTop = frame.getBoundingClientRect().top;
+      if (frameTop > rect.top + 24) bottom = Math.min(bottom, frameTop);
+    }
+    return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY < bottom;
+  }
+
+  /**
+   * True only when the pointer is on the node map itself, not the prompt, sidebar, or page chrome.
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _pointerInMap(clientX, clientY) {
+    if (this.getAttribute("mode") === "hidden") return false;
+    if (!this._mapBandContains(clientX, clientY)) return false;
+    const hit = document.elementFromPoint(clientX, clientY);
+    if (!(hit instanceof Element)) return false;
+    if (hit.closest("whatimado-frame, .v2-frame-kicker, .v2-sidebar, .v2-rail, header, .v2-header, .v2-topbar")) {
+      return false;
+    }
+    if (hit.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap")) {
+      return false;
+    }
+    return Boolean(hit.closest("whatimado-map"));
+  }
+
+  /**
+   * Mouse wheel zooms the map. A trackpad pinch arrives as a wheel event with ctrlKey.
+   * Both are ignored outside the node-map band so the rest of the page stays still.
+   * @param {WheelEvent} event
+   */
+  _handleWheel(event) {
+    if (this.getAttribute("mode") === "hidden") return;
+    if (document.body.classList.contains("is-frame-dragging")) return;
+
+    const inMap = this._pointerInMap(event.clientX, event.clientY);
+    if (!inMap) {
+      // A trackpad pinch outside the map would scale the whole page. Swallow only that.
+      if (event.ctrlKey) event.preventDefault();
       return;
     }
-    if (event.touches.length !== 2 || !this._panSurface) return;
+
+    event.preventDefault();
+    this._stopPanGlide();
+
+    let delta = event.deltaY;
+    if (event.deltaMode === 1) delta *= 16;
+    else if (event.deltaMode === 2) delta *= 400;
+    if (!Number.isFinite(delta) || delta === 0) return;
+
+    // Pinch deltas are steeper than a mouse notch, so they use a lighter gain.
+    const speed = event.ctrlKey ? 0.01 : 0.0024;
+    const factor = Math.min(1.35, Math.max(0.74, Math.exp(-delta * speed)));
+    const focal = this._clientToSvg(event.clientX, event.clientY);
+    this._applyZoomKeepingPoint(focal.x, focal.y, this._zoom, this._panX, this._panY, this._zoom * factor);
+  }
+
+  /** @param {TouchEvent} event */
+  _handlePinchTouchStart(event) {
+    if (event.touches.length !== 2) return;
+    if (this.getAttribute("mode") === "hidden") return;
+    const touches = Array.from(event.touches);
+    if (!touches.every((touch) => this._mapBandContains(touch.clientX, touch.clientY))) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest("whatimado-frame, .whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap")) {
+      return;
+    }
 
     event.preventDefault();
     this._stopPanGlide();
@@ -982,15 +1082,17 @@ export class WhatimadoMap extends HTMLElement {
       startPanX: this._panX,
       startPanY: this._panY,
       focalX: focal.x,
-      focalY: focal.y
+      focalY: focal.y,
+      startCenterX: center.x,
+      startCenterY: center.y
     };
     this.classList.add("is-pinch-zooming");
   }
 
   /** @param {TouchEvent} event */
   _handlePinchTouchMove(event) {
-    event.preventDefault();
     if (!this._pinch || event.touches.length < 2) return;
+    event.preventDefault();
     const dist = this._touchDistance(event.touches);
     if (this._pinch.startDist <= 0) return;
 
@@ -998,11 +1100,20 @@ export class WhatimadoMap extends HTMLElement {
       ZOOM_MIN,
       Math.min(ZOOM_MAX, this._pinch.startZoom * (dist / this._pinch.startDist))
     );
-    const deltaZoom = this._pinch.startZoom - nextZoom;
-
+    const center = this._touchCenter(event.touches);
+    const { x: scaleX, y: scaleY } = svgScaleXY(this._svg);
+    const panDx = (center.x - this._pinch.startCenterX) * scaleX;
+    const panDy = (center.y - this._pinch.startCenterY) * scaleY;
+    const fromZoom = this._pinch.startZoom > 0 ? this._pinch.startZoom : 1;
+    const ratio = nextZoom / fromZoom;
     this._zoom = nextZoom;
-    this._panX = this._pinch.startPanX + deltaZoom * (this._pinch.focalX - SCALE_CENTER_X);
-    this._panY = this._pinch.startPanY + deltaZoom * (this._pinch.focalY - SCALE_CENTER_Y);
+    this._panX = ratio * this._pinch.startPanX + (1 - ratio) * (this._pinch.focalX - SCALE_CENTER_X) + panDx;
+    this._panY = ratio * this._pinch.startPanY + (1 - ratio) * (this._pinch.focalY - SCALE_CENTER_Y) + panDy;
+    this._focalLocked = true;
+    this._focalNodeId = null;
+    this._userPanned = true;
+    this._youBtn?.classList.remove("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "false");
     this._applyPanTransform();
   }
 
@@ -1184,10 +1295,10 @@ export class WhatimadoMap extends HTMLElement {
       this.dispatchEvent(new CustomEvent("map-new-roadmap", { bubbles: true }));
     });
     this._applyPanTransform();
-    this._panSurface?.addEventListener("touchstart", this._onPinchTouchStart, { passive: false });
-    this._panSurface?.addEventListener("touchmove", this._onPinchTouchMove, { passive: false });
-    this._panSurface?.addEventListener("touchend", this._onPinchTouchEnd, { passive: false });
-    this._panSurface?.addEventListener("touchcancel", this._onPinchTouchEnd, { passive: false });
+    this.addEventListener("touchstart", this._onPinchTouchStart, { passive: false });
+    this.addEventListener("touchmove", this._onPinchTouchMove, { passive: false });
+    this.addEventListener("touchend", this._onPinchTouchEnd, { passive: false });
+    this.addEventListener("touchcancel", this._onPinchTouchEnd, { passive: false });
     this.addEventListener("pointermove", this._onPointerMove);
     this.addEventListener("pointerup", this._onPointerUp);
     this.addEventListener("pointercancel", this._onPointerUp);
@@ -1931,7 +2042,7 @@ export class WhatimadoMap extends HTMLElement {
         return {
           text,
           tspan: text.querySelector("tspan"),
-          group: text.parentElement,
+          group: text.closest(".whatimado-map__node"),
           leader: group?.querySelector(".whatimado-map__leader"),
           kind,
           locked: false,
@@ -1988,8 +2099,9 @@ export class WhatimadoMap extends HTMLElement {
       const actual = item.text.getBoundingClientRect();
       const ctm = item.group.getScreenCTM();
       if (!ctm || actual.width < 1) return;
-      const dx = item.left - actual.left;
-      const dy = item.top - actual.top;
+      const float = this._floatScreenOffset(item.text);
+      const dx = item.left - (actual.left - float.x);
+      const dy = item.top - (actual.top - float.y);
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
       const origin = svg.createSVGPoint();
       origin.x = 0;
@@ -2062,6 +2174,25 @@ export class WhatimadoMap extends HTMLElement {
       line.setAttribute("x2", b.x.toFixed(1));
       line.setAttribute("y2", b.y.toFixed(1));
     });
+  }
+
+  /**
+   * Screen shift of the idle float, so title layout stays in rest space
+   * while the words ride the same motion as the dot.
+   * @param {Element} text
+   */
+  _floatScreenOffset(text) {
+    const svg = this._svg;
+    const floatEl = text.closest(".whatimado-map__node-float");
+    const nodeEl = text.closest(".whatimado-map__node");
+    if (!svg || !floatEl || !nodeEl) return { x: 0, y: 0 };
+    const nodeCtm = nodeEl.getScreenCTM();
+    const floatCtm = floatEl.getScreenCTM();
+    if (!nodeCtm || !floatCtm) return { x: 0, y: 0 };
+    const origin = svg.createSVGPoint();
+    const rest = origin.matrixTransform(nodeCtm);
+    const floated = origin.matrixTransform(floatCtm);
+    return { x: floated.x - rest.x, y: floated.y - rest.y };
   }
 
   /**
@@ -2155,10 +2286,10 @@ export class WhatimadoMap extends HTMLElement {
             ${node.type === "more"
               ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.3}" y1="${cy}" x2="${cx + r * 0.3}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.3}" x2="${cx}" y2="${cy + r * 0.3}" /></g>`
               : ""}
-          </g>
             ${title
               ? `<text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`
               : ""}
+          </g>
         </g>
       `
         });
