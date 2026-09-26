@@ -53,9 +53,21 @@ function sanitizePathId(id, index) {
   return base || `path-${index + 1}`;
 }
 
-/** @param {string} value @param {number} max */
-function shortenMapLabel(value) {
-  return String(value || "").trim();
+const MAP_LABEL_SKIP = new Set([
+  "a", "an", "the", "and", "or", "for", "to", "of", "with", "your", "into", "in", "on", "at", "from", "by"
+]);
+
+/** One or two words for the node on the map. */
+export function shortenMapLabel(value) {
+  const words = String(value || "")
+    .replace(/[/|]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, ""))
+    .filter(Boolean);
+  if (!words.length) return "";
+  const kept = words.filter((word) => !MAP_LABEL_SKIP.has(word.toLowerCase()));
+  return (kept.length ? kept : words).slice(0, 2).join(" ");
 }
 
 /** HUD hover accents — distinct hues; yellow reserved for selected state */

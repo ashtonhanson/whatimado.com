@@ -71,8 +71,8 @@ Return ONLY valid JSON — no markdown fences, no commentary:
   "paths": [
     {
       "id": "kebab-case-id",
-      "label": "Short map label (max 14 chars)",
-      "title": "Clear path name",
+      "label": "1 or 2 words, the name drawn on the node",
+      "title": "1 or 2 words, the name drawn on the node",
       "description": "1-2 sentences on what this path involves"
     }
   ]

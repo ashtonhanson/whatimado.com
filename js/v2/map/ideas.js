@@ -223,8 +223,8 @@ export function buildIdeasPrompt(messages, contextBlock, spec) {
     '  "paths": [\n' +
     "    {\n" +
     '      "id": "kebab-case-id",\n' +
-    '      "label": "Short map label (max 14 chars)",\n' +
-    '      "title": "Clear path name",\n' +
+    '      "label": "1 or 2 words, the name drawn on the node",\n' +
+    '      "title": "1 or 2 words, the name drawn on the node",\n' +
     '      "type": "Employment | Training | Self-employment | Stability | Opportunity",\n' +
       '      "tagline": "one specific sentence, max 12 words",\n' +
       '      "why": "one short clause referencing what THEY said, max 10 words",\n' +

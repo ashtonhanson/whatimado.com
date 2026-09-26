@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setMapSpread, setRoadmapFocusLinked, showRoadmapBranch } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setMapSpread, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch } from "../../graph-store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
   BOUND_GLIDE_DAMP,
@@ -1851,7 +1851,7 @@ export class WhatimadoMap extends HTMLElement {
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${node.type === "more" ? r * 0.72 : r}" />
             ${node.type === "more"
               ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.3}" y1="${cy}" x2="${cx + r * 0.3}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.3}" x2="${cx}" y2="${cy + r * 0.3}" /></g>`
-              : labelMarkup(cx, cy, r, node.title || node.label)}
+              : labelMarkup(cx, cy, r, node.type === "start" ? (node.label || "You") : shortenMapLabel(node.title || node.label))}
           </g>
         </g>
       `
