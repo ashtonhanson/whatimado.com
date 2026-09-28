@@ -315,11 +315,22 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
         </article>`
     )
     .join("");
+  root.innerHTML += stages.length ? CONTINUATION_CUE : "";
   const first = stages[0];
   const firstDone = Boolean(first?.missions?.length && first.missions.every((mission) => mission.done));
   root.innerHTML += firstDone ? renderNextPathOptions() : "";
   bindResourcesAccordions(root);
 }
+
+/** The v1 "possible continuation" cue: the roadmap keeps going past the missions shown. */
+const CONTINUATION_CUE = `
+  <div class="v2-mission-continue" role="note" aria-label="Possible continuation">
+    <span class="v2-mission-continue__node" aria-hidden="true">?</span>
+    <span class="v2-mission-continue__copy">
+      <strong>Possible continuation</strong>
+      <span>Your roadmap can keep evolving from here.</span>
+    </span>
+  </div>`;
 
 /** Other roadmaps, with the original save-or-open choice, once the first missions are done. */
 function renderNextPathOptions() {

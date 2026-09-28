@@ -8,7 +8,9 @@
 @media (max-width: 900px) {
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
-    --v2-mobile-header-control: 2.65rem;
+    /* One inset for the top and the side, so logo and menu sit evenly in their corners. */
+    --v2-mobile-header-inset: 0.7rem;
+    --v2-mobile-header-control: calc(3.55rem - 2 * var(--v2-mobile-header-inset));
     --v2-mobile-quarter-in: 0.25in;
     /* Softer hero rise so YOU + Path Finder both clear the menu band */
     --v2-mobile-hero-shift: calc(0.12in + 8px);
@@ -226,9 +228,9 @@
     align-items: center;
     min-height: 0;
     padding:
-      calc(0.45rem + env(safe-area-inset-top, 0px))
-      var(--v2-main-gutter)
-      0.45rem;
+      calc(var(--v2-mobile-header-inset) + env(safe-area-inset-top, 0px))
+      var(--v2-mobile-header-inset)
+      calc(var(--v2-mobile-header-inset) - 1px);
     border-bottom: 1px solid rgba(46, 232, 214, 0.14);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
     background: var(--v2-rail-bg);
@@ -251,8 +253,8 @@
     max-width: min(15rem, 68vw);
     opacity: 1;
     visibility: visible;
-    padding: 0 0.95rem;
-    font-size: clamp(0.9rem, 4.1vw, 1.08rem);
+    padding: 0 0.85rem;
+    font-size: clamp(0.84rem, 3.8vw, 1rem);
     letter-spacing: 0.11em;
   }
 
@@ -888,6 +890,10 @@
   whatimado-frame.is-mobile-docked.is-mobile-reading .v2-stage {
     margin-top: 0.45rem;
     padding: 0.5rem 0.6rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-mission-continue {
+    --v2-cue-inset: 0.6rem;
   }
 
   whatimado-frame.is-mobile-docked.is-mobile-reading .v2-stage__label,

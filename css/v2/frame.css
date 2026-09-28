@@ -789,6 +789,62 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   color: var(--v2-text);
 }
 
+.v2-mission-continue {
+  --v2-cue-inset: 0.8rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.2rem 0 0.35rem;
+  padding: 0.95rem var(--v2-cue-inset) 0.1rem;
+  color: var(--v2-text-muted);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Dashed tail that carries the mission card on toward the "?" node. */
+.v2-mission-continue::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(var(--v2-cue-inset) + 0.7rem - 0.5px);
+  height: 0.95rem;
+  border-left: 1px dashed color-mix(in srgb, var(--v2-teal) 60%, transparent);
+}
+
+.v2-mission-continue__node {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 1px dashed color-mix(in srgb, var(--v2-teal) 70%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
+  color: var(--v2-teal);
+  font-family: var(--v2-font-hero);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.v2-mission-continue__copy {
+  display: grid;
+  gap: 0.1rem;
+  font-size: 0.74rem;
+  line-height: 1.3;
+}
+
+.v2-mission-continue__copy strong {
+  font-family: var(--v2-font-hero);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v2-teal);
+}
+
 .v2-messages:empty {
   display: none;
 }
@@ -1125,14 +1181,27 @@ body.v2-app .v2-timeline__add {
   overflow: visible;
 }
 
-.v2-difficulty {
+/* Same box as the Notes sheet button (.v2-draft-open), filled teal with dark text. */
+body.v2-app .v2-difficulty {
+  appearance: none;
   margin-top: 0.45rem;
-  border: 0;
-  background: transparent;
-  color: var(--v2-teal, #2ee8d6);
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
+  padding: 0.28rem 0.65rem;
+  border: 1px solid var(--v2-teal);
+  background: var(--v2-teal);
+  color: var(--v2-bg);
+  font-family: var(--v2-font-hero);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+body.v2-app .v2-difficulty:hover,
+body.v2-app .v2-difficulty:focus-visible {
+  border-color: var(--v2-neon-teal);
+  background: var(--v2-neon-teal);
+  color: var(--v2-bg);
 }
 
 .v2-mission__steps,
