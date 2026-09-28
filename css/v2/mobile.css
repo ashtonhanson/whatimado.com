@@ -118,14 +118,6 @@
     height: calc(var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) - var(--v2-map-frame-clearance));
   }
 
-  /* The prompt drops by the summary height, so the map band keeps the same room. */
-  body.has-map-timeline.v2-app:not([data-phase="open"]) whatimado-map {
-    height: calc(
-      var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) + var(--v2-timeline-h) -
-        var(--v2-map-frame-clearance)
-    );
-  }
-
   .v2-shell,
   .v2-shell:has(#resources-rail:not(.hidden)),
   .v2-shell:has(#resources-rail.hidden) {
@@ -841,19 +833,11 @@
     animation: none;
   }
 
-  whatimado-map .whatimado-map__you-btn {
-    top: 0.4rem;
-    right: 0.45rem;
+  whatimado-map .whatimado-map__you-btn,
+  whatimado-map .whatimado-map__link-btn {
     width: 2.05rem;
     height: 2.05rem;
     z-index: 8;
-  }
-
-  whatimado-map .whatimado-map__link-btn {
-    top: 0.4rem;
-    right: calc(0.45rem + 2.05rem + 0.35rem);
-    width: 2.05rem;
-    height: 2.05rem;
   }
 
   /* Three path cards must fit in the ¾ reading sheet above the composer */

@@ -55,19 +55,55 @@ body.v2-app:not([data-phase="open"]) whatimado-map .whatimado-map__stage {
   top: 0;
 }
 
-/* Mission summary sits above the constellation. Shift the stage down without shrinking it. */
-body.has-map-timeline.v2-app:not([data-phase="open"]) whatimado-map .whatimado-map__stage,
-body.has-map-timeline.v2-app.is-hero-dismissing whatimado-map .whatimado-map__stage {
-  top: var(--v2-timeline-h);
+whatimado-map .whatimado-map__chrome {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.7rem;
+  right: 0.65rem;
+  z-index: 8;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  pointer-events: none;
 }
 
-body.has-map-timeline whatimado-map .whatimado-map__new-roadmap {
-  top: calc(var(--v2-timeline-h) + 0.55rem);
+whatimado-map .whatimado-map__timeline-col {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+  pointer-events: none;
 }
 
-body.has-map-timeline whatimado-map .whatimado-map__you-btn,
-body.has-map-timeline whatimado-map .whatimado-map__link-btn {
-  top: calc(var(--v2-timeline-h) + 0.4rem);
+whatimado-map .whatimado-map__timeline-col:has(#map-timeline:not([hidden])) {
+  align-items: stretch;
+  width: max-content;
+  max-width: calc(100% - 9.25rem);
+}
+
+whatimado-map .whatimado-map__timeline-tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+whatimado-map .whatimado-map__chrome .whatimado-map__new-roadmap,
+whatimado-map .whatimado-map__chrome .whatimado-map__you-btn,
+whatimado-map .whatimado-map__chrome .whatimado-map__link-btn,
+whatimado-map .whatimado-map__chrome .v2-map-timeline {
+  pointer-events: auto;
+}
+
+whatimado-map .whatimado-map__chrome .whatimado-map__new-roadmap,
+whatimado-map .whatimado-map__chrome .whatimado-map__you-btn,
+whatimado-map .whatimado-map__chrome .whatimado-map__link-btn {
+  position: static;
+  top: auto;
+  right: auto;
 }
 
 whatimado-map[data-mode="ghost"],
@@ -139,9 +175,6 @@ whatimado-map .whatimado-map__edge--live {
 }
 
 whatimado-map .whatimado-map__new-roadmap {
-  position: absolute;
-  top: 0.7rem;
-  left: 0.7rem;
   z-index: 8;
   pointer-events: auto;
   border: 1px solid rgba(245, 213, 71, 0.55);
@@ -154,12 +187,14 @@ whatimado-map .whatimado-map__new-roadmap {
   text-transform: uppercase;
   padding: 0.35rem 0.7rem;
   cursor: pointer;
+  flex: 0 0 auto;
+}
+
+body.v2-app whatimado-map .whatimado-map__new-roadmap {
+  border-radius: 999px;
 }
 
 whatimado-map .whatimado-map__you-btn {
-  position: absolute;
-  top: 0.55rem;
-  right: 0.65rem;
   z-index: 8;
   width: 2.2rem;
   height: 2.2rem;
@@ -195,9 +230,6 @@ whatimado-map .whatimado-map__you-btn.is-active {
 }
 
 whatimado-map .whatimado-map__link-btn {
-  position: absolute;
-  top: 0.55rem;
-  right: calc(0.65rem + 2.2rem + 0.4rem);
   z-index: 8;
   width: 2.2rem;
   height: 2.2rem;
@@ -213,6 +245,10 @@ whatimado-map .whatimado-map__link-btn {
   color: rgba(232, 244, 242, 0.72);
   cursor: pointer;
   pointer-events: auto;
+}
+
+body.v2-app whatimado-map .whatimado-map__link-btn {
+  border-radius: 50%;
 }
 
 whatimado-map .whatimado-map__link-icon {

@@ -194,23 +194,30 @@ const MAP_TEMPLATE = `
         <g class="whatimado-map__layer whatimado-map__layer--live"></g>
       </g>
     </svg>
-    <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
-    <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
-      <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-1.92 1.92a5 5 0 0 0 7.07 7.07l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-      </svg>
-      <svg class="whatimado-map__link-icon whatimado-map__link-icon--off" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-      </svg>
-    </button>
-    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-pressed="false" aria-label="Center the map">
-      <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
-        <path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" />
-        <circle cx="12" cy="12" r="1.2" fill="currentColor" />
-      </svg>
-    </button>
+    <div class="whatimado-map__chrome">
+      <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
+      <div class="whatimado-map__timeline-col">
+        <header class="v2-map-timeline" id="map-timeline" hidden aria-label="Mission timeline"></header>
+        <div class="whatimado-map__timeline-tools">
+          <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
+            <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-1.92 1.92a5 5 0 0 0 7.07 7.07l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+            <svg class="whatimado-map__link-icon whatimado-map__link-icon--off" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+          </button>
+          <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-pressed="false" aria-label="Center the map">
+            <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
+              <path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" />
+              <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 `;
 
@@ -1038,7 +1045,7 @@ export class WhatimadoMap extends HTMLElement {
     if (hit.closest("whatimado-frame, .v2-frame-kicker, .v2-sidebar, .v2-rail, header, .v2-header, .v2-topbar")) {
       return false;
     }
-    if (hit.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap")) {
+    if (hit.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) {
       return false;
     }
     return Boolean(hit.closest("whatimado-map"));
@@ -1082,7 +1089,7 @@ export class WhatimadoMap extends HTMLElement {
     const touches = Array.from(event.touches);
     if (!touches.every((touch) => this._mapBandContains(touch.clientX, touch.clientY))) return;
     const target = event.target;
-    if (target instanceof Element && target.closest("whatimado-frame, .whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap")) {
+    if (target instanceof Element && target.closest("whatimado-frame, .whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) {
       return;
     }
 
@@ -1239,7 +1246,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!(target instanceof Element)) return;
     if (target.closest("whatimado-frame")) return;
     if (target.closest(".whatimado-map__node")) return;
-    if (target.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap")) return;
+    if (target.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) return;
 
     this._beginPanPointer(event);
   }

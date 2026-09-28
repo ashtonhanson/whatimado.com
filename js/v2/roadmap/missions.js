@@ -166,12 +166,12 @@ function timelineHost() {
   return document.getElementById("map-timeline");
 }
 
-/** Pin the abbreviated timeline above the map, and drop the prompt by the same amount. */
+/** Pin the abbreviated timeline on the New roadmap row. */
 function mountMapTimeline(stages) {
   const host = timelineHost();
   const missions = (stages || []).flatMap((stage) => stage.missions || []);
   const show = missions.length > 0;
-  document.body.classList.toggle("has-map-timeline", show);
+  document.body.classList.remove("has-map-timeline");
   if (host) {
     host.hidden = !show;
     host.innerHTML = show ? renderMissionTimeline(stages) : "";
