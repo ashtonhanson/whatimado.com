@@ -5,12 +5,15 @@ import { normalizeUserProfile } from "./user-profile.js";
 import { normalizeLocationDraft, normalizeUserLocation } from "./location.js";
 import {
   accountStorageKey,
+  accountUserIdFromEmail,
   clearGuestRecord,
   ensureGuestUserId,
   loadAccountSnapshot,
   migrateGuestSnapshot,
   readSession,
   saveAccountSnapshot,
+  startFreshAccountRoadmap,
+  touchActiveRoadmapEntry,
   writeSession
 } from "./guest-account.js";
 
@@ -108,11 +111,55 @@ export function saveGuestJourney() {
     return saveAccountSnapshot({
       ...(existing || {}),
       ...snapshot,
+      ...touchActiveRoadmapEntry(existing, snapshot),
       userId: session.userId,
       importedRoadmaps: existing?.importedRoadmaps || []
     });
   }
   return writeRaw(JSON.stringify(snapshot));
+}
+
+/**
+ * Signed in: shelve the live roadmap on the account and make an empty one active.
+ * @returns {boolean} whether an account roadmap was opened
+ */
+export function openFreshAccountRoadmap() {
+  const session = readSession();
+  if (session?.mode !== "account" || !session.userId) return false;
+  flushPersist();
+  const next = startFreshAccountRoadmap(loadAccountSnapshot(session.userId), session.userId);
+  return saveAccountSnapshot(next);
+}
+
+/**
+ * Open an account already kept on this device. A guest map in progress is
+ * moved onto it the same way account creation does, so nothing is dropped.
+ * @param {string} email
+ * @returns {{ ok: boolean, keptGuest: boolean }}
+ */
+export function signInToAccount(email) {
+  const userId = accountUserIdFromEmail(email);
+  if (!loadAccountSnapshot(userId)) return { ok: false, keptGuest: false };
+  const session = readSession();
+  const guest = session?.mode === "account" ? null : buildGuestSnapshot() || loadGuestSnapshot();
+  if (guest) {
+    migrateGuestToAccount(userId, email);
+  } else {
+    if (session?.mode === "account") flushPersist();
+    writeSession({ mode: "account", userId, email });
+  }
+  if (saveTimer) window.clearTimeout(saveTimer);
+  saveTimer = 0;
+  persistEnabled = false;
+  return { ok: true, keptGuest: Boolean(guest) };
+}
+
+/** Active account roadmap entry, if the account has one. */
+export function activeAccountRoadmap() {
+  const session = readSession();
+  if (session?.mode !== "account" || !session.userId) return null;
+  const account = loadAccountSnapshot(session.userId);
+  return (account?.roadmaps || []).find((entry) => entry?.id === account?.activeRoadmapId) || null;
 }
 
 /**

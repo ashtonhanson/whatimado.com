@@ -15,6 +15,11 @@ export function resetGraph() {
   graphStore.nodes = [];
   graphStore.edges = [];
   graphStore.selectedId = null;
+  graphStore.focusRotation = undefined;
+  graphStore.focusSpin = null;
+  possibilityNodes = null;
+  possibilityEdges = null;
+  branchChosenId = null;
 }
 
 /** Snapshot for guest persistence. */
@@ -150,12 +155,14 @@ export function loadAdvisorPaths(paths, options = {}) {
  * @param {AdvisorPath[]} paths
  */
 export function appendAdvisorPaths(paths) {
-  const existingPaths = graphStore.nodes.filter((node) => node.type === "path");
+  const nodes = possibilityNodes || graphStore.nodes;
+  const edges = possibilityEdges || graphStore.edges;
+  const existingPaths = nodes.filter((node) => node.type === "path");
   const startIndex = existingPaths.length;
   const room = MAX_PATH_NODES - startIndex;
   if (room <= 0) return [];
 
-  const used = new Set(graphStore.nodes.map((node) => node.id));
+  const used = new Set(nodes.map((node) => node.id));
   /** @type {GraphNode[]} */
   const added = [];
 
@@ -166,11 +173,12 @@ export function appendAdvisorPaths(paths) {
     if (used.has(id)) id = sanitizePathId(`${id}-${index + 1}`, index);
     used.add(id);
     node.id = id;
-    graphStore.nodes.push(node);
-    graphStore.edges.push({ from: "start", to: id });
+    nodes.push(node);
+    edges.push({ from: "start", to: id });
     added.push(node);
   });
 
+  if (possibilityNodes && branchChosenId && added.length) showRoadmapBranch(branchChosenId);
   return added;
 }
 
@@ -242,6 +250,8 @@ export function selectGraphNode(id) {
 /** Possibility constellation, kept while a roadmap branch is on screen. */
 let possibilityNodes = null;
 let possibilityEdges = null;
+/** @type {string|null} */
+let branchChosenId = null;
 
 export const ROADMAP_MORE_ID = "roadmap-more";
 
@@ -257,6 +267,7 @@ export function restorePossibilityMap() {
   graphStore.edges = possibilityEdges.map((edge) => ({ ...edge }));
   possibilityNodes = null;
   possibilityEdges = null;
+  branchChosenId = null;
 }
 
 /** When linked, the selected roadmap is the left-to-right spoke and the map can spin to it. */
@@ -298,12 +309,24 @@ const MIN_SIBLING_GAP = 28;
 /** The map pulls nodes back inside roughly this vertical band of the 240-unit view. */
 const NODE_CEIL_Y = 32;
 const NODE_FLOOR_Y = 210;
-/** @type {Record<string, { dx: number, dy: number }>} */
-const LINKED_OPTION_OFFSETS = {
-  "option-settings": { dx: -131, dy: -68 },
-  "option-notes": { dx: -40, dy: -86 },
-  "option-roadmaps": { dx: 110, dy: -78 }
-};
+/** Settings, Notes, and Roadmaps all sit this far from You, evenly spaced on an arc. */
+const OPTION_RADIUS = 96;
+
+/**
+ * @param {Record<string, number>} degrees Angle from You, counterclockwise from pointing right.
+ * @returns {Record<string, { dx: number, dy: number }>}
+ */
+function optionRing(degrees) {
+  return Object.fromEntries(
+    Object.entries(degrees).map(([id, deg]) => {
+      const rad = (deg * Math.PI) / 180;
+      return [id, { dx: Math.cos(rad) * OPTION_RADIUS, dy: -Math.sin(rad) * OPTION_RADIUS }];
+    })
+  );
+}
+
+/** The selected roadmap runs right, so the options arc 45° apart over You. */
+const LINKED_OPTION_OFFSETS = optionRing({ "option-settings": 160, "option-notes": 115, "option-roadmaps": 70 });
 const OPTION_OFFSETS = [
   { dx: -175, dy: -90 },
   { dx: -40, dy: -86 },
@@ -317,16 +340,12 @@ const OPTION_OFFSETS = [
 const YOU_UNLINKED = { x: 400, y: 182 };
 const UNLINKED_CHOSEN = { dx: 0, dy: -100 };
 const UNLINKED_PLUS = { dx: 52, dy: -100 };
-const UNLINKED_COLUMN = { dx: 160, dy: -32 };
-/**
- * Their titles sit to the left and can span them all on a phone, so rows stay a title-height apart.
- * @type {Record<string, { dx: number, dy: number }>}
- */
-const UNLINKED_OPTION_OFFSETS = {
-  "option-settings": { dx: -60, dy: -50 },
-  "option-notes": { dx: -90, dy: -96 },
-  "option-roadmaps": { dx: -200, dy: -4 }
-};
+/** The column's lowest roadmap sits here; earlier roadmaps move up as new ones slot in beneath. */
+const UNLINKED_COLUMN = { dx: 160, dy: 0 };
+/** The column's top stays this far under the selected roadmap so its line clears the plus. */
+const UNLINKED_COLUMN_PLUS_CLEAR = 40;
+/** The selected roadmap holds straight up, so the options fan out 30° apart on the left. */
+const UNLINKED_OPTION_OFFSETS = optionRing({ "option-settings": 135, "option-notes": 165, "option-roadmaps": 195 });
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
 export let mapSpread = 1;
@@ -420,11 +439,12 @@ export function placeUnlinkedBranch(nodes, chosenId) {
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
   const column = satellites.filter((node) => node.type === "path");
   const extras = satellites.filter((node) => !column.includes(node) && !UNLINKED_OPTION_OFFSETS[node.id]);
-  const columnTop = youY + UNLINKED_COLUMN.dy;
+  const columnCeil = UNLINKED_CHOSEN.dy + UNLINKED_COLUMN_PLUS_CLEAR;
   const columnGap =
     column.length > 1
-      ? Math.max(MIN_SIBLING_GAP, Math.min(SIBLING_GAP, (NODE_FLOOR_Y - columnTop) / (column.length - 1)))
+      ? Math.max(MIN_SIBLING_GAP, Math.min(SIBLING_GAP, (UNLINKED_COLUMN.dy - columnCeil) / (column.length - 1)))
       : SIBLING_GAP;
+  const columnTop = Math.max(columnCeil, UNLINKED_COLUMN.dy - columnGap * (column.length - 1));
 
   nodes.forEach((node) => {
     /** @type {{ dx: number, dy: number }} */
@@ -433,7 +453,7 @@ export function placeUnlinkedBranch(nodes, chosenId) {
     else if (node.id === chosenId) slot = UNLINKED_CHOSEN;
     else if (node.type === "more") slot = UNLINKED_PLUS;
     else if (column.includes(node)) {
-      slot = { dx: UNLINKED_COLUMN.dx, dy: UNLINKED_COLUMN.dy + columnGap * column.indexOf(node) };
+      slot = { dx: UNLINKED_COLUMN.dx, dy: columnTop + columnGap * column.indexOf(node) };
     } else if (UNLINKED_OPTION_OFFSETS[node.id]) slot = UNLINKED_OPTION_OFFSETS[node.id];
     else slot = { dx: -110 - 50 * extras.indexOf(node), dy: -100 };
     node.x = (youX + slot.dx) / MAP_W;
@@ -463,6 +483,7 @@ export function showRoadmapBranch(pathId) {
   const paths = source.filter((node) => node.type === "path");
   const chosenSource = paths.find((node) => node.id === pathId) || paths[0];
   if (!chosenSource) return;
+  branchChosenId = chosenSource.id;
 
   /** @type {GraphNode[]} */
   const spokes = [chosenSource];

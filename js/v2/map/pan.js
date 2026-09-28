@@ -187,9 +187,38 @@ export function computeOpenHomeGravityPan(mapEl) {
     return computeMobileOpenHomePan(mapEl);
   }
 
+  const stage = mapEl.querySelector(".whatimado-map__stage");
+  const kicker = document.getElementById("frame-kicker");
+  const brand = kicker?.querySelector(".v2-kicker-brand");
+  if (!stage) return { panX: 0, panY: 0, zoom: 1 };
+  const stageRect = stage.getBoundingClientRect();
+  if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
+
   const gapPx = Math.max(14, measureCssVarLength("--v2-hero-node-gap") || 14);
-  return computeOpenHomeCamera(mapEl, gapPx, 0);
+  const textTop = brand?.getBoundingClientRect().top ?? kicker?.getBoundingClientRect().top ?? stageRect.bottom;
+  const top = menuClearScreenY(stageRect) + OPEN_HOME_LABEL_ABOVE_PX;
+  const bottom = textTop - gapPx - OPEN_HOME_LABEL_BELOW_PX;
+
+  const dots = getNodeBounds(mapEl);
+  const shiftY = readGraphShiftY();
+  const { scaleY } = unitsPerPixel(mapEl, stageRect);
+  const availablePx = Math.max(24, bottom - top);
+  const naturalPx = Math.max(1, dots.maxY - dots.minY) / scaleY;
+  const zoom = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(1.15, availablePx / naturalPx));
+  const graphTop = top + Math.max(0, availablePx - naturalPx * zoom) / 2;
+  const yPrime = (graphTop - stageRect.top) * scaleY;
+  return {
+    panX: VIEW_W / 2 - SCALE_CENTER_X - zoom * (dots.cx - SCALE_CENTER_X),
+    panY: yPrime - shiftY - SCALE_CENTER_Y - zoom * (dots.minY - SCALE_CENTER_Y),
+    zoom
+  };
 }
+
+/** Titles stay near 13px at any zoom, so the landing fit reserves pixels for the top title and the one under You. */
+const OPEN_HOME_LABEL_ABOVE_PX = 18;
+const OPEN_HOME_LABEL_BELOW_PX = 26;
+/** Laptop bands are shorter than the constellation; shrink it rather than push titles past the top edge. */
+const OPEN_HOME_ZOOM_MIN = 0.6;
 
 /** A short band at home can shrink the roadmap below pinch-zoom's floor rather than tuck it under the prompt. */
 const FIT_ZOOM_MIN = 0.5;

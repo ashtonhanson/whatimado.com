@@ -46,6 +46,29 @@ import {
   isOpenHomePhase
 } from "../../map/pan.js";
 
+/** How long nodes take to ease into a new layout, such as a roadmap slotting into the stack. */
+const LAYOUT_GLIDE_MS = 560;
+/** Reduced motion keeps the slot-in legible but short. */
+const LAYOUT_GLIDE_REDUCED_MS = 280;
+
+/** Tether dot and gap lengths; must match the edge stroke-dasharray in map-canvas.css. */
+const EDGE_DASH_ON = 1.35;
+const EDGE_DASH_OFF = 5.75;
+/** Tethers end this far inside the dot so no hairline shows between line and node. */
+const EDGE_TUCK = 0.6;
+
+/**
+ * Stretch the dot spacing so a tether of this length starts and ends on a dot.
+ * @param {number} length
+ */
+function dashesEndingOnDots(length) {
+  const period = EDGE_DASH_ON + EDGE_DASH_OFF;
+  if (length < period) return "";
+  const count = Math.max(1, Math.round((length - EDGE_DASH_ON) / period));
+  const stretch = length / (count * period + EDGE_DASH_ON);
+  return `${(EDGE_DASH_ON * stretch).toFixed(3)} ${(EDGE_DASH_OFF * stretch).toFixed(3)}`;
+}
+
 /** @param {import("../../graph-store.js").GraphNode} node */
 function nodeMapTitle(node) {
   if (!node || node.type === "more") return "";
@@ -94,6 +117,11 @@ function placeTitleBesideNode(items) {
     }
     item.top = item.ny - item.h / 2;
   };
+  const placeBelow = (item) => {
+    item.side = "below";
+    item.left = item.nx - item.w / 2;
+    item.top = item.ny + item.nr + 8;
+  };
   if (you) placeAbove(you);
   const others = items.filter((item) => item !== you);
   const spine = you
@@ -103,7 +131,17 @@ function placeTitleBesideNode(items) {
     Math.abs(item.nx - you.nx) < you.w / 2 + item.nr + 6 &&
     item.ny + item.nr + 6 > you.top &&
     item.ny - item.nr - 6 < you.top + you.h;
-  if (you && others.some(dotOverYouTitle)) placeSide(you, spine.length ? -1 : 1);
+  /** Every spoke is tethered to You, so a line to a node overhead can run through the title. */
+  const tetherThroughYouTitle = (item) => {
+    const midY = you.top + you.h / 2;
+    if (item.ny >= midY) return false;
+    const x = you.nx + ((item.nx - you.nx) * (you.ny - midY)) / (you.ny - item.ny);
+    return x > you.left - 4 && x < you.left + you.w + 4;
+  };
+  if (you && (others.some(dotOverYouTitle) || others.some(tetherThroughYouTitle))) {
+    placeBelow(you);
+    if (others.some(dotOverYouTitle)) placeSide(you, spine.length ? -1 : 1);
+  }
   const rightmost = spine.reduce((best, item) => (!best || item.nx > best.nx ? item : best), null);
   const top = others
     .filter((item) => item.kind !== "path" && !spine.includes(item))
@@ -584,7 +622,73 @@ export class WhatimadoMap extends HTMLElement {
       this._animateLinkedSpin(nodes, edges, prev, spin);
       return;
     }
+    const carried = this._layoutGlideOffsets(performance.now());
     this._renderLayer(this._liveLayer, nodes, edges, { layer: "live" });
+    this._glideFromPrevious(prev, carried);
+  }
+
+  /**
+   * Ease nodes from where they were drawn into their new slots. A roadmap that
+   * was not on the map yet comes out from under the roadmap above it.
+   * @param {{ id: string, x: number, y: number }[]} prev
+   * @param {Map<string, { x: number, y: number }>} carried Offsets still left from a glide in progress
+   */
+  _glideFromPrevious(prev, carried) {
+    this._layoutGlide = null;
+    this.querySelectorAll(".whatimado-map__node--live.is-entering").forEach((el) => el.classList.remove("is-entering"));
+    if (!prev.length) return;
+    const before = new Map(prev.map((node) => [node.id, node]));
+    if (!this._liveNodes.some((node) => before.has(node.id) && node.type !== "start")) return;
+
+    /** @type {Map<string, { x: number, y: number }>} */
+    const from = new Map();
+    /** @type {string[]} */
+    const entering = [];
+    let pathAbove = null;
+    for (const node of this._liveNodes) {
+      let start = before.get(node.id);
+      let startId = node.id;
+      if (!start && node.type === "path" && pathAbove) {
+        start = before.get(pathAbove);
+        startId = pathAbove;
+        entering.push(node.id);
+      }
+      if (node.type === "path" && before.has(node.id)) pathAbove = node.id;
+      if (!start) continue;
+      const carry = carried.get(startId);
+      const dx = (start.x - node.x) * VIEW_W + (carry?.x || 0);
+      const dy = (start.y - node.y) * VIEW_H + (carry?.y || 0);
+      if (Math.hypot(dx, dy) < 0.5) continue;
+      from.set(node.id, { x: dx, y: dy });
+    }
+    if (!from.size) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this._layoutGlide = { from, startMs: performance.now(), durationMs: reduce ? LAYOUT_GLIDE_REDUCED_MS : LAYOUT_GLIDE_MS };
+    entering.forEach((id) => {
+      this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`)?.classList.add("is-entering");
+    });
+  }
+
+  /**
+   * What is left of the layout glide at this moment, per node, in SVG units.
+   * @param {number} now
+   * @returns {Map<string, { x: number, y: number }>}
+   */
+  _layoutGlideOffsets(now) {
+    /** @type {Map<string, { x: number, y: number }>} */
+    const out = new Map();
+    const glide = this._layoutGlide;
+    if (!glide) return out;
+    const t = Math.max(0, (now - glide.startMs) / glide.durationMs);
+    if (t >= 1) {
+      this._layoutGlide = null;
+      this.querySelectorAll(".whatimado-map__node--live.is-entering").forEach((el) => el.classList.remove("is-entering"));
+      this._layoutCallouts();
+      return out;
+    }
+    const left = (1 - t) ** 3;
+    glide.from.forEach((offset, id) => out.set(id, { x: offset.x * left, y: offset.y * left }));
+    return out;
   }
 
   /** Sync live layer from graph-store */
@@ -983,6 +1087,7 @@ export class WhatimadoMap extends HTMLElement {
     const selectedId = this._selectedId || graphStore.selectedId;
     const selected = this._liveNodes.find((node) => node.type === "path" && node.id === selectedId);
     const options = { centerNodeId: roadmapFocusLinked ? null : selected?.id, reserve: null };
+    const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
     this._userPanned = false;
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
@@ -992,7 +1097,36 @@ export class WhatimadoMap extends HTMLElement {
       if (!reserve) break;
       options.reserve = reserve;
     }
+    if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
     return true;
+  }
+
+  /**
+   * Travel from an earlier framing to the one just applied, so the camera
+   * follows nodes that are gliding into a new layout instead of jumping.
+   * @param {{ zoom: number, panX: number, panY: number }} from
+   * @param {number} durationMs
+   */
+  _easeCameraFrom(from, durationMs) {
+    const to = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    if (Math.abs(to.zoom - from.zoom) < 0.005 && Math.hypot(to.panX - from.panX, to.panY - from.panY) < 1) return;
+    this._stopPanGlide();
+    if (this._gravityRaf !== null) cancelAnimationFrame(this._gravityRaf);
+    const started = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, Math.max(0, (now - started) / durationMs));
+      const eased = 1 - (1 - t) ** 3;
+      this._zoom = from.zoom + (to.zoom - from.zoom) * eased;
+      this._panX = from.panX + (to.panX - from.panX) * eased;
+      this._panY = from.panY + (to.panY - from.panY) * eased;
+      this._applyPanTransform();
+      this._gravityRaf = t < 1 ? requestAnimationFrame(tick) : null;
+    };
+    this._zoom = from.zoom;
+    this._panX = from.panX;
+    this._panY = from.panY;
+    this._applyPanTransform();
+    this._gravityRaf = requestAnimationFrame(tick);
   }
 
   /**
@@ -1525,6 +1659,21 @@ export class WhatimadoMap extends HTMLElement {
     return clientToSvg(this, clientX, clientY);
   }
 
+  /**
+   * Pointer position in live-layer units, so a dragged node tracks the cursor at any camera zoom.
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _clientToLayer(clientX, clientY) {
+    const ctm = this._liveLayer?.getScreenCTM();
+    if (!ctm || !this._svg) return this._clientToSvg(clientX, clientY);
+    const pt = this._svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const local = pt.matrixTransform(ctm.inverse());
+    return { x: local.x, y: local.y };
+  }
+
   _applyMode() {
     const mode = this.getAttribute("mode") || "hidden";
     this.dataset.mode = mode;
@@ -1731,6 +1880,17 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node */
   _syncNodePosition(node) {
+    const shiftX = node.baseX - parseFloat(node.circleEl.getAttribute("cx") || String(node.baseX));
+    const shiftY = node.baseY - parseFloat(node.circleEl.getAttribute("cy") || String(node.baseY));
+    if (shiftX || shiftY) {
+      /* Laid-out titles use absolute tspan coordinates, so carry them with the node. */
+      node.groupEl.querySelectorAll(".whatimado-map__label tspan").forEach((el) => {
+        const x = parseFloat(el.getAttribute("x") || "");
+        const y = parseFloat(el.getAttribute("y") || "");
+        if (Number.isFinite(x)) el.setAttribute("x", (x + shiftX).toFixed(2));
+        if (Number.isFinite(y)) el.setAttribute("y", (y + shiftY).toFixed(2));
+      });
+    }
     node.circleEl.setAttribute("cx", String(node.baseX));
     node.circleEl.setAttribute("cy", String(node.baseY));
     if (node.hitEl) {
@@ -1754,8 +1914,9 @@ export class WhatimadoMap extends HTMLElement {
    * @param {number} ox
    * @param {number} oy
    * @param {number} fallbackR
+   * @param {number} scale Layer units per screen pixel, camera zoom included
    */
-  _visualCenterForEdge(node, ox, oy, fallbackR) {
+  _visualCenterForEdge(node, ox, oy, fallbackR, scale) {
     const x = node.baseX + ox;
     const y = node.baseY + oy;
     const body = node.circleEl;
@@ -1766,7 +1927,6 @@ export class WhatimadoMap extends HTMLElement {
     const hitRect = hit.getBoundingClientRect();
     if (bodyRect.width <= 0 || hitRect.width <= 0) return { x, y, r: fallbackR };
 
-    const scale = svgScale(this._svg);
     return {
       x: x + ((bodyRect.left + bodyRect.right) / 2 - (hitRect.left + hitRect.right) / 2) * scale,
       y: y + ((bodyRect.top + bodyRect.bottom) / 2 - (hitRect.top + hitRect.bottom) / 2) * scale,
@@ -1781,6 +1941,9 @@ export class WhatimadoMap extends HTMLElement {
     const { lg: trimRadius } = getNodeRadii();
     /** @type {Map<string, { x: number, y: number, r: number }>} */
     const centers = new Map();
+    const glide = this._layoutGlideOffsets(performance.now());
+    /** @type {Array<[string, typeof this._driftNodes extends Map<string, infer N> ? N : never, number, number]>} */
+    const placed = [];
 
     for (const [id, node] of this._driftNodes) {
       const isDragging = this._pointer?.nodeId === id;
@@ -1820,8 +1983,20 @@ export class WhatimadoMap extends HTMLElement {
         this._syncGraphNode(id);
       }
 
+      const settle = glide.get(id);
+      if (settle) {
+        ox += settle.x;
+        oy += settle.y;
+      }
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
-      centers.set(id, this._visualCenterForEdge(node, ox, oy, trimRadius));
+      placed.push([id, node, ox, oy]);
+    }
+
+    /* Every transform is written before any dot is measured, so the frame lays out once. */
+    const layerCtm = this._liveLayer?.getScreenCTM();
+    const scale = layerCtm ? 1 / (Math.hypot(layerCtm.a, layerCtm.b) || 1) : svgScale(this._svg);
+    for (const [id, node, ox, oy] of placed) {
+      centers.set(id, this._visualCenterForEdge(node, ox, oy, trimRadius, scale));
     }
 
     for (const edge of this._driftEdges) {
@@ -1829,11 +2004,12 @@ export class WhatimadoMap extends HTMLElement {
       const b = centers.get(edge.toId);
       if (!a || !b) continue;
 
-      const trimmed = trimLineToNodeEdges(a.x, a.y, a.r, b.x, b.y, b.r);
+      const trimmed = trimLineToNodeEdges(a.x, a.y, a.r - EDGE_TUCK, b.x, b.y, b.r - EDGE_TUCK);
       edge.lineEl.setAttribute("x1", String(trimmed.x1));
       edge.lineEl.setAttribute("y1", String(trimmed.y1));
       edge.lineEl.setAttribute("x2", String(trimmed.x2));
       edge.lineEl.setAttribute("y2", String(trimmed.y2));
+      edge.lineEl.style.strokeDasharray = dashesEndingOnDots(Math.hypot(trimmed.x2 - trimmed.x1, trimmed.y2 - trimmed.y1));
     }
 
     this._driftFrame = requestAnimationFrame((t) => this._tickDrift(t));
@@ -1876,7 +2052,7 @@ export class WhatimadoMap extends HTMLElement {
 
     this._commitDriftToBase(nodeId);
 
-    const pt = this._clientToSvg(event.clientX, event.clientY);
+    const pt = this._clientToLayer(event.clientX, event.clientY);
 
     driftNode.dragX = 0;
     driftNode.dragY = 0;
@@ -1911,7 +2087,7 @@ export class WhatimadoMap extends HTMLElement {
     const driftNode = this._driftNodes.get(this._pointer.nodeId);
     if (!driftNode) return;
 
-    const pt = this._clientToSvg(event.clientX, event.clientY);
+    const pt = this._clientToLayer(event.clientX, event.clientY);
     const dx = pt.x - this._pointer.startSvgX;
     const dy = pt.y - this._pointer.startSvgY;
 

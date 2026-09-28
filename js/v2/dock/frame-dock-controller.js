@@ -473,7 +473,9 @@ export class FrameDockController {
     this.frameEl.style.removeProperty("top");
     document.body.classList.remove("is-hero-dismissing");
 
-    this._topPx = (this.mainEl.clientHeight * openVh) / 100;
+    /* Desktop landing may sit below openVh (frame.css keeps room for the map), so read where it rendered. */
+    const measuredTop = this.frameEl.getBoundingClientRect().top - this.mainEl.getBoundingClientRect().top;
+    this._topPx = Number.isFinite(measuredTop) && measuredTop > 0 ? measuredTop : (this.mainEl.clientHeight * openVh) / 100;
     this._setMapDim(0);
   }
 

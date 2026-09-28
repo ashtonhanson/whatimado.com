@@ -7,7 +7,7 @@ import {
   readSession,
   writeSession
 } from "../state/guest-account.js";
-import { migrateGuestToAccount } from "../state/persistence.js";
+import { migrateGuestToAccount, signInToAccount } from "../state/persistence.js";
 
 const ACK_KEY = "whatimado_v2_guest_ack";
 
@@ -57,6 +57,59 @@ export function initAccountSheet() {
 
   opener.addEventListener("click", () => {
     if (typeof dialog.showModal === "function") dialog.showModal();
+  });
+
+  const signinForm = document.getElementById("account-signin-form");
+  const signinOpen = document.getElementById("account-signin-open");
+  const signinStatus = document.getElementById("account-signin-status");
+
+  /** @param {boolean} on */
+  const showSignIn = (on) => {
+    if (!signinForm || !createForm) return;
+    signinForm.hidden = !on;
+    createForm.hidden = on;
+    signinOpen?.setAttribute("aria-expanded", on ? "true" : "false");
+    if (signinStatus) signinStatus.textContent = "";
+    if (on) document.getElementById("account-signin-email")?.focus();
+  };
+
+  signinOpen?.addEventListener("click", () => showSignIn(signinForm?.hidden ?? false));
+  document.getElementById("account-signin-back")?.addEventListener("click", () => {
+    showSignIn(false);
+    document.getElementById("account-email")?.focus();
+  });
+  dialog.addEventListener("close", () => showSignIn(false));
+
+  signinForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const email = String(document.getElementById("account-signin-email")?.value || "").trim();
+    const password = String(document.getElementById("account-signin-password")?.value || "");
+    if (!isPlausibleEmail(email)) {
+      if (signinStatus) signinStatus.textContent = "Enter the email you signed up with.";
+      return;
+    }
+    if (!password) {
+      if (signinStatus) signinStatus.textContent = "Enter your password.";
+      return;
+    }
+    const result = signInToAccount(email);
+    if (!result.ok) {
+      if (signinStatus) signinStatus.textContent = "No account with that email on this device yet. Create one instead.";
+      return;
+    }
+    try {
+      window.localStorage.setItem(ACK_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    if (signinStatus) {
+      signinStatus.textContent = result.keptGuest
+        ? "Signed in. Your guest roadmap moved onto the account. Opening it…"
+        : "Signed in. Opening your roadmap…";
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.delete("demo");
+    window.location.assign(`${url.pathname}${url.hash}`);
   });
 
   guestForm?.addEventListener("submit", () => {

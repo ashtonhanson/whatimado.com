@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="/css/v2/shell.css?v=20260921-columns" />
   <link rel="stylesheet" href="/css/v2/sidebar.css" />
   <link rel="stylesheet" href="/css/v2/resources.css?v=20260923-line" />
-  <link rel="stylesheet" href="/css/v2/map-canvas.css?v=20260928-unlinked" />
-  <link rel="stylesheet" href="/css/v2/frame.css?v=20260928-scroll" />
+  <link rel="stylesheet" href="/css/v2/map-canvas.css?v=20260928-tethers" />
+  <link rel="stylesheet" href="/css/v2/frame.css?v=20260928-tethers" />
   <link rel="stylesheet" href="/css/v2/chat.css?v=20260921-pathdetails" />
   <link rel="stylesheet" href="/css/v2/drafts.css?v=20260921-drafts2" />
   <link rel="stylesheet" href="/css/v2/neon-frames.css" />
@@ -173,7 +173,19 @@
     <form method="dialog" id="account-guest-form">
       <h2 id="account-sheet-title">Continue as guest</h2>
       <p>Your roadmap stays in this browser, including the nodes, missions, and notes. You can create an account later without losing them.</p>
-      <button type="submit" class="v2-account__guest" id="account-continue-guest">Continue as guest</button>
+      <div class="v2-account__row">
+        <button type="submit" class="v2-account__guest" id="account-continue-guest">Continue as guest</button>
+        <button type="button" class="v2-account__link" id="account-signin-open" aria-controls="account-signin-form" aria-expanded="false">I already have an account</button>
+      </div>
+    </form>
+    <form id="account-signin-form" hidden>
+      <h2>Sign in</h2>
+      <p>Open the account you already made on this device. A guest roadmap in progress moves onto it, so nothing is lost.</p>
+      <label>Email <input type="email" id="account-signin-email" name="email" autocomplete="username" required /></label>
+      <label>Password <input type="password" id="account-signin-password" name="password" autocomplete="current-password" required /></label>
+      <button type="submit" class="v2-account__create">Sign in</button>
+      <button type="button" class="v2-account__link" id="account-signin-back">New here? Create an account</button>
+      <p id="account-signin-status" role="status"></p>
     </form>
     <form id="account-create-form">
       <h2>Create an account</h2>
@@ -188,6 +200,6 @@
     <form method="dialog"><button type="submit" class="v2-account__close">Close</button></form>
   </dialog>
 
-  <script type="module" src="/js/v2/app.js?v=20260928-unlinked"></script>
+  <script type="module" src="/js/v2/app.js?v=20260928-tethers"></script>
 </body>
 </html>

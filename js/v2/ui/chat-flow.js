@@ -8,9 +8,11 @@ import { appStore, resetAppStore, touchJourney } from "../state/store.js";
 import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
 import { formatUserLocation } from "../state/location.js";
 import {
+  activeAccountRoadmap,
   bindPersistLifecycle,
   clearGuestJourney,
   flushPersist,
+  openFreshAccountRoadmap,
   restoreGuestJourney,
   schedulePersist,
   setPersistEnabled
@@ -432,6 +434,7 @@ export function initChatFlow(ctx) {
   }
 
   function startNewJourney() {
+    openFreshAccountRoadmap();
     setPersistEnabled(true);
     clearGuestJourney();
     resetAppStore();
@@ -749,6 +752,10 @@ export function initChatFlow(ctx) {
   const restored = !isDemo && restoreGuestJourney() && restoreSessionUi();
   if (!restored) {
     applyPhaseToDom(document, PHASE.OPEN, { ghostDismissed: false });
+    const fresh = isDemo ? null : activeAccountRoadmap();
+    if (fresh && activePathEl) {
+      activePathEl.innerHTML = `<strong>${escapeHtml(fresh.title)}</strong>Start a conversation below.`;
+    }
   }
 
   const MOBILE_LAYOUT_MQ = window.matchMedia("(max-width: 900px)");

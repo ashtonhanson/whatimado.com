@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { migrateGuestSnapshot } from "./guest-account.js";
+import { migrateGuestSnapshot, startFreshAccountRoadmap, touchActiveRoadmapEntry } from "./guest-account.js";
 import { applyStructuredMissionUpdate, parseDifficultyUpdate } from "../roadmap/difficulty.js";
 
 function guestSnapshot() {
@@ -67,6 +67,53 @@ test("an account that already has a roadmap keeps it and stores the guest map se
   assert.equal(imported.journey.missionsStages[0].missions[0].done, true);
   assert.equal(imported.journey.missionDrafts[0].body, "keep this note");
   assert.deepEqual(imported.graph.edges, guest.graph.edges);
+});
+
+test("a new roadmap shelves the live one as its own entry and starts empty", () => {
+  const live = migrateGuestSnapshot(guestSnapshot(), null, "user_ada").accountSnapshot;
+  const now = new Date("2026-09-28T15:00:00Z");
+  const next = startFreshAccountRoadmap(live, "user_ada", now, "roadmap_new");
+  assert.equal(next.activeRoadmapId, "roadmap_new");
+  assert.equal(next.journey, null);
+  assert.deepEqual(next.graph, { nodes: [], edges: [], selectedId: null });
+  assert.equal(next.profile, null);
+  assert.equal(next.location, null);
+  assert.equal(next.roadmaps.length, 2);
+  const shelved = next.roadmaps.find((entry) => entry.id === "journey-1");
+  assert.equal(shelved.title, "Local design");
+  assert.deepEqual(shelved.snapshot.graph.edges, [{ from: "start", to: "path-local" }]);
+  assert.equal(shelved.snapshot.journey.missionDrafts[0].body, "keep this note");
+  assert.deepEqual(next.roadmaps.find((entry) => entry.id === "roadmap_new"), {
+    id: "roadmap_new",
+    title: "New roadmap",
+    createdAt: now.getTime(),
+    savedAt: now.getTime(),
+    snapshot: null
+  });
+});
+
+test("pressing New roadmap twice does not stack empty roadmaps", () => {
+  const once = startFreshAccountRoadmap(null, "user_ada", new Date(), "roadmap_a");
+  const twice = startFreshAccountRoadmap(once, "user_ada", new Date(), "roadmap_b");
+  assert.deepEqual(twice.roadmaps.map((entry) => entry.id), ["roadmap_b"]);
+});
+
+test("saving the live map titles the active entry without copying it", () => {
+  const fresh = startFreshAccountRoadmap(null, "user_ada", new Date(), "roadmap_a");
+  const live = { ...guestSnapshot(), savedAt: 5 };
+  const touched = touchActiveRoadmapEntry(fresh, live);
+  assert.equal(touched.activeRoadmapId, "roadmap_a");
+  assert.equal(touched.roadmaps[0].title, "Local design");
+  assert.equal(touched.roadmaps[0].snapshot, null);
+});
+
+test("a guest map signing into an account with an empty active roadmap becomes that roadmap", () => {
+  const fresh = startFreshAccountRoadmap(null, "user_ada", new Date(), "roadmap_a");
+  const result = migrateGuestSnapshot(guestSnapshot(), fresh, "user_ada");
+  assert.equal(result.replacedLive, true);
+  assert.equal(result.accountSnapshot.journey.id, "journey-1");
+  assert.equal(result.accountSnapshot.activeRoadmapId, "roadmap_a");
+  assert.equal(result.accountSnapshot.roadmaps.length, 1);
 });
 
 test("editing a guest mission is still there after the move", () => {
