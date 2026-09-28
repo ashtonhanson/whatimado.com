@@ -622,8 +622,52 @@ export function initChatFlow(ctx) {
       mapEl?.setSelectedNode?.(id);
     }
   });
+  function offerTimelineContinuation() {
+    const thread = continuationThread(messagesEl);
+    if (!thread) return;
+    const titles = (appStore.journey.missionsStages || [])
+      .flatMap((stage) => stage.missions || [])
+      .map((mission) => String(mission.title || "").trim())
+      .filter(Boolean);
+    const spoken = titles.length
+      ? `Continuation missions:\n${titles.map((title) => `• ${title}`).join("\n")}`
+      : "Continuation missions will show here as you add them.";
+    appendMessage(thread, "advisor", spoken, { skipScroll: true });
+    appStore.journey.messages.push({ role: "advisor", content: spoken });
+    touchJourney();
+    flushPersist();
+
+    const offer = document.createElement("div");
+    offer.className = "v2-timeline-continue v2-text-box v2-text-box--response";
+    offer.innerHTML =
+      `<p>What do you want to do next?</p>` +
+      `<button type="button" data-continue="finish">Finish current missions</button>` +
+      `<button type="button" data-continue="roadmap">Open another roadmap</button>` +
+      `<button type="button" data-continue="save">Save for later</button>`;
+    thread.appendChild(offer);
+    offer.querySelector("[data-continue=finish]")?.addEventListener("click", () => {
+      scrollFrameChildIntoView(document.getElementById("missions"));
+    });
+    offer.querySelector("[data-continue=roadmap]")?.addEventListener("click", () => {
+      const cards = document.getElementById("possibilities");
+      if (cards) cards.classList.remove("hidden");
+      scrollFrameChildIntoView(cards);
+    });
+    offer.querySelector("[data-continue=save]")?.addEventListener("click", () => {
+      const id = appStore.journey.roadmapPathId || appStore.journey.selectedPathId;
+      if (id && !(appStore.journey.savedPathIds || []).includes(id)) {
+        toggleSavedPath(appStore.journey, id);
+        touchJourney();
+        flushPersist();
+      }
+      appendMessage(thread, "advisor", "Saved this roadmap for later. It stays on this device.");
+    });
+    layout();
+    scrollFrameChildIntoView(offer, { toEnd: true });
+  }
+
   timelineEl?.addEventListener("mission-add", () => {
-    missions.extend();
+    offerTimelineContinuation();
   });
   missionRoot?.addEventListener("mission-difficulty", (event) => {
     const id = event.detail?.id;

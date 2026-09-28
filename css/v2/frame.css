@@ -900,11 +900,12 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   align-items: center;
   min-width: 0;
   max-width: 100%;
+  height: 2.15rem;
   margin: 0;
-  padding: 0.28rem 0.4rem 0.28rem 0.65rem;
+  padding: 0 0.35rem 0 0.7rem;
   pointer-events: auto;
   border: 1px solid rgba(245, 213, 71, 0.55);
-  border-radius: 999px;
+  border-radius: var(--v2-prompt-radius);
   background: rgba(6, 10, 12, 0.72);
   box-sizing: border-box;
 }
@@ -940,7 +941,27 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   min-width: 0;
   flex: 1 1 auto;
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   scrollbar-width: none;
+}
+
+.v2-timeline__cutoff {
+  position: absolute;
+  left: -0.3rem;
+  top: 50%;
+  z-index: 2;
+  width: 0.58rem;
+  height: 0.58rem;
+  margin: 0;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  border: 1.5px solid #8d95a5;
+  background: #10211f;
+  box-shadow: 0 0 0 3px rgba(6, 10, 12, 0.85);
+  pointer-events: none;
 }
 
 .v2-timeline__link {
@@ -1025,14 +1046,18 @@ body.v2-app .v2-timeline__stop.is-planned {
 
 body.v2-app .v2-timeline__add {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 1.45rem;
   height: 1.45rem;
-  margin: 0;
-  padding: 0;
+  margin: 0 0 0 auto;
+  padding: 0 0 0.12em;
   border-radius: 50%;
   border: 1px solid rgba(215, 255, 246, 0.45);
   background: rgba(6, 10, 12, 0.9);
   color: var(--v2-text, #e8fff8);
+  font-size: 1.15rem;
   line-height: 1;
   overflow: visible;
 }
@@ -1053,22 +1078,29 @@ body.v2-app .v2-timeline__add {
   font-size: 0.82rem;
 }
 
-.v2-difficulty-offer {
+.v2-difficulty-offer,
+.v2-timeline-continue {
   margin: 0.6rem 0 0.9rem;
   padding: 0.75rem 0.85rem;
 }
 
-.v2-difficulty-offer p {
+.v2-difficulty-offer p,
+.v2-timeline-continue p {
   margin: 0 0 0.55rem;
 }
 
-.v2-difficulty-offer button {
-  margin-right: 0.45rem;
+.v2-difficulty-offer button,
+.v2-timeline-continue button {
+  margin: 0 0.45rem 0.45rem 0;
   border-radius: 999px;
   border: 1px solid rgba(215, 255, 246, 0.35);
   background: transparent;
   color: inherit;
   padding: 0.35rem 0.7rem;
+}
+
+body.v2-app .v2-timeline-continue button {
+  border-radius: 999px;
 }
 
 .v2-account {

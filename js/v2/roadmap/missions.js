@@ -160,8 +160,8 @@ function renderMissionTimeline(stages) {
   return `
     <div class="v2-timeline">
       <span class="v2-timeline__label">Timeline</span>
-      <div class="v2-timeline__rail">${steps}<span class="v2-timeline__link" aria-hidden="true"></span></div>
-      <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Add a mission here">+</button>
+      <div class="v2-timeline__rail"><span class="v2-timeline__cutoff" aria-hidden="true"></span>${steps}<span class="v2-timeline__link" aria-hidden="true"></span></div>
+      <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Continue this roadmap">+</button>
     </div>`;
 }
 
