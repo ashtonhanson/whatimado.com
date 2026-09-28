@@ -148,7 +148,7 @@ function placeTitleBesideNode(items) {
     .reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
   others.forEach((item) => {
     if (item.kind === "path") {
-      placeSide(item, 1);
+      placeSide(item, you && item.nx < you.nx - item.nr ? -1 : 1);
       return;
     }
     if (spine.includes(item)) {

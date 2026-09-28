@@ -13,6 +13,7 @@ import {
 import { PATH_MODE } from "../intake/path-mode.js";
 import { buildIntakeContextBlock } from "../intake/stability-gates.js";
 import { formatUserLocation } from "../state/location.js";
+import { trackEvent } from "../state/analytics.js";
 import {
   buildAlterSystemPrompt,
   buildDiscussSystemPrompt,
@@ -187,6 +188,7 @@ export function createPathMapController(ui) {
       appStore.journey.mapChatPathId = null;
       touchJourney();
       flush();
+      trackEvent("map_generated", { paths: ideas.length });
       scrollFrameChildIntoView(possibilitiesEl());
     } catch (error) {
       typingEl?.remove();
@@ -194,6 +196,7 @@ export function createPathMapController(ui) {
       appStore.journey.pathsGenerated = true;
       touchJourney();
       flush();
+      trackEvent("map_generated", { fallback: true });
       if (!silentFail) {
         pushAdvisor("I couldn't map custom paths just now — here are starter directions you can explore.", {
           skipScroll: true,

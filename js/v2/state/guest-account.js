@@ -12,9 +12,9 @@
  *   The guest map is appended as its own imported roadmap, titled with
  *   today's date. The guest key is still deleted.
  *
- * The password from the create-account form is never written. This device
- * keeps the structured snapshot; it does not become a second copy of the
- * main site's Supabase sign-in.
+ * Accounts are Supabase users; the account snapshot is keyed by the Supabase
+ * user id and mirrored to public.user_roadmaps (see cloud-roadmaps.js).
+ * Passwords only ever go to Supabase Auth.
  */
 
 const GUEST_ID_KEY = "whatimado_v2_guest_user_id";
@@ -113,8 +113,35 @@ export function saveAccountSnapshot(snapshot, storage = browserStorage()) {
   return true;
 }
 
+/**
+ * Accounts made before Supabase sign-in were keyed by a hash of the email.
+ * The first Supabase sign-in with that email moves the snapshot onto the
+ * Supabase user id, unless that id already has one.
+ * @param {string} email
+ * @param {string} userId
+ * @param {Storage | null} [storage]
+ */
+export function adoptLegacyAccount(email, userId, storage = browserStorage()) {
+  if (!storage || !userId) return false;
+  const legacyId = accountUserIdFromEmail(email);
+  if (legacyId === userId || loadAccountSnapshot(userId, storage)) return false;
+  const legacy = loadAccountSnapshot(legacyId, storage);
+  if (!legacy) return false;
+  saveAccountSnapshot({ ...legacy, userId, sessionOwner: userId }, storage);
+  storage.removeItem(accountStorageKey(legacyId));
+  return true;
+}
+
+/**
+ * @param {string} userId
+ * @param {Storage | null} [storage]
+ */
+export function removeAccountSnapshot(userId, storage = browserStorage()) {
+  if (storage && userId) storage.removeItem(accountStorageKey(userId));
+}
+
 /** @param {object | null | undefined} snapshot */
-function roadmapName(snapshot) {
+export function roadmapName(snapshot) {
   const nodes = snapshot?.graph?.nodes || [];
   const pathId = snapshot?.journey?.roadmapPathId || snapshot?.journey?.selectedPathId;
   const selected = nodes.find((node) => node.id === pathId);

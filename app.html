@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual" />
-  <meta name="whatimado-build" content="v2-drafts-2026-09-21" />
+  <meta name="whatimado-build" content="v2-auth-2026-09-28" />
   <title>whatimado — v2</title>
   <link rel="icon" href="/favicon.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,10 +16,11 @@
   <link rel="stylesheet" href="/css/v2/sidebar.css" />
   <link rel="stylesheet" href="/css/v2/resources.css?v=20260923-line" />
   <link rel="stylesheet" href="/css/v2/map-canvas.css?v=20260928-tethers" />
-  <link rel="stylesheet" href="/css/v2/frame.css?v=20260928-tethers" />
+  <link rel="stylesheet" href="/css/v2/frame.css?v=20260928-auth" />
   <link rel="stylesheet" href="/css/v2/chat.css?v=20260921-pathdetails" />
   <link rel="stylesheet" href="/css/v2/drafts.css?v=20260921-drafts2" />
   <link rel="stylesheet" href="/css/v2/neon-frames.css" />
+  <link rel="stylesheet" href="/css/v2/pages.css?v=20260928-auth" />
   <link rel="stylesheet" href="/css/v2/mobile.css?v=20260928-timeline-mobile" />
 </head>
 <body class="v2-app" data-phase="open">
@@ -85,15 +86,15 @@
                 <span class="v2-rail-tip v2-text-box v2-text-box--response" role="tooltip">My Notes</span>
               </button>
             </li>
-            <li>
-              <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
+            <li id="nav-analytics-item" hidden>
+              <button type="button" class="v2-nav-btn" id="nav-analytics" aria-controls="page-analytics">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M12 20V4M20 20v-6"></path></svg>
                 <span class="v2-nav-label"><span>Analytics</span></span>
                 <span class="v2-rail-tip v2-text-box v2-text-box--response" role="tooltip">Analytics</span>
               </button>
             </li>
             <li>
-              <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
+              <button type="button" class="v2-nav-btn" id="nav-settings" aria-controls="page-settings">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
                 <span class="v2-nav-label"><span>Settings</span></span>
                 <span class="v2-rail-tip v2-text-box v2-text-box--response" role="tooltip">Settings</span>
@@ -109,7 +110,7 @@
         </div>
 
         <div class="v2-rail-foot">
-          <p class="v2-sync-note">Continue as a guest and this map stays on the device. Create an account when you want it kept with you.</p>
+          <p class="v2-sync-note">Maps auto-save on this device. Create an account to back them up.</p>
           <button type="button" class="v2-profile" id="profile-btn" aria-label="Account">
             <img
               class="v2-profile-avatar"
@@ -158,6 +159,123 @@
           <div id="mission-stages"></div>
         </section>
       </whatimado-frame>
+
+      <section class="v2-page hidden" id="page-analytics" aria-labelledby="page-analytics-title" tabindex="-1">
+        <div class="v2-page__inner">
+          <header class="v2-page__head">
+            <button type="button" class="v2-page__back" data-page-close>Back to map</button>
+            <p class="v2-page__kicker">Founder dashboard</p>
+            <h2 class="v2-page__title" id="page-analytics-title">Launch stats</h2>
+            <p class="v2-page__sub">Real visitors only. Any session where you signed in is excluded, even the parts before login.</p>
+          </header>
+
+          <div class="v2-page__row" role="group" aria-label="Period">
+            <button type="button" class="v2-chip is-active" data-stats-period="post">Since Jun 21 post</button>
+            <button type="button" class="v2-chip" data-stats-period="week">Last 7 days</button>
+            <button type="button" class="v2-chip" data-stats-period="all">All time</button>
+            <button type="button" class="v2-chip v2-chip--ghost" id="stats-refresh">Refresh</button>
+          </div>
+
+          <div class="v2-stats__grid">
+            <div class="v2-stats__card v2-stats__card--visits"><span>Visits</span><strong id="stats-visits">—</strong></div>
+            <div class="v2-stats__card v2-stats__card--started"><span>Started</span><strong id="stats-started">—</strong></div>
+            <div class="v2-stats__card v2-stats__card--maps"><span>Got a map</span><strong id="stats-maps">—</strong></div>
+            <div class="v2-stats__card v2-stats__card--roadmaps"><span>Opened a roadmap</span><strong id="stats-roadmaps">—</strong></div>
+          </div>
+
+          <section class="v2-page__panel">
+            <h3 class="v2-section-label">Funnel</h3>
+            <div class="v2-stats__funnel" id="stats-funnel"></div>
+            <p class="v2-page__caption" id="stats-funnel-caption">Loading…</p>
+          </section>
+
+          <section class="v2-page__panel">
+            <div class="v2-page__panel-head">
+              <h3 class="v2-section-label">Daily activity (Central time)</h3>
+              <div class="v2-page__row" role="group" aria-label="Day order">
+                <button type="button" class="v2-chip is-active" data-stats-day-order="newest">Newest first</button>
+                <button type="button" class="v2-chip" data-stats-day-order="oldest">Oldest first</button>
+              </div>
+            </div>
+            <div class="v2-stats__days" id="stats-days"></div>
+            <div class="v2-stats__legend">
+              <span><i class="v2-stats__swatch v2-stats__swatch--visits" aria-hidden="true"></i>Visits</span>
+              <span><i class="v2-stats__swatch v2-stats__swatch--started" aria-hidden="true"></i>Started</span>
+              <span><i class="v2-stats__swatch v2-stats__swatch--maps" aria-hidden="true"></i>Got map</span>
+            </div>
+          </section>
+
+          <p class="v2-page__caption" id="stats-updated"></p>
+          <p class="v2-page__status" id="stats-status" role="status" hidden></p>
+        </div>
+      </section>
+
+      <section class="v2-page hidden" id="page-settings" aria-labelledby="page-settings-title" tabindex="-1">
+        <div class="v2-page__inner">
+          <header class="v2-page__head">
+            <button type="button" class="v2-page__back" data-page-close>Back to map</button>
+            <p class="v2-page__kicker">Settings</p>
+            <h2 class="v2-page__title" id="page-settings-title">Your profile</h2>
+            <p class="v2-page__sub">Your name and location fill in new roadmaps, so intake can skip those questions. When you're signed in, they follow your account.</p>
+          </header>
+
+          <section class="v2-page__panel" aria-labelledby="settings-account-title">
+            <h3 class="v2-section-label" id="settings-account-title">Account</h3>
+            <p class="v2-page__line" id="settings-account-line">You're using whatimado as a guest.</p>
+            <p class="v2-page__caption" id="settings-account-sync"></p>
+            <div class="v2-page__row">
+              <button type="button" class="v2-chip v2-chip--solid" id="settings-account-primary">Create account</button>
+              <button type="button" class="v2-chip" id="settings-account-secondary">Sign in</button>
+            </div>
+          </section>
+
+          <form class="v2-page__panel" id="settings-profile-form" aria-labelledby="settings-profile-title">
+            <h3 class="v2-section-label" id="settings-profile-title">Name and location</h3>
+            <label class="v2-field">
+              <span>Your name</span>
+              <input id="settings-name" type="text" maxlength="80" autocomplete="name" placeholder="First name or what you'd like to be called" />
+            </label>
+            <div class="v2-page__grid">
+              <label class="v2-field"><span>Country</span><input id="settings-country" type="text" maxlength="80" autocomplete="country-name" placeholder="United States" /></label>
+              <label class="v2-field"><span>State / province / region</span><input id="settings-region" type="text" maxlength="80" autocomplete="address-level1" placeholder="Texas" /></label>
+              <label class="v2-field"><span>City or town</span><input id="settings-city" type="text" maxlength="80" autocomplete="address-level2" placeholder="Austin" /></label>
+              <label class="v2-field"><span>ZIP / postal (optional)</span><input id="settings-postal" type="text" maxlength="20" autocomplete="postal-code" placeholder="78701" /></label>
+            </div>
+            <div class="v2-page__row v2-page__row--split">
+              <span class="v2-page__caption">Used for local resources and personalized roadmaps.</span>
+              <button type="submit" class="v2-chip v2-chip--solid">Save profile</button>
+            </div>
+            <p class="v2-page__status" id="settings-profile-status" role="status"></p>
+          </form>
+
+          <form class="v2-page__panel" id="settings-suggest-form" aria-labelledby="settings-suggest-title">
+            <h3 class="v2-section-label" id="settings-suggest-title">Suggest an improvement</h3>
+            <p class="v2-page__caption">Features, fixes, or changes for whatimado. Product feedback only; please leave out personal, medical, or health details.</p>
+            <label class="v2-field">
+              <span>Your name (for credit)</span>
+              <input id="settings-suggest-name" type="text" maxlength="80" autocomplete="name" placeholder="How you'd like to be credited" />
+            </label>
+            <label class="v2-field">
+              <span>Your suggestion</span>
+              <textarea id="settings-suggest-text" rows="3" maxlength="2000" placeholder="e.g. Let me reopen older roadmaps from the sidebar"></textarea>
+            </label>
+            <div class="v2-page__row v2-page__row--split">
+              <span class="v2-page__caption">Signed in, the suggestion is linked to your account.</span>
+              <button type="submit" class="v2-chip v2-chip--solid">Send suggestion</button>
+            </div>
+            <p class="v2-page__status" id="settings-suggest-status" role="status"></p>
+          </form>
+
+          <section class="v2-page__panel v2-page__panel--danger" aria-labelledby="settings-delete-title">
+            <h3 class="v2-section-label" id="settings-delete-title">Delete data</h3>
+            <p class="v2-page__caption">Removes every roadmap, note, and profile setting in this browser, and from your account when you're signed in. This can't be undone.</p>
+            <div class="v2-page__row">
+              <button type="button" class="v2-chip v2-chip--danger" id="settings-delete">Delete all maps and data</button>
+            </div>
+            <p class="v2-page__status" id="settings-delete-status" role="status"></p>
+          </section>
+        </div>
+      </section>
     </main>
 
     <aside class="v2-rail v2-rail--right hidden" id="resources-rail" aria-label="Resources">
@@ -170,36 +288,57 @@
   </div>
 
   <dialog class="v2-account" id="account-sheet" aria-labelledby="account-sheet-title">
-    <form method="dialog" id="account-guest-form">
-      <h2 id="account-sheet-title">Continue as guest</h2>
-      <p>Your roadmap stays in this browser, including the nodes, missions, and notes. You can create an account later without losing them.</p>
+    <section id="account-guest-view">
+      <form method="dialog" id="account-guest-form">
+        <h2 id="account-sheet-title">Continue as guest</h2>
+        <p>Your roadmap stays in this browser, including the nodes, missions, and notes. You can create an account later without losing them.</p>
+        <div class="v2-account__row">
+          <button type="submit" class="v2-account__guest" id="account-continue-guest">Continue as guest</button>
+          <button type="button" class="v2-account__link" id="account-signin-open" aria-controls="account-signin-form" aria-expanded="false">I already have an account</button>
+        </div>
+      </form>
+      <form id="account-signin-form" hidden>
+        <h2>Sign in</h2>
+        <p>Your saved roadmaps come back from your account. A guest roadmap in progress moves onto it, so nothing is lost.</p>
+        <label>Email <input type="email" id="account-signin-email" name="email" autocomplete="username" required /></label>
+        <label>Password <input type="password" id="account-signin-password" name="password" autocomplete="current-password" required /></label>
+        <div class="v2-account__row">
+          <button type="submit" class="v2-account__create">Sign in</button>
+          <button type="button" class="v2-account__link" id="account-forgot">Forgot password?</button>
+        </div>
+        <button type="button" class="v2-account__link" id="account-signin-back">New here? Create an account</button>
+        <p id="account-signin-status" role="status"></p>
+      </form>
+      <form id="account-create-form">
+        <h2>Create an account</h2>
+        <p>This roadmap moves onto the new account and is backed up, so it opens on any device you sign in on.</p>
+        <label>Email <input type="email" id="account-email" name="email" autocomplete="username" required /></label>
+        <label>Password <input type="password" id="account-password" name="password" autocomplete="new-password" minlength="8" required /></label>
+        <p class="v2-account__note">At least 8 characters. The password goes only to the sign-in service; this device never stores it.</p>
+        <button type="submit" class="v2-account__create">Create account and keep this roadmap</button>
+        <p id="account-status" role="status"></p>
+      </form>
+    </section>
+    <section id="account-member-view" hidden>
+      <h2>Your account</h2>
+      <p class="v2-account__email" id="account-member-email"></p>
+      <p id="account-member-sync" role="status"></p>
       <div class="v2-account__row">
-        <button type="submit" class="v2-account__guest" id="account-continue-guest">Continue as guest</button>
-        <button type="button" class="v2-account__link" id="account-signin-open" aria-controls="account-signin-form" aria-expanded="false">I already have an account</button>
+        <button type="button" class="v2-account__guest" id="account-sync-now">Sync now</button>
+        <button type="button" class="v2-account__guest" id="account-signout">Sign out</button>
       </div>
-    </form>
-    <form id="account-signin-form" hidden>
-      <h2>Sign in</h2>
-      <p>Open the account you already made on this device. A guest roadmap in progress moves onto it, so nothing is lost.</p>
-      <label>Email <input type="email" id="account-signin-email" name="email" autocomplete="username" required /></label>
-      <label>Password <input type="password" id="account-signin-password" name="password" autocomplete="current-password" required /></label>
-      <button type="submit" class="v2-account__create">Sign in</button>
-      <button type="button" class="v2-account__link" id="account-signin-back">New here? Create an account</button>
-      <p id="account-signin-status" role="status"></p>
-    </form>
-    <form id="account-create-form">
-      <h2>Create an account</h2>
-      <p>The guest roadmap moves onto the account. If this account already has a roadmap, the guest one is kept as its own map with today's date.</p>
-      <label>Email <input type="email" id="account-email" name="email" autocomplete="username" required /></label>
-      <label>Password <input type="password" id="account-password" name="password" autocomplete="new-password" minlength="8" required /></label>
-      <p class="v2-account__note">The password is not stored on this device. It only confirms you meant to create the account.</p>
-      <button type="submit" class="v2-account__create">Create account and keep this roadmap</button>
-      <p id="account-status" role="status"></p>
+    </section>
+    <form id="account-recovery-form" hidden>
+      <h2>Set a new password</h2>
+      <p>You opened a password reset link. Choose a new password to finish signing in.</p>
+      <label>New password <input type="password" id="account-new-password" name="password" autocomplete="new-password" minlength="8" required /></label>
+      <button type="submit" class="v2-account__create">Save password</button>
+      <p id="account-recovery-status" role="status"></p>
     </form>
     <div id="account-imports"></div>
     <form method="dialog"><button type="submit" class="v2-account__close">Close</button></form>
   </dialog>
 
-  <script type="module" src="/js/v2/app.js?v=20260928-tethers"></script>
+  <script type="module" src="/js/v2/app.js?v=20260928-auth"></script>
 </body>
 </html>

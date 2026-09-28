@@ -5,6 +5,7 @@ import { hideIntakeChips } from "../components/profile-chips.js";
 import { PHASE } from "../phases.js";
 import { buildIntakeContextBlock } from "../intake/stability-gates.js";
 import { formatUserLocation } from "../state/location.js";
+import { trackEvent } from "../state/analytics.js";
 import {
   buildPlanSummaryPrompt,
   fallbackPlanSummary,
@@ -171,6 +172,7 @@ export function createConfirmGateController(ui) {
     setPhase(PHASE.MISSIONS);
     touchJourney();
     flush();
+    trackEvent("roadmap_opened");
     const idea = { id: ideaId, title: "", label: "" };
     onConfirmed(idea, bullets);
   }

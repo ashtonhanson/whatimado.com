@@ -7,6 +7,8 @@ import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ } from "../dock/constants.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
 import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
 import { formatUserLocation } from "../state/location.js";
+import { applyPrefsToStore } from "../state/prefs.js";
+import { trackEvent } from "../state/analytics.js";
 import {
   activeAccountRoadmap,
   bindPersistLifecycle,
@@ -448,6 +450,7 @@ export function initChatFlow(ctx) {
     if (!trimmed) return;
 
     ensureJourneyStarted(appStore.journey);
+    trackEvent("prompt_submitted");
     dismissGhostMap();
     setComposerEnabled(false);
 
@@ -751,6 +754,7 @@ export function initChatFlow(ctx) {
 
   const restored = !isDemo && restoreGuestJourney() && restoreSessionUi();
   if (!restored) {
+    if (!isDemo) applyPrefsToStore(appStore);
     applyPhaseToDom(document, PHASE.OPEN, { ghostDismissed: false });
     const fresh = isDemo ? null : activeAccountRoadmap();
     if (fresh && activePathEl) {

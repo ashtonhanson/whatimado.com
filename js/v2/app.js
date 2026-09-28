@@ -4,6 +4,9 @@ import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
 import { initMobileNav } from "./mobile-nav.js";
 import { initAccountSheet } from "./ui/account-sheet.js";
+import { initPages } from "./ui/pages.js";
+import { initAuth } from "./state/auth.js";
+import { trackEvent } from "./state/analytics.js";
 
 await initBrand();
 await import("./components/whatimado-frame.js");
@@ -28,6 +31,9 @@ initNeonShine();
 initNavRailToggle();
 initMobileNav();
 initAccountSheet();
+initPages();
+void initAuth();
+trackEvent("app_loaded");
 
 /** Safety: never leave the mobile shell permanently hidden if dock init stalls. */
 if (window.matchMedia("(max-width: 900px)").matches) {

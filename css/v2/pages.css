@@ -1,0 +1,427 @@
+/* Sidebar pages (Analytics, Settings) — cover the map column, content in the 720px chat column. */
+
+.v2-page {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--v2-frame-radius);
+  border: 1px solid rgba(66, 255, 240, 0.18);
+  background: var(--v2-bg-gradient);
+  box-shadow: var(--v2-frame-shadow);
+  color: var(--v2-text);
+  outline: none;
+}
+
+.v2-page.hidden {
+  display: none;
+}
+
+.v2-page__inner {
+  width: var(--v2-frame-w);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vh, 2.5rem) var(--v2-main-gutter) 3rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.v2-page__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.v2-page__back {
+  align-self: flex-start;
+  margin-bottom: 0.6rem;
+  border: 1px solid rgba(215, 255, 246, 0.25);
+  border-radius: var(--v2-radius-pill);
+  background: transparent;
+  color: var(--v2-text-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.v2-page__back:hover,
+.v2-page__back:focus-visible {
+  color: var(--v2-teal);
+  border-color: rgba(46, 232, 214, 0.55);
+}
+
+.v2-page__kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--v2-yellow);
+}
+
+.v2-page__title {
+  margin: 0;
+  font-family: Montserrat, Inter, sans-serif;
+  font-weight: 400;
+  font-size: clamp(1.4rem, 2.6vw, 1.85rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v2-teal);
+}
+
+.v2-page__sub,
+.v2-page__line {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--v2-text);
+}
+
+.v2-page__sub {
+  color: var(--v2-text-muted);
+}
+
+.v2-page__caption {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--v2-text-muted);
+}
+
+.v2-page__status {
+  margin: 0;
+  min-height: 1.1em;
+  font-size: 0.82rem;
+  color: var(--v2-teal);
+}
+
+.v2-page__status[data-tone="error"] {
+  color: #ffb4a8;
+}
+
+.v2-page__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border-radius: var(--v2-radius);
+  border: 1px solid rgba(66, 255, 240, 0.16);
+  background: rgba(4, 12, 14, 0.55);
+}
+
+.v2-page__panel .v2-section-label {
+  margin: 0;
+}
+
+.v2-page__panel--danger {
+  border-color: rgba(255, 140, 120, 0.25);
+}
+
+.v2-page__panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.v2-page__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.v2-page__row--split {
+  justify-content: space-between;
+}
+
+.v2-page__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.v2-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--v2-text-muted);
+}
+
+.v2-field input,
+.v2-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid rgba(215, 255, 246, 0.22);
+  background: rgba(16, 33, 31, 0.85);
+  color: var(--v2-text);
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.v2-field textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+.v2-field input:focus-visible,
+.v2-field textarea:focus-visible {
+  outline: none;
+  border-color: rgba(46, 232, 214, 0.65);
+  box-shadow: 0 0 0 3px rgba(46, 232, 214, 0.12);
+}
+
+.v2-chip {
+  border: 1px solid rgba(215, 255, 246, 0.25);
+  border-radius: var(--v2-radius-pill);
+  background: transparent;
+  color: var(--v2-text-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.v2-chip:hover,
+.v2-chip:focus-visible {
+  color: var(--v2-text);
+  border-color: rgba(46, 232, 214, 0.5);
+}
+
+.v2-chip.is-active {
+  color: var(--v2-teal);
+  border-color: rgba(46, 232, 214, 0.6);
+  background: rgba(46, 232, 214, 0.1);
+}
+
+.v2-chip--ghost {
+  margin-left: auto;
+}
+
+.v2-chip--solid {
+  background: var(--v2-yellow);
+  border-color: transparent;
+  color: #14220b;
+}
+
+.v2-chip--solid:hover,
+.v2-chip--solid:focus-visible {
+  background: var(--v2-yellow-bright);
+  color: #14220b;
+}
+
+.v2-chip--danger {
+  color: #ffb4a8;
+  border-color: rgba(255, 140, 120, 0.4);
+}
+
+.v2-chip--danger:hover,
+.v2-chip--danger:focus-visible {
+  color: #ffd3cb;
+  border-color: rgba(255, 140, 120, 0.75);
+  background: rgba(255, 120, 100, 0.08);
+}
+
+.v2-chip:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* Analytics */
+
+.v2-stats__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.v2-stats__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: var(--v2-radius);
+  border: 1px solid rgba(66, 255, 240, 0.16);
+  background: rgba(4, 12, 14, 0.55);
+}
+
+.v2-stats__card span {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v2-text-muted);
+}
+
+.v2-stats__card strong {
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.v2-stats__card--visits strong,
+.v2-stats__step--visits strong { color: var(--v2-teal); }
+.v2-stats__card--started strong,
+.v2-stats__step--started strong { color: var(--v2-yellow); }
+.v2-stats__card--maps strong,
+.v2-stats__step--maps strong { color: #9dffb0; }
+.v2-stats__card--roadmaps strong,
+.v2-stats__step--roadmaps strong { color: #c9b8ff; }
+
+.v2-stats__funnel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.v2-stats__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 4.5rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 12px;
+  background: rgba(46, 232, 214, 0.06);
+}
+
+.v2-stats__step strong {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.v2-stats__step span,
+.v2-stats__link {
+  font-size: 0.74rem;
+  color: var(--v2-text-muted);
+}
+
+.v2-stats__days {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.6rem;
+}
+
+.v2-stats__day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(66, 255, 240, 0.12);
+}
+
+.v2-stats__day-head {
+  margin: 0 0 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--v2-text);
+}
+
+.v2-stats__metric {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr 2rem;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--v2-text-muted);
+}
+
+.v2-stats__metric strong {
+  text-align: right;
+  color: var(--v2-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.v2-stats__track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(215, 255, 246, 0.08);
+  overflow: hidden;
+}
+
+.v2-stats__bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.v2-stats__bar--visits,
+.v2-stats__swatch--visits { background: var(--v2-teal); }
+.v2-stats__bar--started,
+.v2-stats__swatch--started { background: var(--v2-yellow); }
+.v2-stats__bar--maps,
+.v2-stats__swatch--maps { background: #9dffb0; }
+
+.v2-stats__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  font-size: 0.74rem;
+  color: var(--v2-text-muted);
+}
+
+.v2-stats__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.v2-stats__swatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+}
+
+.v2-account__email {
+  font-weight: 600;
+  color: var(--v2-teal, #2ee8d6);
+}
+
+#account-member-view,
+#account-recovery-form {
+  margin-bottom: 0.5rem;
+}
+
+.v2-account button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+/* The docked mobile composer is position:fixed above <main>, so it would float over an open page. */
+body[data-page] whatimado-frame.is-mobile-docked {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .v2-page {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .v2-page__grid,
+  .v2-stats__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .v2-page__grid {
+    grid-template-columns: 1fr;
+  }
+}

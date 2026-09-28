@@ -5,12 +5,13 @@ import { normalizeUserProfile } from "./user-profile.js";
 import { normalizeLocationDraft, normalizeUserLocation } from "./location.js";
 import {
   accountStorageKey,
-  accountUserIdFromEmail,
+  adoptLegacyAccount,
   clearGuestRecord,
   ensureGuestUserId,
   loadAccountSnapshot,
   migrateGuestSnapshot,
   readSession,
+  removeAccountSnapshot,
   saveAccountSnapshot,
   startFreshAccountRoadmap,
   touchActiveRoadmapEntry,
@@ -24,9 +25,28 @@ const SAVE_DEBOUNCE_MS = 280;
 let saveTimer = 0;
 let persistBound = false;
 let persistEnabled = true;
+/** @type {((userId: string) => void) | null} */
+let accountSaveListener = null;
 
 export function setPersistEnabled(enabled) {
   persistEnabled = Boolean(enabled);
+}
+
+/**
+ * Called after every account snapshot write (cloud sync hooks in here).
+ * @param {((userId: string) => void) | null} listener
+ */
+export function onAccountSaved(listener) {
+  accountSaveListener = listener;
+}
+
+/** @param {string} userId */
+function notifyAccountSaved(userId) {
+  try {
+    accountSaveListener?.(userId);
+  } catch {
+    /* sync is best effort */
+  }
 }
 
 function readRaw() {
@@ -108,13 +128,15 @@ export function saveGuestJourney() {
   const session = readSession();
   if (session?.mode === "account" && session.userId) {
     const existing = loadAccountSnapshot(session.userId);
-    return saveAccountSnapshot({
+    const saved = saveAccountSnapshot({
       ...(existing || {}),
       ...snapshot,
       ...touchActiveRoadmapEntry(existing, snapshot),
       userId: session.userId,
       importedRoadmaps: existing?.importedRoadmaps || []
     });
+    if (saved) notifyAccountSaved(session.userId);
+    return saved;
   }
   return writeRaw(JSON.stringify(snapshot));
 }
@@ -128,30 +150,59 @@ export function openFreshAccountRoadmap() {
   if (session?.mode !== "account" || !session.userId) return false;
   flushPersist();
   const next = startFreshAccountRoadmap(loadAccountSnapshot(session.userId), session.userId);
-  return saveAccountSnapshot(next);
+  const saved = saveAccountSnapshot(next);
+  if (saved) notifyAccountSaved(session.userId);
+  return saved;
 }
 
-/**
- * Open an account already kept on this device. A guest map in progress is
- * moved onto it the same way account creation does, so nothing is dropped.
- * @param {string} email
- * @returns {{ ok: boolean, keptGuest: boolean }}
- */
-export function signInToAccount(email) {
-  const userId = accountUserIdFromEmail(email);
-  if (!loadAccountSnapshot(userId)) return { ok: false, keptGuest: false };
-  const session = readSession();
-  const guest = session?.mode === "account" ? null : buildGuestSnapshot() || loadGuestSnapshot();
-  if (guest) {
-    migrateGuestToAccount(userId, email);
-  } else {
-    if (session?.mode === "account") flushPersist();
-    writeSession({ mode: "account", userId, email });
-  }
+/** Stop writing until the page reloads, so a handoff is not overwritten on pagehide. */
+function freezePersist() {
   if (saveTimer) window.clearTimeout(saveTimer);
   saveTimer = 0;
   persistEnabled = false;
-  return { ok: true, keptGuest: Boolean(guest) };
+}
+
+/**
+ * Point this device at a signed-in Supabase user. A guest map in progress is
+ * moved onto the account (the same handoff as account creation), and an
+ * account made on this device before Supabase sign-in is carried over.
+ * Persistence stays off afterwards; the caller reloads.
+ * @param {string} userId Supabase user id
+ * @param {string} email
+ * @returns {{ keptGuest: boolean, replacedLive: boolean, adoptedLegacy: boolean }}
+ */
+export function adoptAccountSession(userId, email) {
+  const session = readSession();
+  if (session?.mode === "account" && session.userId !== userId) flushPersist();
+  const adoptedLegacy = adoptLegacyAccount(email, userId);
+  const guest = session?.mode === "account" ? null : buildGuestSnapshot() || loadGuestSnapshot();
+  let moved = { imported: false, replacedLive: false };
+  if (guest) moved = migrateGuestToAccount(userId, email);
+  if (!moved.imported) writeSession({ mode: "account", userId, email });
+  freezePersist();
+  return { keptGuest: Boolean(moved.imported), replacedLive: Boolean(moved.replacedLive), adoptedLegacy };
+}
+
+/** Signed out: the account copy stays on the device for the next sign-in; the app opens as a guest. */
+export function signOutToGuest() {
+  flushPersist();
+  writeSession({ mode: "guest", userId: ensureGuestUserId() });
+  freezePersist();
+}
+
+/**
+ * Delete every roadmap this browser holds for the current visitor.
+ * @returns {string | null} the account user id that was cleared, if any
+ */
+export function clearAllLocalRoadmaps() {
+  const session = readSession();
+  freezePersist();
+  removeRaw();
+  if (session?.mode === "account" && session.userId) {
+    removeAccountSnapshot(session.userId);
+    return session.userId;
+  }
+  return null;
 }
 
 /** Active account roadmap entry, if the account has one. */
