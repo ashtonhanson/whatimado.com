@@ -55,6 +55,21 @@ body.v2-app:not([data-phase="open"]) whatimado-map .whatimado-map__stage {
   top: 0;
 }
 
+/* Mission summary sits above the constellation. Shift the stage down without shrinking it. */
+body.has-map-timeline.v2-app:not([data-phase="open"]) whatimado-map .whatimado-map__stage,
+body.has-map-timeline.v2-app.is-hero-dismissing whatimado-map .whatimado-map__stage {
+  top: var(--v2-timeline-h);
+}
+
+body.has-map-timeline whatimado-map .whatimado-map__new-roadmap {
+  top: calc(var(--v2-timeline-h) + 0.55rem);
+}
+
+body.has-map-timeline whatimado-map .whatimado-map__you-btn,
+body.has-map-timeline whatimado-map .whatimado-map__link-btn {
+  top: calc(var(--v2-timeline-h) + 0.4rem);
+}
+
 whatimado-map[data-mode="ghost"],
 whatimado-map[data-mode="faint"],
 whatimado-map[data-mode="visible"] {

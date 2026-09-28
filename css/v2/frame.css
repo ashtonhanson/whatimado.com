@@ -895,15 +895,58 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   }
 }
 
-.v2-timeline {
+.v2-map-timeline {
+  position: sticky;
+  top: 0;
+  z-index: 6;
   display: flex;
-  gap: 0.4rem;
-  align-items: stretch;
-  overflow-x: auto;
-  padding: 0.15rem 0 0.85rem;
+  align-items: center;
+  height: var(--v2-timeline-h);
+  margin: 0;
+  padding: 0 0.85rem 0.35rem;
+  pointer-events: auto;
+  background: linear-gradient(180deg, rgba(6, 12, 14, 0.94) 0%, rgba(6, 12, 14, 0.78) 62%, rgba(6, 12, 14, 0) 100%);
 }
 
-.v2-timeline__item,
+.v2-map-timeline[hidden] {
+  display: none;
+}
+
+.v2-timeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.v2-timeline::-webkit-scrollbar {
+  display: none;
+}
+
+.v2-timeline__rail {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: min-content;
+  flex: 1 1 auto;
+}
+
+.v2-timeline__rail::before {
+  content: "";
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  top: 0.28rem;
+  height: 1px;
+  background: rgba(183, 190, 200, 0.38);
+  pointer-events: none;
+}
+
+.v2-timeline__stop,
 .v2-timeline__add,
 .v2-difficulty,
 .v2-difficulty-offer button,
@@ -912,48 +955,76 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   cursor: pointer;
 }
 
-.v2-timeline__item {
-  flex: 0 0 auto;
-  max-width: 11rem;
-  border: 1px solid rgba(215, 255, 246, 0.28);
-  border-radius: 999px;
+.v2-timeline__stop {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 4.25rem;
+  min-width: 3.4rem;
+  max-width: 5.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.22rem;
+  border: 0;
   background: transparent;
-  color: var(--v2-text, #e8fff8);
-  padding: 0.35rem 0.7rem;
-  text-align: left;
+  color: rgba(183, 190, 200, 0.72);
+  padding: 0;
 }
 
-.v2-timeline__item span {
-  display: block;
+.v2-timeline__dot {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 50%;
+  border: 1.5px solid #8d95a5;
+  background: #10211f;
+  box-shadow: 0 0 0 3px rgba(6, 12, 14, 0.85);
+}
+
+.v2-timeline__name {
+  max-width: 100%;
   font-size: 0.62rem;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.7;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.v2-timeline__item.is-done {
+.v2-timeline__stop.is-done {
+  color: rgba(245, 213, 71, 0.92);
+}
+
+.v2-timeline__stop.is-done .v2-timeline__dot {
   background: var(--v2-yellow, #e6ff4d);
-  color: #14220b;
-  border-color: transparent;
+  border-color: var(--v2-yellow, #e6ff4d);
 }
 
-.v2-timeline__item.is-planned {
-  opacity: 0.42;
+.v2-timeline__stop.is-current {
+  color: #e8fff8;
 }
 
-.v2-timeline__item.is-current {
+.v2-timeline__stop.is-current .v2-timeline__dot {
+  background: var(--v2-teal, #2ee8d6);
   border-color: var(--v2-teal, #2ee8d6);
-  box-shadow: 0 0 0 1px rgba(46, 232, 214, 0.45);
+  box-shadow: 0 0 0 3px rgba(46, 232, 214, 0.22);
+}
+
+.v2-timeline__stop.is-planned {
+  opacity: 0.5;
 }
 
 .v2-timeline__add {
   flex: 0 0 auto;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: -0.38rem;
+  border-radius: 50%;
   border: 1px solid rgba(215, 255, 246, 0.4);
-  background: transparent;
+  background: rgba(6, 12, 14, 0.72);
   color: var(--v2-text, #e8fff8);
+  line-height: 1;
 }
 
 .v2-difficulty {

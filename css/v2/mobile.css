@@ -118,6 +118,14 @@
     height: calc(var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) - var(--v2-map-frame-clearance));
   }
 
+  /* The prompt drops by the summary height, so the map band keeps the same room. */
+  body.has-map-timeline.v2-app:not([data-phase="open"]) whatimado-map {
+    height: calc(
+      var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) + var(--v2-timeline-h) -
+        var(--v2-map-frame-clearance)
+    );
+  }
+
   .v2-shell,
   .v2-shell:has(#resources-rail:not(.hidden)),
   .v2-shell:has(#resources-rail.hidden) {

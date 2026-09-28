@@ -6,7 +6,7 @@ import { formatUserLocation } from "../state/location.js";
 import { normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail, resourcesMatchingFirstMissions } from "./resources.js";
 import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, resourcesForTask } from "./resources-accordion.js";
 import { catalogForStages } from "./drafts.js";
-import { graphStore } from "../graph-store.js";
+import { graphStore, shortenMapLabel } from "../graph-store.js";
 import { toggleSavedPath } from "../state/journey.js";
 
 /**
@@ -135,8 +135,8 @@ function buildMissionsPrompt(idea, bullets) {
 }
 
 /**
- * Planned missions stay visible and grey. The first unfinished one is current.
- * The plus opens the next mission at the end of this line.
+ * Compact glance above the map: a dot and one or two words per mission.
+ * Done, current, and later stay distinguishable. The full title is on the button.
  * @param {Array<{ missions?: { id?: string, title?: string, done?: boolean }[] }>} stages
  */
 function renderMissionTimeline(stages) {
@@ -144,30 +144,49 @@ function renderMissionTimeline(stages) {
   if (!missions.length) return "";
   let seenCurrent = false;
   const items = missions
-    .map((mission) => {
+    .map((mission, index) => {
       const done = Boolean(mission.done);
       const current = !done && !seenCurrent;
       if (current) seenCurrent = true;
       const state = done ? "is-done" : current ? "is-current" : "is-planned";
-      const label = done ? "Done" : current ? "Now" : "Planned";
-      return `<button type="button" class="v2-timeline__item ${state}" data-timeline-id="${escapeHtml(mission.id || "")}"><span>${escapeHtml(label)}</span>${escapeHtml(mission.title || "Mission")}</button>`;
+      const status = done ? "Done" : current ? "Now" : "Later";
+      const full = mission.title || "Mission";
+      const short = shortenMapLabel(full) || `Step ${index + 1}`;
+      return `<button type="button" class="v2-timeline__stop ${state}" data-timeline-id="${escapeHtml(mission.id || "")}" aria-label="${escapeHtml(status)}: ${escapeHtml(full)}" title="${escapeHtml(full)}"><span class="v2-timeline__dot" aria-hidden="true"></span><span class="v2-timeline__name">${escapeHtml(short)}</span></button>`;
     })
     .join("");
   return `
-    <div class="v2-timeline" aria-label="Mission timeline">
-      ${items}
+    <div class="v2-timeline">
+      <div class="v2-timeline__rail">${items}</div>
       <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Add a mission here">+</button>
     </div>`;
 }
 
-/** @param {HTMLElement | null} root @param {string} missionId */
-export function highlightTimelineMission(root, missionId) {
+function timelineHost() {
+  return document.getElementById("map-timeline");
+}
+
+/** Pin the abbreviated timeline above the map, and drop the prompt by the same amount. */
+function mountMapTimeline(stages) {
+  const host = timelineHost();
+  const missions = (stages || []).flatMap((stage) => stage.missions || []);
+  const show = missions.length > 0;
+  document.body.classList.toggle("has-map-timeline", show);
+  if (host) {
+    host.hidden = !show;
+    host.innerHTML = show ? renderMissionTimeline(stages) : "";
+  }
+  document.getElementById("dynamic-frame")?.applyTimelineInset?.();
+}
+
+/** @param {HTMLElement | null} _root @param {string} missionId */
+export function highlightTimelineMission(_root, missionId) {
+  const root = timelineHost();
   if (!root) return;
   root.querySelectorAll("[data-timeline-id]").forEach((item) => {
-    item.classList.toggle("is-current", item.getAttribute("data-timeline-id") === missionId);
-    if (item.getAttribute("data-timeline-id") === missionId && item.classList.contains("is-planned")) {
-      item.classList.remove("is-planned");
-    }
+    const match = item.getAttribute("data-timeline-id") === missionId;
+    item.classList.toggle("is-current", match);
+    if (match) item.classList.remove("is-planned");
   });
 }
 
@@ -188,7 +207,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
         place
       })}</div>`
     : "";
-  root.innerHTML = master + renderMissionTimeline(stages) + stages
+  root.innerHTML = master + stages
     .map(
       (stage, index) => `
         <article class="v2-stage" id="stage-${index}">
@@ -302,6 +321,7 @@ export function createMissionsController(ui) {
     appStore.journey.planConfirmed = false;
     if (listEl) listEl.innerHTML = "";
     sectionEl?.classList.add("hidden");
+    mountMapTimeline([]);
     renderResourcesRail([], appStore.location, appStore.profile);
     onShown?.([]);
     touchJourney();
@@ -335,6 +355,7 @@ export function createMissionsController(ui) {
       appStore.profile
     );
     renderMissionStages(listEl, stages, catalog, sharedResources, resourcePlaceLabel(appStore.location));
+    mountMapTimeline(stages);
     onShown?.(stages);
     renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
     bindProgress(listEl);
@@ -403,6 +424,27 @@ export function createMissionsController(ui) {
     return (appStore.journey.missionsStages || []).flatMap((stage) => stage.missions || []);
   }
 
+  function bindTimeline() {
+    const host = timelineHost();
+    if (!host || host.dataset.bound === "1") return;
+    host.dataset.bound = "1";
+    host.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const timeline = target?.closest("[data-timeline-id]");
+      const timelineId = timeline?.getAttribute("data-timeline-id");
+      if (timelineId) {
+        highlightTimelineMission(host, timelineId);
+        host.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: timelineId } }));
+        return;
+      }
+      if (target?.closest("[data-timeline-add]")) {
+        host.dispatchEvent(new CustomEvent("mission-add", { bubbles: true }));
+      }
+    });
+  }
+
+  bindTimeline();
+
   function bindProgress(root) {
     if (!root || root.dataset.progressBound === "1") return;
     root.dataset.progressBound = "1";
@@ -433,17 +475,6 @@ export function createMissionsController(ui) {
       const openId = open?.getAttribute("data-open-path");
       if (openId) {
         root.dispatchEvent(new CustomEvent("mission-open-path", { bubbles: true, detail: { id: openId } }));
-        return;
-      }
-      const timeline = target?.closest("[data-timeline-id]");
-      const timelineId = timeline?.getAttribute("data-timeline-id");
-      if (timelineId) {
-        highlightTimelineMission(root, timelineId);
-        root.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: timelineId } }));
-        return;
-      }
-      if (target?.closest("[data-timeline-add]")) {
-        root.dispatchEvent(new CustomEvent("mission-add", { bubbles: true }));
         return;
       }
       const difficulty = target?.closest("[data-difficulty]");

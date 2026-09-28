@@ -582,7 +582,7 @@ export class FrameDockController {
     /** Bake CSS vh top into main-relative px so the first move is 1:1 */
     const mainRect = this.mainEl.getBoundingClientRect();
     const frameRect = this.frameEl.getBoundingClientRect();
-    this._topPx = frameRect.top - mainRect.top;
+    this._topPx = frameRect.top - mainRect.top - this._timelineInsetPx();
 
     const mapEl = document.getElementById("possibility-map");
     const mapStage = mapEl?.querySelector(".whatimado-map__stage");
@@ -862,6 +862,18 @@ export class FrameDockController {
     this._settleRaf = requestAnimationFrame(tick);
   }
 
+  /** Height of the mission summary. Added to the painted frame top, not the drag position. */
+  _timelineInsetPx() {
+    if (!document.body.classList.contains("has-map-timeline")) return 0;
+    return measureCssVarLength("--v2-timeline-h") || 0;
+  }
+
+  /** Re-apply the current dock top after the timeline shows or hides. */
+  refreshTimelineInset() {
+    if (!Number.isFinite(this._topPx) || !this._docked) return;
+    this._applyTop(this._topPx, { snap: this.activeSnap, layout: false });
+  }
+
   /**
    * @param {number} topPx
    * @param {{ snap?: typeof SNAP[keyof typeof SNAP]|null, layout?: boolean }} [options]
@@ -883,7 +895,8 @@ export class FrameDockController {
           this.frameEl.classList.contains("is-mobile-reading") ||
           this.frameEl.classList.contains("is-mobile-expanded") ||
           this.activeSnap === SNAP.MOBILE_FOCUS);
-      this.frameEl.style.top = `${topPx + mainRect.top + promptDrop}px`;
+      const inset = this._timelineInsetPx();
+      this.frameEl.style.top = `${topPx + mainRect.top + promptDrop + inset}px`;
       if (floored) {
         this.frameEl.classList.add("is-mobile-sheet-floored");
         this.frameEl.style.bottom = `${bottomInset}px`;
@@ -892,7 +905,7 @@ export class FrameDockController {
         this.frameEl.style.bottom = "auto";
       }
     } else {
-      this.frameEl.style.top = `${topPx}px`;
+      this.frameEl.style.top = `${topPx + this._timelineInsetPx()}px`;
     }
 
     if (snap) {

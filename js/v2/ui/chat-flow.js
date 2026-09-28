@@ -607,11 +607,12 @@ export function initChatFlow(ctx) {
 
   mapEl?.setNodeSelectHandler(handleNodeSelect);
   const missionRoot = document.getElementById("mission-stages");
+  const timelineEl = document.getElementById("map-timeline");
   missionRoot?.addEventListener("mission-open-path", (event) => {
     const id = event.detail?.id;
     if (id) handleNodeSelect(id, { startConfirm: true, openRoadmap: true });
   });
-  missionRoot?.addEventListener("mission-focus", (event) => {
+  timelineEl?.addEventListener("mission-focus", (event) => {
     const id = event.detail?.id;
     if (!id) return;
     document.getElementById(`mission-${id}`)?.scrollIntoView({ block: "nearest" });
@@ -621,7 +622,7 @@ export function initChatFlow(ctx) {
       mapEl?.setSelectedNode?.(id);
     }
   });
-  missionRoot?.addEventListener("mission-add", () => {
+  timelineEl?.addEventListener("mission-add", () => {
     missions.extend();
   });
   missionRoot?.addEventListener("mission-difficulty", (event) => {

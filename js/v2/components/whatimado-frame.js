@@ -231,6 +231,11 @@ export class WhatimadoFrame extends HTMLElement {
     this._dock?.remeasure();
   }
 
+  /** Drop or restore the prompt after the mission summary shows or hides. */
+  applyTimelineInset() {
+    this._dock?.refreshTimelineInset();
+  }
+
   /** Sync keyboard pin + focus lift (deterministic, no timed retries). */
   scheduleMobileComposerFocusResync() {
     this._dock?.scheduleMobileComposerFocusResync();
