@@ -93,6 +93,11 @@ function placeTitleBesideNode(items) {
     }
     item.top = item.ny - item.h / 2;
   };
+  const placeBelow = (item) => {
+    item.side = "below";
+    item.left = item.nx - item.w / 2;
+    item.top = item.ny + item.nr + 5;
+  };
   if (you) placeAbove(you);
   const others = items.filter((item) => item !== you);
   const spine = you ? others.filter((item) => Math.abs(item.ny - you.ny) < 28) : [];
@@ -101,6 +106,10 @@ function placeTitleBesideNode(items) {
     .filter((item) => !spine.includes(item))
     .reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
   others.forEach((item) => {
+    if (item.kind === "path") {
+      placeBelow(item);
+      return;
+    }
     if (spine.includes(item)) {
       if (item === rightmost) placeSide(item, 1);
       else placeAbove(item);
@@ -128,6 +137,17 @@ function holdTitlesOnNodes(items) {
         if (!screenBoxesOverlap(ba, bb, 3)) continue;
         const mover = a.ny <= b.ny ? a : b;
         if (mover.side === "left" || mover.side === "right") continue;
+        if (a.side === "below" || b.side === "below") {
+          const lower = a.ny >= b.ny ? a : b;
+          const upper = lower === a ? b : a;
+          const minTop = upper.top + upper.h + 4;
+          if (lower.top < minTop) {
+            lower.top = minTop;
+            lower.left = lower.nx - lower.w / 2;
+            hit = true;
+          }
+          continue;
+        }
         const ceiling = homeTop.get(mover) - (mover.h + 2);
         if (mover.top <= ceiling + 1) continue;
         mover.top = Math.max(ceiling, mover.top - (mover.h + 2));
@@ -160,6 +180,7 @@ function clearTitleFromNodes(item, nodes) {
       if (!screenBoxesOverlap(box, obs, 1)) continue;
       if (item.side === "right") item.left = obs.right + 6;
       else if (item.side === "left") item.left = obs.left - item.w - 6;
+      else if (item.side === "below") item.top = obs.bottom + 4;
       else item.top = obs.top - item.h - 6;
       moved = true;
     }
@@ -619,8 +640,30 @@ export class WhatimadoMap extends HTMLElement {
     this.querySelectorAll(".whatimado-map__node--live.is-focused").forEach((el) => {
       el.classList.remove("is-focused");
     });
-    if (!id) return;
+    if (!id) {
+      this._syncAlternateVisibility();
+      return;
+    }
     this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`)?.classList.add("is-focused");
+    this._syncAlternateVisibility();
+  }
+
+  /** Show the vertical line only as far as the unchosen roadmap that is selected. */
+  _syncAlternateVisibility() {
+    const layer = this._liveLayer;
+    if (!layer) return;
+    layer.querySelectorAll(".whatimado-map__edge.is-alternate-edge").forEach((edge) => {
+      edge.classList.remove("is-revealed");
+    });
+    let cursor = this._focusedId || "";
+    for (let step = 0; cursor && step < 8; step += 1) {
+      const edge = [...layer.querySelectorAll(".whatimado-map__edge.is-alternate-edge")].find(
+        (line) => line.getAttribute("data-to") === cursor
+      );
+      if (!edge) break;
+      edge.classList.add("is-revealed");
+      cursor = edge.getAttribute("data-from") || "";
+    }
   }
 
   /** Mirror path-card hover on the matching live node */
@@ -2330,8 +2373,13 @@ export class WhatimadoMap extends HTMLElement {
         const ay = a.y * VIEW_H;
         const bx = b.x * VIEW_W;
         const by = b.y * VIEW_H;
+        const alternateEdge =
+          options.layer === "live" &&
+          spineAlternatePaths &&
+          b.type === "path" &&
+          b.id !== this._selectedId;
         parts.push(
-          `<line class="whatimado-map__edge whatimado-map__edge--${options.layer}" data-from="${escapeHtml(from)}" data-to="${escapeHtml(to)}" x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" />`
+          `<line class="whatimado-map__edge whatimado-map__edge--${options.layer}${alternateEdge ? " is-alternate-edge" : ""}" data-from="${escapeHtml(from)}" data-to="${escapeHtml(to)}" x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" />`
         );
       });
     }
@@ -2421,6 +2469,7 @@ export class WhatimadoMap extends HTMLElement {
     if (options.layer === "live") {
       this._applyAnchorStyles();
       this._layoutCallouts();
+      this._syncAlternateVisibility();
     }
 
     if (options.layer === "live" && this._pathPreviewId) {

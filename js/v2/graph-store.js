@@ -293,7 +293,7 @@ const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
 const PATH_REACH = 176;
 const PLUS_GAP = 86;
-const SIBLING_GAP = 74;
+const SIBLING_GAP = 46;
 const OPTION_OFFSETS = [
   { dx: -175, dy: -90 },
   { dx: -40, dy: -86 },
@@ -357,7 +357,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const drop = Math.sin(rotation) * chosenDist;
   if (siblingCount > 0) {
     const room = Math.max(1, floorY - minOrigin);
-    if (siblingGap * siblingCount > room) siblingGap = room / siblingCount;
+    if (siblingGap * siblingCount > room) siblingGap = Math.max(40 * spread, room / siblingCount);
     const lowest = originY + drop + siblingGap * siblingCount;
     if (lowest > floorY) originY = Math.max(minOrigin, floorY - drop - siblingGap * siblingCount);
   }
