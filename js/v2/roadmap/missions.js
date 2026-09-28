@@ -153,11 +153,14 @@ function renderMissionTimeline(stages) {
       const full = mission.title || "Mission";
       const short = shortenMapLabel(full) || `Step ${index + 1}`;
       return `<button type="button" class="v2-timeline__stop ${state}" data-timeline-id="${escapeHtml(mission.id || "")}" aria-label="${escapeHtml(status)}: ${escapeHtml(full)}" title="${escapeHtml(full)}"><span class="v2-timeline__dot" aria-hidden="true"></span><span class="v2-timeline__name">${escapeHtml(short)}</span></button>`;
-    })
+    });
+  const steps = items
+    .flatMap((button, index) => (index === 0 ? [button] : [`<span class="v2-timeline__link" aria-hidden="true"></span>`, button]))
     .join("");
   return `
     <div class="v2-timeline">
-      <div class="v2-timeline__rail">${items}</div>
+      <span class="v2-timeline__label">Timeline</span>
+      <div class="v2-timeline__rail">${steps}<span class="v2-timeline__link" aria-hidden="true"></span></div>
       <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Add a mission here">+</button>
     </div>`;
 }
