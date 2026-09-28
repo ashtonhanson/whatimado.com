@@ -17,9 +17,9 @@ export function formatMessageHtml(value) {
 
 const TYPING_DOTS_HTML =
   `<span class="v2-typing-dots" aria-hidden="true">` +
-  `<span class="v2-typing-dots__dot">.</span>` +
-  `<span class="v2-typing-dots__dot">.</span>` +
-  `<span class="v2-typing-dots__dot">.</span>` +
+  `<span class="v2-typing-dots__dot"></span>` +
+  `<span class="v2-typing-dots__dot"></span>` +
+  `<span class="v2-typing-dots__dot"></span>` +
   `</span>`;
 
 /**
@@ -104,11 +104,5 @@ export function setStatusMessage(el, text) {
   }
   el.classList.remove("hidden");
   el.setAttribute("aria-busy", "true");
-  el.innerHTML =
-    `${escapeHtml(value)} ` +
-    `<span class="v2-typing-dots" aria-hidden="true">` +
-    `<span class="v2-typing-dots__dot">.</span>` +
-    `<span class="v2-typing-dots__dot">.</span>` +
-    `<span class="v2-typing-dots__dot">.</span>` +
-    `</span>`;
+  el.innerHTML = `${escapeHtml(value)} ${TYPING_DOTS_HTML}`;
 }

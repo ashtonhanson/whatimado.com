@@ -509,45 +509,70 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 
 .v2-typing-dots {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.02em;
-  font-size: 1.35em;
-  line-height: 1;
-  color: var(--v2-text-muted);
+  align-items: center;
+  gap: 0.34em;
+  height: 1.4em;
+  padding: 0 0.15em;
+  vertical-align: middle;
+}
+
+.v2-msg-body--typing .v2-typing-dots {
+  height: 1.6em;
+  font-size: 1.15em;
+  color: var(--v2-teal);
 }
 
 .v2-typing-dots__dot {
-  display: inline-block;
-  animation: v2-typing-dot-wave 1.05s ease-in-out infinite;
-  will-change: transform;
+  display: block;
+  width: 0.4em;
+  height: 0.4em;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0.45em currentColor;
+  animation: v2-typing-dot-wave 1.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Negative delays start mid-cycle so the wave is already travelling on the first frame. */
+.v2-typing-dots__dot:nth-child(1) {
+  animation-delay: -0.6s;
 }
 
 .v2-typing-dots__dot:nth-child(2) {
-  animation-delay: 0.14s;
+  animation-delay: -0.4s;
 }
 
 .v2-typing-dots__dot:nth-child(3) {
-  animation-delay: 0.28s;
+  animation-delay: -0.2s;
 }
 
 @keyframes v2-typing-dot-wave {
   0%,
-  60%,
   100% {
-    transform: translateY(0);
-    opacity: 0.45;
+    transform: translateY(0.28em) scale(0.8);
+    opacity: 0.35;
   }
 
-  30% {
-    transform: translateY(-0.28em);
+  50% {
+    transform: translateY(-0.28em) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes v2-typing-dot-fade {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
     opacity: 1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .v2-typing-dots__dot {
-    animation: none;
-    opacity: 0.7;
+    animation-name: v2-typing-dot-fade;
   }
 }
 
