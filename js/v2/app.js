@@ -3,6 +3,7 @@ import { initChatFlow } from "./ui/chat-flow.js";
 import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
 import { initMobileNav } from "./mobile-nav.js";
+import { initAccountSheet } from "./ui/account-sheet.js";
 
 await initBrand();
 await import("./components/whatimado-frame.js");
@@ -26,6 +27,7 @@ initChatFlow({
 initNeonShine();
 initNavRailToggle();
 initMobileNav();
+initAccountSheet();
 
 /** Safety: never leave the mobile shell permanently hidden if dock init stalls. */
 if (window.matchMedia("(max-width: 900px)").matches) {

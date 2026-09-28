@@ -894,3 +894,169 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
     opacity: 0.72;
   }
 }
+
+.v2-timeline {
+  display: flex;
+  gap: 0.4rem;
+  align-items: stretch;
+  overflow-x: auto;
+  padding: 0.15rem 0 0.85rem;
+}
+
+.v2-timeline__item,
+.v2-timeline__add,
+.v2-difficulty,
+.v2-difficulty-offer button,
+.v2-account button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.v2-timeline__item {
+  flex: 0 0 auto;
+  max-width: 11rem;
+  border: 1px solid rgba(215, 255, 246, 0.28);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--v2-text, #e8fff8);
+  padding: 0.35rem 0.7rem;
+  text-align: left;
+}
+
+.v2-timeline__item span {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.v2-timeline__item.is-done {
+  background: var(--v2-yellow, #e6ff4d);
+  color: #14220b;
+  border-color: transparent;
+}
+
+.v2-timeline__item.is-planned {
+  opacity: 0.42;
+}
+
+.v2-timeline__item.is-current {
+  border-color: var(--v2-teal, #2ee8d6);
+  box-shadow: 0 0 0 1px rgba(46, 232, 214, 0.45);
+}
+
+.v2-timeline__add {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(215, 255, 246, 0.4);
+  background: transparent;
+  color: var(--v2-text, #e8fff8);
+}
+
+.v2-difficulty {
+  margin-top: 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--v2-teal, #2ee8d6);
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.v2-mission__steps,
+.v2-mission__when {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+}
+
+.v2-difficulty-offer {
+  margin: 0.6rem 0 0.9rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.v2-difficulty-offer p {
+  margin: 0 0 0.55rem;
+}
+
+.v2-difficulty-offer button {
+  margin-right: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(215, 255, 246, 0.35);
+  background: transparent;
+  color: inherit;
+  padding: 0.35rem 0.7rem;
+}
+
+.v2-account {
+  width: min(28rem, calc(100vw - 2rem));
+  border: 0;
+  border-radius: 18px;
+  padding: 1.1rem 1.15rem 0.9rem;
+  background: #071614;
+  color: #e8fff8;
+}
+
+.v2-account::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.v2-account h2,
+.v2-account h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.v2-account p,
+.v2-account li {
+  margin: 0 0 0.7rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.v2-account label {
+  display: block;
+  margin: 0 0 0.55rem;
+  font-size: 0.82rem;
+}
+
+.v2-account input {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid rgba(215, 255, 246, 0.3);
+  background: #10211f;
+  color: inherit;
+  padding: 0.45rem 0.55rem;
+}
+
+.v2-account__note {
+  opacity: 0.75;
+}
+
+.v2-account__guest,
+.v2-account__create,
+.v2-account__close {
+  border-radius: 999px;
+  border: 1px solid rgba(215, 255, 246, 0.35);
+  background: transparent;
+  color: inherit;
+  padding: 0.45rem 0.8rem;
+}
+
+.v2-account__create {
+  background: var(--v2-yellow, #e6ff4d);
+  color: #14220b;
+  border-color: transparent;
+}
+
+.v2-account form + form,
+#account-imports {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(215, 255, 246, 0.16);
+}

@@ -135,6 +135,43 @@ function buildMissionsPrompt(idea, bullets) {
 }
 
 /**
+ * Planned missions stay visible and grey. The first unfinished one is current.
+ * The plus opens the next mission at the end of this line.
+ * @param {Array<{ missions?: { id?: string, title?: string, done?: boolean }[] }>} stages
+ */
+function renderMissionTimeline(stages) {
+  const missions = stages.flatMap((stage) => stage.missions || []);
+  if (!missions.length) return "";
+  let seenCurrent = false;
+  const items = missions
+    .map((mission) => {
+      const done = Boolean(mission.done);
+      const current = !done && !seenCurrent;
+      if (current) seenCurrent = true;
+      const state = done ? "is-done" : current ? "is-current" : "is-planned";
+      const label = done ? "Done" : current ? "Now" : "Planned";
+      return `<button type="button" class="v2-timeline__item ${state}" data-timeline-id="${escapeHtml(mission.id || "")}"><span>${escapeHtml(label)}</span>${escapeHtml(mission.title || "Mission")}</button>`;
+    })
+    .join("");
+  return `
+    <div class="v2-timeline" aria-label="Mission timeline">
+      ${items}
+      <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Add a mission here">+</button>
+    </div>`;
+}
+
+/** @param {HTMLElement | null} root @param {string} missionId */
+export function highlightTimelineMission(root, missionId) {
+  if (!root) return;
+  root.querySelectorAll("[data-timeline-id]").forEach((item) => {
+    item.classList.toggle("is-current", item.getAttribute("data-timeline-id") === missionId);
+    if (item.getAttribute("data-timeline-id") === missionId && item.classList.contains("is-planned")) {
+      item.classList.remove("is-planned");
+    }
+  });
+}
+
+/**
  * @param {HTMLElement | null} root
  * @param {{ label: string, desc: string, missions: { title: string, text: string }[] }[]} stages
  * @param {{ id: string, label: string, missionTitle: string }[]} [catalog]
@@ -151,7 +188,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
         place
       })}</div>`
     : "";
-  root.innerHTML = master + stages
+  root.innerHTML = master + renderMissionTimeline(stages) + stages
     .map(
       (stage, index) => `
         <article class="v2-stage" id="stage-${index}">
@@ -173,6 +210,12 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                   place
                 });
                 const id = mission.id || missionId(mission.title, missionIndex);
+                const steps = Array.isArray(mission.suggestedSteps) && mission.suggestedSteps.length
+                  ? `<ol class="v2-mission__steps">${mission.suggestedSteps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>`
+                  : "";
+                const timing = mission.timelineNote
+                  ? `<p class="v2-mission__when">${escapeHtml(mission.timelineNote)}</p>`
+                  : "";
                 return `
                   <li class="v2-mission${mission.done ? " is-done" : ""}" id="mission-${escapeHtml(id)}">
                     <label class="v2-check v2-mission__title">
@@ -180,8 +223,11 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                       <span>${escapeHtml(mission.title)}</span>
                     </label>
                     <p class="v2-mission__text">${escapeHtml(mission.text)}</p>
+                    ${steps}
+                    ${timing}
                     ${resources}
                     ${action}
+                    <button type="button" class="v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
                   </li>`;
               })
               .join("")}
@@ -382,10 +428,29 @@ export function createMissionsController(ui) {
       show(stages);
     });
     root.addEventListener("click", (event) => {
-      const button = event.target instanceof Element ? event.target.closest("[data-open-path]") : null;
-      const id = button?.getAttribute("data-open-path");
-      if (!id) return;
-      root.dispatchEvent(new CustomEvent("mission-open-path", { bubbles: true, detail: { id } }));
+      const target = event.target instanceof Element ? event.target : null;
+      const open = target?.closest("[data-open-path]");
+      const openId = open?.getAttribute("data-open-path");
+      if (openId) {
+        root.dispatchEvent(new CustomEvent("mission-open-path", { bubbles: true, detail: { id: openId } }));
+        return;
+      }
+      const timeline = target?.closest("[data-timeline-id]");
+      const timelineId = timeline?.getAttribute("data-timeline-id");
+      if (timelineId) {
+        highlightTimelineMission(root, timelineId);
+        root.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: timelineId } }));
+        return;
+      }
+      if (target?.closest("[data-timeline-add]")) {
+        root.dispatchEvent(new CustomEvent("mission-add", { bubbles: true }));
+        return;
+      }
+      const difficulty = target?.closest("[data-difficulty]");
+      const difficultyId = difficulty?.getAttribute("data-difficulty");
+      if (difficultyId) {
+        root.dispatchEvent(new CustomEvent("mission-difficulty", { bubbles: true, detail: { id: difficultyId } }));
+      }
     });
   }
 

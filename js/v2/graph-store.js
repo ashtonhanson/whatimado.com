@@ -262,7 +262,10 @@ export function restorePossibilityMap() {
 /** When linked, the selected roadmap is the left-to-right spoke and the map can spin to it. */
 export let roadmapFocusLinked = true;
 
-/** After a roadmap is confirmed, the other roadmaps sit on that same line. */
+/**
+ * After a roadmap is confirmed, the chosen roadmap stays on the horizontal line.
+ * The other roadmaps hang in a vertical stack above that line, greyed out.
+ */
 export let spineAlternatePaths = false;
 
 /** @param {boolean} on */
@@ -327,8 +330,8 @@ function angleFor(id, index, count) {
 
 /**
  * You sits low in the three-quarter gap. The chosen roadmap runs right.
- * Every other first-ring node leaves You at that same distance, spaced evenly
- * across the upper arc.
+ * Other roadmaps, once one is confirmed, hang in a vertical stack above that line.
+ * Settings, notes, and the rest stay on the upper arc.
  * @param {GraphNode[]} nodes
  * @param {number} rotation
  * @param {string} chosenId
@@ -341,9 +344,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
   const pathSiblings = spineAlternatePaths ? satellites.filter((node) => node.type === "path") : [];
   const orbit = satellites.filter((node) => !pathSiblings.includes(node));
-  const siblingGap = 100 * spread;
   const chosenDist = pathSiblings.length ? 96 * spread : reach;
-  const plusDist = pathSiblings.length ? chosenDist + siblingGap * (pathSiblings.length + 1) : PLUS_REACH * spread;
+  const plusDist = PLUS_REACH * spread;
 
   nodes.forEach((node) => {
     if (node.type === "start") {
@@ -363,9 +365,11 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     }
     const siblingIndex = pathSiblings.findIndex((entry) => entry.id === node.id);
     if (siblingIndex >= 0) {
-      const dist = chosenDist + siblingGap * (siblingIndex + 1);
-      node.x = (originX + Math.cos(rotation) * dist) / MAP_W;
-      node.y = (originY + Math.sin(rotation) * dist) / MAP_H;
+      /* Vertical drop on the open left side, above the chosen line and clear of the action fan. */
+      const stackX = 58;
+      const lift = (20 + siblingIndex * 54) * spread;
+      node.x = stackX / MAP_W;
+      node.y = Math.max(22, originY - lift) / MAP_H;
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
@@ -432,6 +436,18 @@ export function showRoadmapBranch(pathId) {
     nodes.push({ ...node, x: slot.x, y: slot.y });
     edges.push({ from: "start", to: node.id });
   });
+
+  if (spineAlternatePaths) {
+    const alternates = nodes.filter((node) => node.type === "path" && node.id !== chosenSource.id);
+    for (let index = edges.length - 1; index >= 0; index -= 1) {
+      const edge = edges[index];
+      if (edge.from === "start" && alternates.some((node) => node.id === edge.to)) edges.splice(index, 1);
+    }
+    alternates.forEach((node, index) => {
+      const from = index === 0 ? "start" : alternates[index - 1].id;
+      edges.push({ from, to: node.id });
+    });
+  }
 
   const chosen = nodes.find((node) => node.id === chosenSource.id);
   if (chosen) {

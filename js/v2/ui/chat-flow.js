@@ -17,7 +17,8 @@ import {
 import { createIntakeController } from "../intake/session.js";
 import { createPathMapController } from "../map/session.js";
 import { createConfirmGateController } from "../roadmap/session.js";
-import { createMissionsController } from "../roadmap/missions.js";
+import { createMissionsController, highlightTimelineMission } from "../roadmap/missions.js";
+import { applyStructuredMissionUpdate, buildDifficultyPrompt, fallbackDifficultyUpdate, parseDifficultyUpdate } from "../roadmap/difficulty.js";
 import { createDraftsController } from "../roadmap/drafts.js";
 
 const PATHS_READY_TURN = 3;
@@ -255,6 +256,7 @@ export function initChatFlow(ctx) {
     }
     if (node.type === "mission" || node.type === "task") {
       mapEl?.setSelectedNode(nodeId);
+      highlightTimelineMission(document.getElementById("mission-stages"), nodeId);
       const card = document.getElementById(node.type === "task" ? `mission-${nodeId}` : nodeId);
       card?.scrollIntoView({ block: "nearest" });
       return;
@@ -527,10 +529,104 @@ export function initChatFlow(ctx) {
     }
   }
 
+  let difficultyTicket = 0;
+
+  async function startDifficulty(missionId) {
+    const stages = appStore.journey.missionsStages || [];
+    let found = null;
+    let stageLabel = "";
+    for (const stage of stages) {
+      const mission = stage.missions?.find((item) => item.id === missionId);
+      if (mission) {
+        found = mission;
+        stageLabel = stage.label || "";
+        break;
+      }
+    }
+    if (!found) return;
+
+    const thread = continuationThread(messagesEl);
+    const ask = `I'm having difficulties with “${found.title}”. Help me make it smaller.`;
+    appendMessage(thread, "user", ask);
+    appStore.journey.messages.push({ role: "user", content: ask });
+    touchJourney();
+    flushPersist();
+    layout();
+
+    const ticket = ++difficultyTicket;
+    const typingEl = appendMessage(thread, "advisor", "…", { typing: true });
+    let update = null;
+    let spoken = "";
+    try {
+      const raw = await callAdvisor(buildDifficultyPrompt(found, stageLabel), {
+        maxTokens: 500,
+        feature: "v2_difficulty"
+      });
+      update = parseDifficultyUpdate(raw) || fallbackDifficultyUpdate(found);
+      spoken = `${update.title}\n\n${update.description}`;
+      if (update.suggested_steps.length) spoken += `\n\n${update.suggested_steps.join("\n")}`;
+      if (update.timeline_adjustments) spoken += `\n\n${update.timeline_adjustments}`;
+    } catch {
+      update = fallbackDifficultyUpdate(found);
+      spoken = `${update.title}\n\n${update.description}\n\nI couldn't reach the advisor, so this is a smaller version of the same mission. Apply it, or discard it and keep the original.`;
+    }
+    if (ticket !== difficultyTicket) return;
+    typingEl.remove();
+    appendMessage(thread, "advisor", spoken);
+    appStore.journey.messages.push({ role: "advisor", content: spoken });
+    touchJourney();
+
+    const offer = document.createElement("div");
+    offer.className = "v2-difficulty-offer v2-text-box v2-text-box--response";
+    offer.innerHTML =
+      `<p>Apply this to the roadmap, or discard it. The mission stays as it is until you apply.</p>` +
+      `<button type="button" data-apply-difficulty="1">Apply to roadmap</button>` +
+      `<button type="button" data-discard-difficulty="1">Discard</button>`;
+    thread.appendChild(offer);
+    offer.querySelector("[data-apply-difficulty]")?.addEventListener("click", () => {
+      appStore.journey.missionsStages = applyStructuredMissionUpdate(
+        appStore.journey.missionsStages || [],
+        missionId,
+        update
+      );
+      touchJourney();
+      flushPersist();
+      missions.refresh();
+      offer.remove();
+      appendMessage(thread, "advisor", "Updated that mission on the roadmap.");
+      layout();
+    });
+    offer.querySelector("[data-discard-difficulty]")?.addEventListener("click", () => {
+      offer.remove();
+      appendMessage(thread, "advisor", "Left the mission as it was.");
+      layout();
+    });
+    layout();
+    flushPersist();
+  }
+
   mapEl?.setNodeSelectHandler(handleNodeSelect);
-  document.getElementById("mission-stages")?.addEventListener("mission-open-path", (event) => {
+  const missionRoot = document.getElementById("mission-stages");
+  missionRoot?.addEventListener("mission-open-path", (event) => {
     const id = event.detail?.id;
     if (id) handleNodeSelect(id, { startConfirm: true, openRoadmap: true });
+  });
+  missionRoot?.addEventListener("mission-focus", (event) => {
+    const id = event.detail?.id;
+    if (!id) return;
+    document.getElementById(`mission-${id}`)?.scrollIntoView({ block: "nearest" });
+    const node = graphStore.nodes.find((item) => item.id === id);
+    if (node) {
+      mapEl?.setFocusedNode?.(id);
+      mapEl?.setSelectedNode?.(id);
+    }
+  });
+  missionRoot?.addEventListener("mission-add", () => {
+    missions.extend();
+  });
+  missionRoot?.addEventListener("mission-difficulty", (event) => {
+    const id = event.detail?.id;
+    if (id) startDifficulty(id);
   });
   mapEl?.setPromptEmptyChecker(() => !frameEl?.composerInput?.value.trim());
 
