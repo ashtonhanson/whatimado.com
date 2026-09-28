@@ -79,9 +79,15 @@ whatimado-map .whatimado-map__timeline-col {
 }
 
 whatimado-map .whatimado-map__timeline-col:has(#map-timeline:not([hidden])) {
+  flex: 1 1 auto;
+  margin-left: 0;
   align-items: stretch;
-  width: max-content;
-  max-width: calc(100% - 9.25rem);
+  width: auto;
+  max-width: none;
+}
+
+whatimado-map:has(#map-timeline:not([hidden])) .whatimado-map__svg {
+  transform: translateY(15px);
 }
 
 whatimado-map .whatimado-map__timeline-tools {
