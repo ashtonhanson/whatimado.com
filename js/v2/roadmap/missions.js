@@ -169,6 +169,37 @@ function timelineHost() {
   return document.getElementById("map-timeline");
 }
 
+/** Native horizontal scroll. The left cue appears only once earlier steps have moved off. */
+function bindTimelineScroll(host) {
+  const rail = host.querySelector(".v2-timeline__rail");
+  if (!(rail instanceof HTMLElement) || rail.dataset.scrollBound === "1") return;
+  rail.dataset.scrollBound = "1";
+  const mark = () => rail.classList.toggle("is-scrolled", rail.scrollLeft > 4);
+  rail.addEventListener("scroll", mark, { passive: true });
+  mark();
+
+  let drag = null;
+  rail.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest("button")) return;
+    drag = { id: event.pointerId, x: event.clientX, left: rail.scrollLeft };
+    rail.classList.add("is-dragging");
+    rail.setPointerCapture?.(event.pointerId);
+  });
+  rail.addEventListener("pointermove", (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    rail.scrollLeft = drag.left - (event.clientX - drag.x);
+  });
+  const endDrag = (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    drag = null;
+    rail.classList.remove("is-dragging");
+  };
+  rail.addEventListener("pointerup", endDrag);
+  rail.addEventListener("pointercancel", endDrag);
+}
+
 /** Pin the abbreviated timeline on the New roadmap row. */
 function mountMapTimeline(stages) {
   const host = timelineHost();
@@ -178,6 +209,7 @@ function mountMapTimeline(stages) {
   if (host) {
     host.hidden = !show;
     host.innerHTML = show ? renderMissionTimeline(stages) : "";
+    if (show) bindTimelineScroll(host);
   }
   document.getElementById("dynamic-frame")?.applyTimelineInset?.();
 }

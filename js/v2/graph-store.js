@@ -290,10 +290,15 @@ const EXPLORE_OPTIONS = [
 /** You on the left, selected spoke pointing right, in SVG units of the 800×240 map. */
 const MAP_W = 800;
 const MAP_H = 240;
-const YOU_LINKED = { x: 180, y: 188 };
-const PATH_REACH = 124;
-const PLUS_REACH = 158;
-const OPTION_REACH = 72;
+const YOU_LINKED = { x: 200, y: 168 };
+const PATH_REACH = 176;
+const PLUS_GAP = 86;
+const SIBLING_GAP = 74;
+const OPTION_OFFSETS = [
+  { dx: -175, dy: -90 },
+  { dx: -40, dy: -86 },
+  { dx: 110, dy: -78 }
+];
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
 export let mapSpread = 1;
@@ -329,23 +334,31 @@ function angleFor(id, index, count) {
 }
 
 /**
- * You sits low in the three-quarter gap. The chosen roadmap runs right.
- * Other roadmaps, once one is confirmed, hang in a vertical stack above that line.
- * Settings, notes, and the rest stay on the upper arc.
+ * You sits on the horizontal roadmap. The chosen path runs to the right.
+ * Other roadmaps drop in one vertical column under that line.
+ * Settings, notes, and the rest stay on a wider arc above it.
  * @param {GraphNode[]} nodes
  * @param {number} rotation
  * @param {string} chosenId
  */
 export function placeLinkedBranch(nodes, rotation, chosenId) {
   const spread = mapSpread;
-  const reach = PATH_REACH * spread;
   const originX = YOU_LINKED.x;
-  const originY = YOU_LINKED.y;
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
   const pathSiblings = spineAlternatePaths ? satellites.filter((node) => node.type === "path") : [];
   const orbit = satellites.filter((node) => !pathSiblings.includes(node));
-  const chosenDist = pathSiblings.length ? 96 * spread : reach;
-  const plusDist = PLUS_REACH * spread;
+  const siblingCount = pathSiblings.length;
+  const floorY = 176;
+  let siblingGap = SIBLING_GAP * spread;
+  let originY = YOU_LINKED.y;
+  if (siblingCount > 0) {
+    const room = Math.max(siblingGap, floorY - 88);
+    if (siblingGap * siblingCount > room) siblingGap = room / siblingCount;
+    const lowest = originY + siblingGap * siblingCount;
+    if (lowest > floorY) originY = Math.max(88, floorY - siblingGap * siblingCount);
+  }
+  const chosenDist = PATH_REACH * spread;
+  const plusDist = chosenDist + PLUS_GAP * spread;
 
   nodes.forEach((node) => {
     if (node.type === "start") {
@@ -365,21 +378,14 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     }
     const siblingIndex = pathSiblings.findIndex((entry) => entry.id === node.id);
     if (siblingIndex >= 0) {
-      /* Vertical drop on the open left side, above the chosen line and clear of the action fan. */
-      const stackX = 58;
-      const lift = (20 + siblingIndex * 54) * spread;
-      node.x = stackX / MAP_W;
-      node.y = Math.max(22, originY - lift) / MAP_H;
+      node.x = originX / MAP_W;
+      node.y = (originY + siblingGap * (siblingIndex + 1)) / MAP_H;
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
-    const count = Math.max(1, orbit.length);
-    const t = count === 1 ? 0.5 : index / (count - 1);
-    const fan = -Math.PI * (0.78 - t * 0.5);
-    const angle = rotation + fan;
-    const optionReach = OPTION_REACH * spread;
-    node.x = (originX + Math.cos(angle) * optionReach) / MAP_W;
-    node.y = (originY + Math.sin(angle) * optionReach) / MAP_H;
+    const slot = OPTION_OFFSETS[index % OPTION_OFFSETS.length];
+    node.x = (originX + slot.dx * spread) / MAP_W;
+    node.y = Math.max(54, originY + slot.dy * spread) / MAP_H;
   });
 }
 

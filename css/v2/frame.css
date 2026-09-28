@@ -946,13 +946,31 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
   scrollbar-width: none;
+  cursor: grab;
+}
+
+.v2-timeline__rail.is-dragging {
+  cursor: grabbing;
+}
+
+.v2-timeline__rail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1.6rem;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(6, 10, 12, 0.96), rgba(6, 10, 12, 0));
 }
 
 .v2-timeline__cutoff {
   position: absolute;
   left: -0.3rem;
   top: 50%;
-  z-index: 2;
+  z-index: 4;
   width: 0.58rem;
   height: 0.58rem;
   margin: 0;
@@ -962,12 +980,19 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   background: #10211f;
   box-shadow: 0 0 0 3px rgba(6, 10, 12, 0.85);
   pointer-events: none;
+  opacity: 0;
+}
+
+.v2-timeline__rail.is-scrolled::before,
+.v2-timeline__rail.is-scrolled .v2-timeline__cutoff {
+  opacity: 1;
 }
 
 .v2-timeline__link {
-  flex: 1 1 1.25rem;
+  flex: 0 0 2.5rem;
   align-self: center;
-  min-width: 0.85rem;
+  width: 2.5rem;
+  min-width: 2.5rem;
   height: 3px;
   background-image: radial-gradient(circle, rgba(200, 208, 216, 0.9) 1.15px, transparent 1.35px);
   background-size: 8px 3px;
