@@ -28,7 +28,7 @@ export const INTAKE_STEP = {
 /**
  * @param {string} step
  * @param {{ founder?: boolean }} [ctx]
- * @returns {{ prompt: string, options: ChipOption[] } | null}
+ * @returns {{ prompt: string, options: ChipOption[], multiple?: boolean, exclusiveValues?: string[] } | null}
  */
 export function getChipStep(step, ctx = {}) {
   const founder = Boolean(ctx.founder);
@@ -36,7 +36,7 @@ export function getChipStep(step, ctx = {}) {
     case INTAKE_STEP.ID:
       return {
         prompt:
-          "Some of the local resources we can unlock for you — benefits, housing help, and most hiring — need a state ID. Is that something you have on hand, or should we add getting that sorted to your roadmap?",
+          "Some of the local resources we can unlock for you — benefits, housing help, and most hiring — need a government photo ID. Is that something you have on hand, or should we add getting that sorted to your roadmap?",
         options: [
           { field: "idStatus", value: "has", label: "I have one on hand" },
           { field: "idStatus", value: "needs", label: "Not yet — add it to my roadmap" },
@@ -128,7 +128,10 @@ export function getChipStep(step, ctx = {}) {
       };
     case INTAKE_STEP.SKILLS:
       return {
-        prompt: "What could you realistically use to earn money soon — skills you already have, or something you'd learn in 2–4 weeks?",
+        prompt:
+          "What could you realistically use to earn money soon — skills you already have, or something you'd learn in 2–4 weeks? Pick as many as fit.",
+        multiple: true,
+        exclusiveValues: ["not sure yet — help me figure out what I can sell or apply with"],
         options: [
           { field: "skills", value: "customer service, typing, and clear communication", label: "Customer service / admin" },
           { field: "skills", value: "writing, organizing, spreadsheets, and research", label: "Writing / organizing" },

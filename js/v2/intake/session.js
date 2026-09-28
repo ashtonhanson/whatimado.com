@@ -171,6 +171,8 @@ export function createIntakeController(ui) {
     if (!spec || !messagesEl) return;
     renderIntakeChips(messagesEl, {
       options: spec.options,
+      multiple: spec.multiple,
+      exclusiveValues: spec.exclusiveValues,
       onSelect: (option) => {
         void applyChip(option);
       }

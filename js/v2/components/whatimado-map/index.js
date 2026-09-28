@@ -99,13 +99,18 @@ function screenBoxesOverlap(a, b, pad) {
  */
 /**
  * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, side?: string }>} items
+ * @param {{ left: number, right: number } | null} [bounds] visible stage edges in screen px
  */
-function placeTitleBesideNode(items) {
+function placeTitleBesideNode(items, bounds = null) {
   const you = items.find((item) => item.kind === "start");
+  const edgePad = 6;
   const placeAbove = (item) => {
     item.side = "above";
     item.left = item.nx - item.w / 2;
     item.top = item.ny - item.nr - 16 - item.h;
+    if (bounds && item.nx > bounds.left && item.nx < bounds.right) {
+      item.left = Math.min(Math.max(item.left, bounds.left + edgePad), bounds.right - edgePad - item.w);
+    }
   };
   const placeSide = (item, dx) => {
     if (dx < 0) {
@@ -116,6 +121,11 @@ function placeTitleBesideNode(items) {
       item.left = item.nx + item.nr + 8;
     }
     item.top = item.ny - item.h / 2;
+    /* A side title past the stage edge gets cut off on phones; lift it over its dot instead. */
+    const dotVisible = bounds && item.nx > bounds.left && item.nx < bounds.right;
+    if (dotVisible && (item.left < bounds.left + edgePad || item.left + item.w > bounds.right - edgePad)) {
+      placeAbove(item);
+    }
   };
   const placeBelow = (item) => {
     item.side = "below";
@@ -163,7 +173,7 @@ function placeTitleBesideNode(items) {
 
 /**
  * If two titles touch, lift the higher node's title. Horizontal position stays on that node.
- * @param {Array<{ left: number, top: number, w: number, h: number, nx: number, ny: number, side?: string }>} items
+ * @param {Array<{ left: number, top: number, w: number, h: number, nx: number, ny: number, nr?: number, side?: string }>} items
  */
 function holdTitlesOnNodes(items) {
   const homeTop = new Map(items.map((item) => [item, item.top]));
@@ -177,7 +187,16 @@ function holdTitlesOnNodes(items) {
         const bb = { left: b.left, right: b.left + b.w, top: b.top, bottom: b.top + b.h };
         if (!screenBoxesOverlap(ba, bb, 3)) continue;
         const mover = a.ny <= b.ny ? a : b;
-        if (mover.side === "left" || mover.side === "right") continue;
+        if (mover.side === "left" || mover.side === "right") {
+          const other = mover === a ? b : a;
+          if (other.side === "above" && typeof mover.nr === "number") {
+            mover.side = "above";
+            mover.left = mover.nx - mover.w / 2;
+            mover.top = mover.ny - mover.nr - 16 - mover.h;
+            hit = true;
+          }
+          continue;
+        }
         if (a.side === "below" || b.side === "below") {
           const lower = a.ny >= b.ny ? a : b;
           const upper = lower === a ? b : a;
@@ -2362,7 +2381,11 @@ export class WhatimadoMap extends HTMLElement {
         const rest = restCenter(el);
         if (rest) dots.push(rest);
       });
-      placeTitleBesideNode(items);
+      const hostRect = this.getBoundingClientRect();
+      placeTitleBesideNode(items, {
+        left: Math.max(0, hostRect.left),
+        right: Math.min(window.innerWidth, hostRect.right)
+      });
       items.forEach((item) => clearTitleFromNodes(item, dots));
       holdTitlesOnNodes(items);
       items.forEach((item) => clearTitleFromNodes(item, dots));

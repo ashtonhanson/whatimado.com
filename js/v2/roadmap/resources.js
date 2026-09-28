@@ -1,6 +1,7 @@
 import { escapeHtml } from "../ui.js";
 import { formatUserLocation } from "../state/location.js";
 import { shouldBlockJobBoards } from "../intake/stability-gates.js";
+import { countryKey, countryResources } from "./country-resources.js";
 
 /** @typedef {{ name: string, org: string, kind: string, place: string, why: string, offers: string, nextStep: string, details: string, url: string, email: string, phone: string, address: string, contact: string, notes: string, emailDraft: string, phoneDraft: string, draft: string }} LocalResource */
 
@@ -193,10 +194,15 @@ const COMMUNICATION_BY_CITY = {
  * @returns {LocalResource[]}
  */
 export function fallbackResources(location, profile) {
-  if (shouldBlockJobBoards(profile)) return STABILITY_RESOURCES.map((item) => ({ ...item }));
+  const key = countryKey(location);
+  if (shouldBlockJobBoards(profile)) {
+    if (key) return normalizeResources([...countryResources(location, "stability"), ...countryResources(location, "work")]);
+    /* 211 and Findhelp are US-only; show them only when we know nothing about the country. */
+    return location?.country ? [] : STABILITY_RESOURCES.map((item) => ({ ...item }));
+  }
   const city = String(location?.city || "").trim().toLowerCase();
-  const pack = COMMUNICATION_BY_CITY[city];
-  return pack ? pack.map((item) => ({ ...item })) : [];
+  const pack = key === "us" || !key ? COMMUNICATION_BY_CITY[city] : null;
+  return normalizeResources([...(pack || []).map((item) => ({ ...item })), ...countryResources(location, "work")]);
 }
 
 /**
@@ -270,11 +276,15 @@ const AUSTIN_FIRST_MISSION_RESOURCES = [
  * @param {import("../state/user-profile.js").UserProfile | null | undefined} profile
  */
 export function resourcesMatchingFirstMissions(stages, existing, location, profile) {
-  if (shouldBlockJobBoards(profile)) return normalizeResources(existing);
+  if (shouldBlockJobBoards(profile)) {
+    const own = normalizeResources(existing);
+    return own.length >= 3 ? own : mergeResources(own, countryResources(location, "stability"));
+  }
   const first = stages?.[0];
   const blob = (first?.missions || []).map((mission) => `${mission?.title || ""} ${mission?.text || ""}`).join("\n");
   const city = String(location?.city || "").trim().toLowerCase();
-  const austin = city === "austin" || /austin/i.test(blob);
+  const key = countryKey(location);
+  const austin = (!key || key === "us") && (city === "austin" || /austin/i.test(blob));
   /** @type {LocalResource[]} */
   const extra = [];
   if (austin && /aiga|design week|meetup|network/i.test(blob)) extra.push(AUSTIN_FIRST_MISSION_RESOURCES[0]);
@@ -286,6 +296,7 @@ export function resourcesMatchingFirstMissions(stages, existing, location, profi
   let merged = mergeResources(existing, extra);
   if (merged.length < 3 && austin) merged = mergeResources(merged, fallbackResources(location, profile));
   if (merged.length < 3 && austin) merged = mergeResources(merged, AUSTIN_FIRST_MISSION_RESOURCES);
+  if (merged.length < 3) merged = mergeResources(merged, countryResources(location, "work"));
   return merged;
 }
 

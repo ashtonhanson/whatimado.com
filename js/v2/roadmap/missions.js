@@ -4,6 +4,7 @@ import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js
 import { buildIntakeContextBlock, shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
 import { formatUserLocation } from "../state/location.js";
 import { normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail, resourcesMatchingFirstMissions } from "./resources.js";
+import { countryKey, countryName } from "./country-resources.js";
 import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, resourcesForTask } from "./resources-accordion.js";
 import { catalogForStages } from "./drafts.js";
 import { graphStore, shortenMapLabel } from "../graph-store.js";
@@ -105,6 +106,26 @@ export function parseStagesResponse(raw, fallback) {
 }
 
 /**
+ * Resources must be reachable from where the person lives, in that country's own terms.
+ * @param {import("../state/location.js").UserLocation | null | undefined} location
+ */
+function localResourceRule(location) {
+  const city = String(location?.city || "").trim();
+  const region = String(location?.region || "").trim();
+  const country = countryName(location);
+  if (!city && !country) {
+    return "Location is unknown: prefer online and nationally available services, and say so in place.";
+  }
+  const near = [city, region].filter(Boolean).join(", ") || country;
+  return (
+    `LOCAL FIT: the person lives in ${formatUserLocation(location)}. Every resource must be real and usable from there: ` +
+    `offices, organizations, and events in or near ${near}, or national services of ${country || "their country"}. ` +
+    `Use ${country || "that country"}'s own agencies, programs, currency, and terms${country && countryKey(location) !== "us" ? "; never suggest US-only services" : ""}. ` +
+    `Put the real town and country in place, or "Online".`
+  );
+}
+
+/**
  * @param {import("../graph-store.js").GraphNode} idea
  * @param {string[]} bullets
  */
@@ -118,12 +139,17 @@ function buildMissionsPrompt(idea, bullets) {
     ? "STABILITY FIRST: ID or housing is not confirmed. Do not assign job boards, Indeed, or a contact-tracking spreadsheet. Open with shelter, documents, or ID steps that match the profile."
     : "Do not insert ID, shelter, or basic-needs steps unless the profile says they are needed.";
   const plan = (bullets || []).map((bullet) => `- ${bullet}`).join("\n");
+  const austin = /^austin$/i.test(String(appStore.location?.city || "").trim());
+  const austinNote = austin
+    ? " Do not name Austin Design Week; that festival has ended. If the tasks mention meetups or agencies, include AIGA Austin events (https://austin.aiga.org/upcoming-events/) and LinkedIn (https://www.linkedin.com/)."
+    : "";
   return (
     `You are whatimado. Write the FIRST roadmap for "${idea.title || idea.label}".\n` +
     `Return ONLY JSON:\n` +
-    `{"stages":[{"label":"mission name","desc":"one sentence","missions":[{"title":"task the person does","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"","kind":"organization|platform|person|event","place":"city or online","why":"why this fits THIS path","offers":"the specific program or service","nextStep":"one action to take","url":"https://official-site","email":"","phone":"","address":"","contact":"department or role"}]}\n` +
+    `{"stages":[{"label":"mission name","desc":"one sentence","missions":[{"title":"task the person does","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"","kind":"organization|platform|person|event","place":"city, country — or online","why":"why this fits THIS path","offers":"the specific program or service","nextStep":"one action to take","url":"https://official-site","email":"","phone":"","address":"","contact":"department or role"}]}\n` +
     `Exactly 2 stages. Each stage is one mission with 2 tasks.\n` +
-    `Resources are ways to reach people on THIS path. Return at least 3 and at most 4 organizations that the first tasks actually name. Every place named in a task must appear in resources with its official URL. Do not name Austin Design Week; that festival has ended. If the path is in Austin and the tasks mention meetups or agencies, include AIGA Austin events (https://austin.aiga.org/upcoming-events/) and LinkedIn (https://www.linkedin.com/). Include email or phone only when you know that exact current address or number. If you do not, leave it empty and put the official contact-page URL in url. Never invent an email or phone number.\n` +
+    `Resources are ways to reach people on THIS path. Return at least 3 and at most 4 organizations that the first tasks actually name. Every place named in a task must appear in resources with its official URL.${austinNote} Include email or phone only when you know that exact current address or number. If you do not, leave it empty and put the official contact-page URL in url. Never invent an email or phone number.\n` +
+    `${localResourceRule(appStore.location)}\n` +
     `A mission "resources" array is only for an organization this mission needs that is not already in the path list. If it would repeat the path list, use "resources":[].\n` +
     `${writingVoice(appStore.profile)} No job-board filler.\n` +
     `${stability}\n\n` +

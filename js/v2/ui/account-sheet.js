@@ -1,7 +1,6 @@
 import { appStore } from "../state/store.js";
 import { ensureGuestUserId, isPlausibleEmail, loadAccountSnapshot, readSession, writeSession } from "../state/guest-account.js";
 import {
-  authState,
   createAccount,
   onAuthChange,
   reloadApp,
@@ -29,30 +28,6 @@ function syncLine(state) {
   if (state.sync === "error") return `Not synced yet: ${state.syncError}`;
   if (state.sync === "offline") return "Offline. Roadmaps are saved on this device and sync when you're back.";
   return "Roadmaps save on this device and back up to your account.";
-}
-
-/** @param {import("../state/auth.js").AuthState} state */
-function profileCopy(state) {
-  const name = document.querySelector("#profile-btn strong");
-  const detail = document.querySelector("#profile-btn .v2-profile-copy span");
-  const note = document.querySelector(".v2-sync-note");
-  if (!name || !detail) return;
-  const session = readSession();
-  if (state.user) {
-    name.textContent = state.user.email || "Account";
-    detail.textContent = state.sync === "error" ? "Not synced" : state.sync === "syncing" ? "Syncing…" : "Synced";
-    if (note) note.textContent = "Signed in. Roadmaps back up to your account.";
-    return;
-  }
-  if (state.ready && session?.mode === "account") {
-    name.textContent = session.email || "Account";
-    detail.textContent = "Sign in to sync";
-    if (note) note.textContent = "Signed out. Maps still save on this device.";
-    return;
-  }
-  name.textContent = "Guest";
-  detail.textContent = "Create account";
-  if (note) note.textContent = "Maps auto-save on this device. Create an account to back them up.";
 }
 
 /** @param {HTMLElement | null} root */
@@ -86,8 +61,7 @@ function setBusy(button, busy) {
 
 export function initAccountSheet() {
   const dialog = /** @type {HTMLDialogElement | null} */ (document.getElementById("account-sheet"));
-  const opener = document.getElementById("profile-btn");
-  if (!dialog || !opener) return;
+  if (!dialog) return;
 
   const guestView = document.getElementById("account-guest-view");
   const memberView = document.getElementById("account-member-view");
@@ -119,7 +93,6 @@ export function initAccountSheet() {
 
   /** @param {import("../state/auth.js").AuthState} state */
   const render = (state) => {
-    profileCopy(state);
     const signedIn = Boolean(state.user);
     if (recoveryForm) recoveryForm.hidden = !state.recovering;
     if (guestView) guestView.hidden = signedIn || state.recovering;
@@ -134,7 +107,6 @@ export function initAccountSheet() {
   };
 
   onAuthChange(render);
-  opener.addEventListener("click", open);
   document.addEventListener("v2-open-account", (event) => {
     open();
     showSignIn(/** @type {CustomEvent} */ (event).detail?.mode === "signin");
@@ -197,7 +169,6 @@ export function initAccountSheet() {
   guestForm?.addEventListener("submit", () => {
     writeSession({ mode: "guest", userId: ensureGuestUserId() });
     acknowledge();
-    profileCopy(authState());
     if (status) status.textContent = "";
   });
 

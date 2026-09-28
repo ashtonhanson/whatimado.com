@@ -67,7 +67,10 @@ export function buildIntakeContextBlock(profile, location = "", pathMode = null)
     p.founderStage ? `- Founder stage: ${p.founderStage}` : "",
     p.name ? `- Name: ${p.name}` : "",
     location ? `- Location: ${location}` : "",
-    pathMode ? `- Path mode: ${pathMode}` : ""
+    pathMode ? `- Path mode: ${pathMode}` : "",
+    location
+      ? "Local fit: name places, programs, agencies, pay, and costs that exist in this person's own city and country, in that country's terms and currency."
+      : ""
   ].filter(Boolean);
 
   if (shouldBlockJobBoards(p)) {
