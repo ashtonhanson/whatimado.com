@@ -191,6 +191,41 @@ export function computeOpenHomeGravityPan(mapEl) {
   return computeOpenHomeCamera(mapEl, gapPx, 0);
 }
 
+/** A short band at home can shrink the roadmap below pinch-zoom's floor rather than tuck it under the prompt. */
+const FIT_ZOOM_MIN = 0.5;
+/** The phone map is already a quarter of desktop scale; a short band shrinking it further piles the titles up. */
+const FIT_ZOOM_MIN_MOBILE = 1;
+
+/**
+ * Dot extents only, including how far the idle float lifts them.
+ * Titles are drawn at a fixed screen size, so the fit reserves pixels for them.
+ * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ */
+function getNodeBounds(mapEl) {
+  if (!mapEl._liveNodes.length) return getGraphBounds(mapEl);
+  const { lg, sm } = getNodeRadii();
+  const float = mapEl.querySelector(".whatimado-map__node-float");
+  const floatStyle = float ? getComputedStyle(float) : null;
+  const lift =
+    floatStyle && floatStyle.animationName !== "none"
+      ? Math.abs(parseFloat(floatStyle.getPropertyValue("--node-float-amp")) || 0)
+      : 0;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const node of mapEl._liveNodes) {
+    const cx = node.x * VIEW_W;
+    const cy = node.y * VIEW_H;
+    const r = node.type === "start" || node.type === "path" ? lg : sm;
+    minX = Math.min(minX, cx - r);
+    maxX = Math.max(maxX, cx + r);
+    minY = Math.min(minY, cy - r - lift);
+    maxY = Math.max(maxY, cy + r);
+  }
+  return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
+}
+
 /**
  * Screen pixels per SVG unit for the desktop viewBox (`xMidYMin meet`),
  * plus the CSS shift that drops the svg below the timeline.
@@ -222,9 +257,13 @@ function svgMeetPaint(mapEl, stageRect) {
 /**
  * Scale and center the constellation in the band between the timeline and the prompt.
  * Uses the live viewBox meet (uniform) so a tall stage does not stretch the fit.
+ * Titles keep a fixed screen size, so `reserve` holds the pixels they reach past the dots.
+ * `centerNodeId` stays centered unless that would shrink the map past its floor;
+ * then it slides off center only as far as keeps everything on screen.
  * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ * @param {{ centerNodeId?: string|null, reserve?: { above: number, below: number, left: number, right: number } }} [options]
  */
-export function computeTimelineFrameFit(mapEl) {
+export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const frame = document.getElementById("dynamic-frame");
   if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
@@ -240,26 +279,51 @@ export function computeTimelineFrameFit(mapEl) {
     if (bar.height > 4) top = Math.max(top, bar.bottom + 8);
   }
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 12;
-  const bottom = frameRect.top - clearance;
-  const availablePx = Math.max(48, bottom - top);
+  const room = reserve || { above: 34, below: 0, left: 96, right: 96 };
+  const bottom = frameRect.top - clearance - room.below;
+  top += room.above;
+  const availablePx = Math.max(24, bottom - top);
 
-  const bounds = getGraphBounds(mapEl);
+  const bounds = getNodeBounds(mapEl);
+  const focus = centerNodeId ? mapEl._liveNodes.find((node) => node.id === centerNodeId) : null;
   const { pxPerUnit, originX, originY, paintY } = svgMeetPaint(mapEl, stageRect);
   const spanY = Math.max(1, bounds.maxY - bounds.minY);
-  const spanX = Math.max(1, bounds.maxX - bounds.minX);
   const naturalH = spanY * pxPerUnit;
-  const naturalW = spanX * pxPerUnit;
   const zoomY = availablePx / naturalH;
-  const zoomX = (stageRect.width * 0.9) / naturalW;
-  const zoom = Math.max(1, Math.min(ZOOM_MAX, Math.min(zoomY, zoomX)));
+  const usableW = stageRect.width * 0.96;
+  let zoomX;
+  let cx;
+  let screenCx = stageRect.width / 2;
+  const floor = MOBILE_MQ.matches ? FIT_ZOOM_MIN_MOBILE : FIT_ZOOM_MIN;
+  const spanZoomX =
+    Math.max(0.1, usableW - room.left - room.right) / (Math.max(1, bounds.maxX - bounds.minX) * pxPerUnit);
+  if (focus) {
+    cx = focus.x * VIEW_W;
+    const halfX = Math.max(1, cx - bounds.minX, bounds.maxX - cx);
+    const centeredZoomX = Math.max(0.1, usableW / 2 - Math.max(room.left, room.right)) / (halfX * pxPerUnit);
+    zoomX = Math.max(centeredZoomX, Math.min(spanZoomX, floor));
+  } else {
+    cx = bounds.cx;
+    zoomX = spanZoomX;
+    screenCx += (room.left - room.right) / 2;
+  }
+  const zoom = MOBILE_MQ.matches
+    ? Math.max(FIT_ZOOM_MIN, Math.min(ZOOM_MAX, zoomX, Math.max(floor, zoomY)))
+    : Math.max(FIT_ZOOM_MIN, Math.min(ZOOM_MAX, zoomY, zoomX));
+  const scale = pxPerUnit * zoom;
+  const margin = (stageRect.width - usableW) / 2;
+  const overRight = screenCx + (bounds.maxX - cx) * scale + room.right - (stageRect.width - margin);
+  const overLeft = margin - (screenCx - (cx - bounds.minX) * scale - room.left);
+  if (overRight > 0 && overLeft < 0) screenCx -= Math.min(overRight, -overLeft);
+  else if (overLeft > 0 && overRight < 0) screenCx += Math.min(overLeft, -overRight);
   const fittedPx = naturalH * zoom;
   const graphTop = top + Math.max(0, availablePx - fittedPx) / 2;
 
   const shiftY = readGraphShiftY();
   const userY = (graphTop - stageRect.top - paintY - originY) / pxPerUnit;
   const panY = userY - shiftY - SCALE_CENTER_Y - zoom * (bounds.minY - SCALE_CENTER_Y);
-  const userX = (stageRect.width / 2 - originX) / pxPerUnit;
-  const panX = userX - SCALE_CENTER_X - zoom * (bounds.cx - SCALE_CENTER_X);
+  const userX = (screenCx - originX) / pxPerUnit;
+  const panX = userX - SCALE_CENTER_X - zoom * (cx - SCALE_CENTER_X);
   return { panX, panY, zoom };
 }
 

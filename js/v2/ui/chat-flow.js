@@ -3,6 +3,7 @@ import { graphStore, restorePossibilityMap, selectGraphNode, setSpineAlternatePa
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
+import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ } from "../dock/constants.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
 import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
 import { formatUserLocation } from "../state/location.js";
@@ -733,6 +734,10 @@ export function initChatFlow(ctx) {
   frameEl?.addEventListener("dock-settled", () => {
     mapEl?.lockFromFrame();
     mapEl?.syncSnapCamera();
+  });
+
+  frameEl?.addEventListener("frame-drag-end", () => {
+    if (MOBILE_MQ.matches) window.setTimeout(() => mapEl?.syncSnapCamera(), MOBILE_GLIDE_EASE_MS + 40);
   });
 
   document.getElementById("nav-home")?.addEventListener("click", () => {

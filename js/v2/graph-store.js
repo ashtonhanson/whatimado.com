@@ -291,14 +291,42 @@ const EXPLORE_OPTIONS = [
 const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
-const PATH_REACH = 176;
+const PATH_REACH = 88;
 const PLUS_GAP = 86;
 const SIBLING_GAP = 46;
+const MIN_SIBLING_GAP = 28;
+/** The map pulls nodes back inside roughly this vertical band of the 240-unit view. */
+const NODE_CEIL_Y = 32;
+const NODE_FLOOR_Y = 210;
+/** @type {Record<string, { dx: number, dy: number }>} */
+const LINKED_OPTION_OFFSETS = {
+  "option-settings": { dx: -131, dy: -68 },
+  "option-notes": { dx: -40, dy: -86 },
+  "option-roadmaps": { dx: 110, dy: -78 }
+};
 const OPTION_OFFSETS = [
   { dx: -175, dy: -90 },
   { dx: -40, dy: -86 },
   { dx: 110, dy: -78 }
 ];
+
+/**
+ * Unlinked: You at the bottom center, the selected roadmap straight above,
+ * options fanned to the left, other roadmaps stacked in a column on the right.
+ */
+const YOU_UNLINKED = { x: 400, y: 182 };
+const UNLINKED_CHOSEN = { dx: 0, dy: -100 };
+const UNLINKED_PLUS = { dx: 52, dy: -100 };
+const UNLINKED_COLUMN = { dx: 160, dy: -32 };
+/**
+ * Their titles sit to the left and can span them all on a phone, so rows stay a title-height apart.
+ * @type {Record<string, { dx: number, dy: number }>}
+ */
+const UNLINKED_OPTION_OFFSETS = {
+  "option-settings": { dx: -60, dy: -50 },
+  "option-notes": { dx: -90, dy: -96 },
+  "option-roadmaps": { dx: -200, dy: -4 }
+};
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
 export let mapSpread = 1;
@@ -311,15 +339,6 @@ export function setMapSpread(spread) {
 
 /** @type {Map<string, number>} */
 const homeAngles = new Map();
-
-/** Chosen path sits on the short center spoke. Siblings and options fill the arc. */
-const BRANCH_SLOTS = [
-  { x: 0.5, y: 0.42 },
-  { x: 0.32, y: 0.52 },
-  { x: 0.68, y: 0.52 },
-  { x: 0.24, y: 0.62 },
-  { x: 0.76, y: 0.62 }
-];
 
 /**
  * @param {string} id
@@ -345,21 +364,20 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const spread = mapSpread;
   const originX = YOU_LINKED.x;
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
-  const pathSiblings = spineAlternatePaths ? satellites.filter((node) => node.type === "path") : [];
-  const orbit = satellites.filter((node) => !pathSiblings.includes(node));
-  const siblingCount = pathSiblings.length;
-  const floorY = 176;
-  const minOrigin = 88;
+  const pathSiblings = satellites.filter((node) => node.type === "path");
+  const orbit = satellites.filter((node) => !pathSiblings.includes(node) && !LINKED_OPTION_OFFSETS[node.id]);
   const chosenDist = PATH_REACH * spread;
   const plusDist = chosenDist + PLUS_GAP * spread;
+  const drop = Math.sin(rotation) * chosenDist;
+  const topReach = Math.max(...Object.values(LINKED_OPTION_OFFSETS).map((slot) => -slot.dy)) * spread;
   let siblingGap = SIBLING_GAP * spread;
   let originY = YOU_LINKED.y;
-  const drop = Math.sin(rotation) * chosenDist;
-  if (siblingCount > 0) {
-    const room = Math.max(1, floorY - minOrigin);
-    if (siblingGap * siblingCount > room) siblingGap = Math.max(40 * spread, room / siblingCount);
-    const lowest = originY + drop + siblingGap * siblingCount;
-    if (lowest > floorY) originY = Math.max(minOrigin, floorY - drop - siblingGap * siblingCount);
+  if (pathSiblings.length) {
+    originY = Math.min(originY, NODE_FLOOR_Y - drop - siblingGap * pathSiblings.length);
+    if (originY - topReach < NODE_CEIL_Y) {
+      originY = NODE_CEIL_Y + topReach;
+      siblingGap = Math.max(MIN_SIBLING_GAP, (NODE_FLOOR_Y - originY - drop) / pathSiblings.length);
+    }
   }
   const chosenX = originX + Math.cos(rotation) * chosenDist;
   const chosenY = originY + Math.sin(rotation) * chosenDist;
@@ -387,9 +405,39 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
-    const slot = OPTION_OFFSETS[index % OPTION_OFFSETS.length];
+    const slot = LINKED_OPTION_OFFSETS[node.id] || OPTION_OFFSETS[index % OPTION_OFFSETS.length];
     node.x = (originX + slot.dx * spread) / MAP_W;
-    node.y = Math.max(54, originY + slot.dy * spread) / MAP_H;
+    node.y = (originY + slot.dy * spread) / MAP_H;
+  });
+}
+
+/**
+ * @param {GraphNode[]} nodes
+ * @param {string} chosenId
+ */
+export function placeUnlinkedBranch(nodes, chosenId) {
+  const { x: youX, y: youY } = YOU_UNLINKED;
+  const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
+  const column = satellites.filter((node) => node.type === "path");
+  const extras = satellites.filter((node) => !column.includes(node) && !UNLINKED_OPTION_OFFSETS[node.id]);
+  const columnTop = youY + UNLINKED_COLUMN.dy;
+  const columnGap =
+    column.length > 1
+      ? Math.max(MIN_SIBLING_GAP, Math.min(SIBLING_GAP, (NODE_FLOOR_Y - columnTop) / (column.length - 1)))
+      : SIBLING_GAP;
+
+  nodes.forEach((node) => {
+    /** @type {{ dx: number, dy: number }} */
+    let slot;
+    if (node.type === "start") slot = { dx: 0, dy: 0 };
+    else if (node.id === chosenId) slot = UNLINKED_CHOSEN;
+    else if (node.type === "more") slot = UNLINKED_PLUS;
+    else if (column.includes(node)) {
+      slot = { dx: UNLINKED_COLUMN.dx, dy: UNLINKED_COLUMN.dy + columnGap * column.indexOf(node) };
+    } else if (UNLINKED_OPTION_OFFSETS[node.id]) slot = UNLINKED_OPTION_OFFSETS[node.id];
+    else slot = { dx: -110 - 50 * extras.indexOf(node), dy: -100 };
+    node.x = (youX + slot.dx) / MAP_W;
+    node.y = (youY + slot.dy) / MAP_H;
   });
 }
 
@@ -406,7 +454,7 @@ export function relayoutLinkedSpread() {
 
 /**
  * Linked: You on the left, selected roadmap to the right, other options around You.
- * Unlinked: the compact constellation, with no spin into that left-to-right focus.
+ * Unlinked: selected roadmap above You, options to the left, other roadmaps in a right column.
  * @param {string} pathId
  */
 export function showRoadmapBranch(pathId) {
@@ -422,7 +470,6 @@ export function showRoadmapBranch(pathId) {
     if (node.id !== chosenSource.id) spokes.push(node);
   });
   EXPLORE_OPTIONS.forEach((option) => {
-    if (spokes.length >= BRANCH_SLOTS.length) return;
     if (spokes.some((node) => node.id === option.id)) return;
     spokes.push({
       id: option.id,
@@ -441,9 +488,8 @@ export function showRoadmapBranch(pathId) {
   const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.76 }];
   /** @type {GraphEdge[]} */
   const edges = [];
-  spokes.forEach((node, index) => {
-    const slot = BRANCH_SLOTS[index] ?? BRANCH_SLOTS[BRANCH_SLOTS.length - 1];
-    nodes.push({ ...node, x: slot.x, y: slot.y });
+  spokes.forEach((node) => {
+    nodes.push({ ...node });
     edges.push({ from: "start", to: node.id });
   });
 
@@ -483,6 +529,8 @@ export function showRoadmapBranch(pathId) {
   if (roadmapFocusLinked) {
     placeLinkedBranch(nodes, to, chosenSource.id);
     graphStore.focusRotation = to;
+  } else {
+    placeUnlinkedBranch(nodes, chosenSource.id);
   }
 
   graphStore.nodes = nodes;

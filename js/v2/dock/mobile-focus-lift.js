@@ -14,6 +14,9 @@ const FOCUS_MAP_HERO_GAP_PX = 6;
  * Raising this moves hero+subtitle up (map-head nudges alone only grew the map).
  */
 const FOCUS_HERO_PROMPT_GAP_PX = 13;
+/** Mid-glide fits read a moving frame, so fit once more after the sheet stops. */
+const SETTLE_FIT_MS = 140;
+let settleFitTimer = 0;
 
 function lockDocumentScroll() {
   if (window.scrollX || window.scrollY) {
@@ -82,6 +85,8 @@ function fitPinnedMap(map) {
     map.dataset.sceneFit = "1";
     requestAnimationFrame(() => requestAnimationFrame(run));
   }
+  window.clearTimeout(settleFitTimer);
+  settleFitTimer = window.setTimeout(run, SETTLE_FIT_MS);
 }
 
 /**

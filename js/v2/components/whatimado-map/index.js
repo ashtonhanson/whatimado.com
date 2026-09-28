@@ -94,21 +94,23 @@ function placeTitleBesideNode(items) {
     }
     item.top = item.ny - item.h / 2;
   };
-  const placeBelow = (item) => {
-    item.side = "below";
-    item.left = item.nx - item.w / 2;
-    item.top = item.ny + item.nr + 5;
-  };
   if (you) placeAbove(you);
   const others = items.filter((item) => item !== you);
-  const spine = you ? others.filter((item) => Math.abs(item.ny - you.ny) < 28) : [];
+  const spine = you
+    ? others.filter((item) => item.kind !== "path" && item.nx > you.nx && Math.abs(item.ny - you.ny) < 28)
+    : [];
+  const dotOverYouTitle = (item) =>
+    Math.abs(item.nx - you.nx) < you.w / 2 + item.nr + 6 &&
+    item.ny + item.nr + 6 > you.top &&
+    item.ny - item.nr - 6 < you.top + you.h;
+  if (you && others.some(dotOverYouTitle)) placeSide(you, spine.length ? -1 : 1);
   const rightmost = spine.reduce((best, item) => (!best || item.nx > best.nx ? item : best), null);
   const top = others
-    .filter((item) => !spine.includes(item))
+    .filter((item) => item.kind !== "path" && !spine.includes(item))
     .reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
   others.forEach((item) => {
     if (item.kind === "path") {
-      placeBelow(item);
+      placeSide(item, 1);
       return;
     }
     if (spine.includes(item)) {
@@ -393,12 +395,18 @@ export class WhatimadoMap extends HTMLElement {
     }
     this._refreshDrift();
     this._onViewportResize = () => {
-      if (this._userPanned || window.matchMedia("(max-width: 900px)").matches || isOpenHomePhase()) {
+      if (window.matchMedia("(max-width: 900px)").matches && !isOpenHomePhase()) {
+        this.syncDesktopViewBox();
+        if (!this._userPanned) this.syncSnapCamera();
+      } else if (this._userPanned || isOpenHomePhase()) {
         this.syncDesktopViewBox();
       } else {
-        const target = this._computeChatFrameGravityPan();
-        if (typeof target.zoom === "number") this._zoom = target.zoom;
-        this._animatePanTo(target.panX, target.panY, false);
+        this.syncDesktopViewBox();
+        if (!this.syncSnapCamera()) {
+          const target = this._computeChatFrameGravityPan();
+          if (typeof target.zoom === "number") this._zoom = target.zoom;
+          this._animatePanTo(target.panX, target.panY, false);
+        }
       }
       this._seatPlusPastTitle();
     };
@@ -521,7 +529,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!chosen) return;
     showRoadmapBranch(chosen.id);
     this.syncLiveFromStore();
-    if (roadmapFocusLinked) this.resetToYou({ animate: true });
+    if (roadmapFocusLinked && !this.syncSnapCamera()) this.resetToYou({ animate: true });
   }
 
   _cancelLayoutSpin() {
@@ -551,6 +559,7 @@ export class WhatimadoMap extends HTMLElement {
       }
       this._layoutSpinRaf = 0;
       graphStore.focusRotation = spin.to;
+      this.syncSnapCamera();
     };
     placeLinkedBranch(nodes, spin.from, spin.chosenId);
     this._renderLayer(this._liveLayer, nodes, edges, { layer: "live" });
@@ -589,7 +598,10 @@ export class WhatimadoMap extends HTMLElement {
     const fresh = this.querySelector(".whatimado-map__new-roadmap");
     const onRoadmap = this._liveNodes.some((node) => node.type === "path" || node.type === "task");
     fresh?.classList.toggle("hidden", !onRoadmap);
-    if (window.matchMedia("(max-width: 900px)").matches || isOpenHomePhase()) return;
+    if (isOpenHomePhase()) return;
+    this.syncDesktopViewBox();
+    if (this.syncSnapCamera()) return;
+    if (window.matchMedia("(max-width: 900px)").matches) return;
     this._userPanned = false;
     const target = this._computeChatFrameGravityPan();
     if (typeof target.zoom === "number") this._zoom = target.zoom;
@@ -848,6 +860,7 @@ export class WhatimadoMap extends HTMLElement {
 
   /** Recenter a locked constellation after the mobile map band is resized. */
   fitLockedScene({ animate = false } = {}) {
+    if (this.dataset.readingPinned === "1" && this.syncSpreadForFrame()) return;
     const chatPinned = this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1";
     const target = chatPinned ? this._computeChatFrameGravityPan() : this._computeDefaultScenePan();
     if (typeof target.zoom === "number") this._zoom = target.zoom;
@@ -937,6 +950,7 @@ export class WhatimadoMap extends HTMLElement {
     } else if (isOpenHomePhase()) {
       target = this._computeOpenHomeGravityPan();
     } else {
+      if (this.syncSnapCamera()) return;
       target = this._computeChatFrameGravityPan();
     }
 
@@ -945,54 +959,88 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Below home, zoom and center the map between the timeline and the prompt.
-   * At home or tucked above it, keep the resting camera.
+   * At home or lower, zoom and center the roadmap between the timeline and the prompt.
+   * Tucked above home, the map holds where it was.
+   * On mobile this only runs while the sheet rests low enough to show the map band.
    * @param {number} [frameTop] Frame top in main coordinates
+   * @returns {boolean} Whether the camera was fitted
    */
   syncSpreadForFrame(frameTop) {
-    if (window.matchMedia("(max-width: 900px)").matches || !roadmapFocusLinked) return;
+    if (!this._liveNodes.some((node) => node.type === "more")) return false;
     const frame = document.getElementById("dynamic-frame");
     const main = document.querySelector(".v2-main");
-    if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return;
-    const anchors = measureAnchors(main, frame);
-    const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
-    const travel = top - anchors.homeBase;
-    if (travel <= 1) {
-      if (this._restCamera) {
-        this._zoom = this._restCamera.zoom;
-        this._userPanned = false;
-        this._animatePanTo(this._restCamera.panX, this._restCamera.panY, false);
-        this._restCamera = null;
-      }
-      return;
+    if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      if (isOpenHomePhase() || this.dataset.focusPinned === "1") return false;
+      const snap = frame._dock?.activeSnap;
+      if (snap !== "mobile-collapsed" && snap !== "mobile-focus") return false;
+      if (frame._dock?._keyboardDocked || document.body.classList.contains("is-mobile-composer-focus")) return false;
+    } else {
+      const anchors = measureAnchors(main, frame);
+      const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
+      if (top < anchors.homeBase - 1) return false;
     }
-    if (!this._restCamera) {
-      this._restCamera = { zoom: this._zoom || 1, panX: this._panX, panY: this._panY };
-    }
-    const rest = this._restCamera;
-    const fit = computeTimelineFrameFit(this);
-    const blend = Math.min(1, travel / 60);
-    this._zoom = rest.zoom + (fit.zoom - rest.zoom) * blend;
+    const selectedId = this._selectedId || graphStore.selectedId;
+    const selected = this._liveNodes.find((node) => node.type === "path" && node.id === selectedId);
+    const options = { centerNodeId: roadmapFocusLinked ? null : selected?.id, reserve: null };
     this._userPanned = false;
-    this._animatePanTo(
-      rest.panX + (fit.panX - rest.panX) * blend,
-      rest.panY + (fit.panY - rest.panY) * blend,
-      false
-    );
+    for (let pass = 0; pass < 3; pass++) {
+      const fit = computeTimelineFrameFit(this, options);
+      this._zoom = fit.zoom;
+      this._animatePanTo(fit.panX, fit.panY, false);
+      const reserve = this._measureTitleReserve();
+      if (!reserve) break;
+      options.reserve = reserve;
+    }
+    return true;
   }
 
   /**
-   * Frame pulled to the bottom or the top: same expanded map.
-   * The three-quarter snap keeps the compact fan in the gap.
+   * How far the visible titles reach past the dots, in screen pixels.
+   * @returns {{ above: number, below: number, left: number, right: number }|null}
    */
+  _measureTitleReserve() {
+    const layer = this._liveLayer;
+    if (!layer) return null;
+    const dots = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
+    const all = { ...dots };
+    const grow = (box, rect) => {
+      box.left = Math.min(box.left, rect.left);
+      box.right = Math.max(box.right, rect.right);
+      box.top = Math.min(box.top, rect.top);
+      box.bottom = Math.max(box.bottom, rect.bottom);
+    };
+    layer.querySelectorAll(".whatimado-map__node--live").forEach((group) => {
+      const float = group.querySelector(".whatimado-map__node-float");
+      if (float && getComputedStyle(float).visibility !== "visible") return;
+      const body = group.querySelector(".whatimado-map__node-body");
+      if (body) {
+        const rect = body.getBoundingClientRect();
+        grow(dots, rect);
+        grow(all, rect);
+      }
+      const label = group.querySelector("text");
+      if (label?.textContent?.trim()) grow(all, label.getBoundingClientRect());
+    });
+    if (!Number.isFinite(dots.top)) return null;
+    const pad = 4;
+    const reach = (value, cap) => Math.min(cap, Math.max(0, value)) + pad;
+    return {
+      above: reach(dots.top - all.top, 40),
+      below: reach(all.bottom - dots.bottom, 24),
+      left: reach(dots.left - all.left, 130),
+      right: reach(all.right - dots.right, 130)
+    };
+  }
+
+  /** Re-fit the roadmap to wherever the prompt currently sits. */
   syncSnapCamera() {
-    if (window.matchMedia("(max-width: 900px)").matches) return;
     const frame = document.getElementById("dynamic-frame");
     const main = document.querySelector(".v2-main");
-    if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return;
-    const top = frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
-    this._spreadReady = false;
-    this.syncSpreadForFrame(top);
+    if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
+    const dockTop = frame._dock?.topPx;
+    const top = Number.isFinite(dockTop) ? dockTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
+    return this.syncSpreadForFrame(top);
   }
 
   /** Slide the whole map so the selected roadmap sits in the gap above the prompt. */
