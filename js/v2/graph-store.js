@@ -335,8 +335,8 @@ function angleFor(id, index, count) {
 
 /**
  * You sits on the horizontal roadmap. The chosen path runs to the right.
- * Other roadmaps drop in one vertical column under that line.
- * Settings, notes, and the rest stay on a wider arc above it.
+ * Other roadmaps drop in one column under that chosen node.
+ * Settings, notes, and the rest stay on a wider arc above You.
  * @param {GraphNode[]} nodes
  * @param {number} rotation
  * @param {string} chosenId
@@ -349,16 +349,20 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const orbit = satellites.filter((node) => !pathSiblings.includes(node));
   const siblingCount = pathSiblings.length;
   const floorY = 176;
-  let siblingGap = SIBLING_GAP * spread;
-  let originY = YOU_LINKED.y;
-  if (siblingCount > 0) {
-    const room = Math.max(siblingGap, floorY - 88);
-    if (siblingGap * siblingCount > room) siblingGap = room / siblingCount;
-    const lowest = originY + siblingGap * siblingCount;
-    if (lowest > floorY) originY = Math.max(88, floorY - siblingGap * siblingCount);
-  }
+  const minOrigin = 88;
   const chosenDist = PATH_REACH * spread;
   const plusDist = chosenDist + PLUS_GAP * spread;
+  let siblingGap = SIBLING_GAP * spread;
+  let originY = YOU_LINKED.y;
+  const drop = Math.sin(rotation) * chosenDist;
+  if (siblingCount > 0) {
+    const room = Math.max(1, floorY - minOrigin);
+    if (siblingGap * siblingCount > room) siblingGap = room / siblingCount;
+    const lowest = originY + drop + siblingGap * siblingCount;
+    if (lowest > floorY) originY = Math.max(minOrigin, floorY - drop - siblingGap * siblingCount);
+  }
+  const chosenX = originX + Math.cos(rotation) * chosenDist;
+  const chosenY = originY + Math.sin(rotation) * chosenDist;
 
   nodes.forEach((node) => {
     if (node.type === "start") {
@@ -367,8 +371,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       return;
     }
     if (node.id === chosenId) {
-      node.x = (originX + Math.cos(rotation) * chosenDist) / MAP_W;
-      node.y = (originY + Math.sin(rotation) * chosenDist) / MAP_H;
+      node.x = chosenX / MAP_W;
+      node.y = chosenY / MAP_H;
       return;
     }
     if (node.type === "more") {
@@ -378,8 +382,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     }
     const siblingIndex = pathSiblings.findIndex((entry) => entry.id === node.id);
     if (siblingIndex >= 0) {
-      node.x = originX / MAP_W;
-      node.y = (originY + siblingGap * (siblingIndex + 1)) / MAP_H;
+      node.x = chosenX / MAP_W;
+      node.y = (chosenY + siblingGap * (siblingIndex + 1)) / MAP_H;
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
@@ -450,7 +454,7 @@ export function showRoadmapBranch(pathId) {
       if (edge.from === "start" && alternates.some((node) => node.id === edge.to)) edges.splice(index, 1);
     }
     alternates.forEach((node, index) => {
-      const from = index === 0 ? "start" : alternates[index - 1].id;
+      const from = index === 0 ? chosenSource.id : alternates[index - 1].id;
       edges.push({ from, to: node.id });
     });
   }

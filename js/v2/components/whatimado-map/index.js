@@ -373,11 +373,12 @@ export class WhatimadoMap extends HTMLElement {
     this._onViewportResize = () => {
       if (this._userPanned || window.matchMedia("(max-width: 900px)").matches || isOpenHomePhase()) {
         this.syncDesktopViewBox();
-        return;
+      } else {
+        const target = this._computeChatFrameGravityPan();
+        if (typeof target.zoom === "number") this._zoom = target.zoom;
+        this._animatePanTo(target.panX, target.panY, false);
       }
-      const target = this._computeChatFrameGravityPan();
-      if (typeof target.zoom === "number") this._zoom = target.zoom;
-      this._animatePanTo(target.panX, target.panY, false);
+      this._seatPlusPastTitle();
     };
     window.addEventListener("resize", this._onViewportResize);
     requestAnimationFrame(() => {
@@ -435,6 +436,7 @@ export class WhatimadoMap extends HTMLElement {
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
     window.removeEventListener("resize", this._onViewportResize);
+    if (this._plusSeatRaf) cancelAnimationFrame(this._plusSeatRaf);
     window.removeEventListener("pointermove", this._onHoverPointerMove, true);
     window.removeEventListener("mousemove", this._onHoverMouseMove, true);
     window.removeEventListener("wheel", this._onWheel, true);
@@ -2089,6 +2091,7 @@ export class WhatimadoMap extends HTMLElement {
 
       const dots = [];
       layer.querySelectorAll(".whatimado-map__node-body").forEach((el) => {
+        if (el.closest(".is-more")) return;
         const rest = restCenter(el);
         if (rest) dots.push(rest);
       });
@@ -2097,8 +2100,78 @@ export class WhatimadoMap extends HTMLElement {
       holdTitlesOnNodes(items);
       items.forEach((item) => clearTitleFromNodes(item, dots));
       this._writeCallouts(items);
+      this._seatPlusPastTitle();
+      if (this._plusSeatRaf) cancelAnimationFrame(this._plusSeatRaf);
+      this._plusSeatRaf = requestAnimationFrame(() => {
+        this._plusSeatRaf = 0;
+        this._seatPlusPastTitle();
+      });
     } finally {
       this._layingOut = false;
+    }
+  }
+
+  /**
+   * Keep the plus a fixed gap past the selected title, however long that title is.
+   */
+  _seatPlusPastTitle() {
+    if (!roadmapFocusLinked) return;
+    const svg = this._svg;
+    const layer = this._liveLayer;
+    if (!svg || !layer) return;
+    const plus = layer.querySelector(".whatimado-map__node.is-more");
+    const main =
+      layer.querySelector(".whatimado-map__node.is-roadmap.is-selected") ||
+      layer.querySelector(".whatimado-map__node.is-roadmap");
+    const label = main?.querySelector(".whatimado-map__label");
+    const plusBody = plus?.querySelector(".whatimado-map__node-body");
+    if (!(plus instanceof SVGGElement) || !(label instanceof SVGTextElement) || !(plusBody instanceof SVGCircleElement)) return;
+
+    const titleGap = 20;
+    const labelBox = label.getBoundingClientRect();
+    const plusBox = plusBody.getBoundingClientRect();
+    if (labelBox.width < 2 || plusBox.width < 2) return;
+    const labelFloat = this._floatScreenOffset(label);
+    const plusFloat = this._floatScreenOffset(plusBody);
+    const labelRight = labelBox.right - labelFloat.x;
+    const plusCenter = plusBox.left + plusBox.width / 2 - plusFloat.x;
+    const plusR = plusBox.width / 2;
+    const dx = labelRight + titleGap + plusR - plusCenter;
+    if (Math.abs(dx) < 1) return;
+
+    const ctm = plus.getScreenCTM();
+    const inv = invertCtm(ctm);
+    if (!inv) return;
+    const origin = svg.createSVGPoint();
+    const shifted = svg.createSVGPoint();
+    shifted.x = dx;
+    const localDelta = shifted.matrixTransform(inv).x - origin.matrixTransform(inv).x;
+    if (!Number.isFinite(localDelta) || Math.abs(localDelta) < 0.4) return;
+
+    const shift = (el, name) => {
+      const value = parseFloat(el.getAttribute(name) || "");
+      if (Number.isFinite(value)) el.setAttribute(name, (value + localDelta).toFixed(1));
+    };
+    plus.querySelectorAll("[cx]").forEach((el) => shift(el, "cx"));
+    plus.querySelectorAll("line").forEach((el) => {
+      shift(el, "x1");
+      shift(el, "x2");
+    });
+    const plusId = plus.getAttribute("data-node-id") || "";
+    if (plusId) {
+      layer.querySelectorAll(".whatimado-map__edge").forEach((line) => {
+        if (line.getAttribute("data-to") === plusId) shift(line, "x2");
+        if (line.getAttribute("data-from") === plusId) shift(line, "x1");
+      });
+    }
+    const graphNode = this._liveNodes.find((node) => node.id === plusId);
+    if (graphNode) graphNode.x += localDelta / VIEW_W;
+    const drift = this._driftNodes?.get(plusId);
+    if (drift) {
+      drift.baseX += localDelta;
+      drift.originX += localDelta;
+      drift.homeVx = 0;
+      drift.glideVx = 0;
     }
   }
 
