@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setMapSpread, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
   BOUND_GLIDE_DAMP,
@@ -42,6 +42,7 @@ import {
   computeOpenHomeGravityPan,
   computePanForFocalNode,
   computePanForNodeAboveFrame,
+  computeTimelineFrameFit,
   isOpenHomePhase
 } from "../../map/pan.js";
 
@@ -944,9 +945,9 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Three-quarter frame keeps a compact fan in the gap.
-   * Top and bottom use the same expanded figure.
-   * @param {number} [frameTop]
+   * Below home, zoom and center the map between the timeline and the prompt.
+   * At home or tucked above it, keep the resting camera.
+   * @param {number} [frameTop] Frame top in main coordinates
    */
   syncSpreadForFrame(frameTop) {
     if (window.matchMedia("(max-width: 900px)").matches || !roadmapFocusLinked) return;
@@ -955,30 +956,29 @@ export class WhatimadoMap extends HTMLElement {
     if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return;
     const anchors = measureAnchors(main, frame);
     const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
-    const up = (anchors.homeBase - top) / Math.max(1, anchors.homeBase - anchors.topLock);
-    const down = (top - anchors.homeBase) / Math.max(1, anchors.bottomCushion - anchors.homeBase);
-    const expand = Math.max(0, Math.min(1, Math.max(up, down)));
-    const next = 1 + expand * 0.28;
-    if (Math.abs(next - (this._mapSpread || 1)) < 0.02 && this._spreadReady) return;
-    this._mapSpread = next;
-    this._spreadReady = true;
-    setMapSpread(next);
-    if (!relayoutLinkedSpread()) return;
-    this._liveNodes = graphStore.nodes;
-    this._renderLayer(this._liveLayer, graphStore.nodes, graphStore.edges, { layer: "live" });
-    this._applyAnchorStyles();
-    const expanded = expand > 0.82;
-    if (expanded) {
-      this.syncDesktopViewBox();
-      const target = this._computeChatFrameGravityPanAtMainTop(anchors.bottomCushion);
-      if (typeof target.zoom === "number") this._zoom = target.zoom;
-      this._animatePanTo(target.panX, target.panY, false);
+    const travel = top - anchors.homeBase;
+    if (travel <= 1) {
+      if (this._restCamera) {
+        this._zoom = this._restCamera.zoom;
+        this._userPanned = false;
+        this._animatePanTo(this._restCamera.panX, this._restCamera.panY, false);
+        this._restCamera = null;
+      }
       return;
     }
+    if (!this._restCamera) {
+      this._restCamera = { zoom: this._zoom || 1, panX: this._panX, panY: this._panY };
+    }
+    const rest = this._restCamera;
+    const fit = computeTimelineFrameFit(this);
+    const blend = Math.min(1, travel / 60);
+    this._zoom = rest.zoom + (fit.zoom - rest.zoom) * blend;
     this._userPanned = false;
-    const target = this._computeChatFrameGravityPan();
-    if (typeof target.zoom === "number") this._zoom = target.zoom;
-    this._animatePanTo(target.panX, target.panY, false);
+    this._animatePanTo(
+      rest.panX + (fit.panX - rest.panX) * blend,
+      rest.panY + (fit.panY - rest.panY) * blend,
+      false
+    );
   }
 
   /**

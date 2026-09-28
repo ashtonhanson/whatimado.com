@@ -916,6 +916,7 @@ export class FrameDockController {
       this._setMapDim(
         mapDimStrength(topPx, this.mainEl, this._dragging ? this._dimMapBottom ?? undefined : undefined)
       );
+      if (this._docked && !this._dockTransition) this.onDockProgress(topPx);
     }
     if (layout) {
       this.onLayout();

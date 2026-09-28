@@ -1,5 +1,5 @@
 import { measureCssVarLength } from "../layout/measure-css-var.js";
-import { MOBILE_MQ, SCALE_CENTER_X, SCALE_CENTER_Y, VIEW_H, VIEW_W, ZOOM_MIN } from "./constants.js";
+import { MOBILE_MQ, SCALE_CENTER_X, SCALE_CENTER_Y, VIEW_H, VIEW_W, ZOOM_MAX } from "./constants.js";
 import {
   clampPanYForOpenHome,
   clampPanYForTopPad,
@@ -189,6 +189,78 @@ export function computeOpenHomeGravityPan(mapEl) {
 
   const gapPx = Math.max(14, measureCssVarLength("--v2-hero-node-gap") || 14);
   return computeOpenHomeCamera(mapEl, gapPx, 0);
+}
+
+/**
+ * Screen pixels per SVG unit for the desktop viewBox (`xMidYMin meet`),
+ * plus the CSS shift that drops the svg below the timeline.
+ * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ * @param {DOMRect} stageRect
+ */
+function svgMeetPaint(mapEl, stageRect) {
+  const svg = mapEl._svg || mapEl.querySelector(".whatimado-map__svg");
+  const box = svg?.viewBox?.baseVal;
+  const vbW = box?.width > 0 ? box.width : VIEW_W;
+  const vbH = box?.height > 0 ? box.height : VIEW_H;
+  const pxPerUnit = Math.min(stageRect.width / vbW, stageRect.height / vbH);
+  const letterY = Math.max(0, stageRect.height - vbH * pxPerUnit);
+  const letterX = Math.max(0, stageRect.width - vbW * pxPerUnit);
+  const align = svg?.getAttribute("preserveAspectRatio") || "";
+  const originY = align.includes("YMin") ? 0 : align.includes("YMax") ? letterY : letterY / 2;
+  let paintY = 0;
+  if (svg) {
+    const transform = getComputedStyle(svg).transform;
+    const match = transform && transform !== "none" ? transform.match(/matrix\(([^)]+)\)/) : null;
+    if (match) {
+      const parts = match[1].split(",").map((part) => Number(part.trim()));
+      if (parts.length === 6 && Number.isFinite(parts[5])) paintY = parts[5];
+    }
+  }
+  return { pxPerUnit, originX: letterX / 2, originY, paintY };
+}
+
+/**
+ * Scale and center the constellation in the band between the timeline and the prompt.
+ * Uses the live viewBox meet (uniform) so a tall stage does not stretch the fit.
+ * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ */
+export function computeTimelineFrameFit(mapEl) {
+  const stage = mapEl.querySelector(".whatimado-map__stage");
+  const frame = document.getElementById("dynamic-frame");
+  if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
+
+  const stageRect = stage.getBoundingClientRect();
+  const frameRect = frame.getBoundingClientRect();
+  if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
+
+  const timeline = document.getElementById("map-timeline");
+  let top = menuClearScreenY(stageRect);
+  if (timeline instanceof HTMLElement && !timeline.hidden) {
+    const bar = timeline.getBoundingClientRect();
+    if (bar.height > 4) top = Math.max(top, bar.bottom + 8);
+  }
+  const clearance = measureCssVarLength("--v2-map-frame-clearance") || 12;
+  const bottom = frameRect.top - clearance;
+  const availablePx = Math.max(48, bottom - top);
+
+  const bounds = getGraphBounds(mapEl);
+  const { pxPerUnit, originX, originY, paintY } = svgMeetPaint(mapEl, stageRect);
+  const spanY = Math.max(1, bounds.maxY - bounds.minY);
+  const spanX = Math.max(1, bounds.maxX - bounds.minX);
+  const naturalH = spanY * pxPerUnit;
+  const naturalW = spanX * pxPerUnit;
+  const zoomY = availablePx / naturalH;
+  const zoomX = (stageRect.width * 0.9) / naturalW;
+  const zoom = Math.max(1, Math.min(ZOOM_MAX, Math.min(zoomY, zoomX)));
+  const fittedPx = naturalH * zoom;
+  const graphTop = top + Math.max(0, availablePx - fittedPx) / 2;
+
+  const shiftY = readGraphShiftY();
+  const userY = (graphTop - stageRect.top - paintY - originY) / pxPerUnit;
+  const panY = userY - shiftY - SCALE_CENTER_Y - zoom * (bounds.minY - SCALE_CENTER_Y);
+  const userX = (stageRect.width / 2 - originX) / pxPerUnit;
+  const panX = userX - SCALE_CENTER_X - zoom * (bounds.cx - SCALE_CENTER_X);
+  return { panX, panY, zoom };
 }
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
