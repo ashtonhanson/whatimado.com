@@ -8,6 +8,7 @@
 @media (max-width: 900px) {
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
+    --v2-mobile-header-control: 2.65rem;
     --v2-mobile-quarter-in: 0.25in;
     /* Softer hero rise so YOU + Path Finder both clear the menu band */
     --v2-mobile-hero-shift: calc(0.12in + 8px);
@@ -242,14 +243,17 @@
     gap: 0.5rem;
   }
 
+  /* Logo frame and hamburger frame share one height so the header reads as one pair. */
   .v2-rail--left .v2-brand-word {
     display: inline-flex;
-    max-width: min(12.5rem, 58vw);
+    box-sizing: border-box;
+    height: var(--v2-mobile-header-control);
+    max-width: min(15rem, 68vw);
     opacity: 1;
     visibility: visible;
-    padding: 0.35rem 0.7rem;
-    font-size: clamp(0.72rem, 3.1vw, 0.92rem);
-    letter-spacing: 0.1em;
+    padding: 0 0.95rem;
+    font-size: clamp(0.9rem, 4.1vw, 1.08rem);
+    letter-spacing: 0.11em;
   }
 
   .v2-rail--left .v2-brand-mark {
@@ -275,16 +279,21 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 2.65rem;
-    height: 2.65rem;
+    box-sizing: border-box;
+    width: var(--v2-mobile-header-control);
+    height: var(--v2-mobile-header-control);
     margin-left: auto;
     padding: 0;
-    border: 1px solid rgba(66, 255, 240, 0.28);
-    border-radius: var(--v2-btn-radius);
+    border: 1px solid rgba(66, 255, 240, 0.48);
     background: rgba(4, 12, 14, 0.45);
     color: var(--v2-teal);
     cursor: pointer;
     touch-action: manipulation;
+  }
+
+  /* Mirror of the logo: the logo's square corner faces the screen's top-left, the menu's faces top-right. */
+  body.v2-app .v2-mobile-menu-btn {
+    border-radius: var(--v2-prompt-radius);
   }
 
   .v2-mobile-menu-btn:hover,
@@ -430,7 +439,15 @@
     max-height: none;
     opacity: 1;
     visibility: visible;
-    padding: 0.65rem 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.85rem 0.9rem;
+  }
+
+  .v2-active-path strong {
+    margin-bottom: 0;
+    line-height: 1.3;
   }
 
   .v2-nav {

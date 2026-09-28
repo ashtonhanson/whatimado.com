@@ -3,9 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual" />
-  <meta name="whatimado-build" content="v2-auth-2026-09-28" />
+  <meta name="whatimado-build" content="v2-brand-2026-09-28" />
   <title>whatimado — v2</title>
-  <link rel="icon" href="/favicon.png" type="image/png" />
+  <meta name="description" content="A free visual map of your options, then mission-by-mission roadmaps with contacts and drafts ready." />
+  <meta name="theme-color" content="#060a0c" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="/assets/v2/icons/favicon.ico?v=20260928" sizes="48x48" />
+  <link rel="icon" href="/assets/v2/icons/favicon.svg?v=20260928" type="image/svg+xml" />
+  <link rel="icon" href="/assets/v2/icons/favicon-32x32.png?v=20260928" type="image/png" sizes="32x32" />
+  <link rel="icon" href="/assets/v2/icons/favicon-16x16.png?v=20260928" type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="/assets/v2/icons/apple-touch-icon.png?v=20260928" sizes="180x180" />
+  <link rel="manifest" href="/assets/v2/site.webmanifest?v=20260928" />
+  <meta name="apple-mobile-web-app-title" content="whatimado" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="whatimado" />
+  <meta property="og:url" content="https://dev.whatimado.com/app.html" />
+  <meta property="og:title" content="whatimado — map the paths you haven't considered" />
+  <meta property="og:description" content="A free visual map of your options, then mission-by-mission roadmaps with contacts and drafts ready." />
+  <meta property="og:image" content="https://dev.whatimado.com/assets/v2/og/og-card.png?v=20260928" data-share-live />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="whatimado: a career map branching from YOU to stabilize, skills, train, explore, and next step." />
+  <meta property="og:image" content="https://dev.whatimado.com/assets/v2/og/og-blank.png?v=20260928" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="whatimado: start your map with one message." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="whatimado — map the paths you haven't considered" />
+  <meta name="twitter:description" content="A free visual map of your options, then mission-by-mission roadmaps with contacts and drafts ready." />
+  <meta name="twitter:image" content="https://dev.whatimado.com/assets/v2/og/og-card.png?v=20260928" />
+  <meta name="twitter:image:alt" content="whatimado: a career map branching from YOU to your possible paths." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -20,8 +49,8 @@
   <link rel="stylesheet" href="/css/v2/chat.css?v=20260928-multi" />
   <link rel="stylesheet" href="/css/v2/drafts.css?v=20260921-drafts2" />
   <link rel="stylesheet" href="/css/v2/neon-frames.css" />
-  <link rel="stylesheet" href="/css/v2/pages.css?v=20260928-auth" />
-  <link rel="stylesheet" href="/css/v2/mobile.css?v=20260928-timeline-mobile" />
+  <link rel="stylesheet" href="/css/v2/pages.css?v=20260928-cleanview" />
+  <link rel="stylesheet" href="/css/v2/mobile.css?v=20260928-header" />
 </head>
 <body class="v2-app" data-phase="open">
   <div class="v2-shell">
@@ -216,8 +245,16 @@
             <button type="button" class="v2-page__back" data-page-close>Back to map</button>
             <p class="v2-page__kicker">Founder dashboard</p>
             <h2 class="v2-page__title" id="page-analytics-title">Launch stats</h2>
-            <p class="v2-page__sub">Real visitors only. Any session where you signed in is excluded, even the parts before login.</p>
+            <p class="v2-page__sub" id="stats-sub">Real visitors only. Any session where you signed in is excluded, even the parts before login.</p>
           </header>
+
+          <div class="v2-stats__view">
+            <button type="button" class="v2-stats__switch" id="stats-clean-view" role="switch" aria-checked="true">
+              <span class="v2-stats__switch-track" aria-hidden="true"><span class="v2-stats__switch-thumb"></span></span>
+              <span class="v2-stats__switch-label">Clean View: Real Users Only</span>
+            </button>
+            <span class="v2-stats__badge" id="stats-admin-badge" hidden>Includes Admin Events</span>
+          </div>
 
           <div class="v2-page__row" role="group" aria-label="Period">
             <button type="button" class="v2-chip is-active" data-stats-period="post">Since Jun 21 post</button>
@@ -389,6 +426,6 @@
     <form method="dialog"><button type="submit" class="v2-account__close">Close</button></form>
   </dialog>
 
-  <script type="module" src="/js/v2/app.js?v=20260928-account"></script>
+  <script type="module" src="/js/v2/app.js?v=20260928-brand"></script>
 </body>
 </html>

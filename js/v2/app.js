@@ -8,6 +8,7 @@ import { initAccountMenu } from "./ui/account-menu.js";
 import { initPages } from "./ui/pages.js";
 import { initAuth } from "./state/auth.js";
 import { trackEvent } from "./state/analytics.js";
+import { initShareMeta } from "./share-meta.js";
 
 await initBrand();
 await import("./components/whatimado-frame.js");
@@ -34,6 +35,7 @@ initMobileNav();
 initAccountSheet();
 initAccountMenu();
 initPages();
+initShareMeta();
 void initAuth();
 trackEvent("app_loaded");
 

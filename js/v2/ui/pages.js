@@ -32,10 +32,50 @@ function setInput(id, value) {
 
 /* ---------- Analytics ---------- */
 
+const CLEAN_VIEW_KEY = "whatimado_v2_stats_clean_view";
+const CLEAN_VIEW_SUB = "Real visitors only. Any session where you signed in is excluded, even the parts before login.";
+
 let statsPeriod = /** @type {"post" | "week" | "all"} */ ("post");
 let dayOrder = "newest";
 /** @type {any} */
 let lastStats = null;
+let cleanView = readCleanView();
+
+/** Defaults to on; only an explicit "0" turns it off. */
+export function readCleanView() {
+  try {
+    return window.localStorage.getItem(CLEAN_VIEW_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+/** @param {boolean} on */
+function writeCleanView(on) {
+  try {
+    window.localStorage.setItem(CLEAN_VIEW_KEY, on ? "1" : "0");
+  } catch {
+    /* the choice still holds until reload */
+  }
+}
+
+/** @param {any} [data] */
+function renderCleanView(data) {
+  const toggle = $("stats-clean-view");
+  toggle?.setAttribute("aria-checked", cleanView ? "true" : "false");
+  const badge = $("stats-admin-badge");
+  if (badge) badge.hidden = cleanView;
+  $("page-analytics")?.classList.toggle("is-admin-included", !cleanView);
+  const adminSessions = Number(data?.admin_sessions);
+  setText(
+    "stats-sub",
+    cleanView
+      ? CLEAN_VIEW_SUB
+      : Number.isFinite(adminSessions)
+        ? `Full dataset: real visitors plus ${adminSessions} admin session${adminSessions === 1 ? "" : "s"} from your own account.`
+        : "Full dataset: real visitors plus sessions from your own admin account."
+  );
+}
 
 /** @param {any} row */
 function dayKey(row) {
@@ -69,6 +109,7 @@ function metricRow(label, value, max, tone) {
 /** @param {any} data */
 export function renderLaunchStats(data) {
   lastStats = data;
+  renderCleanView(data);
   const visits = Number(data?.visits) || 0;
   const started = Number(data?.started) || 0;
   const maps = Number(data?.got_map) || 0;
@@ -168,9 +209,13 @@ function statsStatus(message, tone) {
   el.dataset.tone = tone;
 }
 
+let statsRequest = 0;
+
 async function refreshStats() {
+  const request = ++statsRequest;
   statsStatus("Loading stats…", "loading");
-  const result = await loadLaunchStats(statsPeriod);
+  const result = await loadLaunchStats(statsPeriod, { includeAdmin: !cleanView });
+  if (request !== statsRequest) return;
   if (!result.ok) {
     statsStatus(result.message || "Could not load stats.", "error");
     setText("stats-funnel-caption", "");
@@ -196,6 +241,13 @@ function initAnalytics() {
     });
   });
   $("stats-refresh")?.addEventListener("click", () => void refreshStats());
+  $("stats-clean-view")?.addEventListener("click", () => {
+    cleanView = !cleanView;
+    writeCleanView(cleanView);
+    renderCleanView();
+    void refreshStats();
+  });
+  renderCleanView();
 }
 
 /* ---------- Settings ---------- */

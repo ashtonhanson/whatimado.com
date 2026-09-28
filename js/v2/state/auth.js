@@ -69,7 +69,7 @@ function setSync(state, message = "") {
 /** @param {any} user */
 function setUser(user) {
   currentUser = user || null;
-  setAnalyticsUser(currentUser?.id || null);
+  setAnalyticsUser(currentUser);
 }
 
 function redirectUrl() {
@@ -343,11 +343,17 @@ export function statsPeriodSince(period) {
   return null;
 }
 
-/** @param {"post" | "week" | "all"} period */
-export async function loadLaunchStats(period) {
+/**
+ * @param {"post" | "week" | "all"} period
+ * @param {{ includeAdmin?: boolean }} [options] includeAdmin adds the founder's own sessions back in
+ */
+export async function loadLaunchStats(period, options = {}) {
   const client = await getSupabase();
   if (!client || !isFounderUser(currentUser)) return { ok: false, message: "Sign in with the founder account to see launch stats." };
-  const { data, error } = await client.rpc("get_launch_stats", { since_at: statsPeriodSince(period) });
+  const { data, error } = await client.rpc("get_launch_stats", {
+    since_at: statsPeriodSince(period),
+    include_admin: Boolean(options.includeAdmin)
+  });
   if (error) return { ok: false, message: /not authorized|42501/i.test(error.message || "") ? "This account can't read launch stats." : describeError(error) };
   return { ok: true, data };
 }

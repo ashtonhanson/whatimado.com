@@ -386,6 +386,105 @@
   border-radius: 50%;
 }
 
+.v2-stats__view {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+}
+
+body.v2-app .v2-stats__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.9rem 0.45rem 0.5rem;
+  border: 1px solid rgba(46, 232, 214, 0.45);
+  border-radius: var(--v2-btn-radius);
+  background: rgba(46, 232, 214, 0.08);
+  color: var(--v2-text);
+  font-family: var(--v2-font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+body.v2-app .v2-stats__switch:hover,
+body.v2-app .v2-stats__switch:focus-visible {
+  border-color: rgba(66, 255, 240, 0.75);
+}
+
+.v2-stats__switch-track {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.1rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: var(--v2-teal);
+  transition: background 0.18s ease;
+}
+
+.v2-stats__switch-thumb {
+  position: absolute;
+  top: 0.15rem;
+  left: 1.05rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: #04100f;
+  transition: left 0.18s ease;
+}
+
+body.v2-app .v2-stats__switch[aria-checked="false"] {
+  border-color: rgba(215, 255, 246, 0.25);
+  background: transparent;
+  color: var(--v2-text-muted);
+}
+
+.v2-stats__switch[aria-checked="false"] .v2-stats__switch-track {
+  background: rgba(215, 255, 246, 0.18);
+}
+
+.v2-stats__switch[aria-checked="false"] .v2-stats__switch-thumb {
+  left: 0.15rem;
+  background: var(--v2-text-muted);
+}
+
+.v2-stats__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgba(245, 213, 71, 0.6);
+  border-radius: var(--v2-radius-pill);
+  background: rgba(245, 213, 71, 0.12);
+  color: var(--v2-yellow);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.v2-stats__badge::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.v2-stats__badge[hidden] {
+  display: none;
+}
+
+#page-analytics.is-admin-included .v2-stats__card,
+#page-analytics.is-admin-included .v2-page__panel {
+  border-color: rgba(245, 213, 71, 0.35);
+  border-style: dashed;
+}
+
 .v2-account__email {
   font-weight: 600;
   color: var(--v2-teal, #2ee8d6);
