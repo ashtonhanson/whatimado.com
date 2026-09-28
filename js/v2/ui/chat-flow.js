@@ -1,10 +1,11 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
-import { graphStore, restorePossibilityMap, selectGraphNode, showRoadmapBranch } from "../graph-store.js";
+import { graphStore, restorePossibilityMap, selectGraphNode, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
-import { ensureJourneyStarted } from "../state/journey.js";
+import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
+import { formatUserLocation } from "../state/location.js";
 import {
   bindPersistLifecycle,
   clearGuestJourney,
@@ -184,6 +185,7 @@ export function initChatFlow(ctx) {
     flush: flushPersist,
     onShown: (stages) => {
       drafts.sync(stages);
+      setSpineAlternatePaths(Boolean(stages?.length));
       const pathId = appStore.journey.roadmapPathId;
       if (stages?.length && pathId) {
         showRoadmapBranch(pathId, stages);
@@ -226,8 +228,8 @@ export function initChatFlow(ctx) {
     }
   });
 
-  /** @param {string} nodeId @param {{ startConfirm?: boolean }} [options] */
-  function handleNodeSelect(nodeId, { startConfirm = true } = {}) {
+  /** @param {string} nodeId @param {{ startConfirm?: boolean, openRoadmap?: boolean }} [options] */
+  function handleNodeSelect(nodeId, { startConfirm = true, openRoadmap = false } = {}) {
     const node = graphStore.nodes.find((n) => n.id === nodeId);
     if (!node || node.type === "start") return;
     if (node.type === "more") {
@@ -235,7 +237,20 @@ export function initChatFlow(ctx) {
       return;
     }
     if (node.type === "action") {
-      mapEl?.setSelectedNode(nodeId);
+      mapEl?.setFocusedNode(nodeId);
+      showSpokePanel(node);
+      return;
+    }
+    if (!openRoadmap && node.type === "path" && appStore.journey.planConfirmed && appStore.journey.roadmapPathId) {
+      if (node.id !== appStore.journey.roadmapPathId) {
+        mapEl?.setFocusedNode(nodeId);
+        showAlternatePath(node);
+        return;
+      }
+      mapEl?.setFocusedNode(null);
+      showSelectedPath(node, { scroll: true, keepGate: true });
+      const missionsEl = document.getElementById("missions");
+      if (missionsEl && !missionsEl.classList.contains("hidden")) scrollFrameChildIntoView(missionsEl);
       return;
     }
     if (node.type === "mission" || node.type === "task") {
@@ -257,6 +272,82 @@ export function initChatFlow(ctx) {
     layout();
     if (startConfirm) void confirmGate.begin(node);
     else confirmGate.hide();
+  }
+
+  /** Settings, Notes, and Roadmaps spokes each rewrite the panel above the missions. */
+  function showSpokePanel(node) {
+    if (!selectionPanel) return;
+    selectionPanel.classList.remove("hidden");
+    const label = node.title || node.label || "Map";
+    let body = "";
+    if (node.id === "option-settings") {
+      const place = formatUserLocation(appStore.location) || "Not set yet";
+      const saved = (appStore.journey.savedPathIds || [])
+        .map((pathId) => graphStore.nodes.find((entry) => entry.id === pathId))
+        .filter(Boolean)
+        .map((path) => path.title || path.label);
+      body = `
+        <p class="v2-selection__tagline">Location: ${escapeHtml(place)}</p>
+        <p class="v2-selection__why">${saved.length ? `Saved maps: ${escapeHtml(saved.join(", "))}` : "No maps saved for later yet."}</p>
+        <p class="v2-selection__why">Maps stay on this device until you sign in.</p>`;
+    } else if (node.id === "option-notes") {
+      const notes = appStore.journey.missionDrafts || [];
+      body = notes.length
+        ? notes
+            .slice(0, 6)
+            .map(
+              (draft) =>
+                `<p class="v2-selection__why"><strong>${escapeHtml(draft.label || "Note")}</strong> — ${escapeHtml(draft.missionTitle || "")}<br>${escapeHtml(draft.body)}</p>`
+            )
+            .join("")
+        : `<p class="v2-selection__why">No notes yet. Open a notes sheet on a mission and it will show up here.</p>`;
+    } else {
+      const paths = graphStore.nodes.filter((entry) => entry.type === "path");
+      body = paths
+        .map((path) => {
+          const mark = path.id === appStore.journey.roadmapPathId ? "On now — " : "";
+          return `<p class="v2-selection__why">${escapeHtml(mark + (path.title || path.label || "Roadmap"))}</p>`;
+        })
+        .join("");
+      document.getElementById("possibilities")?.classList.remove("hidden");
+    }
+    selectionPanel.innerHTML = `<h2 class="v2-section-label">${escapeHtml(label)}</h2>${body}`;
+    const target =
+      node.id === "option-roadmaps"
+        ? document.getElementById("path-cards") || selectionPanel
+        : selectionPanel;
+    scrollFrameChildIntoView(target);
+  }
+
+  /** Grey roadmap: show its card and let the user open it or save it. */
+  function showAlternatePath(node) {
+    if (!selectionPanel) return;
+    selectionPanel.classList.remove("hidden");
+    const saved = (appStore.journey.savedPathIds || []).includes(node.id);
+    const meta = [node.cost, node.timeline, node.income].filter(Boolean);
+    selectionPanel.innerHTML = `
+      <h2 class="v2-section-label">Other roadmap</h2>
+      <h3 class="v2-selection__title">${escapeHtml(node.title || node.label || "Roadmap")}</h3>
+      ${node.tagline || node.description ? `<p class="v2-selection__tagline">${escapeHtml(node.tagline || node.description || "")}</p>` : ""}
+      ${meta.length ? `<p class="v2-selection-meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</p>` : ""}
+      ${node.why ? `<p class="v2-selection__why">${escapeHtml(node.why)}</p>` : ""}
+      <div class="v2-next-path__actions">
+        <label class="v2-next-path__save">
+          <input type="checkbox" data-focus-save="1" ${saved ? "checked" : ""} />
+          Save map for later.
+        </label>
+        <button type="button" class="v2-next-path__open" data-focus-open="1">Open this roadmap</button>
+      </div>`;
+    selectionPanel.querySelector("[data-focus-save]")?.addEventListener("change", () => {
+      toggleSavedPath(appStore.journey, node.id);
+      touchJourney();
+      flushPersist();
+      missions.refresh();
+    });
+    selectionPanel.querySelector("[data-focus-open]")?.addEventListener("click", () => {
+      handleNodeSelect(node.id, { startConfirm: true, openRoadmap: true });
+    });
+    scrollFrameChildIntoView(selectionPanel);
   }
 
   function clearPathThread() {
@@ -437,6 +528,10 @@ export function initChatFlow(ctx) {
   }
 
   mapEl?.setNodeSelectHandler(handleNodeSelect);
+  document.getElementById("mission-stages")?.addEventListener("mission-open-path", (event) => {
+    const id = event.detail?.id;
+    if (id) handleNodeSelect(id, { startConfirm: true, openRoadmap: true });
+  });
   mapEl?.setPromptEmptyChecker(() => !frameEl?.composerInput?.value.trim());
 
   mainEl?.addEventListener("pointerdown", (event) => {

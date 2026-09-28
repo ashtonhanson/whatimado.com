@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setMapSpread, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setMapSpread, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
   BOUND_GLIDE_DAMP,
@@ -95,8 +95,17 @@ function placeTitleBesideNode(items) {
   };
   if (you) placeAbove(you);
   const others = items.filter((item) => item !== you);
-  const top = others.reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
+  const spine = you ? others.filter((item) => Math.abs(item.ny - you.ny) < 28) : [];
+  const rightmost = spine.reduce((best, item) => (!best || item.nx > best.nx ? item : best), null);
+  const top = others
+    .filter((item) => !spine.includes(item))
+    .reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
   others.forEach((item) => {
+    if (spine.includes(item)) {
+      if (item === rightmost) placeSide(item, 1);
+      else placeAbove(item);
+      return;
+    }
     if (item === top) placeAbove(item);
     else placeSide(item, item.nx - (you?.nx ?? item.nx));
   });
@@ -593,6 +602,16 @@ export class WhatimadoMap extends HTMLElement {
     }
     this._applyAnchorStyles();
     this.setPathPreview(null);
+  }
+
+  /** Highlight a node without making it the chosen roadmap. @param {string|null} id */
+  setFocusedNode(id) {
+    this._focusedId = id || null;
+    this.querySelectorAll(".whatimado-map__node--live.is-focused").forEach((el) => {
+      el.classList.remove("is-focused");
+    });
+    if (!id) return;
+    this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`)?.classList.add("is-focused");
   }
 
   /** Mirror path-card hover on the matching live node */
@@ -2259,7 +2278,9 @@ export class WhatimadoMap extends HTMLElement {
           node.done ? "is-complete" : "",
           isLayoutAnchor ? "is-anchor is-primary" : "",
           !isSelected ? "is-support" : "",
-          isSelected ? "is-selected" : ""
+          isSelected ? "is-selected" : "",
+          spineAlternatePaths && node.type === "path" && !isSelected ? "is-alternate" : "",
+          this._focusedId === node.id ? "is-focused" : ""
         ]
           .filter(Boolean)
           .join(" ");

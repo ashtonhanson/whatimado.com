@@ -68,7 +68,8 @@ export function createEmptyJourney() {
     threadBreak: null,
     missionsStages: [],
     missionResources: [],
-    missionDrafts: []
+    missionDrafts: [],
+    savedPathIds: []
   };
 }
 
@@ -166,8 +167,22 @@ export function normalizeJourney(raw) {
     threadBreak: Number.isInteger(source.threadBreak) ? source.threadBreak : null,
     missionsStages: normalizeStages(source.missionsStages),
     missionResources: normalizeResources(source.missionResources),
-    missionDrafts: normalizeDrafts(source.missionDrafts)
+    missionDrafts: normalizeDrafts(source.missionDrafts),
+    savedPathIds: Array.isArray(source.savedPathIds)
+      ? source.savedPathIds.map((id) => String(id || "").trim()).filter(Boolean).slice(0, 12)
+      : []
   };
+}
+
+/** @param {Journey} journey @param {string} id */
+export function toggleSavedPath(journey, id) {
+  const key = String(id || "").trim();
+  if (!key) return journey.savedPathIds || [];
+  const ids = new Set(journey.savedPathIds || []);
+  if (ids.has(key)) ids.delete(key);
+  else ids.add(key);
+  journey.savedPathIds = [...ids];
+  return journey.savedPathIds;
 }
 
 /**

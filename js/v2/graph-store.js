@@ -262,6 +262,15 @@ export function restorePossibilityMap() {
 /** When linked, the selected roadmap is the left-to-right spoke and the map can spin to it. */
 export let roadmapFocusLinked = true;
 
+/** After a roadmap is confirmed, the other roadmaps sit on that same line. */
+export let spineAlternatePaths = false;
+
+/** @param {boolean} on */
+export function setSpineAlternatePaths(on) {
+  spineAlternatePaths = Boolean(on);
+  return spineAlternatePaths;
+}
+
 /** @param {boolean} linked */
 export function setRoadmapFocusLinked(linked) {
   roadmapFocusLinked = Boolean(linked);
@@ -330,6 +339,11 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const originX = YOU_LINKED.x;
   const originY = YOU_LINKED.y;
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
+  const pathSiblings = spineAlternatePaths ? satellites.filter((node) => node.type === "path") : [];
+  const orbit = satellites.filter((node) => !pathSiblings.includes(node));
+  const siblingGap = 100 * spread;
+  const chosenDist = pathSiblings.length ? 96 * spread : reach;
+  const plusDist = pathSiblings.length ? chosenDist + siblingGap * (pathSiblings.length + 1) : PLUS_REACH * spread;
 
   nodes.forEach((node) => {
     if (node.type === "start") {
@@ -338,18 +352,24 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       return;
     }
     if (node.id === chosenId) {
-      node.x = (originX + Math.cos(rotation) * reach) / MAP_W;
-      node.y = (originY + Math.sin(rotation) * reach) / MAP_H;
+      node.x = (originX + Math.cos(rotation) * chosenDist) / MAP_W;
+      node.y = (originY + Math.sin(rotation) * chosenDist) / MAP_H;
       return;
     }
     if (node.type === "more") {
-      const plus = PLUS_REACH * spread;
-      node.x = (originX + Math.cos(rotation) * plus) / MAP_W;
-      node.y = (originY + Math.sin(rotation) * plus) / MAP_H;
+      node.x = (originX + Math.cos(rotation) * plusDist) / MAP_W;
+      node.y = (originY + Math.sin(rotation) * plusDist) / MAP_H;
       return;
     }
-    const index = Math.max(0, satellites.findIndex((entry) => entry.id === node.id));
-    const count = Math.max(1, satellites.length);
+    const siblingIndex = pathSiblings.findIndex((entry) => entry.id === node.id);
+    if (siblingIndex >= 0) {
+      const dist = chosenDist + siblingGap * (siblingIndex + 1);
+      node.x = (originX + Math.cos(rotation) * dist) / MAP_W;
+      node.y = (originY + Math.sin(rotation) * dist) / MAP_H;
+      return;
+    }
+    const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
+    const count = Math.max(1, orbit.length);
     const t = count === 1 ? 0.5 : index / (count - 1);
     const fan = -Math.PI * (0.78 - t * 0.5);
     const angle = rotation + fan;

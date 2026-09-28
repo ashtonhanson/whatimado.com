@@ -3,10 +3,11 @@ import { callAdvisor } from "../advisor.js";
 import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { buildIntakeContextBlock, shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
 import { formatUserLocation } from "../state/location.js";
-import { normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail } from "./resources.js";
+import { normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail, resourcesMatchingFirstMissions } from "./resources.js";
 import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, resourcesForTask } from "./resources-accordion.js";
 import { catalogForStages } from "./drafts.js";
 import { graphStore } from "../graph-store.js";
+import { toggleSavedPath } from "../state/journey.js";
 
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
@@ -122,7 +123,7 @@ function buildMissionsPrompt(idea, bullets) {
     `Return ONLY JSON:\n` +
     `{"stages":[{"label":"mission name","desc":"one sentence","missions":[{"title":"task the person does","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"","kind":"organization|platform|person|event","place":"city or online","why":"why this fits THIS path","offers":"the specific program or service","nextStep":"one action to take","url":"https://official-site","email":"","phone":"","address":"","contact":"department or role"}]}\n` +
     `Exactly 2 stages. Each stage is one mission with 2 tasks.\n` +
-    `Resources are ways to reach people on THIS path. Return 4 organizations: an association, a chamber or directory, a program or venue, and a peer community. For each, give the official site. Include email or phone only when you know that exact current address or number. If you do not, leave it empty and put the official contact-page URL in url. Never invent an email or phone number.\n` +
+    `Resources are ways to reach people on THIS path. Return at least 3 and at most 4 organizations that the first tasks actually name. Every place named in a task must appear in resources with its official URL. Do not name Austin Design Week; that festival has ended. If the path is in Austin and the tasks mention meetups or agencies, include AIGA Austin events (https://austin.aiga.org/upcoming-events/) and LinkedIn (https://www.linkedin.com/). Include email or phone only when you know that exact current address or number. If you do not, leave it empty and put the official contact-page URL in url. Never invent an email or phone number.\n` +
     `A mission "resources" array is only for an organization this mission needs that is not already in the path list. If it would repeat the path list, use "resources":[].\n` +
     `${writingVoice(appStore.profile)} No job-board filler.\n` +
     `${stability}\n\n` +
@@ -188,7 +189,42 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
         </article>`
     )
     .join("");
+  const first = stages[0];
+  const firstDone = Boolean(first?.missions?.length && first.missions.every((mission) => mission.done));
+  root.innerHTML += firstDone ? renderNextPathOptions() : "";
   bindResourcesAccordions(root);
+}
+
+/** Other roadmaps, with the original save-or-open choice, once the first missions are done. */
+function renderNextPathOptions() {
+  const activeId = appStore.journey.roadmapPathId;
+  const paths = graphStore.nodes.filter((node) => node.type === "path" && node.id !== activeId);
+  if (!paths.length) return "";
+  const saved = new Set(appStore.journey.savedPathIds || []);
+  return `
+    <section class="v2-next-paths" aria-label="Other roadmaps">
+      <h3 class="v2-next-paths__title">What's next for you</h3>
+      <p class="v2-next-paths__copy">You finished the first missions. Open another roadmap, or save it for later.</p>
+      <div class="v2-next-paths__grid">
+        ${paths
+          .map((path) => {
+            const title = path.title || path.label || "Roadmap";
+            const isSaved = saved.has(path.id);
+            return `
+              <article class="v2-next-path${isSaved ? " is-saved" : ""}">
+                <label class="v2-next-path__save">
+                  <input type="checkbox" data-save-path="${escapeHtml(path.id)}" ${isSaved ? "checked" : ""} />
+                  Save map for later.
+                </label>
+                <button type="button" class="v2-next-path__open" data-open-path="${escapeHtml(path.id)}">
+                  <span class="v2-next-path__name">${escapeHtml(title)}</span>
+                  ${path.tagline || path.why ? `<span class="v2-next-path__why">${escapeHtml(path.tagline || path.why || "")}</span>` : ""}
+                </button>
+              </article>`;
+          })
+          .join("")}
+      </div>
+    </section>`;
 }
 
 /**
@@ -226,7 +262,7 @@ export function createMissionsController(ui) {
     flush();
   }
 
-  function show(stages) {
+  function show(stages, { scroll = true } = {}) {
     if (!sectionEl) return;
     stages.forEach((stage) => {
       stage.missions.forEach((mission, index) => {
@@ -235,6 +271,18 @@ export function createMissionsController(ui) {
     });
     sectionEl.classList.remove("hidden");
     const catalog = catalogForStages(stages, appStore.profile);
+    const matched = resourcesMatchingFirstMissions(
+      stages,
+      appStore.journey.missionResources,
+      appStore.location,
+      appStore.profile
+    );
+    const before = (appStore.journey.missionResources || []).map((item) => item.name).join("|");
+    if (matched.map((item) => item.name).join("|") !== before) {
+      appStore.journey.missionResources = matched;
+      touchJourney();
+      flush();
+    }
     const sharedResources = resourcesForRail(
       appStore.journey.missionResources,
       appStore.location,
@@ -245,8 +293,13 @@ export function createMissionsController(ui) {
     renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
     bindProgress(listEl);
     setStatusMessage(statusEl(), "");
-    scrollFrameChildIntoView(sectionEl);
+    if (scroll) scrollFrameChildIntoView(sectionEl);
     layout();
+  }
+
+  function refresh() {
+    const stages = appStore.journey.missionsStages || [];
+    if (stages.length && appStore.journey.planConfirmed) show(stages, { scroll: false });
   }
 
   function remember(stages, resources, pathId) {
@@ -321,10 +374,18 @@ export function createMissionsController(ui) {
         stage?.missions.forEach((mission) => {
           mission.done = target.checked;
         });
+      } else if (target.dataset.savePath) {
+        toggleSavedPath(appStore.journey, target.dataset.savePath);
       } else return;
       touchJourney();
       flush();
       show(stages);
+    });
+    root.addEventListener("click", (event) => {
+      const button = event.target instanceof Element ? event.target.closest("[data-open-path]") : null;
+      const id = button?.getAttribute("data-open-path");
+      if (!id) return;
+      root.dispatchEvent(new CustomEvent("mission-open-path", { bubbles: true, detail: { id } }));
     });
   }
 
@@ -363,5 +424,5 @@ export function createMissionsController(ui) {
     show(stages);
   }
 
-  return { begin, restore, clear, extend };
+  return { begin, restore, clear, extend, refresh };
 }

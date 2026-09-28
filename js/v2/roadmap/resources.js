@@ -221,6 +221,74 @@ export function resourcesForRail(resources, location, profile) {
   return fallbackResources(location, profile);
 }
 
+/** Official pages only. No invented email or phone. Austin Design Week has ended. */
+const AUSTIN_FIRST_MISSION_RESOURCES = [
+  {
+    name: "AIGA Austin events",
+    org: "AIGA Austin",
+    kind: "event",
+    place: "Austin, TX",
+    why: "The current design-community calendar. Austin Design Week has ended; this chapter still hosts the in-person meetups.",
+    offers: "Upcoming member and public design events.",
+    nextStep: "Open the events list and pick the next in-person gathering.",
+    url: "https://austin.aiga.org/upcoming-events/",
+    email: "",
+    phone: "",
+    address: "",
+    contact: "Chapter events",
+    notes: "",
+    emailDraft: "",
+    phoneDraft: "",
+    draft: ""
+  },
+  {
+    name: "LinkedIn",
+    org: "LinkedIn",
+    kind: "platform",
+    place: "Online",
+    why: "The public place this mission names for finding Austin agencies and writing to a senior designer.",
+    offers: "People search and messaging.",
+    nextStep: "Search Austin marketing agencies, then message one senior designer about a short conversation.",
+    url: "https://www.linkedin.com/",
+    email: "",
+    phone: "",
+    address: "",
+    contact: "",
+    notes: "",
+    emailDraft: "",
+    phoneDraft: "",
+    draft: ""
+  }
+];
+
+/**
+ * The first stage's tasks name places. Make sure those places are on the resource list,
+ * and keep at least three real channels when the city pack has them.
+ * @param {{ missions?: { title?: string, text?: string }[] }[]} stages
+ * @param {LocalResource[]} existing
+ * @param {import("../state/location.js").UserLocation | null | undefined} location
+ * @param {import("../state/user-profile.js").UserProfile | null | undefined} profile
+ */
+export function resourcesMatchingFirstMissions(stages, existing, location, profile) {
+  if (shouldBlockJobBoards(profile)) return normalizeResources(existing);
+  const first = stages?.[0];
+  const blob = (first?.missions || []).map((mission) => `${mission?.title || ""} ${mission?.text || ""}`).join("\n");
+  const city = String(location?.city || "").trim().toLowerCase();
+  const austin = city === "austin" || /austin/i.test(blob);
+  /** @type {LocalResource[]} */
+  const extra = [];
+  if (austin && /aiga|design week|meetup|network/i.test(blob)) extra.push(AUSTIN_FIRST_MISSION_RESOURCES[0]);
+  if (/linkedin/i.test(blob)) extra.push(AUSTIN_FIRST_MISSION_RESOURCES[1]);
+  if (austin && /chamber|agenc|local/i.test(blob)) {
+    const chamber = (COMMUNICATION_BY_CITY.austin || []).find((item) => /chamber/i.test(item.name));
+    if (chamber) extra.push(chamber);
+  }
+  let merged = mergeResources(existing, extra);
+  if (merged.length < 3 && austin) merged = mergeResources(merged, fallbackResources(location, profile));
+  if (merged.length < 3 && austin) merged = mergeResources(merged, AUSTIN_FIRST_MISSION_RESOURCES);
+  return merged;
+}
+
 /** @param {import("../state/location.js").UserLocation | null | undefined} location */
 export function resourcePlaceLabel(location) {
   const place = formatUserLocation(location);
