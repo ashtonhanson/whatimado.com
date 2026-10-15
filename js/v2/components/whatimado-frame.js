@@ -11,6 +11,11 @@ import {
   SCROLL_THUMB_MIN_SCALE
 } from "../frame/constants.js";
 import { getBrand, getExamplePrompts } from "../config.js";
+import {
+  clearComposerDraft,
+  readComposerDraftForCurrentScope,
+  scheduleComposerDraftSave
+} from "../state/composer-draft.js";
 
 export class WhatimadoFrame extends HTMLElement {
   static get observedAttributes() {
@@ -198,6 +203,27 @@ export class WhatimadoFrame extends HTMLElement {
   /** @returns {HTMLTextAreaElement|null} */
   get composerInput() {
     return this._composerInput;
+  }
+
+  /** Scroll the chat column to the top without clearing state. */
+  scrollChatToTop({ behavior = "auto" } = {}) {
+    if (!this._body) return;
+    const motion =
+      behavior === "smooth" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "smooth"
+        : "auto";
+    this._body.scrollTo({ top: 0, behavior: motion });
+    this._updateScrollFade();
+    this._updateCustomScrollbar();
+  }
+
+  /** Restore unsent composer text for the current session/journey scope. */
+  restoreComposerDraft() {
+    const text = readComposerDraftForCurrentScope();
+    if (!this._composerInput || !text) return;
+    this._composerInput.value = text;
+    this._pausePlaceholderCycle();
+    this._autosizeComposer();
   }
 
   focusComposer({ glideOnMobile = true } = {}) {
@@ -657,6 +683,8 @@ export class WhatimadoFrame extends HTMLElement {
     this._autosizeComposer();
     this._maybeResumePlaceholderCycle();
 
+    clearComposerDraft();
+
     this.dispatchEvent(
       new CustomEvent("composer-submit", {
         bubbles: true,
@@ -716,11 +744,13 @@ export class WhatimadoFrame extends HTMLElement {
   }
 
   _onComposerInputChange() {
-    if (this._composerInput?.value.trim()) {
+    const value = this._composerInput?.value ?? "";
+    if (value.trim()) {
       this._pausePlaceholderCycle();
     } else if (document.activeElement !== this._composerInput) {
       this._maybeResumePlaceholderCycle();
     }
+    scheduleComposerDraftSave(value);
     this._autosizeComposer();
   }
 

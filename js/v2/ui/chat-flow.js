@@ -19,6 +19,16 @@ import {
   schedulePersist,
   setPersistEnabled
 } from "../state/persistence.js";
+import {
+  bindComposerDraftLifecycle,
+  cancelPendingComposerDraftSave,
+  clearComposerDraft
+} from "../state/composer-draft.js";
+import { authState } from "../state/auth.js";
+import { readSession } from "../state/guest-account.js";
+import { closeActivePageIfOpen } from "./pages.js";
+import { journeyHasActiveWork, newMapConfirmMessage } from "./journey-work.js";
+import { confirmStartNewMap } from "./new-map-dialog.js";
 import { createIntakeController } from "../intake/session.js";
 import { createPathMapController } from "../map/session.js";
 import { createConfirmGateController } from "../roadmap/session.js";
@@ -77,6 +87,7 @@ export function initChatFlow(ctx) {
 
   setPersistEnabled(!isDemo);
   bindPersistLifecycle();
+  if (!isDemo) bindComposerDraftLifecycle();
 
   const layout = () => notifyFrameLayout({ frameEl, mapEl });
 
@@ -435,7 +446,11 @@ export function initChatFlow(ctx) {
     return true;
   }
 
+  let newMapResetInFlight = false;
+
   function startNewJourney() {
+    cancelPendingComposerDraftSave();
+    clearComposerDraft();
     openFreshAccountRoadmap();
     setPersistEnabled(true);
     clearGuestJourney();
@@ -445,9 +460,35 @@ export function initChatFlow(ctx) {
     window.location.assign(`${url.pathname}${url.hash}`);
   }
 
+  async function requestStartNewJourney(trigger) {
+    if (newMapResetInFlight) return;
+    const composerText = frameEl?.composerInput?.value ?? "";
+    const hasWork = journeyHasActiveWork(appStore.journey, graphStore, {
+      composerText,
+      includeStoredDraft: false
+    });
+    if (hasWork) {
+      const confirmed = await confirmStartNewMap({
+        message: newMapConfirmMessage(readSession(), authState()),
+        returnFocus: trigger instanceof HTMLElement ? trigger : null
+      });
+      if (!confirmed) return;
+    }
+    newMapResetInFlight = true;
+    startNewJourney();
+  }
+
+  function goToChatHome() {
+    closeActivePageIfOpen();
+    frameEl?.scrollChatToTop({ behavior: "smooth" });
+  }
+
   async function handleSubmit(text) {
     const trimmed = text.trim();
     if (!trimmed) return;
+
+    cancelPendingComposerDraftSave();
+    clearComposerDraft();
 
     ensureJourneyStarted(appStore.journey);
     trackEvent("prompt_submitted");
@@ -730,7 +771,9 @@ export function initChatFlow(ctx) {
     mapEl?.cancelPanFromFrameDrag();
   });
 
-  mapEl?.addEventListener("map-new-roadmap", () => startNewJourney());
+  mapEl?.addEventListener("map-new-roadmap", () => {
+    void requestStartNewJourney(mapEl);
+  });
 
   frameEl?.addEventListener("dock-progress", (event) => {
     const frameTop = /** @type {CustomEvent<{ frameTop?: number }>} */ (event).detail?.frameTop;
@@ -747,7 +790,11 @@ export function initChatFlow(ctx) {
   });
 
   document.getElementById("nav-home")?.addEventListener("click", () => {
-    startNewJourney();
+    goToChatHome();
+  });
+
+  document.getElementById("nav-new-map")?.addEventListener("click", (event) => {
+    void requestStartNewJourney(/** @type {HTMLElement} */ (event.currentTarget));
   });
 
   window.addEventListener("resize", () => layout());
@@ -787,9 +834,21 @@ export function initChatFlow(ctx) {
     requestAnimationFrame(() => seedHypotheticalChat());
   }
 
+  if (!isDemo) {
+    frameEl?.restoreComposerDraft();
+  }
+
   if (!MOBILE_LAYOUT_MQ.matches) {
     frameEl?.focusComposer();
   }
 
-  return { store: appStore, handleSubmit, handleNodeSelect, startNewJourney };
+  return {
+    store: appStore,
+    handleSubmit,
+    handleNodeSelect,
+    startNewJourney,
+    requestStartNewJourney,
+    goToChatHome,
+    journeyHasActiveWork: (opts) => journeyHasActiveWork(appStore.journey, graphStore, opts)
+  };
 }

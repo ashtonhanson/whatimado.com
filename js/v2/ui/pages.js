@@ -351,6 +351,13 @@ function initSettings() {
 
 /* ---------- Page switching ---------- */
 
+/** Close Analytics/Settings overlay if open (does not reset the journey). */
+export function closeActivePageIfOpen() {
+  if (!document.body.dataset.page) return false;
+  document.querySelector("[data-page-close]")?.click();
+  return true;
+}
+
 export function initPages() {
   /** @type {string | null} */
   let current = null;
@@ -386,18 +393,6 @@ export function initPages() {
   });
   document.querySelectorAll("[data-page-close]").forEach((button) => button.addEventListener("click", () => show(null)));
 
-  document.addEventListener(
-    "click",
-    (event) => {
-      if (!current) return;
-      const target = /** @type {HTMLElement} */ (event.target);
-      if (!target?.closest?.("#nav-home")) return;
-      event.stopPropagation();
-      event.preventDefault();
-      show(null);
-    },
-    true
-  );
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape" || !current) return;
     if (document.querySelector("dialog[open]")) return;

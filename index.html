@@ -106,13 +106,22 @@
         <nav aria-label="Primary">
           <ul class="v2-nav">
             <li>
-              <button type="button" class="v2-nav-btn is-active" id="nav-home">
+              <button type="button" class="v2-nav-btn is-active" id="nav-home" aria-label="Home, scroll chat to top">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path></svg>
                 <span class="v2-nav-label">
                   <span>Home</span>
-                  <span class="v2-nav-meta">(start new map)</span>
+                  <span class="v2-nav-meta">(top of chat)</span>
                 </span>
-                <span class="v2-rail-tip v2-text-box v2-text-box--response" role="tooltip">Home</span>
+                <span class="v2-rail-tip v2-text-box v2-text-box--response" role="tooltip">Home — top of chat</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="v2-nav-btn v2-nav-btn--new-map" id="nav-new-map" aria-label="Start a new map">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                <span class="v2-nav-label">
+                  <span>Start New Map</span>
+                </span>
+                <span class="v2-rail-tip v2-text-box v2-text-box--response" role="tooltip">Start New Map</span>
               </button>
             </li>
             <li>
@@ -387,6 +396,15 @@
       </div>
     </aside>
   </div>
+
+  <dialog class="v2-account v2-new-map-dialog" id="new-map-dialog" aria-labelledby="new-map-confirm-title">
+    <h2 id="new-map-confirm-title">Start a new map?</h2>
+    <p id="new-map-confirm-body"></p>
+    <div class="v2-account__row">
+      <button type="button" class="v2-account__guest" id="new-map-cancel">Cancel</button>
+      <button type="button" class="v2-account__create" id="new-map-confirm-btn">Start New Map</button>
+    </div>
+  </dialog>
 
   <dialog class="v2-account" id="account-sheet" aria-labelledby="account-sheet-title">
     <section id="account-guest-view">
