@@ -10,6 +10,7 @@ import {
   syncNow,
   updatePassword
 } from "../state/auth.js";
+import { shouldAutoOpenGuestAccountSheet } from "../state/home-access.js";
 
 const ACK_KEY = "whatimado_v2_guest_ack";
 
@@ -252,5 +253,14 @@ export function initAccountSheet() {
   } catch {
     acknowledged = true;
   }
-  if (!acknowledged && !appStore.journey?.id && readSession()?.mode !== "account") open();
+  const session = readSession();
+  if (
+    shouldAutoOpenGuestAccountSheet({
+      acknowledged,
+      hasActiveJourney: Boolean(appStore.journey?.id),
+      sessionMode: session?.mode
+    })
+  ) {
+    open();
+  }
 }
