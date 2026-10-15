@@ -54,23 +54,13 @@ function readMenuClearanceScreenY() {
   return (headerH > 0 ? headerH : 56) + 8;
 }
 
-/** CSS idle bob on `.whatimado-map__node-float` (screen px). */
-function readMobileIdleFloatAmpPx() {
-  if (!window.matchMedia("(max-width: 900px)").matches) return 0;
-  const float = document.querySelector("whatimado-map .whatimado-map__node-float");
-  if (!float) return 12;
-  return Math.abs(parseFloat(getComputedStyle(float).getPropertyValue("--node-float-amp")) || 12);
-}
-
 /** Pan floor so bounds.minY stays below the menu / stage top pad */
 function panFloorForTopClearance(bounds, stageRect, shiftY) {
   const scaleY = VIEW_H / stageRect.height;
   const topPadSvg = readGraphTopPadPx() * scaleY;
-  /* Ambient drift + CSS float peak — keep labels from tucking under the menu mid-cycle */
-  const mobileDriftPx =
-    (measureCssVarLength("--v2-mobile-open-drift-slack") || 18) + readMobileIdleFloatAmpPx();
+  /* Ambient drift peaks ~7svg up — keep labels from tucking under the menu mid-cycle */
   const driftSlackSvg = window.matchMedia("(max-width: 900px)").matches
-    ? Math.max(10, mobileDriftPx * scaleY * 0.55)
+    ? Math.max(10, (measureCssVarLength("--v2-mobile-open-drift-slack") || 18) * 0.72)
     : 10;
   let panFloor = topPadSvg + driftSlackSvg - bounds.minY - shiftY;
 
