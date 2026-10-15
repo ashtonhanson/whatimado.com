@@ -2663,11 +2663,6 @@ export class WhatimadoMap extends HTMLElement {
         const title = options.layer === "live" ? nodeMapTitle(node) : "";
         const isAlternate = spineAlternatePaths && node.type === "path" && !isSelected;
         const bodyR = node.type === "more" ? r * 0.72 : isAlternate ? r * 0.72 : r;
-        const linkWhere =
-          node.type === "path" ? "Opens this roadmap" : node.type === "mission" ? "Opens this mission" : "";
-        const linkPip = linkWhere
-          ? `<g class="whatimado-map__link-pip"><title>${escapeHtml(linkWhere)}</title><circle cx="${cx + bodyR * 0.78}" cy="${cy - bodyR * 0.78}" r="${Math.max(2.2, bodyR * 0.34)}" /></g>`
-          : "";
         const driftDelay = (index * 0.85) % 5;
         const driftDuration = 9 + (index % 4) * 1.2;
         const styleVars = [
@@ -2686,7 +2681,6 @@ export class WhatimadoMap extends HTMLElement {
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${bodyR}" />
-            ${linkPip}
             ${node.type === "more"
               ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.3}" y1="${cy}" x2="${cx + r * 0.3}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.3}" x2="${cx}" y2="${cy + r * 0.3}" /></g>`
               : ""}

@@ -12,9 +12,8 @@
     --v2-mobile-header-inset: 0.7rem;
     --v2-mobile-header-control: calc(3.55rem - 2 * var(--v2-mobile-header-inset));
     --v2-mobile-quarter-in: 0.25in;
-    /* Softer hero rise so YOU + Path Finder both clear the menu band */
-    --v2-mobile-hero-shift: calc(0.12in + 8px);
-    /* Keep map below the fixed header — any upward shift clips top node labels */
+    /* Less upward pull on hero/map — negative translateY was clipping top labels under overflow:hidden */
+    --v2-mobile-hero-shift: calc(0.04in + 2px);
     --v2-mobile-map-shift: 0px;
     --v2-mobile-bottom-inset: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
     --v2-mobile-you-hero-gap: clamp(0.9rem, 2.2vh, 1.25rem);
@@ -33,7 +32,7 @@
     --v2-kicker-reserve: clamp(3.9rem, 10.5vh, 4.75rem); /* room for 1.5× hero type */
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
     --v2-mobile-map-head-gap: clamp(0.55rem, 1.4vh, 0.85rem);
-    --v2-mobile-prompt-kicker-gap: 0.35rem;
+    --v2-mobile-prompt-kicker-gap: 0.18rem;
     --v2-mobile-keyboard-gap: 0.85rem;
     --v2-mobile-prompt-drop: 8px;
     --v2-mobile-you-btn-drop: 26px; /* landing: YOU button down 10px */
@@ -47,9 +46,10 @@
     --v2-mobile-focus-band-h: 30vh;
     --v2-mobile-focus-kicker-shift: 0px;
     --v2-hero-node-gap: clamp(0.15rem, 0.45vh, 0.3rem);
-    --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
-    /* Room for top labels under the menu after open-home gravity */
-    --v2-map-graph-top-pad: clamp(1.1rem, 2.4vh, 1.6rem);
+    --v2-map-band-offset-top: clamp(0.55rem, 1.5vh, 0.9rem);
+    /* Extra top inset so label + float animation stays inside the clipped map band */
+    --v2-map-graph-top-pad: clamp(1.45rem, 3.2vh, 2.05rem);
+    --v2-mobile-open-drift-slack: 18px;
     --v2-map-node-lg: 8.25;
     --v2-map-node-sm: 4.125;
     --v2-map-edge-width: 2.6;
@@ -643,6 +643,11 @@
   }
 
   /* ── Compact hero + frame on home ── */
+  body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
+    justify-content: flex-end;
+    padding-bottom: 0.1rem;
+  }
+
   .v2-frame-kicker {
     text-align: center;
     align-items: center;

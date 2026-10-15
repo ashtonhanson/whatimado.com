@@ -177,7 +177,7 @@ function computeOpenHomeCamera(mapEl, gapPx, driftSlackPx) {
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
 export function computeMobileOpenHomePan(mapEl) {
   const gapPx = Math.max(14, measureCssVarLength("--v2-mobile-you-hero-gap") || 14);
-  const driftSlackPx = 10;
+  const driftSlackPx = Math.max(10, measureCssVarLength("--v2-mobile-open-drift-slack") || 10);
   return computeOpenHomeCamera(mapEl, gapPx, driftSlackPx);
 }
 

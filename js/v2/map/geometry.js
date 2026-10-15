@@ -1,4 +1,5 @@
 import { BOUND_PAD_X, BOUND_PAD_Y, NODE_LABEL_CAP, NODE_LABEL_OFFSET, VIEW_H, VIEW_W } from "./constants.js";
+import { measureCssVarLength } from "../layout/measure-css-var.js";
 
 /** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
 export function getMapBounds() {
@@ -58,7 +59,9 @@ function panFloorForTopClearance(bounds, stageRect, shiftY) {
   const scaleY = VIEW_H / stageRect.height;
   const topPadSvg = readGraphTopPadPx() * scaleY;
   /* Ambient drift peaks ~7svg up — keep labels from tucking under the menu mid-cycle */
-  const driftSlackSvg = 10;
+  const driftSlackSvg = window.matchMedia("(max-width: 900px)").matches
+    ? Math.max(10, (measureCssVarLength("--v2-mobile-open-drift-slack") || 18) * 0.72)
+    : 10;
   let panFloor = topPadSvg + driftSlackSvg - bounds.minY - shiftY;
 
   const menuClearY = readMenuClearanceScreenY();
