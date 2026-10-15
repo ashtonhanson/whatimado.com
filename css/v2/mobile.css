@@ -49,10 +49,25 @@
     --v2-map-band-offset-top: clamp(0.55rem, 1.5vh, 0.9rem);
     /* Extra top inset so label + float animation stays inside the clipped map band */
     --v2-map-graph-top-pad: clamp(1.45rem, 3.2vh, 2.05rem);
+    /* Live node titles: map-canvas.css 12.5px / ~1.24 line-height — drop ≈ 1.5 label lines */
+    --v2-map-node-label-size: 12.5px;
+    --v2-map-node-label-line: 1.24;
+    --v2-mobile-open-constellation-drop: calc(
+      var(--v2-map-node-label-size) * var(--v2-map-node-label-line) * 1.5
+    );
     --v2-mobile-open-drift-slack: 18px;
     --v2-map-node-lg: 8.25;
     --v2-map-node-sm: 4.125;
     --v2-map-edge-width: 2.6;
+  }
+
+  /* Narrow phones: shorter map band — cap drop at one label line to avoid crowding Path Finder */
+  @media (max-width: 360px) {
+    :root {
+      --v2-mobile-open-constellation-drop: calc(
+        var(--v2-map-node-label-size) * var(--v2-map-node-label-line)
+      );
+    }
   }
 
   /* Large phones / small tablets — smaller nodes so menu + Path Finder both clear */
@@ -238,6 +253,23 @@
     -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
   }
 
+  /* Home: logo + menu float above decorative clouds — no frosted bar behind them */
+  body.v2-app[data-phase="open"]:not(.v2-mobile-menu-open) .v2-rail-brand {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom-color: transparent;
+    box-shadow: none;
+  }
+
+  body.v2-app[data-phase="open"].v2-mobile-menu-open .v2-rail-brand {
+    background: var(--v2-rail-bg);
+    backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+    -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+    border-bottom: 1px solid rgba(46, 232, 214, 0.14);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+  }
+
   .v2-rail-header,
   .v2-rail-logo-slot {
     width: 100%;
@@ -245,27 +277,30 @@
     gap: 0.5rem;
   }
 
-  /* Logo frame and hamburger frame share one height so the header reads as one pair. */
+  /* Bow-tie logo mirrors hamburger inset; wordmark stays in the drawer on desktop only */
   .v2-rail--left .v2-brand-word {
-    display: inline-flex;
-    box-sizing: border-box;
-    height: var(--v2-mobile-header-control);
-    max-width: min(15rem, 68vw);
-    opacity: 1;
-    visibility: visible;
-    padding: 0 0.85rem;
-    font-size: clamp(0.84rem, 3.8vw, 1rem);
-    letter-spacing: 0.11em;
+    display: none;
   }
 
   .v2-rail--left .v2-brand-mark {
     display: none;
   }
 
+  .v2-rail--left .v2-brand-logo {
+    display: block;
+    height: calc(var(--v2-mobile-header-control) * 0.92);
+    width: auto;
+    max-height: var(--v2-mobile-header-control);
+    margin: 0;
+  }
+
   .v2-rail--left .v2-brand {
     justify-content: flex-start;
+    align-items: center;
     flex: 0 1 auto;
     min-width: 0;
+    min-height: var(--v2-mobile-header-control);
+    padding: 0;
   }
 
   .v2-rail-toggle {

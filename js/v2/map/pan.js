@@ -43,14 +43,27 @@ export function getGraphBounds(mapEl) {
   let minY = Infinity;
   let maxY = -Infinity;
 
+  let idleFloatLiftSvg = 0;
+  if (MOBILE_MQ.matches) {
+    const stage = mapEl.querySelector(".whatimado-map__stage");
+    const stageRect = stage?.getBoundingClientRect();
+    const float = mapEl.querySelector(".whatimado-map__node-float");
+    if (stageRect && stageRect.height > 0 && float) {
+      const ampPx = Math.abs(parseFloat(getComputedStyle(float).getPropertyValue("--node-float-amp")) || 12);
+      idleFloatLiftSvg = ampPx * (VIEW_H / stageRect.height);
+    }
+    /* JS ambient drift peaks ~7svg upward on the top node */
+    idleFloatLiftSvg = Math.max(idleFloatLiftSvg, 7);
+  }
+
   for (const node of mapEl._liveNodes) {
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
     const r = node.type === "start" || node.type === "path" ? lg : sm;
     minX = Math.min(minX, cx - r);
     maxX = Math.max(maxX, cx + r);
-    minY = Math.min(minY, cy - r - labelOffset - labelCap);
-    maxY = Math.max(maxY, cy + r);
+    minY = Math.min(minY, cy - r - labelOffset - labelCap - idleFloatLiftSvg);
+    maxY = Math.max(maxY, cy + r + labelOffset + labelCap * 0.45);
   }
 
   return {
@@ -128,7 +141,7 @@ function menuClearScreenY(stageRect) {
  * @param {number} bottomScreenY
  * @returns {{ panX: number, panY: number, zoom: number }}
  */
-function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY) {
+function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY, { downwardBiasPx = 0 } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   if (!stage) return { panX: 0, panY: 0, zoom: 1 };
 
@@ -143,8 +156,8 @@ function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY) {
   const naturalPx = span / scaleY;
   const zoom = Math.max(1, Math.min(1.15, (availablePx / naturalPx) * 1.05));
   const fittedPx = naturalPx * zoom;
-  let graphTop = topScreenY + Math.max(0, availablePx - fittedPx) / 2;
-  if (graphTop + fittedPx > bottomScreenY) graphTop = bottomScreenY - fittedPx;
+  let graphTop = topScreenY + Math.max(0, availablePx - fittedPx) / 2 + downwardBiasPx;
+  if (graphTop + fittedPx > bottomScreenY) graphTop = Math.max(topScreenY, bottomScreenY - fittedPx);
 
   const yPrime = (graphTop - stageRect.top) * scaleY;
   const panY = yPrime - shiftY - SCALE_CENTER_Y - zoom * (bounds.minY - SCALE_CENTER_Y);
@@ -171,7 +184,16 @@ function computeOpenHomeCamera(mapEl, gapPx, driftSlackPx) {
   const kickerRect = kicker?.getBoundingClientRect();
   const textTop = brandRect?.top ?? kickerRect?.top ?? stageRect.bottom;
   const bottom = textTop - gapPx - driftSlackPx;
-  return computeCenteredBandCamera(mapEl, menuClearScreenY(stageRect), bottom);
+  const downwardBiasPx = MOBILE_MQ.matches
+    ? measureCssVarLength("--v2-mobile-open-constellation-drop") || 0
+    : 0;
+  const cam = computeCenteredBandCamera(mapEl, menuClearScreenY(stageRect), bottom, { downwardBiasPx });
+  if (!MOBILE_MQ.matches) return cam;
+
+  const bounds = getGraphBounds(mapEl);
+  const shiftY = readGraphShiftY();
+  cam.panY = clampPanYForOpenHome(cam.panY, bounds, stageRect, shiftY, textTop - gapPx);
+  return cam;
 }
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */

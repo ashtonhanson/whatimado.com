@@ -111,6 +111,13 @@ function applyWordmark(doc, wordmark, meta) {
   if (markEl && wordmark.markLetter) {
     markEl.textContent = String(wordmark.markLetter);
   }
+
+  const logoEl = doc.querySelector(".v2-brand-logo");
+  if (logoEl instanceof HTMLImageElement) {
+    if (wordmark.logoSrc) logoEl.src = String(wordmark.logoSrc);
+    if (wordmark.logoWidth) logoEl.width = Number(wordmark.logoWidth);
+    if (wordmark.logoHeight) logoEl.height = Number(wordmark.logoHeight);
+  }
 }
 
 /** @param {Document} doc @param {Record<string, unknown>|undefined} hero */

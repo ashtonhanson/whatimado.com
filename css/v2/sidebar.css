@@ -142,6 +142,32 @@
   color: inherit;
 }
 
+.v2-brand-logo {
+  display: block;
+  flex-shrink: 0;
+  width: auto;
+  height: 2.35rem;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  border: none;
+  pointer-events: none;
+}
+
+.v2-rail--left:not(.is-collapsed) .v2-brand-logo {
+  height: 2.05rem;
+  margin-right: 0.4rem;
+}
+
+.v2-rail--left.is-collapsed .v2-brand-logo {
+  height: 2.35rem;
+  margin: 0 auto;
+}
+
+.v2-rail--left.is-collapsed .v2-brand-mark {
+  display: none;
+}
+
 .v2-brand-mark {
   display: inline-flex;
   align-items: center;
@@ -546,7 +572,9 @@
 }
 
 .v2-rail--left.is-collapsed .v2-rail-logo-slot:hover .v2-brand-mark,
-.v2-rail--left.is-collapsed .v2-rail-logo-slot:focus-within .v2-brand-mark {
+.v2-rail--left.is-collapsed .v2-rail-logo-slot:focus-within .v2-brand-mark,
+.v2-rail--left.is-collapsed .v2-rail-logo-slot:hover .v2-brand-logo,
+.v2-rail--left.is-collapsed .v2-rail-logo-slot:focus-within .v2-brand-logo {
   opacity: 0;
 }
 
@@ -589,6 +617,14 @@
   transition:
     opacity var(--v2-rail-tip-duration) var(--v2-rail-tip-ease),
     max-width var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
+    visibility 0s;
+}
+
+.v2-rail--left.is-collapsed .v2-brand-logo {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--v2-rail-tip-duration) var(--v2-rail-tip-ease),
     visibility 0s;
 }
 
