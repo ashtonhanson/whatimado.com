@@ -73,7 +73,7 @@ function setUser(user) {
 }
 
 function redirectUrl() {
-  return `${window.location.origin}/app.html`;
+  return `${window.location.origin}/`;
 }
 
 export function reloadApp() {

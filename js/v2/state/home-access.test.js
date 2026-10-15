@@ -54,24 +54,22 @@ test("signed-out account session on device does not auto-open account sheet on r
 });
 
 test("expired or missing supabase user does not force auth redirect on boot", () => {
+  assert.equal(shouldForceAuthRedirectForBoot({ supabaseUser: null, pathname: "/" }), false);
   assert.equal(shouldForceAuthRedirectForBoot({ supabaseUser: null, pathname: "/app.html" }), false);
-  assert.equal(
-    shouldForceAuthRedirectForBoot({ supabaseUser: null, pathname: "/app.html" }),
-    false
-  );
 });
 
 test("session initialization for signed-in user does not force external auth redirect", () => {
   assert.equal(
     shouldForceAuthRedirectForBoot({
       supabaseUser: { id: "user-1", email: "a@example.com" },
-      pathname: "/app.html"
+      pathname: "/"
     }),
     false
   );
 });
 
 test("in-app reload keeps the public entry path", () => {
+  assert.equal(entryPathAfterInAppReload("/"), "/");
   assert.equal(entryPathAfterInAppReload("/app.html"), "/app.html");
 });
 
@@ -96,12 +94,12 @@ test("protected launch stats API helper rejects logged-out callers", async () =>
   assert.match(String(result.message || ""), /founder|sign in/i);
 });
 
-test("reloadApp keeps visitors on app.html without auth query params", async () => {
+test("reloadApp keeps visitors on the site root without auth query params", async () => {
   let assigned = "";
   globalThis.window = {
     location: {
-      href: "https://dev.whatimado.com/app.html?demo=1#access_token=fake",
-      pathname: "/app.html",
+      href: "https://whatimado.com/?demo=1#access_token=fake",
+      pathname: "/",
       search: "?demo=1",
       hash: "#access_token=fake",
       assign(url) {
@@ -111,5 +109,5 @@ test("reloadApp keeps visitors on app.html without auth query params", async () 
   };
   const { reloadApp } = await import("./auth.js");
   reloadApp();
-  assert.equal(assigned, "/app.html");
+  assert.equal(assigned, "/");
 });

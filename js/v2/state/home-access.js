@@ -1,5 +1,5 @@
 /**
- * Public homepage vs authentication entry policy for /app.html.
+ * Public homepage vs authentication entry policy for / (and legacy /app.html aliases).
  *
  * The homepage (open phase, map + prompt) must stay reachable without signing in.
  * Auth UI is voluntary except password-recovery flows.
@@ -34,7 +34,7 @@ export function canAccessLaunchStats(user) {
 }
 
 /**
- * Anonymous or signed-in visitors opening /app.html must never be sent to an
+ * Anonymous or signed-in visitors opening the public entry must never be sent to an
  * external sign-in route. (In-app reload stays on the same path.)
  *
  * @param {{ supabaseUser: unknown, pathname?: string }} ctx
@@ -49,5 +49,5 @@ export function shouldForceAuthRedirectForBoot(ctx) {
  * @param {string} pathname
  */
 export function entryPathAfterInAppReload(pathname) {
-  return pathname || "/app.html";
+  return pathname || "/";
 }
