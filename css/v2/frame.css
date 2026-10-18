@@ -828,16 +828,33 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   margin-top: 0.55rem;
 }
 
+.v2-mission-action,
 .v2-mission__complete,
 .v2-circle-back-toggle,
 .v2-difficulty {
+  font: inherit;
   font-size: 0.68rem;
+  font-weight: 600;
   padding: 0.35rem 0.55rem;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--v2-teal) 35%, transparent);
   background: transparent;
   color: var(--v2-teal);
   cursor: pointer;
+  box-shadow: none;
+}
+
+.v2-mission-action:hover,
+.v2-mission__complete:hover,
+.v2-circle-back-toggle:hover,
+.v2-difficulty:hover {
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
+  border-color: color-mix(in srgb, var(--v2-teal) 50%, transparent);
+}
+
+.v2-mission-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .v2-mission__complete[aria-pressed="true"] {
@@ -899,26 +916,6 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   gap: 0.4rem;
 }
 
-.v2-missions__undo,
-.v2-mission-nav__continue,
-.v2-mission-nav__undo {
-  font: inherit;
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--v2-teal) 40%, transparent);
-  background: transparent;
-  color: var(--v2-teal);
-  cursor: pointer;
-}
-
-.v2-missions__undo:disabled,
-.v2-mission-nav__undo:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 .v2-mission-nav {
   display: flex;
   flex-wrap: wrap;
@@ -945,11 +942,6 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 .v2-mission__badge--now {
   color: var(--v2-teal);
   border-color: color-mix(in srgb, var(--v2-teal) 45%, transparent);
-}
-
-.v2-mission__delete {
-  border-color: color-mix(in srgb, #f07178 45%, transparent);
-  color: #f07178;
 }
 
 body.v2-app .v2-timeline__stop.is-bypassed {
@@ -1475,10 +1467,10 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 }
 
 .v2-timeline__link {
-  flex: 0 0 2.5rem;
+  flex: 0 0 1.65rem;
   align-self: center;
-  width: 2.5rem;
-  min-width: 2.5rem;
+  width: 1.65rem;
+  min-width: 1.65rem;
   height: 3px;
   background-image: radial-gradient(circle, rgba(200, 208, 216, 0.9) 1.15px, transparent 1.35px);
   background-size: 8px 3px;
@@ -1492,6 +1484,7 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 
 body.v2-app .v2-timeline__stop,
 body.v2-app .v2-timeline__add,
+.v2-mission-action,
 .v2-difficulty,
 .v2-difficulty-offer button,
 .v2-account button {

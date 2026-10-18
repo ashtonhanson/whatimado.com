@@ -14,6 +14,7 @@ import { renderMissionChatDrawer, renderMissionChatOpenButton } from "./task-cha
 import {
   applyCircleBack,
   clearCircleBack,
+  flattenMissions,
   missionActionLines,
   normalizeMissionFields,
   setMissionDone
@@ -276,10 +277,18 @@ function mountMapTimeline(stages) {
 export function highlightTimelineMission(_root, missionId) {
   const root = timelineHost();
   if (!root) return;
+  const stages = appStore.journey.missionsStages || [];
+  const focusId = effectiveFocusMissionId(appStore.journey, stages);
+  const byId = new Map(flattenMissions(stages).map((mission) => [mission.id, mission]));
   root.querySelectorAll("[data-timeline-id]").forEach((item) => {
-    const match = item.getAttribute("data-timeline-id") === missionId;
-    item.classList.toggle("is-current", match);
-    if (match) item.classList.remove("is-planned");
+    const id = item.getAttribute("data-timeline-id") || "";
+    const mission = byId.get(id);
+    const status = mission ? missionStatusLabel(mission, focusId) : "Later";
+    item.classList.toggle("is-done", status === "Completed");
+    item.classList.toggle("is-waiting", status === "Waiting");
+    item.classList.toggle("is-bypassed", status === "Not completed");
+    item.classList.toggle("is-current", status === "Now");
+    item.classList.toggle("is-planned", status === "Later");
   });
 }
 
@@ -347,8 +356,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                         <input type="date" data-circle-return="${escapeHtml(id)}" value="${escapeHtml(cb.returnDate || "")}" />
                       </label>
                       <div class="v2-circle-back__actions">
-                        <button type="button" data-circle-save="${escapeHtml(id)}">Save waiting notes</button>
-                        <button type="button" data-circle-reopen="${escapeHtml(id)}">Reopen task</button>
+                        <button type="button" class="v2-mission-action" data-circle-save="${escapeHtml(id)}">Save waiting notes</button>
+                        <button type="button" class="v2-mission-action" data-circle-reopen="${escapeHtml(id)}">Reopen task</button>
                       </div>
                     </div>`
                   : "";
@@ -360,7 +369,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                       </header>
                       <div class="v2-mission__content">
                         <div class="v2-mission__head">
-                          <h4 class="v2-mission__title">${escapeHtml(mission.title)}</h4>
+                          <h4 class="v2-mission__title" tabindex="-1">${escapeHtml(mission.title)}</h4>
                           ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
                           ${bypassed ? `<span class="v2-mission__badge v2-mission__badge--bypassed">Not completed</span>` : ""}
                           ${status === "Now" && !waiting ? `<span class="v2-mission__badge v2-mission__badge--now">Now</span>` : ""}
@@ -372,13 +381,13 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                         ${resources}
                         ${action}
                         <div class="v2-mission__controls">
-                          <button type="button" class="v2-mission__complete" data-mission-complete="${escapeHtml(id)}" aria-pressed="${mission.done ? "true" : "false"}" ${waiting ? "disabled" : ""}>
+                          <button type="button" class="v2-mission-action v2-mission__complete" data-mission-complete="${escapeHtml(id)}" aria-pressed="${mission.done ? "true" : "false"}" ${waiting ? "disabled" : ""}>
                             ${mission.done ? "Completed" : "Mark complete"}
                           </button>
-                          <button type="button" class="v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
-                          <button type="button" class="v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
-                          <button type="button" class="v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
-                          <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}">Delete task</button>
+                          <button type="button" class="v2-mission-action v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
+                          <button type="button" class="v2-mission-action v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
+                          <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
+                          <button type="button" class="v2-mission-action" data-mission-delete="${escapeHtml(id)}">Delete task</button>
                         </div>
                         ${circlePanel}
                         ${renderMissionChatDrawer(id, mission.title)}
@@ -401,9 +410,9 @@ function renderMissionNavBar() {
   const canUndo = canRoadmapUndo(appStore.journey);
   return `
     <div class="v2-mission-nav" role="group" aria-label="Roadmap task navigation">
-      <button type="button" class="v2-mission-nav__continue" data-mission-continue="1">Continue</button>
+      <button type="button" class="v2-mission-action" data-mission-continue="1">Continue</button>
       <p class="v2-mission-nav__feedback" id="mission-nav-feedback" role="status" aria-live="polite"></p>
-      <button type="button" class="v2-mission-nav__undo" id="missions-undo-inline" data-mission-undo="1" ${canUndo ? "" : "disabled"}>Undo</button>
+      <button type="button" class="v2-mission-action" id="missions-undo-inline" data-mission-undo="1" ${canUndo ? "" : "disabled"}>Undo</button>
     </div>`;
 }
 
@@ -482,7 +491,10 @@ export function createMissionsController(ui) {
     highlightTimelineMission(timelineHost(), missionId);
     listEl?.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: missionId } }));
     const target = document.getElementById(`mission-${missionId}`);
-    if (target) scrollFrameChildIntoView(target);
+    if (target) {
+      scrollFrameChildIntoView(target);
+      target.querySelector(".v2-mission__title")?.focus?.();
+    }
   }
 
   function rerender({ scroll = false, feedback = "" } = {}) {
@@ -544,7 +556,7 @@ export function createMissionsController(ui) {
     mountMapTimeline(stages);
     onShown?.(stages);
     renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
-    bindProgress(listEl);
+    bindMissionActions();
     syncUndoButtons();
     setStatusMessage(statusEl(), "");
     if (scroll) scrollFrameChildIntoView(sectionEl);
@@ -636,10 +648,10 @@ export function createMissionsController(ui) {
 
   bindTimeline();
 
-  function bindProgress(root) {
-    if (!root || root.dataset.progressBound === "1") return;
-    root.dataset.progressBound = "1";
-    root.addEventListener("change", (event) => {
+  function bindMissionActions() {
+    if (!sectionEl || sectionEl.dataset.progressBound === "1") return;
+    sectionEl.dataset.progressBound = "1";
+    sectionEl.addEventListener("change", (event) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement)) return;
       if (target.dataset.savePath) {
@@ -649,18 +661,18 @@ export function createMissionsController(ui) {
         show(appStore.journey.missionsStages || []);
       }
     });
-    root.addEventListener("click", (event) => {
+    sectionEl.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
       const open = target?.closest("[data-open-path]");
       const openId = open?.getAttribute("data-open-path");
       if (openId) {
-        root.dispatchEvent(new CustomEvent("mission-open-path", { bubbles: true, detail: { id: openId } }));
+        listEl?.dispatchEvent(new CustomEvent("mission-open-path", { bubbles: true, detail: { id: openId } }));
         return;
       }
       const difficulty = target?.closest("[data-difficulty]");
       const difficultyId = difficulty?.getAttribute("data-difficulty");
       if (difficultyId) {
-        root.dispatchEvent(new CustomEvent("mission-difficulty", { bubbles: true, detail: { id: difficultyId } }));
+        listEl?.dispatchEvent(new CustomEvent("mission-difficulty", { bubbles: true, detail: { id: difficultyId } }));
         return;
       }
       const completeBtn = target?.closest("[data-mission-complete]");
@@ -715,7 +727,7 @@ export function createMissionsController(ui) {
       const saveCircle = target?.closest("[data-circle-save]");
       const saveId = saveCircle?.getAttribute("data-circle-save");
       if (saveId) {
-        const panel = root.querySelector(`[data-circle-back-panel="${CSS.escape(saveId)}"]`);
+        const panel = sectionEl.querySelector(`[data-circle-back-panel="${CSS.escape(saveId)}"]`);
         const reason = panel?.querySelector(`[data-circle-reason="${saveId}"]`)?.value || "";
         const instructions = panel?.querySelector(`[data-circle-instructions="${saveId}"]`)?.value || "";
         const returnDate = panel?.querySelector(`[data-circle-return="${saveId}"]`)?.value || "";

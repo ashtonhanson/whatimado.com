@@ -90,16 +90,15 @@ export function continueRoadmap(journey, fromMissionId) {
   const fromIndex = Math.max(0, all.findIndex((mission) => mission.id === focusId));
   const current = all[fromIndex];
 
-  if (current && !current.done && !isMissionWaiting(current)) {
-    current.bypassed = true;
-  }
-
   for (let index = fromIndex + 1; index < all.length; index += 1) {
     const candidate = all[index];
     if (candidate.done) continue;
     const gate = prerequisiteCheck(candidate, all);
     if (!gate.ok) {
       return { ok: false, blocked: true, reason: gate.reason, focusId: current?.id || focusId };
+    }
+    if (current && !current.done && !isMissionWaiting(current)) {
+      current.bypassed = true;
     }
     journey.focusMissionId = candidate.id;
     candidate.bypassed = false;

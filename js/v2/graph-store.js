@@ -302,10 +302,10 @@ const EXPLORE_OPTIONS = [
 const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
-const PATH_REACH = 72;
-const PLUS_GAP = 52;
-const MISSION_STEP = 38;
-const SIBLING_GAP = 34;
+const PATH_REACH = 68;
+const PLUS_GAP = 48;
+const MISSION_STEP = 34;
+const SIBLING_GAP = 30;
 const MIN_SIBLING_GAP = 22;
 /** The map pulls nodes back inside roughly this vertical band of the 240-unit view. */
 const NODE_CEIL_Y = 32;
@@ -341,7 +341,7 @@ const OPTION_OFFSETS = [
 const YOU_UNLINKED = { x: 400, y: 182 };
 const UNLINKED_CHOSEN = { dx: 0, dy: -82 };
 const UNLINKED_PLUS = { dx: 44, dy: -82 };
-const UNLINKED_MISSION_STEP = 36;
+const UNLINKED_MISSION_STEP = 32;
 /** The column's lowest roadmap sits here; earlier roadmaps move up as new ones slot in beneath. */
 const UNLINKED_COLUMN = { dx: 160, dy: 0 };
 /** The column's top stays this far under the selected roadmap so its line clears the plus. */

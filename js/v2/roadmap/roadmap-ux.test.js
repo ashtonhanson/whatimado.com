@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import { continueRoadmap, deleteMissionFromStages, dependentsOf, prerequisiteCheck } from "./mission-navigation.js";
 import { canRoadmapUndo, popRoadmapUndo, pushRoadmapUndo } from "./roadmap-undo.js";
 import { normalizeMissionFields } from "./mission-model.js";
+import { normalizeJourney } from "../state/journey.js";
 
 function journeyWithMissions(missions) {
   return {
@@ -47,6 +48,7 @@ describe("roadmap navigation", () => {
     assert.equal(blocked.ok, false);
     assert.equal(blocked.blocked, true);
     assert.match(blocked.reason, /waits on/i);
+    assert.equal(a.bypassed, false);
   });
 
   it("delete removes one mission and undo restores it with chats", () => {
@@ -61,6 +63,19 @@ describe("roadmap navigation", () => {
     assert.equal(restored.ok, true);
     assert.equal(journey.missionsStages[0].missions[0].id, "m1");
     assert.equal(journey.taskChats["path:m1"].messages[0].content, "note");
+  });
+
+  it("normalizeJourney keeps focus and undo stack for reload", () => {
+    const raw = {
+      id: "j1",
+      messages: [{ role: "user", content: "hi" }],
+      focusMissionId: "m2",
+      roadmapUndoStack: [{ missionsStages: [], missionDrafts: [], taskChats: {}, focusMissionId: null }],
+      missionsStages: [{ label: "W", missions: [{ id: "m2", title: "T", text: "x" }] }]
+    };
+    const journey = normalizeJourney(raw);
+    assert.equal(journey.focusMissionId, "m2");
+    assert.equal(journey.roadmapUndoStack.length, 1);
   });
 
   it("undo reports empty stack", () => {
