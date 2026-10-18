@@ -3,8 +3,7 @@ import { callAdvisor } from "../advisor.js";
 import { appendMessage, continuationThread, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { hideIntakeChips } from "../components/profile-chips.js";
 import { PHASE } from "../phases.js";
-import { buildIntakeContextBlock } from "../intake/stability-gates.js";
-import { formatUserLocation } from "../state/location.js";
+import { buildSharedPromptContext } from "../state/goal-brief.js";
 import { trackEvent } from "../state/analytics.js";
 import {
   buildPlanSummaryPrompt,
@@ -81,11 +80,11 @@ export function createConfirmGateController(ui) {
 
   async function requestSummary(idea, revision = "") {
     const fallback = fallbackPlanSummary(appStore.profile, idea.title || idea.label);
-    const context = buildIntakeContextBlock(
-      appStore.profile,
-      formatUserLocation(appStore.location),
-      appStore.journey.pathMode
-    );
+    const context = buildSharedPromptContext({
+      journey: appStore.journey,
+      profile: appStore.profile,
+      location: appStore.location
+    });
     try {
       const raw = await callAdvisor(buildPlanSummaryPrompt(idea, context, revision), {
         maxTokens: 500,

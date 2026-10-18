@@ -1174,6 +1174,7 @@ export class WhatimadoMap extends HTMLElement {
       }
       const label = group.querySelector("text");
       if (label?.textContent?.trim()) grow(all, label.getBoundingClientRect());
+      group.querySelectorAll(".whatimado-map__badge").forEach((badge) => grow(all, badge.getBoundingClientRect()));
     });
     if (!Number.isFinite(dots.top)) return null;
     const pad = 4;
@@ -1196,27 +1197,37 @@ export class WhatimadoMap extends HTMLElement {
     return this.syncSpreadForFrame(top);
   }
 
-  /** Slide the whole map so the selected roadmap sits in the gap above the prompt. */
+  /** Fit the current roadmap/task nodes (labels and badges) between timeline and prompt. */
   resetToYou({ animate = true } = {}) {
     this._userPanned = false;
     this.syncDesktopViewBox();
     const selectedId = this._selectedId || graphStore.selectedId;
-    const selected = this._liveNodes.find(
-      (node) => node.id === selectedId && node.type !== "more" && node.type !== "start"
-    );
-    const roadmap = this._liveNodes.find((node) => node.type === "path");
-    const you = this._liveNodes.find((node) => node.type === "start");
-    const focal = selected || roadmap || you;
-    if (!focal) return;
-    this._selectedId = focal.type === "start" ? this._selectedId : focal.id;
+    const keepSelection = selectedId;
+    const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    const options = {
+      centerNodeId:
+        keepSelection && keepSelection !== "start" && this._liveNodes.some((node) => node.id === keepSelection)
+          ? keepSelection
+          : null,
+      reserve: null
+    };
+    for (let pass = 0; pass < 3; pass++) {
+      const fit = computeTimelineFrameFit(this, options);
+      this._zoom = fit.zoom;
+      this._animatePanTo(fit.panX, fit.panY, false);
+      options.reserve = this._measureTitleReserve();
+      if (!options.reserve) break;
+    }
+    if (keepSelection && this._liveNodes.some((node) => node.id === keepSelection)) {
+      this._selectedId = keepSelection;
+      graphStore.selectedId = keepSelection;
+    }
     this._focalLocked = true;
-    this._focalNodeId = focal.id;
-    this._zoom = Math.max(this._zoom || 1, 1.12);
-    const target = computePanForNodeAboveFrame(this, focal.id);
+    this._focalNodeId = this._selectedId;
     this._youBtn?.classList.add("is-active");
     this._youBtn?.setAttribute("aria-pressed", "true");
     this._applyAnchorStyles();
-    this._animatePanTo(target.panX, target.panY, animate);
+    if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
   }
 
   /** @param {TouchList} touches */
@@ -2651,6 +2662,7 @@ export class WhatimadoMap extends HTMLElement {
           node.type === "task" ? "is-task" : "",
           node.type === "more" ? "is-more" : "",
           node.done ? "is-complete" : "",
+          node.waiting ? "is-waiting" : "",
           isLayoutAnchor ? "is-anchor is-primary" : "",
           !isSelected ? "is-support" : "",
           isSelected ? "is-selected" : "",
@@ -2686,6 +2698,9 @@ export class WhatimadoMap extends HTMLElement {
               : ""}
             ${title
               ? `<text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`
+              : ""}
+            ${node.waiting
+              ? `<g class="whatimado-map__badge whatimado-map__badge--waiting" transform="translate(${cx + r * 0.85}, ${cy - r * 0.85})"><circle r="7" /><text y="3" text-anchor="middle">◷</text></g>`
               : ""}
           </g>
         </g>

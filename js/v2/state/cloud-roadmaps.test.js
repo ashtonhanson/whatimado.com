@@ -32,7 +32,10 @@ function guest(id = "journey-1") {
       pathDirectionNote: "something the user typed",
       missionsStages: [{ label: "First week", missions: [{ id: "m1", title: "Email two studios", text: "Send a note.", done: true }] }],
       missionDrafts: [{ id: "d1", kind: "notes", body: "keep this note" }],
-      messages: [{ role: "user", content: "private chat" }]
+      messages: [{ role: "user", content: "private chat" }],
+      taskChats: { "path-local:m1": { messages: [{ role: "user", content: "task help" }] } },
+      goalVersion: 2,
+      goalBrief: { version: 2, intent: "Build the product", intentKind: "founder", updatedAt: 1 }
     },
     graph: { nodes: [{ id: "path-local", type: "path", title: "Local design" }], edges: [{ from: "start", to: "path-local" }], selectedId: null },
     profile: { name: "Ada", workMode: "remote", skills: "free text", goals: "free text" },
@@ -43,7 +46,10 @@ function guest(id = "journey-1") {
 test("cloud payload keeps structure and drops chat, free-text profile, and the direction note", () => {
   const payload = cloudPayload(guest());
   assert.deepEqual(payload.journey.messages, []);
+  assert.deepEqual(payload.journey.taskChats, {});
   assert.equal(payload.journey.pathDirectionNote, "");
+  assert.equal(payload.journey.goalBrief?.intent, "Build the product");
+  assert.equal(payload.journey.goalVersion, 2);
   assert.equal(payload.journey.missionsStages[0].missions[0].done, true);
   assert.equal(payload.journey.missionDrafts[0].body, "keep this note");
   assert.deepEqual(payload.graph.edges, [{ from: "start", to: "path-local" }]);

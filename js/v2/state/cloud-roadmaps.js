@@ -2,10 +2,11 @@
  * Account roadmaps <-> public.user_roadmaps (one row per roadmap).
  *
  * Rows carry structure only: nodes, edges, missions, completion, notes,
- * profile enums and location. Chat messages, free-text profile fields and
- * the path direction note stay on the device (see PRIVACY-NOTES.md).
+ * profile enums and location. Chat messages, task-scoped mission chats,
+ * free-text profile fields and the path direction note stay on the device
+ * (see PRIVACY-NOTES.md).
  *
- * A journey restored from the cloud has no messages, so it gets one short
+ * A journey restored from the cloud has no messages or task chats, so it gets one short
  * assistant line; restore needs at least one message to reopen a journey.
  */
 import { roadmapName } from "./guest-account.js";
@@ -47,7 +48,9 @@ export function cloudProfile(profile) {
  * @param {{ journey?: any, graph?: any, profile?: any, location?: any, locationDraft?: any }} part
  */
 export function cloudPayload(part) {
-  const journey = part?.journey?.id ? { ...clone(part.journey), messages: [], pathDirectionNote: "" } : null;
+  const journey = part?.journey?.id
+    ? { ...clone(part.journey), messages: [], pathDirectionNote: "", taskChats: {} }
+    : null;
   return {
     journey,
     graph: clone(part?.graph) || { ...EMPTY_GRAPH },

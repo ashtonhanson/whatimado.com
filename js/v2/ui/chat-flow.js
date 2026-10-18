@@ -5,6 +5,7 @@ import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ } from "../dock/constants.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
+import { buildSharedPromptContext, refreshGoalBrief } from "../state/goal-brief.js";
 import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
 import { formatUserLocation } from "../state/location.js";
 import { applyPrefsToStore } from "../state/prefs.js";
@@ -35,6 +36,7 @@ import { createConfirmGateController } from "../roadmap/session.js";
 import { createMissionsController, highlightTimelineMission } from "../roadmap/missions.js";
 import { applyStructuredMissionUpdate, buildDifficultyPrompt, fallbackDifficultyUpdate, parseDifficultyUpdate } from "../roadmap/difficulty.js";
 import { createDraftsController } from "../roadmap/drafts.js";
+import { createTaskChatController } from "../roadmap/task-chat.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -195,11 +197,20 @@ export function initChatFlow(ctx) {
     flush: flushPersist
   });
 
+  const taskChat = createTaskChatController({
+    listRoot: document.getElementById("mission-stages"),
+    frameEl,
+    layout,
+    flush: flushPersist
+  });
+  taskChat.bindRoot();
+
   const missions = createMissionsController({
     sectionEl: document.getElementById("missions"),
     listEl: document.getElementById("mission-stages"),
     layout,
     flush: flushPersist,
+    onRendered: () => taskChat.afterMissionRender(),
     onShown: (stages) => {
       drafts.sync(stages);
       setSpineAlternatePaths(Boolean(stages?.length));
@@ -273,8 +284,7 @@ export function initChatFlow(ctx) {
     if (node.type === "mission" || node.type === "task") {
       mapEl?.setSelectedNode(nodeId);
       highlightTimelineMission(document.getElementById("mission-stages"), nodeId);
-      const card = document.getElementById(node.type === "task" ? `mission-${nodeId}` : nodeId);
-      card?.scrollIntoView({ block: "nearest" });
+      taskChat.focusMission(nodeId);
       return;
     }
     const switching = Boolean(appStore.journey.roadmapPathId && appStore.journey.roadmapPathId !== nodeId);
@@ -504,6 +514,10 @@ export function initChatFlow(ctx) {
     layout();
     appStore.journey.messages.push({ role: "user", content: trimmed });
     appStore.journey.turnCount += 1;
+    const briefRefresh = refreshGoalBrief(appStore.journey, appStore.profile, appStore.location, {
+      latestUserText: trimmed
+    });
+    appStore.profile = briefRefresh.profile;
     touchJourney();
     flushPersist();
 
@@ -534,10 +548,20 @@ export function initChatFlow(ctx) {
       layout();
 
       try {
-        const reply = await callAdvisor(buildExplorationPrompt(appStore.journey.messages), {
-          maxTokens: 450,
-          feature: "v2_exploration"
-        });
+        const reply = await callAdvisor(
+          buildExplorationPrompt(
+            appStore.journey.messages,
+            buildSharedPromptContext({
+              journey: appStore.journey,
+              profile: appStore.profile,
+              location: appStore.location
+            })
+          ),
+          {
+            maxTokens: 450,
+            feature: "v2_exploration"
+          }
+        );
         typingEl.remove();
         const finalText = reply || "I'm here — tell me a bit more about what you're hoping changes.";
         appendMessage(thread, "advisor", finalText);
@@ -663,7 +687,7 @@ export function initChatFlow(ctx) {
   timelineEl?.addEventListener("mission-focus", (event) => {
     const id = event.detail?.id;
     if (!id) return;
-    document.getElementById(`mission-${id}`)?.scrollIntoView({ block: "nearest" });
+    taskChat.focusMission(id);
     const node = graphStore.nodes.find((item) => item.id === id);
     if (node) {
       mapEl?.setFocusedNode?.(id);
@@ -798,6 +822,18 @@ export function initChatFlow(ctx) {
   });
 
   window.addEventListener("resize", () => layout());
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key !== "Escape") return;
+      if (taskChat.handlesEscape()) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    },
+    true
+  );
 
   const restored = !isDemo && restoreGuestJourney() && restoreSessionUi();
   if (!restored) {

@@ -243,14 +243,17 @@ function getNodeBounds(mapEl) {
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
+  const { offset: labelOffset, cap: labelCap } = getNodeLabelMetrics(lg);
   for (const node of mapEl._liveNodes) {
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
     const r = node.type === "start" || node.type === "path" ? lg : sm;
-    minX = Math.min(minX, cx - r);
-    maxX = Math.max(maxX, cx + r);
-    minY = Math.min(minY, cy - r - lift);
-    maxY = Math.max(maxY, cy + r);
+    const labelLift = node.type === "mission" || node.type === "task" ? labelOffset + labelCap * 0.65 : 0;
+    const badgeLift = node.waiting ? 10 : 0;
+    minX = Math.min(minX, cx - r - (node.waiting ? 8 : 0));
+    maxX = Math.max(maxX, cx + r + (node.waiting ? 8 : 0));
+    minY = Math.min(minY, cy - r - lift - labelLift - badgeLift);
+    maxY = Math.max(maxY, cy + r + (node.waiting ? 6 : 0));
   }
   return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
 }

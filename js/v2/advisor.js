@@ -52,12 +52,14 @@ Keep replies under 120 words. Plain text only.`;
 
 /**
  * @param {{ role: "user"|"assistant", content: string }[]} messages
+ * @param {string} [sharedContextBlock]
  */
-export function buildExplorationPrompt(messages) {
+export function buildExplorationPrompt(messages, sharedContextBlock = "") {
   const transcript = messages
     .map((m) => `${m.role === "user" ? "User" : "Advisor"}: ${m.content}`)
     .join("\n\n");
-  return `${EXPLORATION_SYSTEM}\n\nConversation:\n${transcript}\n\nRespond to the user's latest message.`;
+  const extra = sharedContextBlock ? `\n${sharedContextBlock}\n` : "";
+  return `${EXPLORATION_SYSTEM}${extra}\n\nConversation:\n${transcript}\n\nRespond to the user's latest message.`;
 }
 
 const PATHS_SYSTEM = `You are whatimado — a career and life planning peer.

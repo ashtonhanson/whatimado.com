@@ -11,15 +11,13 @@ import {
   selectGraphNode
 } from "../graph-store.js";
 import { PATH_MODE } from "../intake/path-mode.js";
-import { buildIntakeContextBlock } from "../intake/stability-gates.js";
-import { formatUserLocation } from "../state/location.js";
+import { buildSharedPromptContext, markPathsAcceptedForGoal, refreshGoalBrief } from "../state/goal-brief.js";
 import { trackEvent } from "../state/analytics.js";
 import {
   buildAlterSystemPrompt,
   buildDiscussSystemPrompt,
   buildIdeasPrompt,
   detectMapChatIntent,
-  fallbackIdeas,
   filterNewIdeas,
   ideaCountForMode,
   MAX_MAP_PATHS,
@@ -39,11 +37,11 @@ function contextBlock() {
       "Regenerate paths that follow this new direction. Do not recycle the previous titles or strategy mix."
     );
   }
-  const base = buildIntakeContextBlock(
-    appStore.profile,
-    formatUserLocation(appStore.location),
-    appStore.journey.pathMode
-  );
+  const base = buildSharedPromptContext({
+    journey: appStore.journey,
+    profile: appStore.profile,
+    location: appStore.location
+  });
   return extras.length ? `${base}\n${extras.join("\n")}` : base;
 }
 
@@ -64,7 +62,6 @@ export function createPathMapController(ui) {
   const { messagesEl, pathCardsEl, mapEl, layout, flush, setComposerEnabled, setPhasePossibilities, onSelectPath, onShowChat } = ui;
   let moreBusy = false;
   let regenBusy = false;
-
   function pathStatusEl() {
     return document.getElementById("path-status");
   }
@@ -75,8 +72,9 @@ export function createPathMapController(ui) {
 
   function setPathBusy(text) {
     const section = possibilitiesEl();
-    if (text) section?.classList.remove("hidden");
-    setStatusMessage(pathStatusEl(), text);
+    const value = String(text || "").trim();
+    if (value) section?.classList.remove("hidden");
+    setStatusMessage(pathStatusEl(), value);
     layout();
   }
 
@@ -127,6 +125,7 @@ export function createPathMapController(ui) {
     loadAdvisorPaths(ideas, { keepSelectedId });
     mapEl?.syncLiveFromStore();
     if (graphStore.selectedId) mapEl?.setSelectedNode(graphStore.selectedId);
+    markPathsAcceptedForGoal(appStore.journey);
     setPhasePossibilities();
     render();
     layout();
@@ -167,6 +166,8 @@ export function createPathMapController(ui) {
 
   async function generate({ silentFail = false } = {}) {
     if (appStore.journey.pathsGenerated || appStore.pathsGenerating) return;
+    const hadPaths = pathNodes().length > 0;
+    const serial = ++appStore.journey.pathsGenerationSerial;
     appStore.pathsGenerating = true;
     setComposerEnabled(false);
     setPathBusy("Generating your roadmaps");
@@ -179,6 +180,7 @@ export function createPathMapController(ui) {
     const count = ideaCountForMode(appStore.journey.pathMode);
     try {
       const { intro, ideas } = await requestIdeas({ count, mode: "generate", feature: "v2_paths" });
+      if (serial !== appStore.journey.pathsGenerationSerial) return;
       typingEl?.remove();
       applyIdeasToMap(ideas.slice(0, count), { keepSelectedId: null });
       pushAdvisor(intro, { skipScroll: true, head: true });
@@ -191,24 +193,29 @@ export function createPathMapController(ui) {
       trackEvent("map_generated", { paths: ideas.length });
       scrollFrameChildIntoView(possibilitiesEl());
     } catch (error) {
+      if (serial !== appStore.journey.pathsGenerationSerial) return;
       typingEl?.remove();
-      applyIdeasToMap(fallbackIdeas(appStore.profile, appStore.journey.pathMode), { keepSelectedId: null });
-      appStore.journey.pathsGenerated = true;
+      if (!hadPaths) {
+        appStore.journey.pathsGenerated = false;
+      }
       touchJourney();
       flush();
-      trackEvent("map_generated", { fallback: true });
+      trackEvent("map_generate_failed", { hadPaths });
       if (!silentFail) {
-        pushAdvisor("I couldn't map custom paths just now — here are starter directions you can explore.", {
-          skipScroll: true,
-          head: true
-        });
+        pushAdvisor(
+          hadPaths
+            ? "I couldn't refresh the map just now — your current paths are unchanged. Try again in a moment."
+            : "I couldn't generate paths just now. Check your connection and try again — I won't substitute generic paths.",
+          { skipScroll: true, head: true }
+        );
       }
-      closeIntakeThread();
       scrollFrameChildIntoView(possibilitiesEl());
     } finally {
-      appStore.pathsGenerating = false;
-      setPathBusy("");
-      setComposerEnabled(true);
+      if (serial === appStore.journey.pathsGenerationSerial) {
+        appStore.pathsGenerating = false;
+        setPathBusy("");
+        setComposerEnabled(true);
+      }
     }
   }
 
@@ -252,7 +259,8 @@ export function createPathMapController(ui) {
   async function regenerateAll({ fromRedirect = false } = {}) {
     if (regenBusy) return;
     regenBusy = true;
-    appStore.journey.selectedPathId = null;
+    const previousSelection = appStore.journey.selectedPathId;
+    const serial = ++appStore.journey.pathsGenerationSerial;
     render();
     setComposerEnabled(false);
     const status = fromRedirect ? "Calculating adjustments to your paths" : "Generating new roadmaps";
@@ -271,6 +279,7 @@ export function createPathMapController(ui) {
         mode: "regenerate",
         feature: "v2_paths_regen"
       });
+      if (serial !== appStore.journey.pathsGenerationSerial) return;
       typingEl?.remove();
       applyIdeasToMap(ideas.slice(0, count), { keepSelectedId: null });
       appStore.journey.selectedPathId = null;
@@ -280,13 +289,17 @@ export function createPathMapController(ui) {
       pushAdvisor(intro || "Here's a refreshed map based on what you've said.", { skipScroll: true });
       scrollFrameChildIntoView(possibilitiesEl());
     } catch {
+      if (serial !== appStore.journey.pathsGenerationSerial) return;
       typingEl?.remove();
+      appStore.journey.selectedPathId = previousSelection;
       pushAdvisor("I couldn't regenerate the map just now — your current paths are unchanged.");
     } finally {
-      regenBusy = false;
-      setPathBusy("");
-      setComposerEnabled(true);
-      render();
+      if (serial === appStore.journey.pathsGenerationSerial) {
+        regenBusy = false;
+        setPathBusy("");
+        setComposerEnabled(true);
+        render();
+      }
     }
   }
 
@@ -414,6 +427,10 @@ export function createPathMapController(ui) {
     const pathId = appStore.journey.mapChatPathId;
     if (type === "redirect") {
       appStore.journey.pathDirectionNote = trimmed;
+      const refreshed = refreshGoalBrief(appStore.journey, appStore.profile, appStore.location, {
+        latestUserText: trimmed
+      });
+      appStore.profile = refreshed.profile;
       appStore.journey.mapChatType = null;
       appStore.journey.mapChatPathId = null;
       touchJourney();

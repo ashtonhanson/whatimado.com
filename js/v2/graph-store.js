@@ -1,4 +1,4 @@
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, homeAngle?: number }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, chainIndex?: number, homeAngle?: number }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
 /** @typedef {{ id?: string, label: string, title: string, description?: string, type?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} AdvisorPath */
 export const graphStore = {
@@ -302,10 +302,11 @@ const EXPLORE_OPTIONS = [
 const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
-const PATH_REACH = 88;
-const PLUS_GAP = 86;
-const SIBLING_GAP = 46;
-const MIN_SIBLING_GAP = 28;
+const PATH_REACH = 72;
+const PLUS_GAP = 52;
+const MISSION_STEP = 38;
+const SIBLING_GAP = 34;
+const MIN_SIBLING_GAP = 22;
 /** The map pulls nodes back inside roughly this vertical band of the 240-unit view. */
 const NODE_CEIL_Y = 32;
 const NODE_FLOOR_Y = 210;
@@ -338,8 +339,9 @@ const OPTION_OFFSETS = [
  * options fanned to the left, other roadmaps stacked in a column on the right.
  */
 const YOU_UNLINKED = { x: 400, y: 182 };
-const UNLINKED_CHOSEN = { dx: 0, dy: -100 };
-const UNLINKED_PLUS = { dx: 52, dy: -100 };
+const UNLINKED_CHOSEN = { dx: 0, dy: -82 };
+const UNLINKED_PLUS = { dx: 44, dy: -82 };
+const UNLINKED_MISSION_STEP = 36;
 /** The column's lowest roadmap sits here; earlier roadmaps move up as new ones slot in beneath. */
 const UNLINKED_COLUMN = { dx: 160, dy: 0 };
 /** The column's top stays this far under the selected roadmap so its line clears the plus. */
@@ -379,14 +381,23 @@ function angleFor(id, index, count) {
  * @param {number} rotation
  * @param {string} chosenId
  */
+function missionChain(nodes) {
+  return nodes
+    .filter((node) => node.type === "mission" || node.type === "task")
+    .sort((a, b) => (a.chainIndex ?? 0) - (b.chainIndex ?? 0));
+}
+
 export function placeLinkedBranch(nodes, rotation, chosenId) {
   const spread = mapSpread;
   const originX = YOU_LINKED.x;
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
   const pathSiblings = satellites.filter((node) => node.type === "path");
-  const orbit = satellites.filter((node) => !pathSiblings.includes(node) && !LINKED_OPTION_OFFSETS[node.id]);
+  const chain = missionChain(satellites);
+  const orbit = satellites.filter(
+    (node) => !pathSiblings.includes(node) && !chain.includes(node) && !LINKED_OPTION_OFFSETS[node.id]
+  );
   const chosenDist = PATH_REACH * spread;
-  const plusDist = chosenDist + PLUS_GAP * spread;
+  const plusDist = chosenDist + (MISSION_STEP * (chain.length + 1) + PLUS_GAP) * spread;
   const drop = Math.sin(rotation) * chosenDist;
   const topReach = Math.max(...Object.values(LINKED_OPTION_OFFSETS).map((slot) => -slot.dy)) * spread;
   let siblingGap = SIBLING_GAP * spread;
@@ -417,6 +428,13 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       node.y = (originY + Math.sin(rotation) * plusDist) / MAP_H;
       return;
     }
+    const chainIndex = chain.findIndex((entry) => entry.id === node.id);
+    if (chainIndex >= 0) {
+      const dist = chosenDist + MISSION_STEP * (chainIndex + 1) * spread;
+      node.x = (originX + Math.cos(rotation) * dist) / MAP_W;
+      node.y = (originY + Math.sin(rotation) * dist) / MAP_H;
+      return;
+    }
     const siblingIndex = pathSiblings.findIndex((entry) => entry.id === node.id);
     if (siblingIndex >= 0) {
       node.x = chosenX / MAP_W;
@@ -438,7 +456,10 @@ export function placeUnlinkedBranch(nodes, chosenId) {
   const { x: youX, y: youY } = YOU_UNLINKED;
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
   const column = satellites.filter((node) => node.type === "path");
-  const extras = satellites.filter((node) => !column.includes(node) && !UNLINKED_OPTION_OFFSETS[node.id]);
+  const chain = missionChain(satellites);
+  const extras = satellites.filter(
+    (node) => !column.includes(node) && !chain.includes(node) && !UNLINKED_OPTION_OFFSETS[node.id]
+  );
   const columnCeil = UNLINKED_CHOSEN.dy + UNLINKED_COLUMN_PLUS_CLEAR;
   const columnGap =
     column.length > 1
@@ -451,7 +472,15 @@ export function placeUnlinkedBranch(nodes, chosenId) {
     let slot;
     if (node.type === "start") slot = { dx: 0, dy: 0 };
     else if (node.id === chosenId) slot = UNLINKED_CHOSEN;
-    else if (node.type === "more") slot = UNLINKED_PLUS;
+    else if (node.type === "more") {
+      slot = {
+        dx: UNLINKED_PLUS.dx,
+        dy: UNLINKED_CHOSEN.dy - UNLINKED_MISSION_STEP * (chain.length + 1) - 18
+      };
+    } else if (chain.includes(node)) {
+      const chainIndex = chain.findIndex((entry) => entry.id === node.id);
+      slot = { dx: UNLINKED_CHOSEN.dx, dy: UNLINKED_CHOSEN.dy - UNLINKED_MISSION_STEP * (chainIndex + 1) };
+    }
     else if (column.includes(node)) {
       slot = { dx: UNLINKED_COLUMN.dx, dy: columnTop + columnGap * column.indexOf(node) };
     } else if (UNLINKED_OPTION_OFFSETS[node.id]) slot = UNLINKED_OPTION_OFFSETS[node.id];
@@ -476,8 +505,9 @@ export function relayoutLinkedSpread() {
  * Linked: You on the left, selected roadmap to the right, other options around You.
  * Unlinked: selected roadmap above You, options to the left, other roadmaps in a right column.
  * @param {string} pathId
+ * @param {Array<{ missions?: { id?: string, title?: string, done?: boolean, waiting?: boolean }[] }>} [stages]
  */
-export function showRoadmapBranch(pathId) {
+export function showRoadmapBranch(pathId, stages = null) {
   rememberPossibilities();
   const source = possibilityNodes || graphStore.nodes;
   const paths = source.filter((node) => node.type === "path");
@@ -526,6 +556,27 @@ export function showRoadmapBranch(pathId) {
     });
   }
 
+  let attachId = chosenSource.id;
+  if (Array.isArray(stages) && stages.length) {
+    const missions = stages.flatMap((stage) => stage.missions || []).slice(0, 12);
+    missions.forEach((mission, index) => {
+      const id = String(mission.id || `mission-${index + 1}`).slice(0, 64);
+      const title = String(mission.title || "Task").trim();
+      nodes.push({
+        id,
+        type: "mission",
+        label: shortenMapLabel(title) || `Step ${index + 1}`,
+        title,
+        done: Boolean(mission.done),
+        waiting: Boolean(mission.waiting),
+        chainIndex: index,
+        parentId: attachId
+      });
+      edges.push({ from: attachId, to: id });
+      attachId = id;
+    });
+  }
+
   const chosen = nodes.find((node) => node.id === chosenSource.id);
   if (chosen) {
     nodes.push({
@@ -537,7 +588,7 @@ export function showRoadmapBranch(pathId) {
       y: chosen.y - 0.16,
       homeAngle: chosen.homeAngle
     });
-    edges.push({ from: chosen.id, to: ROADMAP_MORE_ID });
+    edges.push({ from: attachId, to: ROADMAP_MORE_ID });
   }
 
   const target = 0;

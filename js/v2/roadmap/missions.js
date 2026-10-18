@@ -1,7 +1,8 @@
 import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
 import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
-import { buildIntakeContextBlock, shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
+import { shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
+import { buildSharedPromptContext, markMissionsAcceptedForGoal } from "../state/goal-brief.js";
 import { formatUserLocation } from "../state/location.js";
 import { normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail, resourcesMatchingFirstMissions } from "./resources.js";
 import { countryKey, countryName } from "./country-resources.js";
@@ -9,6 +10,15 @@ import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, 
 import { catalogForStages } from "./drafts.js";
 import { graphStore, shortenMapLabel } from "../graph-store.js";
 import { toggleSavedPath } from "../state/journey.js";
+import { renderMissionChatDrawer, renderMissionChatOpenButton } from "./task-chat.js";
+import {
+  applyCircleBack,
+  clearCircleBack,
+  missionActionLines,
+  normalizeMissionFields,
+  setMissionDone
+} from "./mission-model.js";
+import { rippleCircleBackNotes } from "./circle-back.js";
 
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
@@ -86,16 +96,19 @@ export function parseStagesResponse(raw, fallback) {
           missions: (Array.isArray(missions) ? missions : [])
             .slice(0, 3)
             .map((mission, missionIndex) => {
-              const title = String(mission?.title || mission?.mission || "").trim();
+              const normalized = normalizeMissionFields(
+                {
+                  ...mission,
+                  id: mission?.id || missionId(String(mission?.title || mission?.mission || ""), missionIndex)
+                },
+                missionIndex
+              );
               return {
-                id: missionId(title, missionIndex),
-                title,
-                text: String(mission?.text || "").trim(),
-                done: Boolean(mission?.done),
+                ...normalized,
                 resources: normalizeResources(mission?.resources)
               };
             })
-            .filter((mission) => mission.title && mission.text)
+            .filter((mission) => mission.title && (mission.text || mission.askDo || mission.whom))
         };
       })
       .filter((stage) => stage.label && stage.missions.length);
@@ -130,11 +143,11 @@ function localResourceRule(location) {
  * @param {string[]} bullets
  */
 function buildMissionsPrompt(idea, bullets) {
-  const context = buildIntakeContextBlock(
-    appStore.profile,
-    formatUserLocation(appStore.location),
-    appStore.journey.pathMode
-  );
+  const context = buildSharedPromptContext({
+    journey: appStore.journey,
+    profile: appStore.profile,
+    location: appStore.location
+  });
   const stability = shouldBlockJobBoards(appStore.profile)
     ? "STABILITY FIRST: ID or housing is not confirmed. Do not assign job boards, Indeed, or a contact-tracking spreadsheet. Open with shelter, documents, or ID steps that match the profile."
     : "Do not insert ID, shelter, or basic-needs steps unless the profile says they are needed.";
@@ -146,8 +159,9 @@ function buildMissionsPrompt(idea, bullets) {
   return (
     `You are whatimado. Write the FIRST roadmap for "${idea.title || idea.label}".\n` +
     `Return ONLY JSON:\n` +
-    `{"stages":[{"label":"mission name","desc":"one sentence","missions":[{"title":"task the person does","text":"2 concrete sentences","resources":[]}]}],"resources":[{"name":"","kind":"organization|platform|person|event","place":"city, country — or online","why":"why this fits THIS path","offers":"the specific program or service","nextStep":"one action to take","url":"https://official-site","email":"","phone":"","address":"","contact":"department or role"}]}\n` +
+    `{"stages":[{"label":"mission name","desc":"one sentence","missions":[{"title":"task the person does","whom":"role or org type to contact — no invented names","askDo":"exact ask or action","outcome":"concrete result they should have","text":"optional summary","resources":[]}]}],"resources":[{"name":"","kind":"organization|platform|person|event","place":"city, country — or online","why":"why this fits THIS path","offers":"the specific program or service","nextStep":"one action to take","url":"https://official-site","email":"","phone":"","address":"","contact":"department or role"}]}\n` +
     `Exactly 2 stages. Each stage is one mission with 2 tasks.\n` +
+    `Every task MUST include whom, askDo, and outcome. Name a role or organization type, never a fabricated person, email, or phone number.\n` +
     `Resources are ways to reach people on THIS path. Return at least 3 and at most 4 organizations that the first tasks actually name. Every place named in a task must appear in resources with its official URL.${austinNote} Include email or phone only when you know that exact current address or number. If you do not, leave it empty and put the official contact-page URL in url. Never invent an email or phone number.\n` +
     `${localResourceRule(appStore.location)}\n` +
     `A mission "resources" array is only for an organization this mission needs that is not already in the path list. If it would repeat the path list, use "resources":[].\n` +
@@ -172,10 +186,11 @@ function renderMissionTimeline(stages) {
   const items = missions
     .map((mission, index) => {
       const done = Boolean(mission.done);
-      const current = !done && !seenCurrent;
+      const waiting = Boolean(mission.waiting || mission.circleBack?.active);
+      const current = !done && !waiting && !seenCurrent;
       if (current) seenCurrent = true;
-      const state = done ? "is-done" : current ? "is-current" : "is-planned";
-      const status = done ? "Done" : current ? "Now" : "Later";
+      const state = done ? "is-done" : waiting ? "is-waiting" : current ? "is-current" : "is-planned";
+      const status = done ? "Done" : waiting ? "Waiting" : current ? "Now" : "Later";
       const full = mission.title || "Mission";
       const short = shortenMapLabel(full) || `Step ${index + 1}`;
       return `<button type="button" class="v2-timeline__stop ${state}" data-timeline-id="${escapeHtml(mission.id || "")}" aria-label="${escapeHtml(status)}: ${escapeHtml(full)}" title="${escapeHtml(full)}"><span class="v2-timeline__dot" aria-hidden="true"></span><span class="v2-timeline__name">${escapeHtml(short)}</span></button>`;
@@ -272,10 +287,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
     .map(
       (stage, index) => `
         <article class="v2-stage" id="stage-${index}">
-          <label class="v2-check v2-stage__label">
-            <input type="checkbox" data-stage-index="${index}" ${stage.missions.every((mission) => mission.done) ? "checked" : ""} />
-            <span>${index + 1}. ${escapeHtml(stage.label)}</span>
-          </label>
+          <h3 class="v2-stage__label">${index + 1}. ${escapeHtml(stage.label)}</h3>
           ${stage.desc ? `<p class="v2-stage__desc">${escapeHtml(stage.desc)}</p>` : ""}
           <ol class="v2-mission-list">
             ${stage.missions
@@ -296,18 +308,58 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                 const timing = mission.timelineNote
                   ? `<p class="v2-mission__when">${escapeHtml(mission.timelineNote)}</p>`
                   : "";
+                const waiting = Boolean(mission.waiting || mission.circleBack?.active);
+                const actionLines = missionActionLines(mission);
+                const detail = actionLines.length
+                  ? `<ul class="v2-mission__actions">${actionLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
+                  : "";
+                const cb = mission.circleBack || {};
+                const circlePanel = waiting
+                  ? `<div class="v2-circle-back" data-circle-back-panel="${escapeHtml(id)}">
+                      <p class="v2-circle-back__badge"><span class="v2-circle-back__clock" aria-hidden="true">◷</span> Waiting — circle back</p>
+                      <label class="v2-circle-back__field">Reason
+                        <textarea data-circle-reason="${escapeHtml(id)}" rows="2" placeholder="Why you are pausing">${escapeHtml(cb.reason || "")}</textarea>
+                      </label>
+                      <label class="v2-circle-back__field">Instructions for next time
+                        <textarea data-circle-instructions="${escapeHtml(id)}" rows="3" placeholder="What to do when you return">${escapeHtml(cb.instructions || "")}</textarea>
+                      </label>
+                      <label class="v2-circle-back__field">Return date (optional)
+                        <input type="date" data-circle-return="${escapeHtml(id)}" value="${escapeHtml(cb.returnDate || "")}" />
+                      </label>
+                      <div class="v2-circle-back__actions">
+                        <button type="button" data-circle-save="${escapeHtml(id)}">Save waiting notes</button>
+                        <button type="button" data-circle-reopen="${escapeHtml(id)}">Reopen task</button>
+                      </div>
+                    </div>`
+                  : "";
                 return `
-                  <li class="v2-mission${mission.done ? " is-done" : ""}" id="mission-${escapeHtml(id)}">
-                    <label class="v2-check v2-mission__title">
-                      <input type="checkbox" data-mission-id="${escapeHtml(id)}" ${mission.done ? "checked" : ""} />
-                      <span>${escapeHtml(mission.title)}</span>
-                    </label>
-                    <p class="v2-mission__text">${escapeHtml(mission.text)}</p>
-                    ${steps}
-                    ${timing}
-                    ${resources}
-                    ${action}
-                    <button type="button" class="v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
+                  <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
+                    <div class="v2-mission__panel">
+                      <header class="v2-mission__toolbar">
+                        ${renderMissionChatOpenButton(id)}
+                      </header>
+                      <div class="v2-mission__content">
+                        <div class="v2-mission__head">
+                          <h4 class="v2-mission__title">${escapeHtml(mission.title)}</h4>
+                          ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
+                        </div>
+                        ${detail}
+                        ${mission.text && actionLines.length > 1 ? `<p class="v2-mission__text">${escapeHtml(mission.text)}</p>` : ""}
+                        ${steps}
+                        ${timing}
+                        ${resources}
+                        ${action}
+                        <div class="v2-mission__controls">
+                          <button type="button" class="v2-mission__complete" data-mission-complete="${escapeHtml(id)}" aria-pressed="${mission.done ? "true" : "false"}" ${waiting ? "disabled" : ""}>
+                            ${mission.done ? "Completed" : "Mark complete"}
+                          </button>
+                          <button type="button" class="v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
+                          <button type="button" class="v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
+                        </div>
+                        ${circlePanel}
+                        ${renderMissionChatDrawer(id, mission.title)}
+                      </div>
+                    </div>
                   </li>`;
               })
               .join("")}
@@ -316,9 +368,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
     )
     .join("");
   root.innerHTML += stages.length ? CONTINUATION_CUE : "";
-  const first = stages[0];
-  const firstDone = Boolean(first?.missions?.length && first.missions.every((mission) => mission.done));
-  root.innerHTML += firstDone ? renderNextPathOptions() : "";
+  const allDone = stages.length > 0 && stages.every((stage) => stage.missions.every((mission) => mission.done));
+  root.innerHTML += allDone ? renderNextPathOptions() : "";
   bindResourcesAccordions(root);
 }
 
@@ -371,10 +422,11 @@ function renderNextPathOptions() {
  *   layout: () => void,
  *   flush: () => void,
  *   onShown?: (stages: { label: string, desc: string, missions: { title: string, text: string }[] }[]) => void
+ *   onRendered?: () => void
  * }} ui
  */
 export function createMissionsController(ui) {
-  const { sectionEl, listEl, layout, flush, onShown } = ui;
+  const { sectionEl, listEl, layout, flush, onShown, onRendered } = ui;
   let pending = false;
   let serial = 0;
 
@@ -427,6 +479,7 @@ export function createMissionsController(ui) {
       appStore.profile
     );
     renderMissionStages(listEl, stages, catalog, sharedResources, resourcePlaceLabel(appStore.location));
+    onRendered?.();
     mountMapTimeline(stages);
     onShown?.(stages);
     renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
@@ -445,6 +498,7 @@ export function createMissionsController(ui) {
     appStore.journey.missionsStages = stages;
     appStore.journey.missionResources = normalizeResources(resources);
     if (pathId) appStore.journey.roadmapPathId = pathId;
+    markMissionsAcceptedForGoal(appStore.journey);
     touchJourney();
     flush();
     show(stages);
@@ -523,23 +577,12 @@ export function createMissionsController(ui) {
     root.addEventListener("change", (event) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement)) return;
-      const stages = appStore.journey.missionsStages || [];
-      if (target.dataset.missionId) {
-        for (const stage of stages) {
-          const mission = stage.missions.find((item) => item.id === target.dataset.missionId);
-          if (mission) mission.done = target.checked;
-        }
-      } else if (target.dataset.stageIndex != null) {
-        const stage = stages[Number(target.dataset.stageIndex)];
-        stage?.missions.forEach((mission) => {
-          mission.done = target.checked;
-        });
-      } else if (target.dataset.savePath) {
+      if (target.dataset.savePath) {
         toggleSavedPath(appStore.journey, target.dataset.savePath);
-      } else return;
-      touchJourney();
-      flush();
-      show(stages);
+        touchJourney();
+        flush();
+        show(appStore.journey.missionsStages || []);
+      }
     });
     root.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
@@ -553,6 +596,80 @@ export function createMissionsController(ui) {
       const difficultyId = difficulty?.getAttribute("data-difficulty");
       if (difficultyId) {
         root.dispatchEvent(new CustomEvent("mission-difficulty", { bubbles: true, detail: { id: difficultyId } }));
+        return;
+      }
+      const completeBtn = target?.closest("[data-mission-complete]");
+      const completeId = completeBtn?.getAttribute("data-mission-complete");
+      if (completeId) {
+        const stages = appStore.journey.missionsStages || [];
+        for (const stage of stages) {
+          const mission = stage.missions.find((item) => item.id === completeId);
+          if (mission) setMissionDone(mission, !mission.done);
+        }
+        touchJourney();
+        flush();
+        show(stages);
+        return;
+      }
+      const circleToggle = target?.closest("[data-circle-back]");
+      const circleId = circleToggle?.getAttribute("data-circle-back");
+      if (circleId) {
+        const stages = appStore.journey.missionsStages || [];
+        let found = null;
+        for (const stage of stages) {
+          found = stage.missions.find((item) => item.id === circleId) || found;
+        }
+        if (found && !found.circleBack?.active) {
+          applyCircleBack(found, { reason: "Waiting on something external", instructions: "" });
+        }
+        touchJourney();
+        flush();
+        show(stages);
+        return;
+      }
+      const reopenBtn = target?.closest("[data-circle-reopen]");
+      const reopenId = reopenBtn?.getAttribute("data-circle-reopen");
+      if (reopenId) {
+        const stages = appStore.journey.missionsStages || [];
+        for (const stage of stages) {
+          const mission = stage.missions.find((item) => item.id === reopenId);
+          if (mission) clearCircleBack(mission);
+        }
+        touchJourney();
+        flush();
+        show(stages);
+        return;
+      }
+      const saveCircle = target?.closest("[data-circle-save]");
+      const saveId = saveCircle?.getAttribute("data-circle-save");
+      if (saveId) {
+        const panel = root.querySelector(`[data-circle-back-panel="${CSS.escape(saveId)}"]`);
+        const reason = panel?.querySelector(`[data-circle-reason="${saveId}"]`)?.value || "";
+        const instructions = panel?.querySelector(`[data-circle-instructions="${saveId}"]`)?.value || "";
+        const returnDate = panel?.querySelector(`[data-circle-return="${saveId}"]`)?.value || "";
+        const stages = appStore.journey.missionsStages || [];
+        let stageLabel = "";
+        let mission = null;
+        for (const stage of stages) {
+          const hit = stage.missions.find((item) => item.id === saveId);
+          if (hit) {
+            mission = hit;
+            stageLabel = stage.label || "";
+          }
+        }
+        if (mission) {
+          applyCircleBack(mission, { reason, instructions, returnDate });
+          touchJourney();
+          flush();
+          show(stages);
+          void (async () => {
+            appStore.journey.missionsStages = await rippleCircleBackNotes(appStore.journey, mission, stageLabel);
+            touchJourney();
+            flush();
+            show(appStore.journey.missionsStages);
+          })();
+        }
+        return;
       }
     });
   }

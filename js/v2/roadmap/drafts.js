@@ -3,11 +3,43 @@ import { resourcesForRail } from "./resources.js";
 import { callAdvisor } from "../advisor.js";
 import { escapeHtml } from "../ui.js";
 import { formatUserLocation } from "../state/location.js";
-import { buildIntakeContextBlock, shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
+import { shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
+import { buildSharedPromptContext } from "../state/goal-brief.js";
+import { missionActionLines, missionContextStamp } from "./mission-model.js";
+import { taskChatStorageKey, getTaskThread } from "./task-chat.js";
 
 /** @typedef {"phone_script"|"outreach_email"|"notes"} DraftKind */
 /** @typedef {{ id: string, kind: DraftKind, label: string, missionTitle: string, missionText: string }} DraftCatalogItem */
-/** @typedef {DraftCatalogItem & { body: string }} MissionDraft */
+/** @typedef {DraftCatalogItem & { body: string, contextStamp?: string }} MissionDraft */
+
+const SLUG_IN_BODY = /\bm-[a-z0-9-]{4,}\b/i;
+const PROVIDER_PASTE = /\b(offers|provides|services include|our mission is)\b.{40,}/i;
+
+/**
+ * @param {string} body
+ */
+export function sanitizeDraftBody(body) {
+  let text = String(body || "").trim();
+  text = text.replace(SLUG_IN_BODY, "[task]");
+  if (PROVIDER_PASTE.test(text)) {
+    text = text.replace(PROVIDER_PASTE, "[confirm details on the official site]");
+  }
+  return text.slice(0, 2500);
+}
+
+/**
+ * @param {string} body
+ * @returns {{ ok: boolean, reason?: string }}
+ */
+export function validateDraftForCopy(body) {
+  const text = String(body || "").trim();
+  if (!text) return { ok: false, reason: "Draft is empty." };
+  if (/\[(?:your name|two times|name|email)\]/i.test(text)) {
+    return { ok: false, reason: "Replace placeholders in brackets before copying." };
+  }
+  if (SLUG_IN_BODY.test(text)) return { ok: false, reason: "Draft still contains internal task ids." };
+  return { ok: true };
+}
 
 const LABELS = {
   phone_script: "Phone script",
@@ -157,28 +189,58 @@ export function fallbackDraft(item, location, profile) {
 /**
  * @param {DraftCatalogItem} item
  */
+function missionForCatalogItem(item) {
+  for (const stage of appStore.journey.missionsStages || []) {
+    const hit = stage.missions?.find((mission) => mission.title === item.missionTitle);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function latestTaskNotes(mission) {
+  if (!mission?.id) return "";
+  const pathId = appStore.journey.roadmapPathId || "";
+  const key = taskChatStorageKey(pathId, mission.id);
+  const thread = getTaskThread(appStore.journey, key);
+  const tail = (thread.messages || []).slice(-4).map((m) => `${m.role}: ${m.content}`).join("\n");
+  return tail.slice(0, 1200);
+}
+
 function buildDraftPrompt(item) {
   const place = formatUserLocation(appStore.location);
+  const mission = missionForCatalogItem(item);
+  const actionLines = mission ? missionActionLines(mission).join("\n") : item.missionText;
+  const notes = mission ? latestTaskNotes(mission) : "";
+  const waiting = mission?.circleBack?.active
+    ? `Waiting notes: ${mission.circleBack.reason || ""}\n${mission.circleBack.instructions || ""}`
+    : "";
   const stability = shouldBlockJobBoards(appStore.profile)
     ? "STABILITY FIRST. This is a call or a note about shelter, ID, or documents. Do not write a job application, a job-board email, or a spreadsheet of employers."
     : "Do not add shelter or ID steps unless the profile needs them.";
   const shape =
     item.kind === "phone_script"
-      ? "Write a phone script they can read out loud. Open with who they are and the specific reason for the call. Include the two questions worth asking, and a line to repeat the next step before hanging up."
+      ? "Write a phone script they can read out loud. Use the stated recipient role only. Include the exact ask and expected outcome from the task. No unrelated career pitch."
       : item.kind === "outreach_email"
-        ? "Write an email they would actually send to a peer. Subject line first. One specific reason for writing, tied to this mission. A concrete ask with a time box. No warm-up paragraph."
-        : "Write a notes sheet they will fill after a real conversation. Leave blanks for who they spoke with, what changed the plan, what they brought, and the next step with a date. Do not pre-fill those blanks with invented outcomes.";
+        ? "Write an email tied to this task's recipient, ask, and outcome. Subject line first. No generic job search or unrelated industry pivot."
+        : "Write a notes sheet for after a real conversation. Leave blanks for facts the user must supply. Do not invent outcomes or contacts.";
   return (
     `You are whatimado. Write one draft the user can copy and edit.\n` +
     `Return only the draft. No title, no JSON, no advice before it.\n` +
+    `Never invent people, emails, phone numbers, or program facts. Never paste provider marketing copy or internal ids.\n` +
     `${shape}\n` +
     `${writingVoice(appStore.profile)}\n` +
     `Under 180 words.\n` +
     `${stability}\n\n` +
-    `Mission: ${item.missionTitle}\n` +
-    `Details: ${item.missionText}\n` +
+    `Task: ${item.missionTitle}\n` +
+    `${actionLines}\n` +
+    `${waiting ? `${waiting}\n` : ""}` +
+    `${notes ? `Recent task notes:\n${notes}\n` : ""}` +
     `Place: ${place || "not given"}\n\n` +
-    buildIntakeContextBlock(appStore.profile, place, appStore.journey.pathMode)
+    buildSharedPromptContext({
+      journey: appStore.journey,
+      profile: appStore.profile,
+      location: appStore.location
+    })
   );
 }
 
@@ -249,6 +311,11 @@ function renderReader(drawer, draft, status) {
   copy.className = "v2-drafts__copy";
   copy.textContent = "Copy";
   copy.addEventListener("click", async () => {
+    const check = validateDraftForCopy(draft.body);
+    if (!check.ok) {
+      copy.textContent = check.reason || "Fix draft first";
+      return;
+    }
     try {
       await navigator.clipboard.writeText(draft.body);
       copy.textContent = "Copied";
@@ -310,13 +377,15 @@ export function createDraftsController(ui) {
    */
   function remember(draft) {
     const next = (appStore.journey.missionDrafts || []).filter((entry) => entry.id !== draft.id);
+    const mission = missionForCatalogItem(draft);
     next.push({
       id: draft.id,
       kind: draft.kind,
       label: draft.label,
       missionTitle: draft.missionTitle,
-      body: draft.body,
+      body: sanitizeDraftBody(draft.body),
       pathId: appStore.journey.roadmapPathId || "",
+      contextStamp: mission ? missionContextStamp(mission) : draft.contextStamp || "",
       createdAt: Date.now()
     });
     appStore.journey.missionDrafts = next.slice(-24);
@@ -332,16 +401,21 @@ export function createDraftsController(ui) {
     const el = drawer();
     if (!item || !el || writing) return;
     el.classList.remove("hidden");
+    const mission = missionForCatalogItem(item);
+    const stamp = mission ? missionContextStamp(mission) : "";
     const saved = (appStore.journey.missionDrafts || []).find((entry) => entry.id === id && entry.body);
-    if (saved) {
+    if (saved && (!stamp || saved.contextStamp === stamp)) {
       renderReader(el, { ...item, body: saved.body }, "");
       return;
+    }
+    if (saved && stamp && saved.contextStamp !== stamp) {
+      appStore.journey.missionDrafts = (appStore.journey.missionDrafts || []).filter((entry) => entry.id !== id);
     }
     writing = true;
     renderReader(el, { ...item, body: "" }, "Writing your draft");
     try {
       const raw = await callAdvisor(buildDraftPrompt(item), { maxTokens: 500, feature: "v2_draft" });
-      const body = String(raw || "").trim().slice(0, 2500) || fallbackDraft(item, appStore.location, appStore.profile);
+      const body = sanitizeDraftBody(String(raw || "").trim() || fallbackDraft(item, appStore.location, appStore.profile));
       const draft = { ...item, body };
       remember(draft);
       renderReader(el, draft, "");
@@ -472,8 +546,13 @@ export function createDraftsController(ui) {
         : `Write an email to ${item.email}.`;
     const prompt =
       `You are whatimado. ${shape}\n` +
-      `The sender is a creative director and designer introducing their studio. Write in that voice: visual thinking, a long-term practice, artistic judgment, and a clear ask. Not a generic brand strategist.\n` +
+      `${writingVoice(appStore.profile)}\n` +
       `Return only the draft. Under 160 words.\n\n` +
+      `${buildSharedPromptContext({
+        journey: appStore.journey,
+        profile: appStore.profile,
+        location: appStore.location
+      })}\n\n` +
       `Path: ${path}\nResource: ${item.name}\nWhy it fits: ${item.why || item.details}\nNext step: ${item.nextStep || ""}\n`;
     try {
       const raw = await callAdvisor(prompt, { maxTokens: 450, feature: "v2_resource_draft" });
@@ -536,11 +615,12 @@ function draftBox(body, name, kind) {
  */
 function fallbackResourceDraft(item, path, kind) {
   const why = item.why || item.details || path;
+  const contact = item.contact || "the right person";
   if (kind === "phone") {
-    return `Hi, this is [your name]. I direct a design studio, and I'm calling about ${path}.\n\n${why}\n\nI'd like to talk through one concrete next step. Who should I ask for?`;
+    return `Hi, this is [your name]. I'm calling about ${path}.\n\n${why}\n\nCould I speak with ${contact} about the one next step listed on your site? I'll repeat the next step back before we hang up.`;
   }
   if (kind === "message") {
-    return `Hello —\n\nI'm [your name], a creative director and designer. I'm writing through your contact form because ${why}\n\nIf you have twenty minutes, I'd like to show the work and talk about a specific next step. I'm free [two times].\n\n[your name]`;
+    return `Hello —\n\nI'm [your name]. I'm writing through your contact form because ${why}\n\nCould someone point me to the right contact for this specific request? I'm free [two times].\n\n[your name]`;
   }
-  return `Subject: ${path}\n\nHello —\n\nI'm [your name], a creative director and designer. I'm writing because ${why}\n\nIf you have twenty minutes, I'd like to show the work and talk about a specific next step. I'm free [two times].\n\n[your name]`;
+  return `Subject: ${path}\n\nHello —\n\nI'm [your name]. I'm writing because ${why}\n\nIf you have twenty minutes, I'd like to talk through the specific next step on your site. I'm free [two times].\n\n[your name]`;
 }

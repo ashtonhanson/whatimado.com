@@ -1,5 +1,8 @@
 import { PHASE } from "../phases.js";
+import { normalizeMissionFields } from "../roadmap/mission-model.js";
 import { normalizeResources } from "../roadmap/resources.js";
+import { normalizeTaskChats } from "../roadmap/task-chat.js";
+import { normalizeGoalBrief } from "./goal-brief.js";
 
 /** @typedef {import("../phases.js").Phase} Phase */
 /** @typedef {{ role: "user"|"assistant", content: string }} JourneyMessage */
@@ -32,7 +35,14 @@ import { normalizeResources } from "../roadmap/resources.js";
  *   threadBreak: number | null,
  *   missionsStages: { label: string, desc: string, missions: { title: string, text: string }[] }[],
  *   missionResources: { name: string, org: string, details: string, url: string, phone: string }[],
- *   missionDrafts: { id: string, kind: string, label: string, missionTitle: string, body: string }[]
+ *   missionDrafts: { id: string, kind: string, label: string, missionTitle: string, body: string }[],
+ *   taskChats: Record<string, { messages: { role: "user"|"assistant", content: string }[], composerDraft?: string }>,
+ *   goalVersion: number,
+ *   acceptedGoalVersion: number,
+ *   pathsGoalVersion: number,
+ *   missionsGoalVersion: number,
+ *   pathsGenerationSerial: number,
+ *   goalBrief: import("./goal-brief.js").GoalBrief | null
  * }} Journey */
 
 const PHASE_VALUES = new Set(Object.values(PHASE));
@@ -69,6 +79,13 @@ export function createEmptyJourney() {
     missionsStages: [],
     missionResources: [],
     missionDrafts: [],
+    taskChats: {},
+    goalVersion: 1,
+    acceptedGoalVersion: 0,
+    pathsGoalVersion: 0,
+    missionsGoalVersion: 0,
+    pathsGenerationSerial: 0,
+    goalBrief: null,
     savedPathIds: []
   };
 }
@@ -168,6 +185,13 @@ export function normalizeJourney(raw) {
     missionsStages: normalizeStages(source.missionsStages),
     missionResources: normalizeResources(source.missionResources),
     missionDrafts: normalizeDrafts(source.missionDrafts),
+    taskChats: normalizeTaskChats(source.taskChats),
+    goalVersion: Math.max(1, Number(source.goalVersion) || 1),
+    acceptedGoalVersion: Math.max(0, Number(source.acceptedGoalVersion) || 0),
+    pathsGoalVersion: Math.max(0, Number(source.pathsGoalVersion) || 0),
+    missionsGoalVersion: Math.max(0, Number(source.missionsGoalVersion) || 0),
+    pathsGenerationSerial: Math.max(0, Number(source.pathsGenerationSerial) || 0),
+    goalBrief: source.goalBrief ? normalizeGoalBrief(source.goalBrief) : null,
     savedPathIds: Array.isArray(source.savedPathIds)
       ? source.savedPathIds.map((id) => String(id || "").trim()).filter(Boolean).slice(0, 12)
       : []
@@ -230,13 +254,9 @@ function normalizeStages(raw) {
         missions: missions
           .slice(0, 6)
           .map((mission, missionIndex) => {
-            const title = String(mission?.title || mission?.mission || "").trim().slice(0, 140);
-            const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+            const normalized = normalizeMissionFields(mission, missionIndex);
             return {
-              id: typeof mission?.id === "string" && mission.id ? String(mission.id).slice(0, 64) : `m-${slug || missionIndex}`,
-              title,
-              text: String(mission?.text || "").trim().slice(0, 600),
-              done: Boolean(mission?.done),
+              ...normalized,
               resources: normalizeResources(mission?.resources)
             };
           })
