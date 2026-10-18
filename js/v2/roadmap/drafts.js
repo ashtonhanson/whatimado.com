@@ -5,12 +5,18 @@ import { escapeHtml } from "../ui.js";
 import { formatUserLocation } from "../state/location.js";
 import { shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
 import { buildSharedPromptContext } from "../state/goal-brief.js";
-import { missionActionLines, missionContextStamp } from "./mission-model.js";
+import {
+  missionActionLines,
+  missionDraftContextStamp,
+  flattenMissions
+} from "./mission-model.js";
 import { taskChatStorageKey, getTaskThread } from "./task-chat.js";
 
 /** @typedef {"phone_script"|"outreach_email"|"notes"} DraftKind */
 /** @typedef {{ id: string, kind: DraftKind, label: string, missionTitle: string, missionText: string }} DraftCatalogItem */
 /** @typedef {DraftCatalogItem & { body: string, contextStamp?: string }} MissionDraft */
+
+export const RESOURCE_DRAFT_TEMPLATE_VERSION = 1;
 
 const SLUG_IN_BODY = /\bm-[a-z0-9-]{4,}\b/i;
 const PROVIDER_PASTE = /\b(offers|provides|services include|our mission is)\b.{40,}/i;
@@ -197,6 +203,131 @@ function missionForCatalogItem(item) {
   return null;
 }
 
+/** @returns {import("./mission-model.js").RoadmapMission | null} */
+export function focusMissionForDrafts() {
+  const focusId = appStore.journey.focusMissionId;
+  if (focusId) {
+    for (const mission of flattenMissions(appStore.journey.missionsStages || [])) {
+      if (mission.id === focusId) return mission;
+    }
+  }
+  return flattenMissions(appStore.journey.missionsStages || [])[0] || null;
+}
+
+/**
+ * @param {import("./mission-model.js").RoadmapMission | null} mission
+ * @param {"phone"|"message"|"email"} kind
+ */
+export function resourceDraftContextStamp(mission, kind) {
+  const ctx = mission ? missionDraftContextStamp(mission) : "no-task";
+  return `rv${RESOURCE_DRAFT_TEMPLATE_VERSION}:${kind}:${ctx}`;
+}
+
+/**
+ * @param {import("../state/journey.js").Journey} journey
+ */
+export function reconcileResourceDraftStamps(journey) {
+  const mission = focusMissionForDraftsFromJourney(journey);
+  return (journey.missionResources || []).map((item) => {
+    const next = { ...item };
+    const phoneStamp = resourceDraftContextStamp(mission, "phone");
+    const messageStamp = resourceDraftContextStamp(mission, "message");
+    const emailStamp = resourceDraftContextStamp(mission, "email");
+    if (next.phoneDraft && next.phoneDraftStamp !== phoneStamp) {
+      next.phoneDraft = "";
+      next.phoneDraftStamp = "";
+    }
+    if (next.draft && next.draftStamp !== messageStamp) {
+      next.draft = "";
+      next.draftStamp = "";
+    }
+    if (next.emailDraft && next.emailDraftStamp !== emailStamp) {
+      next.emailDraft = "";
+      next.emailDraftStamp = "";
+    }
+    return next;
+  });
+}
+
+/** @param {import("../state/journey.js").Journey} journey */
+function focusMissionForDraftsFromJourney(journey) {
+  const focusId = journey.focusMissionId;
+  if (focusId) {
+    for (const mission of flattenMissions(journey.missionsStages || [])) {
+      if (mission.id === focusId) return mission;
+    }
+  }
+  return flattenMissions(journey.missionsStages || [])[0] || null;
+}
+
+/**
+ * @param {{ phoneDraft?: string, draft?: string, emailDraft?: string, phoneDraftStamp?: string, draftStamp?: string, emailDraftStamp?: string }} item
+ * @param {"phone"|"message"|"email"} kind
+ */
+function savedResourceDraft(item, kind) {
+  if (kind === "phone") {
+    return { body: item.phoneDraft || "", stamp: item.phoneDraftStamp || "" };
+  }
+  if (kind === "message") {
+    return { body: item.draft || "", stamp: item.draftStamp || "" };
+  }
+  return { body: item.emailDraft || "", stamp: item.emailDraftStamp || "" };
+}
+
+/**
+ * @param {{ phoneDraft?: string, draft?: string, emailDraft?: string, phoneDraftStamp?: string, draftStamp?: string, emailDraftStamp?: string }} item
+ * @param {"phone"|"message"|"email"} kind
+ * @param {string} body
+ * @param {string} stamp
+ */
+function storeResourceDraft(item, kind, body, stamp) {
+  if (kind === "phone") {
+    item.phoneDraft = body;
+    item.phoneDraftStamp = stamp;
+    return;
+  }
+  if (kind === "message") {
+    item.draft = body;
+    item.draftStamp = stamp;
+    return;
+  }
+  item.emailDraft = body;
+  item.emailDraftStamp = stamp;
+}
+
+function clearResourceDraft(item, kind) {
+  storeResourceDraft(item, kind, "", "");
+}
+
+function taskContextBlock(mission) {
+  if (!mission) return "Task: (open a roadmap task first)\n";
+  const lines = missionActionLines(mission);
+  return `Task: ${mission.title}\n${lines.length ? lines.join("\n") : mission.text || ""}\n`;
+}
+
+function buildResourceDraftPrompt(item, kind, mission) {
+  const place = formatUserLocation(appStore.location);
+  const shape =
+    kind === "phone"
+      ? "Write a phone script they can read aloud. Start with “My name is [your name]. I'm calling because…” Do not mention a career, studio, or unrelated job search."
+      : kind === "message"
+        ? `Write a message to paste into the official contact form${item.url ? ` at ${item.url}` : ""}. Start with “My name is [your name]. I'm writing because…” Do not invent email addresses or phone numbers. Do not mention a career or studio.`
+        : `Write an email to ${item.email}. Start with “My name is [your name]. I'm writing because…” Do not mention a career or studio.`;
+  return (
+    `You are whatimado. ${shape}\n` +
+    `${writingVoice(appStore.profile)}\n` +
+    `Return only the draft. Under 160 words.\n\n` +
+    `${buildSharedPromptContext({
+      journey: appStore.journey,
+      profile: appStore.profile,
+      location: appStore.location
+    })}\n\n` +
+    `${taskContextBlock(mission)}` +
+    `Resource: ${item.name}\n` +
+    `Place: ${place || "not given"}\n`
+  );
+}
+
 function latestTaskNotes(mission) {
   if (!mission?.id) return "";
   const pathId = appStore.journey.roadmapPathId || "";
@@ -327,6 +458,30 @@ function renderReader(drawer, draft, status) {
 }
 
 /**
+ * @param {HTMLElement} drawer
+ * @param {DraftCatalogItem} item
+ * @param {() => void} retry
+ */
+function renderDraftRetry(drawer, item, retry) {
+  const body = drawer.querySelector("#drafts-body");
+  const title = drawer.querySelector("#drafts-title");
+  const back = drawer.querySelector("#drafts-back");
+  if (!body || !title || !back) return;
+  title.textContent = item.label || "Draft";
+  back.classList.remove("hidden");
+  body.innerHTML = "";
+  const note = document.createElement("p");
+  note.className = "v2-drafts__status";
+  note.textContent = "Couldn’t write the draft.";
+  const retryBtn = document.createElement("button");
+  retryBtn.type = "button";
+  retryBtn.className = "v2-drafts__copy";
+  retryBtn.textContent = "Retry";
+  retryBtn.addEventListener("click", () => retry());
+  body.append(note, retryBtn);
+}
+
+/**
  * @param {{
  *   frameEl: HTMLElement | null,
  *   openBtn: HTMLButtonElement | null,
@@ -385,7 +540,7 @@ export function createDraftsController(ui) {
       missionTitle: draft.missionTitle,
       body: sanitizeDraftBody(draft.body),
       pathId: appStore.journey.roadmapPathId || "",
-      contextStamp: mission ? missionContextStamp(mission) : draft.contextStamp || "",
+      contextStamp: mission ? missionDraftContextStamp(mission) : draft.contextStamp || "",
       createdAt: Date.now()
     });
     appStore.journey.missionDrafts = next.slice(-24);
@@ -402,9 +557,9 @@ export function createDraftsController(ui) {
     if (!item || !el || writing) return;
     el.classList.remove("hidden");
     const mission = missionForCatalogItem(item);
-    const stamp = mission ? missionContextStamp(mission) : "";
+    const stamp = mission ? missionDraftContextStamp(mission) : "";
     const saved = (appStore.journey.missionDrafts || []).find((entry) => entry.id === id && entry.body);
-    if (saved && (!stamp || saved.contextStamp === stamp)) {
+    if (saved && stamp && saved.contextStamp === stamp) {
       renderReader(el, { ...item, body: saved.body }, "");
       return;
     }
@@ -415,14 +570,13 @@ export function createDraftsController(ui) {
     renderReader(el, { ...item, body: "" }, "Writing your draft");
     try {
       const raw = await callAdvisor(buildDraftPrompt(item), { maxTokens: 500, feature: "v2_draft" });
-      const body = sanitizeDraftBody(String(raw || "").trim() || fallbackDraft(item, appStore.location, appStore.profile));
-      const draft = { ...item, body };
+      const trimmed = sanitizeDraftBody(String(raw || "").trim());
+      if (!trimmed) throw new Error("empty draft");
+      const draft = { ...item, body: trimmed };
       remember(draft);
       renderReader(el, draft, "");
     } catch {
-      const draft = { ...item, body: fallbackDraft(item, appStore.location, appStore.profile) };
-      remember(draft);
-      renderReader(el, draft, "");
+      renderDraftRetry(el, item, () => open(id));
     } finally {
       writing = false;
     }
@@ -473,17 +627,34 @@ export function createDraftsController(ui) {
     const copyBtn = target.closest("[data-resource-copy]");
     if (copyBtn instanceof HTMLElement && copyBtn.dataset.resourceCopy) {
       const item = resourceByName(copyBtn.dataset.resourceCopy);
-      const text = copyBtn.dataset.resourceKind === "phone"
-        ? item?.phoneDraft
+      const kind = copyBtn.dataset.resourceKind === "phone"
+        ? "phone"
         : copyBtn.dataset.resourceKind === "message"
-          ? item?.draft
-          : item?.emailDraft;
+          ? "message"
+          : "email";
+      const text = savedResourceDraft(item || {}, kind).body;
       if (text) {
+        const check = validateDraftForCopy(text);
+        if (!check.ok) {
+          copyBtn.textContent = check.reason || "Fix draft first";
+          return;
+        }
         navigator.clipboard.writeText(text).then(() => {
           copyBtn.textContent = "Copied";
         }).catch(() => {
           copyBtn.textContent = "Select the draft to copy";
         });
+      }
+    }
+    const retryBtn = target.closest("[data-resource-retry]");
+    if (retryBtn instanceof HTMLButtonElement && retryBtn.dataset.resourceRetry) {
+      const kind = retryBtn.dataset.resourceKind || "phone";
+      const name = retryBtn.dataset.resourceRetry;
+      const action = retryBtn.closest(".v2-resource-item")?.querySelector(`[data-resource-action="${kind}"]`);
+      if (action instanceof HTMLButtonElement) {
+        const item = resourceByName(name);
+        if (item) clearResourceDraft(item, /** @type {"phone"|"message"|"email"} */ (kind));
+        void toggleResourceAction(action, kind, name);
       }
     }
   });
@@ -530,48 +701,37 @@ export function createDraftsController(ui) {
       panel.innerHTML = `<textarea class="v2-resource-notes-box" rows="5" data-resource-notes="${escapeHtml(name)}" placeholder="What happened when you reached out, and what you will do next.">${escapeHtml(item.notes || "")}</textarea>`;
       return;
     }
-    const saved = kind === "phone" ? item.phoneDraft : kind === "message" ? item.draft : item.emailDraft;
-    if (saved) {
-      panel.innerHTML = draftBox(saved, name, kind);
+    const mission = focusMissionForDrafts();
+    const wantStamp = resourceDraftContextStamp(mission, /** @type {"phone"|"message"|"email"} */ (kind));
+    const saved = savedResourceDraft(item, /** @type {"phone"|"message"|"email"} */ (kind));
+    if (saved.body && saved.stamp === wantStamp) {
+      panel.innerHTML = draftBox(saved.body, name, kind);
       return;
+    }
+    if (saved.body && saved.stamp !== wantStamp) {
+      clearResourceDraft(item, /** @type {"phone"|"message"|"email"} */ (kind));
     }
     panel.innerHTML = `<p class="v2-wave" role="status">Writing<span></span><span></span><span></span></p>`;
     if (writing) return;
     writing = true;
-    const path = graphPathTitle();
-    const shape = kind === "phone"
-      ? "Write a phone script."
-      : kind === "message"
-        ? `Write a message to paste into the official contact form${item.url ? ` at ${item.url}` : ""}. Do not invent an email address or phone number.`
-        : `Write an email to ${item.email}.`;
-    const prompt =
-      `You are whatimado. ${shape}\n` +
-      `${writingVoice(appStore.profile)}\n` +
-      `Return only the draft. Under 160 words.\n\n` +
-      `${buildSharedPromptContext({
-        journey: appStore.journey,
-        profile: appStore.profile,
-        location: appStore.location
-      })}\n\n` +
-      `Path: ${path}\nResource: ${item.name}\nWhy it fits: ${item.why || item.details}\nNext step: ${item.nextStep || ""}\n`;
+    const prompt = buildResourceDraftPrompt(item, /** @type {"phone"|"message"|"email"} */ (kind), mission);
     try {
       const raw = await callAdvisor(prompt, { maxTokens: 450, feature: "v2_resource_draft" });
-      const body = String(raw || "").trim().slice(0, 2500) || fallbackResourceDraft(item, path, kind);
-      if (kind === "phone") item.phoneDraft = body;
-      else if (kind === "message") item.draft = body;
-      else item.emailDraft = body;
+      const trimmed = String(raw || "").trim().slice(0, 2500);
+      if (!trimmed) throw new Error("empty draft");
+      storeResourceDraft(item, /** @type {"phone"|"message"|"email"} */ (kind), trimmed, wantStamp);
+      touchJourney();
+      flush();
+      if (button.classList.contains("is-open")) {
+        panel.innerHTML = draftBox(trimmed, name, kind);
+      }
     } catch {
-      const body = fallbackResourceDraft(item, path, kind);
-      if (kind === "phone") item.phoneDraft = body;
-      else if (kind === "message") item.draft = body;
-      else item.emailDraft = body;
+      if (button.classList.contains("is-open")) {
+        panel.innerHTML = draftRetryBox(name, kind);
+      }
     } finally {
       writing = false;
     }
-    touchJourney();
-    flush();
-    const body = kind === "phone" ? item.phoneDraft : kind === "message" ? item.draft : item.emailDraft;
-    if (button.classList.contains("is-open")) panel.innerHTML = draftBox(body, name, kind);
   }
 
   return { sync, open, close };
@@ -591,14 +751,6 @@ function resourceByName(name) {
   return appStore.journey.missionResources.find((entry) => entry.name === name) || null;
 }
 
-function graphPathTitle() {
-  return appStore.journey.roadmapPathId || "this path";
-}
-
-/**
- * @param {{ name: string, details?: string, phone?: string }} item
- * @param {string} path
- */
 /**
  * @param {string} body
  * @param {string} name
@@ -609,18 +761,9 @@ function draftBox(body, name, kind) {
 }
 
 /**
- * @param {{ name: string, why?: string, details?: string, email?: string }} item
- * @param {string} path
+ * @param {string} name
  * @param {string} kind
  */
-function fallbackResourceDraft(item, path, kind) {
-  const why = item.why || item.details || path;
-  const contact = item.contact || "the right person";
-  if (kind === "phone") {
-    return `Hi, this is [your name]. I'm calling about ${path}.\n\n${why}\n\nCould I speak with ${contact} about the one next step listed on your site? I'll repeat the next step back before we hang up.`;
-  }
-  if (kind === "message") {
-    return `Hello —\n\nI'm [your name]. I'm writing through your contact form because ${why}\n\nCould someone point me to the right contact for this specific request? I'm free [two times].\n\n[your name]`;
-  }
-  return `Subject: ${path}\n\nHello —\n\nI'm [your name]. I'm writing because ${why}\n\nIf you have twenty minutes, I'd like to talk through the specific next step on your site. I'm free [two times].\n\n[your name]`;
+function draftRetryBox(name, kind) {
+  return `<p class="v2-drafts__status">Couldn’t write the draft.</p><button type="button" class="v2-resource-copy" data-resource-retry="${escapeHtml(name)}" data-resource-kind="${escapeHtml(kind)}">Retry</button>`;
 }

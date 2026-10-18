@@ -1,4 +1,5 @@
-import { missionContextStamp } from "./mission-model.js";
+import { missionDraftContextStamp } from "./mission-model.js";
+import { reconcileResourceDraftStamps } from "./drafts.js";
 
 /** @typedef {{
  *   missionsStages: unknown[],
@@ -57,8 +58,8 @@ function reconcileDraftsAfterRestore(journey, drafts) {
       const draft = /** @type {{ missionTitle?: string, contextStamp?: string, body?: string }} */ (raw);
       const mission = byTitle.get(String(draft.missionTitle || ""));
       if (!mission?.title || !draft.body) return null;
-      const stamp = missionContextStamp(mission);
-      if (draft.contextStamp && draft.contextStamp !== stamp) return null;
+      const stamp = missionDraftContextStamp(mission);
+      if (!draft.contextStamp || draft.contextStamp !== stamp) return null;
       return { ...draft, contextStamp: stamp };
     })
     .filter(Boolean);
@@ -78,5 +79,6 @@ export function popRoadmapUndo(journey) {
   journey.taskChats = clone(snap.taskChats) || {};
   journey.focusMissionId = snap.focusMissionId || null;
   journey.missionDrafts = reconcileDraftsAfterRestore(journey, snap.missionDrafts);
+  journey.missionResources = reconcileResourceDraftStamps(journey);
   return { ok: true };
 }

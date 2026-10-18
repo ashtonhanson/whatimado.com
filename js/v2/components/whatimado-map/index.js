@@ -1,4 +1,5 @@
 import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
   BOUND_GLIDE_DAMP,
@@ -43,7 +44,9 @@ import {
   computePanForFocalNode,
   computePanForNodeAboveFrame,
   computeTimelineFrameFit,
-  isOpenHomePhase
+  isActiveRoadmapBranchNode,
+  isOpenHomePhase,
+  ROADMAP_CROSSHAIR_ZOOM_MIN
 } from "../../map/pan.js";
 
 /** How long nodes take to ease into a new layout, such as a roadmap slotting into the stack. */
@@ -724,6 +727,9 @@ export class WhatimadoMap extends HTMLElement {
     if (isOpenHomePhase()) return;
     this.syncDesktopViewBox();
     if (this.syncSnapCamera()) return;
+    if (this._liveNodes.some((node) => node.type === "mission" || node.type === "task")) {
+      if (this.syncFocusMissionCamera({ animate: false })) return;
+    }
     if (window.matchMedia("(max-width: 900px)").matches) return;
     this._userPanned = false;
     const target = this._computeChatFrameGravityPan();
@@ -1103,9 +1109,16 @@ export class WhatimadoMap extends HTMLElement {
       const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
       if (top < anchors.homeBase - 1) return false;
     }
+    const focusId =
+      typeof appStore.journey.focusMissionId === "string" ? appStore.journey.focusMissionId : null;
+    const focusNode =
+      focusId && this._liveNodes.some((node) => node.id === focusId) ? focusId : null;
     const selectedId = this._selectedId || graphStore.selectedId;
     const selected = this._liveNodes.find((node) => node.type === "path" && node.id === selectedId);
-    const options = { centerNodeId: roadmapFocusLinked ? null : selected?.id, reserve: null };
+    const options = {
+      centerNodeId: focusNode || (roadmapFocusLinked ? null : selected?.id),
+      reserve: null
+    };
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
     this._userPanned = false;
     for (let pass = 0; pass < 3; pass++) {
@@ -1197,19 +1210,42 @@ export class WhatimadoMap extends HTMLElement {
     return this.syncSpreadForFrame(top);
   }
 
+  /**
+   * Center the camera on the focused task without changing zoom (distinct from crosshair fit).
+   * @param {{ animate?: boolean }} [options]
+   * @returns {boolean}
+   */
+  syncFocusMissionCamera({ animate = false } = {}) {
+    const focusId =
+      typeof appStore.journey.focusMissionId === "string" ? appStore.journey.focusMissionId : null;
+    if (!focusId || !this._liveNodes.some((node) => node.id === focusId)) return false;
+    this._userPanned = false;
+    const target = computePanForFocalNode(this, focusId);
+    if (animate) this._animatePanTo(target.panX, target.panY, true);
+    else {
+      this._panX = target.panX;
+      this._panY = target.panY;
+      this._applyPanTransform();
+    }
+    this._focalNodeId = focusId;
+    this._focalLocked = true;
+    return true;
+  }
+
   /** Fit the current roadmap/task nodes (labels and badges) between timeline and prompt. */
   resetToYou({ animate = true } = {}) {
     this._userPanned = false;
     this.syncDesktopViewBox();
     const selectedId = this._selectedId || graphStore.selectedId;
     const keepSelection = selectedId;
+    const chosenPathId = appStore.journey.roadmapPathId || keepSelection;
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    const desktopCrosshair = !window.matchMedia("(max-width: 900px)").matches;
     const options = {
-      centerNodeId:
-        keepSelection && keepSelection !== "start" && this._liveNodes.some((node) => node.id === keepSelection)
-          ? keepSelection
-          : null,
-      reserve: null
+      centerNodeId: null,
+      reserve: null,
+      includeNode: (node) => isActiveRoadmapBranchNode(node, chosenPathId),
+      minZoom: desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : undefined
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);

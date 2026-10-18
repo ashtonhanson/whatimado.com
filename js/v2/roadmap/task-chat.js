@@ -391,7 +391,7 @@ export function createTaskChatController(ui) {
     } else if (openMissionId) {
       openMissionId = null;
     }
-    if (frameEl?.bodyEl) {
+    if (openMissionId && frameEl?.bodyEl) {
       frameEl.bodyEl.scrollTop = frameBodyScrollTop;
     }
   }

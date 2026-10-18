@@ -95,11 +95,30 @@ export function normalizeResources(raw) {
       notes: String(record.notes || "").trim().slice(0, 2000),
       emailDraft: String(record.emailDraft || "").trim().slice(0, 2500),
       phoneDraft: String(record.phoneDraft || "").trim().slice(0, 2500),
-      draft: String(record.draft || "").trim().slice(0, 2500)
+      draft: String(record.draft || "").trim().slice(0, 2500),
+      emailDraftStamp: String(record.emailDraftStamp || "").trim().slice(0, 800),
+      phoneDraftStamp: String(record.phoneDraftStamp || "").trim().slice(0, 800),
+      draftStamp: String(record.draftStamp || "").trim().slice(0, 800)
     }));
     if (list.length >= 6) break;
   }
   return list;
+}
+
+/**
+ * Generated outreach drafts are session-only; notes persist across reloads.
+ * @param {LocalResource[]} resources
+ */
+export function stripEphemeralResourceDrafts(resources) {
+  return (resources || []).map((item) => ({
+    ...item,
+    phoneDraft: "",
+    emailDraft: "",
+    draft: "",
+    phoneDraftStamp: "",
+    emailDraftStamp: "",
+    draftStamp: ""
+  }));
 }
 
 /**

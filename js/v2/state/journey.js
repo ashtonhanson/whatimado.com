@@ -1,6 +1,6 @@
 import { PHASE } from "../phases.js";
 import { normalizeMissionFields } from "../roadmap/mission-model.js";
-import { normalizeResources } from "../roadmap/resources.js";
+import { normalizeResources, stripEphemeralResourceDrafts } from "../roadmap/resources.js";
 import { normalizeTaskChats } from "../roadmap/task-chat.js";
 import { normalizeGoalBrief } from "./goal-brief.js";
 
@@ -187,7 +187,7 @@ export function normalizeJourney(raw) {
     confirmGateAwaitingRevision: Boolean(source.confirmGateAwaitingRevision),
     threadBreak: Number.isInteger(source.threadBreak) ? source.threadBreak : null,
     missionsStages: normalizeStages(source.missionsStages),
-    missionResources: normalizeResources(source.missionResources),
+    missionResources: stripEphemeralResourceDrafts(normalizeResources(source.missionResources)),
     missionDrafts: normalizeDrafts(source.missionDrafts),
     taskChats: normalizeTaskChats(source.taskChats),
     goalVersion: Math.max(1, Number(source.goalVersion) || 1),
@@ -242,6 +242,7 @@ function normalizeDrafts(raw) {
         missionTitle: String(item.missionTitle || "").trim().slice(0, 140),
         body,
         pathId: typeof item.pathId === "string" ? item.pathId.slice(0, 80) : "",
+        contextStamp: typeof item.contextStamp === "string" ? item.contextStamp.slice(0, 1200) : "",
         createdAt: Number(item.createdAt) || 0
       };
     })

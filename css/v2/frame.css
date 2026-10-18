@@ -868,11 +868,23 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-circle-back {
+  position: relative;
   margin-top: 0.55rem;
-  padding: 0.55rem;
+  padding: 0.55rem 2rem 0.55rem 0.55rem;
   border-radius: 0.55rem;
   border: 1px dashed color-mix(in srgb, var(--v2-yellow) 40%, transparent);
   background: color-mix(in srgb, var(--v2-surface) 92%, transparent);
+}
+
+.v2-circle-back__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  min-width: 1.65rem;
+  min-height: 1.65rem;
+  padding: 0;
+  line-height: 1;
+  font-size: 1.1rem;
 }
 
 .v2-circle-back__field {
@@ -1467,10 +1479,10 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 }
 
 .v2-timeline__link {
-  flex: 0 0 1.65rem;
+  flex: 0 0 2.5rem;
   align-self: center;
-  width: 1.65rem;
-  min-width: 1.65rem;
+  width: 2.5rem;
+  min-width: 2.5rem;
   height: 3px;
   background-image: radial-gradient(circle, rgba(200, 208, 216, 0.9) 1.15px, transparent 1.35px);
   background-size: 8px 3px;

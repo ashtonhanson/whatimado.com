@@ -222,6 +222,7 @@ export function initChatFlow(ctx) {
         mapEl?.syncLiveFromStore();
         const still = keep && graphStore.nodes.some((node) => node.id === keep);
         mapEl?.setSelectedNode(still ? keep : pathId);
+        mapEl?.syncFocusMissionCamera?.({ animate: false });
       } else if (!stages?.length) {
         restorePossibilityMap();
         mapEl?.syncLiveFromStore();
@@ -697,6 +698,7 @@ export function initChatFlow(ctx) {
       mapEl?.setFocusedNode?.(id);
       mapEl?.setSelectedNode?.(id);
     }
+    mapEl?.syncFocusMissionCamera?.({ animate: true });
   }
   timelineEl?.addEventListener("mission-focus", onMissionFocus);
   missionRoot?.addEventListener("mission-focus", onMissionFocus);

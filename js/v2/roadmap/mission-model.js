@@ -108,6 +108,13 @@ export function missionContextStamp(mission) {
   ].join("\n");
 }
 
+export const MISSION_DRAFT_TEMPLATE_VERSION = 1;
+
+/** @param {RoadmapMission} mission */
+export function missionDraftContextStamp(mission) {
+  return `v${MISSION_DRAFT_TEMPLATE_VERSION}:${missionContextStamp(mission)}`;
+}
+
 /**
  * @param {Array<{ missions?: RoadmapMission[] }>} stages
  */

@@ -29,6 +29,11 @@ import {
 } from "./mission-navigation.js";
 import { canRoadmapUndo, popRoadmapUndo, pushRoadmapUndo } from "./roadmap-undo.js";
 
+/** @type {Set<string>} */
+const circleBackEditorOpen = new Set();
+/** @type {Map<string, { reason: string, instructions: string, returnDate: string }>} */
+const circleBackUnsaved = new Map();
+
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
  * @param {import("../state/user-profile.js").UserProfile} profile
@@ -343,21 +348,28 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                   ? `<ul class="v2-mission__actions">${actionLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
                   : "";
                 const cb = mission.circleBack || {};
-                const circlePanel = waiting
+                const editorOpen = circleBackEditorOpen.has(id);
+                const showCirclePanel = waiting || editorOpen;
+                const draft = circleBackUnsaved.get(id);
+                const reasonVal = waiting ? cb.reason || "" : draft?.reason ?? "";
+                const instructionsVal = waiting ? cb.instructions || "" : draft?.instructions ?? "";
+                const returnVal = waiting ? cb.returnDate || "" : draft?.returnDate ?? "";
+                const circlePanel = showCirclePanel
                   ? `<div class="v2-circle-back" data-circle-back-panel="${escapeHtml(id)}">
-                      <p class="v2-circle-back__badge"><span class="v2-circle-back__clock" aria-hidden="true">◷</span> Waiting — circle back</p>
+                      <button type="button" class="v2-circle-back__close v2-mission-action" data-circle-close="${escapeHtml(id)}" aria-label="Close"><span aria-hidden="true">×</span></button>
+                      ${waiting ? `<p class="v2-circle-back__badge"><span class="v2-circle-back__clock" aria-hidden="true">◷</span> Waiting — circle back</p>` : `<p class="v2-circle-back__badge">Circle back notes</p>`}
                       <label class="v2-circle-back__field">Reason
-                        <textarea data-circle-reason="${escapeHtml(id)}" rows="2" placeholder="Why you are pausing">${escapeHtml(cb.reason || "")}</textarea>
+                        <textarea data-circle-reason="${escapeHtml(id)}" rows="2" placeholder="Why you are pausing">${escapeHtml(reasonVal)}</textarea>
                       </label>
                       <label class="v2-circle-back__field">Instructions for next time
-                        <textarea data-circle-instructions="${escapeHtml(id)}" rows="3" placeholder="What to do when you return">${escapeHtml(cb.instructions || "")}</textarea>
+                        <textarea data-circle-instructions="${escapeHtml(id)}" rows="3" placeholder="What to do when you return">${escapeHtml(instructionsVal)}</textarea>
                       </label>
                       <label class="v2-circle-back__field">Return date (optional)
-                        <input type="date" data-circle-return="${escapeHtml(id)}" value="${escapeHtml(cb.returnDate || "")}" />
+                        <input type="date" data-circle-return="${escapeHtml(id)}" value="${escapeHtml(returnVal)}" />
                       </label>
                       <div class="v2-circle-back__actions">
                         <button type="button" class="v2-mission-action" data-circle-save="${escapeHtml(id)}">Save waiting notes</button>
-                        <button type="button" class="v2-mission-action" data-circle-reopen="${escapeHtml(id)}">Reopen task</button>
+                        ${waiting ? `<button type="button" class="v2-mission-action" data-circle-reopen="${escapeHtml(id)}">Reopen task</button>` : ""}
                       </div>
                     </div>`
                   : "";
@@ -526,6 +538,11 @@ export function createMissionsController(ui) {
 
   function show(stages, { scroll = true } = {}) {
     if (!sectionEl) return;
+    const frameBody = document.querySelector(".whatimado-frame__body");
+    const savedBodyScroll = frameBody?.scrollTop ?? 0;
+    const restoreBodyScroll = () => {
+      if (frameBody) frameBody.scrollTop = savedBodyScroll;
+    };
     stages.forEach((stage) => {
       stage.missions.forEach((mission, index) => {
         if (!mission.id) mission.id = missionId(mission.title, index);
@@ -553,6 +570,7 @@ export function createMissionsController(ui) {
     const focusId = effectiveFocusMissionId(appStore.journey, stages);
     renderMissionStages(listEl, stages, catalog, sharedResources, resourcePlaceLabel(appStore.location), focusId);
     onRendered?.();
+    restoreBodyScroll();
     mountMapTimeline(stages);
     onShown?.(stages);
     renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
@@ -561,6 +579,8 @@ export function createMissionsController(ui) {
     setStatusMessage(statusEl(), "");
     if (scroll) scrollFrameChildIntoView(sectionEl);
     layout();
+    restoreBodyScroll();
+    requestAnimationFrame(restoreBodyScroll);
   }
 
   function refresh() {
@@ -651,6 +671,35 @@ export function createMissionsController(ui) {
   function bindMissionActions() {
     if (!sectionEl || sectionEl.dataset.progressBound === "1") return;
     sectionEl.dataset.progressBound = "1";
+    if (sectionEl.dataset.circleEscBound !== "1") {
+      sectionEl.dataset.circleEscBound = "1";
+      sectionEl.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || circleBackEditorOpen.size === 0) return;
+        const id = circleBackEditorOpen.values().next().value;
+        if (!id) return;
+        circleBackEditorOpen.delete(id);
+        circleBackUnsaved.delete(id);
+        rerender({ scroll: false });
+        sectionEl.querySelector(`[data-circle-back="${CSS.escape(id)}"]`)?.focus();
+        event.stopPropagation();
+      });
+    }
+    sectionEl.addEventListener("input", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement)) return;
+      const reasonEl = target.matches("[data-circle-reason]") ? target : null;
+      const instrEl = target.matches("[data-circle-instructions]") ? target : null;
+      const dateEl = target.matches("[data-circle-return]") ? target : null;
+      const fieldEl = reasonEl || instrEl || dateEl;
+      if (!fieldEl) return;
+      const missionId = fieldEl.getAttribute(reasonEl ? "data-circle-reason" : instrEl ? "data-circle-instructions" : "data-circle-return");
+      if (!missionId || !circleBackEditorOpen.has(missionId)) return;
+      const prev = circleBackUnsaved.get(missionId) || { reason: "", instructions: "", returnDate: "" };
+      if (reasonEl) prev.reason = reasonEl.value.slice(0, 400);
+      if (instrEl) prev.instructions = instrEl.value.slice(0, 1200);
+      if (dateEl) prev.returnDate = dateEl.value.slice(0, 32);
+      circleBackUnsaved.set(missionId, prev);
+    });
     sectionEl.addEventListener("change", (event) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement)) return;
@@ -695,18 +744,27 @@ export function createMissionsController(ui) {
       const circleToggle = target?.closest("[data-circle-back]");
       const circleId = circleToggle?.getAttribute("data-circle-back");
       if (circleId) {
-        pushRoadmapUndo(appStore.journey);
         const stages = appStore.journey.missionsStages || [];
         let found = null;
         for (const stage of stages) {
           found = stage.missions.find((item) => item.id === circleId) || found;
         }
-        if (found && !found.circleBack?.active) {
-          applyCircleBack(found, { reason: "Waiting on something external", instructions: "" });
+        if (found) {
+          circleBackEditorOpen.add(circleId);
+          if (!found.waiting && !circleBackUnsaved.has(circleId)) {
+            circleBackUnsaved.set(circleId, { reason: "", instructions: "", returnDate: "" });
+          }
+          rerender({ scroll: false });
         }
-        touchJourney();
-        flush();
-        rerender();
+        return;
+      }
+      const closeCircle = target?.closest("[data-circle-close]");
+      const closeId = closeCircle?.getAttribute("data-circle-close");
+      if (closeId) {
+        circleBackEditorOpen.delete(closeId);
+        circleBackUnsaved.delete(closeId);
+        rerender({ scroll: false });
+        sectionEl.querySelector(`[data-circle-back="${CSS.escape(closeId)}"]`)?.focus();
         return;
       }
       const reopenBtn = target?.closest("[data-circle-reopen]");
@@ -718,6 +776,8 @@ export function createMissionsController(ui) {
           const mission = stage.missions.find((item) => item.id === reopenId);
           if (mission) clearCircleBack(mission);
         }
+        circleBackEditorOpen.delete(reopenId);
+        circleBackUnsaved.delete(reopenId);
         focusMissionInUi(reopenId);
         touchJourney();
         flush();
@@ -744,6 +804,8 @@ export function createMissionsController(ui) {
         if (mission) {
           pushRoadmapUndo(appStore.journey);
           applyCircleBack(mission, { reason, instructions, returnDate });
+          circleBackEditorOpen.delete(saveId);
+          circleBackUnsaved.delete(saveId);
           touchJourney();
           flush();
           rerender();

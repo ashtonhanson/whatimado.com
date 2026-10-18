@@ -224,13 +224,32 @@ const OPEN_HOME_ZOOM_MIN = 0.6;
 const FIT_ZOOM_MIN = 0.5;
 /** The phone map is already a quarter of desktop scale; a short band shrinking it further piles the titles up. */
 const FIT_ZOOM_MIN_MOBILE = 1;
+/** Crosshair fit on desktop may shrink below the pinch floor so every task stays visible. */
+export const ROADMAP_CROSSHAIR_ZOOM_MIN = 0.22;
+
+/**
+ * Nodes that belong to the open roadmap branch (not options or sibling paths).
+ * @param {import("../graph-store.js").GraphNode} node
+ * @param {string | null | undefined} chosenPathId
+ */
+export function isActiveRoadmapBranchNode(node, chosenPathId) {
+  if (node.id === "start") return true;
+  if (node.type === "more") return true;
+  if (chosenPathId && node.id === chosenPathId) return true;
+  if (node.type === "mission" || node.type === "task") return true;
+  return false;
+}
 
 /**
  * Dot extents only, including how far the idle float lifts them.
  * Titles are drawn at a fixed screen size, so the fit reserves pixels for them.
  * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
  */
-function getNodeBounds(mapEl) {
+/**
+ * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
+ * @param {{ includeNode?: (node: import("../graph-store.js").GraphNode) => boolean }} [options]
+ */
+function getNodeBounds(mapEl, { includeNode } = {}) {
   if (!mapEl._liveNodes.length) return getGraphBounds(mapEl);
   const { lg, sm } = getNodeRadii();
   const float = mapEl.querySelector(".whatimado-map__node-float");
@@ -245,6 +264,7 @@ function getNodeBounds(mapEl) {
   let maxY = -Infinity;
   const { offset: labelOffset, cap: labelCap } = getNodeLabelMetrics(lg);
   for (const node of mapEl._liveNodes) {
+    if (includeNode && !includeNode(node)) continue;
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
     const r = node.type === "start" || node.type === "path" ? lg : sm;
@@ -293,9 +313,14 @@ function svgMeetPaint(mapEl, stageRect) {
  * `centerNodeId` stays centered unless that would shrink the map past its floor;
  * then it slides off center only as far as keeps everything on screen.
  * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
- * @param {{ centerNodeId?: string|null, reserve?: { above: number, below: number, left: number, right: number } }} [options]
+ * @param {{
+ *   centerNodeId?: string|null,
+ *   reserve?: { above: number, below: number, left: number, right: number } | null,
+ *   includeNode?: (node: import("../graph-store.js").GraphNode) => boolean,
+ *   minZoom?: number
+ * }} [options]
  */
-export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null } = {}) {
+export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const frame = document.getElementById("dynamic-frame");
   if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
@@ -316,7 +341,7 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   top += room.above;
   const availablePx = Math.max(24, bottom - top);
 
-  const bounds = getNodeBounds(mapEl);
+  const bounds = getNodeBounds(mapEl, { includeNode });
   const focus = centerNodeId ? mapEl._liveNodes.find((node) => node.id === centerNodeId) : null;
   const { pxPerUnit, originX, originY, paintY } = svgMeetPaint(mapEl, stageRect);
   const spanY = Math.max(1, bounds.maxY - bounds.minY);
@@ -326,7 +351,12 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   let zoomX;
   let cx;
   let screenCx = stageRect.width / 2;
-  const floor = MOBILE_MQ.matches ? FIT_ZOOM_MIN_MOBILE : FIT_ZOOM_MIN;
+  const floor =
+    typeof minZoom === "number" && Number.isFinite(minZoom)
+      ? minZoom
+      : MOBILE_MQ.matches
+        ? FIT_ZOOM_MIN_MOBILE
+        : FIT_ZOOM_MIN;
   const spanZoomX =
     Math.max(0.1, usableW - room.left - room.right) / (Math.max(1, bounds.maxX - bounds.minX) * pxPerUnit);
   if (focus) {
@@ -339,9 +369,10 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
     zoomX = spanZoomX;
     screenCx += (room.left - room.right) / 2;
   }
+  const zoomMin = typeof minZoom === "number" && Number.isFinite(minZoom) && !MOBILE_MQ.matches ? minZoom : FIT_ZOOM_MIN;
   const zoom = MOBILE_MQ.matches
     ? Math.max(FIT_ZOOM_MIN, Math.min(ZOOM_MAX, zoomX, Math.max(floor, zoomY)))
-    : Math.max(FIT_ZOOM_MIN, Math.min(ZOOM_MAX, zoomY, zoomX));
+    : Math.max(zoomMin, Math.min(ZOOM_MAX, zoomY, zoomX));
   const scale = pxPerUnit * zoom;
   const margin = (stageRect.width - usableW) / 2;
   const overRight = screenCx + (bounds.maxX - cx) * scale + room.right - (stageRect.width - margin);

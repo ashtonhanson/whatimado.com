@@ -305,6 +305,8 @@ const YOU_LINKED = { x: 200, y: 168 };
 const PATH_REACH = 68;
 const PLUS_GAP = 48;
 const MISSION_STEP = 34;
+const MISSION_TITLE_GAP_PX = 16;
+const MAP_LABEL_FONT = "500 12.5px sans-serif";
 const SIBLING_GAP = 30;
 const MIN_SIBLING_GAP = 22;
 /** The map pulls nodes back inside roughly this vertical band of the 240-unit view. */
@@ -387,6 +389,32 @@ function missionChain(nodes) {
     .sort((a, b) => (a.chainIndex ?? 0) - (b.chainIndex ?? 0));
 }
 
+/**
+ * Screen-sized title width → spacing along the linked chain (SVG units).
+ * @param {GraphNode[]} chain
+ */
+function linkedMissionStep(chain) {
+  let maxTitlePx = 0;
+  if (typeof document !== "undefined") {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.font = MAP_LABEL_FONT;
+      for (const node of chain) {
+        const label = shortenMapLabel(node.title || node.label || "", 14).toUpperCase();
+        const width = ctx.measureText(label).width + label.length * 0.5;
+        maxTitlePx = Math.max(maxTitlePx, width);
+      }
+    }
+  }
+  const stageW =
+    typeof window !== "undefined" ? Math.min(Math.max(window.innerWidth || 800, 320), 960) * 0.94 : 720;
+  const pxPerUnit = stageW / MAP_W;
+  const gapPx = Math.max(72, maxTitlePx + MISSION_TITLE_GAP_PX);
+  const stepSvg = gapPx / (pxPerUnit * 0.5);
+  return Math.max(MISSION_STEP, stepSvg);
+}
+
 export function placeLinkedBranch(nodes, rotation, chosenId) {
   const spread = mapSpread;
   const originX = YOU_LINKED.x;
@@ -396,8 +424,9 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const orbit = satellites.filter(
     (node) => !pathSiblings.includes(node) && !chain.includes(node) && !LINKED_OPTION_OFFSETS[node.id]
   );
+  const missionStep = linkedMissionStep(chain);
   const chosenDist = PATH_REACH * spread;
-  const plusDist = chosenDist + (MISSION_STEP * (chain.length + 1) + PLUS_GAP) * spread;
+  const plusDist = chosenDist + (missionStep * (chain.length + 1) + PLUS_GAP) * spread;
   const drop = Math.sin(rotation) * chosenDist;
   const topReach = Math.max(...Object.values(LINKED_OPTION_OFFSETS).map((slot) => -slot.dy)) * spread;
   let siblingGap = SIBLING_GAP * spread;
@@ -430,7 +459,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     }
     const chainIndex = chain.findIndex((entry) => entry.id === node.id);
     if (chainIndex >= 0) {
-      const dist = chosenDist + MISSION_STEP * (chainIndex + 1) * spread;
+      const dist = chosenDist + missionStep * (chainIndex + 1) * spread;
       node.x = (originX + Math.cos(rotation) * dist) / MAP_W;
       node.y = (originY + Math.sin(rotation) * dist) / MAP_H;
       return;
