@@ -886,6 +886,82 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   font-weight: 600;
 }
 
+.v2-missions__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.v2-missions__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.v2-missions__undo,
+.v2-mission-nav__continue,
+.v2-mission-nav__undo {
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--v2-teal) 40%, transparent);
+  background: transparent;
+  color: var(--v2-teal);
+  cursor: pointer;
+}
+
+.v2-missions__undo:disabled,
+.v2-mission-nav__undo:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.v2-mission-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.65rem 0 0.25rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed color-mix(in srgb, var(--v2-teal) 25%, transparent);
+}
+
+.v2-mission-nav__feedback {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--v2-text-muted);
+}
+
+.v2-mission__badge--bypassed {
+  color: rgba(183, 190, 200, 0.95);
+  border-color: color-mix(in srgb, var(--v2-text-muted) 50%, transparent);
+  background: color-mix(in srgb, var(--v2-text-muted) 12%, transparent);
+}
+
+.v2-mission__badge--now {
+  color: var(--v2-teal);
+  border-color: color-mix(in srgb, var(--v2-teal) 45%, transparent);
+}
+
+.v2-mission__delete {
+  border-color: color-mix(in srgb, #f07178 45%, transparent);
+  color: #f07178;
+}
+
+body.v2-app .v2-timeline__stop.is-bypassed {
+  color: rgba(183, 190, 200, 0.92);
+}
+
+.v2-timeline__stop.is-bypassed .v2-timeline__dot {
+  background: transparent;
+  border-style: dashed;
+  border-color: rgba(183, 190, 200, 0.75);
+}
+
 .v2-mission__panel {
   position: relative;
 }

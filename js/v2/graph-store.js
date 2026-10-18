@@ -1,4 +1,4 @@
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, chainIndex?: number, homeAngle?: number }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, bypassed?: boolean, chainIndex?: number, homeAngle?: number }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
 /** @typedef {{ id?: string, label: string, title: string, description?: string, type?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} AdvisorPath */
 export const graphStore = {
@@ -569,6 +569,7 @@ export function showRoadmapBranch(pathId, stages = null) {
         title,
         done: Boolean(mission.done),
         waiting: Boolean(mission.waiting),
+        bypassed: Boolean(mission.bypassed) && !mission.done,
         chainIndex: index,
         parentId: attachId
       });

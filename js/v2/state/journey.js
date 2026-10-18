@@ -42,7 +42,9 @@ import { normalizeGoalBrief } from "./goal-brief.js";
  *   pathsGoalVersion: number,
  *   missionsGoalVersion: number,
  *   pathsGenerationSerial: number,
- *   goalBrief: import("./goal-brief.js").GoalBrief | null
+ *   goalBrief: import("./goal-brief.js").GoalBrief | null,
+ *   focusMissionId: string | null,
+ *   roadmapUndoStack: import("../roadmap/roadmap-undo.js").RoadmapUndoSnapshot[]
  * }} Journey */
 
 const PHASE_VALUES = new Set(Object.values(PHASE));
@@ -86,7 +88,9 @@ export function createEmptyJourney() {
     missionsGoalVersion: 0,
     pathsGenerationSerial: 0,
     goalBrief: null,
-    savedPathIds: []
+    savedPathIds: [],
+    focusMissionId: null,
+    roadmapUndoStack: []
   };
 }
 
@@ -194,7 +198,9 @@ export function normalizeJourney(raw) {
     goalBrief: source.goalBrief ? normalizeGoalBrief(source.goalBrief) : null,
     savedPathIds: Array.isArray(source.savedPathIds)
       ? source.savedPathIds.map((id) => String(id || "").trim()).filter(Boolean).slice(0, 12)
-      : []
+      : [],
+    focusMissionId: typeof source.focusMissionId === "string" && source.focusMissionId ? source.focusMissionId.slice(0, 64) : null,
+    roadmapUndoStack: Array.isArray(source.roadmapUndoStack) ? source.roadmapUndoStack.slice(-25) : []
   };
 }
 

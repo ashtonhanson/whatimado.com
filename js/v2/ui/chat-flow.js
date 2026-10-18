@@ -35,6 +35,7 @@ import { createPathMapController } from "../map/session.js";
 import { createConfirmGateController } from "../roadmap/session.js";
 import { createMissionsController, highlightTimelineMission } from "../roadmap/missions.js";
 import { applyStructuredMissionUpdate, buildDifficultyPrompt, fallbackDifficultyUpdate, parseDifficultyUpdate } from "../roadmap/difficulty.js";
+import { pushRoadmapUndo } from "../roadmap/roadmap-undo.js";
 import { createDraftsController } from "../roadmap/drafts.js";
 import { createTaskChatController } from "../roadmap/task-chat.js";
 
@@ -656,6 +657,7 @@ export function initChatFlow(ctx) {
       `<button type="button" data-discard-difficulty="1">Discard</button>`;
     thread.appendChild(offer);
     offer.querySelector("[data-apply-difficulty]")?.addEventListener("click", () => {
+      pushRoadmapUndo(appStore.journey);
       appStore.journey.missionsStages = applyStructuredMissionUpdate(
         appStore.journey.missionsStages || [],
         missionId,
@@ -684,16 +686,20 @@ export function initChatFlow(ctx) {
     const id = event.detail?.id;
     if (id) handleNodeSelect(id, { startConfirm: true, openRoadmap: true });
   });
-  timelineEl?.addEventListener("mission-focus", (event) => {
+  function onMissionFocus(event) {
     const id = event.detail?.id;
     if (!id) return;
+    appStore.journey.focusMissionId = id;
+    touchJourney();
     taskChat.focusMission(id);
     const node = graphStore.nodes.find((item) => item.id === id);
     if (node) {
       mapEl?.setFocusedNode?.(id);
       mapEl?.setSelectedNode?.(id);
     }
-  });
+  }
+  timelineEl?.addEventListener("mission-focus", onMissionFocus);
+  missionRoot?.addEventListener("mission-focus", onMissionFocus);
   function offerTimelineContinuation() {
     const thread = continuationThread(messagesEl);
     if (!thread) return;

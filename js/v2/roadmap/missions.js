@@ -19,6 +19,14 @@ import {
   setMissionDone
 } from "./mission-model.js";
 import { rippleCircleBackNotes } from "./circle-back.js";
+import {
+  continueRoadmap,
+  deleteMissionFromStages,
+  dependentsOf,
+  effectiveFocusMissionId,
+  missionStatusLabel
+} from "./mission-navigation.js";
+import { canRoadmapUndo, popRoadmapUndo, pushRoadmapUndo } from "./roadmap-undo.js";
 
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
@@ -103,8 +111,12 @@ export function parseStagesResponse(raw, fallback) {
                 },
                 missionIndex
               );
+              const dependsOn = Array.isArray(mission?.dependsOn)
+                ? mission.dependsOn.map((dep) => String(dep || "").trim()).filter(Boolean)
+                : normalized.dependsOn;
               return {
                 ...normalized,
+                dependsOn,
                 resources: normalizeResources(mission?.resources)
               };
             })
@@ -179,18 +191,22 @@ function buildMissionsPrompt(idea, bullets) {
  * Done, current, and later stay distinguishable. The full title is on the button.
  * @param {Array<{ missions?: { id?: string, title?: string, done?: boolean }[] }>} stages
  */
-function renderMissionTimeline(stages) {
+function renderMissionTimeline(stages, focusId) {
   const missions = stages.flatMap((stage) => stage.missions || []);
   if (!missions.length) return "";
-  let seenCurrent = false;
   const items = missions
     .map((mission, index) => {
-      const done = Boolean(mission.done);
-      const waiting = Boolean(mission.waiting || mission.circleBack?.active);
-      const current = !done && !waiting && !seenCurrent;
-      if (current) seenCurrent = true;
-      const state = done ? "is-done" : waiting ? "is-waiting" : current ? "is-current" : "is-planned";
-      const status = done ? "Done" : waiting ? "Waiting" : current ? "Now" : "Later";
+      const status = missionStatusLabel(mission, focusId);
+      const state =
+        status === "Completed"
+          ? "is-done"
+          : status === "Waiting"
+            ? "is-waiting"
+            : status === "Now"
+              ? "is-current"
+              : status === "Not completed"
+                ? "is-bypassed"
+                : "is-planned";
       const full = mission.title || "Mission";
       const short = shortenMapLabel(full) || `Step ${index + 1}`;
       return `<button type="button" class="v2-timeline__stop ${state}" data-timeline-id="${escapeHtml(mission.id || "")}" aria-label="${escapeHtml(status)}: ${escapeHtml(full)}" title="${escapeHtml(full)}"><span class="v2-timeline__dot" aria-hidden="true"></span><span class="v2-timeline__name">${escapeHtml(short)}</span></button>`;
@@ -202,7 +218,7 @@ function renderMissionTimeline(stages) {
     <div class="v2-timeline">
       <span class="v2-timeline__label">Timeline</span>
       <div class="v2-timeline__rail"><span class="v2-timeline__cutoff" aria-hidden="true"></span>${steps}<span class="v2-timeline__link" aria-hidden="true"></span></div>
-      <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Continue this roadmap">+</button>
+      <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Add more missions to this roadmap">+</button>
     </div>`;
 }
 
@@ -249,7 +265,8 @@ function mountMapTimeline(stages) {
   document.body.classList.remove("has-map-timeline");
   if (host) {
     host.hidden = !show;
-    host.innerHTML = show ? renderMissionTimeline(stages) : "";
+    const focusId = effectiveFocusMissionId(appStore.journey, stages);
+    host.innerHTML = show ? renderMissionTimeline(stages, focusId) : "";
     if (show) bindTimelineScroll(host);
   }
   document.getElementById("dynamic-frame")?.applyTimelineInset?.();
@@ -273,8 +290,9 @@ export function highlightTimelineMission(_root, missionId) {
  * @param {import("./resources.js").LocalResource[]} [sharedResources]
  * @param {string} [place]
  */
-export function renderMissionStages(root, stages, catalog = [], sharedResources = [], place = "") {
+export function renderMissionStages(root, stages, catalog = [], sharedResources = [], place = "", focusId = null) {
   if (!root) return;
+  const focus = focusId || effectiveFocusMissionId(appStore.journey, stages);
   const byTitle = new Map(catalog.map((item) => [item.missionTitle, item]));
   const master = sharedResources.length
     ? `<div class="v2-resources-master">${renderResourcesAccordion({
@@ -309,6 +327,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                   ? `<p class="v2-mission__when">${escapeHtml(mission.timelineNote)}</p>`
                   : "";
                 const waiting = Boolean(mission.waiting || mission.circleBack?.active);
+                const bypassed = Boolean(mission.bypassed && !mission.done);
+                const status = missionStatusLabel(mission, focus);
                 const actionLines = missionActionLines(mission);
                 const detail = actionLines.length
                   ? `<ul class="v2-mission__actions">${actionLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
@@ -333,7 +353,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                     </div>`
                   : "";
                 return `
-                  <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
+                  <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
                     <div class="v2-mission__panel">
                       <header class="v2-mission__toolbar">
                         ${renderMissionChatOpenButton(id)}
@@ -342,6 +362,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                         <div class="v2-mission__head">
                           <h4 class="v2-mission__title">${escapeHtml(mission.title)}</h4>
                           ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
+                          ${bypassed ? `<span class="v2-mission__badge v2-mission__badge--bypassed">Not completed</span>` : ""}
+                          ${status === "Now" && !waiting ? `<span class="v2-mission__badge v2-mission__badge--now">Now</span>` : ""}
                         </div>
                         ${detail}
                         ${mission.text && actionLines.length > 1 ? `<p class="v2-mission__text">${escapeHtml(mission.text)}</p>` : ""}
@@ -355,6 +377,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                           </button>
                           <button type="button" class="v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
                           <button type="button" class="v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
+                          <button type="button" class="v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
+                          <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}">Delete task</button>
                         </div>
                         ${circlePanel}
                         ${renderMissionChatDrawer(id, mission.title)}
@@ -367,21 +391,21 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
         </article>`
     )
     .join("");
-  root.innerHTML += stages.length ? CONTINUATION_CUE : "";
+  root.innerHTML += stages.length ? renderMissionNavBar() : "";
   const allDone = stages.length > 0 && stages.every((stage) => stage.missions.every((mission) => mission.done));
   root.innerHTML += allDone ? renderNextPathOptions() : "";
   bindResourcesAccordions(root);
 }
 
-/** The v1 "possible continuation" cue: the roadmap keeps going past the missions shown. */
-const CONTINUATION_CUE = `
-  <div class="v2-mission-continue" role="note" aria-label="Possible continuation">
-    <span class="v2-mission-continue__node" aria-hidden="true">?</span>
-    <span class="v2-mission-continue__copy">
-      <strong>Possible continuation</strong>
-      <span>Your roadmap can keep evolving from here.</span>
-    </span>
-  </div>`;
+function renderMissionNavBar() {
+  const canUndo = canRoadmapUndo(appStore.journey);
+  return `
+    <div class="v2-mission-nav" role="group" aria-label="Roadmap task navigation">
+      <button type="button" class="v2-mission-nav__continue" data-mission-continue="1">Continue</button>
+      <p class="v2-mission-nav__feedback" id="mission-nav-feedback" role="status" aria-live="polite"></p>
+      <button type="button" class="v2-mission-nav__undo" id="missions-undo-inline" data-mission-undo="1" ${canUndo ? "" : "disabled"}>Undo</button>
+    </div>`;
+}
 
 /** Other roadmaps, with the original save-or-open choice, once the first missions are done. */
 function renderNextPathOptions() {
@@ -434,6 +458,40 @@ export function createMissionsController(ui) {
     return sectionEl?.querySelector("#missions-status") || null;
   }
 
+  function navFeedbackEl() {
+    return listEl?.querySelector("#mission-nav-feedback") || sectionEl?.querySelector("#mission-nav-feedback") || null;
+  }
+
+  function syncUndoButtons() {
+    const enabled = canRoadmapUndo(appStore.journey);
+    document.querySelectorAll("[data-mission-undo]").forEach((button) => {
+      if (button instanceof HTMLButtonElement) button.disabled = !enabled;
+    });
+  }
+
+  function setNavFeedback(message = "") {
+    const el = navFeedbackEl();
+    if (el) el.textContent = message;
+    if (!message) setStatusMessage(statusEl(), "");
+  }
+
+  /** @param {string} missionId */
+  function focusMissionInUi(missionId) {
+    if (!missionId) return;
+    appStore.journey.focusMissionId = missionId;
+    highlightTimelineMission(timelineHost(), missionId);
+    listEl?.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: missionId } }));
+    const target = document.getElementById(`mission-${missionId}`);
+    if (target) scrollFrameChildIntoView(target);
+  }
+
+  function rerender({ scroll = false, feedback = "" } = {}) {
+    const stages = appStore.journey.missionsStages || [];
+    show(stages, { scroll });
+    setNavFeedback(feedback);
+    syncUndoButtons();
+  }
+
   function clear() {
     serial += 1;
     pending = false;
@@ -443,6 +501,8 @@ export function createMissionsController(ui) {
     appStore.journey.planBullets = [];
     appStore.journey.roadmapPathId = null;
     appStore.journey.planConfirmed = false;
+    appStore.journey.focusMissionId = null;
+    appStore.journey.roadmapUndoStack = [];
     if (listEl) listEl.innerHTML = "";
     sectionEl?.classList.add("hidden");
     mountMapTimeline([]);
@@ -478,12 +538,14 @@ export function createMissionsController(ui) {
       appStore.location,
       appStore.profile
     );
-    renderMissionStages(listEl, stages, catalog, sharedResources, resourcePlaceLabel(appStore.location));
+    const focusId = effectiveFocusMissionId(appStore.journey, stages);
+    renderMissionStages(listEl, stages, catalog, sharedResources, resourcePlaceLabel(appStore.location), focusId);
     onRendered?.();
     mountMapTimeline(stages);
     onShown?.(stages);
     renderResourcesRail(appStore.journey.missionResources, appStore.location, appStore.profile);
     bindProgress(listEl);
+    syncUndoButtons();
     setStatusMessage(statusEl(), "");
     if (scroll) scrollFrameChildIntoView(sectionEl);
     layout();
@@ -498,6 +560,8 @@ export function createMissionsController(ui) {
     appStore.journey.missionsStages = stages;
     appStore.journey.missionResources = normalizeResources(resources);
     if (pathId) appStore.journey.roadmapPathId = pathId;
+    appStore.journey.roadmapUndoStack = [];
+    appStore.journey.focusMissionId = stages.flatMap((stage) => stage.missions || [])[0]?.id || null;
     markMissionsAcceptedForGoal(appStore.journey);
     touchJourney();
     flush();
@@ -559,6 +623,7 @@ export function createMissionsController(ui) {
       const timeline = target?.closest("[data-timeline-id]");
       const timelineId = timeline?.getAttribute("data-timeline-id");
       if (timelineId) {
+        appStore.journey.focusMissionId = timelineId;
         highlightTimelineMission(host, timelineId);
         host.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: timelineId } }));
         return;
@@ -601,19 +666,24 @@ export function createMissionsController(ui) {
       const completeBtn = target?.closest("[data-mission-complete]");
       const completeId = completeBtn?.getAttribute("data-mission-complete");
       if (completeId) {
+        pushRoadmapUndo(appStore.journey);
         const stages = appStore.journey.missionsStages || [];
         for (const stage of stages) {
           const mission = stage.missions.find((item) => item.id === completeId);
-          if (mission) setMissionDone(mission, !mission.done);
+          if (mission) {
+            setMissionDone(mission, !mission.done);
+            if (mission.done) mission.bypassed = false;
+          }
         }
         touchJourney();
         flush();
-        show(stages);
+        rerender();
         return;
       }
       const circleToggle = target?.closest("[data-circle-back]");
       const circleId = circleToggle?.getAttribute("data-circle-back");
       if (circleId) {
+        pushRoadmapUndo(appStore.journey);
         const stages = appStore.journey.missionsStages || [];
         let found = null;
         for (const stage of stages) {
@@ -624,20 +694,22 @@ export function createMissionsController(ui) {
         }
         touchJourney();
         flush();
-        show(stages);
+        rerender();
         return;
       }
       const reopenBtn = target?.closest("[data-circle-reopen]");
       const reopenId = reopenBtn?.getAttribute("data-circle-reopen");
       if (reopenId) {
+        pushRoadmapUndo(appStore.journey);
         const stages = appStore.journey.missionsStages || [];
         for (const stage of stages) {
           const mission = stage.missions.find((item) => item.id === reopenId);
           if (mission) clearCircleBack(mission);
         }
+        focusMissionInUi(reopenId);
         touchJourney();
         flush();
-        show(stages);
+        rerender();
         return;
       }
       const saveCircle = target?.closest("[data-circle-save]");
@@ -658,20 +730,101 @@ export function createMissionsController(ui) {
           }
         }
         if (mission) {
+          pushRoadmapUndo(appStore.journey);
           applyCircleBack(mission, { reason, instructions, returnDate });
           touchJourney();
           flush();
-          show(stages);
+          rerender();
           void (async () => {
+            pushRoadmapUndo(appStore.journey);
             appStore.journey.missionsStages = await rippleCircleBackNotes(appStore.journey, mission, stageLabel);
             touchJourney();
             flush();
-            show(appStore.journey.missionsStages);
+            rerender();
           })();
         }
         return;
       }
+      const continueBtn = target?.closest("[data-mission-continue]");
+      if (continueBtn) {
+        pushRoadmapUndo(appStore.journey);
+        const result = continueRoadmap(appStore.journey);
+        touchJourney();
+        flush();
+        if (result.ok) {
+          focusMissionInUi(result.focusId);
+          rerender({ feedback: "" });
+        } else {
+          rerender({ feedback: result.reason });
+        }
+        return;
+      }
+      const undoBtn = target?.closest("[data-mission-undo]");
+      if (undoBtn) {
+        const restored = popRoadmapUndo(appStore.journey);
+        if (!restored.ok) {
+          setNavFeedback(restored.reason);
+          syncUndoButtons();
+          return;
+        }
+        touchJourney();
+        flush();
+        const focus = appStore.journey.focusMissionId;
+        rerender({ scroll: false });
+        if (focus) focusMissionInUi(focus);
+        setNavFeedback("Restored the previous roadmap state.");
+        return;
+      }
+      const returnBtn = target?.closest("[data-mission-return]");
+      const returnId = returnBtn?.getAttribute("data-mission-return");
+      if (returnId) {
+        pushRoadmapUndo(appStore.journey);
+        const stages = appStore.journey.missionsStages || [];
+        for (const stage of stages) {
+          const mission = stage.missions.find((item) => item.id === returnId);
+          if (mission) mission.bypassed = false;
+        }
+        focusMissionInUi(returnId);
+        touchJourney();
+        flush();
+        rerender();
+        return;
+      }
+      const deleteBtn = target?.closest("[data-mission-delete]");
+      const deleteId = deleteBtn?.getAttribute("data-mission-delete");
+      if (deleteId) {
+        const stages = appStore.journey.missionsStages || [];
+        let title = "this task";
+        for (const stage of stages) {
+          const hit = stage.missions.find((item) => item.id === deleteId);
+          if (hit?.title) title = hit.title;
+        }
+        const deps = dependentsOf(stages, deleteId);
+        const consequence = deps.length
+          ? ` ${deps.length} later task(s) still list it as a prerequisite: ${deps.map((item) => item.title).join(", ")}.`
+          : "";
+        if (!window.confirm(`Delete “${title}”?${consequence} You can undo this.`)) return;
+        pushRoadmapUndo(appStore.journey);
+        appStore.journey.missionsStages = deleteMissionFromStages(stages, deleteId);
+        const nextFocus = pickNextFocusAfterDelete(appStore.journey.missionsStages, deleteId);
+        appStore.journey.focusMissionId = nextFocus;
+        touchJourney();
+        flush();
+        rerender();
+        if (nextFocus) focusMissionInUi(nextFocus);
+        return;
+      }
     });
+  }
+
+  /** @param {Array<{ missions?: { id?: string }[] }>} stages @param {string} removedId */
+  function pickNextFocusAfterDelete(stages, removedId) {
+    const missions = (stages || []).flatMap((stage) => stage.missions || []);
+    if (!missions.length) return null;
+    if (appStore.journey.focusMissionId && appStore.journey.focusMissionId !== removedId) {
+      return appStore.journey.focusMissionId;
+    }
+    return missions[0]?.id || null;
   }
 
   async function extend() {
@@ -690,6 +843,7 @@ export function createMissionsController(ui) {
       if (ticket !== serial) return;
       const added = parseStagesResponse(raw, []);
       if (!added.length) return;
+      pushRoadmapUndo(appStore.journey);
       appStore.journey.missionsStages = [...(appStore.journey.missionsStages || []), ...added].slice(0, 8);
       touchJourney();
       flush();

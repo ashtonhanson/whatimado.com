@@ -2663,6 +2663,7 @@ export class WhatimadoMap extends HTMLElement {
           node.type === "more" ? "is-more" : "",
           node.done ? "is-complete" : "",
           node.waiting ? "is-waiting" : "",
+          node.bypassed ? "is-bypassed" : "",
           isLayoutAnchor ? "is-anchor is-primary" : "",
           !isSelected ? "is-support" : "",
           isSelected ? "is-selected" : "",

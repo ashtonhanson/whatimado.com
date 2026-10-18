@@ -16,6 +16,8 @@
  * @property {string} outcome
  * @property {boolean} done
  * @property {boolean} waiting
+ * @property {boolean} bypassed
+ * @property {string[]} dependsOn
  * @property {CircleBackState} circleBack
  * @property {string[]} [suggestedSteps]
  * @property {string} [timelineNote]
@@ -50,6 +52,9 @@ export function normalizeMissionFields(raw, missionIndex = 0) {
     returnDate: String(circleRaw.returnDate || raw?.returnDate || "").trim().slice(0, 32)
   };
   const waiting = Boolean(raw?.waiting || circleBack.active);
+  const dependsOn = Array.isArray(raw?.dependsOn)
+    ? raw.dependsOn.map((id) => String(id || "").trim()).filter(Boolean).slice(0, 6)
+    : [];
   return {
     id: typeof raw?.id === "string" && raw.id ? String(raw.id).slice(0, 64) : `m-${slug || missionIndex}`,
     title,
@@ -59,6 +64,8 @@ export function normalizeMissionFields(raw, missionIndex = 0) {
     outcome,
     done: Boolean(raw?.done) && !waiting,
     waiting,
+    bypassed: Boolean(raw?.bypassed) && !Boolean(raw?.done),
+    dependsOn,
     circleBack,
     suggestedSteps: Array.isArray(raw?.suggestedSteps)
       ? raw.suggestedSteps.map((step) => String(step || "").trim()).filter(Boolean).slice(0, 5)
