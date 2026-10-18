@@ -350,10 +350,10 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                 const cb = mission.circleBack || {};
                 const editorOpen = circleBackEditorOpen.has(id);
                 const showCirclePanel = waiting || editorOpen;
-                const draft = circleBackUnsaved.get(id);
-                const reasonVal = waiting ? cb.reason || "" : draft?.reason ?? "";
-                const instructionsVal = waiting ? cb.instructions || "" : draft?.instructions ?? "";
-                const returnVal = waiting ? cb.returnDate || "" : draft?.returnDate ?? "";
+                const circleDraft = circleBackUnsaved.get(id);
+                const reasonVal = waiting ? cb.reason || "" : circleDraft?.reason ?? "";
+                const instructionsVal = waiting ? cb.instructions || "" : circleDraft?.instructions ?? "";
+                const returnVal = waiting ? cb.returnDate || "" : circleDraft?.returnDate ?? "";
                 const circlePanel = showCirclePanel
                   ? `<div class="v2-circle-back" data-circle-back-panel="${escapeHtml(id)}">
                       <button type="button" class="v2-circle-back__close v2-mission-action" data-circle-close="${escapeHtml(id)}" aria-label="Close"><span aria-hidden="true">×</span></button>
