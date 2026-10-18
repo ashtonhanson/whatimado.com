@@ -1,4 +1,4 @@
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, bypassed?: boolean, chainIndex?: number, homeAngle?: number }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, bypassed?: boolean, chainIndex?: number, taskIndex?: number, stageIndex?: number, homeAngle?: number }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
 /** @typedef {{ id?: string, label: string, title: string, description?: string, type?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} AdvisorPath */
 export const graphStore = {
@@ -306,6 +306,7 @@ const PATH_REACH = 68;
 const PLUS_GAP = 48;
 const MISSION_STEP = 34;
 const MISSION_TITLE_GAP_PX = 16;
+const TASK_STACK_STEP = 30;
 const MAP_LABEL_FONT = "500 12.5px sans-serif";
 const SIBLING_GAP = 30;
 const MIN_SIBLING_GAP = 22;
@@ -383,50 +384,79 @@ function angleFor(id, index, count) {
  * @param {number} rotation
  * @param {string} chosenId
  */
-function missionChain(nodes) {
+/** Horizontal milestone nodes (stage headers), not tasks. */
+function milestoneChain(nodes) {
   return nodes
-    .filter((node) => node.type === "mission" || node.type === "task")
+    .filter((node) => node.type === "mission")
     .sort((a, b) => (a.chainIndex ?? 0) - (b.chainIndex ?? 0));
 }
 
 /**
- * Screen-sized title width → spacing along the linked chain (SVG units).
- * @param {GraphNode[]} chain
+ * @param {GraphNode[]} nodes
+ * @param {string} milestoneId
  */
-function linkedMissionStep(chain) {
-  let maxTitlePx = 0;
-  if (typeof document !== "undefined") {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.font = MAP_LABEL_FONT;
-      for (const node of chain) {
-        const label = shortenMapLabel(node.title || node.label || "", 14).toUpperCase();
-        const width = ctx.measureText(label).width + label.length * 0.5;
-        maxTitlePx = Math.max(maxTitlePx, width);
-      }
+function tasksForMilestone(nodes, milestoneId) {
+  return nodes
+    .filter((node) => node.type === "task" && node.parentId === milestoneId)
+    .sort((a, b) => (a.taskIndex ?? 0) - (b.taskIndex ?? 0));
+}
+
+/**
+ * @param {string} text
+ */
+function measureTitlePx(text) {
+  if (typeof document === "undefined") return String(text || "").length * 7;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return String(text || "").length * 7;
+  ctx.font = MAP_LABEL_FONT;
+  const label = shortenMapLabel(text || "", 14).toUpperCase();
+  return ctx.measureText(label).width + label.length * 0.5;
+}
+
+/**
+ * Screen-sized title width → spacing between milestone columns (SVG units).
+ * @param {GraphNode[]} milestones
+ * @param {GraphNode[]} nodes
+ */
+function linkedMilestoneStep(milestones, nodes) {
+  let maxColPx = 0;
+  for (const milestone of milestones) {
+    let colPx = measureTitlePx(milestone.title || milestone.label || "");
+    for (const task of tasksForMilestone(nodes, milestone.id)) {
+      colPx = Math.max(colPx, measureTitlePx(task.title || task.label || ""));
     }
+    maxColPx = Math.max(maxColPx, colPx);
   }
   const stageW =
     typeof window !== "undefined" ? Math.min(Math.max(window.innerWidth || 800, 320), 960) * 0.94 : 720;
   const pxPerUnit = stageW / MAP_W;
-  const gapPx = Math.max(72, maxTitlePx + MISSION_TITLE_GAP_PX);
+  const gapPx = Math.max(72, maxColPx + MISSION_TITLE_GAP_PX);
   const stepSvg = gapPx / (pxPerUnit * 0.5);
   return Math.max(MISSION_STEP, stepSvg);
 }
 
+/**
+ * @param {GraphNode[]} nodes
+ * @param {GraphNode[]} milestones
+ */
 export function placeLinkedBranch(nodes, rotation, chosenId) {
   const spread = mapSpread;
   const originX = YOU_LINKED.x;
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
   const pathSiblings = satellites.filter((node) => node.type === "path");
-  const chain = missionChain(satellites);
+  const milestones = milestoneChain(satellites);
+  const tasks = satellites.filter((node) => node.type === "task");
   const orbit = satellites.filter(
-    (node) => !pathSiblings.includes(node) && !chain.includes(node) && !LINKED_OPTION_OFFSETS[node.id]
+    (node) =>
+      !pathSiblings.includes(node) &&
+      !milestones.includes(node) &&
+      !tasks.includes(node) &&
+      !LINKED_OPTION_OFFSETS[node.id]
   );
-  const missionStep = linkedMissionStep(chain);
+  const milestoneStep = linkedMilestoneStep(milestones, nodes);
   const chosenDist = PATH_REACH * spread;
-  const plusDist = chosenDist + (missionStep * (chain.length + 1) + PLUS_GAP) * spread;
+  const plusDist = chosenDist + (milestoneStep * (milestones.length + 1) + PLUS_GAP) * spread;
   const drop = Math.sin(rotation) * chosenDist;
   const topReach = Math.max(...Object.values(LINKED_OPTION_OFFSETS).map((slot) => -slot.dy)) * spread;
   let siblingGap = SIBLING_GAP * spread;
@@ -457,11 +487,26 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       node.y = (originY + Math.sin(rotation) * plusDist) / MAP_H;
       return;
     }
-    const chainIndex = chain.findIndex((entry) => entry.id === node.id);
-    if (chainIndex >= 0) {
-      const dist = chosenDist + missionStep * (chainIndex + 1) * spread;
+    const milestoneIndex = milestones.findIndex((entry) => entry.id === node.id);
+    if (milestoneIndex >= 0) {
+      const dist = chosenDist + milestoneStep * (milestoneIndex + 1) * spread;
       node.x = (originX + Math.cos(rotation) * dist) / MAP_W;
       node.y = (originY + Math.sin(rotation) * dist) / MAP_H;
+      return;
+    }
+    if (node.type === "task" && node.parentId) {
+      const parent = milestones.find((entry) => entry.id === node.parentId);
+      const milestoneDist =
+        parent != null
+          ? chosenDist + milestoneStep * (milestones.findIndex((entry) => entry.id === parent.id) + 1) * spread
+          : chosenDist + milestoneStep * spread;
+      const mx = originX + Math.cos(rotation) * milestoneDist;
+      const my = originY + Math.sin(rotation) * milestoneDist;
+      const perpX = -Math.sin(rotation);
+      const perpY = Math.cos(rotation);
+      const stack = TASK_STACK_STEP * ((node.taskIndex ?? 0) + 1) * spread;
+      node.x = (mx + perpX * stack) / MAP_W;
+      node.y = (my + perpY * stack) / MAP_H;
       return;
     }
     const siblingIndex = pathSiblings.findIndex((entry) => entry.id === node.id);
@@ -485,10 +530,16 @@ export function placeUnlinkedBranch(nodes, chosenId) {
   const { x: youX, y: youY } = YOU_UNLINKED;
   const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
   const column = satellites.filter((node) => node.type === "path");
-  const chain = missionChain(satellites);
+  const milestones = milestoneChain(satellites);
+  const tasks = satellites.filter((node) => node.type === "task");
   const extras = satellites.filter(
-    (node) => !column.includes(node) && !chain.includes(node) && !UNLINKED_OPTION_OFFSETS[node.id]
+    (node) =>
+      !column.includes(node) &&
+      !milestones.includes(node) &&
+      !tasks.includes(node) &&
+      !UNLINKED_OPTION_OFFSETS[node.id]
   );
+  const milestoneStep = Math.max(UNLINKED_MISSION_STEP, linkedMilestoneStep(milestones, nodes) * 0.85);
   const columnCeil = UNLINKED_CHOSEN.dy + UNLINKED_COLUMN_PLUS_CLEAR;
   const columnGap =
     column.length > 1
@@ -503,12 +554,19 @@ export function placeUnlinkedBranch(nodes, chosenId) {
     else if (node.id === chosenId) slot = UNLINKED_CHOSEN;
     else if (node.type === "more") {
       slot = {
-        dx: UNLINKED_PLUS.dx,
-        dy: UNLINKED_CHOSEN.dy - UNLINKED_MISSION_STEP * (chain.length + 1) - 18
+        dx: UNLINKED_CHOSEN.dx + milestoneStep * (milestones.length + 1) + 18,
+        dy: UNLINKED_CHOSEN.dy
       };
-    } else if (chain.includes(node)) {
-      const chainIndex = chain.findIndex((entry) => entry.id === node.id);
-      slot = { dx: UNLINKED_CHOSEN.dx, dy: UNLINKED_CHOSEN.dy - UNLINKED_MISSION_STEP * (chainIndex + 1) };
+    } else if (milestones.includes(node)) {
+      const milestoneIndex = milestones.findIndex((entry) => entry.id === node.id);
+      slot = { dx: UNLINKED_CHOSEN.dx + milestoneStep * (milestoneIndex + 1), dy: UNLINKED_CHOSEN.dy };
+    } else if (node.type === "task" && node.parentId) {
+      const parent = milestones.find((entry) => entry.id === node.parentId);
+      const milestoneIndex = parent ? milestones.findIndex((entry) => entry.id === parent.id) : 0;
+      slot = {
+        dx: UNLINKED_CHOSEN.dx + milestoneStep * (milestoneIndex + 1),
+        dy: UNLINKED_CHOSEN.dy + TASK_STACK_STEP * ((node.taskIndex ?? 0) + 1)
+      };
     }
     else if (column.includes(node)) {
       slot = { dx: UNLINKED_COLUMN.dx, dy: columnTop + columnGap * column.indexOf(node) };
@@ -587,23 +645,39 @@ export function showRoadmapBranch(pathId, stages = null) {
 
   let attachId = chosenSource.id;
   if (Array.isArray(stages) && stages.length) {
-    const missions = stages.flatMap((stage) => stage.missions || []).slice(0, 12);
-    missions.forEach((mission, index) => {
-      const id = String(mission.id || `mission-${index + 1}`).slice(0, 64);
-      const title = String(mission.title || "Task").trim();
+    stages.slice(0, 8).forEach((stage, stageIndex) => {
+      const milestoneId = `milestone-${stageIndex}`;
+      const stageTitle = String(stage.label || `Stage ${stageIndex + 1}`).trim();
       nodes.push({
-        id,
+        id: milestoneId,
         type: "mission",
-        label: shortenMapLabel(title) || `Step ${index + 1}`,
-        title,
-        done: Boolean(mission.done),
-        waiting: Boolean(mission.waiting),
-        bypassed: Boolean(mission.bypassed) && !mission.done,
-        chainIndex: index,
+        label: shortenMapLabel(stageTitle) || `Stage ${stageIndex + 1}`,
+        title: stageTitle,
+        chainIndex: stageIndex,
+        stageIndex,
         parentId: attachId
       });
-      edges.push({ from: attachId, to: id });
-      attachId = id;
+      edges.push({ from: attachId, to: milestoneId });
+      attachId = milestoneId;
+
+      (stage.missions || []).slice(0, 8).forEach((mission, taskIndex) => {
+        const id = String(mission.id || `mission-${stageIndex}-${taskIndex}`).slice(0, 64);
+        const title = String(mission.title || "Task").trim();
+        nodes.push({
+          id,
+          type: "task",
+          label: shortenMapLabel(title) || `Task ${taskIndex + 1}`,
+          title,
+          done: Boolean(mission.done),
+          waiting: Boolean(mission.waiting),
+          bypassed: Boolean(mission.bypassed) && !mission.done,
+          chainIndex: stageIndex,
+          taskIndex,
+          stageIndex,
+          parentId: milestoneId
+        });
+        edges.push({ from: milestoneId, to: id });
+      });
     });
   }
 

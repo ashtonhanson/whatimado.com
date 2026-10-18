@@ -222,7 +222,7 @@ export function initChatFlow(ctx) {
         mapEl?.syncLiveFromStore();
         const still = keep && graphStore.nodes.some((node) => node.id === keep);
         mapEl?.setSelectedNode(still ? keep : pathId);
-        mapEl?.syncFocusMissionCamera?.({ animate: false });
+        mapEl?.syncRoadmapBranchFit?.({ animate: false });
       } else if (!stages?.length) {
         restorePossibilityMap();
         mapEl?.syncLiveFromStore();
@@ -284,9 +284,17 @@ export function initChatFlow(ctx) {
       return;
     }
     if (node.type === "mission" || node.type === "task") {
-      mapEl?.setSelectedNode(nodeId);
-      highlightTimelineMission(document.getElementById("mission-stages"), nodeId);
-      taskChat.focusMission(nodeId);
+      let focusId = nodeId;
+      if (node.type === "mission" && String(node.id).startsWith("milestone-")) {
+        const firstTask = graphStore.nodes.find((entry) => entry.type === "task" && entry.parentId === node.id);
+        if (!firstTask) return;
+        focusId = firstTask.id;
+      }
+      mapEl?.setSelectedNode(focusId);
+      highlightTimelineMission(document.getElementById("map-timeline"), focusId);
+      appStore.journey.focusMissionId = focusId;
+      touchJourney();
+      taskChat.focusMission(focusId);
       return;
     }
     const switching = Boolean(appStore.journey.roadmapPathId && appStore.journey.roadmapPathId !== nodeId);
@@ -698,7 +706,7 @@ export function initChatFlow(ctx) {
       mapEl?.setFocusedNode?.(id);
       mapEl?.setSelectedNode?.(id);
     }
-    mapEl?.syncFocusMissionCamera?.({ animate: true });
+    mapEl?.syncRoadmapBranchFit?.({ animate: true });
   }
   timelineEl?.addEventListener("mission-focus", onMissionFocus);
   missionRoot?.addEventListener("mission-focus", onMissionFocus);

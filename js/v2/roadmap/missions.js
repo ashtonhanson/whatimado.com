@@ -381,6 +381,16 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                       </header>
                       <div class="v2-mission__content">
                         <div class="v2-mission__head">
+                          <label class="v2-mission__done-toggle">
+                            <input
+                              type="checkbox"
+                              class="v2-mission__done-check"
+                              data-mission-complete="${escapeHtml(id)}"
+                              ${mission.done ? "checked" : ""}
+                              ${waiting ? "disabled" : ""}
+                              aria-label="${mission.done ? "Task completed" : "Mark task complete"}"
+                            />
+                          </label>
                           <h4 class="v2-mission__title" tabindex="-1">${escapeHtml(mission.title)}</h4>
                           ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
                           ${bypassed ? `<span class="v2-mission__badge v2-mission__badge--bypassed">Not completed</span>` : ""}
@@ -393,9 +403,6 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                         ${resources}
                         ${action}
                         <div class="v2-mission__controls">
-                          <button type="button" class="v2-mission-action v2-mission__complete" data-mission-complete="${escapeHtml(id)}" aria-pressed="${mission.done ? "true" : "false"}" ${waiting ? "disabled" : ""}>
-                            ${mission.done ? "Completed" : "Mark complete"}
-                          </button>
                           <button type="button" class="v2-mission-action v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
                           <button type="button" class="v2-mission-action v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
                           <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
@@ -668,6 +675,22 @@ export function createMissionsController(ui) {
 
   bindTimeline();
 
+  /** @param {string} completeId @param {boolean} done */
+  function applyMissionComplete(completeId, done) {
+    pushRoadmapUndo(appStore.journey);
+    const stages = appStore.journey.missionsStages || [];
+    for (const stage of stages) {
+      const mission = stage.missions.find((item) => item.id === completeId);
+      if (mission) {
+        setMissionDone(mission, done);
+        if (mission.done) mission.bypassed = false;
+      }
+    }
+    touchJourney();
+    flush();
+    rerender();
+  }
+
   function bindMissionActions() {
     if (!sectionEl || sectionEl.dataset.progressBound === "1") return;
     sectionEl.dataset.progressBound = "1";
@@ -703,6 +726,10 @@ export function createMissionsController(ui) {
     sectionEl.addEventListener("change", (event) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement)) return;
+      if (target.dataset.missionComplete) {
+        applyMissionComplete(target.dataset.missionComplete, target.checked);
+        return;
+      }
       if (target.dataset.savePath) {
         toggleSavedPath(appStore.journey, target.dataset.savePath);
         touchJourney();
@@ -722,23 +749,6 @@ export function createMissionsController(ui) {
       const difficultyId = difficulty?.getAttribute("data-difficulty");
       if (difficultyId) {
         listEl?.dispatchEvent(new CustomEvent("mission-difficulty", { bubbles: true, detail: { id: difficultyId } }));
-        return;
-      }
-      const completeBtn = target?.closest("[data-mission-complete]");
-      const completeId = completeBtn?.getAttribute("data-mission-complete");
-      if (completeId) {
-        pushRoadmapUndo(appStore.journey);
-        const stages = appStore.journey.missionsStages || [];
-        for (const stage of stages) {
-          const mission = stage.missions.find((item) => item.id === completeId);
-          if (mission) {
-            setMissionDone(mission, !mission.done);
-            if (mission.done) mission.bypassed = false;
-          }
-        }
-        touchJourney();
-        flush();
-        rerender();
         return;
       }
       const circleToggle = target?.closest("[data-circle-back]");

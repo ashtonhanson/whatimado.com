@@ -788,9 +788,9 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 
 .v2-mission__head {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.45rem 0.55rem;
 }
 
 .v2-mission__title {
@@ -821,21 +821,46 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   color: color-mix(in srgb, var(--v2-text) 88%, transparent);
 }
 
+.v2-mission__done-toggle {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  margin: 0;
+  padding: 0.35rem;
+  cursor: pointer;
+}
+
+.v2-mission__done-check {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  accent-color: var(--v2-teal);
+  cursor: pointer;
+}
+
+.v2-mission__done-check:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .v2-mission__controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.28rem;
   margin-top: 0.55rem;
 }
 
 .v2-mission-action,
-.v2-mission__complete,
 .v2-circle-back-toggle,
 .v2-difficulty {
   font: inherit;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  padding: 0.35rem 0.55rem;
+  line-height: 1.25;
+  padding: 0.42rem 0.5rem;
+  min-height: 2.75rem;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--v2-teal) 35%, transparent);
   background: transparent;
@@ -845,7 +870,6 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-mission-action:hover,
-.v2-mission__complete:hover,
 .v2-circle-back-toggle:hover,
 .v2-difficulty:hover {
   background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
@@ -853,16 +877,6 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-mission-action:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.v2-mission__complete[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--v2-yellow) 50%, transparent);
-  color: var(--v2-yellow);
-}
-
-.v2-mission__complete:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
