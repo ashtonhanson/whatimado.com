@@ -23,12 +23,17 @@
     );
     --v2-mobile-focus-you-hero-gap: 0px;
     --v2-mobile-focus-hero-nudge: 1.1rem;
+    --v2-kicker-sub-line-h: calc(clamp(0.72rem, 3.2vw, 0.84rem) * 1.4);
     /*
      * Mobile prompt frame. Stays a top-third sheet so the band between the
      * menu bar and this top edge is where the node map is centered.
      * Desktop uses 25vh (tokens.css). Do not inherit that here.
      */
-    --whatimado-frame-top-default: clamp(32vh, 26vh + 5vw, 38vh);
+    --whatimado-frame-top-default: clamp(
+      calc(32vh + var(--v2-kicker-sub-line-h) * 2),
+      calc(26vh + 5vw + var(--v2-kicker-sub-line-h) * 2),
+      calc(38vh + var(--v2-kicker-sub-line-h) * 2)
+    );
     --v2-kicker-reserve: clamp(3.9rem, 10.5vh, 4.75rem); /* room for 1.5× hero type */
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
     --v2-mobile-map-head-gap: clamp(0.55rem, 1.4vh, 0.85rem);
@@ -41,7 +46,6 @@
     --v2-mobile-focus-lift: 0px;
     --v2-mobile-focus-band-top-gap: clamp(0.3rem, 1vh, 0.55rem);
     --v2-mobile-focus-map-head-gap: clamp(0.4rem, 1.1vh, 0.65rem);
-    --v2-kicker-sub-line-h: calc(clamp(0.72rem, 3.2vw, 0.84rem) * 1.4);
     --v2-mobile-focus-hero-gap: calc(0.55rem + var(--v2-kicker-sub-line-h));
     --v2-mobile-focus-band-h: 30vh;
     --v2-mobile-focus-kicker-shift: 0px;
@@ -123,6 +127,38 @@
 
   whatimado-map:has(#map-timeline:not([hidden])) .whatimado-map__svg {
     transform: none;
+  }
+
+  whatimado-map .whatimado-map__chrome {
+    left: 0.45rem;
+    right: 0.45rem;
+    align-items: stretch;
+  }
+
+  whatimado-map .whatimado-map__timeline-col:has(#map-timeline:not([hidden])) {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+  }
+
+  whatimado-map .whatimado-map__timeline-tools {
+    flex: 0 0 auto;
+  }
+
+  .v2-map-timeline {
+    padding-left: 0.45rem;
+  }
+
+  whatimado-frame.is-mobile-docked .whatimado-frame__body,
+  whatimado-frame.is-mobile-docked .whatimado-frame__body-content,
+  whatimado-frame.is-mobile-docked #mission-stages {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  .v2-mission__controls {
+    width: 100%;
   }
 
   .v2-shell,
@@ -243,6 +279,44 @@
     width: 100%;
     justify-content: flex-start;
     gap: 0.5rem;
+  }
+
+  .v2-header-undo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: var(--v2-mobile-header-control);
+    height: var(--v2-mobile-header-control);
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(66, 255, 240, 0.48);
+    border-radius: 50%;
+    background: rgba(4, 12, 14, 0.45);
+    color: var(--v2-text-muted);
+    cursor: not-allowed;
+    opacity: 0.55;
+    touch-action: manipulation;
+  }
+
+  .v2-header-undo:not(:disabled),
+  .v2-header-undo.is-ready {
+    color: var(--v2-teal);
+    cursor: pointer;
+    opacity: 1;
+  }
+
+  .v2-header-undo svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+  }
+
+  .v2-rail-body > .v2-undo-btn {
+    display: none;
   }
 
   /* Logo frame and hamburger frame share one height so the header reads as one pair. */

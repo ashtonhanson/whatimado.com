@@ -373,25 +373,26 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                       </div>
                     </div>`
                   : "";
+                const deleteLabel = `Delete task: ${mission.title || "Task"}`;
                 return `
                   <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
                     <div class="v2-mission__panel">
-                      <header class="v2-mission__toolbar">
-                        ${renderMissionChatOpenButton(id)}
-                      </header>
+                      <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                       <div class="v2-mission__content">
                         <div class="v2-mission__head">
-                          <label class="v2-mission__done-toggle">
-                            <input
-                              type="checkbox"
-                              class="v2-mission__done-check"
-                              data-mission-complete="${escapeHtml(id)}"
-                              ${mission.done ? "checked" : ""}
-                              ${waiting ? "disabled" : ""}
-                              aria-label="${mission.done ? "Task completed" : "Mark task complete"}"
-                            />
-                          </label>
-                          <h4 class="v2-mission__title" tabindex="-1">${escapeHtml(mission.title)}</h4>
+                          <div class="v2-mission__head-main">
+                            <label class="v2-mission__done-toggle">
+                              <input
+                                type="checkbox"
+                                class="v2-mission__done-check"
+                                data-mission-complete="${escapeHtml(id)}"
+                                ${mission.done ? "checked" : ""}
+                                ${waiting ? "disabled" : ""}
+                                aria-label="${mission.done ? "Task completed" : "Mark task complete"}"
+                              />
+                            </label>
+                            <h4 class="v2-mission__title" tabindex="-1">${escapeHtml(mission.title)}</h4>
+                          </div>
                           ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
                           ${bypassed ? `<span class="v2-mission__badge v2-mission__badge--bypassed">Not completed</span>` : ""}
                           ${status === "Now" && !waiting ? `<span class="v2-mission__badge v2-mission__badge--now">Now</span>` : ""}
@@ -402,14 +403,16 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                         ${timing}
                         ${resources}
                         ${action}
-                        <div class="v2-mission__controls">
-                          <button type="button" class="v2-mission-action v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
-                          <button type="button" class="v2-mission-action v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
-                          <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
-                          <button type="button" class="v2-mission-action" data-mission-delete="${escapeHtml(id)}">Delete task</button>
+                        <div class="v2-mission__foot">
+                          <div class="v2-mission__controls">
+                            <button type="button" class="v2-mission-action v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
+                            <button type="button" class="v2-mission-action v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
+                            <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
+                            ${renderMissionChatOpenButton(id)}
+                          </div>
+                          ${renderMissionChatDrawer(id, mission.title)}
+                          ${circlePanel}
                         </div>
-                        ${circlePanel}
-                        ${renderMissionChatDrawer(id, mission.title)}
                       </div>
                     </div>
                   </li>`;
@@ -426,12 +429,10 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
 }
 
 function renderMissionNavBar() {
-  const canUndo = canRoadmapUndo(appStore.journey);
   return `
     <div class="v2-mission-nav" role="group" aria-label="Roadmap task navigation">
       <button type="button" class="v2-mission-action" data-mission-continue="1">Continue</button>
       <p class="v2-mission-nav__feedback" id="mission-nav-feedback" role="status" aria-live="polite"></p>
-      <button type="button" class="v2-mission-action" id="missions-undo-inline" data-mission-undo="1" ${canUndo ? "" : "disabled"}>Undo</button>
     </div>`;
 }
 
@@ -493,7 +494,10 @@ export function createMissionsController(ui) {
   function syncUndoButtons() {
     const enabled = canRoadmapUndo(appStore.journey);
     document.querySelectorAll("[data-mission-undo]").forEach((button) => {
-      if (button instanceof HTMLButtonElement) button.disabled = !enabled;
+      if (!(button instanceof HTMLButtonElement)) return;
+      button.disabled = !enabled;
+      button.setAttribute("aria-disabled", enabled ? "false" : "true");
+      button.classList.toggle("is-ready", enabled);
     });
   }
 
@@ -877,17 +881,8 @@ export function createMissionsController(ui) {
       const deleteBtn = target?.closest("[data-mission-delete]");
       const deleteId = deleteBtn?.getAttribute("data-mission-delete");
       if (deleteId) {
+        if (!window.confirm("Are you sure you want to delete this task?")) return;
         const stages = appStore.journey.missionsStages || [];
-        let title = "this task";
-        for (const stage of stages) {
-          const hit = stage.missions.find((item) => item.id === deleteId);
-          if (hit?.title) title = hit.title;
-        }
-        const deps = dependentsOf(stages, deleteId);
-        const consequence = deps.length
-          ? ` ${deps.length} later task(s) still list it as a prerequisite: ${deps.map((item) => item.title).join(", ")}.`
-          : "";
-        if (!window.confirm(`Delete “${title}”?${consequence} You can undo this.`)) return;
         pushRoadmapUndo(appStore.journey);
         appStore.journey.missionsStages = deleteMissionFromStages(stages, deleteId);
         const nextFocus = pickNextFocusAfterDelete(appStore.journey.missionsStages, deleteId);
