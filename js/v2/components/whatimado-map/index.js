@@ -455,6 +455,11 @@ export class WhatimadoMap extends HTMLElement {
     }
     this._refreshDrift();
     this._onViewportResize = () => {
+      this._syncMobileHeaderMapTools();
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        relayoutLinkedSpread();
+        this.syncRoadmapBranchFit({ animate: false });
+      }
       if (window.matchMedia("(max-width: 900px)").matches && !isOpenHomePhase()) {
         this.syncDesktopViewBox();
         if (!this._userPanned) this.syncSnapCamera();
@@ -476,6 +481,30 @@ export class WhatimadoMap extends HTMLElement {
       this.syncFrameGravity({ animate: false });
       this.lockFromFrame();
     });
+    this._syncMobileHeaderMapTools();
+  }
+
+  /** Mobile: Link + crosshair live in the header beside Undo; desktop keeps map chrome. */
+  _syncMobileHeaderMapTools() {
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const slot = document.getElementById("header-map-tools");
+    const tools = this.querySelector(".whatimado-map__timeline-tools");
+    if (!slot) return;
+    if (mobile && this._linkBtn && this._youBtn) {
+      slot.hidden = false;
+      slot.setAttribute("aria-hidden", "false");
+      if (this._linkBtn.parentElement !== slot) slot.append(this._linkBtn);
+      if (this._youBtn.parentElement !== slot) slot.append(this._youBtn);
+      if (tools) tools.hidden = true;
+    } else {
+      slot.hidden = true;
+      slot.setAttribute("aria-hidden", "true");
+      if (tools) {
+        tools.hidden = false;
+        if (this._linkBtn && this._linkBtn.parentElement !== tools) tools.prepend(this._linkBtn);
+        if (this._youBtn && this._youBtn.parentElement !== tools) tools.append(this._youBtn);
+      }
+    }
   }
 
   /** Stop following prompt frame after hero dismiss completes. */
@@ -1635,6 +1664,7 @@ export class WhatimadoMap extends HTMLElement {
     this._linkBtn = this.querySelector(".whatimado-map__link-btn");
     this._syncLinkButton();
     this._linkBtn?.addEventListener("click", () => this._toggleFocusLink());
+    this._syncMobileHeaderMapTools();
     this.querySelector(".whatimado-map__new-roadmap")?.addEventListener("click", () => {
       this.dispatchEvent(new CustomEvent("map-new-roadmap", { bubbles: true }));
     });

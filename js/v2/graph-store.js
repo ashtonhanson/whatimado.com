@@ -1,3 +1,5 @@
+import { measureCssVarLength } from "./layout/measure-css-var.js";
+
 /** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, bypassed?: boolean, chainIndex?: number, taskIndex?: number, stageIndex?: number, homeAngle?: number }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
 /** @typedef {{ id?: string, label: string, title: string, description?: string, type?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} AdvisorPath */
@@ -316,6 +318,46 @@ const NODE_FLOOR_Y = 210;
 /** Settings, Notes, and Roadmaps all sit this far from You, evenly spaced on an arc. */
 const OPTION_RADIUS = 96;
 
+/** @returns {boolean} */
+function isMobileMapLayout() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
+}
+
+/** @returns {number} */
+function mapStageWidthPx() {
+  return typeof window !== "undefined" ? Math.min(Math.max(window.innerWidth || 800, 320), 960) * 0.94 : 720;
+}
+
+/** @returns {number} */
+function mapPxPerUnit() {
+  return mapStageWidthPx() / MAP_W;
+}
+
+/**
+ * Wider arc on mobile so Settings / Notes / Roadmaps labels do not collide.
+ * @param {string} nodeId
+ */
+function linkedOptionSlot(nodeId) {
+  if (!LINKED_OPTION_OFFSETS[nodeId]) return null;
+  if (!isMobileMapLayout()) return LINKED_OPTION_OFFSETS[nodeId];
+  const degrees = { "option-settings": 168, "option-notes": 102, "option-roadmaps": 46 };
+  const radius = OPTION_RADIUS * 1.24;
+  const deg = degrees[nodeId];
+  if (deg == null) return LINKED_OPTION_OFFSETS[nodeId];
+  const rad = (deg * Math.PI) / 180;
+  return { dx: Math.cos(rad) * radius, dy: -Math.sin(rad) * radius };
+}
+
+/** @returns {number} */
+function taskStackStep() {
+  if (!isMobileMapLayout()) return TASK_STACK_STEP;
+  const labelLine = measureCssVarLength("--v2-map-task-label-line-h") || 17.5;
+  const floatPx = measureCssVarLength("--v2-map-node-float-amp") || 8;
+  const pxPerUnit = mapPxPerUnit() * 0.5;
+  const extraSvg = (labelLine * 0.5 + floatPx) / pxPerUnit;
+  return TASK_STACK_STEP + extraSvg;
+}
+
 /**
  * @param {Record<string, number>} degrees Angle from You, counterclockwise from pointing right.
  * @returns {Record<string, { dx: number, dy: number }>}
@@ -428,10 +470,11 @@ function linkedMilestoneStep(milestones, nodes) {
     }
     maxColPx = Math.max(maxColPx, colPx);
   }
-  const stageW =
-    typeof window !== "undefined" ? Math.min(Math.max(window.innerWidth || 800, 320), 960) * 0.94 : 720;
-  const pxPerUnit = stageW / MAP_W;
-  const gapPx = Math.max(72, maxColPx + MISSION_TITLE_GAP_PX);
+  const pxPerUnit = mapPxPerUnit();
+  let gapPx = Math.max(72, maxColPx + MISSION_TITLE_GAP_PX);
+  if (isMobileMapLayout()) {
+    gapPx = Math.max(44, maxColPx + 10);
+  }
   const stepSvg = gapPx / (pxPerUnit * 0.5);
   return Math.max(MISSION_STEP, stepSvg);
 }
@@ -458,7 +501,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const chosenDist = PATH_REACH * spread;
   const plusDist = chosenDist + (milestoneStep * (milestones.length + 1) + PLUS_GAP) * spread;
   const drop = Math.sin(rotation) * chosenDist;
-  const topReach = Math.max(...Object.values(LINKED_OPTION_OFFSETS).map((slot) => -slot.dy)) * spread;
+  const optionSlots = Object.keys(LINKED_OPTION_OFFSETS).map((id) => linkedOptionSlot(id) || LINKED_OPTION_OFFSETS[id]);
+  const topReach = Math.max(...optionSlots.map((slot) => -slot.dy)) * spread;
   let siblingGap = SIBLING_GAP * spread;
   let originY = YOU_LINKED.y;
   if (pathSiblings.length) {
@@ -504,7 +548,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       const my = originY + Math.sin(rotation) * milestoneDist;
       const perpX = -Math.sin(rotation);
       const perpY = Math.cos(rotation);
-      const stack = TASK_STACK_STEP * ((node.taskIndex ?? 0) + 1) * spread;
+      const stack = taskStackStep() * ((node.taskIndex ?? 0) + 1) * spread;
       node.x = (mx + perpX * stack) / MAP_W;
       node.y = (my + perpY * stack) / MAP_H;
       return;
@@ -516,7 +560,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
-    const slot = LINKED_OPTION_OFFSETS[node.id] || OPTION_OFFSETS[index % OPTION_OFFSETS.length];
+    const slot = linkedOptionSlot(node.id) || OPTION_OFFSETS[index % OPTION_OFFSETS.length];
     node.x = (originX + slot.dx * spread) / MAP_W;
     node.y = (originY + slot.dy * spread) / MAP_H;
   });

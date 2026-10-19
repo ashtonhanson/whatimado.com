@@ -223,7 +223,7 @@ function renderMissionTimeline(stages, focusId) {
   return `
     <div class="v2-timeline">
       <span class="v2-timeline__label">Timeline</span>
-      <div class="v2-timeline__rail"><span class="v2-timeline__cutoff" aria-hidden="true"></span>${steps}<span class="v2-timeline__link" aria-hidden="true"></span></div>
+      <div class="v2-timeline__rail"><span class="v2-timeline__cutoff" aria-hidden="true"></span>${steps}</div>
       <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Add more missions to this roadmap">+</button>
     </div>`;
 }

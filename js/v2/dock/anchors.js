@@ -135,8 +135,10 @@ export function measureMobileAnchors(mainEl, frameEl) {
    */
   const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
+  const lineH = measureCssVarLength("--v2-kicker-sub-line-h") || 0;
   const expandedTop = Math.max(0, headerH + 4 - mainRect.top - promptDrop);
-  const readingTop = Math.max(expandedTop + 24, vh * 0.25 - mainRect.top - promptDrop);
+  const readingTop =
+    Math.max(expandedTop + 24, vh * 0.25 - mainRect.top - promptDrop) + lineH * 2;
   const mapFocusTop = Math.max(
     readingTop + 24,
     mainH - chromeH - bottomInset - promptDrop
