@@ -1843,6 +1843,7 @@ export class WhatimadoMap extends HTMLElement {
         homeVy: 0,
         driftAnchorX: 0,
         driftAnchorY: 0,
+        isTask: groupEl.classList.contains("is-task"),
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
@@ -1937,11 +1938,13 @@ export class WhatimadoMap extends HTMLElement {
       adjusted = true;
     }
 
-    if (cy < minY) {
+    /* Task stacks can run deeper than the 240-unit band; the camera fit frames them and the home spring returns drags. */
+    const boundY = !node.isTask;
+    if (boundY && cy < minY) {
       ny += (minY - cy) * BOUND_PULL;
       if (node.glideVy < 0) node.glideVy *= BOUND_GLIDE_DAMP;
       adjusted = true;
-    } else if (cy > maxY) {
+    } else if (boundY && cy > maxY) {
       ny += (maxY - cy) * BOUND_PULL;
       if (node.glideVy > 0) node.glideVy *= BOUND_GLIDE_DAMP;
       adjusted = true;

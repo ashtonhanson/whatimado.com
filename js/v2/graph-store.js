@@ -353,27 +353,33 @@ function taskLabelLinePx() {
   return measureCssVarLength("--v2-map-task-label-line-h") || 17.5;
 }
 
-/** Perpendicular spacing between stacked task nodes (SVG units). */
-function taskStackStep() {
+/** Milestone → first task distance before the extra task spacing (SVG units). */
+function baseTaskStackStep() {
+  if (!isMobileMapLayout()) return TASK_STACK_STEP;
+  const floatPx = measureCssVarLength("--v2-map-node-float-amp") || 8;
   const pxPerUnit = mapPxPerUnit() * 0.5;
-  const halfLineSvg = taskLabelLinePx() * 0.5 / pxPerUnit;
-  let step = TASK_STACK_STEP + halfLineSvg;
-  if (isMobileMapLayout()) {
-    const floatPx = measureCssVarLength("--v2-map-node-float-amp") || 8;
-    step += (floatPx * 0.5) / pxPerUnit;
-  }
-  return step;
+  return TASK_STACK_STEP + (taskLabelLinePx() * 0.5 + floatPx) / pxPerUnit;
 }
 
 /**
- * Offset from milestone to task column: base lead-in (½ milestone→task gap) plus per-task steps.
+ * Spacing between stacked tasks (SVG units). Phones add half a label line. The desktop map
+ * is fitted to a short band by height, so extra units there only shrink the whole map.
+ */
+function taskStackStep() {
+  const base = baseTaskStackStep();
+  if (!isMobileMapLayout()) return base;
+  return base + (taskLabelLinePx() * 0.5) / (mapPxPerUnit() * 0.5);
+}
+
+/**
+ * On phones the first task sits 1.5 base steps under its milestone; desktop keeps one step.
  * @param {number} taskIndex
  * @param {number} spread
  */
 function taskStackOffset(taskIndex, spread) {
-  const step = taskStackStep();
-  const leadIn = step * 0.5;
-  return (leadIn + step * ((taskIndex ?? 0) + 1)) * spread;
+  const base = baseTaskStackStep();
+  const lead = isMobileMapLayout() ? base * 1.5 : base;
+  return (lead + taskStackStep() * (taskIndex ?? 0)) * spread;
 }
 
 /**
@@ -489,9 +495,9 @@ function linkedMilestoneStep(milestones, nodes) {
     maxColPx = Math.max(maxColPx, colPx);
   }
   const pxPerUnit = mapPxPerUnit();
-  let gapPx = Math.max(48, maxColPx + 8);
+  let gapPx = Math.max(60, maxColPx + MISSION_TITLE_GAP_PX * 0.5);
   if (isMobileMapLayout()) {
-    gapPx = Math.max(28, maxColPx + 6);
+    gapPx = Math.max(36, maxColPx + 6);
   }
   const stepSvg = gapPx / (pxPerUnit * 0.5);
   return Math.max(MISSION_STEP, stepSvg);

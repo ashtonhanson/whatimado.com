@@ -194,7 +194,8 @@ export function computeOpenHomeGravityPan(mapEl) {
   const stageRect = stage.getBoundingClientRect();
   if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
 
-  const gapPx = Math.max(14, measureCssVarLength("--v2-hero-node-gap") || 14);
+  const gapPx =
+    Math.max(14, measureCssVarLength("--v2-hero-node-gap") || 14) + (measureCssVarLength("--v2-hero-you-clear") || 0);
   const textTop = brand?.getBoundingClientRect().top ?? kicker?.getBoundingClientRect().top ?? stageRect.bottom;
   const top = menuClearScreenY(stageRect) + OPEN_HOME_LABEL_ABOVE_PX;
   const bottom = textTop - gapPx - OPEN_HOME_LABEL_BELOW_PX;

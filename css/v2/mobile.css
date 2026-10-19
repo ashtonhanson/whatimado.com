@@ -328,10 +328,16 @@
 
   .v2-header-map-tools .whatimado-map__link-btn,
   .v2-header-map-tools .whatimado-map__you-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     box-sizing: border-box;
     width: var(--v2-mobile-header-control);
     height: var(--v2-mobile-header-control);
+    margin: 0;
     padding: 0;
+    color: var(--v2-teal);
     border: none;
     border-radius: 0;
     background: transparent;
@@ -353,8 +359,13 @@
   }
 
   .v2-header-map-tools .whatimado-map__you-crosshair {
+    display: block;
     width: 1.12rem;
     height: 1.12rem;
+  }
+
+  .v2-header-map-tools .whatimado-map__link-btn:not(.is-linked) {
+    color: var(--v2-text-muted);
   }
 
   .v2-header-map-tools .whatimado-map__link-btn:focus-visible,
