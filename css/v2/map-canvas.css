@@ -494,9 +494,10 @@ whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
 
 whatimado-map .whatimado-map__node--live.is-more .whatimado-map__node-body,
 whatimado-map .whatimado-map__node--live.is-more.is-selected .whatimado-map__node-body {
-  fill: transparent;
-  stroke: var(--v2-teal);
-  stroke-width: 1.2;
+  fill: rgba(6, 10, 12, 0.9);
+  stroke: rgba(215, 255, 246, 0.45);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
   transform: none;
 }
 
@@ -533,7 +534,7 @@ whatimado-map .whatimado-map__node--live.is-support text {
 }
 
 whatimado-map .whatimado-map__node--live.is-more .whatimado-map__plus line {
-  stroke: var(--v2-teal);
+  stroke: var(--v2-text, #e8fff8);
   stroke-width: 1.7px;
   stroke-linecap: round;
   fill: none;
@@ -543,6 +544,20 @@ whatimado-map .whatimado-map__node--live.is-more .whatimado-map__plus line {
 whatimado-map .whatimado-map__node--live.is-selected text {
   fill: var(--v2-yellow);
   font-weight: 600;
+}
+
+whatimado-map .whatimado-map__node--live.is-label-crowded text {
+  visibility: hidden;
+}
+
+whatimado-map .whatimado-map__node--live.is-kicker-off .whatimado-map__kicker {
+  display: none;
+}
+
+whatimado-map .whatimado-map__node--live text.whatimado-map__kicker {
+  fill: var(--v2-text-muted, #9aa8a6);
+  font-weight: 500;
+  letter-spacing: 0.14em;
 }
 
 whatimado-map .whatimado-map__node--live.is-alternate .whatimado-map__node-float {

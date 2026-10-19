@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, roadmapFocusLinked, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
@@ -59,6 +59,9 @@ const EDGE_DASH_ON = 1.35;
 const EDGE_DASH_OFF = 5.75;
 /** Tethers end this far inside the dot so no hairline shows between line and node. */
 const EDGE_TUCK = 0.6;
+/** "Roadmaps" over the selected roadmap title, relative to the title size. */
+const KICKER_SCALE = 0.8;
+const KICKER_GAP_PX = 3;
 
 /**
  * Stretch the dot spacing so a tether of this length starts and ends on a dot.
@@ -103,8 +106,9 @@ function screenBoxesOverlap(a, b, pad) {
 /**
  * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, side?: string }>} items
  * @param {{ left: number, right: number } | null} [bounds] visible stage edges in screen px
+ * @param {{ spineAbove?: boolean }} [options] center every title on the horizontal line over its dot
  */
-function placeTitleBesideNode(items, bounds = null) {
+function placeTitleBesideNode(items, bounds = null, { spineAbove = false } = {}) {
   const you = items.find((item) => item.kind === "start");
   const edgePad = 6;
   const placeAbove = (item) => {
@@ -124,9 +128,9 @@ function placeTitleBesideNode(items, bounds = null) {
       item.left = item.nx + item.nr + 8;
     }
     item.top = item.ny - item.h / 2;
-    /* A side title past the stage edge gets cut off on phones; lift it over its dot instead. */
+    /* A side title past the stage edge gets cut off; lift it over its dot instead. Phones pan to it, so it stays on one line beside its dot there. */
     const dotVisible = bounds && item.nx > bounds.left && item.nx < bounds.right;
-    if (dotVisible && (item.left < bounds.left + edgePad || item.left + item.w > bounds.right - edgePad)) {
+    if (!spineAbove && dotVisible && (item.left < bounds.left + edgePad || item.left + item.w > bounds.right - edgePad)) {
       placeAbove(item);
     }
   };
@@ -165,7 +169,7 @@ function placeTitleBesideNode(items, bounds = null) {
       return;
     }
     if (spine.includes(item)) {
-      if (item === rightmost) placeSide(item, 1);
+      if (item === rightmost && !spineAbove) placeSide(item, 1);
       else placeAbove(item);
       return;
     }
@@ -1217,15 +1221,16 @@ export class WhatimadoMap extends HTMLElement {
         grow(dots, rect);
         grow(all, rect);
       }
-      const label = group.querySelector("text");
-      if (label?.textContent?.trim()) grow(all, label.getBoundingClientRect());
+      group.querySelectorAll("text").forEach((label) => {
+        if (label.textContent?.trim() && getComputedStyle(label).visibility !== "hidden") grow(all, label.getBoundingClientRect());
+      });
       group.querySelectorAll(".whatimado-map__badge").forEach((badge) => grow(all, badge.getBoundingClientRect()));
     });
     if (!Number.isFinite(dots.top)) return null;
     const pad = 4;
     const reach = (value, cap) => Math.min(cap, Math.max(0, value)) + pad;
     return {
-      above: reach(dots.top - all.top, 40),
+      above: reach(dots.top - all.top, 58),
       below: reach(all.bottom - dots.bottom, 24),
       left: reach(dots.left - all.left, 130),
       right: reach(all.right - dots.right, 130)
@@ -1843,7 +1848,7 @@ export class WhatimadoMap extends HTMLElement {
         homeVy: 0,
         driftAnchorX: 0,
         driftAnchorY: 0,
-        isTask: groupEl.classList.contains("is-task"),
+        isTask: groupEl.classList.contains("is-task") || groupEl.classList.contains("is-alternate"),
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
@@ -1938,7 +1943,7 @@ export class WhatimadoMap extends HTMLElement {
       adjusted = true;
     }
 
-    /* Task stacks can run deeper than the 240-unit band; the camera fit frames them and the home spring returns drags. */
+    /* Task stacks and the alternate column can run deeper than the 240-unit band; the camera fit frames them and the home spring returns drags. */
     const boundY = !node.isTask;
     if (boundY && cy < minY) {
       ny += (minY - cy) * BOUND_PULL;
@@ -2008,11 +2013,17 @@ export class WhatimadoMap extends HTMLElement {
     const shiftY = node.baseY - parseFloat(node.circleEl.getAttribute("cy") || String(node.baseY));
     if (shiftX || shiftY) {
       /* Laid-out titles use absolute tspan coordinates, so carry them with the node. */
-      node.groupEl.querySelectorAll(".whatimado-map__label tspan").forEach((el) => {
+      node.groupEl.querySelectorAll(".whatimado-map__label tspan, .whatimado-map__kicker tspan").forEach((el) => {
         const x = parseFloat(el.getAttribute("x") || "");
         const y = parseFloat(el.getAttribute("y") || "");
         if (Number.isFinite(x)) el.setAttribute("x", (x + shiftX).toFixed(2));
         if (Number.isFinite(y)) el.setAttribute("y", (y + shiftY).toFixed(2));
+      });
+      node.groupEl.querySelectorAll(".whatimado-map__plus line").forEach((el) => {
+        for (const [name, shift] of [["x1", shiftX], ["x2", shiftX], ["y1", shiftY], ["y2", shiftY]]) {
+          const value = parseFloat(el.getAttribute(name) || "");
+          if (Number.isFinite(value)) el.setAttribute(name, (value + shift).toFixed(2));
+        }
       });
     }
     node.circleEl.setAttribute("cx", String(node.baseX));
@@ -2384,8 +2395,7 @@ export class WhatimadoMap extends HTMLElement {
    * choose a font that lands near 13px on screen.
    * @param {SVGTextElement[]} texts
    */
-  _fitLabelFont(texts) {
-    const target = 13;
+  _fitLabelFont(texts, target = 13) {
     const probe = 20;
     texts.forEach((text) => {
       text.style.fontSize = `${probe}px`;
@@ -2397,6 +2407,11 @@ export class WhatimadoMap extends HTMLElement {
       text.style.fontSize = `${fontPx}px`;
       text.style.letterSpacing = "0.04em";
       text.style.strokeWidth = "1px";
+    });
+    this._liveLayer?.querySelectorAll(".whatimado-map__kicker").forEach((kicker) => {
+      if (!(kicker instanceof SVGTextElement)) return;
+      kicker.style.fontSize = `${fontPx * KICKER_SCALE}px`;
+      kicker.style.strokeWidth = "1px";
     });
     return fontPx;
   }
@@ -2418,8 +2433,6 @@ export class WhatimadoMap extends HTMLElement {
 
     this._layingOut = true;
     try {
-      this._fitLabelFont(texts);
-
       const restCenter = (body) => {
         const host = body?.closest(".whatimado-map__node");
         const ctm = host?.getScreenCTM();
@@ -2446,7 +2459,7 @@ export class WhatimadoMap extends HTMLElement {
         };
       };
 
-      const items = texts.map((text) => {
+      const buildItems = () => texts.map((text) => {
         const group = text.closest(".whatimado-map__node");
         const body = group?.querySelector(".whatimado-map__node-body");
         const rect = text.getBoundingClientRect();
@@ -2458,17 +2471,24 @@ export class WhatimadoMap extends HTMLElement {
             : group?.classList.contains("is-roadmap")
               ? "path"
               : "sat";
+        const kicker = group?.querySelector(".whatimado-map__kicker");
+        const kickerRect = kicker instanceof SVGTextElement ? kicker.getBoundingClientRect() : null;
+        const kickerH = kickerRect && kickerRect.width > 0 ? kickerRect.height + KICKER_GAP_PX : 0;
+        const labelH = Math.max(4, rect.height);
         return {
           text,
           tspan: text.querySelector("tspan"),
+          kicker: kickerH ? kicker : null,
+          kickerH,
+          labelH,
           group: text.closest(".whatimado-map__node"),
           leader: group?.querySelector(".whatimado-map__leader"),
           kind,
           locked: false,
-          w: Math.max(12, rect.width),
-          h: Math.max(10, rect.height),
+          w: Math.max(12, rect.width, kickerRect?.width || 0),
+          h: labelH + kickerH,
           left: rect.left,
-          top: rect.top,
+          top: rect.top - kickerH,
           nx: rest?.nx ?? rect.left,
           ny: rest?.ny ?? rect.top,
           nr: rest?.nr ?? 6,
@@ -2478,8 +2498,6 @@ export class WhatimadoMap extends HTMLElement {
         };
       }).filter((item) => item.tspan && item.group);
 
-      if (!items.length) return;
-
       const dots = [];
       layer.querySelectorAll(".whatimado-map__node-body").forEach((el) => {
         if (el.closest(".is-more")) return;
@@ -2487,13 +2505,63 @@ export class WhatimadoMap extends HTMLElement {
         if (rest) dots.push(rest);
       });
       const hostRect = this.getBoundingClientRect();
-      placeTitleBesideNode(items, {
-        left: Math.max(0, hostRect.left),
-        right: Math.min(window.innerWidth, hostRect.right)
-      });
-      items.forEach((item) => clearTitleFromNodes(item, dots));
-      holdTitlesOnNodes(items);
-      items.forEach((item) => clearTitleFromNodes(item, dots));
+      const mobile = window.matchMedia("(max-width: 900px)").matches;
+      texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-label-crowded"));
+      const shown = (item) => getComputedStyle(item.text).visibility !== "hidden";
+      const crowdedPairs = (list) => {
+        const visible = list.filter(shown);
+        const pairs = [];
+        for (let i = 0; i < visible.length; i++) {
+          for (let j = i + 1; j < visible.length; j++) {
+            const a = visible[i];
+            const b = visible[j];
+            const ba = { left: a.left, right: a.left + a.w, top: a.top, bottom: a.top + a.h };
+            const bb = { left: b.left, right: b.left + b.w, top: b.top, bottom: b.top + b.h };
+            if (screenBoxesOverlap(ba, bb, 1)) pairs.push([a, b]);
+          }
+        }
+        return pairs;
+      };
+
+      /* Phones step titles down while zoomed out until no two single-line titles touch. */
+      const sizes = mobile ? [13, 12, 11, 10, 9] : [13];
+      let items = [];
+      texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-kicker-off"));
+      /** The selected roadmap title was pushed off its spot over the dot to make room for "Roadmaps". */
+      const kickerDisplaced = (list) =>
+        list.some((item) => item.kicker && item.side === "above" && item.top < item.ny - item.nr - 16 - item.h - 1);
+      let sizeIndex = 0;
+      for (let attempt = 0; attempt < sizes.length + 1; attempt++) {
+        const size = sizes[sizeIndex];
+        this._fitLabelFont(texts, size);
+        items = buildItems();
+        if (!items.length) return;
+        placeTitleBesideNode(
+          items,
+          {
+            left: Math.max(0, hostRect.left),
+            right: Math.min(window.innerWidth, hostRect.right)
+          },
+          { spineAbove: mobile }
+        );
+        items.forEach((item) => clearTitleFromNodes(item, dots));
+        holdTitlesOnNodes(items);
+        items.forEach((item) => clearTitleFromNodes(item, dots));
+        if (kickerDisplaced(items)) {
+          items.forEach((item) => item.kicker && item.group.classList.add("is-kicker-off"));
+          continue;
+        }
+        if (!mobile || !crowdedPairs(items).length || sizeIndex >= sizes.length - 1) break;
+        sizeIndex += 1;
+      }
+      if (mobile) {
+        const rank = (item) =>
+          item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;
+        for (const [a, b] of crowdedPairs(items)) {
+          if (a.group.classList.contains("is-label-crowded") || b.group.classList.contains("is-label-crowded")) continue;
+          (rank(a) < rank(b) ? a : b).group.classList.add("is-label-crowded");
+        }
+      }
       this._writeCallouts(items);
       this._seatPlusPastTitle();
       if (this._plusSeatRaf) cancelAnimationFrame(this._plusSeatRaf);
@@ -2507,7 +2575,7 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Keep the plus a fixed gap past the selected title, however long that title is.
+   * Keep the plus a fixed gap past the title that runs along the line before it, however long that title is.
    */
   _seatPlusPastTitle() {
     if (!roadmapFocusLinked) return;
@@ -2515,10 +2583,12 @@ export class WhatimadoMap extends HTMLElement {
     const layer = this._liveLayer;
     if (!svg || !layer) return;
     const plus = layer.querySelector(".whatimado-map__node.is-more");
-    const main =
-      layer.querySelector(".whatimado-map__node.is-roadmap.is-selected") ||
-      layer.querySelector(".whatimado-map__node.is-roadmap");
-    const label = main?.querySelector(".whatimado-map__label");
+    const plusId = plus?.getAttribute("data-node-id") || "";
+    const beforeId = [...layer.querySelectorAll(".whatimado-map__edge")]
+      .find((line) => line.getAttribute("data-to") === plusId)
+      ?.getAttribute("data-from");
+    const before = beforeId ? layer.querySelector(`.whatimado-map__node[data-node-id="${CSS.escape(beforeId)}"]`) : null;
+    const label = before?.querySelector(".whatimado-map__label");
     const plusBody = plus?.querySelector(".whatimado-map__node-body");
     if (!(plus instanceof SVGGElement) || !(label instanceof SVGTextElement) || !(plusBody instanceof SVGCircleElement)) return;
 
@@ -2530,7 +2600,11 @@ export class WhatimadoMap extends HTMLElement {
     const plusFloat = this._floatScreenOffset(plusBody);
     const labelRight = labelBox.right - labelFloat.x;
     const plusCenter = plusBox.left + plusBox.width / 2 - plusFloat.x;
+    const plusCenterY = plusBox.top + plusBox.height / 2 - plusFloat.y;
     const plusR = plusBox.width / 2;
+    /* A title centered over its dot never reaches the line, so the plus keeps its own gap. */
+    const labelTop = labelBox.top - labelFloat.y;
+    if (labelTop > plusCenterY + plusR || labelTop + labelBox.height < plusCenterY - plusR) return;
     const dx = labelRight + titleGap + plusR - plusCenter;
     if (dx < 1) return;
 
@@ -2552,7 +2626,6 @@ export class WhatimadoMap extends HTMLElement {
       shift(el, "x1");
       shift(el, "x2");
     });
-    const plusId = plus.getAttribute("data-node-id") || "";
     if (plusId) {
       layer.querySelectorAll(".whatimado-map__edge").forEach((line) => {
         if (line.getAttribute("data-to") === plusId) shift(line, "x2");
@@ -2576,26 +2649,22 @@ export class WhatimadoMap extends HTMLElement {
   _writeCallouts(items) {
     const svg = this._svg;
     if (!svg) return;
-    items.forEach((item) => {
-      const ctm = item.group.getScreenCTM();
-      if (!ctm) return;
-      const point = svg.createSVGPoint();
-      point.x = item.left + item.w / 2;
-      point.y = item.top + item.h * 0.86;
-      const inv0 = invertCtm(ctm);
-      if (!inv0) return;
-      const local = point.matrixTransform(inv0);
-      item.tspan.setAttribute("x", local.x.toFixed(1));
-      item.tspan.setAttribute("y", local.y.toFixed(1));
-    });
+    /** Left edge for a line of this width inside the item box, keeping the box's side alignment. */
+    const alignedLeft = (item, width) =>
+      item.side === "left"
+        ? item.left + item.w - width
+        : item.side === "right"
+          ? item.left
+          : item.left + (item.w - width) / 2;
 
-    items.forEach((item) => {
-      const actual = item.text.getBoundingClientRect();
-      const ctm = item.group.getScreenCTM();
+    /** @param {SVGTextElement} text @param {SVGTSpanElement} tspan @param {SVGGElement} group @param {number} left @param {number} top */
+    const nudgeTextTo = (text, tspan, group, left, top) => {
+      const actual = text.getBoundingClientRect();
+      const ctm = group.getScreenCTM();
       if (!ctm || actual.width < 1) return;
-      const float = this._floatScreenOffset(item.text);
-      const dx = item.left - (actual.left - float.x);
-      const dy = item.top - (actual.top - float.y);
+      const float = this._floatScreenOffset(text);
+      const dx = left - (actual.left - float.x);
+      const dy = top - (actual.top - float.y);
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
       const origin = svg.createSVGPoint();
       origin.x = 0;
@@ -2607,10 +2676,38 @@ export class WhatimadoMap extends HTMLElement {
       if (!inv) return;
       const a = origin.matrixTransform(inv);
       const b = shifted.matrixTransform(inv);
-      const x = parseFloat(item.tspan.getAttribute("x") || "0") + (b.x - a.x);
-      const y = parseFloat(item.tspan.getAttribute("y") || "0") + (b.y - a.y);
-      item.tspan.setAttribute("x", x.toFixed(1));
-      item.tspan.setAttribute("y", y.toFixed(1));
+      const x = parseFloat(tspan.getAttribute("x") || "0") + (b.x - a.x);
+      const y = parseFloat(tspan.getAttribute("y") || "0") + (b.y - a.y);
+      tspan.setAttribute("x", x.toFixed(1));
+      tspan.setAttribute("y", y.toFixed(1));
+    };
+
+    items.forEach((item) => {
+      const ctm = item.group.getScreenCTM();
+      if (!ctm) return;
+      const point = svg.createSVGPoint();
+      point.x = item.left + item.w / 2;
+      point.y = item.top + item.kickerH + item.labelH * 0.86;
+      const inv0 = invertCtm(ctm);
+      if (!inv0) return;
+      const local = point.matrixTransform(inv0);
+      item.tspan.setAttribute("x", local.x.toFixed(1));
+      item.tspan.setAttribute("y", local.y.toFixed(1));
+      const kickerSpan = item.kicker?.querySelector("tspan");
+      if (kickerSpan) {
+        kickerSpan.setAttribute("x", local.x.toFixed(1));
+        kickerSpan.setAttribute("y", local.y.toFixed(1));
+      }
+    });
+
+    items.forEach((item) => {
+      const labelW = item.text.getBoundingClientRect().width;
+      nudgeTextTo(item.text, item.tspan, item.group, alignedLeft(item, labelW), item.top + item.kickerH);
+      const kickerSpan = item.kicker?.querySelector("tspan");
+      if (item.kicker instanceof SVGTextElement && kickerSpan instanceof SVGTSpanElement) {
+        const kickerW = item.kicker.getBoundingClientRect().width;
+        nudgeTextTo(item.kicker, kickerSpan, item.group, alignedLeft(item, kickerW), item.top);
+      }
     });
 
     items.forEach((item) => {
@@ -2739,6 +2836,10 @@ export class WhatimadoMap extends HTMLElement {
     if (!skipNodes) {
       const { lg: radiusLg } = getNodeRadii();
       const nodeR = radiusLg;
+      const branchRootId =
+        options.layer === "live"
+          ? (edges.find((edge) => edge.to === "milestone-0") || edges.find((edge) => edge.to === ROADMAP_MORE_ID))?.from
+          : null;
 
       nodes.forEach((node, index) => {
         const cx = node.x * VIEW_W;
@@ -2769,7 +2870,8 @@ export class WhatimadoMap extends HTMLElement {
 
         const title = options.layer === "live" ? nodeMapTitle(node) : "";
         const isAlternate = spineAlternatePaths && node.type === "path" && !isSelected;
-        const bodyR = node.type === "more" ? r * 0.72 : isAlternate ? r * 0.72 : r;
+        const bodyR = node.type === "more" ? r : isAlternate ? r * 0.72 : r;
+        const kicker = title && node.type === "path" && node.id === branchRootId;
         const driftDelay = (index * 0.85) % 5;
         const driftDuration = 9 + (index % 4) * 1.2;
         const styleVars = [
@@ -2789,7 +2891,10 @@ export class WhatimadoMap extends HTMLElement {
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${bodyR}" />
             ${node.type === "more"
-              ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.3}" y1="${cy}" x2="${cx + r * 0.3}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.3}" x2="${cx}" y2="${cy + r * 0.3}" /></g>`
+              ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.5}" y1="${cy}" x2="${cx + r * 0.5}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.5}" x2="${cx}" y2="${cy + r * 0.5}" /></g>`
+              : ""}
+            ${kicker
+              ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">Roadmaps</tspan></text>`
               : ""}
             ${title
               ? `<text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`

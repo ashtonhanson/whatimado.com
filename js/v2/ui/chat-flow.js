@@ -263,7 +263,7 @@ export function initChatFlow(ctx) {
     const node = graphStore.nodes.find((n) => n.id === nodeId);
     if (!node || node.type === "start") return;
     if (node.type === "more") {
-      void missions.extend();
+      missions.confirmExtend();
       return;
     }
     if (node.type === "action") {

@@ -304,8 +304,11 @@ const EXPLORE_OPTIONS = [
 const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
-const PATH_REACH = 68;
-const PLUS_GAP = 48;
+const PATH_REACH = 112;
+/** Screen gap between the last mission dot and the + node. */
+const PLUS_GAP_PX = 30;
+/** Painted cap height of a 13px map title, used for the mobile half-line stacks. */
+const MAP_LABEL_BOX_PX = 13;
 const MISSION_STEP = 34;
 const MISSION_TITLE_GAP_PX = 16;
 const TASK_STACK_STEP = 30;
@@ -340,13 +343,21 @@ function mapPxPerUnit() {
 function linkedOptionSlot(nodeId) {
   if (!LINKED_OPTION_OFFSETS[nodeId]) return null;
   if (!isMobileMapLayout()) return LINKED_OPTION_OFFSETS[nodeId];
-  const degrees = { "option-settings": 168, "option-notes": 102, "option-roadmaps": 46 };
-  const radius = OPTION_RADIUS * 1.24;
-  const deg = degrees[nodeId];
-  if (deg == null) return LINKED_OPTION_OFFSETS[nodeId];
-  const rad = (deg * Math.PI) / 180;
-  return { dx: Math.cos(rad) * radius, dy: -Math.sin(rad) * radius };
+  const slot = MOBILE_OPTION_SLOTS_PX[nodeId];
+  if (!slot) return LINKED_OPTION_OFFSETS[nodeId];
+  const pxPerUnit = mapPxPerUnit() * 0.5;
+  return { dx: slot.dx / pxPerUnit, dy: slot.dy / pxPerUnit };
 }
+
+/**
+ * Phone slots in screen px around You, sized for 13px single-line titles: Notes overhead
+ * (title above), Settings and Roadmaps to the left (titles run left, a title and a half apart).
+ */
+const MOBILE_OPTION_SLOTS_PX = {
+  "option-settings": { dx: -46, dy: 0 },
+  "option-notes": { dx: 0, dy: -62 },
+  "option-roadmaps": { dx: -46, dy: -40 }
+};
 
 /** @returns {number} */
 function taskLabelLinePx() {
@@ -362,13 +373,18 @@ function baseTaskStackStep() {
 }
 
 /**
- * Spacing between stacked tasks (SVG units). Phones add half a label line. The desktop map
- * is fitted to a short band by height, so extra units there only shrink the whole map.
+ * Spacing between stacked tasks (SVG units). Phones leave half a label line clear between
+ * titles. The desktop map is fitted to a short band by height, so extra units there only
+ * shrink the whole map.
  */
 function taskStackStep() {
-  const base = baseTaskStackStep();
-  if (!isMobileMapLayout()) return base;
-  return base + (taskLabelLinePx() * 0.5) / (mapPxPerUnit() * 0.5);
+  if (!isMobileMapLayout()) return baseTaskStackStep();
+  return halfLineStackStep();
+}
+
+/** One single-line title plus half a line of clear space, in SVG units (phones). */
+function halfLineStackStep() {
+  return (MAP_LABEL_BOX_PX + taskLabelLinePx() * 0.5) / (mapPxPerUnit() * 0.5);
 }
 
 /**
@@ -504,6 +520,24 @@ function linkedMilestoneStep(milestones, nodes) {
 }
 
 /**
+ * Roadmap → first mission. Only needs to clear the two titles over those dots and the
+ * alternate roadmap titles that run right of the roadmap column, level with the first tasks.
+ * @param {GraphNode|undefined} chosen
+ * @param {GraphNode[]} milestones
+ * @param {GraphNode[]} pathSiblings
+ * @param {number} milestoneStep
+ */
+function linkedFirstMilestoneStep(chosen, milestones, pathSiblings, milestoneStep) {
+  if (!milestones.length) return milestoneStep;
+  const titlePx = (node) => measureTitlePx(node?.title || node?.label || "") * (13 / 12.5);
+  const kickerPx = measureTitlePx("Roadmaps") * 0.82;
+  const mainPx = Math.max(titlePx(chosen), kickerPx);
+  let gapPx = (mainPx + titlePx(milestones[0])) / 2 + (isMobileMapLayout() ? 12 : 18);
+  for (const sibling of pathSiblings) gapPx = Math.max(gapPx, titlePx(sibling) + 18);
+  return Math.min(milestoneStep, Math.max(MISSION_STEP, gapPx / (mapPxPerUnit() * 0.5)));
+}
+
+/**
  * @param {GraphNode[]} nodes
  * @param {GraphNode[]} milestones
  */
@@ -521,15 +555,26 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       !tasks.includes(node) &&
       !LINKED_OPTION_OFFSETS[node.id]
   );
+  const mobile = isMobileMapLayout();
   const milestoneStep = linkedMilestoneStep(milestones, nodes);
-  const chosenDist = PATH_REACH * spread;
-  const plusDist = chosenDist + (milestoneStep * (milestones.length + 1) + PLUS_GAP) * spread;
+  const chosen = nodes.find((node) => node.id === chosenId);
+  const firstStep = linkedFirstMilestoneStep(chosen, milestones, pathSiblings, milestoneStep);
+  /* On phones the title over the roadmap dot has to clear the Notes spoke straight above You. */
+  const chosenReach = mobile
+    ? Math.max(PATH_REACH, (Math.max(measureTitlePx(chosen?.title || chosen?.label || ""), measureTitlePx("Roadmaps")) * 0.55 + 16) / (mapPxPerUnit() * 0.5))
+    : PATH_REACH;
+  const chosenDist = chosenReach * spread;
+  /** @param {number} index */
+  const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;
+  const lastDist = milestones.length ? milestoneDist(milestones.length - 1) : chosenDist;
+  const plusDist = lastDist + (PLUS_GAP_PX / (mapPxPerUnit() * 0.5)) * spread;
   const drop = Math.sin(rotation) * chosenDist;
   const optionSlots = Object.keys(LINKED_OPTION_OFFSETS).map((id) => linkedOptionSlot(id) || LINKED_OPTION_OFFSETS[id]);
   const topReach = Math.max(...optionSlots.map((slot) => -slot.dy)) * spread;
-  let siblingGap = SIBLING_GAP * spread;
+  let siblingGap = (mobile ? halfLineStackStep() : SIBLING_GAP) * spread;
   let originY = YOU_LINKED.y;
-  if (pathSiblings.length) {
+  /* Phones pan the branch instead of squeezing it into the band, so the column keeps its spacing. */
+  if (pathSiblings.length && !mobile) {
     originY = Math.min(originY, NODE_FLOOR_Y - drop - siblingGap * pathSiblings.length);
     if (originY - topReach < NODE_CEIL_Y) {
       originY = NODE_CEIL_Y + topReach;
@@ -557,19 +602,16 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     }
     const milestoneIndex = milestones.findIndex((entry) => entry.id === node.id);
     if (milestoneIndex >= 0) {
-      const dist = chosenDist + milestoneStep * (milestoneIndex + 1) * spread;
+      const dist = milestoneDist(milestoneIndex);
       node.x = (originX + Math.cos(rotation) * dist) / MAP_W;
       node.y = (originY + Math.sin(rotation) * dist) / MAP_H;
       return;
     }
     if (node.type === "task" && node.parentId) {
       const parent = milestones.find((entry) => entry.id === node.parentId);
-      const milestoneDist =
-        parent != null
-          ? chosenDist + milestoneStep * (milestones.findIndex((entry) => entry.id === parent.id) + 1) * spread
-          : chosenDist + milestoneStep * spread;
-      const mx = originX + Math.cos(rotation) * milestoneDist;
-      const my = originY + Math.sin(rotation) * milestoneDist;
+      const parentDist = milestoneDist(parent != null ? milestones.findIndex((entry) => entry.id === parent.id) : 0);
+      const mx = originX + Math.cos(rotation) * parentDist;
+      const my = originY + Math.sin(rotation) * parentDist;
       const perpX = -Math.sin(rotation);
       const perpY = Math.cos(rotation);
       const stack = taskStackOffset(node.taskIndex ?? 0, spread);

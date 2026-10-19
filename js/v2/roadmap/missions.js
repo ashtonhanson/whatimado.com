@@ -835,6 +835,11 @@ export function createMissionsController(ui) {
       }
       const continueBtn = target?.closest("[data-mission-continue]");
       if (continueBtn) {
+        const probe = continueRoadmap(structuredClone(appStore.journey));
+        if (!probe.ok && probe.end) {
+          if (!confirmExtend()) setNavFeedback(probe.reason);
+          return;
+        }
         pushRoadmapUndo(appStore.journey);
         const result = continueRoadmap(appStore.journey);
         touchJourney();
@@ -936,11 +941,19 @@ export function createMissionsController(ui) {
     }
   }
 
+  /** Map + and Continue at the last task share this prompt; cancel leaves the roadmap as it is. */
+  function confirmExtend() {
+    if (pending) return false;
+    if (!window.confirm("Do you want to add the next mission?")) return false;
+    void extend();
+    return true;
+  }
+
   function restore() {
     const stages = appStore.journey.missionsStages || [];
     if (!stages.length || !appStore.journey.planConfirmed) return;
     show(stages);
   }
 
-  return { begin, restore, clear, extend, refresh };
+  return { begin, restore, clear, extend, confirmExtend, refresh };
 }
