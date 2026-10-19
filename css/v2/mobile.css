@@ -1,7 +1,8 @@
 /* Mobile layout — hamburger nav + compact home stack (≤900px) */
 
 .v2-mobile-menu-btn,
-.v2-mobile-menu-backdrop {
+.v2-mobile-menu-backdrop,
+.v2-mobile-header-controls {
   display: none;
 }
 
@@ -302,13 +303,22 @@
   .v2-rail-logo-slot {
     width: 100%;
     justify-content: flex-start;
+    align-items: center;
     gap: 0.5rem;
+  }
+
+  .v2-mobile-header-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--v2-mobile-header-icon-gap, 0.45rem);
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
   .v2-header-map-tools {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--v2-mobile-header-icon-gap, 0.45rem);
     flex-shrink: 0;
   }
 
@@ -390,8 +400,8 @@
   }
 
   .v2-header-undo svg {
-    width: 18px;
-    height: 18px;
+    width: 1.12rem;
+    height: 1.12rem;
     stroke: currentColor;
     fill: none;
     stroke-width: 1.8;
@@ -440,24 +450,25 @@
     box-sizing: border-box;
     width: var(--v2-mobile-header-control);
     height: var(--v2-mobile-header-control);
-    margin-left: auto;
+    margin: 0;
     padding: 0;
-    border: 1px solid rgba(66, 255, 240, 0.48);
-    background: rgba(4, 12, 14, 0.45);
+    border: none;
+    border-radius: 0;
+    background: transparent;
     color: var(--v2-teal);
     cursor: pointer;
     touch-action: manipulation;
+    box-shadow: none;
   }
 
-  /* Mirror of the logo: the logo's square corner faces the screen's top-left, the menu's faces top-right. */
-  body.v2-app .v2-mobile-menu-btn {
-    border-radius: var(--v2-prompt-radius);
-  }
-
-  .v2-mobile-menu-btn:hover,
   .v2-mobile-menu-btn:focus-visible {
-    background: rgba(46, 232, 214, 0.1);
+    outline: 2px solid var(--v2-teal);
+    outline-offset: 2px;
+  }
+
+  .v2-mobile-menu-btn:hover {
     color: var(--v2-neon-teal);
+    background: transparent;
   }
 
   .v2-mobile-menu-icon,

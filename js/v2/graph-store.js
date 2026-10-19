@@ -349,13 +349,31 @@ function linkedOptionSlot(nodeId) {
 }
 
 /** @returns {number} */
+function taskLabelLinePx() {
+  return measureCssVarLength("--v2-map-task-label-line-h") || 17.5;
+}
+
+/** Perpendicular spacing between stacked task nodes (SVG units). */
 function taskStackStep() {
-  if (!isMobileMapLayout()) return TASK_STACK_STEP;
-  const labelLine = measureCssVarLength("--v2-map-task-label-line-h") || 17.5;
-  const floatPx = measureCssVarLength("--v2-map-node-float-amp") || 8;
   const pxPerUnit = mapPxPerUnit() * 0.5;
-  const extraSvg = (labelLine * 0.5 + floatPx) / pxPerUnit;
-  return TASK_STACK_STEP + extraSvg;
+  const halfLineSvg = taskLabelLinePx() * 0.5 / pxPerUnit;
+  let step = TASK_STACK_STEP + halfLineSvg;
+  if (isMobileMapLayout()) {
+    const floatPx = measureCssVarLength("--v2-map-node-float-amp") || 8;
+    step += (floatPx * 0.5) / pxPerUnit;
+  }
+  return step;
+}
+
+/**
+ * Offset from milestone to task column: base lead-in (½ milestone→task gap) plus per-task steps.
+ * @param {number} taskIndex
+ * @param {number} spread
+ */
+function taskStackOffset(taskIndex, spread) {
+  const step = taskStackStep();
+  const leadIn = step * 0.5;
+  return (leadIn + step * ((taskIndex ?? 0) + 1)) * spread;
 }
 
 /**
@@ -471,9 +489,9 @@ function linkedMilestoneStep(milestones, nodes) {
     maxColPx = Math.max(maxColPx, colPx);
   }
   const pxPerUnit = mapPxPerUnit();
-  let gapPx = Math.max(72, maxColPx + MISSION_TITLE_GAP_PX);
+  let gapPx = Math.max(48, maxColPx + 8);
   if (isMobileMapLayout()) {
-    gapPx = Math.max(44, maxColPx + 10);
+    gapPx = Math.max(28, maxColPx + 6);
   }
   const stepSvg = gapPx / (pxPerUnit * 0.5);
   return Math.max(MISSION_STEP, stepSvg);
@@ -548,7 +566,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       const my = originY + Math.sin(rotation) * milestoneDist;
       const perpX = -Math.sin(rotation);
       const perpY = Math.cos(rotation);
-      const stack = taskStackStep() * ((node.taskIndex ?? 0) + 1) * spread;
+      const stack = taskStackOffset(node.taskIndex ?? 0, spread);
       node.x = (mx + perpX * stack) / MAP_W;
       node.y = (my + perpY * stack) / MAP_H;
       return;

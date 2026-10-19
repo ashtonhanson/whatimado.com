@@ -376,8 +376,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                 const deleteLabel = `Delete task: ${mission.title || "Task"}`;
                 return `
                   <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
+                    <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                     <div class="v2-mission__panel">
-                      <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                       <div class="v2-mission__content">
                         <div class="v2-mission__head">
                           <div class="v2-mission__head-main">
