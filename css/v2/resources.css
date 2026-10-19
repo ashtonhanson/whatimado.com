@@ -142,24 +142,45 @@ body.v2-app .v2-resources-title {
   margin-top: 0.55rem;
 }
 
-.v2-resource-action {
+/* Phone script (.v2-resource-action) is the reference for flat pill actions. */
+.v2-resource-action,
+.v2-resource-copy,
+.v2-mission-action:not(.v2-circle-back__close),
+.v2-mission-chat-open,
+.v2-mission-chat__send,
+.v2-circle-back-toggle,
+.v2-difficulty,
+.v2-difficulty-offer button,
+.v2-timeline-continue button,
+.v2-draft-open,
+.v2-drafts-open,
+.v2-next-path__open {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
+  box-sizing: border-box;
   border: 1px solid rgba(46, 232, 214, 0.35);
   border-radius: 999px;
   background: transparent;
   color: var(--v2-text);
   font: inherit;
   font-size: 0.72rem;
+  line-height: 1.3;
   padding: 0.28rem 0.65rem;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: none;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.v2-resource-action svg,
+.v2-mission-chat-open__icon {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex-shrink: 0;
 }
 
 .v2-resource-action svg {
-  width: 0.7rem;
-  height: 0.7rem;
   transition: transform 0.2s ease;
 }
 
@@ -168,11 +189,38 @@ body.v2-app .v2-resources-title {
 }
 
 @media (hover: hover) {
-  .v2-resource-action:hover {
+  .v2-resource-action:hover,
+  .v2-resource-copy:hover,
+  .v2-mission-action:not(.v2-circle-back__close):hover,
+  .v2-mission-chat-open:hover,
+  .v2-mission-chat__send:hover,
+  .v2-circle-back-toggle:hover,
+  .v2-difficulty:hover,
+  .v2-difficulty-offer button:hover,
+  .v2-timeline-continue button:hover,
+  .v2-draft-open:hover,
+  .v2-drafts-open:hover,
+  .v2-next-path__open:hover {
     background: rgba(46, 232, 214, 0.12);
     border-color: var(--v2-teal);
     box-shadow: 0 0 12px rgba(46, 232, 214, 0.18);
   }
+}
+
+.v2-resource-action:focus-visible,
+.v2-resource-copy:focus-visible,
+.v2-mission-action:not(.v2-circle-back__close):focus-visible,
+.v2-mission-chat-open:focus-visible,
+.v2-mission-chat__send:focus-visible,
+.v2-circle-back-toggle:focus-visible,
+.v2-difficulty:focus-visible,
+.v2-difficulty-offer button:focus-visible,
+.v2-timeline-continue button:focus-visible,
+.v2-draft-open:focus-visible,
+.v2-drafts-open:focus-visible,
+.v2-next-path__open:focus-visible {
+  outline: 2px solid var(--v2-teal);
+  outline-offset: 2px;
 }
 
 .v2-resource-action.is-open {
@@ -233,14 +281,6 @@ body.v2-app .v2-resources-title {
 .v2-resource-copy {
   margin-top: 0.4rem;
   margin-right: 0.4rem;
-  border: 1px solid rgba(46, 232, 214, 0.4);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--v2-teal);
-  font: inherit;
-  font-size: 0.72rem;
-  padding: 0.25rem 0.7rem;
-  cursor: pointer;
 }
 
 .v2-resource-draft {
