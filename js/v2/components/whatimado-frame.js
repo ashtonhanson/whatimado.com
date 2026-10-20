@@ -11,6 +11,11 @@ import {
   SCROLL_THUMB_MIN_SCALE
 } from "../frame/constants.js";
 import { getBrand, getExamplePrompts } from "../config.js";
+import {
+  clearComposerDraft,
+  readComposerDraftForCurrentScope,
+  scheduleComposerDraftSave
+} from "../state/composer-draft.js";
 
 export class WhatimadoFrame extends HTMLElement {
   static get observedAttributes() {
@@ -95,6 +100,9 @@ export class WhatimadoFrame extends HTMLElement {
           this._dock?.syncMobileKeyboard();
         }, 250);
         if (this._dock.activeSnap === SNAP.MOBILE_FOCUS) return;
+        // Chat stays at the ¾ reading snap so the constellation stays above
+        // the frame and the sheet does not drop to the floor while typing.
+        if (this._dock._mobileChatSheet) return;
       }
       this._dock?.mobileGlideToTyping();
     };
@@ -197,6 +205,27 @@ export class WhatimadoFrame extends HTMLElement {
     return this._composerInput;
   }
 
+  /** Scroll the chat column to the top without clearing state. */
+  scrollChatToTop({ behavior = "auto" } = {}) {
+    if (!this._body) return;
+    const motion =
+      behavior === "smooth" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "smooth"
+        : "auto";
+    this._body.scrollTo({ top: 0, behavior: motion });
+    this._updateScrollFade();
+    this._updateCustomScrollbar();
+  }
+
+  /** Restore unsent composer text for the current session/journey scope. */
+  restoreComposerDraft() {
+    const text = readComposerDraftForCurrentScope();
+    if (!this._composerInput || !text) return;
+    this._composerInput.value = text;
+    this._pausePlaceholderCycle();
+    this._autosizeComposer();
+  }
+
   focusComposer({ glideOnMobile = true } = {}) {
     if (!glideOnMobile) this._suppressMobileFocusGlide = true;
     this._composerInput?.focus({ preventScroll: true });
@@ -228,6 +257,11 @@ export class WhatimadoFrame extends HTMLElement {
     this._dock?.remeasure();
   }
 
+  /** Drop or restore the prompt after the mission summary shows or hides. */
+  applyTimelineInset() {
+    this._dock?.refreshTimelineInset();
+  }
+
   /** Sync keyboard pin + focus lift (deterministic, no timed retries). */
   scheduleMobileComposerFocusResync() {
     this._dock?.scheduleMobileComposerFocusResync();
@@ -244,6 +278,11 @@ export class WhatimadoFrame extends HTMLElement {
       return;
     }
     this._dock?.exitMobileMode();
+  }
+
+  /** True while the user is dragging the prompt frame. */
+  isDragging() {
+    return Boolean(this._dock?._dragging);
   }
 
   /** True while the frame is easing into dock after hero dismiss. */
@@ -293,6 +332,7 @@ export class WhatimadoFrame extends HTMLElement {
   _handleDragPointerDown(event) {
     if (!this._dock?.onDragStart(event)) return;
     event.preventDefault();
+    event.stopPropagation();
     this._dragRail?.setPointerCapture(event.pointerId);
     document.addEventListener("pointermove", this._onDragPointerMove);
     document.addEventListener("pointerup", this._onDragPointerUp);
@@ -400,7 +440,6 @@ export class WhatimadoFrame extends HTMLElement {
     this._resizeObserver = new ResizeObserver(() => this.notifyContentChange());
     this._resizeObserver.observe(this._body);
     if (this._bodyContent) this._resizeObserver.observe(this._bodyContent);
-    this._resizeObserver.observe(this);
   }
 
   _clearBounceReleaseTimer() {
@@ -644,6 +683,8 @@ export class WhatimadoFrame extends HTMLElement {
     this._autosizeComposer();
     this._maybeResumePlaceholderCycle();
 
+    clearComposerDraft();
+
     this.dispatchEvent(
       new CustomEvent("composer-submit", {
         bubbles: true,
@@ -703,11 +744,13 @@ export class WhatimadoFrame extends HTMLElement {
   }
 
   _onComposerInputChange() {
-    if (this._composerInput?.value.trim()) {
+    const value = this._composerInput?.value ?? "";
+    if (value.trim()) {
       this._pausePlaceholderCycle();
     } else if (document.activeElement !== this._composerInput) {
       this._maybeResumePlaceholderCycle();
     }
+    scheduleComposerDraftSave(value);
     this._autosizeComposer();
   }
 
@@ -763,10 +806,7 @@ export class WhatimadoFrame extends HTMLElement {
       }
       this._dock?.remeasure();
       this._updateScrollState();
-      if (this.classList.contains("is-scrollable") && this._body) {
-        this._body.scrollTop = this._body.scrollHeight;
-        this._updateScrollFade();
-      }
+      this._updateScrollFade();
     });
   }
 }

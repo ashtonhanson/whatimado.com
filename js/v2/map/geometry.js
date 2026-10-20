@@ -1,4 +1,5 @@
 import { BOUND_PAD_X, BOUND_PAD_Y, NODE_LABEL_CAP, NODE_LABEL_OFFSET, VIEW_H, VIEW_W } from "./constants.js";
+import { measureCssVarLength } from "../layout/measure-css-var.js";
 
 /** @returns {{ minX: number, maxX: number, minY: number, maxY: number }} */
 export function getMapBounds() {
@@ -58,7 +59,9 @@ function panFloorForTopClearance(bounds, stageRect, shiftY) {
   const scaleY = VIEW_H / stageRect.height;
   const topPadSvg = readGraphTopPadPx() * scaleY;
   /* Ambient drift peaks ~7svg up — keep labels from tucking under the menu mid-cycle */
-  const driftSlackSvg = 10;
+  const driftSlackSvg = window.matchMedia("(max-width: 900px)").matches
+    ? Math.max(10, (measureCssVarLength("--v2-mobile-open-drift-slack") || 18) * 0.72)
+    : 10;
   let panFloor = topPadSvg + driftSlackSvg - bounds.minY - shiftY;
 
   const menuClearY = readMenuClearanceScreenY();
@@ -105,12 +108,27 @@ export function readGraphShiftY() {
   return -frac * VIEW_H;
 }
 
+/**
+ * SVG units per screen pixel from the live CTM (handles letterboxing).
+ * @param {SVGSVGElement|null} svg
+ * @returns {{ x: number, y: number }}
+ */
+export function svgScaleXY(svg) {
+  if (!svg) return { x: 1, y: 1 };
+  const ctm = svg.getScreenCTM();
+  if (ctm && Math.abs(ctm.a) > 1e-6 && Math.abs(ctm.d) > 1e-6) {
+    return { x: 1 / Math.abs(ctm.a), y: 1 / Math.abs(ctm.d) };
+  }
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: rect.width > 0 ? VIEW_W / rect.width : 1,
+    y: rect.height > 0 ? VIEW_H / rect.height : 1
+  };
+}
+
 /** SVG units per screen pixel — used for hand-tool canvas panning */
 export function svgScale(svg) {
-  if (!svg) return 1;
-  const rect = svg.getBoundingClientRect();
-  if (rect.width <= 0) return 1;
-  return VIEW_W / rect.width;
+  return svgScaleXY(svg).x;
 }
 
 /** Read node radii from CSS tokens so sizing stays consistent across breakpoints */

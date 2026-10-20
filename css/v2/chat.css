@@ -1,19 +1,38 @@
 /* Intake chips + path-mode cards — stay inside the 720px chat column */
 
 .v2-intake-chips {
+  position: relative;
+  z-index: 6;
   width: 100%;
   max-width: 100%;
   margin-top: 0.15rem;
   pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .v2-intake-chips__list {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
   gap: 0.45rem;
+  pointer-events: auto;
 }
 
 .v2-intake-chip {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  min-height: 44px;
+  isolation: isolate;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   cursor: pointer;
   appearance: none;
   padding: 0.42rem 0.78rem;
@@ -37,6 +56,71 @@
 
 .v2-intake-chip:disabled {
   opacity: 0.55;
+  cursor: default;
+}
+
+.v2-intake-chip[aria-pressed] {
+  gap: 0.4rem;
+}
+
+.v2-intake-chip[aria-pressed]::before {
+  content: "";
+  flex-shrink: 0;
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  box-sizing: border-box;
+  opacity: 0.7;
+}
+
+.v2-intake-chip[aria-pressed="true"] {
+  color: var(--v2-yellow);
+  border-color: var(--v2-yellow);
+  background: color-mix(in srgb, var(--v2-yellow) 12%, transparent);
+}
+
+.v2-intake-chip[aria-pressed="true"]::before {
+  opacity: 1;
+  border-color: var(--v2-yellow);
+  background:
+    no-repeat center / 80% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6 9.6 3.6' fill='none' stroke='%23041a18' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    var(--v2-yellow);
+}
+
+.v2-intake-chips__done-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+
+.v2-intake-chips__hint {
+  font-size: 0.72rem;
+  color: var(--v2-text-muted);
+}
+
+.v2-intake-chips__done {
+  min-height: 40px;
+  padding: 0.4rem 1.1rem;
+  border: 1px solid var(--v2-yellow);
+  border-radius: var(--v2-btn-radius);
+  background: var(--v2-yellow);
+  color: #041a18;
+  font-family: var(--v2-font-hero);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.v2-intake-chips__done:disabled {
+  border-color: color-mix(in srgb, var(--v2-neon-teal) 35%, transparent);
+  background: transparent;
+  color: var(--v2-text-muted);
   cursor: default;
 }
 
@@ -87,4 +171,183 @@
   color: var(--v2-text-muted);
   text-transform: none;
   letter-spacing: 0;
+}
+
+body.v2-app .v2-path-card__open {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+body.v2-app .v2-path-card__type,
+body.v2-app .v2-path-card__tagline,
+body.v2-app .v2-path-card__why,
+body.v2-app .v2-path-card__meta {
+  font-family: var(--v2-font);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.v2-path-card__type {
+  margin: 0 0 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--v2-teal) 80%, white);
+}
+
+.v2-path-card__tagline {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--v2-text);
+}
+
+.v2-path-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  margin: 0.45rem 0 0;
+  font-size: 0.72rem;
+  color: var(--v2-text-muted);
+}
+
+.v2-path-card__why {
+  margin: 0.45rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--v2-text-muted);
+}
+
+.v2-path-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.v2-path-card__action,
+.v2-path-toolbar__btn {
+  cursor: pointer;
+  appearance: none;
+  padding: 0.38rem 0.7rem;
+  font-family: var(--v2-font-hero);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--v2-teal);
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
+  border-color: color-mix(in srgb, var(--v2-neon-teal) 55%, transparent);
+  box-shadow: none;
+}
+
+.v2-path-card__action:hover:not(:disabled),
+.v2-path-toolbar__btn:hover:not(:disabled) {
+  border-color: var(--v2-neon-teal);
+  color: var(--v2-yellow);
+}
+
+.v2-path-toolbar,
+.v2-path-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.v2-path-feedback__title,
+.v2-path-feedback__thanks,
+.v2-path-sync {
+  margin: 0.55rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--v2-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.v2-path-feedback__title {
+  margin-right: 0.2rem;
+}
+
+.v2-selection-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.74rem;
+  color: var(--v2-text-muted);
+}
+
+.v2-selection #v2-confirm-gate {
+  margin-top: 0.7rem;
+}
+
+.v2-confirm-gate {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.85rem 0.95rem;
+}
+
+.v2-confirm-gate__label {
+  margin: 0 0 0.55rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--v2-text);
+}
+
+.v2-confirm-gate__bullets {
+  margin: 0 0 0.75rem;
+  padding-left: 1.15rem;
+  color: var(--v2-text);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.v2-confirm-gate__bullets li + li {
+  margin-top: 0.35rem;
+}
+
+.v2-confirm-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.v2-confirm-gate__btn {
+  cursor: pointer;
+  appearance: none;
+  padding: 0.42rem 0.78rem;
+  font-family: var(--v2-font-hero);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--v2-teal);
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
+  border-color: color-mix(in srgb, var(--v2-neon-teal) 55%, transparent);
+  box-shadow: none;
+}
+
+.v2-confirm-gate__btn--primary {
+  color: var(--v2-yellow);
+  border-color: color-mix(in srgb, var(--v2-yellow) 55%, transparent);
+  background: color-mix(in srgb, var(--v2-yellow) 12%, transparent);
+}
+
+.v2-confirm-gate__btn:hover:not(:disabled) {
+  border-color: var(--v2-neon-teal);
+  color: var(--v2-yellow);
 }

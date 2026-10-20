@@ -1,10 +1,10 @@
 const ADVISOR_MODEL_RATES_USD = {
-  'anthropic/claude-sonnet-4': { inputPer1M: 3, outputPer1M: 15 },
+  'anthropic/claude-sonnet-4.5': { inputPer1M: 3, outputPer1M: 15 },
   'claude-sonnet-4-5': { inputPer1M: 3, outputPer1M: 15 }
 };
 
 function estimateAdvisorCostUsd(model, inputTokens = 0, outputTokens = 0) {
-  const rates = ADVISOR_MODEL_RATES_USD[model] || ADVISOR_MODEL_RATES_USD['anthropic/claude-sonnet-4'];
+  const rates = ADVISOR_MODEL_RATES_USD[model] || ADVISOR_MODEL_RATES_USD['anthropic/claude-sonnet-4.5'];
   return Number(
     ((inputTokens / 1_000_000) * rates.inputPer1M + (outputTokens / 1_000_000) * rates.outputPer1M).toFixed(6)
   );
@@ -17,7 +17,7 @@ function logAdvisorUsage(entry) {
 // Map what the frontend sends → OpenRouter model slug
 function toOpenRouterModel(model) {
   const map = {
-    'claude-sonnet-4-5': 'anthropic/claude-sonnet-4',
+    'claude-sonnet-4-5': 'anthropic/claude-sonnet-4.5',
     'claude-3-5-sonnet-20241022': 'anthropic/claude-3.5-sonnet'
   };
   return map[model] || model;

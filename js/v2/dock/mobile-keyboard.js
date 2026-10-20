@@ -1,6 +1,6 @@
 import { SNAP } from "./constants.js";
 import { measureCssVarLength, measureKeyboardInset } from "../layout/measure-css-var.js";
-import { syncMobileFocusLift } from "./mobile-focus-lift.js";
+import { syncMobileFocusLift, syncMobileReadingMap } from "./mobile-focus-lift.js";
 
 /**
  * Pin prompt above the software keyboard (Visual Viewport inset).
@@ -16,15 +16,20 @@ export function syncMobileKeyboard(controller) {
   const typing =
     controller.activeSnap === SNAP.MOBILE_FOCUS ||
     controller.frameEl.classList.contains("is-mobile-typing");
+  const chatReading =
+    Boolean(controller._mobileChatSheet) &&
+    (controller.activeSnap === SNAP.MOBILE_COLLAPSED ||
+      controller.frameEl.classList.contains("is-mobile-reading"));
   const focused = document.body.classList.contains("is-mobile-composer-focus");
 
   if (focused) {
     syncMobileFocusLift(controller);
   }
 
-  if (keyboardOpen && typing && focused) {
-    const gap = measureCssVarLength("--v2-mobile-keyboard-gap") || 6;
+  if (keyboardOpen && focused && (typing || chatReading)) {
+    const gap = measureCssVarLength("--v2-mobile-keyboard-gap") || 12;
     const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
+    const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
     const vv = window.visualViewport;
     // Pin to the visual viewport bottom (not layout viewport) so the prompt
     // stays above the keyboard even when Safari shifts offsetTop.
@@ -35,8 +40,18 @@ export function syncMobileKeyboard(controller) {
 
     controller._keyboardDocked = true;
     controller.frameEl.classList.add("is-mobile-keyboard");
-    controller.frameEl.style.removeProperty("top");
     controller.frameEl.style.bottom = `${bottom}px`;
+    if (chatReading) {
+      const anchors = controller._anchors || controller._refreshAnchors?.();
+      const readingTop = anchors?.readingTop ?? anchors?.collapsedTop;
+      if (typeof readingTop === "number" && controller.mainEl) {
+        const mainRect = controller.mainEl.getBoundingClientRect();
+        const screenTop = readingTop + mainRect.top + promptDrop;
+        controller.frameEl.style.top = `${Math.max(headerH + 8, screenTop)}px`;
+      }
+    } else {
+      controller.frameEl.style.removeProperty("top");
+    }
     document.body.classList.add("is-mobile-keyboard-open");
     syncMobileFocusLift(controller);
     return;
@@ -56,6 +71,7 @@ export function clearKeyboardDock(controller, { keepFocusLayout = false } = {}) 
   if (!controller._keyboardDocked && !controller.frameEl.classList.contains("is-mobile-keyboard")) {
     document.body.classList.remove("is-mobile-keyboard-open");
     if (!keepFocusLayout) syncMobileFocusLift(controller);
+    if (controller._mobileChatSheet) syncMobileReadingMap(controller);
     return;
   }
 
@@ -81,4 +97,5 @@ export function clearKeyboardDock(controller, { keepFocusLayout = false } = {}) 
 
   controller._applyTop(target, { snap: controller.activeSnap });
   if (!keepFocusLayout) syncMobileFocusLift(controller);
+  if (controller._mobileChatSheet) syncMobileReadingMap(controller);
 }

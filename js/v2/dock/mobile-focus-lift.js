@@ -14,6 +14,9 @@ const FOCUS_MAP_HERO_GAP_PX = 6;
  * Raising this moves hero+subtitle up (map-head nudges alone only grew the map).
  */
 const FOCUS_HERO_PROMPT_GAP_PX = 13;
+/** Mid-glide fits read a moving frame, so fit once more after the sheet stops. */
+const SETTLE_FIT_MS = 140;
+let settleFitTimer = 0;
 
 function lockDocumentScroll() {
   if (window.scrollX || window.scrollY) {
@@ -37,9 +40,53 @@ function clearPinStyles(el) {
   el.style.removeProperty("height");
   el.style.removeProperty("transform");
   el.style.removeProperty("z-index");
+  el.style.removeProperty("overflow");
   el.style.removeProperty("--v2-map-svg-h");
   delete el.dataset.focusPinned;
   delete el.dataset.readingPinned;
+  delete el.dataset.pinH;
+  delete el.dataset.sceneFit;
+}
+
+/**
+ * @param {HTMLElement} map
+ * @param {{ top: number, left: number, width: number, height: number, svgHeight?: number, zIndex: string }} box
+ */
+function applyMapPin(map, box) {
+  map.style.position = "fixed";
+  map.style.top = `${Math.round(box.top)}px`;
+  map.style.left = `${Math.round(box.left)}px`;
+  map.style.width = `${Math.round(box.width)}px`;
+  map.style.height = `${Math.round(box.height)}px`;
+  map.style.right = "auto";
+  map.style.transform = "none";
+  map.style.overflow = "hidden";
+  map.style.zIndex = box.zIndex;
+  const svgH = Math.round(box.svgHeight ?? box.height);
+  map.style.setProperty("--v2-map-svg-h", `${svgH}px`);
+}
+
+/** Recenter the constellation in the pinned stage when height changes. */
+function fitPinnedMap(map) {
+  const nextH = Math.round(
+    Number.parseFloat(map.style.getPropertyValue("--v2-map-svg-h")) ||
+      map.getBoundingClientRect().height
+  );
+  const frameTop = Math.round(document.getElementById("dynamic-frame")?.getBoundingClientRect().top || 0);
+  const prevH = Number(map.dataset.pinH || 0);
+  const prevTop = Number(map.dataset.pinFrameTop || 0);
+  const heightChanged = Math.abs(nextH - prevH) >= 6;
+  const frameMoved = Math.abs(frameTop - prevTop) >= 8;
+  map.dataset.pinH = String(nextH);
+  map.dataset.pinFrameTop = String(frameTop);
+  const host = /** @type {HTMLElement & { fitLockedScene?: (opts?: { animate?: boolean }) => void }} */ (map);
+  const run = () => host.fitLockedScene?.({ animate: false });
+  if (heightChanged || frameMoved || map.dataset.sceneFit !== "1") {
+    map.dataset.sceneFit = "1";
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  }
+  window.clearTimeout(settleFitTimer);
+  settleFitTimer = window.setTimeout(run, SETTLE_FIT_MS);
 }
 
 /**
@@ -52,7 +99,7 @@ export function pinMobileFocusChrome(controller) {
 
   const map = document.getElementById("possibility-map");
   const kicker = document.getElementById("frame-kicker");
-  if (!map || !kicker || !controller?.frameEl) return;
+  if (!map || !controller?.frameEl) return;
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const mapHeadGap = FOCUS_MAP_HEAD_GAP_PX;
@@ -64,15 +111,40 @@ export function pinMobileFocusChrome(controller) {
   const promptTop = frameRect.top;
   const contentLeft = gutter;
   const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
+  const mapTop = Math.round(headerH + mapHeadGap);
+  const kickerVisible =
+    Boolean(kicker) &&
+    document.body.dataset.phase === "open" &&
+    !kicker.classList.contains("hidden") &&
+    !kicker.classList.contains("is-dismissing");
 
-  // Natural kicker height (content), fall back to reserve token
+  if (!kickerVisible) {
+    const mapH = Math.max(160, window.innerHeight - mapTop);
+    const tuck = 110;
+    const svgH = Math.max(140, Math.round(promptTop - mapTop + tuck));
+    applyMapPin(map, {
+      top: mapTop,
+      left: contentLeft,
+      width: contentWidth,
+      height: mapH,
+      svgHeight: svgH,
+      zIndex: "40"
+    });
+    map.dataset.focusPinned = "1";
+    delete map.dataset.readingPinned;
+    if (kicker) clearPinStyles(kicker);
+    fitPinnedMap(map);
+    return;
+  }
+
+  if (!kicker) return;
+
   const kickerReserve = measureCssVarLength("--v2-kicker-reserve") || 56;
   const kickerHeight = Math.max(
     kickerReserve,
     Math.ceil(kicker.scrollHeight || kicker.getBoundingClientRect().height || kickerReserve)
   );
 
-  const mapTop = Math.round(headerH + mapHeadGap);
   const kickerBottom = Math.round(promptTop - heroGap);
   const available = kickerBottom - mapTop;
 
@@ -88,16 +160,15 @@ export function pinMobileFocusChrome(controller) {
     kickerTop = mapTop + mapHeight + mapHeroGap;
   }
 
-  map.style.position = "fixed";
-  map.style.top = `${mapTop}px`;
-  map.style.left = `${contentLeft}px`;
-  map.style.width = `${contentWidth}px`;
-  map.style.height = `${Math.round(mapHeight)}px`;
-  map.style.right = "auto";
-  map.style.transform = "none";
-  map.style.zIndex = "40";
-  map.style.setProperty("--v2-map-svg-h", `${Math.round(mapHeight)}px`);
+  applyMapPin(map, {
+    top: mapTop,
+    left: contentLeft,
+    width: contentWidth,
+    height: Math.round(mapHeight),
+    zIndex: "40"
+  });
   map.dataset.focusPinned = "1";
+  delete map.dataset.readingPinned;
 
   kicker.style.position = "fixed";
   kicker.style.top = `${Math.round(kickerTop)}px`;
@@ -106,22 +177,26 @@ export function pinMobileFocusChrome(controller) {
   kicker.style.height = `${Math.round(usedKickerH)}px`;
   kicker.style.right = "auto";
   kicker.style.transform = "none";
-  kicker.style.zIndex = "46";
+  kicker.style.zIndex = "30";
   kicker.dataset.focusPinned = "1";
+  fitPinnedMap(map);
 }
 
-export function unpinMobileFocusChrome() {
+export function unpinMobileFocusChrome(controller) {
   const map = document.getElementById("possibility-map");
   const kicker = document.getElementById("frame-kicker");
-  if (map) clearPinStyles(map);
   if (kicker) clearPinStyles(kicker);
+  if (!map) return;
+  if (controller?._mobileChatSheet) {
+    delete map.dataset.focusPinned;
+    return;
+  }
+  clearPinStyles(map);
 }
 
 /**
- * Fit / fill the node map for mobile chat sheet snaps.
- * - mid (¾): fit in the gap between menu and frame top
- * - bottom: scale to fill the screen above the composer strip
- * - top: leave the map alone (frozen under the expanded sheet)
+ * Fit the node map in the gap between the menu bar and the prompt frame.
+ * The constellation stays above the frame.
  * @param {import("./frame-dock-controller.js").FrameDockController} controller
  */
 export function syncMobileReadingMap(controller) {
@@ -135,44 +210,29 @@ export function syncMobileReadingMap(controller) {
     return;
   }
 
-  // Prefer live frame classes (drag preview updates these before activeSnap).
   const expanded = controller.frameEl.classList.contains("is-mobile-expanded");
-  const fillScreen = controller.frameEl.classList.contains("is-mobile-typing");
-  const midReading =
-    controller.frameEl.classList.contains("is-mobile-reading") && !expanded;
-
-  // Top snap — do not move or resize the map.
   if (expanded) return;
-
-  if (!fillScreen && !midReading) {
-    if (map.dataset.readingPinned === "1") clearPinStyles(map);
-    return;
-  }
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const gutter = measureCssVarLength("--v2-main-gutter") || 14;
+  const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
   const frameTop = controller.frameEl.getBoundingClientRect().top;
-  const bandTop = headerH;
-  const bandH = Math.max(0, frameTop - bandTop);
-  if (bandH < 48) return;
-
+  const mapTop = headerH;
+  const svgH = Math.max(120, Math.round(frameTop - mapTop - clearance));
   const contentLeft = gutter;
   const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
-  const edgePad = fillScreen ? 6 : Math.round(bandH * 0.09);
-  const mapH = Math.max(fillScreen ? 120 : 96, Math.round(bandH - edgePad * 2));
-  const mapTop = Math.round(bandTop + (bandH - mapH) / 2);
 
-  map.style.position = "fixed";
-  map.style.top = `${mapTop}px`;
-  map.style.left = `${contentLeft}px`;
-  map.style.width = `${contentWidth}px`;
-  map.style.height = `${mapH}px`;
-  map.style.right = "auto";
-  map.style.transform = "none";
-  map.style.zIndex = "40";
-  map.style.setProperty("--v2-map-svg-h", `${mapH}px`);
+  applyMapPin(map, {
+    top: mapTop,
+    left: contentLeft,
+    width: contentWidth,
+    height: svgH,
+    svgHeight: svgH,
+    zIndex: "40"
+  });
   map.dataset.readingPinned = "1";
   delete map.dataset.focusPinned;
+  fitPinnedMap(map);
 }
 
 export function unpinMobileReadingMap() {
@@ -217,8 +277,9 @@ export function releaseMobileComposerFocus(controller, { onComplete } = {}) {
   document.body.style.removeProperty("--v2-mobile-focus-prompt-top");
   document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
   document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
-  unpinMobileFocusChrome();
+  unpinMobileFocusChrome(controller);
   lockDocumentScroll();
+  if (controller._mobileChatSheet) syncMobileReadingMap(controller);
   onComplete?.();
 }
 
@@ -232,7 +293,8 @@ export function syncMobileFocusLift(controller) {
     document.body.style.removeProperty("--v2-mobile-focus-prompt-top");
     document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
     document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
-    unpinMobileFocusChrome();
+    unpinMobileFocusChrome(controller);
+    if (controller._mobileChatSheet) syncMobileReadingMap(controller);
     return;
   }
 

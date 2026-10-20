@@ -62,11 +62,22 @@
   --v2-main-gutter: clamp(0.85rem, 2.2vw, 1.5rem);
   --v2-shell-radius: 0 var(--v2-frame-radius) var(--v2-frame-radius) var(--v2-frame-radius);
   --v2-shell-radius-right: var(--v2-frame-radius) 0 var(--v2-frame-radius) var(--v2-frame-radius);
-  --whatimado-frame-top-default: 47vh;
+  /*
+   * Desktop prompt frame. Top edge at 25vh, so the frame is the lower three
+   * quarters of the viewport and the node map has the band above it.
+   * Mobile overrides this inside css/v2/mobile.css (max-width: 900px).
+   */
+  --whatimado-frame-top-default: 25vh;
   --whatimado-frame-top: var(--whatimado-frame-top-default);
+  /* Compact mission summary pinned above the node map. The prompt drops by this same amount. */
+  --v2-timeline-h: 2.75rem;
+  /* Gap that keeps the constellation above the prompt frame, not inside the glass. */
+  --v2-map-frame-clearance: clamp(0.85rem, 2.2vh, 1.35rem);
   --whatimado-scroll-thumb-h: 3.25rem;
   --v2-kicker-reserve: clamp(4.5rem, 11.5vh, 5.75rem);
   --v2-hero-node-gap: clamp(0.3rem, 0.75vh, 0.5rem);
+  /* Landing only: extra room between the You label and the Path Finder title. */
+  --v2-hero-you-clear: clamp(0.75rem, 1.8vh, 1.25rem);
   --v2-map-band-offset-top: clamp(0.4rem, 1vh, 0.7rem);
   --v2-map-graph-top-pad: clamp(0.85rem, 2.2vh, 1.35rem);
   /* Full main column — global pan surface; graph SVG stays in upper band */
@@ -81,12 +92,13 @@
   --v2-map-ghost-opacity: 0.28;
   --v2-map-node-lg: 8.5;
   --v2-map-node-sm: 4.25;
+  --v2-map-task-label-line-h: calc(12.5px * 1.4);
   --v2-map-drift-duration: 11s;
   --v2-map-edge-width: 1.45;
   --v2-map-dim: 0;
   --v2-frame-elevation: 0;
   /** Docked frame top (px) — set during hero dismiss; frozen after dock settles */
-  --v2-docked-frame-top: 33.333vh;
+  --v2-docked-frame-top: var(--whatimado-frame-top-default);
   /** Visual-only float on docked prompt frame (transform, not layout) */
   --v2-frame-breathe-amplitude: clamp(2px, 0.35vh, 4px);
   /** Global upward shift for the node graph (fraction of SVG view height) */
@@ -114,6 +126,13 @@ html,
 body {
   height: 100%;
   margin: 0;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  max-width: 100%;
+}
+
+html {
+  overflow-x: clip;
 }
 
 body.v2-app {
@@ -122,6 +141,10 @@ body.v2-app {
   background: var(--v2-bg);
   background-image: var(--v2-bg-gradient);
   min-height: 100dvh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "liga" 1, "calt" 1;

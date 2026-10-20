@@ -20,6 +20,11 @@ export function notifyFrameLayout({ frameEl, mapEl }) {
   // Mobile sheet snaps are independent of the node map — don't re-lay it out.
   if (mobile) return;
 
+  // User frame drag must not re-anchor the constellation.
+  if (frameEl?.isDragging?.() || document.body.classList.contains("is-frame-dragging")) {
+    return;
+  }
+
   if (!frameEl?.isDockSettling()) {
     mapEl?.syncFrameGravity({ animate: false });
   }

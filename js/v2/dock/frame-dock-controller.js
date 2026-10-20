@@ -50,6 +50,8 @@ export class FrameDockController {
     this._docked = false;
     /** @type {boolean} */
     this._dragging = false;
+    /** @type {number|null} */
+    this._dimMapBottom = null;
     /** @type {boolean} */
     this._gliding = false;
     /** @type {boolean} */
@@ -256,6 +258,7 @@ export class FrameDockController {
     this.frameEl.style.removeProperty("top");
     this.frameEl.classList.add("is-docked", "is-mobile-docked");
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
+    document.body.classList.remove("is-frame-dragging");
     this.frameEl.removeAttribute("data-snap");
     document.body.classList.remove("is-hero-dismissing");
 
@@ -291,7 +294,6 @@ export class FrameDockController {
       this.frameEl.classList.remove("is-mobile-keyboard");
       document.body.classList.remove("is-mobile-keyboard-open");
     }
-    unpinMobileReadingMap();
     releaseMobileComposerFocus(this);
 
     this._anchors = null;
@@ -466,11 +468,14 @@ export class FrameDockController {
 
     this.frameEl.classList.add("is-docked");
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
+    document.body.classList.remove("is-frame-dragging");
     this.frameEl.removeAttribute("data-snap");
     this.frameEl.style.removeProperty("top");
     document.body.classList.remove("is-hero-dismissing");
 
-    this._topPx = (this.mainEl.clientHeight * openVh) / 100;
+    /* Desktop landing may sit below openVh (frame.css keeps room for the map), so read where it rendered. */
+    const measuredTop = this.frameEl.getBoundingClientRect().top - this.mainEl.getBoundingClientRect().top;
+    this._topPx = Number.isFinite(measuredTop) && measuredTop > 0 ? measuredTop : (this.mainEl.clientHeight * openVh) / 100;
     this._setMapDim(0);
   }
 
@@ -579,7 +584,13 @@ export class FrameDockController {
     /** Bake CSS vh top into main-relative px so the first move is 1:1 */
     const mainRect = this.mainEl.getBoundingClientRect();
     const frameRect = this.frameEl.getBoundingClientRect();
-    this._topPx = frameRect.top - mainRect.top;
+    this._topPx = frameRect.top - mainRect.top - this._timelineInsetPx();
+
+    const mapEl = document.getElementById("possibility-map");
+    const mapStage = mapEl?.querySelector(".whatimado-map__stage");
+    this._dimMapBottom = mapStage
+      ? mapStage.getBoundingClientRect().bottom - mainRect.top
+      : this.mainEl.clientHeight * 0.42;
 
     this._pointer = {
       pointerId: event.pointerId,
@@ -590,6 +601,8 @@ export class FrameDockController {
 
     this.frameEl.classList.add("is-dragging");
     this.frameEl.classList.remove("is-animating");
+    document.body.classList.add("is-frame-dragging");
+    this.frameEl.dispatchEvent(new CustomEvent("frame-drag-start", { bubbles: true }));
     return true;
   }
 
@@ -656,6 +669,9 @@ export class FrameDockController {
     const startTop = this._pointer.startTop;
     this._pointer = null;
     this.frameEl.classList.remove("is-dragging");
+    document.body.classList.remove("is-frame-dragging");
+    this.frameEl.dispatchEvent(new CustomEvent("frame-drag-end", { bubbles: true }));
+    this._dimMapBottom = null;
 
     const releaseVelocity = this._motionEnabled ? computeReleaseVelocity(this._dragSamples) : 0;
     this._dragSamples = [];
@@ -848,6 +864,18 @@ export class FrameDockController {
     this._settleRaf = requestAnimationFrame(tick);
   }
 
+  /** Height of the mission summary. Added to the painted frame top, not the drag position. */
+  _timelineInsetPx() {
+    if (!document.body.classList.contains("has-map-timeline")) return 0;
+    return measureCssVarLength("--v2-timeline-h") || 0;
+  }
+
+  /** Re-apply the current dock top after the timeline shows or hides. */
+  refreshTimelineInset() {
+    if (!Number.isFinite(this._topPx) || !this._docked) return;
+    this._applyTop(this._topPx, { snap: this.activeSnap, layout: false });
+  }
+
   /**
    * @param {number} topPx
    * @param {{ snap?: typeof SNAP[keyof typeof SNAP]|null, layout?: boolean }} [options]
@@ -869,7 +897,8 @@ export class FrameDockController {
           this.frameEl.classList.contains("is-mobile-reading") ||
           this.frameEl.classList.contains("is-mobile-expanded") ||
           this.activeSnap === SNAP.MOBILE_FOCUS);
-      this.frameEl.style.top = `${topPx + mainRect.top + promptDrop}px`;
+      const inset = this._timelineInsetPx();
+      this.frameEl.style.top = `${topPx + mainRect.top + promptDrop + inset}px`;
       if (floored) {
         this.frameEl.classList.add("is-mobile-sheet-floored");
         this.frameEl.style.bottom = `${bottomInset}px`;
@@ -878,7 +907,7 @@ export class FrameDockController {
         this.frameEl.style.bottom = "auto";
       }
     } else {
-      this.frameEl.style.top = `${topPx}px`;
+      this.frameEl.style.top = `${topPx + this._timelineInsetPx()}px`;
     }
 
     if (snap) {
@@ -886,7 +915,10 @@ export class FrameDockController {
     }
 
     if (!this._mobileMode) {
-      this._setMapDim(mapDimStrength(topPx, this.mainEl));
+      this._setMapDim(
+        mapDimStrength(topPx, this.mainEl, this._dragging ? this._dimMapBottom ?? undefined : undefined)
+      );
+      if (this._docked && !this._dockTransition) this.onDockProgress(topPx);
     }
     if (layout) {
       this.onLayout();

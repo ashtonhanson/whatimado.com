@@ -28,7 +28,7 @@ export const INTAKE_STEP = {
 /**
  * @param {string} step
  * @param {{ founder?: boolean }} [ctx]
- * @returns {{ prompt: string, options: ChipOption[] } | null}
+ * @returns {{ prompt: string, options: ChipOption[], multiple?: boolean, exclusiveValues?: string[] } | null}
  */
 export function getChipStep(step, ctx = {}) {
   const founder = Boolean(ctx.founder);
@@ -36,20 +36,21 @@ export function getChipStep(step, ctx = {}) {
     case INTAKE_STEP.ID:
       return {
         prompt:
-          "Do you have a valid ID right now — like a driver's license or state ID — or is getting that sorted still on your to-do list?",
+          "Some of the local resources we can unlock for you — benefits, housing help, and most hiring — need a government photo ID. Is that something you have on hand, or should we add getting that sorted to your roadmap?",
         options: [
-          { field: "idStatus", value: "has", label: "Yes, I have valid ID" },
-          { field: "idStatus", value: "needs", label: "No — I still need to get ID sorted" },
-          { field: "idStatus", value: "needs", label: "Not sure / working on it" }
+          { field: "idStatus", value: "has", label: "I have one on hand" },
+          { field: "idStatus", value: "needs", label: "Not yet — add it to my roadmap" },
+          { field: "idStatus", value: "needs", label: "Not sure / mine is expired" }
         ]
       };
     case INTAKE_STEP.HOUSING:
       return {
-        prompt: "Before we plan work or income, do you have a safe place you can reliably stay for at least the next week?",
+        prompt:
+          "Housing changes which resources we can unlock and how we order your first steps. Do you have a safe place you can reliably stay for the next week, or should finding that be part of the plan?",
         options: [
-          { field: "housingStatus", value: "has", label: "Yes — I have a safe, reliable place" },
-          { field: "housingStatus", value: "needs", label: "Only temporary / not reliable" },
-          { field: "housingStatus", value: "needs", label: "No — I need housing or shelter help" }
+          { field: "housingStatus", value: "has", label: "I have a reliable place" },
+          { field: "housingStatus", value: "needs", label: "Only temporary — keep that in the plan" },
+          { field: "housingStatus", value: "needs", label: "Not right now — help me find housing" }
         ]
       };
     case INTAKE_STEP.TRANSPORT:
@@ -127,7 +128,10 @@ export function getChipStep(step, ctx = {}) {
       };
     case INTAKE_STEP.SKILLS:
       return {
-        prompt: "What could you realistically use to earn money soon — skills you already have, or something you'd learn in 2–4 weeks?",
+        prompt:
+          "What could you realistically use to earn money soon — skills you already have, or something you'd learn in 2–4 weeks? Pick as many as fit.",
+        multiple: true,
+        exclusiveValues: ["not sure yet — help me figure out what I can sell or apply with"],
         options: [
           { field: "skills", value: "customer service, typing, and clear communication", label: "Customer service / admin" },
           { field: "skills", value: "writing, organizing, spreadsheets, and research", label: "Writing / organizing" },
@@ -164,14 +168,15 @@ function chipSequence(ctx = {}) {
   const founder = Boolean(ctx.founder);
   const ownBusiness = profilePathIsOwnBusiness(ctx.profile);
   /** @type {string[]} */
-  const steps = [
-    INTAKE_STEP.ID,
-    INTAKE_STEP.HOUSING,
+  const steps = [];
+  if (!ctx.suppressId) steps.push(INTAKE_STEP.ID);
+  if (!ctx.suppressHousing) steps.push(INTAKE_STEP.HOUSING);
+  steps.push(
     INTAKE_STEP.TRANSPORT,
     INTAKE_STEP.DEPENDENTS,
     INTAKE_STEP.INCOME,
     INTAKE_STEP.PATH
-  ];
+  );
   if (founder) {
     steps.push(INTAKE_STEP.FOUNDER);
     return steps;
@@ -216,7 +221,7 @@ export function chipStepAnswered(profile, step) {
  * Next chip step that is still unknown. Location/name are handled separately.
  * Completed steps are skipped even if a parser missed the field, so we never loop.
  * @param {import("../state/user-profile.js").UserProfile} profile
- * @param {{ founder?: boolean, completedSteps?: string[], skipStep?: string }} [ctx]
+ * @param {{ founder?: boolean, completedSteps?: string[], skipStep?: string, suppressId?: boolean, suppressHousing?: boolean }} [ctx]
  */
 export function nextChipStep(profile, ctx = {}) {
   const p = normalizeUserProfile(profile);
@@ -235,11 +240,16 @@ export function parseIdStatus(text) {
   if (!q) return "";
   if (/^(no|nope|nah)([!.?\s].*)?$/.test(q)) return "needs";
   if (/^(yes|yeah|yep)([!.?\s].*)?$/.test(q)) return "has";
-  if (/\b(yes|yeah|yep|have (?:my )?(?:id|license)|valid id)\b/.test(q) && !/\b(no|don'?t|do not|need)\b/.test(q)) {
+  if (
+    /\b(yes|yeah|yep|have (?:my |one |an )?(?:id|license|on hand)|valid id|on hand)\b/.test(q) &&
+    !/\b(no|don'?t|do not|need)\b/.test(q)
+  ) {
     return "has";
   }
   if (
-    /\b(no|nope|nah|not yet|don'?t have|do not have|need to get|lost|missing|no id|not sure|unsure|working on)\b/.test(q)
+    /\b(no|nope|nah|not yet|don'?t have|do not have|need to get|lost|missing|no id|not sure|unsure|working on|expired|add it to my roadmap)\b/.test(
+      q
+    )
   ) {
     return "needs";
   }
@@ -250,7 +260,13 @@ export function parseHousingStatus(text) {
   const q = String(text || "").toLowerCase().trim();
   if (/^(yes|yeah|yep|i do|i have one)$/.test(q)) return "has";
   if (/^(no|nope|not yet|unsure|not sure|maybe)$/.test(q)) return "needs";
-  if (/\b(temporary|not reliable|not safe|shelter|homeless|couch|motel|need housing)\b/.test(q)) return "needs";
+  if (
+    /\b(temporary|not reliable|not safe|shelter|homeless|couch|motel|need housing|find housing|not right now|no place)\b/.test(
+      q
+    )
+  ) {
+    return "needs";
+  }
   if (/\b(yes|safe|stable|reliable place|have (?:a )?place|have housing)\b/.test(q)) return "has";
   return "";
 }
@@ -321,7 +337,13 @@ export function parseRelocatePreference(text) {
 
 export function parseFounderStage(text) {
   const q = String(text || "").toLowerCase();
-  if (/\b(beta|test if it works|just testing)\b/.test(q)) return "beta";
+  if (
+    /\b(beta|still testing|still in test|in testing|testing phase|testing (?:the |if it |it )?works|test if it works|just testing|closed (?:data|beta)|functionality test|functional test)\b/.test(
+      q
+    )
+  ) {
+    return "beta";
+  }
   if (/\b(first (real )?strangers|validation|early users)\b/.test(q)) return "validation";
   if (/\b(pilot|partner)\b/.test(q)) return "pilot";
   if (/\b(grant|sponsor|scale|growth)\b/.test(q)) return "growth";

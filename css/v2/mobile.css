@@ -1,17 +1,20 @@
 /* Mobile layout — hamburger nav + compact home stack (≤900px) */
 
 .v2-mobile-menu-btn,
-.v2-mobile-menu-backdrop {
+.v2-mobile-menu-backdrop,
+.v2-mobile-header-controls {
   display: none;
 }
 
 @media (max-width: 900px) {
   :root {
     --v2-mobile-header-h: calc(3.55rem + env(safe-area-inset-top, 0px));
+    /* One inset for the top and the side, so logo and menu sit evenly in their corners. */
+    --v2-mobile-header-inset: 0.7rem;
+    --v2-mobile-header-control: calc(3.55rem - 2 * var(--v2-mobile-header-inset));
     --v2-mobile-quarter-in: 0.25in;
-    /* Softer hero rise so YOU + Path Finder both clear the menu band */
-    --v2-mobile-hero-shift: calc(0.12in + 8px);
-    /* Keep map below the fixed header — any upward shift clips top node labels */
+    /* Less upward pull on hero/map — negative translateY was clipping top labels under overflow:hidden */
+    --v2-mobile-hero-shift: calc(0.04in + 2px);
     --v2-mobile-map-shift: 0px;
     --v2-mobile-bottom-inset: max(var(--v2-main-gutter), env(safe-area-inset-bottom, 0px));
     --v2-mobile-you-hero-gap: clamp(0.9rem, 2.2vh, 1.25rem);
@@ -21,16 +24,22 @@
     );
     --v2-mobile-focus-you-hero-gap: 0px;
     --v2-mobile-focus-hero-nudge: 1.1rem;
+    --v2-kicker-sub-line-h: calc(clamp(0.72rem, 3.2vw, 0.84rem) * 1.4);
     /*
-     * Small tablets need a taller map band so YOU stays above Path Finder
-     * without crushing constellation proportions (phone stays near 32vh).
+     * Mobile prompt frame. Stays a top-third sheet so the band between the
+     * menu bar and this top edge is where the node map is centered.
+     * Desktop uses 25vh (tokens.css). Do not inherit that here.
      */
-    --whatimado-frame-top-default: clamp(32vh, 26vh + 5vw, 38vh);
+    --whatimado-frame-top-default: clamp(
+      calc(32vh + var(--v2-kicker-sub-line-h) * 2),
+      calc(26vh + 5vw + var(--v2-kicker-sub-line-h) * 2),
+      calc(38vh + var(--v2-kicker-sub-line-h) * 2)
+    );
     --v2-kicker-reserve: clamp(3.9rem, 10.5vh, 4.75rem); /* room for 1.5× hero type */
     --v2-kicker-top: calc(var(--whatimado-frame-top-default) - var(--v2-kicker-reserve));
     --v2-mobile-map-head-gap: clamp(0.55rem, 1.4vh, 0.85rem);
-    --v2-mobile-prompt-kicker-gap: 0.35rem;
-    --v2-mobile-keyboard-gap: 0.35rem;
+    --v2-mobile-prompt-kicker-gap: 0.18rem;
+    --v2-mobile-keyboard-gap: 0.85rem;
     --v2-mobile-prompt-drop: 8px;
     --v2-mobile-you-btn-drop: 26px; /* landing: YOU button down 10px */
     --v2-mobile-focus-band-rise: 0px;
@@ -38,47 +47,49 @@
     --v2-mobile-focus-lift: 0px;
     --v2-mobile-focus-band-top-gap: clamp(0.3rem, 1vh, 0.55rem);
     --v2-mobile-focus-map-head-gap: clamp(0.4rem, 1.1vh, 0.65rem);
-    --v2-kicker-sub-line-h: calc(clamp(0.72rem, 3.2vw, 0.84rem) * 1.4);
     --v2-mobile-focus-hero-gap: calc(0.55rem + var(--v2-kicker-sub-line-h));
     --v2-mobile-focus-band-h: 30vh;
     --v2-mobile-focus-kicker-shift: 0px;
     --v2-hero-node-gap: clamp(0.15rem, 0.45vh, 0.3rem);
-    --v2-map-band-offset-top: clamp(0.25rem, 0.8vh, 0.45rem);
-    /* Room for top labels under the menu after open-home gravity */
-    --v2-map-graph-top-pad: clamp(1.1rem, 2.4vh, 1.6rem);
-    --v2-map-node-lg: 33;
-    --v2-map-node-sm: 16.5;
+    --v2-map-band-offset-top: clamp(0.55rem, 1.5vh, 0.9rem);
+    /* Extra top inset so label + float animation stays inside the clipped map band */
+    --v2-map-graph-top-pad: clamp(1.45rem, 3.2vh, 2.05rem);
+    --v2-mobile-open-drift-slack: 18px;
+    --v2-map-node-lg: 8.25;
+    --v2-map-node-sm: 4.125;
     --v2-map-edge-width: 2.6;
+    --v2-map-task-label-line-h: calc(12.5px * 1.4);
+    --v2-map-node-float-amp: 8px;
   }
 
   /* Large phones / small tablets — smaller nodes so menu + Path Finder both clear */
   @media (min-width: 480px) {
     :root {
-      --v2-map-node-lg: 24;
-      --v2-map-node-sm: 12;
+      --v2-map-node-lg: 6;
+      --v2-map-node-sm: 3;
     }
   }
 
   @media (min-width: 600px) {
     :root {
-      --v2-map-node-lg: 22;
-      --v2-map-node-sm: 11;
+      --v2-map-node-lg: 5.5;
+      --v2-map-node-sm: 2.75;
       --whatimado-frame-top-default: clamp(33vh, 27vh + 4vw, 38vh);
     }
   }
 
   @media (min-width: 600px) and (max-height: 820px) {
     :root {
-      --v2-map-node-lg: 20;
-      --v2-map-node-sm: 10;
+      --v2-map-node-lg: 5;
+      --v2-map-node-sm: 2.5;
       --whatimado-frame-top-default: clamp(34vh, 28vh + 4vw, 40vh);
     }
   }
 
   @media (max-height: 640px) {
     :root {
-      --v2-map-node-lg: 20;
-      --v2-map-node-sm: 10;
+      --v2-map-node-lg: 5;
+      --v2-map-node-sm: 2.5;
       --whatimado-frame-top-default: clamp(36vh, 32vh + 3vw, 44vh);
       --v2-mobile-you-hero-gap: clamp(0.55rem, 1.4vh, 0.85rem);
     }
@@ -89,8 +100,22 @@
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
   }
 
+  body.v2-app.is-map-panning {
+    overflow: hidden;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    touch-action: none;
+  }
+
+  /*
+   * Home map stage: the open band between the menu bar and Path Finder.
+   * Chat pins the same band in mobile-focus-lift.js (frame top minus clearance).
+   */
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map {
     --v2-map-svg-h: calc(
       var(--v2-kicker-top) - var(--v2-mobile-map-head-gap, 0.45rem) -
@@ -98,7 +123,72 @@
     );
   }
 
-  .v2-shell {
+  /* Chat sheet: map box ends above the frame. Inline pin height matches this. */
+  body.v2-app:not([data-phase="open"]) whatimado-map {
+    height: calc(var(--v2-docked-frame-top, var(--whatimado-frame-top-default)) - var(--v2-map-frame-clearance));
+  }
+
+  whatimado-map:has(#map-timeline:not([hidden])) .whatimado-map__svg {
+    transform: none;
+  }
+
+  whatimado-map .whatimado-map__chrome {
+    left: 0.45rem;
+    right: 0.45rem;
+    align-items: stretch;
+  }
+
+  whatimado-map .whatimado-map__timeline-col:has(#map-timeline:not([hidden])) {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+  }
+
+  whatimado-map .whatimado-map__timeline-tools {
+    flex: 0 0 auto;
+  }
+
+  .v2-map-timeline {
+    padding-left: 0.45rem;
+    height: auto;
+    min-height: 2.15rem;
+    padding-top: 0.14rem;
+    padding-bottom: 0.14rem;
+  }
+
+  .v2-timeline__rail {
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+  }
+
+  .v2-timeline__link {
+    flex: 0 0 0.58rem;
+    align-self: center;
+    width: 0.58rem;
+    min-width: 0.58rem;
+    height: 0.58rem;
+    background-image: none;
+    border: 1.5px solid #8d95a5;
+    border-radius: 50%;
+    background-color: #10211f;
+    box-shadow: 0 0 0 3px rgba(6, 10, 12, 0.85);
+  }
+
+  whatimado-frame.is-mobile-docked .whatimado-frame__body,
+  whatimado-frame.is-mobile-docked .whatimado-frame__body-content,
+  whatimado-frame.is-mobile-docked #mission-stages {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  .v2-mission__controls {
+    width: 100%;
+  }
+
+  .v2-shell,
+  .v2-shell:has(#resources-rail:not(.hidden)),
+  .v2-shell:has(#resources-rail.hidden) {
     --v2-left-sidebar-offset: 0px;
     padding: 0;
     padding-top: var(--v2-mobile-header-h);
@@ -108,6 +198,9 @@
   .v2-main {
     height: calc(100dvh - var(--v2-mobile-header-h) - env(safe-area-inset-bottom, 0px));
     min-height: calc(100dvh - var(--v2-mobile-header-h) - env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
   }
 
   .v2-main > whatimado-map,
@@ -196,9 +289,9 @@
     align-items: center;
     min-height: 0;
     padding:
-      calc(0.45rem + env(safe-area-inset-top, 0px))
-      var(--v2-main-gutter)
-      0.45rem;
+      calc(var(--v2-mobile-header-inset) + env(safe-area-inset-top, 0px))
+      var(--v2-mobile-header-inset)
+      calc(var(--v2-mobile-header-inset) - 1px);
     border-bottom: 1px solid rgba(46, 232, 214, 0.14);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
     background: var(--v2-rail-bg);
@@ -210,17 +303,136 @@
   .v2-rail-logo-slot {
     width: 100%;
     justify-content: flex-start;
+    align-items: center;
     gap: 0.5rem;
   }
 
+  .v2-mobile-header-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--v2-mobile-header-icon-gap, 0.45rem);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .v2-header-map-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--v2-mobile-header-icon-gap, 0.45rem);
+    flex-shrink: 0;
+  }
+
+  .v2-header-map-tools[hidden] {
+    display: none !important;
+  }
+
+  .v2-header-map-tools .whatimado-map__link-btn,
+  .v2-header-map-tools .whatimado-map__you-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: var(--v2-mobile-header-control);
+    height: var(--v2-mobile-header-control);
+    margin: 0;
+    padding: 0;
+    color: var(--v2-teal);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    pointer-events: auto;
+  }
+
+  .v2-header-map-tools .whatimado-map__link-icon {
+    display: none;
+    width: 1.12rem;
+    height: 1.12rem;
+  }
+
+  .v2-header-map-tools .whatimado-map__link-btn.is-linked .whatimado-map__link-icon--on,
+  .v2-header-map-tools .whatimado-map__link-btn:not(.is-linked) .whatimado-map__link-icon--off {
+    display: block;
+  }
+
+  .v2-header-map-tools .whatimado-map__you-crosshair {
+    display: block;
+    width: 1.12rem;
+    height: 1.12rem;
+  }
+
+  .v2-header-map-tools .whatimado-map__link-btn:not(.is-linked) {
+    color: var(--v2-text-muted);
+  }
+
+  .v2-header-map-tools .whatimado-map__link-btn:focus-visible,
+  .v2-header-map-tools .whatimado-map__you-btn:focus-visible {
+    outline: 2px solid var(--v2-teal);
+    outline-offset: 2px;
+  }
+
+  whatimado-map .whatimado-map__timeline-tools {
+    display: none;
+  }
+
+  .v2-header-undo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: var(--v2-mobile-header-control);
+    height: var(--v2-mobile-header-control);
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--v2-text-muted);
+    cursor: not-allowed;
+    opacity: 0.55;
+    touch-action: manipulation;
+    box-shadow: none;
+  }
+
+  .v2-header-undo:not(:disabled),
+  .v2-header-undo.is-ready {
+    color: var(--v2-teal);
+    cursor: pointer;
+    opacity: 1;
+  }
+
+  .v2-header-undo:focus-visible {
+    outline: 2px solid var(--v2-teal);
+    outline-offset: 2px;
+  }
+
+  .v2-header-undo svg {
+    width: 1.12rem;
+    height: 1.12rem;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+  }
+
+  .v2-rail-body > .v2-undo-btn {
+    display: none;
+  }
+
+  /* Logo frame and hamburger frame share one height so the header reads as one pair. */
   .v2-rail--left .v2-brand-word {
     display: inline-flex;
-    max-width: min(12.5rem, 58vw);
+    box-sizing: border-box;
+    height: var(--v2-mobile-header-control);
+    max-width: min(15rem, 68vw);
     opacity: 1;
     visibility: visible;
-    padding: 0.35rem 0.7rem;
-    font-size: clamp(0.72rem, 3.1vw, 0.92rem);
-    letter-spacing: 0.1em;
+    padding: 0 0.85rem;
+    font-size: clamp(0.84rem, 3.8vw, 1rem);
+    letter-spacing: 0.11em;
   }
 
   .v2-rail--left .v2-brand-mark {
@@ -246,22 +458,28 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 2.65rem;
-    height: 2.65rem;
-    margin-left: auto;
+    box-sizing: border-box;
+    width: var(--v2-mobile-header-control);
+    height: var(--v2-mobile-header-control);
+    margin: 0;
     padding: 0;
-    border: 1px solid rgba(66, 255, 240, 0.28);
-    border-radius: var(--v2-btn-radius);
-    background: rgba(4, 12, 14, 0.45);
+    border: none;
+    border-radius: 0;
+    background: transparent;
     color: var(--v2-teal);
     cursor: pointer;
     touch-action: manipulation;
+    box-shadow: none;
   }
 
-  .v2-mobile-menu-btn:hover,
   .v2-mobile-menu-btn:focus-visible {
-    background: rgba(46, 232, 214, 0.1);
+    outline: 2px solid var(--v2-teal);
+    outline-offset: 2px;
+  }
+
+  .v2-mobile-menu-btn:hover {
     color: var(--v2-neon-teal);
+    background: transparent;
   }
 
   .v2-mobile-menu-icon,
@@ -401,7 +619,15 @@
     max-height: none;
     opacity: 1;
     visibility: visible;
-    padding: 0.65rem 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.85rem 0.9rem;
+  }
+
+  .v2-active-path strong {
+    margin-bottom: 0;
+    line-height: 1.3;
   }
 
   .v2-nav {
@@ -595,6 +821,11 @@
   }
 
   /* ── Compact hero + frame on home ── */
+  body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
+    justify-content: flex-end;
+    padding-bottom: 0.1rem;
+  }
+
   .v2-frame-kicker {
     text-align: center;
     align-items: center;
@@ -623,20 +854,6 @@
 
   .v2-kicker-sub-br {
     display: block;
-  }
-
-  whatimado-map .whatimado-map__node--live text {
-    font-size: 25.5px;
-    letter-spacing: 0.09em;
-  }
-
-  whatimado-map .whatimado-map__node--live.is-support text {
-    font-size: 20.25px;
-  }
-
-  /* YOU node title — sit 5px higher above the yellow node */
-  whatimado-map .whatimado-map__node--live.is-start text {
-    transform: translateY(-5px);
   }
 
   /*
@@ -672,11 +889,15 @@
   body.v2-app.is-mobile-composer-focus whatimado-map[data-focus-pinned="1"] .whatimado-map__stage,
   body.v2-app whatimado-map[data-reading-pinned="1"] .whatimado-map__stage {
     top: 0;
-    height: 100%;
+    height: var(--v2-map-svg-h);
+    overflow: visible;
   }
 
-  body.v2-app whatimado-map[data-reading-pinned="1"] {
+  body.v2-app whatimado-map[data-reading-pinned="1"],
+  body.v2-app whatimado-map[data-focus-pinned="1"] {
     margin: 0;
+    overflow: hidden;
+    touch-action: none;
   }
 
   /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */
@@ -788,9 +1009,26 @@
     padding-top: 0.45rem;
   }
 
-  whatimado-frame.is-mobile-docked.is-mobile-keyboard {
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard:not(.is-mobile-reading) {
     top: auto !important;
     transition: none;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard {
+    z-index: 80;
+    transition: none;
+  }
+
+  body.is-mobile-keyboard-open .v2-rail--left {
+    z-index: 40;
+  }
+
+  body.is-mobile-keyboard-open .v2-rail-brand {
+    pointer-events: none;
+  }
+
+  body.is-mobile-keyboard-open .v2-brand-word {
+    opacity: 0;
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__composer-input {
@@ -801,11 +1039,117 @@
     animation: none;
   }
 
-  whatimado-map .whatimado-map__you-btn {
-    top: calc(0.35rem + var(--v2-mobile-you-btn-drop, 0px));
-    right: 0.35rem;
+  whatimado-map .whatimado-map__you-btn,
+  whatimado-map .whatimado-map__link-btn {
+    width: 2.05rem;
+    height: 2.05rem;
+    z-index: 8;
+  }
+
+  /* Three path cards must fit in the ¾ reading sheet above the composer */
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-possibilities {
+    margin-top: 0.45rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-selection {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-selection__title {
+    font-size: 0.8rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-selection__why,
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-selection__tagline {
+    display: block;
+    font-size: 0.7rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-status {
+    font-size: 0.72rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-stage {
+    margin-top: 0.45rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-mission-continue {
+    --v2-cue-inset: 0.6rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-stage__label,
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-mission__title {
+    font-size: 0.74rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-stage__desc,
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-mission__text {
+    font-size: 0.7rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-possibilities .v2-section-label {
+    margin: 0 0 0.35rem;
+    font-size: 0.68rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-cards {
+    gap: 0.35rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card {
+    padding: 0.45rem 0.6rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card h3 {
+    margin: 0 0 0.08rem;
+    font-size: 0.74rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__type {
+    margin: 0 0 0.08rem;
+    font-size: 0.58rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__tagline {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.7rem;
+    line-height: 1.3;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__why {
+    display: none;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__meta {
+    margin: 0.2rem 0 0;
+    font-size: 0.64rem;
+    gap: 0.2rem 0.5rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__actions {
+    margin-top: 0.35rem;
+    gap: 0.3rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-card__action,
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-toolbar__btn {
+    padding: 0.28rem 0.52rem;
     font-size: 0.62rem;
-    padding: 0.28rem 0.55rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-toolbar,
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-feedback {
+    margin-top: 0.45rem;
+    gap: 0.35rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-sync {
+    display: none;
   }
 }
 

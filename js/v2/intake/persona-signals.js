@@ -1,0 +1,249 @@
+/**
+ * Who should be asked the ID / housing questions.
+ *
+ * Main (index.html profileIntakeNeedsIdStep) is opt-in: ask only when a
+ * personal stability need is present. Founder / career-pivot / closed-testing
+ * flows skip ID unless the user is talking about their own documents or
+ * housing. v2 keeps its own modules but follows that same precedence.
+ */
+
+export const STABILITY_CONTEXT = {
+  /** Their words show ID/housing is a real, current constraint. */
+  SIGNALS: "signals",
+  /** Established professional / operator — suppress the basics questions. */
+  PROFESSIONAL: "professional",
+  /** Neither. Ask, but with the resource framing. */
+  NEUTRAL: ""
+};
+
+export function mentionsIdNeed(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(need(?:s|ed)? (?:an? )?(?:id|identification|birth certificate|driver'?s licen[sc]e|state id|ssn|social security)|don'?t have (?:a |an )?(?:id|birth certificate|driver'?s licen[sc]e|social security)|no (?:valid )?id\b|no job or id|no id or job|missing (?:my )?(?:id|documents|papers)|lost my (?:id|licen[sc]e)|get(?:ting)? (?:an? )?(?:id|birth certificate|documents)|replace (?:my )?(?:id|licen[sc]e)|sort (?:my )?id|id and housing|without (?:an? )?id|expired (?:id|licen[sc]e))\b/.test(
+    blob
+  );
+}
+
+export function confirmsHasId(text = "") {
+  const blob = String(text || "").toLowerCase();
+  if (mentionsIdNeed(blob)) return false;
+  return /\b(have (?:my )?(?:id|driver'?s licen[sc]e|state id|birth certificate)|id is (?:good|fine|set|valid)|already have (?:an? )?(?:id|birth certificate|licen[sc]e))\b/.test(
+    blob
+  );
+}
+
+export function mentionsHousingInstability(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(no place to stay|nowhere to stay|no(?:where| )?(?:to )?(?:live|stay|sleep)|(?:don'?t|do not) have (?:a )?(?:place|home|housing|somewhere to stay)|homeless|unhoused|in a shelter|living in (?:a |my )?(?:car|motel|shelter|van)|no home|no housing|evict|between places|couch ?surf|staying with friends temporarily|no permanent address)\b/.test(
+    blob
+  );
+}
+
+export function confirmsHasHousing(text = "") {
+  const blob = String(text || "").toLowerCase();
+  if (mentionsHousingInstability(blob)) return false;
+  return /\b(have (?:a |my )?(?:safe |stable )?(?:place|apartment|housing|home|room|lease)|stable housing|i'?m housed|got (?:a )?(?:place|apartment|housing)|housing is (?:set|sorted|secure|stable))\b/.test(
+    blob
+  );
+}
+
+export function mentionsReentryHardship(text = "") {
+  const blob = String(text || "").toLowerCase();
+  // Same shape as the monolith (index.html conversationMentionsReentryHardship).
+  // Do NOT use bare "got out" / "just released" / "my record" — those fire on
+  // product language ("just released a beta") and override a pro persona.
+  return (
+    /\b(re-?enter(?:ing)?|reentry|incarcerat|jail|prison|parole|probation|second chance|record expung|just got out|just getting out|(?:got|getting) out of (?:jail|prison)|after incarceration|formerly incarcerat|rebuilding after release|criminal record|felony(?: conviction)?|(?:recently|newly|just) released(?: from)? (?:jail|prison|custody|incarceration|detention)|halfway house|justice[- ]involved)\b/.test(
+      blob
+    ) ||
+    /\b(background check).{0,48}\b(record|felony|conviction|jail|prison)\b/.test(blob) ||
+    /\b(record|felony|conviction|jail|prison).{0,48}\b(background check)\b/.test(blob)
+  );
+}
+
+/** Asking for benefits, shelter, or local services makes ID relevant again. */
+export function asksForLocalServices(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(food stamps|snap benefits|medicaid|medicare|welfare|general assistance|housing voucher|section 8|shelter bed|food bank|211|social services|case ?worker|disability benefits|unemployment benefits)\b/.test(
+    blob
+  );
+}
+
+/** Career-change language alone must never trigger the stability gates. */
+export function looksLikeCareerPivot(text = "") {
+  const blob = String(text || "").toLowerCase();
+  if (!blob.trim()) return false;
+  if (mentionsHousingInstability(blob) || mentionsIdNeed(blob) || mentionsReentryHardship(blob)) return false;
+  return /\b(corporate|office job|9\s*[- ]?\s*to\s*[- ]?\s*5|desk job|career change|changing careers|switch careers|new career|second career|pivot(?:ing)?(?: careers)?|burn(?:ed|t)? out|burnout|tired of (?:my )?(?:job|work|career|role)|stuck in (?:my )?(?:job|career|role)|hate my job|leave (?:my )?(?:job|career)|mid[- ]?career|next chapter|ready for (?:a )?change|looking for (?:a )?new (?:field|industry)|switch(?:ing)? (?:fields?|industries)|reinvent(?:ing)? my career)\b/.test(
+    blob
+  );
+}
+
+/** Soft "starting over" only counts with a hard signal beside it. */
+export function mentionsStabilityRebuild(text = "") {
+  const blob = String(text || "").toLowerCase();
+  if (!blob.trim()) return false;
+  if (looksLikeCareerPivot(blob)) return false;
+  if (mentionsHousingInstability(blob) || mentionsReentryHardship(blob)) return true;
+  const softRebuild = /\b(rebuild(?:ing)? (?:my )?life|starting over|fresh start|back on (?:my )?feet|starting from nothing)\b/.test(
+    blob
+  );
+  if (!softRebuild) return false;
+  if (
+    /\b(out in society|back out|reintegrat|everyday life|real world|on my own again|getting out|get back on)\b/.test(blob)
+  ) {
+    return true;
+  }
+  return mentionsIdNeed(blob) || /\b(no place|homeless|shelter|nowhere to stay|no (?:valid )?id)\b/.test(blob);
+}
+
+/**
+ * Closed beta / closed-data / functionality testing — a product stage, not a
+ * personal audit. Main treats this as founder-stage "beta".
+ * @param {string} text
+ */
+export function isClosedTestingFlow(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(closed (?:data|beta|alpha)(?:[ -]?test(?:ing)?)?|functionality test|functional test|trusted testers?|3\s*[-–]?\s*5 testers?|watching sessions|bug watch)\b/.test(
+    blob
+  );
+}
+
+/**
+ * Talking ABOUT reentry as a product audience, not saying "I just got out".
+ * Mirrors main isReentrySituation's founder / beta / whatimado exception.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function isProductAudienceReentry(text = "", ctx = {}) {
+  const blob = String(text || "").toLowerCase();
+  if (ctx.founder || isClosedTestingFlow(blob)) return true;
+  return (
+    /\bre-?entry\b/.test(blob) &&
+    /\b(reentry program|mutual[- ]?aid|beta|pilot|cohort|invite|users from|partner|whatimado|functionality test|validation sprint|platform|product|closed (?:data|beta))\b/.test(
+      blob
+    )
+  );
+}
+
+/** First-person custody / justice language — the person themselves. */
+export function mentionsFirstPersonReentry(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(i|i'?m|i am)\b[^.!?]{0,80}\b(just got out of (?:jail|prison)|on parole|on probation|in jail|in prison|criminal record|felony|halfway house)\b/.test(
+    blob
+  );
+}
+
+/**
+ * Personal reentry need. Product-audience mentions do not count.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function mentionsPersonalReentry(text = "", ctx = {}) {
+  if (!mentionsReentryHardship(text)) return false;
+  if (isProductAudienceReentry(text, ctx)) return mentionsFirstPersonReentry(text);
+  return true;
+}
+
+/**
+ * A live, personal constraint — not the product's target users.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function hasPersonalStabilityNeed(text = "", ctx = {}) {
+  const blob = String(text || "").toLowerCase();
+  if (!blob.trim()) return false;
+  return (
+    mentionsIdNeed(blob) ||
+    mentionsHousingInstability(blob) ||
+    asksForLocalServices(blob) ||
+    mentionsPersonalReentry(blob, ctx) ||
+    (!isTrustedProfessionalFlow(blob, ctx) && mentionsStabilityRebuild(blob))
+  );
+}
+
+/** @deprecated use hasPersonalStabilityNeed — kept for existing callers */
+export function hasStabilitySignals(text = "", ctx = {}) {
+  return hasPersonalStabilityNeed(text, ctx);
+}
+
+/**
+ * Trusted lane: founder, closed testing, scored professional, or career pivot.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function isTrustedProfessionalFlow(text = "", ctx = {}) {
+  if (ctx.founder) return true;
+  if (isClosedTestingFlow(text)) return true;
+  if (looksProfessional(text)) return true;
+  if (looksLikeCareerPivot(text)) return true;
+  return false;
+}
+
+const PROFESSIONAL_PATTERNS = [
+  // Multi-year work history
+  /\b(\d{1,2}\+?\s*(?:years?|yrs?)|a decade|two decades)\b[^.!?]{0,40}\b(experience|in the industry|as an?|working|career|doing|building|managing)\b/,
+  /\b(my career|throughout my career|since 20\d\d|been doing this since)\b/,
+  // Shipping products
+  /\b(shipped|launched|released|deployed|in production|went live|took it to market|end[- ]to[- ]end delivery)\b/,
+  // Running a business
+  /\b(my (?:clients?|company|firm|agency|studio|practice|shop)|my own business|s[- ]?corp|\bllc\b|sole proprietor|invoic(?:e|ing)|contracts? with|p&l|revenue|billable)\b/,
+  // Leading teams
+  /\b(led (?:a )?team|manage[ds]? (?:a )?team|direct reports?|team of \d+|mentor(?:ed|ing) (?:junior|new)|hired and|people manager|head of|director of|principal|senior (?:engineer|designer|manager|analyst))\b/,
+  // Deep tool / craft fluency
+  /\b(stack|codebase|ci\/cd|kubernetes|terraform|figma|autocad|solidworks|revit|quickbooks|salesforce|epic|ehr|cnc|journeyman|master electrician|\bcdl\b|board[- ]certified|licensed (?:contractor|nurse|therapist|architect|cpa))\b/,
+  // Formal credentials
+  /\b(my (?:resume|portfolio|cv)|bachelor'?s|master'?s|\bmba\b|\bphd\b|certified in|professional licen[sc]e)\b/
+];
+
+/**
+ * Score, don't keyword-trigger — one stray word should not flip the persona.
+ * @param {string} text
+ * @returns {string[]} names of matched signals, for debugging
+ */
+export function professionalSignals(text = "") {
+  const blob = String(text || "").toLowerCase();
+  if (!blob.trim()) return [];
+  return PROFESSIONAL_PATTERNS.map((pattern, index) => (pattern.test(blob) ? `p${index}` : "")).filter(Boolean);
+}
+
+/** @param {string} text */
+export function looksProfessional(text = "") {
+  return professionalSignals(text).length >= 2;
+}
+
+/**
+ * Single classification used by the chip sequence and the stability gates.
+ * @param {string} text All user text so far.
+ * @param {{ founder?: boolean }} [ctx]
+ * @returns {string} one of STABILITY_CONTEXT
+ */
+export function classifyStabilityContext(text = "", ctx = {}) {
+  const personalNeed = hasPersonalStabilityNeed(text, ctx);
+  if (personalNeed) return STABILITY_CONTEXT.SIGNALS;
+  if (isTrustedProfessionalFlow(text, ctx)) return STABILITY_CONTEXT.PROFESSIONAL;
+  return STABILITY_CONTEXT.NEUTRAL;
+}
+
+/**
+ * Main is opt-in: skip ID unless a personal stability need is live.
+ * Trusted / closed-testing / founder flows skip even if the product mentions
+ * reentry or jail as an audience.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function shouldSuppressIdStep(text = "", ctx = {}) {
+  if (confirmsHasId(text)) return true;
+  return !hasPersonalStabilityNeed(text, ctx);
+}
+
+/**
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function shouldSuppressHousingStep(text = "", ctx = {}) {
+  if (confirmsHasHousing(text)) return true;
+  if (ctx.founder || isClosedTestingFlow(text)) {
+    return !mentionsHousingInstability(text);
+  }
+  return !hasPersonalStabilityNeed(text, ctx);
+}

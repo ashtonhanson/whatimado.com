@@ -1,11 +1,12 @@
 # v2 architecture
 
-Entry point: `/app.html` with `js/v2/app.js`.
+Entry point: `/` (`index.html`) with `js/v2/app.js`. Legacy `/app.html` redirects to `/`.
 
 ## Module layout
 
 ```
-app.html                     # Shell markup (brand copy applied at runtime)
+index.html                   # Shell markup (brand copy applied at runtime)
+legacy.html                  # Pre-v2 monolith (archived)
 brand/
   whatimado.default.json     # White-label knobs (copy, colors, layout)
   apply-brand.js             # JSON → CSS vars + DOM text

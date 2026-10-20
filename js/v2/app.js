@@ -3,6 +3,12 @@ import { initChatFlow } from "./ui/chat-flow.js";
 import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
 import { initMobileNav } from "./mobile-nav.js";
+import { initAccountSheet } from "./ui/account-sheet.js";
+import { initAccountMenu } from "./ui/account-menu.js";
+import { initPages } from "./ui/pages.js";
+import { initAuth } from "./state/auth.js";
+import { trackEvent } from "./state/analytics.js";
+import { initShareMeta } from "./share-meta.js";
 
 await initBrand();
 await import("./components/whatimado-frame.js");
@@ -26,6 +32,12 @@ initChatFlow({
 initNeonShine();
 initNavRailToggle();
 initMobileNav();
+initAccountSheet();
+initAccountMenu();
+initPages();
+initShareMeta();
+void initAuth();
+trackEvent("app_loaded");
 
 /** Safety: never leave the mobile shell permanently hidden if dock init stalls. */
 if (window.matchMedia("(max-width: 900px)").matches) {

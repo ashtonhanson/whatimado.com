@@ -1,4 +1,8 @@
 import { PHASE } from "../phases.js";
+import { normalizeMissionFields } from "../roadmap/mission-model.js";
+import { normalizeResources, stripEphemeralResourceDrafts } from "../roadmap/resources.js";
+import { normalizeTaskChats } from "../roadmap/task-chat.js";
+import { normalizeGoalBrief } from "./goal-brief.js";
 
 /** @typedef {import("../phases.js").Phase} Phase */
 /** @typedef {{ role: "user"|"assistant", content: string }} JourneyMessage */
@@ -12,13 +16,35 @@ import { PHASE } from "../phases.js";
  *   ghostDismissed: boolean,
  *   pathsGenerated: boolean,
  *   selectedPathId: string | null,
+ *   roadmapPathId: string | null,
  *   pathMode: "direct"|"flexible"|null,
  *   awaitingPathModeChoice: boolean,
  *   profileIntakeStep: string | null,
  *   clarifyingQuestionsAsked: number,
  *   locationConfirmed: boolean,
  *   intakeComplete: boolean,
- *   completedIntakeSteps: string[]
+ *   completedIntakeSteps: string[],
+ *   mapChatType: "discuss"|"alter"|"redirect"|null,
+ *   mapChatPathId: string | null,
+ *   pathDirectionNote: string,
+ *   mapFeedbackGiven: boolean,
+ *   mapFeedbackSentiment: "yes"|"no"|null,
+ *   planConfirmed: boolean,
+ *   planBullets: string[],
+ *   confirmGateAwaitingRevision: boolean,
+ *   threadBreak: number | null,
+ *   missionsStages: { label: string, desc: string, missions: { title: string, text: string }[] }[],
+ *   missionResources: { name: string, org: string, details: string, url: string, phone: string }[],
+ *   missionDrafts: { id: string, kind: string, label: string, missionTitle: string, body: string }[],
+ *   taskChats: Record<string, { messages: { role: "user"|"assistant", content: string }[], composerDraft?: string }>,
+ *   goalVersion: number,
+ *   acceptedGoalVersion: number,
+ *   pathsGoalVersion: number,
+ *   missionsGoalVersion: number,
+ *   pathsGenerationSerial: number,
+ *   goalBrief: import("./goal-brief.js").GoalBrief | null,
+ *   focusMissionId: string | null,
+ *   roadmapUndoStack: import("../roadmap/roadmap-undo.js").RoadmapUndoSnapshot[]
  * }} Journey */
 
 const PHASE_VALUES = new Set(Object.values(PHASE));
@@ -35,13 +61,36 @@ export function createEmptyJourney() {
     ghostDismissed: false,
     pathsGenerated: false,
     selectedPathId: null,
+    roadmapPathId: null,
     pathMode: null,
     awaitingPathModeChoice: false,
     profileIntakeStep: null,
     clarifyingQuestionsAsked: 0,
     locationConfirmed: false,
     intakeComplete: false,
-    completedIntakeSteps: []
+    completedIntakeSteps: [],
+    mapChatType: null,
+    mapChatPathId: null,
+    pathDirectionNote: "",
+    mapFeedbackGiven: false,
+    mapFeedbackSentiment: null,
+    planConfirmed: false,
+    planBullets: [],
+    confirmGateAwaitingRevision: false,
+    threadBreak: null,
+    missionsStages: [],
+    missionResources: [],
+    missionDrafts: [],
+    taskChats: {},
+    goalVersion: 1,
+    acceptedGoalVersion: 0,
+    pathsGoalVersion: 0,
+    missionsGoalVersion: 0,
+    pathsGenerationSerial: 0,
+    goalBrief: null,
+    savedPathIds: [],
+    focusMissionId: null,
+    roadmapUndoStack: []
   };
 }
 
@@ -108,6 +157,12 @@ export function normalizeJourney(raw) {
     ghostDismissed: Boolean(source.ghostDismissed),
     pathsGenerated: Boolean(source.pathsGenerated),
     selectedPathId: typeof source.selectedPathId === "string" ? source.selectedPathId : null,
+    roadmapPathId:
+      typeof source.roadmapPathId === "string"
+        ? source.roadmapPathId
+        : source.planConfirmed && typeof source.selectedPathId === "string"
+          ? source.selectedPathId
+          : null,
     pathMode: source.pathMode === "direct" || source.pathMode === "flexible" ? source.pathMode : null,
     awaitingPathModeChoice: Boolean(source.awaitingPathModeChoice),
     profileIntakeStep: typeof source.profileIntakeStep === "string" && source.profileIntakeStep ? source.profileIntakeStep : null,
@@ -116,8 +171,106 @@ export function normalizeJourney(raw) {
     intakeComplete: Boolean(source.intakeComplete),
     completedIntakeSteps: Array.isArray(source.completedIntakeSteps)
       ? source.completedIntakeSteps.map((step) => String(step || "")).filter(Boolean)
-      : []
+      : [],
+    mapChatType:
+      source.mapChatType === "discuss" || source.mapChatType === "alter" || source.mapChatType === "redirect"
+        ? source.mapChatType
+        : null,
+    mapChatPathId: typeof source.mapChatPathId === "string" && source.mapChatPathId ? source.mapChatPathId : null,
+    pathDirectionNote: typeof source.pathDirectionNote === "string" ? source.pathDirectionNote.slice(0, 400) : "",
+    mapFeedbackGiven: Boolean(source.mapFeedbackGiven),
+    mapFeedbackSentiment: source.mapFeedbackSentiment === "yes" || source.mapFeedbackSentiment === "no" ? source.mapFeedbackSentiment : null,
+    planConfirmed: Boolean(source.planConfirmed),
+    planBullets: Array.isArray(source.planBullets)
+      ? source.planBullets.map((bullet) => String(bullet || "").trim()).filter(Boolean).slice(0, 7)
+      : [],
+    confirmGateAwaitingRevision: Boolean(source.confirmGateAwaitingRevision),
+    threadBreak: Number.isInteger(source.threadBreak) ? source.threadBreak : null,
+    missionsStages: normalizeStages(source.missionsStages),
+    missionResources: stripEphemeralResourceDrafts(normalizeResources(source.missionResources)),
+    missionDrafts: normalizeDrafts(source.missionDrafts),
+    taskChats: normalizeTaskChats(source.taskChats),
+    goalVersion: Math.max(1, Number(source.goalVersion) || 1),
+    acceptedGoalVersion: Math.max(0, Number(source.acceptedGoalVersion) || 0),
+    pathsGoalVersion: Math.max(0, Number(source.pathsGoalVersion) || 0),
+    missionsGoalVersion: Math.max(0, Number(source.missionsGoalVersion) || 0),
+    pathsGenerationSerial: Math.max(0, Number(source.pathsGenerationSerial) || 0),
+    goalBrief: source.goalBrief ? normalizeGoalBrief(source.goalBrief) : null,
+    savedPathIds: Array.isArray(source.savedPathIds)
+      ? source.savedPathIds.map((id) => String(id || "").trim()).filter(Boolean).slice(0, 12)
+      : [],
+    focusMissionId: typeof source.focusMissionId === "string" && source.focusMissionId ? source.focusMissionId.slice(0, 64) : null,
+    roadmapUndoStack: Array.isArray(source.roadmapUndoStack) ? source.roadmapUndoStack.slice(-25) : []
   };
+}
+
+/** @param {Journey} journey @param {string} id */
+export function toggleSavedPath(journey, id) {
+  const key = String(id || "").trim();
+  if (!key) return journey.savedPathIds || [];
+  const ids = new Set(journey.savedPathIds || []);
+  if (ids.has(key)) ids.delete(key);
+  else ids.add(key);
+  journey.savedPathIds = [...ids];
+  return journey.savedPathIds;
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {{ label: string, desc: string, missions: { title: string, text: string }[] }[]}
+ */
+const DRAFT_KINDS = new Set(["phone_script", "outreach_email", "notes"]);
+
+/**
+ * @param {unknown} raw
+ * @returns {{ id: string, kind: string, label: string, missionTitle: string, body: string }[]}
+ */
+function normalizeDrafts(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 24)
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const kind = DRAFT_KINDS.has(item.kind) ? item.kind : "";
+      const id = String(item.id || "").trim().slice(0, 80);
+      const body = String(item.body || "").trim().slice(0, 2500);
+      if (!kind || !id || !body) return null;
+      return {
+        id,
+        kind,
+        label: String(item.label || "").trim().slice(0, 40),
+        missionTitle: String(item.missionTitle || "").trim().slice(0, 140),
+        body,
+        pathId: typeof item.pathId === "string" ? item.pathId.slice(0, 80) : "",
+        contextStamp: typeof item.contextStamp === "string" ? item.contextStamp.slice(0, 1200) : "",
+        createdAt: Number(item.createdAt) || 0
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeStages(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 8)
+    .map((stage) => {
+      const missions = Array.isArray(stage?.missions) ? stage.missions : Array.isArray(stage?.tasks) ? stage.tasks : [];
+      return {
+        label: String(stage?.label || "").trim().slice(0, 80),
+        desc: String(stage?.desc || "").trim().slice(0, 320),
+        missions: missions
+          .slice(0, 6)
+          .map((mission, missionIndex) => {
+            const normalized = normalizeMissionFields(mission, missionIndex);
+            return {
+              ...normalized,
+              resources: normalizeResources(mission?.resources)
+            };
+          })
+          .filter((mission) => mission.title)
+      };
+    })
+    .filter((stage) => stage.label && stage.missions.length);
 }
 
 export function isRestorableJourney(journey) {

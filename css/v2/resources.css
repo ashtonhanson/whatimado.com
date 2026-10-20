@@ -31,13 +31,30 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0.75rem 1.15rem 1rem;
+  padding: var(--v2-rail-body-top-gap) 1.15rem 0.75rem;
   scrollbar-width: thin;
   scrollbar-color: var(--v2-teal-dim) transparent;
 }
 
+body.v2-app .v2-resources-title {
+  flex-shrink: 0;
+  margin: 0;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(46, 232, 214, 0.18);
+  font-family: var(--v2-font-hero);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--v2-teal);
+  text-shadow: 0 0 14px rgba(46, 232, 214, 0.35);
+}
+
+/* The body is a flex column; without this the tall list squeezes the overflow-hidden label to 0. */
 .v2-resources-region {
-  margin: 0.35rem 0 0.65rem;
+  flex-shrink: 0;
+  margin: 0.6rem 0 0.4rem;
 }
 
 .v2-resources-list {
@@ -72,8 +89,209 @@
   color: var(--v2-text);
 }
 
-.v2-resource-desc {
+.v2-resource-desc,
+.v2-resource-address,
+.v2-resource-contact {
   margin: 0 0 0.35rem;
+}
+
+.v2-resource-notes {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v2-text-muted);
+}
+
+.v2-resource-notes textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.3rem;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 4.2rem;
+  border: 1px solid rgba(46, 232, 214, 0.28);
+  border-radius: 0.4rem;
+  background: rgba(4, 12, 14, 0.45);
+  color: var(--v2-text);
+  font: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 0.4rem 0.5rem;
+}
+
+.v2-resource-kind {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v2-teal);
+}
+
+.v2-resource-next,
+.v2-resource-offers {
+  margin: 0 0 0.35rem;
+}
+
+.v2-resource-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+/* Phone script (.v2-resource-action) is the reference for flat pill actions. */
+.v2-resource-action,
+.v2-resource-copy,
+.v2-mission-action:not(.v2-circle-back__close),
+.v2-mission-chat-open,
+.v2-mission-chat__send,
+.v2-circle-back-toggle,
+.v2-difficulty,
+.v2-difficulty-offer button,
+.v2-timeline-continue button,
+.v2-draft-open,
+.v2-drafts-open,
+.v2-next-path__open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  box-sizing: border-box;
+  border: 1px solid rgba(46, 232, 214, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--v2-text);
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  padding: 0.28rem 0.65rem;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.v2-resource-action svg,
+.v2-mission-chat-open__icon {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex-shrink: 0;
+}
+
+.v2-resource-action svg {
+  transition: transform 0.2s ease;
+}
+
+.v2-resource-action.is-open svg {
+  transform: rotate(90deg);
+}
+
+@media (hover: hover) {
+  .v2-resource-action:hover,
+  .v2-resource-copy:hover,
+  .v2-mission-action:not(.v2-circle-back__close):hover,
+  .v2-mission-chat-open:hover,
+  .v2-mission-chat__send:hover,
+  .v2-circle-back-toggle:hover,
+  .v2-difficulty:hover,
+  .v2-difficulty-offer button:hover,
+  .v2-timeline-continue button:hover,
+  .v2-draft-open:hover,
+  .v2-drafts-open:hover,
+  .v2-next-path__open:hover {
+    background: rgba(46, 232, 214, 0.12);
+    border-color: var(--v2-teal);
+    box-shadow: 0 0 12px rgba(46, 232, 214, 0.18);
+  }
+}
+
+.v2-resource-action:focus-visible,
+.v2-resource-copy:focus-visible,
+.v2-mission-action:not(.v2-circle-back__close):focus-visible,
+.v2-mission-chat-open:focus-visible,
+.v2-mission-chat__send:focus-visible,
+.v2-circle-back-toggle:focus-visible,
+.v2-difficulty:focus-visible,
+.v2-difficulty-offer button:focus-visible,
+.v2-timeline-continue button:focus-visible,
+.v2-draft-open:focus-visible,
+.v2-drafts-open:focus-visible,
+.v2-next-path__open:focus-visible {
+  outline: 2px solid var(--v2-teal);
+  outline-offset: 2px;
+}
+
+.v2-resource-action.is-open {
+  background: rgba(245, 213, 71, 0.16);
+  border-color: var(--v2-yellow);
+  color: var(--v2-yellow);
+  font-weight: 600;
+  box-shadow: 0 0 14px rgba(245, 213, 71, 0.22);
+}
+
+.v2-resource-panel {
+  margin-top: 0.45rem;
+}
+
+.v2-resource-notes-box,
+.v2-resource-draft {
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 11rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  margin: 0;
+  padding: 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(46, 232, 214, 0.22);
+  background: rgba(4, 12, 14, 0.72);
+  color: var(--v2-text);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.v2-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.28rem;
+  min-height: 2.4rem;
+  margin: 0;
+  color: var(--v2-teal);
+  font-size: 0.78rem;
+}
+
+.v2-wave span {
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: v2-wave 0.9s ease-in-out infinite;
+}
+
+.v2-wave span:nth-child(2) { animation-delay: 0.15s; }
+.v2-wave span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes v2-wave {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+.v2-resource-copy {
+  margin-top: 0.4rem;
+  margin-right: 0.4rem;
+}
+
+.v2-resource-draft {
+  max-height: 9rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  margin: 0.45rem 0 0;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  background: rgba(4, 12, 14, 0.65);
+  color: var(--v2-text);
 }
 
 .v2-resource-meta {
@@ -101,8 +319,91 @@
   color: var(--v2-text-muted);
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
   .v2-rail--right {
     display: none !important;
+  }
+}
+
+/* One path-level list where the desktop rail is hidden. Cards do not repeat it. */
+.v2-resources-master {
+  margin: 0.35rem 0 0.75rem;
+}
+
+@media (min-width: 901px) {
+  .v2-resources-master {
+    display: none;
+  }
+}
+
+/* In-task resources accordion — every viewport. The desktop rail stays separate. */
+.v2-resources-acc {
+  margin-top: 0.55rem;
+}
+
+.v2-resources-acc__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0.35rem 0.7rem;
+  appearance: none;
+  cursor: pointer;
+  font-family: var(--v2-font-hero);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--v2-teal);
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--v2-neon-teal) 55%, transparent);
+  border-radius: var(--v2-btn-radius);
+}
+
+.v2-resources-acc__trigger:hover {
+  color: var(--v2-yellow);
+  border-color: var(--v2-neon-teal);
+}
+
+.v2-resources-acc__chevron {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  transition: transform 0.2s ease;
+}
+
+.v2-resources-acc__trigger[aria-expanded="true"] .v2-resources-acc__chevron {
+  transform: rotate(180deg);
+}
+
+.v2-resources-acc__panel {
+  margin-top: 0.35rem;
+}
+
+.v2-resources-acc__panel.is-collapsed {
+  height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.v2-resources-acc__scroll {
+  max-height: 14rem;
+  padding: 0.15rem 0.15rem 0.35rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.v2-resources-acc .v2-resource-name,
+.v2-resources-acc .v2-resource-desc {
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-resources-acc__chevron {
+    transition: none;
   }
 }

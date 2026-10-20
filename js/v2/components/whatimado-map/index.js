@@ -1,5 +1,6 @@
-import { GHOST_GRAPH, graphStore } from "../../graph-store.js";
-import { getBrand } from "../../config.js";
+import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { appStore } from "../../state/store.js";
+import { measureAnchors } from "../../dock/anchors.js";
 import {
   BOUND_GLIDE_DAMP,
   BOUND_PULL,
@@ -15,7 +16,6 @@ import {
   HOME_SPRING_DAMP,
   HOME_SPRING_DAMP_SETTLE,
   HOME_SPRING_K,
-  MOBILE_MQ,
   SCALE_CENTER_X,
   SCALE_CENTER_Y,
   VIEW_H,
@@ -30,6 +30,7 @@ import {
   getNodeRadii,
   readGraphShiftY,
   svgScale,
+  svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
 import {
@@ -41,13 +42,222 @@ import {
   computeMobileOpenHomePan,
   computeOpenHomeGravityPan,
   computePanForFocalNode,
-  isOpenHomePhase
+  computePanForNodeAboveFrame,
+  computeTimelineFrameFit,
+  isActiveRoadmapBranchNode,
+  isOpenHomePhase,
+  ROADMAP_CROSSHAIR_ZOOM_MIN
 } from "../../map/pan.js";
+
+/** How long nodes take to ease into a new layout, such as a roadmap slotting into the stack. */
+const LAYOUT_GLIDE_MS = 560;
+/** Reduced motion keeps the slot-in legible but short. */
+const LAYOUT_GLIDE_REDUCED_MS = 280;
+
+/** Tether dot and gap lengths; must match the edge stroke-dasharray in map-canvas.css. */
+const EDGE_DASH_ON = 1.35;
+const EDGE_DASH_OFF = 5.75;
+/** Tethers end this far inside the dot so no hairline shows between line and node. */
+const EDGE_TUCK = 0.6;
+/** "Roadmaps" over the selected roadmap title, relative to the title size. */
+const KICKER_SCALE = 0.8;
+const KICKER_GAP_PX = 3;
+
+/**
+ * Stretch the dot spacing so a tether of this length starts and ends on a dot.
+ * @param {number} length
+ */
+function dashesEndingOnDots(length) {
+  const period = EDGE_DASH_ON + EDGE_DASH_OFF;
+  if (length < period) return "";
+  const count = Math.max(1, Math.round((length - EDGE_DASH_ON) / period));
+  const stretch = length / (count * period + EDGE_DASH_ON);
+  return `${(EDGE_DASH_ON * stretch).toFixed(3)} ${(EDGE_DASH_OFF * stretch).toFixed(3)}`;
+}
+
+/** @param {import("../../graph-store.js").GraphNode} node */
+function nodeMapTitle(node) {
+  if (!node || node.type === "more") return "";
+  if (node.type === "start") return node.label || "You";
+  return shortenMapLabel(node.title || node.label);
+}
+
+/** @param {DOMMatrix|null|undefined} ctm */
+function invertCtm(ctm) {
+  if (!ctm) return null;
+  try {
+    return ctm.inverse();
+  } catch {
+    return null;
+  }
+}
+
+/** @param {{ left: number, right: number, top: number, bottom: number }} a @param {{ left: number, right: number, top: number, bottom: number }} b */
+function screenBoxesOverlap(a, b, pad) {
+  return a.left - pad < b.right && a.right + pad > b.left && a.top - pad < b.bottom && a.bottom + pad > b.top;
+}
+
+/**
+ * Title sits on the node the way the constellation reference does:
+ * above the dot, or beside it when the branch runs out to the side.
+ * @param {{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string }} item
+ * @param {{ nx: number, ny: number } | undefined} you
+ */
+/**
+ * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, side?: string }>} items
+ * @param {{ left: number, right: number } | null} [bounds] visible stage edges in screen px
+ * @param {{ spineAbove?: boolean }} [options] center every title on the horizontal line over its dot
+ */
+function placeTitleBesideNode(items, bounds = null, { spineAbove = false } = {}) {
+  const you = items.find((item) => item.kind === "start");
+  const edgePad = 6;
+  const placeAbove = (item) => {
+    item.side = "above";
+    item.left = item.nx - item.w / 2;
+    item.top = item.ny - item.nr - 16 - item.h;
+    if (bounds && item.nx > bounds.left && item.nx < bounds.right) {
+      item.left = Math.min(Math.max(item.left, bounds.left + edgePad), bounds.right - edgePad - item.w);
+    }
+  };
+  const placeSide = (item, dx) => {
+    if (dx < 0) {
+      item.side = "left";
+      item.left = item.nx - item.nr - 8 - item.w;
+    } else {
+      item.side = "right";
+      item.left = item.nx + item.nr + 8;
+    }
+    item.top = item.ny - item.h / 2;
+    /* A side title past the stage edge gets cut off; lift it over its dot instead. Phones pan to it, so it stays on one line beside its dot there. */
+    const dotVisible = bounds && item.nx > bounds.left && item.nx < bounds.right;
+    if (!spineAbove && dotVisible && (item.left < bounds.left + edgePad || item.left + item.w > bounds.right - edgePad)) {
+      placeAbove(item);
+    }
+  };
+  const placeBelow = (item) => {
+    item.side = "below";
+    item.left = item.nx - item.w / 2;
+    item.top = item.ny + item.nr + 8;
+  };
+  if (you) placeAbove(you);
+  const others = items.filter((item) => item !== you);
+  const spine = you
+    ? others.filter((item) => item.kind !== "path" && item.nx > you.nx && Math.abs(item.ny - you.ny) < 28)
+    : [];
+  const dotOverYouTitle = (item) =>
+    Math.abs(item.nx - you.nx) < you.w / 2 + item.nr + 6 &&
+    item.ny + item.nr + 6 > you.top &&
+    item.ny - item.nr - 6 < you.top + you.h;
+  /** Every spoke is tethered to You, so a line to a node overhead can run through the title. */
+  const tetherThroughYouTitle = (item) => {
+    const midY = you.top + you.h / 2;
+    if (item.ny >= midY) return false;
+    const x = you.nx + ((item.nx - you.nx) * (you.ny - midY)) / (you.ny - item.ny);
+    return x > you.left - 4 && x < you.left + you.w + 4;
+  };
+  if (you && (others.some(dotOverYouTitle) || others.some(tetherThroughYouTitle))) {
+    placeBelow(you);
+    if (others.some(dotOverYouTitle)) placeSide(you, spine.length ? -1 : 1);
+  }
+  const rightmost = spine.reduce((best, item) => (!best || item.nx > best.nx ? item : best), null);
+  const top = others
+    .filter((item) => item.kind !== "path" && !spine.includes(item))
+    .reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
+  others.forEach((item) => {
+    if (item.kind === "path") {
+      placeSide(item, you && item.nx < you.nx - item.nr ? -1 : 1);
+      return;
+    }
+    if (spine.includes(item)) {
+      if (item === rightmost && !spineAbove) placeSide(item, 1);
+      else placeAbove(item);
+      return;
+    }
+    if (item === top) placeAbove(item);
+    else placeSide(item, item.nx - (you?.nx ?? item.nx));
+  });
+}
+
+/**
+ * If two titles touch, lift the higher node's title. Horizontal position stays on that node.
+ * @param {Array<{ left: number, top: number, w: number, h: number, nx: number, ny: number, nr?: number, side?: string }>} items
+ */
+function holdTitlesOnNodes(items) {
+  const homeTop = new Map(items.map((item) => [item, item.top]));
+  for (let pass = 0; pass < 8; pass++) {
+    let hit = false;
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i];
+        const b = items[j];
+        const ba = { left: a.left, right: a.left + a.w, top: a.top, bottom: a.top + a.h };
+        const bb = { left: b.left, right: b.left + b.w, top: b.top, bottom: b.top + b.h };
+        if (!screenBoxesOverlap(ba, bb, 3)) continue;
+        const mover = a.ny <= b.ny ? a : b;
+        if (mover.side === "left" || mover.side === "right") {
+          const other = mover === a ? b : a;
+          if (other.side === "above" && typeof mover.nr === "number") {
+            mover.side = "above";
+            mover.left = mover.nx - mover.w / 2;
+            mover.top = mover.ny - mover.nr - 16 - mover.h;
+            hit = true;
+          }
+          continue;
+        }
+        if (a.side === "below" || b.side === "below") {
+          const lower = a.ny >= b.ny ? a : b;
+          const upper = lower === a ? b : a;
+          const minTop = upper.top + upper.h + 4;
+          if (lower.top < minTop) {
+            lower.top = minTop;
+            lower.left = lower.nx - lower.w / 2;
+            hit = true;
+          }
+          continue;
+        }
+        const ceiling = homeTop.get(mover) - (mover.h + 2);
+        if (mover.top <= ceiling + 1) continue;
+        mover.top = Math.max(ceiling, mover.top - (mover.h + 2));
+        mover.left = mover.nx - mover.w / 2;
+        hit = true;
+      }
+    }
+    if (!hit) break;
+  }
+}
+
+/**
+ * Step a title past a neighboring dot without leaving its side of the node.
+ * @param {{ left: number, top: number, w: number, h: number, nx: number, ny: number, side?: string }} item
+ * @param {Array<{ nx: number, ny: number, nr: number }>} nodes
+ */
+function clearTitleFromNodes(item, nodes) {
+  for (let pass = 0; pass < 5; pass++) {
+    let moved = false;
+    for (const node of nodes) {
+      const apart = Math.hypot(node.nx - item.nx, node.ny - item.ny);
+      if (apart < 2 || apart > item.nr + node.nr + 36) continue;
+      const box = { left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h };
+      const obs = {
+        left: node.nx - node.nr - 3,
+        right: node.nx + node.nr + 3,
+        top: node.ny - node.nr - 3,
+        bottom: node.ny + node.nr + 3
+      };
+      if (!screenBoxesOverlap(box, obs, 1)) continue;
+      if (item.side === "right") item.left = obs.right + 6;
+      else if (item.side === "left") item.left = obs.left - item.w - 6;
+      else if (item.side === "below") item.top = obs.bottom + 4;
+      else item.top = obs.top - item.h - 6;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+}
 
 const MAP_TEMPLATE = `
   <div class="whatimado-map__pan-surface" part="pan-surface" aria-hidden="true"></div>
   <div class="whatimado-map__stage">
-    <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-label="Center on You">YOU</button>
     <svg class="whatimado-map__svg" part="svg" role="img" aria-label="Possibility map">
       <defs>
         <filter id="whatimado-node-shadow" x="-80%" y="-80%" width="260%" height="260%">
@@ -72,6 +282,30 @@ const MAP_TEMPLATE = `
         <g class="whatimado-map__layer whatimado-map__layer--live"></g>
       </g>
     </svg>
+    <div class="whatimado-map__chrome">
+      <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
+      <div class="whatimado-map__timeline-col">
+        <header class="v2-map-timeline" id="map-timeline" hidden aria-label="Mission timeline"></header>
+        <div class="whatimado-map__timeline-tools">
+          <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
+            <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-1.92 1.92a5 5 0 0 0 7.07 7.07l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+            <svg class="whatimado-map__link-icon whatimado-map__link-icon--off" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+          </button>
+          <button type="button" class="whatimado-map__you-btn" part="you-reset" aria-pressed="false" aria-label="Center the map">
+            <svg class="whatimado-map__you-crosshair" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.65" />
+              <path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" />
+              <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 `;
 
@@ -96,6 +330,10 @@ export class WhatimadoMap extends HTMLElement {
     this._panX = 0;
     /** @type {number} */
     this._panY = 0;
+    /** @type {boolean} */
+    this._userPanned = false;
+    /** @type {boolean} */
+    this._expandedSnap = false;
     /** @type {{ x: number, y: number, t: number }[]} */
     this._panSamples = [];
     /** @type {number} */
@@ -106,8 +344,16 @@ export class WhatimadoMap extends HTMLElement {
     this._panGliding = false;
     /** @type {number|null} */
     this._panGlideRaf = null;
-    /** @type {{ pointerId: number, startPanX: number, startPanY: number, startClientX: number, startClientY: number }|null} */
+    /** @type {{ pointerId: number, startPanX: number, startPanY: number, startClientX: number, startClientY: number, scaleX: number, scaleY: number }|null} */
     this._panPointer = null;
+    /** @type {number|null} */
+    this._panMoveRaf = null;
+    /** @type {number} */
+    this._panPendingClientX = 0;
+    /** @type {number} */
+    this._panPendingClientY = 0;
+    /** @type {Element|null} */
+    this._panCaptureEl = null;
     /** @type {number|null} */
     this._panResetRaf = null;
     /** @type {number|null} */
@@ -185,11 +431,15 @@ export class WhatimadoMap extends HTMLElement {
     this._onPinchTouchStart = (event) => this._handlePinchTouchStart(event);
     this._onPinchTouchMove = (event) => this._handlePinchTouchMove(event);
     this._onPinchTouchEnd = (event) => this._handlePinchTouchEnd(event);
+    this._onWheel = (event) => this._handleWheel(event);
 
     this._onPointerMove = (event) => this._handlePointerMove(event);
     this._onPointerUp = (event) => this._handlePointerUp(event);
     this._onGlobalPanMove = (event) => this._handlePanMove(event);
     this._onGlobalPanUp = (event) => this._finishPanPointer(event);
+    this._onPanTouchMove = (event) => {
+      if (this._panPointer || this._pinch) event.preventDefault();
+    };
     /** Hover via geometry — SVG :hover is unreliable under pan-surface stacking */
     this._onHoverPointerMove = (event) => this._handleHoverPointerMove(event);
     this._onHoverMouseMove = (event) => this._handleHoverPointerMove(event);
@@ -199,6 +449,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!this._built) this._build();
     window.addEventListener("pointermove", this._onHoverPointerMove, { passive: true, capture: true });
     window.addEventListener("mousemove", this._onHoverMouseMove, { passive: true, capture: true });
+    window.addEventListener("wheel", this._onWheel, { passive: false, capture: true });
     this._applyMode();
     if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
@@ -207,18 +458,57 @@ export class WhatimadoMap extends HTMLElement {
       this.loadAmbientLiveGraph();
     }
     this._refreshDrift();
-    const isOpen = document.body.dataset.phase === "open";
-    this._frameCoupled = isOpen;
-    requestAnimationFrame(() => {
-      if (isOpen) {
-        this.syncFrameGravity({ animate: false });
-        return;
+    this._onViewportResize = () => {
+      this._syncMobileHeaderMapTools();
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        relayoutLinkedSpread();
+        this.syncRoadmapBranchFit({ animate: false });
       }
-      /** Mid-session reload — align once, then freeze */
+      if (window.matchMedia("(max-width: 900px)").matches && !isOpenHomePhase()) {
+        this.syncDesktopViewBox();
+        if (!this._userPanned) this.syncSnapCamera();
+      } else if (this._userPanned || isOpenHomePhase()) {
+        this.syncDesktopViewBox();
+      } else {
+        this.syncDesktopViewBox();
+        if (!this.syncSnapCamera()) {
+          const target = this._computeChatFrameGravityPan();
+          if (typeof target.zoom === "number") this._zoom = target.zoom;
+          this._animatePanTo(target.panX, target.panY, false);
+        }
+      }
+      this._seatPlusPastTitle();
+    };
+    window.addEventListener("resize", this._onViewportResize);
+    requestAnimationFrame(() => {
       this._frameCoupled = true;
       this.syncFrameGravity({ animate: false });
       this.lockFromFrame();
     });
+    this._syncMobileHeaderMapTools();
+  }
+
+  /** Mobile: Link + crosshair live in the header beside Undo; desktop keeps map chrome. */
+  _syncMobileHeaderMapTools() {
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const slot = document.getElementById("header-map-tools");
+    const tools = this.querySelector(".whatimado-map__timeline-tools");
+    if (!slot) return;
+    if (mobile && this._linkBtn && this._youBtn) {
+      slot.hidden = false;
+      slot.setAttribute("aria-hidden", "false");
+      if (this._linkBtn.parentElement !== slot) slot.append(this._linkBtn);
+      if (this._youBtn.parentElement !== slot) slot.append(this._youBtn);
+      if (tools) tools.hidden = true;
+    } else {
+      slot.hidden = true;
+      slot.setAttribute("aria-hidden", "true");
+      if (tools) {
+        tools.hidden = false;
+        if (this._linkBtn && this._linkBtn.parentElement !== tools) tools.prepend(this._linkBtn);
+        if (this._youBtn && this._youBtn.parentElement !== tools) tools.append(this._youBtn);
+      }
+    }
   }
 
   /** Stop following prompt frame after hero dismiss completes. */
@@ -230,11 +520,31 @@ export class WhatimadoMap extends HTMLElement {
   unlockFrameCoupling() {
     this._frameCoupled = true;
     this.syncFrameGravity({ animate: false });
+    this.lockFromFrame();
+  }
+
+  /** Frame slide must not take the constellation with it. */
+  cancelPanFromFrameDrag() {
+    this._cancelPanMoveFrame();
+    this._stopPanGlide();
+    if (this._gravityRaf !== null) {
+      cancelAnimationFrame(this._gravityRaf);
+      this._gravityRaf = null;
+    }
+    this._releasePanCapture();
+    if (this._globalPanActive) {
+      this._detachGlobalPanListeners();
+    }
+    this._panPointer = null;
+    this._panSamples = [];
+    this.classList.remove("is-panning");
+    this.setNodeHover(null);
   }
 
   disconnectedCallback() {
     this._stopDriftLoop();
     this._stopPanGlide();
+    this.cancelPanFromFrameDrag();
     if (this._panResetRaf !== null) {
       cancelAnimationFrame(this._panResetRaf);
       this._panResetRaf = null;
@@ -248,17 +558,20 @@ export class WhatimadoMap extends HTMLElement {
     this.removeEventListener("pointermove", this._onPointerMove);
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
+    window.removeEventListener("resize", this._onViewportResize);
+    if (this._plusSeatRaf) cancelAnimationFrame(this._plusSeatRaf);
     window.removeEventListener("pointermove", this._onHoverPointerMove, true);
     window.removeEventListener("mousemove", this._onHoverMouseMove, true);
+    window.removeEventListener("wheel", this._onWheel, true);
     if (this._hoverRaf !== null) {
       cancelAnimationFrame(this._hoverRaf);
       this._hoverRaf = null;
     }
     this._detachGlobalPanListeners();
-    this._panSurface?.removeEventListener("touchstart", this._onPinchTouchStart);
-    this._panSurface?.removeEventListener("touchmove", this._onPinchTouchMove);
-    this._panSurface?.removeEventListener("touchend", this._onPinchTouchEnd);
-    this._panSurface?.removeEventListener("touchcancel", this._onPinchTouchEnd);
+    this.removeEventListener("touchstart", this._onPinchTouchStart);
+    this.removeEventListener("touchmove", this._onPinchTouchMove);
+    this.removeEventListener("touchend", this._onPinchTouchEnd);
+    this.removeEventListener("touchcancel", this._onPinchTouchEnd);
   }
 
   attributeChangedCallback(name) {
@@ -289,20 +602,172 @@ export class WhatimadoMap extends HTMLElement {
     this._applyAnchorStyles();
   }
 
+  _syncLinkButton() {
+    const linked = roadmapFocusLinked;
+    this._linkBtn?.classList.toggle("is-linked", linked);
+    this._linkBtn?.setAttribute("aria-pressed", linked ? "true" : "false");
+    const label = linked
+      ? "Linked. The map follows the selected roadmap and keeps it running to the right of You. Click to unlink and leave the map where it is."
+      : "Unlinked. The map stays put when you change roadmaps. Click to link it so the selected roadmap runs to the right of You.";
+    this._linkBtn?.setAttribute("aria-label", label);
+    this._linkBtn?.setAttribute("title", label);
+  }
+
+  _toggleFocusLink() {
+    setRoadmapFocusLinked(!roadmapFocusLinked);
+    this._syncLinkButton();
+    const chosen =
+      this._liveNodes.find((node) => node.id === (this._selectedId || graphStore.selectedId) && node.type === "path") ||
+      this._liveNodes.find((node) => node.type === "path");
+    if (!chosen) return;
+    showRoadmapBranch(chosen.id);
+    this.syncLiveFromStore();
+    if (roadmapFocusLinked && !this.syncSnapCamera()) this.resetToYou({ animate: true });
+  }
+
+  _cancelLayoutSpin() {
+    if (this._layoutSpinRaf) cancelAnimationFrame(this._layoutSpinRaf);
+    this._layoutSpinRaf = 0;
+  }
+
+  /**
+   * Spin spokes around You so the selected roadmap lands pointing right.
+   * @param {GraphNode[]} nodes
+   * @param {GraphEdge[]} edges
+   * @param {{ id: string, x: number, y: number }[]} prev
+   * @param {{ from: number, to: number, chosenId: string }} spin
+   */
+  _animateLinkedSpin(nodes, edges, prev, spin) {
+    const started = performance.now();
+    const duration = 680;
+    const step = (now) => {
+      const t = Math.min(1, (now - started) / duration);
+      const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+      placeLinkedBranch(nodes, spin.from + (spin.to - spin.from) * eased, spin.chosenId);
+      this._renderLayer(this._liveLayer, nodes, edges, { layer: "live" });
+      this._applyAnchorStyles();
+      if (t < 1) {
+        this._layoutSpinRaf = requestAnimationFrame(step);
+        return;
+      }
+      this._layoutSpinRaf = 0;
+      graphStore.focusRotation = spin.to;
+      this.syncSnapCamera();
+    };
+    placeLinkedBranch(nodes, spin.from, spin.chosenId);
+    this._renderLayer(this._liveLayer, nodes, edges, { layer: "live" });
+    this._layoutSpinRaf = requestAnimationFrame(step);
+  }
+
   /** @param {GraphNode[]} nodes @param {GraphEdge[]} edges */
   loadLiveGraph(nodes, edges) {
+    const prev = this._liveNodes.map((node) => ({ id: node.id, x: node.x, y: node.y }));
+    const spin = graphStore.focusSpin;
+    graphStore.focusSpin = null;
+    this._cancelLayoutSpin();
     this._liveNodes = nodes;
     const start = nodes.find((n) => n.type === "start");
     this._anchorId = start?.id ?? nodes[0]?.id ?? this._anchorId;
-    this._renderLayer(this._liveLayer, nodes, edges, {
-      layer: "live"
+    const moved = prev.some((node) => {
+      const next = nodes.find((entry) => entry.id === node.id);
+      return next && Math.hypot(next.x - node.x, next.y - node.y) > 0.03;
     });
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (roadmapFocusLinked && spin && moved && !reduce) {
+      this._animateLinkedSpin(nodes, edges, prev, spin);
+      return;
+    }
+    const carried = this._layoutGlideOffsets(performance.now());
+    this._renderLayer(this._liveLayer, nodes, edges, { layer: "live" });
+    this._glideFromPrevious(prev, carried);
+  }
+
+  /**
+   * Ease nodes from where they were drawn into their new slots. A roadmap that
+   * was not on the map yet comes out from under the roadmap above it.
+   * @param {{ id: string, x: number, y: number }[]} prev
+   * @param {Map<string, { x: number, y: number }>} carried Offsets still left from a glide in progress
+   */
+  _glideFromPrevious(prev, carried) {
+    this._layoutGlide = null;
+    this.querySelectorAll(".whatimado-map__node--live.is-entering").forEach((el) => el.classList.remove("is-entering"));
+    if (!prev.length) return;
+    const before = new Map(prev.map((node) => [node.id, node]));
+    if (!this._liveNodes.some((node) => before.has(node.id) && node.type !== "start")) return;
+
+    /** @type {Map<string, { x: number, y: number }>} */
+    const from = new Map();
+    /** @type {string[]} */
+    const entering = [];
+    let pathAbove = null;
+    for (const node of this._liveNodes) {
+      let start = before.get(node.id);
+      let startId = node.id;
+      if (!start && node.type === "path" && pathAbove) {
+        start = before.get(pathAbove);
+        startId = pathAbove;
+        entering.push(node.id);
+      }
+      if (node.type === "path" && before.has(node.id)) pathAbove = node.id;
+      if (!start) continue;
+      const carry = carried.get(startId);
+      const dx = (start.x - node.x) * VIEW_W + (carry?.x || 0);
+      const dy = (start.y - node.y) * VIEW_H + (carry?.y || 0);
+      if (Math.hypot(dx, dy) < 0.5) continue;
+      from.set(node.id, { x: dx, y: dy });
+    }
+    if (!from.size) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this._layoutGlide = { from, startMs: performance.now(), durationMs: reduce ? LAYOUT_GLIDE_REDUCED_MS : LAYOUT_GLIDE_MS };
+    entering.forEach((id) => {
+      this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`)?.classList.add("is-entering");
+    });
+  }
+
+  /**
+   * What is left of the layout glide at this moment, per node, in SVG units.
+   * @param {number} now
+   * @returns {Map<string, { x: number, y: number }>}
+   */
+  _layoutGlideOffsets(now) {
+    /** @type {Map<string, { x: number, y: number }>} */
+    const out = new Map();
+    const glide = this._layoutGlide;
+    if (!glide) return out;
+    const t = Math.max(0, (now - glide.startMs) / glide.durationMs);
+    if (t >= 1) {
+      this._layoutGlide = null;
+      this.querySelectorAll(".whatimado-map__node--live.is-entering").forEach((el) => el.classList.remove("is-entering"));
+      this._layoutCallouts();
+      return out;
+    }
+    const left = (1 - t) ** 3;
+    glide.from.forEach((offset, id) => out.set(id, { x: offset.x * left, y: offset.y * left }));
+    return out;
   }
 
   /** Sync live layer from graph-store */
   syncLiveFromStore() {
     this.loadLiveGraph(graphStore.nodes, graphStore.edges);
     this._applyAnchorStyles();
+    if (this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1") {
+      this.fitLockedScene({ animate: false });
+      return;
+    }
+    const fresh = this.querySelector(".whatimado-map__new-roadmap");
+    const onRoadmap = this._liveNodes.some((node) => node.type === "path" || node.type === "task");
+    fresh?.classList.toggle("hidden", !onRoadmap);
+    if (isOpenHomePhase()) return;
+    this.syncDesktopViewBox();
+    if (this.syncSnapCamera()) return;
+    if (this._liveNodes.some((node) => node.type === "task")) {
+      if (this.syncRoadmapBranchFit({ animate: false })) return;
+    }
+    if (window.matchMedia("(max-width: 900px)").matches) return;
+    this._userPanned = false;
+    const target = this._computeChatFrameGravityPan();
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
+    this._animatePanTo(target.panX, target.panY, false);
   }
 
   /** Fade out ambient ghost (Step B — full personalize in Step D) */
@@ -329,14 +794,51 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {string|null} id */
   setSelectedNode(id) {
     this._selectedId = id;
-    if (id) {
+    if (id && this._liveNodes.length <= 2) {
       this._focalLocked = true;
       this._focalNodeId = id;
-      const target = this._computePanForFocalNode(id);
+      const desktop = !window.matchMedia("(max-width: 900px)").matches;
+      if (desktop) this.syncDesktopViewBox();
+      const target = desktop ? computePanForNodeAboveFrame(this, id) : this._computePanForFocalNode(id);
       this._animatePanTo(target.panX, target.panY, true);
+    } else {
+      this._focalLocked = false;
+      this._focalNodeId = null;
     }
     this._applyAnchorStyles();
     this.setPathPreview(null);
+  }
+
+  /** Highlight a node without making it the chosen roadmap. @param {string|null} id */
+  setFocusedNode(id) {
+    this._focusedId = id || null;
+    this.querySelectorAll(".whatimado-map__node--live.is-focused").forEach((el) => {
+      el.classList.remove("is-focused");
+    });
+    if (!id) {
+      this._syncAlternateVisibility();
+      return;
+    }
+    this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`)?.classList.add("is-focused");
+    this._syncAlternateVisibility();
+  }
+
+  /** Show the vertical line only as far as the unchosen roadmap that is selected. */
+  _syncAlternateVisibility() {
+    const layer = this._liveLayer;
+    if (!layer) return;
+    layer.querySelectorAll(".whatimado-map__edge.is-alternate-edge").forEach((edge) => {
+      edge.classList.remove("is-revealed");
+    });
+    let cursor = this._focusedId || "";
+    for (let step = 0; cursor && step < 8; step += 1) {
+      const edge = [...layer.querySelectorAll(".whatimado-map__edge.is-alternate-edge")].find(
+        (line) => line.getAttribute("data-to") === cursor
+      );
+      if (!edge) break;
+      edge.classList.add("is-revealed");
+      cursor = edge.getAttribute("data-from") || "";
+    }
   }
 
   /** Mirror path-card hover on the matching live node */
@@ -409,9 +911,10 @@ export class WhatimadoMap extends HTMLElement {
   /**
    * Release velocity for canvas pan — same friction family as frame/node glide.
    * @param {{ x: number, y: number, t: number }[]} samples
-   * @param {number} scale svg units per pixel
+   * @param {number} scaleX svg units per pixel
+   * @param {number} [scaleY]
    */
-  _computePanReleaseVelocity(samples, scale) {
+  _computePanReleaseVelocity(samples, scaleX, scaleY = scaleX) {
     if (samples.length < 2) return { vx: 0, vy: 0 };
 
     const last = samples[samples.length - 1];
@@ -421,8 +924,8 @@ export class WhatimadoMap extends HTMLElement {
 
     const pxPerMsX = (last.x - prev.x) / dt;
     const pxPerMsY = (last.y - prev.y) / dt;
-    const pxPerFrameX = pxPerMsX * (1000 / 60) * scale;
-    const pxPerFrameY = pxPerMsY * (1000 / 60) * scale;
+    const pxPerFrameX = pxPerMsX * (1000 / 60) * scaleX;
+    const pxPerFrameY = pxPerMsY * (1000 / 60) * scaleY;
 
     let vx = pxPerFrameX * GLIDE_VEL_SCALE;
     let vy = pxPerFrameY * GLIDE_VEL_SCALE;
@@ -468,8 +971,30 @@ export class WhatimadoMap extends HTMLElement {
     return computeOpenHomeGravityPan(this);
   }
 
+  /**
+   * Desktop chat uses a viewBox as tall as the column so nodes stay round
+   * and can pan through the space behind the prompt.
+   */
+  syncDesktopViewBox() {
+    if (!this._svg) return;
+    const openHome =
+      document.body.dataset.phase === "open" && !document.body.classList.contains("is-hero-dismissing");
+    if (window.matchMedia("(max-width: 900px)").matches || openHome) {
+      this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
+      this._svg.removeAttribute("preserveAspectRatio");
+      return;
+    }
+    const stage = this.querySelector(".whatimado-map__stage");
+    const rect = stage?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) return;
+    const vbH = VIEW_W * (rect.height / rect.width);
+    this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${vbH}`);
+    this._svg.setAttribute("preserveAspectRatio", "xMidYMin meet");
+  }
+
   /** @returns {{ panX: number, panY: number }} */
   _computeChatFrameGravityPan() {
+    this.syncDesktopViewBox();
     return computeChatFrameGravityPan(this);
   }
 
@@ -486,12 +1011,22 @@ export class WhatimadoMap extends HTMLElement {
     if (!this._frameCoupled || (this._focalLocked && !this._focalNodeId)) return;
 
     const target = this._computeChatFrameGravityPanAtMainTop(frameTopMainPx);
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
   /** Frozen default when decoupled — centers graph in map stage */
   _computeDefaultScenePan() {
     return computeDefaultScenePan(this);
+  }
+
+  /** Recenter a locked constellation after the mobile map band is resized. */
+  fitLockedScene({ animate = false } = {}) {
+    if (this.dataset.readingPinned === "1" && this.syncSpreadForFrame()) return;
+    const chatPinned = this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1";
+    const target = chatPinned ? this._computeChatFrameGravityPan() : this._computeDefaultScenePan();
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
+    this._animatePanTo(target.panX, target.panY, animate);
   }
 
   /**
@@ -514,7 +1049,9 @@ export class WhatimadoMap extends HTMLElement {
       this._gravityRaf = null;
     }
 
-    if (!animate || this._driftReducedMotion) {
+    const distance = Math.hypot(targetX - this._panX, targetY - this._panY);
+    const slide = animate && (distance > 1.5 || !this._driftReducedMotion);
+    if (!slide) {
       this._panX = targetX;
       this._panY = targetY;
       this._applyPanTransform();
@@ -574,27 +1111,218 @@ export class WhatimadoMap extends HTMLElement {
       target = this._computePanForFocalNode(this._focalNodeId);
     } else if (isOpenHomePhase()) {
       target = this._computeOpenHomeGravityPan();
-      if (typeof target.zoom === "number") {
-        this._zoom = target.zoom;
-      }
     } else {
+      if (this.syncSnapCamera()) return;
       target = this._computeChatFrameGravityPan();
     }
 
+    if (typeof target.zoom === "number") this._zoom = target.zoom;
     this._animatePanTo(target.panX, target.panY, animate);
   }
 
-  /** Reset pan — follows frame while coupled, stage-centered when locked. */
+  /**
+   * At home or lower, zoom and center the roadmap between the timeline and the prompt.
+   * Tucked above home, the map holds where it was.
+   * On mobile this only runs while the sheet rests low enough to show the map band.
+   * @param {number} [frameTop] Frame top in main coordinates
+   * @returns {boolean} Whether the camera was fitted
+   */
+  syncSpreadForFrame(frameTop) {
+    if (!this._liveNodes.some((node) => node.type === "more")) return false;
+    const frame = document.getElementById("dynamic-frame");
+    const main = document.querySelector(".v2-main");
+    if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      if (isOpenHomePhase() || this.dataset.focusPinned === "1") return false;
+      const snap = frame._dock?.activeSnap;
+      if (snap !== "mobile-collapsed" && snap !== "mobile-focus") return false;
+      if (frame._dock?._keyboardDocked || document.body.classList.contains("is-mobile-composer-focus")) return false;
+    } else {
+      const anchors = measureAnchors(main, frame);
+      const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
+      if (top < anchors.homeBase - 1) return false;
+    }
+    const selectedId = this._selectedId || graphStore.selectedId;
+    const selected = this._liveNodes.find((node) => node.type === "path" && node.id === selectedId);
+    const chosenPathId = appStore.journey.roadmapPathId || selectedId;
+    const hasRoadmapColumns = this._liveNodes.some((node) => node.type === "task");
+    const desktopCrosshair = !window.matchMedia("(max-width: 900px)").matches;
+    const options = {
+      centerNodeId: hasRoadmapColumns ? null : roadmapFocusLinked ? null : selected?.id,
+      reserve: null,
+      includeNode: hasRoadmapColumns
+        ? (node) => isActiveRoadmapBranchNode(node, chosenPathId)
+        : undefined,
+      minZoom: hasRoadmapColumns && desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : undefined
+    };
+    const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    this._userPanned = false;
+    for (let pass = 0; pass < 3; pass++) {
+      const fit = computeTimelineFrameFit(this, options);
+      this._zoom = fit.zoom;
+      this._animatePanTo(fit.panX, fit.panY, false);
+      const reserve = this._measureTitleReserve();
+      if (!reserve) break;
+      options.reserve = reserve;
+    }
+    if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
+    return true;
+  }
+
+  /**
+   * Travel from an earlier framing to the one just applied, so the camera
+   * follows nodes that are gliding into a new layout instead of jumping.
+   * @param {{ zoom: number, panX: number, panY: number }} from
+   * @param {number} durationMs
+   */
+  _easeCameraFrom(from, durationMs) {
+    const to = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    if (Math.abs(to.zoom - from.zoom) < 0.005 && Math.hypot(to.panX - from.panX, to.panY - from.panY) < 1) return;
+    this._stopPanGlide();
+    if (this._gravityRaf !== null) cancelAnimationFrame(this._gravityRaf);
+    const started = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, Math.max(0, (now - started) / durationMs));
+      const eased = 1 - (1 - t) ** 3;
+      this._zoom = from.zoom + (to.zoom - from.zoom) * eased;
+      this._panX = from.panX + (to.panX - from.panX) * eased;
+      this._panY = from.panY + (to.panY - from.panY) * eased;
+      this._applyPanTransform();
+      this._gravityRaf = t < 1 ? requestAnimationFrame(tick) : null;
+    };
+    this._zoom = from.zoom;
+    this._panX = from.panX;
+    this._panY = from.panY;
+    this._applyPanTransform();
+    this._gravityRaf = requestAnimationFrame(tick);
+  }
+
+  /**
+   * How far the visible titles reach past the dots, in screen pixels.
+   * @returns {{ above: number, below: number, left: number, right: number }|null}
+   */
+  _measureTitleReserve() {
+    const layer = this._liveLayer;
+    if (!layer) return null;
+    const dots = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
+    const all = { ...dots };
+    const grow = (box, rect) => {
+      box.left = Math.min(box.left, rect.left);
+      box.right = Math.max(box.right, rect.right);
+      box.top = Math.min(box.top, rect.top);
+      box.bottom = Math.max(box.bottom, rect.bottom);
+    };
+    layer.querySelectorAll(".whatimado-map__node--live").forEach((group) => {
+      const float = group.querySelector(".whatimado-map__node-float");
+      if (float && getComputedStyle(float).visibility !== "visible") return;
+      const body = group.querySelector(".whatimado-map__node-body");
+      if (body) {
+        const rect = body.getBoundingClientRect();
+        grow(dots, rect);
+        grow(all, rect);
+      }
+      group.querySelectorAll("text").forEach((label) => {
+        if (label.textContent?.trim() && getComputedStyle(label).visibility !== "hidden") grow(all, label.getBoundingClientRect());
+      });
+      group.querySelectorAll(".whatimado-map__badge").forEach((badge) => grow(all, badge.getBoundingClientRect()));
+    });
+    if (!Number.isFinite(dots.top)) return null;
+    const pad = 4;
+    const reach = (value, cap) => Math.min(cap, Math.max(0, value)) + pad;
+    return {
+      above: reach(dots.top - all.top, 58),
+      below: reach(all.bottom - dots.bottom, 24),
+      left: reach(dots.left - all.left, 130),
+      right: reach(all.right - dots.right, 130)
+    };
+  }
+
+  /** Re-fit the roadmap to wherever the prompt currently sits. */
+  syncSnapCamera() {
+    const frame = document.getElementById("dynamic-frame");
+    const main = document.querySelector(".v2-main");
+    if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
+    const dockTop = frame._dock?.topPx;
+    const top = Number.isFinite(dockTop) ? dockTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
+    return this.syncSpreadForFrame(top);
+  }
+
+  /**
+   * Fit the active roadmap branch (milestones, task columns, +) above the prompt frame.
+   * @param {{ animate?: boolean }} [options]
+   * @returns {boolean}
+   */
+  syncRoadmapBranchFit({ animate = false } = {}) {
+    const hasRoadmapColumns = this._liveNodes.some((node) => node.type === "task");
+    if (!hasRoadmapColumns) return false;
+    this._userPanned = false;
+    this.syncDesktopViewBox();
+    const selectedId = this._selectedId || graphStore.selectedId;
+    const chosenPathId = appStore.journey.roadmapPathId || selectedId;
+    const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    const desktopCrosshair = !window.matchMedia("(max-width: 900px)").matches;
+    const options = {
+      centerNodeId: null,
+      reserve: null,
+      includeNode: (node) => isActiveRoadmapBranchNode(node, chosenPathId),
+      minZoom: desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : undefined
+    };
+    for (let pass = 0; pass < 3; pass++) {
+      const fit = computeTimelineFrameFit(this, options);
+      this._zoom = fit.zoom;
+      this._animatePanTo(fit.panX, fit.panY, false);
+      options.reserve = this._measureTitleReserve();
+      if (!options.reserve) break;
+    }
+    if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
+    return true;
+  }
+
+  /** Fit the current roadmap/task nodes (labels and badges) between timeline and prompt. */
   resetToYou({ animate = true } = {}) {
-    this._focalLocked = false;
-    this._focalNodeId = null;
-    this._zoom = 1;
-    if (this._frameCoupled) {
-      this.syncFrameGravity({ animate });
+    this._userPanned = false;
+    this.syncDesktopViewBox();
+    const selectedId = this._selectedId || graphStore.selectedId;
+    const keepSelection = selectedId;
+    const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    if (this.syncRoadmapBranchFit({ animate: false })) {
+      if (keepSelection && this._liveNodes.some((node) => node.id === keepSelection)) {
+        this._selectedId = keepSelection;
+        graphStore.selectedId = keepSelection;
+      }
+      this._focalLocked = true;
+      this._focalNodeId = this._selectedId;
+      this._youBtn?.classList.add("is-active");
+      this._youBtn?.setAttribute("aria-pressed", "true");
+      this._applyAnchorStyles();
+      if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
       return;
     }
-    const target = this._computeDefaultScenePan();
-    this._animatePanTo(target.panX, target.panY, animate);
+    const chosenPathId = appStore.journey.roadmapPathId || keepSelection;
+    const desktopCrosshair = !window.matchMedia("(max-width: 900px)").matches;
+    const options = {
+      centerNodeId: null,
+      reserve: null,
+      includeNode: (node) => isActiveRoadmapBranchNode(node, chosenPathId),
+      minZoom: desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : undefined
+    };
+    for (let pass = 0; pass < 3; pass++) {
+      const fit = computeTimelineFrameFit(this, options);
+      this._zoom = fit.zoom;
+      this._animatePanTo(fit.panX, fit.panY, false);
+      options.reserve = this._measureTitleReserve();
+      if (!options.reserve) break;
+    }
+    if (keepSelection && this._liveNodes.some((node) => node.id === keepSelection)) {
+      this._selectedId = keepSelection;
+      graphStore.selectedId = keepSelection;
+    }
+    this._focalLocked = true;
+    this._focalNodeId = this._selectedId;
+    this._youBtn?.classList.add("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "true");
+    this._applyAnchorStyles();
+    if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
   }
 
   /** @param {TouchList} touches */
@@ -612,17 +1340,115 @@ export class WhatimadoMap extends HTMLElement {
     };
   }
 
+  /**
+   * Keep the viewBox point under the cursor/pinch while zoom changes.
+   * @param {number} focalX
+   * @param {number} focalY
+   * @param {number} fromZoom
+   * @param {number} fromPanX
+   * @param {number} fromPanY
+   * @param {number} nextZoom
+   */
+  _applyZoomKeepingPoint(focalX, focalY, fromZoom, fromPanX, fromPanY, nextZoom) {
+    const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, nextZoom));
+    if (!(fromZoom > 0) || zoom === fromZoom) return false;
+    const ratio = zoom / fromZoom;
+    this._zoom = zoom;
+    this._panX = ratio * fromPanX + (1 - ratio) * (focalX - SCALE_CENTER_X);
+    this._panY = ratio * fromPanY + (1 - ratio) * (focalY - SCALE_CENTER_Y);
+    this._focalLocked = true;
+    this._focalNodeId = null;
+    this._userPanned = true;
+    this._youBtn?.classList.remove("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "false");
+    this._applyPanTransform();
+    return true;
+  }
+
+  /**
+   * The constellation band: the map stage, cut off where the prompt frame begins.
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _mapBandContains(clientX, clientY) {
+    const stage = this.querySelector(".whatimado-map__stage");
+    if (!stage) return false;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width < 40 || rect.height < 40) return false;
+    const frame = document.getElementById("dynamic-frame");
+    let bottom = rect.bottom;
+    if (frame instanceof HTMLElement) {
+      const frameTop = frame.getBoundingClientRect().top;
+      if (frameTop > rect.top + 24) bottom = Math.min(bottom, frameTop);
+    }
+    return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY < bottom;
+  }
+
+  /**
+   * True only when the pointer is on the node map itself, not the prompt, sidebar, or page chrome.
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _pointerInMap(clientX, clientY) {
+    if (this.getAttribute("mode") === "hidden") return false;
+    if (!this._mapBandContains(clientX, clientY)) return false;
+    const hit = document.elementFromPoint(clientX, clientY);
+    if (!(hit instanceof Element)) return false;
+    if (hit.closest("whatimado-frame, .v2-frame-kicker, .v2-sidebar, .v2-rail, header, .v2-header, .v2-topbar")) {
+      return false;
+    }
+    if (hit.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) {
+      return false;
+    }
+    return Boolean(hit.closest("whatimado-map"));
+  }
+
+  /**
+   * Mouse wheel zooms the map. A trackpad pinch arrives as a wheel event with ctrlKey.
+   * Both are ignored outside the node-map band so the rest of the page stays still.
+   * @param {WheelEvent} event
+   */
+  _handleWheel(event) {
+    if (this.getAttribute("mode") === "hidden") return;
+    if (document.body.classList.contains("is-frame-dragging")) return;
+
+    const inMap = this._pointerInMap(event.clientX, event.clientY);
+    if (!inMap) {
+      // A trackpad pinch outside the map would scale the whole page. Swallow only that.
+      if (event.ctrlKey) event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+    this._stopPanGlide();
+
+    let delta = event.deltaY;
+    if (event.deltaMode === 1) delta *= 16;
+    else if (event.deltaMode === 2) delta *= 400;
+    if (!Number.isFinite(delta) || delta === 0) return;
+
+    // Pinch deltas are steeper than a mouse notch, so they use a lighter gain.
+    const speed = event.ctrlKey ? 0.01 : 0.0024;
+    const factor = Math.min(1.35, Math.max(0.74, Math.exp(-delta * speed)));
+    const focal = this._clientToSvg(event.clientX, event.clientY);
+    this._applyZoomKeepingPoint(focal.x, focal.y, this._zoom, this._panX, this._panY, this._zoom * factor);
+  }
+
   /** @param {TouchEvent} event */
   _handlePinchTouchStart(event) {
-    if (event.touches.length !== 2 || !this._panSurface) return;
+    if (event.touches.length !== 2) return;
+    if (this.getAttribute("mode") === "hidden") return;
+    const touches = Array.from(event.touches);
+    if (!touches.every((touch) => this._mapBandContains(touch.clientX, touch.clientY))) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest("whatimado-frame, .whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) {
+      return;
+    }
 
     event.preventDefault();
     this._stopPanGlide();
     if (this._panPointer) {
-      this._detachGlobalPanListeners();
-      this._panPointer = null;
-      this._panSamples = [];
-      this.classList.remove("is-panning");
+      this.cancelPanFromFrameDrag();
     }
 
     const center = this._touchCenter(event.touches);
@@ -634,7 +1460,9 @@ export class WhatimadoMap extends HTMLElement {
       startPanX: this._panX,
       startPanY: this._panY,
       focalX: focal.x,
-      focalY: focal.y
+      focalY: focal.y,
+      startCenterX: center.x,
+      startCenterY: center.y
     };
     this.classList.add("is-pinch-zooming");
   }
@@ -642,7 +1470,6 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {TouchEvent} event */
   _handlePinchTouchMove(event) {
     if (!this._pinch || event.touches.length < 2) return;
-
     event.preventDefault();
     const dist = this._touchDistance(event.touches);
     if (this._pinch.startDist <= 0) return;
@@ -651,11 +1478,20 @@ export class WhatimadoMap extends HTMLElement {
       ZOOM_MIN,
       Math.min(ZOOM_MAX, this._pinch.startZoom * (dist / this._pinch.startDist))
     );
-    const deltaZoom = this._pinch.startZoom - nextZoom;
-
+    const center = this._touchCenter(event.touches);
+    const { x: scaleX, y: scaleY } = svgScaleXY(this._svg);
+    const panDx = (center.x - this._pinch.startCenterX) * scaleX;
+    const panDy = (center.y - this._pinch.startCenterY) * scaleY;
+    const fromZoom = this._pinch.startZoom > 0 ? this._pinch.startZoom : 1;
+    const ratio = nextZoom / fromZoom;
     this._zoom = nextZoom;
-    this._panX = this._pinch.startPanX + deltaZoom * (this._pinch.focalX - SCALE_CENTER_X);
-    this._panY = this._pinch.startPanY + deltaZoom * (this._pinch.focalY - SCALE_CENTER_Y);
+    this._panX = ratio * this._pinch.startPanX + (1 - ratio) * (this._pinch.focalX - SCALE_CENTER_X) + panDx;
+    this._panY = ratio * this._pinch.startPanY + (1 - ratio) * (this._pinch.focalY - SCALE_CENTER_Y) + panDy;
+    this._focalLocked = true;
+    this._focalNodeId = null;
+    this._userPanned = true;
+    this._youBtn?.classList.remove("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "false");
     this._applyPanTransform();
   }
 
@@ -680,28 +1516,57 @@ export class WhatimadoMap extends HTMLElement {
       "transform",
       `translate(${this._panX}, ${shiftY + this._panY}) translate(${SCALE_CENTER_X}, ${SCALE_CENTER_Y}) scale(${z}) translate(${-SCALE_CENTER_X}, ${-SCALE_CENTER_Y})`
     );
+    this._layoutCallouts();
   }
 
   _detachGlobalPanListeners() {
     document.removeEventListener("pointermove", this._onGlobalPanMove);
     document.removeEventListener("pointerup", this._onGlobalPanUp);
     document.removeEventListener("pointercancel", this._onGlobalPanUp);
+    document.removeEventListener("touchmove", this._onPanTouchMove);
+    document.body.classList.remove("is-map-panning");
     this._globalPanActive = false;
+  }
+
+  _releasePanCapture() {
+    const el = this._panCaptureEl;
+    const pointer = this._panPointer;
+    this._panCaptureEl = null;
+    if (!el || !pointer) return;
+    try {
+      if (el.hasPointerCapture?.(pointer.pointerId)) {
+        el.releasePointerCapture(pointer.pointerId);
+      }
+    } catch {
+      /* already released */
+    }
+  }
+
+  _cancelPanMoveFrame() {
+    if (this._panMoveRaf !== null) {
+      cancelAnimationFrame(this._panMoveRaf);
+      this._panMoveRaf = null;
+    }
   }
 
   /** @param {PointerEvent} event */
   _finishPanPointer(event) {
     if (!this._panPointer || event.pointerId !== this._panPointer.pointerId) return;
 
+    this._flushPanMove();
+    this._cancelPanMoveFrame();
+
     const startPanX = this._panPointer.startPanX;
     const startPanY = this._panPointer.startPanY;
+    const scaleX = this._panPointer.scaleX;
+    const scaleY = this._panPointer.scaleY;
 
+    this._releasePanCapture();
     if (this._globalPanActive) {
       this._detachGlobalPanListeners();
     }
 
-    const scale = svgScale(this._svg);
-    const { vx, vy } = this._computePanReleaseVelocity(this._panSamples, scale);
+    const { vx, vy } = this._computePanReleaseVelocity(this._panSamples, scaleX, scaleY);
     this._panSamples = [];
     this._panPointer = null;
     this.classList.remove("is-panning");
@@ -709,6 +1574,7 @@ export class WhatimadoMap extends HTMLElement {
     if (Math.hypot(this._panX - startPanX, this._panY - startPanY) > 6) {
       this._focalLocked = true;
       this._focalNodeId = null;
+      this._userPanned = true;
     }
 
     if (!this._driftReducedMotion && Math.hypot(vx, vy) >= GLIDE_MIN_SPEED) {
@@ -726,11 +1592,13 @@ export class WhatimadoMap extends HTMLElement {
     if (event.button !== 0) return;
     if (this._pinch) return;
     if (this.getAttribute("mode") === "hidden") return;
+    if (document.body.classList.contains("is-frame-dragging")) return;
 
     const target = event.target;
     if (!(target instanceof Element)) return;
+    if (target.closest("whatimado-frame")) return;
     if (target.closest(".whatimado-map__node")) return;
-    if (target.closest(".whatimado-map__you-btn")) return;
+    if (target.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) return;
 
     this._beginPanPointer(event);
   }
@@ -738,21 +1606,39 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {PointerEvent} event */
   _beginPanPointer(event) {
     event.preventDefault();
+    this._youBtn?.classList.remove("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "false");
     this._stopPanGlide();
+    this._cancelPanMoveFrame();
+
+    const { x: scaleX, y: scaleY } = svgScaleXY(this._svg);
+    const captureEl = event.target instanceof Element ? event.target : this._panSurface;
 
     this._globalPanActive = true;
+    document.body.classList.add("is-map-panning");
     document.addEventListener("pointermove", this._onGlobalPanMove);
     document.addEventListener("pointerup", this._onGlobalPanUp);
     document.addEventListener("pointercancel", this._onGlobalPanUp);
+    document.addEventListener("touchmove", this._onPanTouchMove, { passive: false });
 
     this._panSamples = [{ x: event.clientX, y: event.clientY, t: performance.now() }];
+    this._panPendingClientX = event.clientX;
+    this._panPendingClientY = event.clientY;
     this._panPointer = {
       pointerId: event.pointerId,
       startPanX: this._panX,
       startPanY: this._panY,
       startClientX: event.clientX,
-      startClientY: event.clientY
+      startClientY: event.clientY,
+      scaleX,
+      scaleY
     };
+    this._panCaptureEl = captureEl;
+    try {
+      captureEl?.setPointerCapture?.(event.pointerId);
+    } catch {
+      this._panCaptureEl = null;
+    }
     this.classList.add("is-panning");
   }
 
@@ -766,24 +1652,32 @@ export class WhatimadoMap extends HTMLElement {
     this._ghostLayer = this.querySelector(".whatimado-map__layer--ghost");
     this._liveLayer = this.querySelector(".whatimado-map__layer--live");
     this._youBtn = this.querySelector(".whatimado-map__you-btn");
-    const mapBrand = /** @type {{ youButtonLabel?: string, youButtonAriaLabel?: string }|undefined} */ (
-      getBrand()?.map
-    );
-    if (this._youBtn && mapBrand?.youButtonLabel) {
-      this._youBtn.textContent = mapBrand.youButtonLabel;
-    }
-    if (this._youBtn && mapBrand?.youButtonAriaLabel) {
-      this._youBtn.setAttribute("aria-label", mapBrand.youButtonAriaLabel);
-    }
     if (this._svg) {
       this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
     }
-    this._youBtn?.addEventListener("click", () => this.resetToYou());
+    const focusSelected = (event) => {
+      if (typeof event.button === "number" && event.button > 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const now = performance.now();
+      if (now - (this._crosshairAt || 0) < 350) return;
+      this._crosshairAt = now;
+      this.resetToYou();
+    };
+    this._youBtn?.addEventListener("pointerdown", focusSelected);
+    this._youBtn?.addEventListener("click", focusSelected);
+    this._linkBtn = this.querySelector(".whatimado-map__link-btn");
+    this._syncLinkButton();
+    this._linkBtn?.addEventListener("click", () => this._toggleFocusLink());
+    this._syncMobileHeaderMapTools();
+    this.querySelector(".whatimado-map__new-roadmap")?.addEventListener("click", () => {
+      this.dispatchEvent(new CustomEvent("map-new-roadmap", { bubbles: true }));
+    });
     this._applyPanTransform();
-    this._panSurface?.addEventListener("touchstart", this._onPinchTouchStart, { passive: false });
-    this._panSurface?.addEventListener("touchmove", this._onPinchTouchMove, { passive: false });
-    this._panSurface?.addEventListener("touchend", this._onPinchTouchEnd, { passive: false });
-    this._panSurface?.addEventListener("touchcancel", this._onPinchTouchEnd, { passive: false });
+    this.addEventListener("touchstart", this._onPinchTouchStart, { passive: false });
+    this.addEventListener("touchmove", this._onPinchTouchMove, { passive: false });
+    this.addEventListener("touchend", this._onPinchTouchEnd, { passive: false });
+    this.addEventListener("touchcancel", this._onPinchTouchEnd, { passive: false });
     this.addEventListener("pointermove", this._onPointerMove);
     this.addEventListener("pointerup", this._onPointerUp);
     this.addEventListener("pointercancel", this._onPointerUp);
@@ -796,6 +1690,10 @@ export class WhatimadoMap extends HTMLElement {
    */
   _handleHoverPointerMove(event) {
     if ("pointerType" in event && event.pointerType === "touch") return;
+    if (document.body.classList.contains("is-frame-dragging") || this._panPointer || this._pinch) {
+      if (this._hoverNodeId) this.setNodeHover(null);
+      return;
+    }
     this._lastHoverClient.x = event.clientX;
     this._lastHoverClient.y = event.clientY;
     if (this._hoverRaf !== null) return;
@@ -841,6 +1739,7 @@ export class WhatimadoMap extends HTMLElement {
         top.closest(".v2-mobile-menu-btn") ||
         top.closest(".v2-mobile-menu-backdrop") ||
         top.closest(".whatimado-map__you-btn") ||
+        top.closest(".whatimado-map__link-btn") ||
         top.closest("input, textarea, button, a, select, label")
       ) {
         return null;
@@ -884,6 +1783,21 @@ export class WhatimadoMap extends HTMLElement {
    */
   _clientToSvg(clientX, clientY) {
     return clientToSvg(this, clientX, clientY);
+  }
+
+  /**
+   * Pointer position in live-layer units, so a dragged node tracks the cursor at any camera zoom.
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _clientToLayer(clientX, clientY) {
+    const ctm = this._liveLayer?.getScreenCTM();
+    if (!ctm || !this._svg) return this._clientToSvg(clientX, clientY);
+    const pt = this._svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const local = pt.matrixTransform(ctm.inverse());
+    return { x: local.x, y: local.y };
   }
 
   _applyMode() {
@@ -934,6 +1848,7 @@ export class WhatimadoMap extends HTMLElement {
         homeVy: 0,
         driftAnchorX: 0,
         driftAnchorY: 0,
+        isTask: groupEl.classList.contains("is-task") || groupEl.classList.contains("is-alternate"),
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
@@ -1028,11 +1943,13 @@ export class WhatimadoMap extends HTMLElement {
       adjusted = true;
     }
 
-    if (cy < minY) {
+    /* Task stacks and the alternate column can run deeper than the 240-unit band; the camera fit frames them and the home spring returns drags. */
+    const boundY = !node.isTask;
+    if (boundY && cy < minY) {
       ny += (minY - cy) * BOUND_PULL;
       if (node.glideVy < 0) node.glideVy *= BOUND_GLIDE_DAMP;
       adjusted = true;
-    } else if (cy > maxY) {
+    } else if (boundY && cy > maxY) {
       ny += (maxY - cy) * BOUND_PULL;
       if (node.glideVy > 0) node.glideVy *= BOUND_GLIDE_DAMP;
       adjusted = true;
@@ -1092,6 +2009,23 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node */
   _syncNodePosition(node) {
+    const shiftX = node.baseX - parseFloat(node.circleEl.getAttribute("cx") || String(node.baseX));
+    const shiftY = node.baseY - parseFloat(node.circleEl.getAttribute("cy") || String(node.baseY));
+    if (shiftX || shiftY) {
+      /* Laid-out titles use absolute tspan coordinates, so carry them with the node. */
+      node.groupEl.querySelectorAll(".whatimado-map__label tspan, .whatimado-map__kicker tspan").forEach((el) => {
+        const x = parseFloat(el.getAttribute("x") || "");
+        const y = parseFloat(el.getAttribute("y") || "");
+        if (Number.isFinite(x)) el.setAttribute("x", (x + shiftX).toFixed(2));
+        if (Number.isFinite(y)) el.setAttribute("y", (y + shiftY).toFixed(2));
+      });
+      node.groupEl.querySelectorAll(".whatimado-map__plus line").forEach((el) => {
+        for (const [name, shift] of [["x1", shiftX], ["x2", shiftX], ["y1", shiftY], ["y2", shiftY]]) {
+          const value = parseFloat(el.getAttribute(name) || "");
+          if (Number.isFinite(value)) el.setAttribute(name, (value + shift).toFixed(2));
+        }
+      });
+    }
     node.circleEl.setAttribute("cx", String(node.baseX));
     node.circleEl.setAttribute("cy", String(node.baseY));
     if (node.hitEl) {
@@ -1115,8 +2049,9 @@ export class WhatimadoMap extends HTMLElement {
    * @param {number} ox
    * @param {number} oy
    * @param {number} fallbackR
+   * @param {number} scale Layer units per screen pixel, camera zoom included
    */
-  _visualCenterForEdge(node, ox, oy, fallbackR) {
+  _visualCenterForEdge(node, ox, oy, fallbackR, scale) {
     const x = node.baseX + ox;
     const y = node.baseY + oy;
     const body = node.circleEl;
@@ -1127,7 +2062,6 @@ export class WhatimadoMap extends HTMLElement {
     const hitRect = hit.getBoundingClientRect();
     if (bodyRect.width <= 0 || hitRect.width <= 0) return { x, y, r: fallbackR };
 
-    const scale = svgScale(this._svg);
     return {
       x: x + ((bodyRect.left + bodyRect.right) / 2 - (hitRect.left + hitRect.right) / 2) * scale,
       y: y + ((bodyRect.top + bodyRect.bottom) / 2 - (hitRect.top + hitRect.bottom) / 2) * scale,
@@ -1142,6 +2076,9 @@ export class WhatimadoMap extends HTMLElement {
     const { lg: trimRadius } = getNodeRadii();
     /** @type {Map<string, { x: number, y: number, r: number }>} */
     const centers = new Map();
+    const glide = this._layoutGlideOffsets(performance.now());
+    /** @type {Array<[string, typeof this._driftNodes extends Map<string, infer N> ? N : never, number, number]>} */
+    const placed = [];
 
     for (const [id, node] of this._driftNodes) {
       const isDragging = this._pointer?.nodeId === id;
@@ -1181,8 +2118,20 @@ export class WhatimadoMap extends HTMLElement {
         this._syncGraphNode(id);
       }
 
+      const settle = glide.get(id);
+      if (settle) {
+        ox += settle.x;
+        oy += settle.y;
+      }
       node.groupEl.setAttribute("transform", `translate(${ox}, ${oy})`);
-      centers.set(id, this._visualCenterForEdge(node, ox, oy, trimRadius));
+      placed.push([id, node, ox, oy]);
+    }
+
+    /* Every transform is written before any dot is measured, so the frame lays out once. */
+    const layerCtm = this._liveLayer?.getScreenCTM();
+    const scale = layerCtm ? 1 / (Math.hypot(layerCtm.a, layerCtm.b) || 1) : svgScale(this._svg);
+    for (const [id, node, ox, oy] of placed) {
+      centers.set(id, this._visualCenterForEdge(node, ox, oy, trimRadius, scale));
     }
 
     for (const edge of this._driftEdges) {
@@ -1190,11 +2139,12 @@ export class WhatimadoMap extends HTMLElement {
       const b = centers.get(edge.toId);
       if (!a || !b) continue;
 
-      const trimmed = trimLineToNodeEdges(a.x, a.y, a.r, b.x, b.y, b.r);
+      const trimmed = trimLineToNodeEdges(a.x, a.y, a.r - EDGE_TUCK, b.x, b.y, b.r - EDGE_TUCK);
       edge.lineEl.setAttribute("x1", String(trimmed.x1));
       edge.lineEl.setAttribute("y1", String(trimmed.y1));
       edge.lineEl.setAttribute("x2", String(trimmed.x2));
       edge.lineEl.setAttribute("y2", String(trimmed.y2));
+      edge.lineEl.style.strokeDasharray = dashesEndingOnDots(Math.hypot(trimmed.x2 - trimmed.x1, trimmed.y2 - trimmed.y1));
     }
 
     this._driftFrame = requestAnimationFrame((t) => this._tickDrift(t));
@@ -1212,6 +2162,11 @@ export class WhatimadoMap extends HTMLElement {
       group.classList.toggle("is-support", !isSelected);
       group.classList.toggle("is-primary", isLayoutAnchor);
       group.classList.toggle("is-start", Boolean(isStart));
+      group.classList.toggle("is-roadmap", graphNode?.type === "path");
+      group.classList.toggle("is-mission", graphNode?.type === "mission");
+      group.classList.toggle("is-task", graphNode?.type === "task");
+      group.classList.toggle("is-more", graphNode?.type === "more");
+      group.classList.toggle("is-complete", Boolean(graphNode?.done));
       group.classList.toggle("is-selected", isSelected);
     }
   }
@@ -1232,7 +2187,7 @@ export class WhatimadoMap extends HTMLElement {
 
     this._commitDriftToBase(nodeId);
 
-    const pt = this._clientToSvg(event.clientX, event.clientY);
+    const pt = this._clientToLayer(event.clientX, event.clientY);
 
     driftNode.dragX = 0;
     driftNode.dragY = 0;
@@ -1267,7 +2222,7 @@ export class WhatimadoMap extends HTMLElement {
     const driftNode = this._driftNodes.get(this._pointer.nodeId);
     if (!driftNode) return;
 
-    const pt = this._clientToSvg(event.clientX, event.clientY);
+    const pt = this._clientToLayer(event.clientX, event.clientY);
     const dx = pt.x - this._pointer.startSvgX;
     const dy = pt.y - this._pointer.startSvgY;
 
@@ -1370,17 +2325,32 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {PointerEvent} event */
   _handlePanMove(event) {
-    if (!this._panPointer) return;
+    if (!this._panPointer || event.pointerId !== this._panPointer.pointerId) return;
+    if (document.body.classList.contains("is-frame-dragging")) {
+      this.cancelPanFromFrameDrag();
+      return;
+    }
 
+    this._panPendingClientX = event.clientX;
+    this._panPendingClientY = event.clientY;
     this._panSamples.push({ x: event.clientX, y: event.clientY, t: performance.now() });
     if (this._panSamples.length > 8) this._panSamples.shift();
 
-    const scale = svgScale(this._svg);
-    const dx = (event.clientX - this._panPointer.startClientX) * scale;
-    const dy = (event.clientY - this._panPointer.startClientY) * scale;
+    if (this._panMoveRaf !== null) return;
+    this._panMoveRaf = requestAnimationFrame(() => {
+      this._panMoveRaf = null;
+      this._flushPanMove();
+    });
+  }
 
-    this._panX = this._panPointer.startPanX + dx;
-    this._panY = this._panPointer.startPanY + dy;
+  _flushPanMove() {
+    const pointer = this._panPointer;
+    if (!pointer) return;
+
+    const dx = (this._panPendingClientX - pointer.startClientX) * pointer.scaleX;
+    const dy = (this._panPendingClientY - pointer.startClientY) * pointer.scaleY;
+    this._panX = pointer.startPanX + dx;
+    this._panY = pointer.startPanY + dy;
     this._applyPanTransform();
   }
 
@@ -1421,6 +2391,414 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
+   * SVG text is scaled by the viewBox, so probe the painted height and
+   * choose a font that lands near 13px on screen.
+   * @param {SVGTextElement[]} texts
+   */
+  _fitLabelFont(texts, target = 13) {
+    const probe = 20;
+    texts.forEach((text) => {
+      text.style.fontSize = `${probe}px`;
+    });
+    const painted = texts[0].getBoundingClientRect().height || target;
+    const scale = painted / probe;
+    const fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
+    texts.forEach((text) => {
+      text.style.fontSize = `${fontPx}px`;
+      text.style.letterSpacing = "0.04em";
+      text.style.strokeWidth = "1px";
+    });
+    this._liveLayer?.querySelectorAll(".whatimado-map__kicker").forEach((kicker) => {
+      if (!(kicker instanceof SVGTextElement)) return;
+      kicker.style.fontSize = `${fontPx * KICKER_SCALE}px`;
+      kicker.style.strokeWidth = "1px";
+    });
+    return fontPx;
+  }
+
+  /**
+   * Place each title beside its own node, then pin it so it stays with the dot while the map pans.
+   */
+  _layoutCallouts() {
+    if (this._layingOut) return;
+    const layer = this._liveLayer;
+    const svg = this._svg;
+    if (!layer || !svg) return;
+    const texts = [...layer.querySelectorAll(".whatimado-map__label")];
+    if (!texts.length) return;
+    const stage = this.querySelector(".whatimado-map__stage");
+    if (!stage) return;
+    const stageRect = stage.getBoundingClientRect();
+    if (stageRect.width < 40 || stageRect.height < 40) return;
+
+    this._layingOut = true;
+    try {
+      const restCenter = (body) => {
+        const host = body?.closest(".whatimado-map__node");
+        const ctm = host?.getScreenCTM();
+        if (!body || !ctm) return null;
+        const cx = parseFloat(body.getAttribute("cx") || "0");
+        const cy = parseFloat(body.getAttribute("cy") || "0");
+        const r = parseFloat(body.getAttribute("r") || "6");
+        const center = svg.createSVGPoint();
+        center.x = cx;
+        center.y = cy;
+        const edge = svg.createSVGPoint();
+        edge.x = cx + r;
+        edge.y = cy;
+        const screen = center.matrixTransform(ctm);
+        const edgeScreen = edge.matrixTransform(ctm);
+        const nr = Math.hypot(edgeScreen.x - screen.x, edgeScreen.y - screen.y);
+        return {
+          nx: screen.x,
+          ny: screen.y,
+          nr,
+          nodeLeft: screen.x - nr,
+          nodeRight: screen.x + nr,
+          nodeTop: screen.y - nr
+        };
+      };
+
+      const buildItems = () => texts.map((text) => {
+        const group = text.closest(".whatimado-map__node");
+        const body = group?.querySelector(".whatimado-map__node-body");
+        const rect = text.getBoundingClientRect();
+        const rest = restCenter(body);
+        const kind = group?.classList.contains("is-start")
+          ? "start"
+          : group?.classList.contains("is-roadmap") && group.classList.contains("is-selected")
+            ? "main"
+            : group?.classList.contains("is-roadmap")
+              ? "path"
+              : "sat";
+        const kicker = group?.querySelector(".whatimado-map__kicker");
+        const kickerRect = kicker instanceof SVGTextElement ? kicker.getBoundingClientRect() : null;
+        const kickerH = kickerRect && kickerRect.width > 0 ? kickerRect.height + KICKER_GAP_PX : 0;
+        const labelH = Math.max(4, rect.height);
+        return {
+          text,
+          tspan: text.querySelector("tspan"),
+          kicker: kickerH ? kicker : null,
+          kickerH,
+          labelH,
+          group: text.closest(".whatimado-map__node"),
+          leader: group?.querySelector(".whatimado-map__leader"),
+          kind,
+          locked: false,
+          w: Math.max(12, rect.width, kickerRect?.width || 0),
+          h: labelH + kickerH,
+          left: rect.left,
+          top: rect.top - kickerH,
+          nx: rest?.nx ?? rect.left,
+          ny: rest?.ny ?? rect.top,
+          nr: rest?.nr ?? 6,
+          nodeLeft: rest?.nodeLeft ?? rect.left,
+          nodeRight: rest?.nodeRight ?? rect.right,
+          nodeTop: rest?.nodeTop ?? rect.top
+        };
+      }).filter((item) => item.tspan && item.group);
+
+      const dots = [];
+      layer.querySelectorAll(".whatimado-map__node-body").forEach((el) => {
+        if (el.closest(".is-more")) return;
+        const rest = restCenter(el);
+        if (rest) dots.push(rest);
+      });
+      const hostRect = this.getBoundingClientRect();
+      const mobile = window.matchMedia("(max-width: 900px)").matches;
+      texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-label-crowded"));
+      const shown = (item) => getComputedStyle(item.text).visibility !== "hidden";
+      const crowdedPairs = (list) => {
+        const visible = list.filter(shown);
+        const pairs = [];
+        for (let i = 0; i < visible.length; i++) {
+          for (let j = i + 1; j < visible.length; j++) {
+            const a = visible[i];
+            const b = visible[j];
+            const ba = { left: a.left, right: a.left + a.w, top: a.top, bottom: a.top + a.h };
+            const bb = { left: b.left, right: b.left + b.w, top: b.top, bottom: b.top + b.h };
+            if (screenBoxesOverlap(ba, bb, 1)) pairs.push([a, b]);
+          }
+        }
+        return pairs;
+      };
+
+      /* Phones step titles down while zoomed out until no two single-line titles touch. */
+      const sizes = mobile ? [13, 12, 11, 10, 9] : [13];
+      let items = [];
+      texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-kicker-off"));
+      /** The selected roadmap title was pushed off its spot over the dot to make room for "Roadmaps". */
+      const kickerDisplaced = (list) =>
+        list.some((item) => item.kicker && item.side === "above" && item.top < item.ny - item.nr - 16 - item.h - 1);
+      let sizeIndex = 0;
+      for (let attempt = 0; attempt < sizes.length + 1; attempt++) {
+        const size = sizes[sizeIndex];
+        this._fitLabelFont(texts, size);
+        items = buildItems();
+        if (!items.length) return;
+        placeTitleBesideNode(
+          items,
+          {
+            left: Math.max(0, hostRect.left),
+            right: Math.min(window.innerWidth, hostRect.right)
+          },
+          { spineAbove: mobile }
+        );
+        items.forEach((item) => clearTitleFromNodes(item, dots));
+        holdTitlesOnNodes(items);
+        items.forEach((item) => clearTitleFromNodes(item, dots));
+        if (kickerDisplaced(items)) {
+          items.forEach((item) => item.kicker && item.group.classList.add("is-kicker-off"));
+          continue;
+        }
+        if (!mobile || !crowdedPairs(items).length || sizeIndex >= sizes.length - 1) break;
+        sizeIndex += 1;
+      }
+      if (mobile) {
+        const rank = (item) =>
+          item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;
+        for (const [a, b] of crowdedPairs(items)) {
+          if (a.group.classList.contains("is-label-crowded") || b.group.classList.contains("is-label-crowded")) continue;
+          (rank(a) < rank(b) ? a : b).group.classList.add("is-label-crowded");
+        }
+      }
+      this._writeCallouts(items);
+      this._seatPlusPastTitle();
+      if (this._plusSeatRaf) cancelAnimationFrame(this._plusSeatRaf);
+      this._plusSeatRaf = requestAnimationFrame(() => {
+        this._plusSeatRaf = 0;
+        this._seatPlusPastTitle();
+      });
+    } finally {
+      this._layingOut = false;
+    }
+  }
+
+  /**
+   * Keep the plus a fixed gap past the title that runs along the line before it, however long that title is.
+   */
+  _seatPlusPastTitle() {
+    if (!roadmapFocusLinked) return;
+    const svg = this._svg;
+    const layer = this._liveLayer;
+    if (!svg || !layer) return;
+    const plus = layer.querySelector(".whatimado-map__node.is-more");
+    const plusId = plus?.getAttribute("data-node-id") || "";
+    const beforeId = [...layer.querySelectorAll(".whatimado-map__edge")]
+      .find((line) => line.getAttribute("data-to") === plusId)
+      ?.getAttribute("data-from");
+    const before = beforeId ? layer.querySelector(`.whatimado-map__node[data-node-id="${CSS.escape(beforeId)}"]`) : null;
+    const label = before?.querySelector(".whatimado-map__label");
+    const plusBody = plus?.querySelector(".whatimado-map__node-body");
+    if (!(plus instanceof SVGGElement) || !(label instanceof SVGTextElement) || !(plusBody instanceof SVGCircleElement)) return;
+
+    const titleGap = 20;
+    const labelBox = label.getBoundingClientRect();
+    const plusBox = plusBody.getBoundingClientRect();
+    if (labelBox.width < 2 || plusBox.width < 2) return;
+    const labelFloat = this._floatScreenOffset(label);
+    const plusFloat = this._floatScreenOffset(plusBody);
+    const labelRight = labelBox.right - labelFloat.x;
+    const plusCenter = plusBox.left + plusBox.width / 2 - plusFloat.x;
+    const plusCenterY = plusBox.top + plusBox.height / 2 - plusFloat.y;
+    const plusR = plusBox.width / 2;
+    /* A title centered over its dot never reaches the line, so the plus keeps its own gap. */
+    const labelTop = labelBox.top - labelFloat.y;
+    if (labelTop > plusCenterY + plusR || labelTop + labelBox.height < plusCenterY - plusR) return;
+    const dx = labelRight + titleGap + plusR - plusCenter;
+    if (dx < 1) return;
+
+    const ctm = plus.getScreenCTM();
+    const inv = invertCtm(ctm);
+    if (!inv) return;
+    const origin = svg.createSVGPoint();
+    const shifted = svg.createSVGPoint();
+    shifted.x = dx;
+    const localDelta = shifted.matrixTransform(inv).x - origin.matrixTransform(inv).x;
+    if (!Number.isFinite(localDelta) || Math.abs(localDelta) < 0.4) return;
+
+    const shift = (el, name) => {
+      const value = parseFloat(el.getAttribute(name) || "");
+      if (Number.isFinite(value)) el.setAttribute(name, (value + localDelta).toFixed(1));
+    };
+    plus.querySelectorAll("[cx]").forEach((el) => shift(el, "cx"));
+    plus.querySelectorAll("line").forEach((el) => {
+      shift(el, "x1");
+      shift(el, "x2");
+    });
+    if (plusId) {
+      layer.querySelectorAll(".whatimado-map__edge").forEach((line) => {
+        if (line.getAttribute("data-to") === plusId) shift(line, "x2");
+        if (line.getAttribute("data-from") === plusId) shift(line, "x1");
+      });
+    }
+    const graphNode = this._liveNodes.find((node) => node.id === plusId);
+    if (graphNode) graphNode.x += localDelta / VIEW_W;
+    const drift = this._driftNodes?.get(plusId);
+    if (drift) {
+      drift.baseX += localDelta;
+      drift.originX += localDelta;
+      drift.homeVx = 0;
+      drift.glideVx = 0;
+    }
+  }
+
+  /**
+   * @param {Array<{ text: SVGTextElement, tspan: SVGTSpanElement, group: SVGGElement, leader: SVGLineElement|null, left: number, top: number, w: number, h: number, nx: number, ny: number, nr: number }>} items
+   */
+  _writeCallouts(items) {
+    const svg = this._svg;
+    if (!svg) return;
+    /** Left edge for a line of this width inside the item box, keeping the box's side alignment. */
+    const alignedLeft = (item, width) =>
+      item.side === "left"
+        ? item.left + item.w - width
+        : item.side === "right"
+          ? item.left
+          : item.left + (item.w - width) / 2;
+
+    /** @param {SVGTextElement} text @param {SVGTSpanElement} tspan @param {SVGGElement} group @param {number} left @param {number} top */
+    const nudgeTextTo = (text, tspan, group, left, top) => {
+      const actual = text.getBoundingClientRect();
+      const ctm = group.getScreenCTM();
+      if (!ctm || actual.width < 1) return;
+      const float = this._floatScreenOffset(text);
+      const dx = left - (actual.left - float.x);
+      const dy = top - (actual.top - float.y);
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+      const origin = svg.createSVGPoint();
+      origin.x = 0;
+      origin.y = 0;
+      const shifted = svg.createSVGPoint();
+      shifted.x = dx;
+      shifted.y = dy;
+      const inv = invertCtm(ctm);
+      if (!inv) return;
+      const a = origin.matrixTransform(inv);
+      const b = shifted.matrixTransform(inv);
+      const x = parseFloat(tspan.getAttribute("x") || "0") + (b.x - a.x);
+      const y = parseFloat(tspan.getAttribute("y") || "0") + (b.y - a.y);
+      tspan.setAttribute("x", x.toFixed(1));
+      tspan.setAttribute("y", y.toFixed(1));
+    };
+
+    items.forEach((item) => {
+      const ctm = item.group.getScreenCTM();
+      if (!ctm) return;
+      const point = svg.createSVGPoint();
+      point.x = item.left + item.w / 2;
+      point.y = item.top + item.kickerH + item.labelH * 0.86;
+      const inv0 = invertCtm(ctm);
+      if (!inv0) return;
+      const local = point.matrixTransform(inv0);
+      item.tspan.setAttribute("x", local.x.toFixed(1));
+      item.tspan.setAttribute("y", local.y.toFixed(1));
+      const kickerSpan = item.kicker?.querySelector("tspan");
+      if (kickerSpan) {
+        kickerSpan.setAttribute("x", local.x.toFixed(1));
+        kickerSpan.setAttribute("y", local.y.toFixed(1));
+      }
+    });
+
+    items.forEach((item) => {
+      const labelW = item.text.getBoundingClientRect().width;
+      nudgeTextTo(item.text, item.tspan, item.group, alignedLeft(item, labelW), item.top + item.kickerH);
+      const kickerSpan = item.kicker?.querySelector("tspan");
+      if (item.kicker instanceof SVGTextElement && kickerSpan instanceof SVGTSpanElement) {
+        const kickerW = item.kicker.getBoundingClientRect().width;
+        nudgeTextTo(item.kicker, kickerSpan, item.group, alignedLeft(item, kickerW), item.top);
+      }
+    });
+
+    items.forEach((item) => {
+      const line = item.leader;
+      if (!line) return;
+      const textRect = item.text.getBoundingClientRect();
+      const gap = 8;
+      const near =
+        textRect.left - gap < item.nx + item.nr &&
+        textRect.right + gap > item.nx - item.nr &&
+        textRect.top - gap < item.ny + item.nr &&
+        textRect.bottom + gap > item.ny - item.nr;
+      if (item.kind === "start" || near) {
+        line.setAttribute("x1", "0");
+        line.setAttribute("y1", "0");
+        line.setAttribute("x2", "0");
+        line.setAttribute("y2", "0");
+        return;
+      }
+      const ctm = item.group.getScreenCTM();
+      if (!ctm) return;
+      const end = this._leaderEnd(item.nx, item.ny, textRect);
+      const crosses = items.some((other) => {
+        if (other === item) return false;
+        const box = other.text.getBoundingClientRect();
+        for (let t = 0.2; t <= 0.9; t += 0.1) {
+          const x = item.nx + (end.x - item.nx) * t;
+          const y = item.ny + (end.y - item.ny) * t;
+          if (x > box.left && x < box.right && y > box.top && y < box.bottom) return true;
+        }
+        return false;
+      });
+      if (crosses) {
+        line.setAttribute("x1", "0");
+        line.setAttribute("y1", "0");
+        line.setAttribute("x2", "0");
+        line.setAttribute("y2", "0");
+        return;
+      }
+      const ldx = end.x - item.nx;
+      const ldy = end.y - item.ny;
+      const llen = Math.hypot(ldx, ldy) || 1;
+      const inv = invertCtm(ctm);
+      if (!inv) return;
+      const from = svg.createSVGPoint();
+      from.x = item.nx + (ldx / llen) * (item.nr + 3);
+      from.y = item.ny + (ldy / llen) * (item.nr + 3);
+      const to = svg.createSVGPoint();
+      to.x = end.x;
+      to.y = end.y;
+      const a = from.matrixTransform(inv);
+      const b = to.matrixTransform(inv);
+      line.setAttribute("x1", a.x.toFixed(1));
+      line.setAttribute("y1", a.y.toFixed(1));
+      line.setAttribute("x2", b.x.toFixed(1));
+      line.setAttribute("y2", b.y.toFixed(1));
+    });
+  }
+
+  /**
+   * Screen shift of the idle float, so title layout stays in rest space
+   * while the words ride the same motion as the dot.
+   * @param {Element} text
+   */
+  _floatScreenOffset(text) {
+    const svg = this._svg;
+    const floatEl = text.closest(".whatimado-map__node-float");
+    const nodeEl = text.closest(".whatimado-map__node");
+    if (!svg || !floatEl || !nodeEl) return { x: 0, y: 0 };
+    const nodeCtm = nodeEl.getScreenCTM();
+    const floatCtm = floatEl.getScreenCTM();
+    if (!nodeCtm || !floatCtm) return { x: 0, y: 0 };
+    const origin = svg.createSVGPoint();
+    const rest = origin.matrixTransform(nodeCtm);
+    const floated = origin.matrixTransform(floatCtm);
+    return { x: floated.x - rest.x, y: floated.y - rest.y };
+  }
+
+  /**
+   * Point on the title box closest to the node, so the leader stops at the words.
+   * @param {number} nx
+   * @param {number} ny
+   * @param {DOMRect} rect
+   */
+  _leaderEnd(nx, ny, rect) {
+    const cx = Math.max(rect.left, Math.min(nx, rect.right));
+    const cy = Math.max(rect.top, Math.min(ny, rect.bottom));
+    return { x: cx, y: cy };
+  }
+
+  /**
    * @param {SVGGElement|null} layer
    * @param {GraphNode[]} nodes
    * @param {GraphEdge[]} edges
@@ -1444,8 +2822,13 @@ export class WhatimadoMap extends HTMLElement {
         const ay = a.y * VIEW_H;
         const bx = b.x * VIEW_W;
         const by = b.y * VIEW_H;
+        const alternateEdge =
+          options.layer === "live" &&
+          spineAlternatePaths &&
+          b.type === "path" &&
+          b.id !== this._selectedId;
         parts.push(
-          `<line class="whatimado-map__edge whatimado-map__edge--${options.layer}" data-from="${escapeHtml(from)}" data-to="${escapeHtml(to)}" x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" />`
+          `<line class="whatimado-map__edge whatimado-map__edge--${options.layer}${alternateEdge ? " is-alternate-edge" : ""}" data-from="${escapeHtml(from)}" data-to="${escapeHtml(to)}" x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" />`
         );
       });
     }
@@ -1453,6 +2836,10 @@ export class WhatimadoMap extends HTMLElement {
     if (!skipNodes) {
       const { lg: radiusLg } = getNodeRadii();
       const nodeR = radiusLg;
+      const branchRootId =
+        options.layer === "live"
+          ? (edges.find((edge) => edge.to === "milestone-0") || edges.find((edge) => edge.to === ROADMAP_MORE_ID))?.from
+          : null;
 
       nodes.forEach((node, index) => {
         const cx = node.x * VIEW_W;
@@ -1465,13 +2852,26 @@ export class WhatimadoMap extends HTMLElement {
           "whatimado-map__node",
           `whatimado-map__node--${options.layer}`,
           isStart ? "is-start" : "",
+          node.type === "path" ? "is-roadmap" : "",
+          node.type === "mission" ? "is-mission" : "",
+          node.type === "task" ? "is-task" : "",
+          node.type === "more" ? "is-more" : "",
+          node.done ? "is-complete" : "",
+          node.waiting ? "is-waiting" : "",
+          node.bypassed ? "is-bypassed" : "",
           isLayoutAnchor ? "is-anchor is-primary" : "",
           !isSelected ? "is-support" : "",
-          isSelected ? "is-selected" : ""
+          isSelected ? "is-selected" : "",
+          spineAlternatePaths && node.type === "path" && !isSelected ? "is-alternate" : "",
+          this._focusedId === node.id ? "is-focused" : ""
         ]
           .filter(Boolean)
           .join(" ");
 
+        const title = options.layer === "live" ? nodeMapTitle(node) : "";
+        const isAlternate = spineAlternatePaths && node.type === "path" && !isSelected;
+        const bodyR = node.type === "more" ? r : isAlternate ? r * 0.72 : r;
+        const kicker = title && node.type === "path" && node.id === branchRootId;
         const driftDelay = (index * 0.85) % 5;
         const driftDuration = 9 + (index % 4) * 1.2;
         const styleVars = [
@@ -1489,8 +2889,19 @@ export class WhatimadoMap extends HTMLElement {
           <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r * 2.6, 22)}" />
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
-            <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${r}" />
-            <text x="${cx}" y="${cy - r - Math.max(6, r * 0.55)}" text-anchor="middle">${escapeHtml(node.label)}</text>
+            <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${bodyR}" />
+            ${node.type === "more"
+              ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.5}" y1="${cy}" x2="${cx + r * 0.5}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.5}" x2="${cx}" y2="${cy + r * 0.5}" /></g>`
+              : ""}
+            ${kicker
+              ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">Roadmaps</tspan></text>`
+              : ""}
+            ${title
+              ? `<text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`
+              : ""}
+            ${node.waiting
+              ? `<g class="whatimado-map__badge whatimado-map__badge--waiting" transform="translate(${cx + r * 0.85}, ${cy - r * 0.85})"><circle r="7" /><text y="3" text-anchor="middle">◷</text></g>`
+              : ""}
           </g>
         </g>
       `
@@ -1513,6 +2924,8 @@ export class WhatimadoMap extends HTMLElement {
 
     if (options.layer === "live") {
       this._applyAnchorStyles();
+      this._layoutCallouts();
+      this._syncAlternateVisibility();
     }
 
     if (options.layer === "live" && this._pathPreviewId) {
