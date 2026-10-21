@@ -370,6 +370,8 @@ export class WhatimadoMap extends HTMLElement {
     this._liveLayer = null;
     /** @type {string|null} */
     this._selectedId = null;
+    /** @type {Set<string>} */
+    this._currentIds = new Set();
     /** @type {string|null} */
     this._pathPreviewId = null;
     /** @type {string|null} */
@@ -2168,7 +2170,18 @@ export class WhatimadoMap extends HTMLElement {
       group.classList.toggle("is-more", graphNode?.type === "more");
       group.classList.toggle("is-complete", Boolean(graphNode?.done));
       group.classList.toggle("is-selected", isSelected);
+      group.classList.toggle("is-current", this._currentIds.has(id));
     }
+  }
+
+  /**
+   * Glow the roadmap, mission, and task the user is actually on.
+   * Inspecting another node does not clear this.
+   * @param {Array<string | null | undefined>} ids
+   */
+  setCurrentNodes(ids) {
+    this._currentIds = new Set((ids || []).map((id) => String(id || "")).filter(Boolean));
+    this._applyAnchorStyles();
   }
 
   /**

@@ -10,7 +10,6 @@ import {
   MAX_PATH_NODES,
   selectGraphNode
 } from "../graph-store.js";
-import { PATH_MODE } from "../intake/path-mode.js";
 import { buildSharedPromptContext, markPathsAcceptedForGoal, refreshGoalBrief } from "../state/goal-brief.js";
 import { trackEvent } from "../state/analytics.js";
 import {
@@ -134,11 +133,10 @@ export function createPathMapController(ui) {
 
   function render() {
     const paths = pathNodes();
-    const mode = appStore.journey.pathMode;
     renderPathCards(pathCardsEl, {
       paths,
       selectedId: appStore.journey.selectedPathId || graphStore.selectedId,
-      canAddMore: mode !== PATH_MODE.DIRECT && paths.length < MAX_MAP_PATHS && paths.length < MAX_PATH_NODES,
+      canAddMore: paths.length < MAX_MAP_PATHS && paths.length < MAX_PATH_NODES,
       moreBusy,
       regenBusy,
       feedbackGiven: Boolean(appStore.journey.mapFeedbackGiven),
@@ -481,7 +479,7 @@ export function createPathMapController(ui) {
             },
             paths
           )
-        : buildAlterSystemPrompt(paths, appStore.journey.pathMode === PATH_MODE.DIRECT);
+        : buildAlterSystemPrompt(paths, false);
     const transcript = appStore.journey.messages
       .slice(-12)
       .map((m) => `${m.role === "user" ? "User" : "Advisor"}: ${m.content}`)
