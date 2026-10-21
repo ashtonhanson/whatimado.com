@@ -33,6 +33,7 @@ import {
   svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
+import { missionNumberLabel, placeTitleBesideNode } from "../../map/callouts.js";
 import {
   clientToSvg,
   computeChatFrameGravityPan,
@@ -98,87 +99,6 @@ function screenBoxesOverlap(a, b, pad) {
 }
 
 /**
- * Title sits on the node the way the constellation reference does:
- * above the dot, or beside it when the branch runs out to the side.
- * @param {{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string }} item
- * @param {{ nx: number, ny: number } | undefined} you
- */
-/**
- * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, side?: string }>} items
- * @param {{ left: number, right: number } | null} [bounds] visible stage edges in screen px
- * @param {{ spineAbove?: boolean }} [options] center every title on the horizontal line over its dot
- */
-function placeTitleBesideNode(items, bounds = null, { spineAbove = false } = {}) {
-  const you = items.find((item) => item.kind === "start");
-  const edgePad = 6;
-  const placeAbove = (item) => {
-    item.side = "above";
-    item.left = item.nx - item.w / 2;
-    item.top = item.ny - item.nr - 16 - item.h;
-    if (bounds && item.nx > bounds.left && item.nx < bounds.right) {
-      item.left = Math.min(Math.max(item.left, bounds.left + edgePad), bounds.right - edgePad - item.w);
-    }
-  };
-  const placeSide = (item, dx) => {
-    if (dx < 0) {
-      item.side = "left";
-      item.left = item.nx - item.nr - 8 - item.w;
-    } else {
-      item.side = "right";
-      item.left = item.nx + item.nr + 8;
-    }
-    item.top = item.ny - item.h / 2;
-    /* A side title past the stage edge gets cut off; lift it over its dot instead. Phones pan to it, so it stays on one line beside its dot there. */
-    const dotVisible = bounds && item.nx > bounds.left && item.nx < bounds.right;
-    if (!spineAbove && dotVisible && (item.left < bounds.left + edgePad || item.left + item.w > bounds.right - edgePad)) {
-      placeAbove(item);
-    }
-  };
-  const placeBelow = (item) => {
-    item.side = "below";
-    item.left = item.nx - item.w / 2;
-    item.top = item.ny + item.nr + 8;
-  };
-  if (you) placeAbove(you);
-  const others = items.filter((item) => item !== you);
-  const spine = you
-    ? others.filter((item) => item.kind !== "path" && item.nx > you.nx && Math.abs(item.ny - you.ny) < 28)
-    : [];
-  const dotOverYouTitle = (item) =>
-    Math.abs(item.nx - you.nx) < you.w / 2 + item.nr + 6 &&
-    item.ny + item.nr + 6 > you.top &&
-    item.ny - item.nr - 6 < you.top + you.h;
-  /** Every spoke is tethered to You, so a line to a node overhead can run through the title. */
-  const tetherThroughYouTitle = (item) => {
-    const midY = you.top + you.h / 2;
-    if (item.ny >= midY) return false;
-    const x = you.nx + ((item.nx - you.nx) * (you.ny - midY)) / (you.ny - item.ny);
-    return x > you.left - 4 && x < you.left + you.w + 4;
-  };
-  if (you && (others.some(dotOverYouTitle) || others.some(tetherThroughYouTitle))) {
-    placeBelow(you);
-    if (others.some(dotOverYouTitle)) placeSide(you, spine.length ? -1 : 1);
-  }
-  const rightmost = spine.reduce((best, item) => (!best || item.nx > best.nx ? item : best), null);
-  const top = others
-    .filter((item) => item.kind !== "path" && !spine.includes(item))
-    .reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
-  others.forEach((item) => {
-    if (item.kind === "path") {
-      placeSide(item, you && item.nx < you.nx - item.nr ? -1 : 1);
-      return;
-    }
-    if (spine.includes(item)) {
-      if (item === rightmost && !spineAbove) placeSide(item, 1);
-      else placeAbove(item);
-      return;
-    }
-    if (item === top) placeAbove(item);
-    else placeSide(item, item.nx - (you?.nx ?? item.nx));
-  });
-}
-
-/**
  * If two titles touch, lift the higher node's title. Horizontal position stays on that node.
  * @param {Array<{ left: number, top: number, w: number, h: number, nx: number, ny: number, nr?: number, side?: string }>} items
  */
@@ -195,6 +115,7 @@ function holdTitlesOnNodes(items) {
         if (!screenBoxesOverlap(ba, bb, 3)) continue;
         const mover = a.ny <= b.ny ? a : b;
         if (mover.side === "left" || mover.side === "right") {
+          if (mover.role === "task") continue;
           const other = mover === a ? b : a;
           if (other.side === "above" && typeof mover.nr === "number") {
             mover.side = "above";
@@ -2175,8 +2096,7 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Glow the roadmap, mission, and task the user is actually on.
-   * Inspecting another node does not clear this.
+   * Glow the node whose working context is open in the chat.
    * @param {Array<string | null | undefined>} ids
    */
   setCurrentNodes(ids) {
@@ -2484,6 +2404,11 @@ export class WhatimadoMap extends HTMLElement {
             : group?.classList.contains("is-roadmap")
               ? "path"
               : "sat";
+        const role = group?.classList.contains("is-mission")
+          ? "mission"
+          : group?.classList.contains("is-task")
+            ? "task"
+            : "";
         const kicker = group?.querySelector(".whatimado-map__kicker");
         const kickerRect = kicker instanceof SVGTextElement ? kicker.getBoundingClientRect() : null;
         const kickerH = kickerRect && kickerRect.width > 0 ? kickerRect.height + KICKER_GAP_PX : 0;
@@ -2497,6 +2422,7 @@ export class WhatimadoMap extends HTMLElement {
           group: text.closest(".whatimado-map__node"),
           leader: group?.querySelector(".whatimado-map__leader"),
           kind,
+          role,
           locked: false,
           w: Math.max(12, rect.width, kickerRect?.width || 0),
           h: labelH + kickerH,
@@ -2540,9 +2466,15 @@ export class WhatimadoMap extends HTMLElement {
       const sizes = mobile ? [13, 12, 11, 10, 9] : [13];
       let items = [];
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-kicker-off"));
-      /** The selected roadmap title was pushed off its spot over the dot to make room for "Roadmaps". */
+      /** The selected roadmap title was pushed off its spot over the dot to make room for "Roadmaps". Mission numbers stay. */
       const kickerDisplaced = (list) =>
-        list.some((item) => item.kicker && item.side === "above" && item.top < item.ny - item.nr - 16 - item.h - 1);
+        list.some(
+          (item) =>
+            item.kicker &&
+            item.group.classList.contains("is-roadmap") &&
+            item.side === "above" &&
+            item.top < item.ny - item.nr - 16 - item.h - 1
+        );
       let sizeIndex = 0;
       for (let attempt = 0; attempt < sizes.length + 1; attempt++) {
         const size = sizes[sizeIndex];
@@ -2561,7 +2493,9 @@ export class WhatimadoMap extends HTMLElement {
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
         if (kickerDisplaced(items)) {
-          items.forEach((item) => item.kicker && item.group.classList.add("is-kicker-off"));
+          items.forEach((item) => {
+            if (item.kicker && item.group.classList.contains("is-roadmap")) item.group.classList.add("is-kicker-off");
+          });
           continue;
         }
         if (!mobile || !crowdedPairs(items).length || sizeIndex >= sizes.length - 1) break;
@@ -2884,7 +2818,12 @@ export class WhatimadoMap extends HTMLElement {
         const title = options.layer === "live" ? nodeMapTitle(node) : "";
         const isAlternate = spineAlternatePaths && node.type === "path" && !isSelected;
         const bodyR = node.type === "more" ? r : isAlternate ? r * 0.72 : r;
-        const kicker = title && node.type === "path" && node.id === branchRootId;
+        const kickerText =
+          title && node.type === "path" && node.id === branchRootId
+            ? "Roadmaps"
+            : title && node.type === "mission"
+              ? missionNumberLabel(node.chainIndex ?? 0)
+              : "";
         const driftDelay = (index * 0.85) % 5;
         const driftDuration = 9 + (index % 4) * 1.2;
         const styleVars = [
@@ -2906,8 +2845,8 @@ export class WhatimadoMap extends HTMLElement {
             ${node.type === "more"
               ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.5}" y1="${cy}" x2="${cx + r * 0.5}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.5}" x2="${cx}" y2="${cy + r * 0.5}" /></g>`
               : ""}
-            ${kicker
-              ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">Roadmaps</tspan></text>`
+            ${kickerText
+              ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`
               : ""}
             ${title
               ? `<text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`
