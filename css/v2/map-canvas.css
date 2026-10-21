@@ -595,6 +595,18 @@ whatimado-map .whatimado-map__node--live.is-focused:not(.is-selected) .whatimado
   stroke-width: 1.15;
 }
 
+/* The step the user is on keeps a teal glow even while they inspect another node. */
+whatimado-map .whatimado-map__node--live.is-current .whatimado-map__node-aura {
+  opacity: 1;
+  fill: rgba(61, 240, 222, 0.75);
+  animation: whatimado-anchor-aura-breathe 3.6s ease-in-out infinite;
+}
+
+whatimado-map .whatimado-map__node--live.is-current .whatimado-map__node-body {
+  stroke: #5ef2e0;
+  stroke-width: 1.35;
+}
+
 /* Soft diffused neon aura — selected path only */
 whatimado-map .whatimado-map__node-aura {
   fill: rgba(245, 213, 71, 0.65);
@@ -742,6 +754,7 @@ whatimado-map .whatimado-map__node--live.is-selected.is-path-preview .whatimado-
   }
 
   whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-aura,
+  whatimado-map .whatimado-map__node--live.is-current .whatimado-map__node-aura,
   whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start .whatimado-map__node-aura {
     animation-duration: 6s;
   }

@@ -1,4 +1,3 @@
-import { PATH_MODE } from "../intake/path-mode.js";
 import { shouldBlockJobBoards } from "../intake/stability-gates.js";
 
 export const MAX_MAP_PATHS = 6;
@@ -114,9 +113,9 @@ export function normalizeIdeas(ideas) {
   return (Array.isArray(ideas) ? ideas : []).map((entry, index) => coerceIdea(entry, index)).filter(Boolean);
 }
 
-/** @param {string | null} pathMode */
-export function ideaCountForMode(pathMode) {
-  return pathMode === PATH_MODE.DIRECT ? 1 : 3;
+/** Flexible options are the only mode now. Older saved "direct" journeys still get three. */
+export function ideaCountForMode(_pathMode) {
+  return 3;
 }
 
 /**

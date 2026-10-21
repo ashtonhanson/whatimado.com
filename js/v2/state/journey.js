@@ -44,6 +44,7 @@ import { normalizeGoalBrief } from "./goal-brief.js";
  *   pathsGenerationSerial: number,
  *   goalBrief: import("./goal-brief.js").GoalBrief | null,
  *   focusMissionId: string | null,
+ *   savedContinuations: { id: string, label: string, desc: string, missions: { title: string, text: string }[] }[],
  *   roadmapUndoStack: import("../roadmap/roadmap-undo.js").RoadmapUndoSnapshot[]
  * }} Journey */
 
@@ -89,6 +90,7 @@ export function createEmptyJourney() {
     pathsGenerationSerial: 0,
     goalBrief: null,
     savedPathIds: [],
+    savedContinuations: [],
     focusMissionId: null,
     roadmapUndoStack: []
   };
@@ -199,9 +201,39 @@ export function normalizeJourney(raw) {
     savedPathIds: Array.isArray(source.savedPathIds)
       ? source.savedPathIds.map((id) => String(id || "").trim()).filter(Boolean).slice(0, 12)
       : [],
+    savedContinuations: normalizeSavedContinuations(source.savedContinuations),
     focusMissionId: typeof source.focusMissionId === "string" && source.focusMissionId ? source.focusMissionId.slice(0, 64) : null,
     roadmapUndoStack: Array.isArray(source.roadmapUndoStack) ? source.roadmapUndoStack.slice(-25) : []
   };
+}
+
+/**
+ * Mission options the user kept but did not make the next step.
+ * @param {unknown} raw
+ */
+function normalizeSavedContinuations(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 24)
+    .map((item, index) => {
+      const stage = normalizeStages([item])[0];
+      if (!stage) return null;
+      const id = String(item?.id || `${stage.label}-${index + 1}`)
+        .trim()
+        .slice(0, 80);
+      return { id, label: stage.label, desc: stage.desc, missions: stage.missions };
+    })
+    .filter(Boolean);
+}
+
+/** @param {Journey} journey @param {{ id?: string, label: string, desc?: string, missions: unknown[] }} stage */
+export function saveContinuation(journey, stage) {
+  const [saved] = normalizeSavedContinuations([stage]);
+  if (!saved) return journey.savedContinuations || [];
+  const list = Array.isArray(journey.savedContinuations) ? journey.savedContinuations : [];
+  if (list.some((item) => item.id === saved.id || item.label === saved.label)) return list;
+  journey.savedContinuations = [...list, saved].slice(0, 24);
+  return journey.savedContinuations;
 }
 
 /** @param {Journey} journey @param {string} id */

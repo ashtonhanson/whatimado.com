@@ -9,7 +9,7 @@ import { countryKey, countryName } from "./country-resources.js";
 import { bindResourcesAccordions, renderResourcesAccordion, resourcePlaceLabel, resourcesForTask } from "./resources-accordion.js";
 import { catalogForStages } from "./drafts.js";
 import { graphStore, shortenMapLabel } from "../graph-store.js";
-import { toggleSavedPath } from "../state/journey.js";
+import { saveContinuation, toggleSavedPath } from "../state/journey.js";
 import { renderMissionChatDrawer, renderMissionChatOpenButton } from "./task-chat.js";
 import {
   applyCircleBack,
@@ -178,7 +178,7 @@ function buildMissionsPrompt(idea, bullets) {
     `You are whatimado. Write the FIRST roadmap for "${idea.title || idea.label}".\n` +
     `Return ONLY JSON:\n` +
     `{"stages":[{"label":"mission name","desc":"one sentence","missions":[{"title":"task the person does","whom":"role or org type to contact — no invented names","askDo":"exact ask or action","outcome":"concrete result they should have","text":"optional summary","resources":[]}]}],"resources":[{"name":"","kind":"organization|platform|person|event","place":"city, country — or online","why":"why this fits THIS path","offers":"the specific program or service","nextStep":"one action to take","url":"https://official-site","email":"","phone":"","address":"","contact":"department or role"}]}\n` +
-    `Exactly 2 stages. Each stage is one mission with 2 tasks.\n` +
+    `Exactly 1 stage. That stage is one mission with 2 tasks. The user chooses the mission after this one from separate options.\n` +
     `Every task MUST include whom, askDo, and outcome. Name a role or organization type, never a fabricated person, email, or phone number.\n` +
     `Resources are ways to reach people on THIS path. Return at least 3 and at most 4 organizations that the first tasks actually name. Every place named in a task must appear in resources with its official URL.${austinNote} Include email or phone only when you know that exact current address or number. If you do not, leave it empty and put the official contact-page URL in url. Never invent an email or phone number.\n` +
     `${localResourceRule(appStore.location)}\n` +
@@ -474,14 +474,17 @@ function renderNextPathOptions() {
  *   listEl: HTMLElement | null,
  *   layout: () => void,
  *   flush: () => void,
+ *   messagesEl?: HTMLElement | null,
  *   onShown?: (stages: { label: string, desc: string, missions: { title: string, text: string }[] }[]) => void
  *   onRendered?: () => void
  * }} ui
  */
 export function createMissionsController(ui) {
-  const { sectionEl, listEl, layout, flush, onShown, onRendered } = ui;
+  const { sectionEl, listEl, layout, flush, onShown, onRendered, messagesEl = null } = ui;
   let pending = false;
   let serial = 0;
+  /** @type {{ id: string, label: string, desc: string, missions: { title: string, text: string }[] }[]} */
+  let continuationOffer = [];
 
   function statusEl() {
     return sectionEl?.querySelector("#missions-status") || null;
@@ -505,6 +508,11 @@ export function createMissionsController(ui) {
     const el = navFeedbackEl();
     if (el) el.textContent = message;
     if (!message) setStatusMessage(statusEl(), "");
+  }
+
+  /** @param {string} missionId */
+  function focus(missionId) {
+    focusMissionInUi(missionId);
   }
 
   /** @param {string} missionId */
@@ -911,29 +919,153 @@ export function createMissionsController(ui) {
     return missions[0]?.id || null;
   }
 
-  async function extend() {
+  function continuationHost() {
+    const parent = messagesEl || sectionEl;
+    if (!parent) return null;
+    let host = document.getElementById("mission-continuations");
+    if (!host) {
+      host = document.createElement("section");
+      host.id = "mission-continuations";
+      host.className = "v2-continuations v2-text-box v2-text-box--chrome";
+      host.setAttribute("aria-label", "Next mission choices");
+      parent.appendChild(host);
+      host.addEventListener("click", onContinuationClick);
+    }
+    return host;
+  }
+
+  function renderContinuations() {
+    const host = continuationHost();
+    if (!host) return;
+    const saved = appStore.journey.savedContinuations || [];
+    const savedIds = new Set(saved.map((item) => item.id));
+    const choices = continuationOffer
+      .map((stage, index) => {
+        const tasks = (stage.missions || []).map((mission) => mission.title).filter(Boolean).join(" · ");
+        const kept = savedIds.has(stage.id);
+        return `<article class="v2-continuations__choice">
+          <h3>${escapeHtml(stage.label)}</h3>
+          ${stage.desc ? `<p>${escapeHtml(stage.desc)}</p>` : ""}
+          ${tasks ? `<p class="v2-continuations__tasks">${escapeHtml(tasks)}</p>` : ""}
+          <div class="v2-continuations__actions">
+            <button type="button" data-continuation-choose="${index}">Choose this mission</button>
+            <button type="button" data-continuation-save="${index}" ${kept ? "disabled" : ""}>${kept ? "Saved" : "Save for later"}</button>
+          </div>
+        </article>`;
+      })
+      .join("");
+    const kept = saved
+      .map(
+        (stage) => `<article class="v2-continuations__choice is-saved">
+          <h3>${escapeHtml(stage.label)}</h3>
+          ${stage.desc ? `<p>${escapeHtml(stage.desc)}</p>` : ""}
+          <div class="v2-continuations__actions">
+            <button type="button" data-continuation-use="${escapeHtml(stage.id)}">Use this saved mission</button>
+          </div>
+        </article>`
+      )
+      .join("");
+    host.innerHTML = `
+      <p class="v2-continuations__kicker">Next mission</p>
+      ${choices ? `<p>Three ways this roadmap could continue. Pick one. Save any you are not ready to use.</p>${choices}` : ""}
+      ${kept ? `<p class="v2-continuations__kicker">Saved continuations</p>${kept}` : ""}
+      <button type="button" data-continuation-dismiss="1">Not now</button>`;
+    layout();
+    scrollFrameChildIntoView(host);
+  }
+
+  /** @param {MouseEvent} event */
+  function onContinuationClick(event) {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+    if (target.closest("[data-continuation-dismiss]")) {
+      continuationOffer = [];
+      document.getElementById("mission-continuations")?.remove();
+      return;
+    }
+    const choose = target.closest("[data-continuation-choose]");
+    if (choose) {
+      const index = Number(choose.getAttribute("data-continuation-choose"));
+      const stage = continuationOffer[index];
+      if (!stage) return;
+      adoptContinuation(stage);
+      continuationOffer = continuationOffer.filter((item) => item.id !== stage.id);
+      renderContinuations();
+      return;
+    }
+    const save = target.closest("[data-continuation-save]");
+    if (save) {
+      const index = Number(save.getAttribute("data-continuation-save"));
+      const stage = continuationOffer[index];
+      if (!stage) return;
+      saveContinuation(appStore.journey, stage);
+      touchJourney();
+      flush();
+      renderContinuations();
+      return;
+    }
+    const use = target.closest("[data-continuation-use]");
+    const useId = use?.getAttribute("data-continuation-use");
+    if (useId) {
+      const stage = (appStore.journey.savedContinuations || []).find((item) => item.id === useId);
+      if (stage) adoptContinuation(stage);
+    }
+  }
+
+  /** @param {{ id?: string, label: string, desc?: string, missions: { title: string, text?: string }[] }} stage */
+  function adoptContinuation(stage) {
+    const stages = appStore.journey.missionsStages || [];
+    if (stages.some((item) => item.label === stage.label)) {
+      setNavFeedback(`“${stage.label}” is already on this roadmap.`);
+      return;
+    }
+    if (stages.length >= 8) {
+      setNavFeedback("This roadmap already has as many missions as it can hold.");
+      return;
+    }
+    pushRoadmapUndo(appStore.journey);
+    appStore.journey.missionsStages = [...stages, { label: stage.label, desc: stage.desc || "", missions: stage.missions }].slice(0, 8);
+    touchJourney();
+    flush();
+    show(appStore.journey.missionsStages);
+  }
+
+  function continuationId(stage, index) {
+    const base = String(stage.label || "next")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 36);
+    return `${base || "next"}-${index + 1}`;
+  }
+
+  async function offerContinuations() {
     const pathNode = graphStore.nodes.find((node) => node.id === appStore.journey.roadmapPathId);
     if (!pathNode || pending) return;
     const ticket = ++serial;
     pending = true;
-    setStatusMessage(statusEl(), "Adding the next missions");
+    setStatusMessage(statusEl(), "Finding three ways the next mission could go");
     const existing = flatMissions().map((mission) => mission.title);
+    const stageNames = (appStore.journey.missionsStages || []).map((stage) => stage.label).filter(Boolean);
     const prompt =
-      `You are whatimado. Add the NEXT batch of missions for "${pathNode.title || pathNode.label}". Do not repeat: ${existing.join("; ") || "none"}.\n` +
-      `Return ONLY JSON: {"stages":[{"label":"short stage name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}]}\n` +
-      `Exactly 1 stage, 2 missions. ${writingVoice(appStore.profile)}`;
+      `You are whatimado. Offer THREE different possible NEXT missions for "${pathNode.title || pathNode.label}". ` +
+      `They are alternatives, not a sequence. Do not repeat these missions: ${stageNames.join("; ") || "none"}. ` +
+      `Do not repeat these tasks: ${existing.join("; ") || "none"}.\n` +
+      `Return ONLY JSON: {"stages":[{"label":"short mission name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}]}\n` +
+      `Exactly 3 stages. Each stage is one mission with 2 tasks. ${writingVoice(appStore.profile)}`;
     try {
-      const raw = await callAdvisor(prompt, { maxTokens: 700, feature: "v2_missions_more" });
+      const raw = await callAdvisor(prompt, { maxTokens: 1100, feature: "v2_missions_more" });
       if (ticket !== serial) return;
-      const added = parseStagesResponse(raw, []);
-      if (!added.length) return;
-      pushRoadmapUndo(appStore.journey);
-      appStore.journey.missionsStages = [...(appStore.journey.missionsStages || []), ...added].slice(0, 8);
-      touchJourney();
-      flush();
-      show(appStore.journey.missionsStages);
+      const added = parseStagesResponse(raw, []).slice(0, 3);
+      if (added.length < 1) {
+        setNavFeedback("I couldn't draft the next mission options. Try again in a moment.");
+        return;
+      }
+      continuationOffer = added.map((stage, index) => ({ ...stage, id: continuationId(stage, index) }));
+      renderContinuations();
     } catch {
       if (ticket !== serial) return;
+      setNavFeedback("I couldn't draft the next mission options. Try again in a moment.");
     } finally {
       if (ticket !== serial) return;
       pending = false;
@@ -941,11 +1073,14 @@ export function createMissionsController(ui) {
     }
   }
 
-  /** Map + and Continue at the last task share this prompt; cancel leaves the roadmap as it is. */
+  async function extend() {
+    await offerContinuations();
+  }
+
+  /** Map + and Continue at the last task open the same three-way choice. Cancel leaves the roadmap as it is. */
   function confirmExtend() {
     if (pending) return false;
-    if (!window.confirm("Do you want to add the next mission?")) return false;
-    void extend();
+    void offerContinuations();
     return true;
   }
 
@@ -955,5 +1090,5 @@ export function createMissionsController(ui) {
     show(stages);
   }
 
-  return { begin, restore, clear, extend, confirmExtend, refresh };
+  return { begin, restore, clear, extend, confirmExtend, focus, refresh };
 }

@@ -33,7 +33,7 @@ import { confirmStartNewMap } from "./new-map-dialog.js";
 import { createIntakeController } from "../intake/session.js";
 import { createPathMapController } from "../map/session.js";
 import { createConfirmGateController } from "../roadmap/session.js";
-import { createMissionsController, highlightTimelineMission } from "../roadmap/missions.js";
+import { createMissionsController } from "../roadmap/missions.js";
 import { applyStructuredMissionUpdate, buildDifficultyPrompt, fallbackDifficultyUpdate, parseDifficultyUpdate } from "../roadmap/difficulty.js";
 import { pushRoadmapUndo } from "../roadmap/roadmap-undo.js";
 import { createDraftsController } from "../roadmap/drafts.js";
@@ -206,9 +206,17 @@ export function initChatFlow(ctx) {
   });
   taskChat.bindRoot();
 
+  function markMapCurrent() {
+    const focusId = appStore.journey.focusMissionId;
+    const task = graphStore.nodes.find((node) => node.id === focusId);
+    const missionId = task?.type === "task" ? task.parentId : task?.type === "mission" ? task.id : null;
+    mapEl?.setCurrentNodes?.([focusId, missionId, appStore.journey.roadmapPathId]);
+  }
+
   const missions = createMissionsController({
     sectionEl: document.getElementById("missions"),
     listEl: document.getElementById("mission-stages"),
+    messagesEl,
     layout,
     flush: flushPersist,
     onRendered: () => taskChat.afterMissionRender(),
@@ -223,12 +231,15 @@ export function initChatFlow(ctx) {
         const still = keep && graphStore.nodes.some((node) => node.id === keep);
         mapEl?.setSelectedNode(still ? keep : pathId);
         mapEl?.syncRoadmapBranchFit?.({ animate: false });
+        markMapCurrent();
       } else if (!stages?.length) {
         restorePossibilityMap();
         mapEl?.syncLiveFromStore();
       }
     }
   });
+
+  document.addEventListener("mission-focus", () => markMapCurrent());
 
   const confirmGate = createConfirmGateController({
     messagesEl,
@@ -242,6 +253,7 @@ export function initChatFlow(ctx) {
       const selected =
         graphStore.nodes.find((node) => node.id === appStore.journey.selectedPathId) || null;
       if (selected && selected.type !== "start") showSelectedPath(selected, { scroll: false });
+      offerUnchosenRoadmaps(selected?.id || "");
       layout();
       void missions.begin(selected, bullets);
     }
@@ -275,26 +287,24 @@ export function initChatFlow(ctx) {
       if (node.id !== appStore.journey.roadmapPathId) {
         mapEl?.setFocusedNode(nodeId);
         showAlternatePath(node);
+        reflectNodeInChat(node);
         return;
       }
       mapEl?.setFocusedNode(null);
       showSelectedPath(node, { scroll: true, keepGate: true });
+      reflectNodeInChat(node);
       const missionsEl = document.getElementById("missions");
       if (missionsEl && !missionsEl.classList.contains("hidden")) scrollFrameChildIntoView(missionsEl);
       return;
     }
     if (node.type === "mission" || node.type === "task") {
-      let focusId = nodeId;
-      if (node.type === "mission" && String(node.id).startsWith("milestone-")) {
-        const firstTask = graphStore.nodes.find((entry) => entry.type === "task" && entry.parentId === node.id);
-        if (!firstTask) return;
-        focusId = firstTask.id;
-      }
-      mapEl?.setSelectedNode(focusId);
-      highlightTimelineMission(document.getElementById("map-timeline"), focusId);
-      appStore.journey.focusMissionId = focusId;
-      touchJourney();
-      taskChat.focusMission(focusId);
+      mapEl?.setFocusedNode(nodeId);
+      reflectNodeInChat(node);
+      const shownId =
+        node.type === "task"
+          ? node.id
+          : graphStore.nodes.find((entry) => entry.type === "task" && entry.parentId === node.id)?.id;
+      if (shownId) taskChat.focusMission(shownId);
       return;
     }
     const switching = Boolean(appStore.journey.roadmapPathId && appStore.journey.roadmapPathId !== nodeId);
@@ -306,6 +316,7 @@ export function initChatFlow(ctx) {
     if (startConfirm) appStore.journey.planConfirmed = false;
     setPhase(PHASE.PATH_SELECTED);
     showSelectedPath(node, { generating: startConfirm, keepGate: !switching });
+    reflectNodeInChat(node);
     renderPathCards();
     layout();
     if (startConfirm) void confirmGate.begin(node);
@@ -355,6 +366,131 @@ export function initChatFlow(ctx) {
         ? document.getElementById("path-cards") || selectionPanel
         : selectionPanel;
     scrollFrameChildIntoView(target);
+  }
+
+  function describeMapNode(node) {
+    const stages = appStore.journey.missionsStages || [];
+    if (node.type === "task") {
+      for (const stage of stages) {
+        const mission = (stage.missions || []).find((item) => item.id === node.id);
+        if (mission) {
+          return {
+            title: mission.title,
+            body: [stage.label, mission.text || mission.askDo].filter(Boolean).join(" — "),
+            workId: mission.id
+          };
+        }
+      }
+    }
+    if (node.type === "mission") {
+      const stage =
+        stages.find((item) => item.label === (node.title || node.label)) ||
+        stages[Number(String(node.id).replace("milestone-", ""))];
+      const firstTask = graphStore.nodes.find((entry) => entry.type === "task" && entry.parentId === node.id);
+      return {
+        title: stage?.label || node.title || node.label || "Mission",
+        body: stage?.desc || (stage?.missions || []).map((item) => item.title).filter(Boolean).join(" · "),
+        workId: firstTask?.id || ""
+      };
+    }
+    return {
+      title: node.title || node.label || "Roadmap",
+      body: node.tagline || node.description || node.why || "",
+      workId: ""
+    };
+  }
+
+  /** The chat shows the node the user clicked. Switching a roadmap still takes the button. */
+  function reflectNodeInChat(node) {
+    const host = document.getElementById("messages-tail") || messagesEl;
+    if (!host || !node) return;
+    let note = document.getElementById("map-focus-note");
+    if (!note) {
+      note = document.createElement("article");
+      note.id = "map-focus-note";
+      note.className = "v2-map-focus v2-text-box v2-text-box--chrome";
+      host.appendChild(note);
+    }
+    const info = describeMapNode(node);
+    const here =
+      node.id === appStore.journey.focusMissionId ||
+      (node.type === "path" && node.id === appStore.journey.roadmapPathId) ||
+      (node.type === "mission" && info.workId && info.workId === appStore.journey.focusMissionId);
+    const saved = (appStore.journey.savedPathIds || []).includes(node.id);
+    const canSwitch =
+      node.type === "path" && appStore.journey.planConfirmed && node.id !== appStore.journey.roadmapPathId;
+    const actions = [];
+    if (canSwitch) {
+      actions.push(
+        `<button type="button" data-map-save-path="${escapeHtml(node.id)}">${saved ? "Saved" : "Save this roadmap"}</button>`
+      );
+      actions.push(`<button type="button" data-map-use-path="${escapeHtml(node.id)}">Use this roadmap</button>`);
+    }
+    if (!here && info.workId && info.workId !== appStore.journey.focusMissionId) {
+      actions.push(`<button type="button" data-map-work="${escapeHtml(info.workId)}">Work on this step</button>`);
+    }
+    note.innerHTML = `
+      <p class="v2-map-focus__kicker">${here ? "Where you are" : "On the map"}</p>
+      <h3>${escapeHtml(info.title)}</h3>
+      ${info.body ? `<p>${escapeHtml(info.body)}</p>` : ""}
+      ${actions.length ? `<div class="v2-map-focus__actions">${actions.join("")}</div>` : ""}`;
+    note.querySelector("[data-map-use-path]")?.addEventListener("click", () => {
+      handleNodeSelect(node.id, { startConfirm: true, openRoadmap: true });
+    });
+    note.querySelector("[data-map-save-path]")?.addEventListener("click", (event) => {
+      toggleSavedPath(appStore.journey, node.id);
+      touchJourney();
+      flushPersist();
+      const button = event.currentTarget;
+      if (button instanceof HTMLElement) button.textContent = "Saved";
+      missions.refresh();
+    });
+    note.querySelector("[data-map-work]")?.addEventListener("click", (event) => {
+      const id = event.currentTarget instanceof Element ? event.currentTarget.getAttribute("data-map-work") : "";
+      if (!id) return;
+      missions.focus(id);
+      markMapCurrent();
+      reflectNodeInChat(graphStore.nodes.find((entry) => entry.id === id) || node);
+    });
+    scrollFrameChildIntoView(note);
+  }
+
+  /** After a roadmap is chosen, the others stay available to save. */
+  function offerUnchosenRoadmaps(chosenId) {
+    const host = document.getElementById("messages-tail") || messagesEl;
+    const others = graphStore.nodes.filter((node) => node.type === "path" && node.id !== chosenId);
+    if (!host || !others.length) return;
+    let note = document.getElementById("map-save-others");
+    if (!note) {
+      note = document.createElement("article");
+      note.id = "map-save-others";
+      note.className = "v2-map-focus v2-text-box v2-text-box--chrome";
+      host.appendChild(note);
+    }
+    const saved = new Set(appStore.journey.savedPathIds || []);
+    note.innerHTML = `
+      <p class="v2-map-focus__kicker">Other roadmaps</p>
+      <p>These stay on the map. Save any you might want later. Opening one takes the button on that roadmap.</p>
+      <div class="v2-map-focus__actions">
+        ${others
+          .map(
+            (node) =>
+              `<button type="button" data-save-other="${escapeHtml(node.id)}">${saved.has(node.id) ? "Saved" : "Save"} ${escapeHtml(node.title || node.label || "roadmap")}</button>`
+          )
+          .join("")}
+      </div>`;
+    note.querySelectorAll("[data-save-other]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const id = button.getAttribute("data-save-other") || "";
+        if (!id || saved.has(id)) return;
+        toggleSavedPath(appStore.journey, id);
+        saved.add(id);
+        touchJourney();
+        flushPersist();
+        button.textContent = `Saved ${button.textContent.replace(/^Save\s+/, "")}`;
+        missions.refresh();
+      });
+    });
   }
 
   /** Grey roadmap: show its card and let the user open it or save it. */

@@ -5,7 +5,7 @@ import { callAdvisor } from "../advisor.js";
 import { appendMessage } from "../ui.js";
 import { hideIntakeChips, renderIntakeChips } from "../components/profile-chips.js";
 import { PATH_MODE, parsePathMode, pathModeLabel } from "./path-mode.js";
-import { buildClarifyingPrompt, clarifyingFallback, isFounderOrProjectPrompt } from "./clarifying.js";
+import { buildClarifyingPrompt, clarifyingFallback, isFounderOrProjectPrompt, shouldAdvancePastClarifying } from "./clarifying.js";
 import {
   INTAKE_STEP,
   getChipStep,
@@ -193,25 +193,44 @@ export function createIntakeController(ui) {
     layout();
   }
 
+  function clarifyingTranscript() {
+    return appStore.journey.messages
+      .map((message) => `${message.role === "user" ? "User" : "Advisor"}: ${message.content}`)
+      .join("\n\n")
+      .slice(-2500);
+  }
+
   async function askClarifying() {
     setStep(INTAKE_STEP.CLARIFYING);
     setComposerEnabled(false);
     const typingEl = messagesEl ? appendMessage(messagesEl, "advisor", "…", { typing: true }) : null;
     layout();
     const userText = firstUserText();
+    const turn = (Number(appStore.journey.clarifyingQuestionsAsked) || 0) + 1;
     try {
       const reply =
-        (await callAdvisor(buildClarifyingPrompt(userText, { pathMode: appStore.journey.pathMode }), {
-          maxTokens: 280,
-          feature: "v2_intake_clarifying"
-        })) || clarifyingFallback(userText);
+        (await callAdvisor(
+          buildClarifyingPrompt(userText, {
+            pathMode: PATH_MODE.FLEXIBLE,
+            turn,
+            transcript: clarifyingTranscript()
+          }),
+          {
+            maxTokens: 280,
+            feature: "v2_intake_clarifying"
+          }
+        )) || clarifyingFallback(userText);
       typingEl?.remove();
-      appStore.journey.clarifyingQuestionsAsked = 1;
+      appStore.journey.clarifyingQuestionsAsked = turn;
       pushAdvisor(reply);
     } catch {
       typingEl?.remove();
-      appStore.journey.clarifyingQuestionsAsked = 1;
-      pushAdvisor(clarifyingFallback(userText));
+      appStore.journey.clarifyingQuestionsAsked = turn;
+      pushAdvisor(
+        turn >= 2
+          ? "I want to be sure I heard you. Did I miss something about what you can already do?"
+          : clarifyingFallback(userText)
+      );
     } finally {
       setComposerEnabled(true);
     }
@@ -327,7 +346,11 @@ export function createIntakeController(ui) {
 
     if (step === INTAKE_STEP.CLARIFYING) {
       absorbClarifyingAnswer(trimmed);
-      beginChipIntake();
+      if (shouldAdvancePastClarifying(trimmed, appStore.journey.clarifyingQuestionsAsked)) {
+        beginChipIntake();
+      } else {
+        await askClarifying();
+      }
       return true;
     }
 
@@ -372,18 +395,25 @@ export function createIntakeController(ui) {
     return false;
   }
 
+  function useFlexiblePaths() {
+    appStore.journey.pathMode = PATH_MODE.FLEXIBLE;
+    appStore.journey.awaitingPathModeChoice = false;
+    touchJourney();
+    flush();
+  }
+
   function startAfterFirstPrompt() {
     recordStabilityContext();
-    setStep(INTAKE_STEP.PATH_MODE);
-    pushAdvisor("How do you want to explore your options?");
-    showPathMode();
+    useFlexiblePaths();
+    void askClarifying();
   }
 
   function restoreChips() {
     const step = appStore.journey.profileIntakeStep;
     if (!step || appStore.journey.intakeComplete) return;
     if (step === INTAKE_STEP.PATH_MODE || appStore.journey.awaitingPathModeChoice) {
-      showPathMode();
+      useFlexiblePaths();
+      if (!appStore.journey.clarifyingQuestionsAsked) void askClarifying();
       return;
     }
     if (isChipStep(step)) showChipsForStep(step);
