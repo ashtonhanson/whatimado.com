@@ -34,6 +34,16 @@ export function canAccessLaunchStats(user) {
 }
 
 /**
+ * Analytics is an owner desktop page. A narrow layout hides the menu entry.
+ * The owner check is the authorization; the layout flag does not grant access.
+ * @param {unknown} user
+ * @param {{ desktop?: boolean }} [layout]
+ */
+export function analyticsPageAllowed(user, { desktop = false } = {}) {
+  return Boolean(desktop) && canAccessLaunchStats(user);
+}
+
+/**
  * Anonymous or signed-in visitors opening the public entry must never be sent to an
  * external sign-in route. (In-app reload stays on the same path.)
  *

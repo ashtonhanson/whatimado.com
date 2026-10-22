@@ -28,6 +28,7 @@ import {
   missionStatusLabel
 } from "./mission-navigation.js";
 import { canRoadmapUndo, popRoadmapUndo, pushRoadmapUndo } from "./roadmap-undo.js";
+import { timelineShowsInOpenChat } from "./map-chat-focus.js";
 
 /** @type {Set<string>} */
 const circleBackEditorOpen = new Set();
@@ -263,16 +264,26 @@ function bindTimelineScroll(host) {
   rail.addEventListener("pointercancel", endDrag);
 }
 
-/** Pin the abbreviated timeline on the New roadmap row. */
+/** Keep this roadmap's timeline inside its open chat. Pages cover it without clearing it. */
 function mountMapTimeline(stages) {
   const host = timelineHost();
   const missions = (stages || []).flatMap((stage) => stage.missions || []);
-  const show = missions.length > 0;
+  const roadmapId = appStore.journey.roadmapPathId || "";
+  const show =
+    missions.length > 0 &&
+    timelineShowsInOpenChat({
+      roadmapPathId: roadmapId,
+      chatRoadmapId: roadmapId,
+      planConfirmed: Boolean(appStore.journey.planConfirmed),
+      page: ""
+    });
   document.body.classList.remove("has-map-timeline");
   if (host) {
     host.hidden = !show;
+    host.dataset.roadmapId = show ? roadmapId : "";
     const focusId = effectiveFocusMissionId(appStore.journey, stages);
-    host.innerHTML = show ? renderMissionTimeline(stages, focusId) : "";
+    if (show) host.innerHTML = renderMissionTimeline(stages, focusId);
+    else if (!missions.length) host.innerHTML = "";
     if (show) bindTimelineScroll(host);
   }
   document.getElementById("dynamic-frame")?.applyTimelineInset?.();

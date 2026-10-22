@@ -8,6 +8,29 @@ export function missionNumberLabel(orderIndex) {
 }
 
 /**
+ * Split a long map title onto a second line. Short titles stay one line.
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function wrapMapLabel(text) {
+  const full = String(text || "").trim();
+  if (full.length <= 18) return full ? [full] : [];
+  const mid = full.length / 2;
+  let split = -1;
+  let best = Infinity;
+  for (let i = 4; i <= full.length - 4; i += 1) {
+    if (full[i] !== " ") continue;
+    const dist = Math.abs(i - mid);
+    if (dist < best) {
+      best = dist;
+      split = i;
+    }
+  }
+  if (split < 0) return [full.slice(0, 18), full.slice(18, 36)].filter(Boolean);
+  return [full.slice(0, split).trim(), full.slice(split + 1).trim()].filter(Boolean).slice(0, 2);
+}
+
+/**
  * Title sits on the node the way the constellation reference does:
  * mission titles above that mission's dot, task titles level with that task's dot.
  * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, role?: string, side?: string }>} items
@@ -40,21 +63,11 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
       placeAbove(item);
     }
   };
-  /** Task titles stay level with their own dot. Lifting them "above" parks task 0 on the mission. */
-  const placeAtTask = (item) => {
+  /** Titles that belong beside a dot stay on its right, even when the line is long. */
+  const placeRightOfNode = (item) => {
     item.side = "right";
     item.left = item.nx + item.nr + 8;
     item.top = item.ny - item.h / 2;
-    const dotVisible = bounds && item.nx > bounds.left && item.nx < bounds.right;
-    if (!dotVisible || !bounds) return;
-    if (item.left + item.w > bounds.right - edgePad) {
-      item.side = "left";
-      item.left = item.nx - item.nr - 8 - item.w;
-    }
-    if (item.left < bounds.left + edgePad) {
-      item.side = "right";
-      item.left = Math.max(bounds.left + edgePad, item.nx + item.nr + 8);
-    }
   };
   const placeBelow = (item) => {
     item.side = "below";
@@ -94,16 +107,12 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
     .filter((item) => item.kind !== "path" && item.role !== "task" && item.role !== "mission" && !spine.includes(item))
     .reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
   others.forEach((item) => {
-    if (item.role === "mission") {
+    if (item.kind === "main" || item.role === "mission") {
       placeAbove(item);
       return;
     }
-    if (item.role === "task") {
-      placeAtTask(item);
-      return;
-    }
-    if (item.kind === "path") {
-      placeSide(item, you && item.nx < you.nx - item.nr ? -1 : 1);
+    if (item.role === "task" || item.kind === "path") {
+      placeRightOfNode(item);
       return;
     }
     if (spine.includes(item)) {

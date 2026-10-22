@@ -94,6 +94,12 @@ export function initAccountMenu() {
     items()[0]?.focus();
   };
 
+  menu.querySelector(".v2-menu-close")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    close(true);
+  });
+
   button.addEventListener("click", (event) => {
     event.preventDefault();
     if (isOpen()) close();

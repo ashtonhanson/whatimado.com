@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { ADMIN_USER_ID } from "./cloud-config.js";
 import {
+  analyticsPageAllowed,
   canAccessLaunchStats,
   entryPathAfterInAppReload,
   shouldAutoOpenAccountSheetOnAuthReady,
@@ -85,6 +86,16 @@ test("launch stats stay founder-only", () => {
   assert.equal(canAccessLaunchStats(null), false);
   assert.equal(canAccessLaunchStats({ id: "11111111-1111-1111-1111-111111111111" }), false);
   assert.equal(canAccessLaunchStats({ id: ADMIN_USER_ID, email: "a@example.com" }), true);
+});
+
+test("analytics page is the owner on a desktop layout", () => {
+  const owner = { id: ADMIN_USER_ID, email: "a@example.com" };
+  assert.equal(analyticsPageAllowed(owner, { desktop: true }), true);
+  assert.equal(analyticsPageAllowed(owner, { desktop: false }), false);
+  assert.equal(analyticsPageAllowed(null, { desktop: true }), false);
+  assert.equal(analyticsPageAllowed({ id: "11111111-1111-1111-1111-111111111111", email: "visitor@example.com" }, { desktop: true }), false);
+  assert.equal(analyticsPageAllowed({ email: "ashtonsemailis@gmail.com" }, { desktop: true }), true);
+  assert.equal(analyticsPageAllowed({ email: "ashtonsemailis@gmail.com" }, { desktop: false }), false);
 });
 
 test("protected launch stats API helper rejects logged-out callers", async () => {

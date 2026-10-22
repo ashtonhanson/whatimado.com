@@ -52,19 +52,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/v2/tokens.css?v=20260928-timeline" />
+  <link rel="stylesheet" href="/css/v2/tokens.css?v=20261021-step1" />
   <link rel="stylesheet" href="/css/v2/glass.css?v=20260922-mapfill" />
   <link rel="stylesheet" href="/css/v2/text-box.css" />
   <link rel="stylesheet" href="/css/v2/shell.css?v=20260921-columns" />
   <link rel="stylesheet" href="/css/v2/sidebar.css?v=20260928-account" />
   <link rel="stylesheet" href="/css/v2/resources.css?v=20260928-title" />
   <link rel="stylesheet" href="/css/v2/map-canvas.css?v=20260928-tethers" />
-  <link rel="stylesheet" href="/css/v2/frame.css?v=20260928-continue" />
-  <link rel="stylesheet" href="/css/v2/chat.css?v=20260928-multi" />
+  <link rel="stylesheet" href="/css/v2/frame.css?v=20261021-step1" />
+  <link rel="stylesheet" href="/css/v2/chat.css?v=20261022-step2" />
   <link rel="stylesheet" href="/css/v2/drafts.css?v=20260921-drafts2" />
   <link rel="stylesheet" href="/css/v2/neon-frames.css" />
-  <link rel="stylesheet" href="/css/v2/pages.css?v=20260928-cleanview" />
-  <link rel="stylesheet" href="/css/v2/mobile.css?v=20260928-inset" />
+  <link rel="stylesheet" href="/css/v2/pages.css?v=20261022-step2" />
+  <link rel="stylesheet" href="/css/v2/mobile.css?v=20261022-step3" />
 </head>
 <body class="v2-app" data-phase="open">
   <div class="v2-shell">
@@ -112,6 +112,7 @@
       </div>
 
       <div class="v2-rail-body" id="nav-rail-body">
+        <button type="button" class="v2-menu-close" id="mobile-menu-close" aria-label="Close menu">×</button>
         <button type="button" class="v2-undo-btn" id="sidebar-undo" data-mission-undo="1" disabled aria-disabled="true">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14H4V9l1.5 1.5C7.8 8.2 10.2 7 13 7c4.4 0 8 3.6 8 8s-3.6 8-8 8c-2.8 0-5.3-1.4-6.8-3.5"></path></svg>
           Undo
@@ -206,6 +207,7 @@
     <button type="button" class="v2-mobile-menu-backdrop hidden" id="mobile-menu-backdrop" aria-label="Close menu" tabindex="-1"></button>
 
     <div class="v2-account-menu" id="account-menu" role="menu" aria-labelledby="profile-btn" hidden>
+      <button type="button" class="v2-menu-close" id="account-menu-close" aria-label="Close account menu">×</button>
       <button type="button" class="v2-account-menu__head" role="menuitem" data-account-action="account">
         <span class="v2-account-menu__avatar" data-account-avatar aria-hidden="true"></span>
         <span class="v2-account-menu__who">
@@ -267,6 +269,7 @@
         <section class="v2-selection hidden" id="selection-panel"></section>
         <div class="v2-messages" id="messages-tail" aria-live="polite"></div>
         <section class="v2-missions hidden" id="missions" aria-live="polite">
+          <header class="v2-map-timeline" id="map-timeline" hidden aria-label="Mission timeline"></header>
           <div class="v2-missions__head">
             <h2 class="v2-section-label">Missions</h2>
             <div class="v2-missions__actions">
@@ -339,6 +342,7 @@
 
       <section class="v2-page hidden" id="page-settings" aria-labelledby="page-settings-title" tabindex="-1">
         <div class="v2-page__inner">
+          <button type="button" class="v2-page__close" data-page-close aria-label="Close settings">×</button>
           <header class="v2-page__head">
             <button type="button" class="v2-page__back" data-page-close>Back to map</button>
             <p class="v2-page__kicker">Settings</p>
@@ -475,6 +479,6 @@
     <form method="dialog"><button type="submit" class="v2-account__close">Close</button></form>
   </dialog>
 
-  <script type="module" src="/js/v2/app.js?v=20260928-continue"></script>
+  <script type="module" src="/js/v2/app.js?v=20261022-step3"></script>
 </body>
 </html>

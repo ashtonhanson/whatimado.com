@@ -38,7 +38,7 @@ import { applyStructuredMissionUpdate, buildDifficultyPrompt, fallbackDifficulty
 import { pushRoadmapUndo } from "../roadmap/roadmap-undo.js";
 import { createDraftsController } from "../roadmap/drafts.js";
 import { createTaskChatController } from "../roadmap/task-chat.js";
-import { highlightIdsForChatFocus, resolveMapNodeActivation } from "../roadmap/map-chat-focus.js";
+import { highlightIdsForChatFocus, hoverChatTargetId, resolveMapNodeActivation } from "../roadmap/map-chat-focus.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -219,21 +219,56 @@ export function initChatFlow(ctx) {
   }
 
   function markMapCurrent() {
-    mapEl?.setCurrentNodes?.(highlightIdsForChatFocus(resolvedChatFocusId()));
+    mapEl?.setCurrentNodes?.(
+      highlightIdsForChatFocus(resolvedChatFocusId(), graphStore.nodes, appStore.journey.focusMissionId || "")
+    );
+  }
+
+  /** @param {import("../graph-store.js").GraphNode | undefined} missionNode */
+  function markMissionStage(missionNode) {
+    if (!missionNode) return;
+    const index = Number.isInteger(missionNode.chainIndex)
+      ? missionNode.chainIndex
+      : Number(String(missionNode.id).replace("milestone-", "")) || 0;
+    document.getElementById(`stage-${index}`)?.classList.add("is-open-context");
+  }
+
+  /** @param {string} taskId */
+  function markTaskCard(taskId) {
+    if (!taskId) return;
+    document
+      .querySelector(`#mission-stages [data-mission-id="${CSS.escape(taskId)}"]`)
+      ?.classList.add("is-open-context");
   }
 
   function paintOpenContext(id) {
     document.querySelectorAll(".is-open-context").forEach((el) => el.classList.remove("is-open-context"));
     if (!id) return;
     const node = graphStore.nodes.find((entry) => entry.id === id);
-    if (node?.type === "mission") {
-      const index = Number.isInteger(node.chainIndex)
-        ? node.chainIndex
-        : Number(String(node.id).replace("milestone-", "")) || 0;
-      document.getElementById(`stage-${index}`)?.classList.add("is-open-context");
+    if (node?.type === "task") {
+      markTaskCard(node.id);
+      const mission = graphStore.nodes.find((entry) => entry.id === node.parentId && entry.type === "mission");
+      markMissionStage(mission);
       return;
     }
-    document.getElementById(`mission-${id}`)?.classList.add("is-open-context");
+    if (node?.type === "mission") {
+      markMissionStage(node);
+      const progressId = appStore.journey.focusMissionId || "";
+      const task = graphStore.nodes.find(
+        (entry) => entry.type === "task" && entry.id === progressId && entry.parentId === node.id
+      );
+      if (task) markTaskCard(task.id);
+    }
+  }
+
+  /** Temporary chat mark for the hovered task. Does not clear the open mission or task. */
+  function paintHoverContext(id) {
+    document.querySelectorAll(".is-hover-context").forEach((el) => el.classList.remove("is-hover-context"));
+    const targetId = hoverChatTargetId(graphStore.nodes.find((entry) => entry.id === id));
+    if (!targetId) return;
+    document
+      .querySelector(`#mission-stages [data-mission-id="${CSS.escape(targetId)}"]`)
+      ?.classList.add("is-hover-context");
   }
 
   /**
@@ -347,6 +382,10 @@ export function initChatFlow(ctx) {
       return;
     }
     if (node.type === "action") {
+      if (node.id === "option-settings") {
+        document.getElementById("nav-settings")?.click();
+        return;
+      }
       mapEl?.setFocusedNode(nodeId);
       showSpokePanel(node);
       return;
@@ -357,7 +396,8 @@ export function initChatFlow(ctx) {
         planConfirmed: appStore.journey.planConfirmed,
         roadmapPathId: appStore.journey.roadmapPathId,
         focusMissionId: appStore.journey.focusMissionId,
-        chatFocusId: resolvedChatFocusId()
+        chatFocusId: resolvedChatFocusId(),
+        nodes: graphStore.nodes
       },
       { openRoadmap }
     );
@@ -999,6 +1039,11 @@ export function initChatFlow(ctx) {
     },
     { passive: false }
   );
+
+  mapEl?.addEventListener("map-node-hover", (event) => {
+    const detail = /** @type {CustomEvent<{ nodeId?: string }>} */ (event).detail;
+    paintHoverContext(detail?.nodeId || "");
+  });
 
   mapEl?.addEventListener("map-node-select", (event) => {
     const detail = /** @type {CustomEvent<{ nodeId: string, node?: { type?: string }, promptEmpty?: boolean }>} */ (event).detail;

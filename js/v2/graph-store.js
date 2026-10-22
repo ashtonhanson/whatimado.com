@@ -1,4 +1,6 @@
 import { measureCssVarLength } from "./layout/measure-css-var.js";
+import { wrapMapLabel } from "./map/callouts.js";
+import { branchStepSvg, childOffset } from "./map/spines.js";
 
 /** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, bypassed?: boolean, chainIndex?: number, taskIndex?: number, stageIndex?: number, homeAngle?: number }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
@@ -307,17 +309,10 @@ const YOU_LINKED = { x: 200, y: 168 };
 const PATH_REACH = 112;
 /** Screen gap between the last mission dot and the + node. */
 const PLUS_GAP_PX = 30;
-/** Painted cap height of a 13px map title, used for the mobile half-line stacks. */
-const MAP_LABEL_BOX_PX = 13;
 const MISSION_STEP = 34;
 const MISSION_TITLE_GAP_PX = 16;
 const TASK_STACK_STEP = 30;
 const MAP_LABEL_FONT = "500 12.5px sans-serif";
-const SIBLING_GAP = 30;
-const MIN_SIBLING_GAP = 22;
-/** The map pulls nodes back inside roughly this vertical band of the 240-unit view. */
-const NODE_CEIL_Y = 32;
-const NODE_FLOOR_Y = 210;
 /** Settings, Notes, and Roadmaps all sit this far from You, evenly spaced on an arc. */
 const OPTION_RADIUS = 96;
 
@@ -364,38 +359,35 @@ function taskLabelLinePx() {
   return measureCssVarLength("--v2-map-task-label-line-h") || 17.5;
 }
 
-/** Milestone → first task distance before the extra task spacing (SVG units). */
-function baseTaskStackStep() {
-  if (!isMobileMapLayout()) return TASK_STACK_STEP;
-  const floatPx = measureCssVarLength("--v2-map-node-float-amp") || 8;
-  const pxPerUnit = mapPxPerUnit() * 0.5;
-  return TASK_STACK_STEP + (taskLabelLinePx() * 0.5 + floatPx) / pxPerUnit;
+/** @returns {number} Painted node radius in SVG units. */
+function nodeRadiusSvg() {
+  if (typeof document === "undefined") return 17;
+  const lg = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--v2-map-node-lg"));
+  return Number.isFinite(lg) && lg > 0 ? lg : 17;
 }
 
 /**
- * Spacing between stacked tasks (SVG units). Phones leave half a label line clear between
- * titles. The desktop map is fitted to a short band by height, so extra units there only
- * shrink the whole map.
+ * How many lines this title will paint. The map caps a title at two lines.
+ * @param {string} text
  */
-function taskStackStep() {
-  if (!isMobileMapLayout()) return baseTaskStackStep();
-  return halfLineStackStep();
-}
-
-/** One single-line title plus half a line of clear space, in SVG units (phones). */
-function halfLineStackStep() {
-  return (MAP_LABEL_BOX_PX + taskLabelLinePx() * 0.5) / (mapPxPerUnit() * 0.5);
+function titleLineCount(text) {
+  return Math.max(1, wrapMapLabel(text).length);
 }
 
 /**
- * On phones the first task sits 1.5 base steps under its milestone; desktop keeps one step.
- * @param {number} taskIndex
- * @param {number} spread
+ * One step for every child in a column. Roadmap columns and mission columns
+ * call this with their own titles, so a wrapped title only lengthens its column.
+ * @param {string[]} titles
  */
-function taskStackOffset(taskIndex, spread) {
-  const base = baseTaskStackStep();
-  const lead = isMobileMapLayout() ? base * 1.5 : base;
-  return (lead + taskStackStep() * (taskIndex ?? 0)) * spread;
+function stepForTitles(titles) {
+  const lineCount = (titles || []).reduce((max, title) => Math.max(max, titleLineCount(title)), 1);
+  return branchStepSvg({
+    lineCount,
+    linePx: taskLabelLinePx(),
+    pxPerUnit: mapPxPerUnit() * 0.5,
+    nodeRadius: nodeRadiusSvg(),
+    minStep: TASK_STACK_STEP
+  });
 }
 
 /**
@@ -487,12 +479,13 @@ function tasksForMilestone(nodes, milestoneId) {
  * @param {string} text
  */
 function measureTitlePx(text) {
-  if (typeof document === "undefined") return String(text || "").length * 7;
+  const lines = wrapMapLabel(text || "");
+  const label = lines.reduce((best, line) => (line.length > best.length ? line : best), "").toUpperCase();
+  if (typeof document === "undefined") return label.length * 7;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-  if (!ctx) return String(text || "").length * 7;
+  if (!ctx) return label.length * 7;
   ctx.font = MAP_LABEL_FONT;
-  const label = shortenMapLabel(text || "", 14).toUpperCase();
   return ctx.measureText(label).width + label.length * 0.5;
 }
 
@@ -568,19 +561,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;
   const lastDist = milestones.length ? milestoneDist(milestones.length - 1) : chosenDist;
   const plusDist = lastDist + (PLUS_GAP_PX / (mapPxPerUnit() * 0.5)) * spread;
-  const drop = Math.sin(rotation) * chosenDist;
-  const optionSlots = Object.keys(LINKED_OPTION_OFFSETS).map((id) => linkedOptionSlot(id) || LINKED_OPTION_OFFSETS[id]);
-  const topReach = Math.max(...optionSlots.map((slot) => -slot.dy)) * spread;
-  let siblingGap = (mobile ? halfLineStackStep() : SIBLING_GAP) * spread;
-  let originY = YOU_LINKED.y;
-  /* Phones pan the branch instead of squeezing it into the band, so the column keeps its spacing. */
-  if (pathSiblings.length && !mobile) {
-    originY = Math.min(originY, NODE_FLOOR_Y - drop - siblingGap * pathSiblings.length);
-    if (originY - topReach < NODE_CEIL_Y) {
-      originY = NODE_CEIL_Y + topReach;
-      siblingGap = Math.max(MIN_SIBLING_GAP, (NODE_FLOOR_Y - originY - drop) / pathSiblings.length);
-    }
-  }
+  const originY = YOU_LINKED.y;
+  const siblingStep = stepForTitles(pathSiblings.map((node) => node.title || node.label || ""));
   const chosenX = originX + Math.cos(rotation) * chosenDist;
   const chosenY = originY + Math.sin(rotation) * chosenDist;
 
@@ -614,7 +596,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       const my = originY + Math.sin(rotation) * parentDist;
       const perpX = -Math.sin(rotation);
       const perpY = Math.cos(rotation);
-      const stack = taskStackOffset(node.taskIndex ?? 0, spread);
+      const columnTitles = tasksForMilestone(nodes, node.parentId).map((task) => task.title || task.label || "");
+      const stack = childOffset(node.taskIndex ?? 0, stepForTitles(columnTitles)) * spread;
       node.x = (mx + perpX * stack) / MAP_W;
       node.y = (my + perpY * stack) / MAP_H;
       return;
@@ -622,7 +605,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     const siblingIndex = pathSiblings.findIndex((entry) => entry.id === node.id);
     if (siblingIndex >= 0) {
       node.x = chosenX / MAP_W;
-      node.y = (chosenY + siblingGap * (siblingIndex + 1)) / MAP_H;
+      node.y = (chosenY + childOffset(siblingIndex, siblingStep) * spread) / MAP_H;
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
@@ -650,12 +633,9 @@ export function placeUnlinkedBranch(nodes, chosenId) {
       !UNLINKED_OPTION_OFFSETS[node.id]
   );
   const milestoneStep = Math.max(UNLINKED_MISSION_STEP, linkedMilestoneStep(milestones, nodes) * 0.85);
-  const columnCeil = UNLINKED_CHOSEN.dy + UNLINKED_COLUMN_PLUS_CLEAR;
-  const columnGap =
-    column.length > 1
-      ? Math.max(MIN_SIBLING_GAP, Math.min(SIBLING_GAP, (UNLINKED_COLUMN.dy - columnCeil) / (column.length - 1)))
-      : SIBLING_GAP;
-  const columnTop = Math.max(columnCeil, UNLINKED_COLUMN.dy - columnGap * (column.length - 1));
+  const columnGap = stepForTitles(column.map((node) => node.title || node.label || ""));
+  const taskGap = stepForTitles(tasks.map((node) => node.title || node.label || ""));
+  const columnTop = UNLINKED_CHOSEN.dy + UNLINKED_COLUMN_PLUS_CLEAR;
 
   nodes.forEach((node) => {
     /** @type {{ dx: number, dy: number }} */
@@ -675,7 +655,7 @@ export function placeUnlinkedBranch(nodes, chosenId) {
       const milestoneIndex = parent ? milestones.findIndex((entry) => entry.id === parent.id) : 0;
       slot = {
         dx: UNLINKED_CHOSEN.dx + milestoneStep * (milestoneIndex + 1),
-        dy: UNLINKED_CHOSEN.dy + TASK_STACK_STEP * ((node.taskIndex ?? 0) + 1)
+        dy: UNLINKED_CHOSEN.dy + childOffset(node.taskIndex ?? 0, taskGap)
       };
     }
     else if (column.includes(node)) {

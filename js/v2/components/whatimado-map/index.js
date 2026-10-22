@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, shortenMapLabel, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
@@ -33,7 +33,8 @@ import {
   svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
-import { missionNumberLabel, placeTitleBesideNode } from "../../map/callouts.js";
+import { missionNumberLabel, placeTitleBesideNode, wrapMapLabel } from "../../map/callouts.js";
+import { collapseVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
   computeChatFrameGravityPan,
@@ -77,10 +78,10 @@ function dashesEndingOnDots(length) {
 }
 
 /** @param {import("../../graph-store.js").GraphNode} node */
-function nodeMapTitle(node) {
-  if (!node || node.type === "more") return "";
-  if (node.type === "start") return node.label || "You";
-  return shortenMapLabel(node.title || node.label);
+function nodeMapTitleLines(node) {
+  if (!node || node.type === "more") return [];
+  if (node.type === "start") return [node.label || "You"];
+  return wrapMapLabel(node.title || node.label || "");
 }
 
 /** @param {DOMMatrix|null|undefined} ctm */
@@ -115,7 +116,7 @@ function holdTitlesOnNodes(items) {
         if (!screenBoxesOverlap(ba, bb, 3)) continue;
         const mover = a.ny <= b.ny ? a : b;
         if (mover.side === "left" || mover.side === "right") {
-          if (mover.role === "task") continue;
+          if (mover.role === "task" || mover.kind === "path") continue;
           const other = mover === a ? b : a;
           if (other.side === "above" && typeof mover.nr === "number") {
             mover.side = "above";
@@ -206,7 +207,6 @@ const MAP_TEMPLATE = `
     <div class="whatimado-map__chrome">
       <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
       <div class="whatimado-map__timeline-col">
-        <header class="v2-map-timeline" id="map-timeline" hidden aria-label="Mission timeline"></header>
         <div class="whatimado-map__timeline-tools">
           <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
             <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
@@ -358,6 +358,7 @@ export class WhatimadoMap extends HTMLElement {
 
     this._onPointerMove = (event) => this._handlePointerMove(event);
     this._onPointerUp = (event) => this._handlePointerUp(event);
+    this._onPointerLeave = () => this.setNodeHover(null);
     this._onGlobalPanMove = (event) => this._handlePanMove(event);
     this._onGlobalPanUp = (event) => this._finishPanPointer(event);
     this._onPanTouchMove = (event) => {
@@ -479,6 +480,7 @@ export class WhatimadoMap extends HTMLElement {
     this._onSelect = null;
     this._promptEmptyChecker = null;
     this.removeEventListener("pointermove", this._onPointerMove);
+    this.removeEventListener("pointerleave", this._onPointerLeave);
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
     window.removeEventListener("resize", this._onViewportResize);
@@ -798,10 +800,13 @@ export class WhatimadoMap extends HTMLElement {
 
     this._hoverNodeId = id;
 
-    if (!id) return;
-
-    const group = this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`);
-    group?.classList.add("is-hover");
+    if (id) {
+      const group = this.querySelector(`.whatimado-map__node--live[data-node-id="${id}"]`);
+      group?.classList.add("is-hover");
+    }
+    this.dispatchEvent(
+      new CustomEvent("map-node-hover", { bubbles: true, detail: { nodeId: id || "" } })
+    );
   }
 
   /** @param {string} id */
@@ -1602,6 +1607,7 @@ export class WhatimadoMap extends HTMLElement {
     this.addEventListener("touchend", this._onPinchTouchEnd, { passive: false });
     this.addEventListener("touchcancel", this._onPinchTouchEnd, { passive: false });
     this.addEventListener("pointermove", this._onPointerMove);
+    this.addEventListener("pointerleave", this._onPointerLeave);
     this.addEventListener("pointerup", this._onPointerUp);
     this.addEventListener("pointercancel", this._onPointerUp);
   }
@@ -2159,7 +2165,7 @@ export class WhatimadoMap extends HTMLElement {
     const dx = pt.x - this._pointer.startSvgX;
     const dy = pt.y - this._pointer.startSvgY;
 
-    if (Math.hypot(dx, dy) > 4) {
+    if (Math.hypot(dx, dy) > 12) {
       this._pointer.moved = true;
     }
 
@@ -2627,6 +2633,9 @@ export class WhatimadoMap extends HTMLElement {
       const y = parseFloat(tspan.getAttribute("y") || "0") + (b.y - a.y);
       tspan.setAttribute("x", x.toFixed(1));
       tspan.setAttribute("y", y.toFixed(1));
+      text.querySelectorAll("tspan").forEach((span, index) => {
+        if (index > 0) span.setAttribute("x", x.toFixed(1));
+      });
     };
 
     items.forEach((item) => {
@@ -2640,6 +2649,9 @@ export class WhatimadoMap extends HTMLElement {
       const local = point.matrixTransform(inv0);
       item.tspan.setAttribute("x", local.x.toFixed(1));
       item.tspan.setAttribute("y", local.y.toFixed(1));
+      item.text.querySelectorAll("tspan").forEach((span, index) => {
+        if (index > 0) span.setAttribute("x", local.x.toFixed(1));
+      });
       const kickerSpan = item.kicker?.querySelector("tspan");
       if (kickerSpan) {
         kickerSpan.setAttribute("x", local.x.toFixed(1));
@@ -2761,7 +2773,8 @@ export class WhatimadoMap extends HTMLElement {
     const skipNodes = options.edgesOnly === true;
 
     if (!skipEdges) {
-      edges.forEach(({ from, to }) => {
+      const drawnEdges = collapseVerticalSpines(edges, nodes);
+      drawnEdges.forEach(({ from, to }) => {
         const a = nodes.find((n) => n.id === from);
         const b = nodes.find((n) => n.id === to);
         if (!a || !b) return;
@@ -2815,7 +2828,8 @@ export class WhatimadoMap extends HTMLElement {
           .filter(Boolean)
           .join(" ");
 
-        const title = options.layer === "live" ? nodeMapTitle(node) : "";
+        const titleLines = options.layer === "live" ? nodeMapTitleLines(node) : [];
+        const title = titleLines[0] || "";
         const isAlternate = spineAlternatePaths && node.type === "path" && !isSelected;
         const bodyR = node.type === "more" ? r : isAlternate ? r * 0.72 : r;
         const kickerText =
@@ -2838,7 +2852,7 @@ export class WhatimadoMap extends HTMLElement {
           isAnchor: isLayoutAnchor,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}" style="${styleVars}">
-          <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r * 2.6, 22)}" />
+          <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r + 8, 18)}" />
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${bodyR}" />
@@ -2848,8 +2862,13 @@ export class WhatimadoMap extends HTMLElement {
             ${kickerText
               ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`
               : ""}
-            ${title
-              ? `<text class="whatimado-map__label" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(title)}</tspan></text>`
+            ${titleLines.length
+              ? `<text class="whatimado-map__label" text-anchor="middle">${titleLines
+                  .map(
+                    (line, lineIndex) =>
+                      `<tspan x="${cx}"${lineIndex ? ' dy="1.15em"' : ` y="${cy}"`}>${escapeHtml(line)}</tspan>`
+                  )
+                  .join("")}</text>`
               : ""}
             ${node.waiting
               ? `<g class="whatimado-map__badge whatimado-map__badge--waiting" transform="translate(${cx + r * 0.85}, ${cy - r * 0.85})"><circle r="7" /><text y="3" text-anchor="middle">◷</text></g>`
