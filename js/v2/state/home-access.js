@@ -34,6 +34,15 @@ export function canAccessLaunchStats(user) {
 }
 
 /**
+ * Analytics is the owner's page on desktop and on the phone.
+ * A narrow screen does not grant or remove access.
+ * @param {unknown} user
+ */
+export function analyticsPageAllowed(user) {
+  return canAccessLaunchStats(user);
+}
+
+/**
  * Anonymous or signed-in visitors opening the public entry must never be sent to an
  * external sign-in route. (In-app reload stays on the same path.)
  *

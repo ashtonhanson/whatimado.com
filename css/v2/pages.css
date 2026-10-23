@@ -3,7 +3,7 @@
 .v2-page {
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: 50;
   overflow-y: auto;
   overscroll-behavior: contain;
   border-radius: var(--v2-frame-radius);
@@ -33,6 +33,39 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+#page-settings .v2-page__head {
+  padding-right: 2.75rem;
+}
+
+.v2-page__close {
+  position: sticky;
+  top: 0.65rem;
+  z-index: 4;
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0 0 -2.5rem;
+  padding: 0;
+  border: 1px solid rgba(215, 255, 246, 0.28);
+  border-radius: 999px;
+  background: rgba(6, 16, 18, 0.72);
+  color: var(--v2-teal);
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.v2-page__close:hover,
+.v2-page__close:focus-visible {
+  color: var(--v2-neon-teal, #7dffef);
+  border-color: rgba(46, 232, 214, 0.55);
+  outline: none;
 }
 
 .v2-page__back {
@@ -506,11 +539,40 @@ body[data-page] whatimado-frame.is-mobile-docked {
   pointer-events: none;
 }
 
+/* Timeline stays in the open roadmap chat. A page covers that chat without clearing it. */
+body[data-page] #map-timeline {
+  visibility: hidden;
+}
+
 @media (max-width: 900px) {
   .v2-page {
+    position: fixed;
+    top: var(--v2-mobile-header-h, 0px);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    height: auto;
     border-radius: 0;
     border-left: 0;
     border-right: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  .v2-page__inner {
+    padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .v2-page__back {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    width: fit-content;
+    background: rgba(6, 16, 18, 0.92);
   }
 
   .v2-page__grid,

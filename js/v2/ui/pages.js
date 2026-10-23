@@ -7,6 +7,7 @@ import { locationFromDraft } from "../state/location.js";
 import { readPrefs } from "../state/prefs.js";
 import { schedulePersist } from "../state/persistence.js";
 import { authState, deleteAllData, loadLaunchStats, onAuthChange, reloadApp, saveProfile, submitSuggestion } from "../state/auth.js";
+import { analyticsPageAllowed } from "../state/home-access.js";
 
 const PAGES = /** @type {const} */ (["analytics", "settings"]);
 
@@ -211,7 +212,21 @@ function statsStatus(message, tone) {
 
 let statsRequest = 0;
 
+function clearLaunchStatsDisplay() {
+  lastStats = null;
+  for (const id of ["stats-visits", "stats-started", "stats-maps", "stats-roadmaps"]) setText(id, "—");
+  $("stats-funnel")?.replaceChildren();
+  $("stats-days")?.replaceChildren();
+  setText("stats-funnel-caption", "");
+  setText("stats-updated", "");
+  statsStatus("", "");
+}
+
 async function refreshStats() {
+  if (!analyticsPageAllowed(authState().user)) {
+    clearLaunchStatsDisplay();
+    return;
+  }
   const request = ++statsRequest;
   statsStatus("Loading stats…", "loading");
   const result = await loadLaunchStats(statsPeriod, { includeAdmin: !cleanView });
@@ -362,9 +377,29 @@ export function initPages() {
   /** @type {string | null} */
   let current = null;
   const home = $("nav-home");
+  let analyticsUrlHandled = false;
+
+  function analyticsRequestedByUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("page") === "analytics" || window.location.hash === "#analytics";
+  }
+
+  function clearAnalyticsUrl() {
+    const url = new URL(window.location.href);
+    const hadPage = url.searchParams.get("page") === "analytics";
+    const hadHash = url.hash === "#analytics";
+    if (!hadPage && !hadHash) return;
+    if (hadPage) url.searchParams.delete("page");
+    if (hadHash) url.hash = "";
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(null, "", next);
+  }
 
   /** @param {string | null} name */
   const show = (name) => {
+    if (name === "analytics" && !analyticsPageAllowed(authState().user)) {
+      name = null;
+    }
     current = name;
     for (const page of PAGES) {
       const el = $(`page-${page}`);
@@ -383,7 +418,23 @@ export function initPages() {
     if (name) $(`page-${name}`)?.focus({ preventScroll: true });
   };
 
+  function syncAnalyticsAccess(state) {
+    const allowed = analyticsPageAllowed(state.user);
+    const item = $("nav-analytics-item");
+    if (item) item.hidden = !allowed;
+    if (!allowed && current === "analytics") {
+      clearLaunchStatsDisplay();
+      show(null);
+    }
+    return allowed;
+  }
+
   $("nav-analytics")?.addEventListener("click", () => {
+    if (!analyticsPageAllowed(authState().user)) {
+      clearLaunchStatsDisplay();
+      show(null);
+      return;
+    }
     show("analytics");
     void refreshStats();
   });
@@ -403,9 +454,15 @@ export function initPages() {
   initSettings();
 
   onAuthChange((state) => {
-    const item = $("nav-analytics-item");
-    if (item) item.hidden = !state.founder;
-    if (!state.founder && current === "analytics") show(null);
+    const allowed = syncAnalyticsAccess(state);
     renderSettingsAccount(state);
+    if (!state.ready || analyticsUrlHandled || !analyticsRequestedByUrl()) return;
+    analyticsUrlHandled = true;
+    if (allowed) {
+      show("analytics");
+      void refreshStats();
+      return;
+    }
+    clearAnalyticsUrl();
   });
 }

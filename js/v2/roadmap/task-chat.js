@@ -344,8 +344,17 @@ export function createTaskChatController(ui) {
       const openBtn = target?.closest("[data-mission-chat-open]");
       if (openBtn instanceof HTMLButtonElement) {
         const missionId = openBtn.getAttribute("data-mission-chat-open");
-        if (missionId) open(missionId, openBtn);
+        if (missionId) {
+          openBtn.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: missionId } }));
+        }
         return;
+      }
+      if (target && !target.closest("button, a, input, textarea, select, label")) {
+        const card = target.closest(".v2-mission[data-mission-id]");
+        const missionId = card?.getAttribute("data-mission-id");
+        if (missionId) {
+          card.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: missionId } }));
+        }
       }
       const closeBtn = target?.closest("[data-mission-chat-close]");
       if (closeBtn instanceof HTMLButtonElement) {

@@ -38,6 +38,7 @@ import { applyStructuredMissionUpdate, buildDifficultyPrompt, fallbackDifficulty
 import { pushRoadmapUndo } from "../roadmap/roadmap-undo.js";
 import { createDraftsController } from "../roadmap/drafts.js";
 import { createTaskChatController } from "../roadmap/task-chat.js";
+import { highlightIdsForChatFocus, hoverChatTargetId, resolveMapNodeActivation } from "../roadmap/map-chat-focus.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -206,11 +207,117 @@ export function initChatFlow(ctx) {
   });
   taskChat.bindRoot();
 
+  /** Open chat context. Separate from focusMissionId so inspecting a node does not move progress. */
+  let chatFocusId = "";
+
+  function resolvedChatFocusId() {
+    const preferred = chatFocusId || appStore.journey.focusMissionId || "";
+    if (preferred && graphStore.nodes.some((node) => node.id === preferred)) return preferred;
+    const progress = appStore.journey.focusMissionId || "";
+    if (progress && graphStore.nodes.some((node) => node.id === progress)) return progress;
+    return "";
+  }
+
   function markMapCurrent() {
-    const focusId = appStore.journey.focusMissionId;
-    const task = graphStore.nodes.find((node) => node.id === focusId);
-    const missionId = task?.type === "task" ? task.parentId : task?.type === "mission" ? task.id : null;
-    mapEl?.setCurrentNodes?.([focusId, missionId, appStore.journey.roadmapPathId]);
+    mapEl?.setCurrentNodes?.(
+      highlightIdsForChatFocus(resolvedChatFocusId(), graphStore.nodes, appStore.journey.focusMissionId || "")
+    );
+  }
+
+  /** @param {import("../graph-store.js").GraphNode | undefined} missionNode */
+  function markMissionStage(missionNode) {
+    if (!missionNode) return;
+    const index = Number.isInteger(missionNode.chainIndex)
+      ? missionNode.chainIndex
+      : Number(String(missionNode.id).replace("milestone-", "")) || 0;
+    document.getElementById(`stage-${index}`)?.classList.add("is-open-context");
+  }
+
+  /** @param {string} taskId */
+  function markTaskCard(taskId) {
+    if (!taskId) return;
+    document
+      .querySelector(`#mission-stages [data-mission-id="${CSS.escape(taskId)}"]`)
+      ?.classList.add("is-open-context");
+  }
+
+  function paintOpenContext(id) {
+    document.querySelectorAll(".is-open-context").forEach((el) => el.classList.remove("is-open-context"));
+    if (!id) return;
+    const node = graphStore.nodes.find((entry) => entry.id === id);
+    if (node?.type === "task") {
+      markTaskCard(node.id);
+      const mission = graphStore.nodes.find((entry) => entry.id === node.parentId && entry.type === "mission");
+      markMissionStage(mission);
+      return;
+    }
+    if (node?.type === "mission") {
+      markMissionStage(node);
+      const progressId = appStore.journey.focusMissionId || "";
+      const task = graphStore.nodes.find(
+        (entry) => entry.type === "task" && entry.id === progressId && entry.parentId === node.id
+      );
+      if (task) markTaskCard(task.id);
+    }
+  }
+
+  /** Mark the clicked task on the timeline without moving the Now stop. */
+  function markTimelineOpen(taskId) {
+    const host = document.getElementById("map-timeline");
+    if (!host) return;
+    if (taskId) host.dataset.openTaskId = taskId;
+    else delete host.dataset.openTaskId;
+    host.querySelectorAll("[data-timeline-id]").forEach((item) => {
+      item.classList.toggle("is-open", Boolean(taskId) && item.getAttribute("data-timeline-id") === taskId);
+    });
+  }
+
+  /** Temporary chat mark for the hovered task. Does not clear the open mission or task. */
+  function paintHoverContext(id) {
+    document.querySelectorAll(".is-hover-context").forEach((el) => el.classList.remove("is-hover-context"));
+    const targetId = hoverChatTargetId(graphStore.nodes.find((entry) => entry.id === id));
+    if (!targetId) return;
+    document
+      .querySelector(`#mission-stages [data-mission-id="${CSS.escape(targetId)}"]`)
+      ?.classList.add("is-hover-context");
+  }
+
+  /**
+   * Open the mission stage or task card that belongs to this node.
+   * Progress (focusMissionId, completion) and the active roadmap stay as they are.
+   * @param {import("../graph-store.js").GraphNode} node
+   */
+  function openWorkingContext(node) {
+    const progressFocus = appStore.journey.focusMissionId;
+    const activePath = appStore.journey.roadmapPathId;
+    const confirmed = appStore.journey.planConfirmed;
+    chatFocusId = node.id;
+    mapEl?.setFocusedNode(null);
+    markMapCurrent();
+    document.getElementById("map-focus-note")?.remove();
+    if (node.type === "mission") {
+      taskChat.closeOpen({ restoreFocus: false });
+      paintOpenContext(node.id);
+      markTimelineOpen("");
+      const index = Number.isInteger(node.chainIndex)
+        ? node.chainIndex
+        : Number(String(node.id).replace("milestone-", "")) || 0;
+      const stage = document.getElementById(`stage-${index}`);
+      if (stage) scrollFrameChildIntoView(stage);
+      else {
+        const missionsEl = document.getElementById("missions");
+        if (missionsEl) scrollFrameChildIntoView(missionsEl);
+      }
+    } else {
+      paintOpenContext(node.id);
+      markTimelineOpen(node.id);
+      taskChat.open(node.id);
+      const card = document.getElementById(`mission-${node.id}`);
+      if (card) scrollFrameChildIntoView(card);
+    }
+    appStore.journey.focusMissionId = progressFocus;
+    appStore.journey.roadmapPathId = activePath;
+    appStore.journey.planConfirmed = confirmed;
   }
 
   const missions = createMissionsController({
@@ -232,6 +339,7 @@ export function initChatFlow(ctx) {
         mapEl?.setSelectedNode(still ? keep : pathId);
         mapEl?.syncRoadmapBranchFit?.({ animate: false });
         markMapCurrent();
+        paintOpenContext(resolvedChatFocusId());
       } else if (!stages?.length) {
         restorePossibilityMap();
         mapEl?.syncLiveFromStore();
@@ -239,7 +347,15 @@ export function initChatFlow(ctx) {
     }
   });
 
-  document.addEventListener("mission-focus", () => markMapCurrent());
+  document.addEventListener("mission-focus", (event) => {
+    const id =
+      event instanceof CustomEvent && typeof event.detail?.id === "string"
+        ? event.detail.id
+        : appStore.journey.focusMissionId || "";
+    if (id) chatFocusId = id;
+    markMapCurrent();
+    paintOpenContext(id);
+  });
 
   const confirmGate = createConfirmGateController({
     messagesEl,
@@ -279,32 +395,43 @@ export function initChatFlow(ctx) {
       return;
     }
     if (node.type === "action") {
+      if (node.id === "option-settings") {
+        document.getElementById("nav-settings")?.click();
+        return;
+      }
       mapEl?.setFocusedNode(nodeId);
       showSpokePanel(node);
       return;
     }
-    if (!openRoadmap && node.type === "path" && appStore.journey.planConfirmed && appStore.journey.roadmapPathId) {
-      if (node.id !== appStore.journey.roadmapPathId) {
-        mapEl?.setFocusedNode(nodeId);
-        showAlternatePath(node);
-        reflectNodeInChat(node);
-        return;
-      }
+    const decision = resolveMapNodeActivation(
+      node,
+      {
+        planConfirmed: appStore.journey.planConfirmed,
+        roadmapPathId: appStore.journey.roadmapPathId,
+        focusMissionId: appStore.journey.focusMissionId,
+        chatFocusId: resolvedChatFocusId(),
+        nodes: graphStore.nodes
+      },
+      { openRoadmap }
+    );
+    if (decision.action === "preview-alternate") {
+      mapEl?.setFocusedNode(nodeId);
+      showAlternatePath(node);
+      reflectNodeInChat(node);
+      markMapCurrent();
+      return;
+    }
+    if (decision.action === "show-active-roadmap") {
       mapEl?.setFocusedNode(null);
       showSelectedPath(node, { scroll: true, keepGate: true });
       reflectNodeInChat(node);
+      markMapCurrent();
       const missionsEl = document.getElementById("missions");
       if (missionsEl && !missionsEl.classList.contains("hidden")) scrollFrameChildIntoView(missionsEl);
       return;
     }
-    if (node.type === "mission" || node.type === "task") {
-      mapEl?.setFocusedNode(nodeId);
-      reflectNodeInChat(node);
-      const shownId =
-        node.type === "task"
-          ? node.id
-          : graphStore.nodes.find((entry) => entry.type === "task" && entry.parentId === node.id)?.id;
-      if (shownId) taskChat.focusMission(shownId);
+    if (decision.action === "open-working-context") {
+      openWorkingContext(node);
       return;
     }
     const switching = Boolean(appStore.journey.roadmapPathId && appStore.journey.roadmapPathId !== nodeId);
@@ -834,15 +961,17 @@ export function initChatFlow(ctx) {
   function onMissionFocus(event) {
     const id = event.detail?.id;
     if (!id) return;
-    appStore.journey.focusMissionId = id;
-    touchJourney();
-    taskChat.focusMission(id);
     const node = graphStore.nodes.find((item) => item.id === id);
-    if (node) {
-      mapEl?.setFocusedNode?.(id);
-      mapEl?.setSelectedNode?.(id);
+    if (node && (node.type === "task" || node.type === "mission")) {
+      openWorkingContext(node);
+      return;
     }
-    mapEl?.syncRoadmapBranchFit?.({ animate: true });
+    chatFocusId = id;
+    markMapCurrent();
+    paintOpenContext(id);
+    markTimelineOpen(id);
+    const card = document.getElementById(`mission-${id}`);
+    if (card) scrollFrameChildIntoView(card);
   }
   timelineEl?.addEventListener("mission-focus", onMissionFocus);
   missionRoot?.addEventListener("mission-focus", onMissionFocus);
@@ -926,10 +1055,23 @@ export function initChatFlow(ctx) {
     { passive: false }
   );
 
+  mapEl?.addEventListener("map-node-hover", (event) => {
+    const detail = /** @type {CustomEvent<{ nodeId?: string }>} */ (event).detail;
+    paintHoverContext(detail?.nodeId || "");
+  });
+
   mapEl?.addEventListener("map-node-select", (event) => {
-    const detail = /** @type {CustomEvent<{ nodeId: string, promptEmpty?: boolean }>} */ (event).detail;
+    const detail = /** @type {CustomEvent<{ nodeId: string, node?: { type?: string }, promptEmpty?: boolean }>} */ (event).detail;
     if (!detail?.nodeId) return;
-    if (detail.node?.type === "mission" || detail.node?.type === "more" || detail.node?.type === "action" || !detail.promptEmpty) {
+    const type = detail.node?.type;
+    const roadmapOpen = Boolean(appStore.journey.planConfirmed && appStore.journey.roadmapPathId);
+    if (
+      type === "mission" ||
+      type === "more" ||
+      type === "action" ||
+      (roadmapOpen && (type === "task" || type === "path")) ||
+      !detail.promptEmpty
+    ) {
       handleNodeSelect(detail.nodeId);
     }
   });

@@ -2,7 +2,8 @@
 
 .v2-mobile-menu-btn,
 .v2-mobile-menu-backdrop,
-.v2-mobile-header-controls {
+.v2-mobile-header-controls,
+.v2-menu-close {
   display: none;
 }
 
@@ -55,8 +56,8 @@
     /* Extra top inset so label + float animation stays inside the clipped map band */
     --v2-map-graph-top-pad: clamp(1.45rem, 3.2vh, 2.05rem);
     --v2-mobile-open-drift-slack: 18px;
-    --v2-map-node-lg: 8.25;
-    --v2-map-node-sm: 4.125;
+    --v2-map-node-lg: 16.5;
+    --v2-map-node-sm: 8.25;
     --v2-map-edge-width: 2.6;
     --v2-map-task-label-line-h: calc(12.5px * 1.4);
     --v2-map-node-float-amp: 8px;
@@ -65,31 +66,31 @@
   /* Large phones / small tablets — smaller nodes so menu + Path Finder both clear */
   @media (min-width: 480px) {
     :root {
-      --v2-map-node-lg: 6;
-      --v2-map-node-sm: 3;
+      --v2-map-node-lg: 12;
+      --v2-map-node-sm: 6;
     }
   }
 
   @media (min-width: 600px) {
     :root {
-      --v2-map-node-lg: 5.5;
-      --v2-map-node-sm: 2.75;
+      --v2-map-node-lg: 11;
+      --v2-map-node-sm: 5.5;
       --whatimado-frame-top-default: clamp(33vh, 27vh + 4vw, 38vh);
     }
   }
 
   @media (min-width: 600px) and (max-height: 820px) {
     :root {
-      --v2-map-node-lg: 5;
-      --v2-map-node-sm: 2.5;
+      --v2-map-node-lg: 10;
+      --v2-map-node-sm: 5;
       --whatimado-frame-top-default: clamp(34vh, 28vh + 4vw, 40vh);
     }
   }
 
   @media (max-height: 640px) {
     :root {
-      --v2-map-node-lg: 5;
-      --v2-map-node-sm: 2.5;
+      --v2-map-node-lg: 10;
+      --v2-map-node-sm: 5;
       --whatimado-frame-top-default: clamp(36vh, 32vh + 3vw, 44vh);
       --v2-mobile-you-hero-gap: clamp(0.55rem, 1.4vh, 0.85rem);
     }
@@ -548,6 +549,35 @@
     transition: opacity 0.28s ease, visibility 0s;
   }
 
+  .v2-menu-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    align-self: flex-start;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0 0 0.15rem;
+    padding: 0;
+    border: 1px solid rgba(215, 255, 246, 0.28);
+    border-radius: 999px;
+    background: rgba(6, 16, 18, 0.55);
+    color: var(--v2-teal);
+    font: inherit;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .v2-menu-close:hover,
+  .v2-menu-close:focus-visible {
+    color: var(--v2-neon-teal, #7dffef);
+    border-color: rgba(46, 232, 214, 0.55);
+    outline: none;
+  }
+
   .v2-rail-body {
     position: fixed;
     top: var(--v2-mobile-header-h);
@@ -564,12 +594,16 @@
     align-items: stretch;
     gap: var(--v2-rail-stack-gap);
     padding:
-      1rem 0.85rem
+      0.7rem 0.85rem
       calc(0.85rem + env(safe-area-inset-bottom, 0px));
     overflow-x: hidden;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     border-left: 1px solid var(--v2-border);
-    background: var(--v2-rail-bg);
+    background: rgba(6, 16, 18, 0.78);
+    backdrop-filter: blur(18px) saturate(1.15);
+    -webkit-backdrop-filter: blur(18px) saturate(1.15);
     box-shadow: -8px 0 28px rgba(0, 0, 0, 0.35);
     visibility: visible;
     opacity: 1;
@@ -580,6 +614,14 @@
 
   .v2-rail--left.is-mobile-menu-open .v2-rail-body {
     transform: translate3d(0, 0, 0);
+  }
+
+  .v2-account-menu {
+    background: rgba(6, 16, 18, 0.78);
+    backdrop-filter: blur(18px) saturate(1.15);
+    -webkit-backdrop-filter: blur(18px) saturate(1.15);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .v2-rail-body > .v2-rail-foot {

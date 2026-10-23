@@ -41,6 +41,7 @@ export function initMobileNav() {
   });
 
   backdrop?.addEventListener("click", closeMobileMenu);
+  document.getElementById("mobile-menu-close")?.addEventListener("click", closeMobileMenu);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeMobileMenu();

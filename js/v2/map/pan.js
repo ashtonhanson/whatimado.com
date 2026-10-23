@@ -36,7 +36,7 @@ export function getGraphBounds(mapEl) {
     };
   }
 
-  const { lg, sm } = getNodeRadii();
+  const { lg } = getNodeRadii();
   const { offset: labelOffset, cap: labelCap } = getNodeLabelMetrics(lg);
   let minX = Infinity;
   let maxX = -Infinity;
@@ -46,7 +46,7 @@ export function getGraphBounds(mapEl) {
   for (const node of mapEl._liveNodes) {
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
-    const r = node.type === "start" || node.type === "path" ? lg : sm;
+    const r = lg;
     minX = Math.min(minX, cx - r);
     maxX = Math.max(maxX, cx + r);
     minY = Math.min(minY, cy - r - labelOffset - labelCap);
@@ -252,7 +252,7 @@ export function isActiveRoadmapBranchNode(node, chosenPathId) {
  */
 function getNodeBounds(mapEl, { includeNode } = {}) {
   if (!mapEl._liveNodes.length) return getGraphBounds(mapEl);
-  const { lg, sm } = getNodeRadii();
+  const { lg } = getNodeRadii();
   const float = mapEl.querySelector(".whatimado-map__node-float");
   const floatStyle = float ? getComputedStyle(float) : null;
   const lift =
@@ -268,7 +268,7 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
     if (includeNode && !includeNode(node)) continue;
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
-    const r = node.type === "start" || node.type === "path" ? lg : sm;
+    const r = lg;
     const labelLift = node.type === "mission" || node.type === "task" ? labelOffset + labelCap * 0.65 : 0;
     const badgeLift = node.waiting ? 10 : 0;
     minX = Math.min(minX, cx - r - (node.waiting ? 8 : 0));
@@ -332,9 +332,10 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
 
   const timeline = document.getElementById("map-timeline");
   let top = menuClearScreenY(stageRect);
-  if (timeline instanceof HTMLElement && !timeline.hidden) {
+  if (timeline instanceof HTMLElement && !timeline.hidden && stage.contains(timeline) === false) {
     const bar = timeline.getBoundingClientRect();
-    if (bar.height > 4) top = Math.max(top, bar.bottom + 8);
+    const overStage = bar.top < frameRect.top && bar.bottom > stageRect.top && bar.top < stageRect.bottom;
+    if (bar.height > 4 && overStage) top = Math.max(top, bar.bottom + 8);
   }
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 12;
   const room = reserve || { above: 34, below: 0, left: 96, right: 96 };
