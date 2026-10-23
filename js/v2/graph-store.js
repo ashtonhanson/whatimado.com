@@ -392,10 +392,16 @@ function stepForTitles(titles, { singleLine = false } = {}) {
  * @returns {number}
  */
 function youSpokeRadius() {
-  const px = isMobileMapLayout() ? SPOKE_SCREEN_PX.mobile : SPOKE_SCREEN_PX.desktop;
+  const mobile = isMobileMapLayout();
+  const px = mobile ? SPOKE_SCREEN_PX.mobile : SPOKE_SCREEN_PX.desktop;
   const unit = mapPxPerUnit();
   if (!(unit > 0)) return px;
-  return px / (unit * 0.5);
+  const radius = px / (unit * 0.5);
+  if (!mobile) return radius;
+  /* Analytics is the leftmost spoke (205°). Past this length its dot leaves the map and the title detaches. */
+  const leftCos = Math.cos((205 * Math.PI) / 180);
+  const maxRadius = (YOU_LINKED.x - 28) / -leftCos;
+  return Math.min(radius, maxRadius);
 }
 
 /**
@@ -568,7 +574,6 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       !tasks.includes(node) &&
       !linkedOffsets[node.id]
   );
-  const mobile = isMobileMapLayout();
   const milestoneStep = linkedMilestoneStep(milestones, nodes);
   const chosen = nodes.find((node) => node.id === chosenId);
   const firstStep = linkedFirstMilestoneStep(chosen, milestones, pathSiblings, milestoneStep);
@@ -579,9 +584,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const lastDist = milestones.length ? milestoneDist(milestones.length - 1) : chosenDist;
   const plusDist = lastDist + (PLUS_GAP_PX / (mapPxPerUnit() * 0.5)) * spread;
   const originY = YOU_LINKED.y;
-  const siblingStep = stepForTitles(pathSiblings.map((node) => node.title || node.label || ""), {
-    singleLine: mobile
-  });
+  const columnStep = stepForTitles([], { singleLine: true });
+  const siblingStep = columnStep;
   const chosenX = originX + Math.cos(rotation) * chosenDist;
   const chosenY = originY + Math.sin(rotation) * chosenDist;
 
@@ -615,8 +619,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       const my = originY + Math.sin(rotation) * parentDist;
       const perpX = -Math.sin(rotation);
       const perpY = Math.cos(rotation);
-      const columnTitles = tasksForMilestone(nodes, node.parentId).map((task) => task.title || task.label || "");
-      const stack = childOffset(node.taskIndex ?? 0, stepForTitles(columnTitles, { singleLine: true })) * spread;
+      const stack = childOffset(node.taskIndex ?? 0, columnStep) * spread;
       node.x = (mx + perpX * stack) / MAP_W;
       node.y = (my + perpY * stack) / MAP_H;
       return;
@@ -655,13 +658,8 @@ export function placeUnlinkedBranch(nodes, chosenId) {
       !unlinkedOffsets[node.id]
   );
   const milestoneStep = Math.max(UNLINKED_MISSION_STEP, linkedMilestoneStep(milestones, nodes) * 0.85);
-  const columnGap = stepForTitles(column.map((node) => node.title || node.label || ""), {
-    singleLine: isMobileMapLayout()
-  });
-  const taskGap = stepForTitles(
-    tasks.map((node) => node.title || node.label || ""),
-    { singleLine: true }
-  );
+  const columnGap = stepForTitles([], { singleLine: true });
+  const taskGap = columnGap;
   const columnTop = chosenSlot.dy + UNLINKED_COLUMN_PLUS_CLEAR;
 
   nodes.forEach((node) => {

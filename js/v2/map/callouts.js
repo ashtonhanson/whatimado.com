@@ -36,30 +36,18 @@ export function wrapMapLabel(text) {
  * @param {{ left: number, right: number } | null} [bounds]
  */
 export function pinSpokeTitles(items, bounds = null) {
-  const edge = 14;
+  const edge = 8;
   const spokes = items.filter((item) => item.nodeId === "option-settings" || item.nodeId === "option-analytics");
   for (const item of spokes) {
+    const nr = item.nr || 6;
     item.side = "above";
-    item.left = item.nx - item.w / 2;
-    item.top = item.ny - (item.nr || 6) - 10 - item.h;
+    const ideal = item.nx - item.w / 2;
+    item.left = ideal;
+    item.top = item.ny - nr - 6 - item.h;
     if (!bounds) continue;
-    const minLeft = bounds.left + edge;
-    const maxLeft = Math.max(minLeft, bounds.right - edge - item.w);
-    item.left = Math.min(Math.max(item.left, minLeft), maxLeft);
-  }
-  const overlap = (a, b) =>
-    a.left < b.left + b.w + 4 && a.left + a.w + 4 > b.left && a.top < b.top + b.h + 2 && a.top + a.h + 2 > b.top;
-  for (let pass = 0; pass < 8; pass += 1) {
-    let moved = false;
-    for (const item of spokes) {
-      for (const other of items) {
-        if (other === item || other.nodeId === "option-settings" || other.nodeId === "option-analytics") continue;
-        if (!overlap(item, other)) continue;
-        item.top = other.top - item.h - 6;
-        moved = true;
-      }
-    }
-    if (!moved) break;
+    const clamped = Math.min(Math.max(item.left, bounds.left + edge), bounds.right - edge - item.w);
+    /* A small nudge keeps the word on screen. A bigger slide would leave the dot. */
+    if (Math.abs(clamped - ideal) <= 12) item.left = clamped;
   }
 }
 
@@ -75,14 +63,22 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
   const edgePad = 6;
   const placeAbove = (item) => {
     item.side = "above";
-    item.left = item.nx - item.w / 2;
+    const ideal = item.nx - item.w / 2;
+    item.left = ideal;
     item.top = item.ny - item.nr - 16 - item.h;
-    if (bounds && item.nx > bounds.left && item.nx < bounds.right) {
-      item.left = Math.min(Math.max(item.left, bounds.left + edgePad), bounds.right - edgePad - item.w);
+    if (!(bounds && item.nx > bounds.left && item.nx < bounds.right)) return;
+    const clamped = Math.min(Math.max(item.left, bounds.left + edgePad), bounds.right - edgePad - item.w);
+    if (Math.abs(clamped - ideal) <= 12) {
+      item.left = clamped;
+      return;
     }
+    item.side = "right";
+    item.left = item.nx + item.nr + 8;
+    item.top = item.ny - item.h / 2;
   };
   const placeSide = (item, dx) => {
-    if (dx < 0) {
+    const nearLeft = bounds && item.nx < bounds.left + Math.max(item.w, 48) + item.nr + 12;
+    if (dx < 0 && !nearLeft) {
       item.side = "left";
       item.left = item.nx - item.nr - 8 - item.w;
     } else {
@@ -90,13 +86,15 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
       item.left = item.nx + item.nr + 8;
     }
     item.top = item.ny - item.h / 2;
-    /* A side title past the stage edge gets cut off; lift it over its dot instead.
-       Phones pan along the roadmap, so a title past the right edge stays beside its dot.
-       A title past the left edge has nowhere to pan without losing the hub, so it lifts. */
+    /* A side title past the stage edge gets cut off. Keep it on this dot: the other side, then above. */
     const dotVisible = bounds && item.nx > bounds.left && item.nx < bounds.right;
     const pastLeft = bounds && item.left < bounds.left + edgePad;
     const pastRight = bounds && item.left + item.w > bounds.right - edgePad;
-    if (dotVisible && (pastLeft || (!spineAbove && pastRight))) placeAbove(item);
+    if (dotVisible && pastLeft && item.side === "left") {
+      item.side = "right";
+      item.left = item.nx + item.nr + 8;
+      item.top = item.ny - item.h / 2;
+    } else if (dotVisible && pastRight && !spineAbove && item.side === "right") placeAbove(item);
   };
   /** Titles that belong beside a dot stay on its right, even when the line is long. */
   const placeRightOfNode = (item) => {

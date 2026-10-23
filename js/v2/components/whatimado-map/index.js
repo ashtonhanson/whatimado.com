@@ -84,7 +84,9 @@ function nodeMapTitleLines(node) {
   const mobile = window.matchMedia("(max-width: 900px)").matches;
   if (node.type === "task" || (mobile && node.type === "path")) {
     const short = mapNodeLabel(node.title || node.label || "", { compact: mobile });
-    return short ? [short] : [];
+    /* A two-word roadmap title runs into the mission tasks beside that column. */
+    const label = mobile && node.type === "path" && short.length > 10 ? short.split(/\s+/)[0] : short;
+    return label ? [label] : [];
   }
   return wrapMapLabel(node.title || node.label || "");
 }
@@ -177,7 +179,11 @@ function clearTitleFromNodes(item, nodes) {
       if (item.side === "right") item.left = obs.right + 6;
       else if (item.side === "left") item.left = obs.left - item.w - 6;
       else if (item.side === "below") item.top = obs.bottom + 4;
-      else item.top = obs.top - item.h - 6;
+      else {
+        /* Stay on this dot. Walking up past every neighbor is what left Roadmaps floating. */
+        const beside = item.ny - (item.nr || 6) - item.h - 4;
+        item.top = Math.max(obs.top - item.h - 6, beside);
+      }
       moved = true;
     }
     if (!moved) break;
@@ -1320,7 +1326,7 @@ export class WhatimadoMap extends HTMLElement {
       centerNodeId: null,
       reserve: null,
       includeNode: (node) => isActiveRoadmapBranchNode(node, chosenPathId),
-      minZoom: desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : undefined
+      minZoom: desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : 0.44
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
@@ -1330,7 +1336,39 @@ export class WhatimadoMap extends HTMLElement {
       if (!options.reserve) break;
     }
     if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
+    if (!desktopCrosshair) this._keepSpokeTitlesOnStage();
     return true;
+  }
+
+  /**
+   * The phone fit packs the branch to the right edge and leaves Settings and Analytics off the left.
+   * Slide just enough that those dots, and a title above them, sit inside the stage.
+   */
+  _keepSpokeTitlesOnStage() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const layer = this._liveLayer;
+    const svg = this._svg;
+    if (!stage || !layer || !svg) return;
+    const stageLeft = stage.getBoundingClientRect().left;
+    const pad = 40;
+    let shift = 0;
+    for (const id of ["option-settings", "option-analytics"]) {
+      const center = this._nodeScreenCenter(id);
+      if (!center) continue;
+      shift = Math.max(shift, stageLeft + pad - center.x);
+    }
+    if (shift < 4) return;
+    const inv = invertCtm(layer.getScreenCTM());
+    if (!inv) return;
+    const shifted = svg.createSVGPoint();
+    shifted.x = shift;
+    const zero = svg.createSVGPoint().matrixTransform(inv);
+    const local = shifted.matrixTransform(inv);
+    const panDx = (local.x - zero.x) * (this._zoom || 1);
+    if (!Number.isFinite(panDx) || Math.abs(panDx) < 0.5) return;
+    this._panX += panDx;
+    this._applyPanTransform();
+    this._layoutCallouts();
   }
 
   /** Fit the current roadmap/task nodes (labels and badges) between timeline and prompt. */
@@ -2609,7 +2647,7 @@ export class WhatimadoMap extends HTMLElement {
             left: Math.max(0, hostRect.left),
             right: Math.min(window.innerWidth, hostRect.right)
           },
-          { spineAbove: mobile }
+          { spineAbove: false }
         );
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);

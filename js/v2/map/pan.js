@@ -372,9 +372,12 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
     zoomX = spanZoomX;
     screenCx += (room.left - room.right) / 2;
   }
-  const zoomMin = typeof minZoom === "number" && Number.isFinite(minZoom) && !MOBILE_MQ.matches ? minZoom : FIT_ZOOM_MIN;
+  const explicitMin = typeof minZoom === "number" && Number.isFinite(minZoom);
+  const zoomMin = explicitMin && !MOBILE_MQ.matches ? minZoom : FIT_ZOOM_MIN;
+  /* A phone roadmap is wider than the stage at the usual floor, so the left spokes clip. */
+  const mobileMin = explicitMin ? Math.min(minZoom, FIT_ZOOM_MIN) : FIT_ZOOM_MIN;
   const zoom = MOBILE_MQ.matches
-    ? Math.max(FIT_ZOOM_MIN, Math.min(ZOOM_MAX, zoomX, Math.max(floor, zoomY)))
+    ? Math.max(mobileMin, Math.min(ZOOM_MAX, zoomX, Math.max(floor, zoomY)))
     : Math.max(zoomMin, Math.min(ZOOM_MAX, zoomY, zoomX));
   const scale = pxPerUnit * zoom;
   const margin = (stageRect.width - usableW) / 2;
