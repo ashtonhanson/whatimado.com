@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { branchStepSvg, childOffset, collapseVerticalSpines } from "./spines.js";
+import { branchStepSvg, childOffset, collapseVerticalSpines, segmentVerticalSpines } from "./spines.js";
 
 describe("vertical spines", () => {
   it("draws one spine for a mission and keeps the horizontal links", () => {
@@ -50,6 +50,27 @@ describe("vertical spines", () => {
     assert.deepEqual(
       drawn.map((edge) => `${edge.from}->${edge.to}`).sort(),
       ["chosen->alt-2", "chosen->milestone-0"]
+    );
+  });
+});
+
+describe("line splits", () => {
+  it("splits a task column at every node so each dot is a joint", () => {
+    const nodes = [
+      { id: "milestone-0", x: 0.55, y: 0.5 },
+      { id: "task-1", x: 0.55, y: 0.62 },
+      { id: "task-2", x: 0.55, y: 0.74 },
+      { id: "task-3", x: 0.55, y: 0.86 }
+    ];
+    const edges = [
+      { from: "milestone-0", to: "task-1" },
+      { from: "milestone-0", to: "task-2" },
+      { from: "milestone-0", to: "task-3" }
+    ];
+    const drawn = segmentVerticalSpines(edges, nodes);
+    assert.deepEqual(
+      drawn.map((edge) => `${edge.from}->${edge.to}`),
+      ["milestone-0->task-1", "task-1->task-2", "task-2->task-3"]
     );
   });
 });

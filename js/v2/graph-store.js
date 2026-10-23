@@ -585,7 +585,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const chosen = nodes.find((node) => node.id === chosenId);
   const firstStep = linkedFirstMilestoneStep(chosen, milestones, pathSiblings, milestoneStep);
   /* Phones hide You, so the chosen roadmap can sit near the left instead of a reach past an empty dot. */
-  const chosenReach = mobile ? 48 : PATH_REACH;
+  const chosenReach = mobile ? 96 : PATH_REACH;
   const chosenDist = chosenReach * spread;
   /** @param {number} index */
   const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;

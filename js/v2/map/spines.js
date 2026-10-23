@@ -42,6 +42,47 @@ export function collapseVerticalSpines(edges, nodes) {
 }
 
 /**
+ * Same columns as a spine, split at every node. Dragging a dot moves the
+ * line ends on both sides of it.
+ * @param {Array<{ from: string, to: string }>} edges
+ * @param {Array<{ id: string, x: number, y: number }>} nodes
+ */
+export function segmentVerticalSpines(edges, nodes) {
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  /** @type {Array<{ from: string, to: string }>} */
+  const rest = [];
+  /** @type {Map<string, string[]>} */
+  const down = new Map();
+  for (const edge of edges) {
+    const from = byId.get(edge.from);
+    const to = byId.get(edge.to);
+    if (!from || !to) continue;
+    const sameColumn = Math.abs(from.x - to.x) < 0.02 && to.y > from.y + 0.004;
+    if (!sameColumn) {
+      rest.push({ from: edge.from, to: edge.to });
+      continue;
+    }
+    if (!down.has(edge.from)) down.set(edge.from, []);
+    down.get(edge.from).push(edge.to);
+  }
+  /** @type {Array<{ from: string, to: string }>} */
+  const segments = [];
+  const seen = new Set();
+  for (const [from, kids] of down) {
+    const ordered = [from, ...kids]
+      .filter((id, index, list) => byId.has(id) && list.indexOf(id) === index)
+      .sort((a, b) => (byId.get(a)?.y || 0) - (byId.get(b)?.y || 0));
+    for (let index = 1; index < ordered.length; index += 1) {
+      const key = `${ordered[index - 1]}->${ordered[index]}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      segments.push({ from: ordered[index - 1], to: ordered[index] });
+    }
+  }
+  return [...rest, ...segments];
+}
+
+/**
  * Parent → first child and each following child use the same step.
  * Index 0 is the first child, one step below the parent.
  * @param {number} index

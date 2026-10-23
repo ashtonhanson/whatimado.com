@@ -34,7 +34,7 @@ import {
   trimLineToNodeEdges
 } from "../../map/geometry.js";
 import { missionNumberLabel, placeTitleBesideNode, wrapMapLabel } from "../../map/callouts.js";
-import { collapseVerticalSpines } from "../../map/spines.js";
+import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
   computeChatFrameGravityPan,
@@ -90,14 +90,12 @@ function nodeMapTitleLines(node) {
 }
 
 /**
- * A phone map only draws a node when tapping it opens that place:
- * a roadmap, mission, task, the add-mission plus, Settings, or Analytics.
- * @param {{ type?: string, id?: string }} node
+ * Phone maps hide spokes that only open a text panel. You stays: it is the
+ * hub the roadmap grows from.
+ * @param {{ id?: string }} node
  */
-function mapNodeIsDestination(node) {
-  if (!node) return false;
-  if (node.type === "path" || node.type === "mission" || node.type === "task" || node.type === "more") return true;
-  return node.type === "action" && (node.id === "option-settings" || node.id === "option-analytics");
+function mapNodeHiddenOnPhone(node) {
+  return node?.id === "option-notes" || node?.id === "option-roadmaps";
 }
 
 /** @param {DOMMatrix|null|undefined} ctm */
@@ -220,7 +218,8 @@ const MAP_TEMPLATE = `
         <g class="whatimado-map__layer whatimado-map__layer--live"></g>
       </g>
     </svg>
-    <div class="whatimado-map__chrome">
+      <div class="whatimado-map__chrome">
+      <p class="whatimado-map__roadmap-sticky" hidden></p>
       <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
       <div class="whatimado-map__timeline-col">
         <div class="whatimado-map__timeline-tools">
@@ -433,16 +432,25 @@ export class WhatimadoMap extends HTMLElement {
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const slot = document.getElementById("header-map-tools");
     const tools = this.querySelector(".whatimado-map__timeline-tools");
+    const chrome = this.querySelector(".whatimado-map__chrome");
+    const logoSlot = document.querySelector(".v2-rail-logo-slot");
+    const controls = document.querySelector(".v2-mobile-header-controls");
     if (!slot) return;
     if (mobile && this._linkBtn && this._youBtn) {
       slot.hidden = false;
       slot.setAttribute("aria-hidden", "false");
       if (this._linkBtn.parentElement !== slot) slot.append(this._linkBtn);
       if (this._youBtn.parentElement !== slot) slot.append(this._youBtn);
+      if (this._roadmapSticky && logoSlot && controls && this._roadmapSticky.parentElement !== logoSlot) {
+        logoSlot.insertBefore(this._roadmapSticky, controls);
+      }
       if (tools) tools.hidden = true;
     } else {
       slot.hidden = true;
       slot.setAttribute("aria-hidden", "true");
+      if (chrome && this._roadmapSticky && this._roadmapSticky.parentElement !== chrome) {
+        chrome.prepend(this._roadmapSticky);
+      }
       if (tools) {
         tools.hidden = false;
         if (this._linkBtn && this._linkBtn.parentElement !== tools) tools.prepend(this._linkBtn);
@@ -691,6 +699,7 @@ export class WhatimadoMap extends HTMLElement {
   syncLiveFromStore() {
     this.loadLiveGraph(graphStore.nodes, graphStore.edges);
     this._applyAnchorStyles();
+    this._syncRoadmapSticky();
     if (this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1") {
       this.fitLockedScene({ animate: false });
       return;
@@ -702,6 +711,10 @@ export class WhatimadoMap extends HTMLElement {
     this.syncDesktopViewBox();
     if (this.syncSnapCamera()) return;
     if (this._liveNodes.some((node) => node.type === "task")) {
+      if (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId)) {
+        this.centerOnNode(this._focusNodeId, { animate: false });
+        return;
+      }
       if (this.syncRoadmapBranchFit({ animate: false })) return;
     }
     if (window.matchMedia("(max-width: 900px)").matches) return;
@@ -738,16 +751,43 @@ export class WhatimadoMap extends HTMLElement {
     if (id && this._liveNodes.length <= 2) {
       this._focalLocked = true;
       this._focalNodeId = id;
-      const desktop = !window.matchMedia("(max-width: 900px)").matches;
-      if (desktop) this.syncDesktopViewBox();
-      const target = desktop ? computePanForNodeAboveFrame(this, id) : this._computePanForFocalNode(id);
-      this._animatePanTo(target.panX, target.panY, true);
-    } else {
+      this.centerOnNode(id);
+    } else if (!this._focusNodeId) {
       this._focalLocked = false;
       this._focalNodeId = null;
     }
     this._applyAnchorStyles();
     this.setPathPreview(null);
+    this._syncRoadmapSticky();
+  }
+
+  /**
+   * Put one node in the open band above the prompt and under the menu.
+   * @param {string|null|undefined} id
+   * @param {{ animate?: boolean }} [options]
+   */
+  centerOnNode(id, { animate = true } = {}) {
+    if (!id || !this._liveNodes.some((node) => node.id === id)) return;
+    this._userPanned = false;
+    this._focalLocked = true;
+    this._focalNodeId = id;
+    this._focusNodeId = id;
+    this.syncDesktopViewBox();
+    const target = computePanForNodeAboveFrame(this, id);
+    this._animatePanTo(target.panX, target.panY, animate);
+    this._youBtn?.classList.add("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "true");
+  }
+
+  /** The active roadmap name, pinned across the top of the map. */
+  _syncRoadmapSticky() {
+    const el = this._roadmapSticky;
+    if (!el) return;
+    const pathId = appStore.journey.roadmapPathId || this._selectedId;
+    const node = this._liveNodes.find((entry) => entry.id === pathId && entry.type === "path");
+    const title = String(node?.title || node?.label || "").trim();
+    el.textContent = title;
+    el.hidden = !title;
   }
 
   /** Highlight a node without making it the chosen roadmap. @param {string|null} id */
@@ -1225,48 +1265,11 @@ export class WhatimadoMap extends HTMLElement {
   /** Fit the current roadmap/task nodes (labels and badges) between timeline and prompt. */
   resetToYou({ animate = true } = {}) {
     this._userPanned = false;
-    this.syncDesktopViewBox();
-    const selectedId = this._selectedId || graphStore.selectedId;
-    const keepSelection = selectedId;
-    const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
-    if (this.syncRoadmapBranchFit({ animate: false })) {
-      if (keepSelection && this._liveNodes.some((node) => node.id === keepSelection)) {
-        this._selectedId = keepSelection;
-        graphStore.selectedId = keepSelection;
-      }
-      this._focalLocked = true;
-      this._focalNodeId = this._selectedId;
-      this._youBtn?.classList.add("is-active");
-      this._youBtn?.setAttribute("aria-pressed", "true");
-      this._applyAnchorStyles();
-      if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
-      return;
-    }
-    const chosenPathId = appStore.journey.roadmapPathId || keepSelection;
-    const desktopCrosshair = !window.matchMedia("(max-width: 900px)").matches;
-    const options = {
-      centerNodeId: null,
-      reserve: null,
-      includeNode: (node) => isActiveRoadmapBranchNode(node, chosenPathId),
-      minZoom: desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : undefined
-    };
-    for (let pass = 0; pass < 3; pass++) {
-      const fit = computeTimelineFrameFit(this, options);
-      this._zoom = fit.zoom;
-      this._animatePanTo(fit.panX, fit.panY, false);
-      options.reserve = this._measureTitleReserve();
-      if (!options.reserve) break;
-    }
-    if (keepSelection && this._liveNodes.some((node) => node.id === keepSelection)) {
-      this._selectedId = keepSelection;
-      graphStore.selectedId = keepSelection;
-    }
-    this._focalLocked = true;
-    this._focalNodeId = this._selectedId;
-    this._youBtn?.classList.add("is-active");
-    this._youBtn?.setAttribute("aria-pressed", "true");
-    this._applyAnchorStyles();
-    if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
+    const preferred =
+      (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId) && this._focusNodeId) ||
+      this._selectedId ||
+      "start";
+    this.centerOnNode(preferred, { animate });
   }
 
   /** @param {TouchList} touches */
@@ -1596,6 +1599,7 @@ export class WhatimadoMap extends HTMLElement {
     this._ghostLayer = this.querySelector(".whatimado-map__layer--ghost");
     this._liveLayer = this.querySelector(".whatimado-map__layer--live");
     this._youBtn = this.querySelector(".whatimado-map__you-btn");
+    this._roadmapSticky = this.querySelector(".whatimado-map__roadmap-sticky");
     if (this._svg) {
       this._svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${VIEW_H}`);
     }
@@ -2182,7 +2186,9 @@ export class WhatimadoMap extends HTMLElement {
     const dx = pt.x - this._pointer.startSvgX;
     const dy = pt.y - this._pointer.startSvgY;
 
-    if (Math.hypot(dx, dy) > 12) {
+    const ctm = this._liveLayer?.getScreenCTM();
+    const pxPerUnit = ctm ? Math.hypot(ctm.a, ctm.b) || 1 : 1;
+    if (Math.hypot(dx, dy) * pxPerUnit > 16) {
       this._pointer.moved = true;
     }
 
@@ -2319,6 +2325,8 @@ export class WhatimadoMap extends HTMLElement {
   _handleNodeClick(nodeId) {
     const node = this._liveNodes.find((n) => n.id === nodeId);
     if (!node) return;
+    if (node.type !== "start") this._focusNodeId = nodeId;
+    this.centerOnNode(nodeId);
 
     const promptEmpty = this._promptEmptyChecker?.() ?? true;
 
@@ -2334,6 +2342,7 @@ export class WhatimadoMap extends HTMLElement {
       this._applyAnchorStyles();
       this._onSelect?.(nodeId);
     }
+    this._syncRoadmapSticky();
   }
 
   /** @param {SVGGElement} layer */
@@ -2783,7 +2792,7 @@ export class WhatimadoMap extends HTMLElement {
   _renderLayer(layer, nodes, edges, options) {
     if (!layer) return;
     if (options.layer === "live" && window.matchMedia("(max-width: 900px)").matches) {
-      nodes = nodes.filter((node) => mapNodeIsDestination(node));
+      nodes = nodes.filter((node) => !mapNodeHiddenOnPhone(node));
       const ids = new Set(nodes.map((node) => node.id));
       edges = edges.filter((edge) => ids.has(edge.from) && ids.has(edge.to));
     }
@@ -2795,7 +2804,7 @@ export class WhatimadoMap extends HTMLElement {
     const skipNodes = options.edgesOnly === true;
 
     if (!skipEdges) {
-      const drawnEdges = collapseVerticalSpines(edges, nodes);
+      const drawnEdges = segmentVerticalSpines(edges, nodes);
       drawnEdges.forEach(({ from, to }) => {
         const a = nodes.find((n) => n.id === from);
         const b = nodes.find((n) => n.id === to);

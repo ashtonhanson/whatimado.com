@@ -234,8 +234,7 @@ export const ROADMAP_CROSSHAIR_ZOOM_MIN = 0.48;
  * @param {string | null | undefined} chosenPathId
  */
 export function isActiveRoadmapBranchNode(node, chosenPathId) {
-  const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
-  if (node.id === "start") return !mobile;
+  if (node.id === "start") return true;
   if (node.type === "more") return true;
   if (node.id === "option-settings" || node.id === "option-analytics") return true;
   if (chosenPathId && node.id === chosenPathId) return true;

@@ -62,14 +62,36 @@ whatimado-map .whatimado-map__chrome {
   right: 0.65rem;
   z-index: 8;
   display: flex;
-  align-items: flex-start;
-  gap: 0.55rem;
+  align-items: center;
+  gap: 0.75rem;
   pointer-events: none;
 }
 
+whatimado-map .whatimado-map__roadmap-sticky {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0.15rem 0.15rem;
+  color: var(--v2-yellow);
+  font-family: var(--v2-font-hero);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+whatimado-map .whatimado-map__roadmap-sticky[hidden] {
+  display: none !important;
+}
+
 whatimado-map .whatimado-map__timeline-col {
-  margin-left: auto;
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.85rem;
@@ -599,16 +621,13 @@ whatimado-map .whatimado-map__node--live.is-focused:not(.is-selected) .whatimado
 whatimado-map .whatimado-map__node--live.is-current .whatimado-map__node-aura {
   opacity: 1;
   fill: rgba(94, 242, 224, 0.95);
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: scale(1.45);
   animation: whatimado-anchor-aura-breathe 3.6s ease-in-out infinite;
 }
 
 whatimado-map .whatimado-map__node--live.is-current .whatimado-map__node-body {
   stroke: #e8fff8;
-  stroke-width: 2.4;
-  filter: drop-shadow(0 0 7px rgba(46, 232, 214, 0.95));
+  stroke-width: 1.6;
+  filter: drop-shadow(0 0 6px rgba(46, 232, 214, 0.85));
 }
 
 /* Soft diffused neon aura — selected path only */
