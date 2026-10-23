@@ -261,6 +261,17 @@ export function initChatFlow(ctx) {
     }
   }
 
+  /** Mark the clicked task on the timeline without moving the Now stop. */
+  function markTimelineOpen(taskId) {
+    const host = document.getElementById("map-timeline");
+    if (!host) return;
+    if (taskId) host.dataset.openTaskId = taskId;
+    else delete host.dataset.openTaskId;
+    host.querySelectorAll("[data-timeline-id]").forEach((item) => {
+      item.classList.toggle("is-open", Boolean(taskId) && item.getAttribute("data-timeline-id") === taskId);
+    });
+  }
+
   /** Temporary chat mark for the hovered task. Does not clear the open mission or task. */
   function paintHoverContext(id) {
     document.querySelectorAll(".is-hover-context").forEach((el) => el.classList.remove("is-hover-context"));
@@ -287,6 +298,7 @@ export function initChatFlow(ctx) {
     if (node.type === "mission") {
       taskChat.closeOpen({ restoreFocus: false });
       paintOpenContext(node.id);
+      markTimelineOpen("");
       const index = Number.isInteger(node.chainIndex)
         ? node.chainIndex
         : Number(String(node.id).replace("milestone-", "")) || 0;
@@ -298,6 +310,7 @@ export function initChatFlow(ctx) {
       }
     } else {
       paintOpenContext(node.id);
+      markTimelineOpen(node.id);
       taskChat.open(node.id);
       const card = document.getElementById(`mission-${node.id}`);
       if (card) scrollFrameChildIntoView(card);
@@ -948,15 +961,17 @@ export function initChatFlow(ctx) {
   function onMissionFocus(event) {
     const id = event.detail?.id;
     if (!id) return;
-    appStore.journey.focusMissionId = id;
-    touchJourney();
-    taskChat.focusMission(id);
     const node = graphStore.nodes.find((item) => item.id === id);
-    if (node) {
-      mapEl?.setFocusedNode?.(id);
-      mapEl?.setSelectedNode?.(id);
+    if (node && (node.type === "task" || node.type === "mission")) {
+      openWorkingContext(node);
+      return;
     }
-    mapEl?.syncRoadmapBranchFit?.({ animate: true });
+    chatFocusId = id;
+    markMapCurrent();
+    paintOpenContext(id);
+    markTimelineOpen(id);
+    const card = document.getElementById(`mission-${id}`);
+    if (card) scrollFrameChildIntoView(card);
   }
   timelineEl?.addEventListener("mission-focus", onMissionFocus);
   missionRoot?.addEventListener("mission-focus", onMissionFocus);

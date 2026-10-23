@@ -284,6 +284,12 @@ function mountMapTimeline(stages) {
     const focusId = effectiveFocusMissionId(appStore.journey, stages);
     if (show) host.innerHTML = renderMissionTimeline(stages, focusId);
     else if (!missions.length) host.innerHTML = "";
+    const openTaskId = host.dataset.openTaskId || "";
+    if (show && openTaskId) {
+      host.querySelectorAll("[data-timeline-id]").forEach((item) => {
+        item.classList.toggle("is-open", item.getAttribute("data-timeline-id") === openTaskId);
+      });
+    }
     if (show) bindTimelineScroll(host);
   }
   document.getElementById("dynamic-frame")?.applyTimelineInset?.();
@@ -685,8 +691,6 @@ export function createMissionsController(ui) {
       const timeline = target?.closest("[data-timeline-id]");
       const timelineId = timeline?.getAttribute("data-timeline-id");
       if (timelineId) {
-        appStore.journey.focusMissionId = timelineId;
-        highlightTimelineMission(host, timelineId);
         host.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: timelineId } }));
         return;
       }
