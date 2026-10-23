@@ -1,5 +1,5 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
-import { graphStore, restorePossibilityMap, selectGraphNode, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
+import { graphStore, restorePossibilityMap, selectGraphNode, setExtraExploreOptions, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
@@ -25,7 +25,8 @@ import {
   cancelPendingComposerDraftSave,
   clearComposerDraft
 } from "../state/composer-draft.js";
-import { authState } from "../state/auth.js";
+import { authState, onAuthChange } from "../state/auth.js";
+import { isFounderUser } from "../state/cloud-config.js";
 import { readSession } from "../state/guest-account.js";
 import { closeActivePageIfOpen } from "./pages.js";
 import { journeyHasActiveWork, newMapConfirmMessage } from "./journey-work.js";
@@ -330,6 +331,7 @@ export function initChatFlow(ctx) {
     onShown: (stages) => {
       drafts.sync(stages);
       setSpineAlternatePaths(Boolean(stages?.length));
+      setExtraExploreOptions(isFounderUser(authState().user) ? [{ id: "option-analytics", label: "Analytics" }] : []);
       const pathId = appStore.journey.roadmapPathId;
       if (stages?.length && pathId) {
         showRoadmapBranch(pathId, stages);
@@ -397,6 +399,10 @@ export function initChatFlow(ctx) {
     if (node.type === "action") {
       if (node.id === "option-settings") {
         document.getElementById("nav-settings")?.click();
+        return;
+      }
+      if (node.id === "option-analytics") {
+        document.getElementById("nav-analytics")?.click();
         return;
       }
       mapEl?.setFocusedNode(nodeId);
@@ -1116,6 +1122,22 @@ export function initChatFlow(ctx) {
   });
 
   window.addEventListener("resize", () => layout());
+
+  onAuthChange(() => {
+    const want = isFounderUser(authState().user);
+    setExtraExploreOptions(want ? [{ id: "option-analytics", label: "Analytics" }] : []);
+    const has = graphStore.nodes.some((node) => node.id === "option-analytics");
+    if (want === has) return;
+    const pathId = appStore.journey.roadmapPathId;
+    const stages = appStore.journey.missionsStages;
+    if (!pathId || !appStore.journey.planConfirmed || !stages?.length) return;
+    showRoadmapBranch(pathId, stages);
+    const keep = mapEl?._selectedId;
+    mapEl?.syncLiveFromStore();
+    const still = keep && graphStore.nodes.some((node) => node.id === keep);
+    mapEl?.setSelectedNode(still ? keep : pathId);
+    mapEl?.syncRoadmapBranchFit?.({ animate: false });
+  });
 
   document.addEventListener(
     "keydown",

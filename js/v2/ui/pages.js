@@ -421,7 +421,10 @@ export function initPages() {
   function syncAnalyticsAccess(state) {
     const allowed = analyticsPageAllowed(state.user);
     const item = $("nav-analytics-item");
-    if (item) item.hidden = !allowed;
+    if (item) {
+      item.hidden = !allowed;
+      item.classList.toggle("hidden", !allowed);
+    }
     if (!allowed && current === "analytics") {
       clearLaunchStatsDisplay();
       show(null);

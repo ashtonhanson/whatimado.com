@@ -79,6 +79,13 @@ export function shortenMapLabel(value) {
   return (kept.length ? kept : words).slice(0, 2).join(" ");
 }
 
+/** Phone map titles stay one short word when two words would run off the screen. */
+export function mapNodeLabel(value, { compact = false } = {}) {
+  const short = shortenMapLabel(value);
+  if (!compact || short.length <= 14) return short;
+  return short.split(/\s+/)[0] || short;
+}
+
 /** HUD hover accents — distinct hues; yellow reserved for selected state */
 export const PATH_ACCENT_PALETTE = ["#3df0de", "#2ee8d6", "#1ec9b8", "#5ce0d4"];
 
@@ -349,10 +356,20 @@ function linkedOptionSlot(nodeId) {
  * (title above), Settings and Roadmaps to the left (titles run left, a title and a half apart).
  */
 const MOBILE_OPTION_SLOTS_PX = {
-  "option-settings": { dx: -46, dy: 0 },
+  "option-settings": { dx: -72, dy: -34 },
+  "option-analytics": { dx: -72, dy: 34 },
   "option-notes": { dx: 0, dy: -62 },
   "option-roadmaps": { dx: -46, dy: -40 }
 };
+
+/** Founder-only spokes added beside Settings. Empty for everyone else. */
+let extraExploreOptions = [];
+
+/** @param {Array<{ id: string, label: string }>} options */
+export function setExtraExploreOptions(options) {
+  extraExploreOptions = Array.isArray(options) ? options.filter((option) => option?.id && option?.label) : [];
+  return extraExploreOptions;
+}
 
 /** @returns {number} */
 function taskLabelLinePx() {
@@ -379,14 +396,19 @@ function titleLineCount(text) {
  * call this with their own titles, so a wrapped title only lengthens its column.
  * @param {string[]} titles
  */
-function stepForTitles(titles) {
-  const lineCount = (titles || []).reduce((max, title) => Math.max(max, titleLineCount(title)), 1);
+function stepForTitles(titles, { singleLine = false } = {}) {
+  const mobile = isMobileMapLayout();
+  const lineCount =
+    singleLine || mobile
+      ? 1
+      : (titles || []).reduce((max, title) => Math.max(max, titleLineCount(title)), 1);
   return branchStepSvg({
     lineCount,
     linePx: taskLabelLinePx(),
     pxPerUnit: mapPxPerUnit() * 0.5,
     nodeRadius: nodeRadiusSvg(),
-    minStep: TASK_STACK_STEP
+    minStep: mobile ? 16 : 28,
+    air: mobile ? 0.35 : 1.2
   });
 }
 
@@ -404,7 +426,12 @@ function optionRing(degrees) {
 }
 
 /** The selected roadmap runs right, so the options arc 45° apart over You. */
-const LINKED_OPTION_OFFSETS = optionRing({ "option-settings": 160, "option-notes": 115, "option-roadmaps": 70 });
+const LINKED_OPTION_OFFSETS = optionRing({
+  "option-analytics": 205,
+  "option-settings": 160,
+  "option-notes": 115,
+  "option-roadmaps": 70
+});
 const OPTION_OFFSETS = [
   { dx: -175, dy: -90 },
   { dx: -40, dy: -86 },
@@ -424,7 +451,12 @@ const UNLINKED_COLUMN = { dx: 160, dy: 0 };
 /** The column's top stays this far under the selected roadmap so its line clears the plus. */
 const UNLINKED_COLUMN_PLUS_CLEAR = 40;
 /** The selected roadmap holds straight up, so the options fan out 30° apart on the left. */
-const UNLINKED_OPTION_OFFSETS = optionRing({ "option-settings": 135, "option-notes": 165, "option-roadmaps": 195 });
+const UNLINKED_OPTION_OFFSETS = optionRing({
+  "option-analytics": 105,
+  "option-settings": 135,
+  "option-notes": 165,
+  "option-roadmaps": 195
+});
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
 export let mapSpread = 1;
@@ -499,14 +531,14 @@ function linkedMilestoneStep(milestones, nodes) {
   for (const milestone of milestones) {
     let colPx = measureTitlePx(milestone.title || milestone.label || "");
     for (const task of tasksForMilestone(nodes, milestone.id)) {
-      colPx = Math.max(colPx, measureTitlePx(task.title || task.label || ""));
+      colPx = Math.max(colPx, measureTitlePx(mapNodeLabel(task.title || task.label || "", { compact: isMobileMapLayout() })));
     }
     maxColPx = Math.max(maxColPx, colPx);
   }
   const pxPerUnit = mapPxPerUnit();
-  let gapPx = Math.max(60, maxColPx + MISSION_TITLE_GAP_PX * 0.5);
+  let gapPx = Math.max(88, maxColPx + MISSION_TITLE_GAP_PX + 10);
   if (isMobileMapLayout()) {
-    gapPx = Math.max(36, maxColPx + 6);
+    gapPx = Math.max(28, maxColPx + 4);
   }
   const stepSvg = gapPx / (pxPerUnit * 0.5);
   return Math.max(MISSION_STEP, stepSvg);
@@ -552,17 +584,17 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const milestoneStep = linkedMilestoneStep(milestones, nodes);
   const chosen = nodes.find((node) => node.id === chosenId);
   const firstStep = linkedFirstMilestoneStep(chosen, milestones, pathSiblings, milestoneStep);
-  /* On phones the title over the roadmap dot has to clear the Notes spoke straight above You. */
-  const chosenReach = mobile
-    ? Math.max(PATH_REACH, (Math.max(measureTitlePx(chosen?.title || chosen?.label || ""), measureTitlePx("Roadmaps")) * 0.55 + 16) / (mapPxPerUnit() * 0.5))
-    : PATH_REACH;
+  /* Phones hide You, so the chosen roadmap can sit near the left instead of a reach past an empty dot. */
+  const chosenReach = mobile ? 48 : PATH_REACH;
   const chosenDist = chosenReach * spread;
   /** @param {number} index */
   const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;
   const lastDist = milestones.length ? milestoneDist(milestones.length - 1) : chosenDist;
   const plusDist = lastDist + (PLUS_GAP_PX / (mapPxPerUnit() * 0.5)) * spread;
   const originY = YOU_LINKED.y;
-  const siblingStep = stepForTitles(pathSiblings.map((node) => node.title || node.label || ""));
+  const siblingStep = stepForTitles(pathSiblings.map((node) => node.title || node.label || ""), {
+    singleLine: mobile
+  });
   const chosenX = originX + Math.cos(rotation) * chosenDist;
   const chosenY = originY + Math.sin(rotation) * chosenDist;
 
@@ -597,7 +629,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       const perpX = -Math.sin(rotation);
       const perpY = Math.cos(rotation);
       const columnTitles = tasksForMilestone(nodes, node.parentId).map((task) => task.title || task.label || "");
-      const stack = childOffset(node.taskIndex ?? 0, stepForTitles(columnTitles)) * spread;
+      const stack = childOffset(node.taskIndex ?? 0, stepForTitles(columnTitles, { singleLine: true })) * spread;
       node.x = (mx + perpX * stack) / MAP_W;
       node.y = (my + perpY * stack) / MAP_H;
       return;
@@ -606,6 +638,13 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     if (siblingIndex >= 0) {
       node.x = chosenX / MAP_W;
       node.y = (chosenY + childOffset(siblingIndex, siblingStep) * spread) / MAP_H;
+      return;
+    }
+    if (mobile && (node.id === "option-settings" || node.id === "option-analytics")) {
+      const spokeIds = ["option-settings", "option-analytics"].filter((id) => nodes.some((entry) => entry.id === id));
+      const spokeIndex = pathSiblings.length + Math.max(0, spokeIds.indexOf(node.id));
+      node.x = chosenX / MAP_W;
+      node.y = (chosenY + childOffset(spokeIndex, siblingStep) * spread) / MAP_H;
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
@@ -633,8 +672,13 @@ export function placeUnlinkedBranch(nodes, chosenId) {
       !UNLINKED_OPTION_OFFSETS[node.id]
   );
   const milestoneStep = Math.max(UNLINKED_MISSION_STEP, linkedMilestoneStep(milestones, nodes) * 0.85);
-  const columnGap = stepForTitles(column.map((node) => node.title || node.label || ""));
-  const taskGap = stepForTitles(tasks.map((node) => node.title || node.label || ""));
+  const columnGap = stepForTitles(column.map((node) => node.title || node.label || ""), {
+    singleLine: isMobileMapLayout()
+  });
+  const taskGap = stepForTitles(
+    tasks.map((node) => node.title || node.label || ""),
+    { singleLine: true }
+  );
   const columnTop = UNLINKED_CHOSEN.dy + UNLINKED_COLUMN_PLUS_CLEAR;
 
   nodes.forEach((node) => {
@@ -697,7 +741,7 @@ export function showRoadmapBranch(pathId, stages = null) {
   paths.forEach((node) => {
     if (node.id !== chosenSource.id) spokes.push(node);
   });
-  EXPLORE_OPTIONS.forEach((option) => {
+  [...EXPLORE_OPTIONS, ...extraExploreOptions].forEach((option) => {
     if (spokes.some((node) => node.id === option.id)) return;
     spokes.push({
       id: option.id,

@@ -57,12 +57,15 @@ export function childOffset(index, step) {
  * One text line, plus half a line above and below it. A wrapped title
  * grows the step by one line. The node diameter is the floor so doubled
  * dots do not sit on each other.
- * @param {{ lineCount?: number, linePx: number, pxPerUnit: number, nodeRadius: number, minStep?: number }} input
+ * `air` is extra line-heights between titles. Phones use a small air so the
+ * column stays tight. Desktop uses more air so a one-line title can be read.
+ * The same step is used from the parent to every child, so the gaps stay even.
+ * @param {{ lineCount?: number, linePx: number, pxPerUnit: number, nodeRadius: number, minStep?: number, air?: number }} input
  */
-export function branchStepSvg({ lineCount = 1, linePx, pxPerUnit, nodeRadius, minStep = 0 }) {
+export function branchStepSvg({ lineCount = 1, linePx, pxPerUnit, nodeRadius, minStep = 0, air = 1 }) {
   const lines = Math.max(1, Math.min(2, Math.round(lineCount) || 1));
   const unit = Math.max(0.25, pxPerUnit || 0.25);
-  const titleBlock = linePx * lines + linePx;
-  const nodeClear = (Math.max(1, nodeRadius) * 2 + 10) * unit;
+  const titleBlock = linePx * lines + linePx * Math.max(0, air);
+  const nodeClear = (Math.max(1, nodeRadius) * 2 + 8) * unit;
   return Math.max(minStep, titleBlock / unit, nodeClear / unit);
 }

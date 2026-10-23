@@ -71,5 +71,10 @@ describe("equal child gaps", () => {
     assert.ok(roadmap >= 17 * 2 + 10);
     const wrapped = branchStepSvg({ ...input, lineCount: 2 });
     assert.ok(wrapped > roadmap);
+    const compact = branchStepSvg({ ...input, air: 0.35 });
+    const roomy = branchStepSvg({ ...input, air: 1.2 });
+    assert.ok(compact < roadmap);
+    assert.ok(roomy > roadmap);
+    assert.ok(roomy - roadmap < roadmap);
   });
 });

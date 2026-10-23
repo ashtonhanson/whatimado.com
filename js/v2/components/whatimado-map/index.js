@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
@@ -81,7 +81,23 @@ function dashesEndingOnDots(length) {
 function nodeMapTitleLines(node) {
   if (!node || node.type === "more") return [];
   if (node.type === "start") return [node.label || "You"];
+  const mobile = window.matchMedia("(max-width: 900px)").matches;
+  if (node.type === "task" || (mobile && node.type === "path")) {
+    const short = mapNodeLabel(node.title || node.label || "", { compact: mobile });
+    return short ? [short] : [];
+  }
   return wrapMapLabel(node.title || node.label || "");
+}
+
+/**
+ * A phone map only draws a node when tapping it opens that place:
+ * a roadmap, mission, task, the add-mission plus, Settings, or Analytics.
+ * @param {{ type?: string, id?: string }} node
+ */
+function mapNodeIsDestination(node) {
+  if (!node) return false;
+  if (node.type === "path" || node.type === "mission" || node.type === "task" || node.type === "more") return true;
+  return node.type === "action" && (node.id === "option-settings" || node.id === "option-analytics");
 }
 
 /** @param {DOMMatrix|null|undefined} ctm */
@@ -1872,8 +1888,9 @@ export class WhatimadoMap extends HTMLElement {
       adjusted = true;
     }
 
-    /* Task stacks and the alternate column can run deeper than the 240-unit band; the camera fit frames them and the home spring returns drags. */
-    const boundY = !node.isTask;
+    /* Task stacks, alternate roadmaps, and the Settings / Analytics spokes can run deeper than the 240-unit band. The camera fit frames them. */
+    const spokeId = node.groupEl?.getAttribute("data-node-id") || "";
+    const boundY = !node.isTask && spokeId !== "option-settings" && spokeId !== "option-analytics";
     if (boundY && cy < minY) {
       ny += (minY - cy) * BOUND_PULL;
       if (node.glideVy < 0) node.glideVy *= BOUND_GLIDE_DAMP;
@@ -2765,6 +2782,11 @@ export class WhatimadoMap extends HTMLElement {
    */
   _renderLayer(layer, nodes, edges, options) {
     if (!layer) return;
+    if (options.layer === "live" && window.matchMedia("(max-width: 900px)").matches) {
+      nodes = nodes.filter((node) => mapNodeIsDestination(node));
+      const ids = new Set(nodes.map((node) => node.id));
+      edges = edges.filter((edge) => ids.has(edge.from) && ids.has(edge.to));
+    }
 
     const parts = [];
     /** @type {{ isAnchor: boolean, html: string }[]} */

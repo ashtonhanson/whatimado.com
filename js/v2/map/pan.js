@@ -225,8 +225,8 @@ const OPEN_HOME_ZOOM_MIN = 0.6;
 const FIT_ZOOM_MIN = 0.5;
 /** The phone map is already a quarter of desktop scale; a short band shrinking it further piles the titles up. */
 const FIT_ZOOM_MIN_MOBILE = 1;
-/** Crosshair fit on desktop may shrink below the pinch floor so every task stays visible. */
-export const ROADMAP_CROSSHAIR_ZOOM_MIN = 0.22;
+/** Crosshair fit on desktop stays large enough that one-line titles keep a gap. */
+export const ROADMAP_CROSSHAIR_ZOOM_MIN = 0.48;
 
 /**
  * Nodes that belong to the open roadmap branch (not options or sibling paths).
@@ -234,8 +234,10 @@ export const ROADMAP_CROSSHAIR_ZOOM_MIN = 0.22;
  * @param {string | null | undefined} chosenPathId
  */
 export function isActiveRoadmapBranchNode(node, chosenPathId) {
-  if (node.id === "start") return true;
+  const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
+  if (node.id === "start") return !mobile;
   if (node.type === "more") return true;
+  if (node.id === "option-settings" || node.id === "option-analytics") return true;
   if (chosenPathId && node.id === chosenPathId) return true;
   if (node.type === "mission" || node.type === "task") return true;
   return false;

@@ -1193,6 +1193,58 @@
   whatimado-frame.is-mobile-docked.is-mobile-reading .v2-path-sync {
     display: none;
   }
+
+  /*
+   * Settings and Analytics scroll with the page. The map shell locks the
+   * document, so an inner overflow box never receives the swipe on a phone.
+   */
+  html:has(body.v2-app[data-page]),
+  body.v2-app[data-page] {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.v2-app[data-page] .v2-shell {
+    height: auto;
+    min-height: 0;
+  }
+
+  body.v2-app[data-page] .v2-main {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    overscroll-behavior: auto;
+  }
+
+  body.v2-app[data-page] .v2-main > whatimado-map,
+  body.v2-app[data-page] .v2-main > .v2-frame-kicker,
+  body.v2-app[data-page] .v2-main > whatimado-frame {
+    display: none !important;
+  }
+
+  body.v2-app[data-page] .v2-page {
+    position: relative;
+    inset: auto;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    z-index: 1;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    touch-action: pan-y;
+  }
+
+  body.v2-app[data-page] .v2-page__close,
+  body.v2-app[data-page] .v2-page__back {
+    top: calc(var(--v2-mobile-header-h, 0px) + 0.35rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
