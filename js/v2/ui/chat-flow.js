@@ -26,7 +26,6 @@ import {
   clearComposerDraft
 } from "../state/composer-draft.js";
 import { authState, onAuthChange } from "../state/auth.js";
-import { isFounderUser } from "../state/cloud-config.js";
 import { readSession } from "../state/guest-account.js";
 import { closeActivePageIfOpen } from "./pages.js";
 import { journeyHasActiveWork, newMapConfirmMessage } from "./journey-work.js";
@@ -331,7 +330,7 @@ export function initChatFlow(ctx) {
     onShown: (stages) => {
       drafts.sync(stages);
       setSpineAlternatePaths(Boolean(stages?.length));
-      setExtraExploreOptions(isFounderUser(authState().user) ? [{ id: "option-analytics", label: "Analytics" }] : []);
+      setExtraExploreOptions([{ id: "option-analytics", label: "Analytics" }]);
       const pathId = appStore.journey.roadmapPathId;
       if (stages?.length && pathId) {
         showRoadmapBranch(pathId, stages);
@@ -1124,10 +1123,9 @@ export function initChatFlow(ctx) {
   window.addEventListener("resize", () => layout());
 
   onAuthChange(() => {
-    const want = isFounderUser(authState().user);
-    setExtraExploreOptions(want ? [{ id: "option-analytics", label: "Analytics" }] : []);
+    setExtraExploreOptions([{ id: "option-analytics", label: "Analytics" }]);
     const has = graphStore.nodes.some((node) => node.id === "option-analytics");
-    if (want === has) return;
+    if (has) return;
     const pathId = appStore.journey.roadmapPathId;
     const stages = appStore.journey.missionsStages;
     if (!pathId || !appStore.journey.planConfirmed || !stages?.length) return;

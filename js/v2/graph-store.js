@@ -343,26 +343,10 @@ function mapPxPerUnit() {
  * @param {string} nodeId
  */
 function linkedOptionSlot(nodeId) {
-  if (!LINKED_OPTION_OFFSETS[nodeId]) return null;
-  if (!isMobileMapLayout()) return LINKED_OPTION_OFFSETS[nodeId];
-  const slot = MOBILE_OPTION_SLOTS_PX[nodeId];
-  if (!slot) return LINKED_OPTION_OFFSETS[nodeId];
-  const pxPerUnit = mapPxPerUnit() * 0.5;
-  return { dx: slot.dx / pxPerUnit, dy: slot.dy / pxPerUnit };
+  return LINKED_OPTION_OFFSETS[nodeId] || null;
 }
 
-/**
- * Phone slots in screen px around You, sized for 13px single-line titles: Notes overhead
- * (title above), Settings and Roadmaps to the left (titles run left, a title and a half apart).
- */
-const MOBILE_OPTION_SLOTS_PX = {
-  "option-settings": { dx: -72, dy: -34 },
-  "option-analytics": { dx: -72, dy: 34 },
-  "option-notes": { dx: 0, dy: -62 },
-  "option-roadmaps": { dx: -46, dy: -40 }
-};
-
-/** Founder-only spokes added beside Settings. Empty for everyone else. */
+/** Spokes added beside Settings, including Analytics. */
 let extraExploreOptions = [];
 
 /** @param {Array<{ id: string, label: string }>} options */
@@ -638,13 +622,6 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     if (siblingIndex >= 0) {
       node.x = chosenX / MAP_W;
       node.y = (chosenY + childOffset(siblingIndex, siblingStep) * spread) / MAP_H;
-      return;
-    }
-    if (mobile && (node.id === "option-settings" || node.id === "option-analytics")) {
-      const spokeIds = ["option-settings", "option-analytics"].filter((id) => nodes.some((entry) => entry.id === id));
-      const spokeIndex = pathSiblings.length + Math.max(0, spokeIds.indexOf(node.id));
-      node.x = chosenX / MAP_W;
-      node.y = (chosenY + childOffset(spokeIndex, siblingStep) * spread) / MAP_H;
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));

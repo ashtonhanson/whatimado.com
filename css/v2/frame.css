@@ -875,17 +875,17 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 
 .v2-circle-back__close {
   position: absolute;
-  top: 0.35rem;
-  right: 0.35rem;
-  min-width: 1.65rem;
-  min-height: 1.65rem;
-  padding: 0;
+  top: 0.28rem;
+  right: 0.32rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.1rem;
   line-height: 1;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   border: none;
   background: transparent;
   box-shadow: none;
-  border-radius: 0.35rem;
+  border-radius: 0;
   color: var(--v2-text-muted);
 }
 
@@ -984,22 +984,23 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 /* The hit area stays 2.25rem; the glyph is pinned to its top-right so it reads as the card corner. */
 .v2-mission__delete {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 0.2rem;
+  right: 0.28rem;
   z-index: 3;
   display: inline-flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  width: 2.25rem;
-  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
   margin: 0;
-  padding: 0.15rem 0.25rem 0 0;
+  padding: 0.1rem;
   border: none;
-  border-radius: 0.35rem;
+  border-radius: 0;
   background: transparent;
+  box-shadow: none;
   color: var(--v2-text-muted);
-  font-size: 1.35rem;
-  line-height: 0.75;
+  font-size: 1.25rem;
+  line-height: 1;
   cursor: pointer;
 }
 
@@ -1033,6 +1034,7 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 }
 
 .v2-mission-chat {
+  position: relative;
   display: none;
   flex-direction: column;
   gap: 0.45rem;
@@ -1040,14 +1042,32 @@ body.v2-app .v2-timeline__stop.is-bypassed {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 0.55rem 0.65rem 0.65rem;
+  padding: 0.55rem 1.6rem 0.65rem 0.65rem;
   border-radius: var(--v2-btn-radius);
   background: color-mix(in srgb, var(--v2-surface) 96%, #000 4%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v2-teal) 22%, transparent);
 }
 
-.v2-mission.is-chat-open .v2-mission-chat {
-  display: flex;
+.v2-mission-chat__close {
+  position: absolute;
+  top: 0.22rem;
+  right: 0.28rem;
+  grid-column: auto;
+  grid-row: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0.1rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--v2-text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .v2-mission-chat__head {
@@ -1086,29 +1106,13 @@ body.v2-app .v2-timeline__stop.is-bypassed {
   color: var(--v2-teal);
 }
 
-.v2-mission-chat__close {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: start;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 0.45rem;
-  background: transparent;
-  color: var(--v2-text-muted);
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: pointer;
+.v2-mission.is-chat-open .v2-mission-chat {
+  display: flex;
 }
 
 .v2-mission-chat__close:hover {
   color: var(--v2-text);
-  background: color-mix(in srgb, var(--v2-teal) 10%, transparent);
+  background: transparent;
 }
 
 .v2-mission-chat__close:focus-visible {
@@ -1468,10 +1472,10 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 }
 
 .v2-timeline__link {
-  flex: 0 0 2.5rem;
+  flex: 0 0 1rem;
   align-self: center;
-  width: 2.5rem;
-  min-width: 2.5rem;
+  width: 1rem;
+  min-width: 1rem;
   height: 3px;
   background-image: radial-gradient(circle, rgba(200, 208, 216, 0.9) 1.15px, transparent 1.35px);
   background-size: 8px 3px;

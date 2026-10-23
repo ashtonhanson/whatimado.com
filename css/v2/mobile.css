@@ -158,22 +158,34 @@
     padding-bottom: 0.14rem;
   }
 
+  .v2-timeline {
+    gap: 0.2rem;
+  }
+
   .v2-timeline__rail {
+    gap: 0.15rem;
     padding-top: 0.1rem;
     padding-bottom: 0.1rem;
   }
 
+  .v2-timeline__stop {
+    gap: 0.16rem;
+  }
+
   .v2-timeline__link {
-    flex: 0 0 0.58rem;
+    flex: 0 0 0.4rem;
     align-self: center;
-    width: 0.58rem;
-    min-width: 0.58rem;
-    height: 0.58rem;
-    background-image: none;
-    border: 1.5px solid #8d95a5;
-    border-radius: 50%;
-    background-color: #10211f;
-    box-shadow: 0 0 0 3px rgba(6, 10, 12, 0.85);
+    width: 0.4rem;
+    min-width: 0.4rem;
+    height: 3px;
+    background-image: radial-gradient(circle, rgba(200, 208, 216, 0.9) 1.15px, transparent 1.35px);
+    background-size: 6px 3px;
+    background-repeat: repeat-x;
+    background-position: center;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__body,
@@ -591,17 +603,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    position: sticky;
-    top: 0;
+    position: absolute;
+    top: 0.4rem;
+    right: 0.45rem;
     z-index: 2;
-    align-self: flex-start;
-    width: 2.25rem;
-    height: 2.25rem;
-    margin: 0 0 0.15rem;
-    padding: 0;
-    border: 1px solid rgba(215, 255, 246, 0.28);
-    border-radius: 999px;
-    background: rgba(6, 16, 18, 0.55);
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0.1rem;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     color: var(--v2-teal);
     font: inherit;
     font-size: 1.35rem;
@@ -612,7 +625,6 @@
   .v2-menu-close:hover,
   .v2-menu-close:focus-visible {
     color: var(--v2-neon-teal, #7dffef);
-    border-color: rgba(46, 232, 214, 0.55);
     outline: none;
   }
 
@@ -1279,9 +1291,9 @@
     touch-action: pan-y;
   }
 
-  body.v2-app[data-page] .v2-page__close,
-  body.v2-app[data-page] .v2-page__back {
+  body.v2-app[data-page] .v2-page__close {
     top: calc(var(--v2-mobile-header-h, 0px) + 0.35rem);
+    right: 0.4rem;
   }
 }
 

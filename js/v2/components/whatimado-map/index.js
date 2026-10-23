@@ -89,15 +89,6 @@ function nodeMapTitleLines(node) {
   return wrapMapLabel(node.title || node.label || "");
 }
 
-/**
- * Phone maps hide spokes that only open a text panel. You stays: it is the
- * hub the roadmap grows from.
- * @param {{ id?: string }} node
- */
-function mapNodeHiddenOnPhone(node) {
-  return node?.id === "option-notes" || node?.id === "option-roadmaps";
-}
-
 /** @param {DOMMatrix|null|undefined} ctm */
 function invertCtm(ctm) {
   if (!ctm) return null;
@@ -773,10 +764,84 @@ export class WhatimadoMap extends HTMLElement {
     this._focalNodeId = id;
     this._focusNodeId = id;
     this.syncDesktopViewBox();
-    const target = computePanForNodeAboveFrame(this, id);
-    this._animatePanTo(target.panX, target.panY, animate);
     this._youBtn?.classList.add("is-active");
     this._youBtn?.setAttribute("aria-pressed", "true");
+    if (this._nodeSitsInOpenBand(id)) return;
+    const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    const target = computePanForNodeAboveFrame(this, id);
+    this._animatePanTo(target.panX, target.panY, false);
+    this._pullNodeIntoOpenBand(id);
+    if (!animate) return;
+    const landedX = this._panX;
+    const landedY = this._panY;
+    this._panX = from.panX;
+    this._panY = from.panY;
+    this._zoom = from.zoom;
+    this._animatePanTo(landedX, landedY, true);
+  }
+
+  /** The open strip under the menu and above the prompt. */
+  _openBand() {
+    const stage = this.querySelector(".whatimado-map__stage")?.getBoundingClientRect();
+    const frame = document.getElementById("dynamic-frame")?.getBoundingClientRect();
+    if (!stage || !frame || stage.width < 40 || stage.height < 40) return null;
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const railBottom = document.querySelector(".v2-rail-brand")?.getBoundingClientRect().bottom;
+    const top = mobile && railBottom > 0 ? railBottom + 10 : stage.top + 18;
+    const bottom = Math.max(top + 36, Math.min(stage.bottom - 8, frame.top - 20));
+    return { top, bottom, left: stage.left + 16, right: stage.right - 16 };
+  }
+
+  /** @param {string} id */
+  _nodeScreenCenter(id) {
+    const body = this._liveLayer?.querySelector(
+      `.whatimado-map__node[data-node-id="${CSS.escape(id)}"] .whatimado-map__node-body`
+    );
+    if (!(body instanceof SVGCircleElement)) return null;
+    const rect = body.getBoundingClientRect();
+    if (rect.width <= 0) return null;
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+
+  /** @param {string} id */
+  _nodeSitsInOpenBand(id) {
+    const band = this._openBand();
+    const center = this._nodeScreenCenter(id);
+    if (!band || !center) return false;
+    return center.y >= band.top && center.y <= band.bottom && center.x >= band.left && center.x <= band.right;
+  }
+
+  /**
+   * If a centering pass left the dot under the prompt, pull it back into the band.
+   * A node already in the band is left where it is.
+   * @param {string} id
+   */
+  _pullNodeIntoOpenBand(id) {
+    const band = this._openBand();
+    const center = this._nodeScreenCenter(id);
+    const layer = this._liveLayer;
+    const svg = this._svg;
+    if (!band || !center || !layer || !svg) return;
+    let dx = 0;
+    let dy = 0;
+    if (center.y < band.top || center.y > band.bottom) dy = band.top + (band.bottom - band.top) * 0.42 - center.y;
+    if (center.x < band.left || center.x > band.right) dx = (band.left + band.right) / 2 - center.x;
+    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+    const inv = invertCtm(layer.getScreenCTM());
+    if (!inv) return;
+    const origin = svg.createSVGPoint();
+    const shifted = svg.createSVGPoint();
+    shifted.x = dx;
+    shifted.y = dy;
+    const local = shifted.matrixTransform(inv);
+    const zero = origin.matrixTransform(inv);
+    const zoom = this._zoom || 1;
+    const panDx = (local.x - zero.x) * zoom;
+    const panDy = (local.y - zero.y) * zoom;
+    if (!Number.isFinite(panDx) || !Number.isFinite(panDy)) return;
+    this._panX += panDx;
+    this._panY += panDy;
+    this._applyPanTransform();
   }
 
   /** The active roadmap name, pinned across the top of the map. */
@@ -1125,6 +1190,10 @@ export class WhatimadoMap extends HTMLElement {
       const anchors = measureAnchors(main, frame);
       const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
       if (top < anchors.homeBase - 1) return false;
+    }
+    if (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId)) {
+      this.centerOnNode(this._focusNodeId, { animate: false });
+      return true;
     }
     const selectedId = this._selectedId || graphStore.selectedId;
     const selected = this._liveNodes.find((node) => node.type === "path" && node.id === selectedId);
@@ -2360,14 +2429,7 @@ export class WhatimadoMap extends HTMLElement {
    * choose a font that lands near 13px on screen.
    * @param {SVGTextElement[]} texts
    */
-  _fitLabelFont(texts, target = 13) {
-    const probe = 20;
-    texts.forEach((text) => {
-      text.style.fontSize = `${probe}px`;
-    });
-    const painted = texts[0].getBoundingClientRect().height || target;
-    const scale = painted / probe;
-    const fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
+  _applyLabelFont(texts, fontPx) {
     texts.forEach((text) => {
       text.style.fontSize = `${fontPx}px`;
       text.style.letterSpacing = "0.04em";
@@ -2378,6 +2440,25 @@ export class WhatimadoMap extends HTMLElement {
       kicker.style.fontSize = `${fontPx * KICKER_SCALE}px`;
       kicker.style.strokeWidth = "1px";
     });
+  }
+
+  _fitLabelFont(texts, target = 13) {
+    const zoomKey = Math.round((this._zoom || 1) * 20);
+    if (this._labelZoomKey === zoomKey && this._labelFontPx) {
+      this._applyLabelFont(texts, this._labelFontPx);
+      return this._labelFontPx;
+    }
+    const probe = 20;
+    texts.forEach((text) => {
+      text.style.fontSize = `${probe}px`;
+    });
+    const painted = texts[0].getBoundingClientRect().height || target;
+    const scale = painted / probe;
+    let fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
+    if (this._labelFontPx && fontPx < this._labelFontPx) fontPx = this._labelFontPx;
+    this._labelZoomKey = zoomKey;
+    this._labelFontPx = fontPx;
+    this._applyLabelFont(texts, fontPx);
     return fontPx;
   }
 
@@ -2494,8 +2575,6 @@ export class WhatimadoMap extends HTMLElement {
         return pairs;
       };
 
-      /* Phones step titles down while zoomed out until no two single-line titles touch. */
-      const sizes = mobile ? [13, 12, 11, 10, 9] : [13];
       let items = [];
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-kicker-off"));
       /** The selected roadmap title was pushed off its spot over the dot to make room for "Roadmaps". Mission numbers stay. */
@@ -2507,10 +2586,8 @@ export class WhatimadoMap extends HTMLElement {
             item.side === "above" &&
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
-      let sizeIndex = 0;
-      for (let attempt = 0; attempt < sizes.length + 1; attempt++) {
-        const size = sizes[sizeIndex];
-        this._fitLabelFont(texts, size);
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        this._fitLabelFont(texts, 13);
         items = buildItems();
         if (!items.length) return;
         placeTitleBesideNode(
@@ -2524,14 +2601,10 @@ export class WhatimadoMap extends HTMLElement {
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
-        if (kickerDisplaced(items)) {
-          items.forEach((item) => {
-            if (item.kicker && item.group.classList.contains("is-roadmap")) item.group.classList.add("is-kicker-off");
-          });
-          continue;
-        }
-        if (!mobile || !crowdedPairs(items).length || sizeIndex >= sizes.length - 1) break;
-        sizeIndex += 1;
+        if (!kickerDisplaced(items)) break;
+        items.forEach((item) => {
+          if (item.kicker && item.group.classList.contains("is-roadmap")) item.group.classList.add("is-kicker-off");
+        });
       }
       if (mobile) {
         const rank = (item) =>
@@ -2791,11 +2864,6 @@ export class WhatimadoMap extends HTMLElement {
    */
   _renderLayer(layer, nodes, edges, options) {
     if (!layer) return;
-    if (options.layer === "live" && window.matchMedia("(max-width: 900px)").matches) {
-      nodes = nodes.filter((node) => !mapNodeHiddenOnPhone(node));
-      const ids = new Set(nodes.map((node) => node.id));
-      edges = edges.filter((edge) => ids.has(edge.from) && ids.has(edge.to));
-    }
 
     const parts = [];
     /** @type {{ isAnchor: boolean, html: string }[]} */
@@ -2883,7 +2951,7 @@ export class WhatimadoMap extends HTMLElement {
           isAnchor: isLayoutAnchor,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}" style="${styleVars}">
-          <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r + 8, 18)}" />
+          <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r + 16, 30)}" />
           <g class="whatimado-map__node-float">
             <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${bodyR}" />

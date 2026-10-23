@@ -225,6 +225,7 @@ function clearLaunchStatsDisplay() {
 async function refreshStats() {
   if (!analyticsPageAllowed(authState().user)) {
     clearLaunchStatsDisplay();
+    statsStatus("Sign in with the founder account to see launch stats.", "error");
     return;
   }
   const request = ++statsRequest;
@@ -398,7 +399,8 @@ export function initPages() {
   /** @param {string | null} name */
   const show = (name) => {
     if (name === "analytics" && !analyticsPageAllowed(authState().user)) {
-      name = null;
+      clearLaunchStatsDisplay();
+      statsStatus("Sign in with the founder account to see launch stats.", "error");
     }
     current = name;
     for (const page of PAGES) {
@@ -419,25 +421,19 @@ export function initPages() {
   };
 
   function syncAnalyticsAccess(state) {
-    const allowed = analyticsPageAllowed(state.user);
     const item = $("nav-analytics-item");
     if (item) {
-      item.hidden = !allowed;
-      item.classList.toggle("hidden", !allowed);
+      item.hidden = false;
+      item.classList.remove("hidden");
     }
-    if (!allowed && current === "analytics") {
+    if (!analyticsPageAllowed(state.user) && current === "analytics") {
       clearLaunchStatsDisplay();
-      show(null);
+      statsStatus("Sign in with the founder account to see launch stats.", "error");
     }
-    return allowed;
+    return analyticsPageAllowed(state.user);
   }
 
   $("nav-analytics")?.addEventListener("click", () => {
-    if (!analyticsPageAllowed(authState().user)) {
-      clearLaunchStatsDisplay();
-      show(null);
-      return;
-    }
     show("analytics");
     void refreshStats();
   });
