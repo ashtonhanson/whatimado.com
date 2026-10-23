@@ -2463,10 +2463,20 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
+   * The user is dragging, gliding, or pinching the map. Titles already sit in
+   * SVG space, so they ride with their nodes and are not placed again.
+   */
+  _userIsMovingMap() {
+    if (!window.matchMedia("(max-width: 900px)").matches) return false;
+    return Boolean(this._panPointer || this._panGliding || this._pinch);
+  }
+
+  /**
    * Place each title beside its own node, then pin it so it stays with the dot while the map pans.
    */
   _layoutCallouts() {
     if (this._layingOut) return;
+    if (this._userIsMovingMap()) return;
     const layer = this._liveLayer;
     const svg = this._svg;
     if (!layer || !svg) return;
