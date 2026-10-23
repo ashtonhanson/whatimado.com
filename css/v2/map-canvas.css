@@ -620,17 +620,9 @@ whatimado-map .whatimado-map__node--live.is-focused:not(.is-selected) .whatimado
   stroke-width: 1.15;
 }
 
-/* Teal glow is the mission or task whose working context is open in the chat. */
-whatimado-map .whatimado-map__node--live.is-current .whatimado-map__node-aura {
-  opacity: 1;
-  fill: rgba(94, 242, 224, 0.95);
-  animation: whatimado-anchor-aura-breathe 3.6s ease-in-out infinite;
-}
-
-whatimado-map .whatimado-map__node--live.is-current .whatimado-map__node-body {
-  stroke: #e8fff8;
-  stroke-width: 1.6;
-  filter: drop-shadow(0 0 6px rgba(46, 232, 214, 0.85));
+whatimado-map .whatimado-map__node--live[data-node-id="option-settings"] text,
+whatimado-map .whatimado-map__node--live[data-node-id="option-analytics"] text {
+  visibility: visible;
 }
 
 /* Soft diffused neon aura — selected path only */

@@ -31,6 +31,39 @@ export function wrapMapLabel(text) {
 }
 
 /**
+ * Settings and Analytics titles sit above their own dots and stay fully on screen.
+ * @param {Array<{ nodeId?: string, nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string }>} items
+ * @param {{ left: number, right: number } | null} [bounds]
+ */
+export function pinSpokeTitles(items, bounds = null) {
+  const edge = 14;
+  const spokes = items.filter((item) => item.nodeId === "option-settings" || item.nodeId === "option-analytics");
+  for (const item of spokes) {
+    item.side = "above";
+    item.left = item.nx - item.w / 2;
+    item.top = item.ny - (item.nr || 6) - 10 - item.h;
+    if (!bounds) continue;
+    const minLeft = bounds.left + edge;
+    const maxLeft = Math.max(minLeft, bounds.right - edge - item.w);
+    item.left = Math.min(Math.max(item.left, minLeft), maxLeft);
+  }
+  const overlap = (a, b) =>
+    a.left < b.left + b.w + 4 && a.left + a.w + 4 > b.left && a.top < b.top + b.h + 2 && a.top + a.h + 2 > b.top;
+  for (let pass = 0; pass < 8; pass += 1) {
+    let moved = false;
+    for (const item of spokes) {
+      for (const other of items) {
+        if (other === item || other.nodeId === "option-settings" || other.nodeId === "option-analytics") continue;
+        if (!overlap(item, other)) continue;
+        item.top = other.top - item.h - 6;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+}
+
+/**
  * Title sits on the node the way the constellation reference does:
  * mission titles above that mission's dot, task titles level with that task's dot.
  * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, role?: string, side?: string }>} items
@@ -107,6 +140,7 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
     .filter((item) => item.kind !== "path" && item.role !== "task" && item.role !== "mission" && !spine.includes(item))
     .reduce((best, item) => (!best || item.ny < best.ny ? item : best), null);
   others.forEach((item) => {
+    if (item.nodeId === "option-settings" || item.nodeId === "option-analytics") return;
     if (item.kind === "main" || item.role === "mission") {
       placeAbove(item);
       return;
@@ -123,4 +157,5 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
     if (item === top) placeAbove(item);
     else placeSide(item, item.nx - (you?.nx ?? item.nx));
   });
+  pinSpokeTitles(items, bounds);
 }

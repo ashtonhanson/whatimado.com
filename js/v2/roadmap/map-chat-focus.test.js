@@ -157,6 +157,18 @@ describe("label to node mapping", () => {
     assert.equal(unused.side, "right");
     assert.ok(unused.left > unused.nx);
   });
+
+  it("puts Settings and Analytics titles above their own nodes", () => {
+    const you = callout({ kind: "start", nx: 120, ny: 180, w: 24, h: 12 });
+    const settings = callout({ nodeId: "option-settings", nx: 40, ny: 150, w: 64, h: 14 });
+    const analytics = callout({ nodeId: "option-analytics", nx: 48, ny: 214, w: 72, h: 14 });
+    placeTitleBesideNode([you, settings, analytics], { left: 0, right: 390 }, { spineAbove: true });
+    for (const item of [settings, analytics]) {
+      assert.equal(item.side, "above");
+      assert.ok(item.top + item.h <= item.ny - item.nr, "title sits above its node");
+      assert.ok(item.left >= 0, "title stays on screen");
+    }
+  });
 });
 
 describe("mission numbering", () => {

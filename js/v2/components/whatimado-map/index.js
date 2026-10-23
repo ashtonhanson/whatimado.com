@@ -33,7 +33,7 @@ import {
   svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
-import { missionNumberLabel, placeTitleBesideNode, wrapMapLabel } from "../../map/callouts.js";
+import { missionNumberLabel, pinSpokeTitles, placeTitleBesideNode, wrapMapLabel } from "../../map/callouts.js";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -116,6 +116,7 @@ function holdTitlesOnNodes(items) {
       for (let j = i + 1; j < items.length; j++) {
         const a = items[i];
         const b = items[j];
+        if (a.nodeId === "option-settings" || a.nodeId === "option-analytics" || b.nodeId === "option-settings" || b.nodeId === "option-analytics") continue;
         const ba = { left: a.left, right: a.left + a.w, top: a.top, bottom: a.top + a.h };
         const bb = { left: b.left, right: b.left + b.w, top: b.top, bottom: b.top + b.h };
         if (!screenBoxesOverlap(ba, bb, 3)) continue;
@@ -159,6 +160,7 @@ function holdTitlesOnNodes(items) {
  * @param {Array<{ nx: number, ny: number, nr: number }>} nodes
  */
 function clearTitleFromNodes(item, nodes) {
+  if (item.nodeId === "option-settings" || item.nodeId === "option-analytics") return;
   for (let pass = 0; pass < 5; pass++) {
     let moved = false;
     for (const node of nodes) {
@@ -2546,6 +2548,7 @@ export class WhatimadoMap extends HTMLElement {
           leader: group?.querySelector(".whatimado-map__leader"),
           kind,
           role,
+          nodeId: group?.getAttribute("data-node-id") || "",
           locked: false,
           w: Math.max(12, rect.width, kickerRect?.width || 0),
           h: labelH + kickerH,
@@ -2611,6 +2614,10 @@ export class WhatimadoMap extends HTMLElement {
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
+        pinSpokeTitles(items, {
+          left: Math.max(0, hostRect.left),
+          right: Math.min(window.innerWidth, hostRect.right)
+        });
         if (!kickerDisplaced(items)) break;
         items.forEach((item) => {
           if (item.kicker && item.group.classList.contains("is-roadmap")) item.group.classList.add("is-kicker-off");
@@ -2619,7 +2626,9 @@ export class WhatimadoMap extends HTMLElement {
       if (mobile) {
         const rank = (item) =>
           item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;
+        const keepLabel = (item) => item.nodeId === "option-settings" || item.nodeId === "option-analytics";
         for (const [a, b] of crowdedPairs(items)) {
+          if (keepLabel(a) || keepLabel(b)) continue;
           if (a.group.classList.contains("is-label-crowded") || b.group.classList.contains("is-label-crowded")) continue;
           (rank(a) < rank(b) ? a : b).group.classList.add("is-label-crowded");
         }

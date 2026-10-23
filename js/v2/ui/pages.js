@@ -455,6 +455,7 @@ export function initPages() {
   onAuthChange((state) => {
     const allowed = syncAnalyticsAccess(state);
     renderSettingsAccount(state);
+    if (state.ready && allowed && current === "analytics" && !lastStats) void refreshStats();
     if (!state.ready || analyticsUrlHandled || !analyticsRequestedByUrl()) return;
     analyticsUrlHandled = true;
     if (allowed) {
