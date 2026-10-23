@@ -90,11 +90,13 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
       item.left = item.nx + item.nr + 8;
     }
     item.top = item.ny - item.h / 2;
-    /* A side title past the stage edge gets cut off; lift it over its dot instead. Phones pan to it, so it stays on one line beside its dot there. */
+    /* A side title past the stage edge gets cut off; lift it over its dot instead.
+       Phones pan along the roadmap, so a title past the right edge stays beside its dot.
+       A title past the left edge has nowhere to pan without losing the hub, so it lifts. */
     const dotVisible = bounds && item.nx > bounds.left && item.nx < bounds.right;
-    if (!spineAbove && dotVisible && (item.left < bounds.left + edgePad || item.left + item.w > bounds.right - edgePad)) {
-      placeAbove(item);
-    }
+    const pastLeft = bounds && item.left < bounds.left + edgePad;
+    const pastRight = bounds && item.left + item.w > bounds.right - edgePad;
+    if (dotVisible && (pastLeft || (!spineAbove && pastRight))) placeAbove(item);
   };
   /** Titles that belong beside a dot stay on its right, even when the line is long. */
   const placeRightOfNode = (item) => {

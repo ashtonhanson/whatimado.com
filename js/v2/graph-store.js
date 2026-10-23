@@ -313,15 +313,14 @@ const EXPLORE_OPTIONS = [
 const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
-const PATH_REACH = 112;
 /** Screen gap between the last mission dot and the + node. */
 const PLUS_GAP_PX = 30;
 const MISSION_STEP = 34;
 const MISSION_TITLE_GAP_PX = 16;
 const TASK_STACK_STEP = 30;
 const MAP_LABEL_FONT = "500 12.5px sans-serif";
-/** Settings, Notes, and Roadmaps all sit this far from You, evenly spaced on an arc. */
-const OPTION_RADIUS = 96;
+/** Screen length of every line that leaves You, so each title stays with its own dot after the map is fitted. */
+const SPOKE_SCREEN_PX = { mobile: 64, desktop: 100 };
 
 /** @returns {boolean} */
 function isMobileMapLayout() {
@@ -336,14 +335,6 @@ function mapStageWidthPx() {
 /** @returns {number} */
 function mapPxPerUnit() {
   return mapStageWidthPx() / MAP_W;
-}
-
-/**
- * Wider arc on mobile so Settings / Notes / Roadmaps labels do not collide.
- * @param {string} nodeId
- */
-function linkedOptionSlot(nodeId) {
-  return LINKED_OPTION_OFFSETS[nodeId] || null;
 }
 
 /** Spokes added beside Settings, including Analytics. */
@@ -397,25 +388,37 @@ function stepForTitles(titles, { singleLine = false } = {}) {
 }
 
 /**
+ * SVG length that paints as `px` once the fitted map sits near half scale.
+ * @returns {number}
+ */
+function youSpokeRadius() {
+  const px = isMobileMapLayout() ? SPOKE_SCREEN_PX.mobile : SPOKE_SCREEN_PX.desktop;
+  const unit = mapPxPerUnit();
+  if (!(unit > 0)) return px;
+  return px / (unit * 0.5);
+}
+
+/**
  * @param {Record<string, number>} degrees Angle from You, counterclockwise from pointing right.
+ * @param {number} radius
  * @returns {Record<string, { dx: number, dy: number }>}
  */
-function optionRing(degrees) {
+function optionRing(degrees, radius) {
   return Object.fromEntries(
     Object.entries(degrees).map(([id, deg]) => {
       const rad = (deg * Math.PI) / 180;
-      return [id, { dx: Math.cos(rad) * OPTION_RADIUS, dy: -Math.sin(rad) * OPTION_RADIUS }];
+      return [id, { dx: Math.cos(rad) * radius, dy: -Math.sin(rad) * radius }];
     })
   );
 }
 
 /** The selected roadmap runs right, so the options arc 45° apart over You. */
-const LINKED_OPTION_OFFSETS = optionRing({
+const LINKED_OPTION_DEGREES = {
   "option-analytics": 205,
   "option-settings": 160,
   "option-notes": 115,
   "option-roadmaps": 70
-});
+};
 const OPTION_OFFSETS = [
   { dx: -175, dy: -90 },
   { dx: -40, dy: -86 },
@@ -427,7 +430,6 @@ const OPTION_OFFSETS = [
  * options fanned to the left, other roadmaps stacked in a column on the right.
  */
 const YOU_UNLINKED = { x: 400, y: 182 };
-const UNLINKED_CHOSEN = { dx: 0, dy: -82 };
 const UNLINKED_PLUS = { dx: 44, dy: -82 };
 const UNLINKED_MISSION_STEP = 32;
 /** The column's lowest roadmap sits here; earlier roadmaps move up as new ones slot in beneath. */
@@ -435,12 +437,12 @@ const UNLINKED_COLUMN = { dx: 160, dy: 0 };
 /** The column's top stays this far under the selected roadmap so its line clears the plus. */
 const UNLINKED_COLUMN_PLUS_CLEAR = 40;
 /** The selected roadmap holds straight up, so the options fan out 30° apart on the left. */
-const UNLINKED_OPTION_OFFSETS = optionRing({
+const UNLINKED_OPTION_DEGREES = {
   "option-analytics": 105,
   "option-settings": 135,
   "option-notes": 165,
   "option-roadmaps": 195
-});
+};
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
 export let mapSpread = 1;
@@ -557,19 +559,20 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const pathSiblings = satellites.filter((node) => node.type === "path");
   const milestones = milestoneChain(satellites);
   const tasks = satellites.filter((node) => node.type === "task");
+  const spoke = youSpokeRadius();
+  const linkedOffsets = optionRing(LINKED_OPTION_DEGREES, spoke);
   const orbit = satellites.filter(
     (node) =>
       !pathSiblings.includes(node) &&
       !milestones.includes(node) &&
       !tasks.includes(node) &&
-      !LINKED_OPTION_OFFSETS[node.id]
+      !linkedOffsets[node.id]
   );
   const mobile = isMobileMapLayout();
   const milestoneStep = linkedMilestoneStep(milestones, nodes);
   const chosen = nodes.find((node) => node.id === chosenId);
   const firstStep = linkedFirstMilestoneStep(chosen, milestones, pathSiblings, milestoneStep);
-  /* Phones hide You, so the chosen roadmap can sit near the left instead of a reach past an empty dot. */
-  const chosenReach = mobile ? 96 : PATH_REACH;
+  const chosenReach = spoke;
   const chosenDist = chosenReach * spread;
   /** @param {number} index */
   const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;
@@ -625,7 +628,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       return;
     }
     const index = Math.max(0, orbit.findIndex((entry) => entry.id === node.id));
-    const slot = linkedOptionSlot(node.id) || OPTION_OFFSETS[index % OPTION_OFFSETS.length];
+    const slot = linkedOffsets[node.id] || OPTION_OFFSETS[index % OPTION_OFFSETS.length];
     node.x = (originX + slot.dx * spread) / MAP_W;
     node.y = (originY + slot.dy * spread) / MAP_H;
   });
@@ -641,12 +644,15 @@ export function placeUnlinkedBranch(nodes, chosenId) {
   const column = satellites.filter((node) => node.type === "path");
   const milestones = milestoneChain(satellites);
   const tasks = satellites.filter((node) => node.type === "task");
+  const spoke = youSpokeRadius();
+  const unlinkedOffsets = optionRing(UNLINKED_OPTION_DEGREES, spoke);
+  const chosenSlot = { dx: 0, dy: -spoke };
   const extras = satellites.filter(
     (node) =>
       !column.includes(node) &&
       !milestones.includes(node) &&
       !tasks.includes(node) &&
-      !UNLINKED_OPTION_OFFSETS[node.id]
+      !unlinkedOffsets[node.id]
   );
   const milestoneStep = Math.max(UNLINKED_MISSION_STEP, linkedMilestoneStep(milestones, nodes) * 0.85);
   const columnGap = stepForTitles(column.map((node) => node.title || node.label || ""), {
@@ -656,32 +662,32 @@ export function placeUnlinkedBranch(nodes, chosenId) {
     tasks.map((node) => node.title || node.label || ""),
     { singleLine: true }
   );
-  const columnTop = UNLINKED_CHOSEN.dy + UNLINKED_COLUMN_PLUS_CLEAR;
+  const columnTop = chosenSlot.dy + UNLINKED_COLUMN_PLUS_CLEAR;
 
   nodes.forEach((node) => {
     /** @type {{ dx: number, dy: number }} */
     let slot;
     if (node.type === "start") slot = { dx: 0, dy: 0 };
-    else if (node.id === chosenId) slot = UNLINKED_CHOSEN;
+    else if (node.id === chosenId) slot = chosenSlot;
     else if (node.type === "more") {
       slot = {
-        dx: UNLINKED_CHOSEN.dx + milestoneStep * (milestones.length + 1) + 18,
-        dy: UNLINKED_CHOSEN.dy
+        dx: chosenSlot.dx + milestoneStep * (milestones.length + 1) + 18,
+        dy: chosenSlot.dy
       };
     } else if (milestones.includes(node)) {
       const milestoneIndex = milestones.findIndex((entry) => entry.id === node.id);
-      slot = { dx: UNLINKED_CHOSEN.dx + milestoneStep * (milestoneIndex + 1), dy: UNLINKED_CHOSEN.dy };
+      slot = { dx: chosenSlot.dx + milestoneStep * (milestoneIndex + 1), dy: chosenSlot.dy };
     } else if (node.type === "task" && node.parentId) {
       const parent = milestones.find((entry) => entry.id === node.parentId);
       const milestoneIndex = parent ? milestones.findIndex((entry) => entry.id === parent.id) : 0;
       slot = {
-        dx: UNLINKED_CHOSEN.dx + milestoneStep * (milestoneIndex + 1),
-        dy: UNLINKED_CHOSEN.dy + childOffset(node.taskIndex ?? 0, taskGap)
+        dx: chosenSlot.dx + milestoneStep * (milestoneIndex + 1),
+        dy: chosenSlot.dy + childOffset(node.taskIndex ?? 0, taskGap)
       };
     }
     else if (column.includes(node)) {
       slot = { dx: UNLINKED_COLUMN.dx, dy: columnTop + columnGap * column.indexOf(node) };
-    } else if (UNLINKED_OPTION_OFFSETS[node.id]) slot = UNLINKED_OPTION_OFFSETS[node.id];
+    } else if (unlinkedOffsets[node.id]) slot = unlinkedOffsets[node.id];
     else slot = { dx: -110 - 50 * extras.indexOf(node), dy: -100 };
     node.x = (youX + slot.dx) / MAP_W;
     node.y = (youY + slot.dy) / MAP_H;
