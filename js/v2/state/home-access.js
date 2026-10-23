@@ -34,13 +34,12 @@ export function canAccessLaunchStats(user) {
 }
 
 /**
- * Analytics is an owner desktop page. A narrow layout hides the menu entry.
- * The owner check is the authorization; the layout flag does not grant access.
+ * Analytics is the owner's page on desktop and on the phone.
+ * A narrow screen does not grant or remove access.
  * @param {unknown} user
- * @param {{ desktop?: boolean }} [layout]
  */
-export function analyticsPageAllowed(user, { desktop = false } = {}) {
-  return Boolean(desktop) && canAccessLaunchStats(user);
+export function analyticsPageAllowed(user) {
+  return canAccessLaunchStats(user);
 }
 
 /**

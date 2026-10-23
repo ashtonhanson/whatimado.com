@@ -212,10 +212,6 @@ function statsStatus(message, tone) {
 
 let statsRequest = 0;
 
-function desktopAnalyticsLayout() {
-  return window.matchMedia("(min-width: 901px)").matches;
-}
-
 function clearLaunchStatsDisplay() {
   lastStats = null;
   for (const id of ["stats-visits", "stats-started", "stats-maps", "stats-roadmaps"]) setText(id, "—");
@@ -227,7 +223,7 @@ function clearLaunchStatsDisplay() {
 }
 
 async function refreshStats() {
-  if (!analyticsPageAllowed(authState().user, { desktop: desktopAnalyticsLayout() })) {
+  if (!analyticsPageAllowed(authState().user)) {
     clearLaunchStatsDisplay();
     return;
   }
@@ -401,7 +397,7 @@ export function initPages() {
 
   /** @param {string | null} name */
   const show = (name) => {
-    if (name === "analytics" && !analyticsPageAllowed(authState().user, { desktop: desktopAnalyticsLayout() })) {
+    if (name === "analytics" && !analyticsPageAllowed(authState().user)) {
       name = null;
     }
     current = name;
@@ -423,7 +419,7 @@ export function initPages() {
   };
 
   function syncAnalyticsAccess(state) {
-    const allowed = analyticsPageAllowed(state.user, { desktop: desktopAnalyticsLayout() });
+    const allowed = analyticsPageAllowed(state.user);
     const item = $("nav-analytics-item");
     if (item) item.hidden = !allowed;
     if (!allowed && current === "analytics") {
@@ -434,7 +430,7 @@ export function initPages() {
   }
 
   $("nav-analytics")?.addEventListener("click", () => {
-    if (!analyticsPageAllowed(authState().user, { desktop: desktopAnalyticsLayout() })) {
+    if (!analyticsPageAllowed(authState().user)) {
       clearLaunchStatsDisplay();
       show(null);
       return;
@@ -456,11 +452,6 @@ export function initPages() {
 
   initAnalytics();
   initSettings();
-
-  const desktopQuery = window.matchMedia("(min-width: 901px)");
-  desktopQuery.addEventListener("change", () => {
-    syncAnalyticsAccess(authState());
-  });
 
   onAuthChange((state) => {
     const allowed = syncAnalyticsAccess(state);

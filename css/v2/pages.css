@@ -546,9 +546,33 @@ body[data-page] #map-timeline {
 
 @media (max-width: 900px) {
   .v2-page {
+    position: fixed;
+    top: var(--v2-mobile-header-h, 0px);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    height: auto;
     border-radius: 0;
     border-left: 0;
     border-right: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  .v2-page__inner {
+    padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .v2-page__back {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    width: fit-content;
+    background: rgba(6, 16, 18, 0.92);
   }
 
   .v2-page__grid,
