@@ -12,9 +12,10 @@ export function missionNumberLabel(orderIndex) {
  * @param {string} text
  * @returns {string[]}
  */
-export function wrapMapLabel(text) {
+export function wrapMapLabel(text, maxLine = 18) {
   const full = String(text || "").trim();
-  if (full.length <= 18) return full ? [full] : [];
+  const limit = Math.max(8, maxLine);
+  if (full.length <= limit) return full ? [full] : [];
   const mid = full.length / 2;
   let split = -1;
   let best = Infinity;
@@ -26,7 +27,7 @@ export function wrapMapLabel(text) {
       split = i;
     }
   }
-  if (split < 0) return [full.slice(0, 18), full.slice(18, 36)].filter(Boolean);
+  if (split < 0) return [full.slice(0, limit), full.slice(limit, limit * 2)].filter(Boolean);
   return [full.slice(0, split).trim(), full.slice(split + 1).trim()].filter(Boolean).slice(0, 2);
 }
 
@@ -91,9 +92,13 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
     const ideal = item.nx - item.w / 2;
     item.left = ideal;
     item.top = item.ny - item.nr - gap - item.h;
-    if (!(bounds && item.nx > bounds.left && item.nx < bounds.right)) return;
-    const clamped = Math.min(Math.max(item.left, bounds.left + edgePad), bounds.right - edgePad - item.w);
-    if (Math.abs(clamped - ideal) <= 12) {
+    if (!bounds) return;
+    const stayAbove = item.role === "mission" || item.kind === "main";
+    const roomRight = Math.max(bounds.left + edgePad, bounds.right - edgePad - item.w);
+    const clamped = Math.min(Math.max(item.left, bounds.left + edgePad), roomRight);
+    /* A mission title belongs above its dot. Sliding it right puts it on the line to the next mission. */
+    const dotInside = item.nx > bounds.left && item.nx < bounds.right;
+    if (stayAbove || (dotInside && Math.abs(clamped - ideal) <= 12)) {
       item.left = clamped;
       return;
     }

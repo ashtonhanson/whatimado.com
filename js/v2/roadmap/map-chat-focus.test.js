@@ -138,6 +138,16 @@ describe("label to node mapping", () => {
     assert.ok(firstTask.top > mission.ny, "first task title is not parked above the mission node");
   });
 
+  it("keeps the last mission title above its dot when the phone edge is close", () => {
+    const you = callout({ kind: "start", nx: 40, ny: 180, w: 20, h: 12 });
+    const mission = callout({ role: "mission", nx: 300, ny: 180, w: 140, h: 16 });
+    placeTitleBesideNode([you, mission], { left: 0, right: 360 }, { spineAbove: false });
+    assert.equal(mission.side, "above");
+    assert.ok(mission.top + mission.h <= mission.ny - mission.nr);
+    assert.ok(mission.left >= 6);
+    assert.ok(mission.left + mission.w <= 354);
+  });
+
   it("aligns task titles on a phone layout without pulling the first task onto the mission", () => {
     const you = callout({ kind: "start", nx: 40, ny: 180, w: 20, h: 12 });
     const mission = callout({ role: "mission", nx: 180, ny: 180, w: 88, h: 28 });

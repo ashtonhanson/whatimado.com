@@ -90,7 +90,8 @@ function nodeMapTitleLines(node) {
     const label = mobile && node.type === "path" && short.length > 10 ? short.split(/\s+/)[0] : short;
     return label ? [label] : [];
   }
-  return wrapMapLabel(node.title || node.label || "");
+  /* Phone mission titles stack so the last mission stays above its dot instead of riding the connector. */
+  return wrapMapLabel(node.title || node.label || "", mobile && node.type === "mission" ? 14 : 18);
 }
 
 /** @param {DOMMatrix|null|undefined} ctm */
