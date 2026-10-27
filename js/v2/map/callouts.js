@@ -37,17 +37,42 @@ export function wrapMapLabel(text) {
  */
 export function pinSpokeTitles(items, bounds = null) {
   const edge = 8;
-  const spokes = items.filter((item) => item.nodeId === "option-settings" || item.nodeId === "option-analytics");
-  for (const item of spokes) {
+  const gaps = {
+    "option-settings": 6,
+    "option-analytics": 6,
+    "option-notes": 4,
+    "option-roadmaps": 4
+  };
+  for (const item of items) {
+    const gap = gaps[item.nodeId];
+    if (gap == null) continue;
     const nr = item.nr || 6;
     item.side = "above";
     const ideal = item.nx - item.w / 2;
     item.left = ideal;
-    item.top = item.ny - nr - 6 - item.h;
+    item.top = item.ny - nr - gap - item.h;
     if (!bounds) continue;
     const clamped = Math.min(Math.max(item.left, bounds.left + edge), bounds.right - edge - item.w);
     /* A small nudge keeps the word on screen. A bigger slide would leave the dot. */
     if (Math.abs(clamped - ideal) <= 12) item.left = clamped;
+  }
+  const pinned = items.filter((item) => gaps[item.nodeId] != null);
+  for (let i = 0; i < pinned.length; i += 1) {
+    for (let j = i + 1; j < pinned.length; j += 1) {
+      const a = pinned[i];
+      const b = pinned[j];
+      const overlapX = Math.min(a.left + a.w, b.left + b.w) - Math.max(a.left, b.left);
+      const overlapY = Math.min(a.top + a.h, b.top + b.h) - Math.max(a.top, b.top);
+      if (overlapX <= 2 || overlapY <= 2) continue;
+      const shift = (overlapX + 8) / 2;
+      if (a.nx <= b.nx) {
+        a.left -= shift;
+        b.left += shift;
+      } else {
+        b.left -= shift;
+        a.left += shift;
+      }
+    }
   }
 }
 
@@ -61,11 +86,11 @@ export function pinSpokeTitles(items, bounds = null) {
 export function placeTitleBesideNode(items, bounds = null, { spineAbove = false } = {}) {
   const you = items.find((item) => item.kind === "start");
   const edgePad = 6;
-  const placeAbove = (item) => {
+  const placeAbove = (item, gap = 16) => {
     item.side = "above";
     const ideal = item.nx - item.w / 2;
     item.left = ideal;
-    item.top = item.ny - item.nr - 16 - item.h;
+    item.top = item.ny - item.nr - gap - item.h;
     if (!(bounds && item.nx > bounds.left && item.nx < bounds.right)) return;
     const clamped = Math.min(Math.max(item.left, bounds.left + edgePad), bounds.right - edgePad - item.w);
     if (Math.abs(clamped - ideal) <= 12) {
@@ -142,7 +167,7 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
   others.forEach((item) => {
     if (item.nodeId === "option-settings" || item.nodeId === "option-analytics") return;
     if (item.kind === "main" || item.role === "mission") {
-      placeAbove(item);
+      placeAbove(item, 4);
       return;
     }
     if (item.role === "task" || item.kind === "path") {

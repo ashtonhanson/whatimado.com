@@ -278,6 +278,8 @@ function mountMapTimeline(stages) {
       page: ""
     });
   document.body.classList.remove("has-map-timeline");
+  const col = document.querySelector("whatimado-map .whatimado-map__timeline-col");
+  if (host && col && host.parentElement !== col) col.append(host);
   if (host) {
     host.hidden = !show;
     host.dataset.roadmapId = show ? roadmapId : "";

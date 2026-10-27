@@ -20,8 +20,10 @@ import {
   SCALE_CENTER_Y,
   VIEW_H,
   VIEW_W,
+  MOBILE_MQ,
   ZOOM_MAX,
-  ZOOM_MIN
+  ZOOM_MIN,
+  ZOOM_MIN_MOBILE
 } from "../../map/constants.js";
 import {
   driftOffset,
@@ -118,7 +120,11 @@ function holdTitlesOnNodes(items) {
       for (let j = i + 1; j < items.length; j++) {
         const a = items[i];
         const b = items[j];
-        if (a.nodeId === "option-settings" || a.nodeId === "option-analytics" || b.nodeId === "option-settings" || b.nodeId === "option-analytics") continue;
+        if (
+          a.nodeId === "option-settings" || a.nodeId === "option-analytics" || a.nodeId === "option-notes" || a.nodeId === "option-roadmaps" ||
+          b.nodeId === "option-settings" || b.nodeId === "option-analytics" || b.nodeId === "option-notes" || b.nodeId === "option-roadmaps"
+        ) continue;
+        if (a.role === "mission" || b.role === "mission" || a.kind === "main" || b.kind === "main") continue;
         const ba = { left: a.left, right: a.left + a.w, top: a.top, bottom: a.top + a.h };
         const bb = { left: b.left, right: b.left + b.w, top: b.top, bottom: b.top + b.h };
         if (!screenBoxesOverlap(ba, bb, 3)) continue;
@@ -162,7 +168,14 @@ function holdTitlesOnNodes(items) {
  * @param {Array<{ nx: number, ny: number, nr: number }>} nodes
  */
 function clearTitleFromNodes(item, nodes) {
-  if (item.nodeId === "option-settings" || item.nodeId === "option-analytics") return;
+  if (
+    item.nodeId === "option-settings" ||
+    item.nodeId === "option-analytics" ||
+    item.nodeId === "option-notes" ||
+    item.nodeId === "option-roadmaps" ||
+    item.role === "mission" ||
+    item.kind === "main"
+  ) return;
   for (let pass = 0; pass < 5; pass++) {
     let moved = false;
     for (const node of nodes) {
@@ -400,7 +413,7 @@ export class WhatimadoMap extends HTMLElement {
       this._syncMobileHeaderMapTools();
       if (window.matchMedia("(max-width: 900px)").matches) {
         relayoutLinkedSpread();
-        this.syncRoadmapBranchFit({ animate: false });
+        if (!this._userPanned && !this._pinch) this.syncRoadmapBranchFit({ animate: false });
       }
       if (window.matchMedia("(max-width: 900px)").matches && !isOpenHomePhase()) {
         this.syncDesktopViewBox();
@@ -432,30 +445,33 @@ export class WhatimadoMap extends HTMLElement {
     const slot = document.getElementById("header-map-tools");
     const tools = this.querySelector(".whatimado-map__timeline-tools");
     const chrome = this.querySelector(".whatimado-map__chrome");
-    const logoSlot = document.querySelector(".v2-rail-logo-slot");
-    const controls = document.querySelector(".v2-mobile-header-controls");
     if (!slot) return;
     if (mobile && this._linkBtn && this._youBtn) {
       slot.hidden = false;
       slot.setAttribute("aria-hidden", "false");
       if (this._linkBtn.parentElement !== slot) slot.append(this._linkBtn);
       if (this._youBtn.parentElement !== slot) slot.append(this._youBtn);
-      if (this._roadmapSticky && logoSlot && controls && this._roadmapSticky.parentElement !== logoSlot) {
-        logoSlot.insertBefore(this._roadmapSticky, controls);
-      }
       if (tools) tools.hidden = true;
     } else {
       slot.hidden = true;
       slot.setAttribute("aria-hidden", "true");
-      if (chrome && this._roadmapSticky && this._roadmapSticky.parentElement !== chrome) {
-        chrome.prepend(this._roadmapSticky);
-      }
       if (tools) {
         tools.hidden = false;
         if (this._linkBtn && this._linkBtn.parentElement !== tools) tools.prepend(this._linkBtn);
         if (this._youBtn && this._youBtn.parentElement !== tools) tools.append(this._youBtn);
       }
     }
+    if (chrome && this._roadmapSticky && this._roadmapSticky.parentElement !== chrome) {
+      chrome.prepend(this._roadmapSticky);
+    }
+  }
+
+  /**
+   * How far a pinch can shrink the map. The phone fit sits below the desktop floor,
+   * and a higher floor snaps a pinch-out larger instead of smaller.
+   */
+  _pinchZoomFloor() {
+    return MOBILE_MQ.matches ? ZOOM_MIN_MOBILE : ZOOM_MIN;
   }
 
   /** Stop following prompt frame after hero dismiss completes. */
@@ -1185,6 +1201,7 @@ export class WhatimadoMap extends HTMLElement {
    * @returns {boolean} Whether the camera was fitted
    */
   syncSpreadForFrame(frameTop) {
+    if (this._userPanned) return false;
     if (!this._liveNodes.some((node) => node.type === "more")) return false;
     const frame = document.getElementById("dynamic-frame");
     const main = document.querySelector(".v2-main");
@@ -1337,7 +1354,33 @@ export class WhatimadoMap extends HTMLElement {
     }
     if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
     if (!desktopCrosshair) this._keepSpokeTitlesOnStage();
+    else this._keepNotesTitleOnStage();
     return true;
+  }
+
+  /** The Notes title sits above its dot. Slide the map down if that word would leave the stage. */
+  _keepNotesTitleOnStage() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const layer = this._liveLayer;
+    const svg = this._svg;
+    const text = this.querySelector('[data-node-id="option-notes"] text');
+    if (!stage || !layer || !svg || !(text instanceof SVGTextElement)) return;
+    const box = text.getBoundingClientRect();
+    if (box.height < 2) return;
+    const limit = stage.getBoundingClientRect().top + 6;
+    const dy = limit - box.top;
+    if (dy < 4) return;
+    const inv = invertCtm(layer.getScreenCTM());
+    if (!inv) return;
+    const shifted = svg.createSVGPoint();
+    shifted.y = dy;
+    const zero = svg.createSVGPoint().matrixTransform(inv);
+    const local = shifted.matrixTransform(inv);
+    const panDy = (local.y - zero.y) * (this._zoom || 1);
+    if (!Number.isFinite(panDy) || Math.abs(panDy) < 0.5) return;
+    this._panY += panDy;
+    this._applyPanTransform();
+    this._layoutCallouts();
   }
 
   /**
@@ -1406,7 +1449,7 @@ export class WhatimadoMap extends HTMLElement {
    * @param {number} nextZoom
    */
   _applyZoomKeepingPoint(focalX, focalY, fromZoom, fromPanX, fromPanY, nextZoom) {
-    const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, nextZoom));
+    const zoom = Math.max(this._pinchZoomFloor(), Math.min(ZOOM_MAX, nextZoom));
     if (!(fromZoom > 0) || zoom === fromZoom) return false;
     const ratio = zoom / fromZoom;
     this._zoom = zoom;
@@ -1531,7 +1574,7 @@ export class WhatimadoMap extends HTMLElement {
     if (this._pinch.startDist <= 0) return;
 
     const nextZoom = Math.max(
-      ZOOM_MIN,
+      this._pinchZoomFloor(),
       Math.min(ZOOM_MAX, this._pinch.startZoom * (dist / this._pinch.startDist))
     );
     const center = this._touchCenter(event.touches);
@@ -2664,7 +2707,11 @@ export class WhatimadoMap extends HTMLElement {
       if (mobile) {
         const rank = (item) =>
           item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;
-        const keepLabel = (item) => item.nodeId === "option-settings" || item.nodeId === "option-analytics";
+        const keepLabel = (item) =>
+          item.nodeId === "option-settings" ||
+          item.nodeId === "option-analytics" ||
+          item.nodeId === "option-notes" ||
+          item.nodeId === "option-roadmaps";
         for (const [a, b] of crowdedPairs(items)) {
           if (keepLabel(a) || keepLabel(b)) continue;
           if (a.group.classList.contains("is-label-crowded") || b.group.classList.contains("is-label-crowded")) continue;

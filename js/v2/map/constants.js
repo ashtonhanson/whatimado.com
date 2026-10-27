@@ -24,8 +24,10 @@ export const HOME_SETTLE_SPEED = 0.028;
 export const HOME_RETURN_KICK = 0.014;
 export const HOME_RETURN_KICK_MAX = 1.35;
 
-/** Pinch zoom — scale around view center; focal point stays under fingers */
-export const ZOOM_MIN = 0.72;
+/** Pinch and wheel zoom. Fitted maps sit below the old 0.72 floor, which snapped a zoom-out larger. */
+export const ZOOM_MIN = 0.36;
+/** Phone maps are fitted even smaller. Pinch has to reach that size. */
+export const ZOOM_MIN_MOBILE = 0.28;
 export const ZOOM_MAX = 2.45;
 export const SCALE_CENTER_X = VIEW_W / 2;
 export const SCALE_CENTER_Y = VIEW_H / 2;

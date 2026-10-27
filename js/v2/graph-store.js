@@ -404,6 +404,17 @@ function youSpokeRadius() {
   return Math.min(radius, maxRadius);
 }
 
+/** Settings, Analytics, Notes, and Roadmaps sit further from You than the chosen path. */
+function optionSpokeRadius() {
+  const base = youSpokeRadius();
+  if (!isMobileMapLayout()) return base;
+  const unit = mapPxPerUnit();
+  const wanted = unit > 0 ? 120 / (unit * 0.5) : base * 1.7;
+  const leftCos = Math.cos((205 * Math.PI) / 180);
+  const maxRadius = (YOU_LINKED.x + 48) / -leftCos;
+  return Math.min(Math.max(base, wanted), maxRadius);
+}
+
 /**
  * @param {Record<string, number>} degrees Angle from You, counterclockwise from pointing right.
  * @param {number} radius
@@ -566,7 +577,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const milestones = milestoneChain(satellites);
   const tasks = satellites.filter((node) => node.type === "task");
   const spoke = youSpokeRadius();
-  const linkedOffsets = optionRing(LINKED_OPTION_DEGREES, spoke);
+  const linkedOffsets = optionRing(LINKED_OPTION_DEGREES, optionSpokeRadius());
   const orbit = satellites.filter(
     (node) =>
       !pathSiblings.includes(node) &&
@@ -648,7 +659,7 @@ export function placeUnlinkedBranch(nodes, chosenId) {
   const milestones = milestoneChain(satellites);
   const tasks = satellites.filter((node) => node.type === "task");
   const spoke = youSpokeRadius();
-  const unlinkedOffsets = optionRing(UNLINKED_OPTION_DEGREES, spoke);
+  const unlinkedOffsets = optionRing(UNLINKED_OPTION_DEGREES, optionSpokeRadius());
   const chosenSlot = { dx: 0, dy: -spoke };
   const extras = satellites.filter(
     (node) =>

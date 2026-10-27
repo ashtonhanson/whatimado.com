@@ -333,6 +333,13 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
 
   const timeline = document.getElementById("map-timeline");
   let top = menuClearScreenY(stageRect);
+  if (MOBILE_MQ.matches) {
+    const chrome = stage.querySelector(".whatimado-map__chrome");
+    if (chrome instanceof HTMLElement) {
+      const bar = chrome.getBoundingClientRect();
+      if (bar.height > 8) top = Math.max(top, bar.bottom + 4);
+    }
+  }
   if (timeline instanceof HTMLElement && !timeline.hidden && stage.contains(timeline) === false) {
     const bar = timeline.getBoundingClientRect();
     const overStage = bar.top < frameRect.top && bar.bottom > stageRect.top && bar.top < stageRect.bottom;

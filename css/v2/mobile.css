@@ -134,15 +134,28 @@
   }
 
   whatimado-map .whatimado-map__chrome {
-    left: 0.45rem;
-    right: 0.45rem;
-    align-items: stretch;
+    top: 0.35rem;
+    left: 0.4rem;
+    right: 0.4rem;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
   }
 
+  whatimado-map .whatimado-map__roadmap-sticky {
+    flex: 0 1 auto;
+    max-width: 46%;
+    padding: 0.28rem 0.55rem;
+  }
+
+  whatimado-map .whatimado-map__timeline-col,
   whatimado-map .whatimado-map__timeline-col:has(#map-timeline:not([hidden])) {
     flex: 1 1 auto;
-    width: 100%;
-    max-width: 100%;
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    max-width: none;
     margin-left: 0;
   }
 
@@ -330,40 +343,6 @@
     gap: var(--v2-mobile-header-icon-gap, 0.45rem);
     margin-left: auto;
     flex-shrink: 0;
-  }
-
-  .v2-rail-logo-slot:has(.whatimado-map__roadmap-sticky:not([hidden])) .v2-mobile-header-controls {
-    margin-left: auto;
-  }
-
-  body.v2-app:has(.v2-rail-logo-slot > .whatimado-map__roadmap-sticky:not([hidden])) {
-    --v2-mobile-header-h: calc(6.7rem + env(safe-area-inset-top, 0px));
-  }
-
-  .v2-rail-brand:has(.whatimado-map__roadmap-sticky:not([hidden])) {
-    position: relative;
-  }
-
-  .v2-rail-logo-slot > .whatimado-map__roadmap-sticky {
-    position: absolute;
-    left: var(--v2-mobile-header-inset);
-    right: var(--v2-mobile-header-inset);
-    top: calc(var(--v2-mobile-header-control) + var(--v2-mobile-header-inset) + 1.9rem);
-    flex: none;
-    width: auto;
-    margin: 0;
-    padding: 0;
-    color: var(--v2-yellow);
-    font-family: var(--v2-font-hero);
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    line-height: 1.2;
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    pointer-events: none;
   }
 
   .v2-header-map-tools {
