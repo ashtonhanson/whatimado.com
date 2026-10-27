@@ -1,5 +1,5 @@
 import { measureCssVarLength } from "../layout/measure-css-var.js";
-import { MOBILE_MQ, SCALE_CENTER_X, SCALE_CENTER_Y, VIEW_H, VIEW_W, ZOOM_MAX } from "./constants.js";
+import { MOBILE_MQ, SCALE_CENTER_X, SCALE_CENTER_Y, VIEW_H, VIEW_W, ZOOM_MAX, ZOOM_MIN } from "./constants.js";
 import {
   clampPanYForOpenHome,
   clampPanYForTopPad,
@@ -333,12 +333,10 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
 
   const timeline = document.getElementById("map-timeline");
   let top = menuClearScreenY(stageRect);
-  if (MOBILE_MQ.matches) {
-    const chrome = stage.querySelector(".whatimado-map__chrome");
-    if (chrome instanceof HTMLElement) {
-      const bar = chrome.getBoundingClientRect();
-      if (bar.height > 8) top = Math.max(top, bar.bottom + 4);
-    }
+  const chrome = stage.querySelector(".whatimado-map__chrome");
+  if (chrome instanceof HTMLElement) {
+    const bar = chrome.getBoundingClientRect();
+    if (bar.height > 8 && bar.bottom > stageRect.top) top = Math.max(top, bar.bottom + 22);
   }
   if (timeline instanceof HTMLElement && !timeline.hidden && stage.contains(timeline) === false) {
     const bar = timeline.getBoundingClientRect();
@@ -380,12 +378,12 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
     screenCx += (room.left - room.right) / 2;
   }
   const explicitMin = typeof minZoom === "number" && Number.isFinite(minZoom);
-  const zoomMin = explicitMin && !MOBILE_MQ.matches ? minZoom : FIT_ZOOM_MIN;
   /* A phone roadmap is wider than the stage at the usual floor, so the left spokes clip. */
   const mobileMin = explicitMin ? Math.min(minZoom, FIT_ZOOM_MIN) : FIT_ZOOM_MIN;
+  const fitted = Math.min(ZOOM_MAX, zoomY, zoomX);
   const zoom = MOBILE_MQ.matches
     ? Math.max(mobileMin, Math.min(ZOOM_MAX, zoomX, Math.max(floor, zoomY)))
-    : Math.max(zoomMin, Math.min(ZOOM_MAX, zoomY, zoomX));
+    : Math.max(ZOOM_MIN, fitted);
   const scale = pxPerUnit * zoom;
   const margin = (stageRect.width - usableW) / 2;
   const overRight = screenCx + (bounds.maxX - cx) * scale + room.right - (stageRect.width - margin);

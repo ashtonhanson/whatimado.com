@@ -1,5 +1,5 @@
 /*
- * Prompt frame. Vertical position is --whatimado-frame-top (25vh on desktop).
+ * Prompt frame. Chat on desktop uses the brand frame top (40vh).
  * bottom: 0 keeps the frame on the floor, so a higher top makes a taller frame.
  */
 whatimado-frame {
@@ -22,6 +22,10 @@ whatimado-frame {
 
 /* Desktop: fill the center column so the glass meets the rail gap, not a centered 720px box. */
 @media (min-width: 901px) {
+  :root {
+    --whatimado-frame-top-default: 40vh;
+  }
+
   .v2-main > whatimado-frame {
     left: 0;
     right: 0;
@@ -41,7 +45,7 @@ whatimado-frame {
   }
 
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) .v2-main > whatimado-frame {
-    top: max(var(--whatimado-frame-top, 25vh), var(--whatimado-frame-top-default));
+    top: max(25vh, 16.5rem);
   }
 }
 

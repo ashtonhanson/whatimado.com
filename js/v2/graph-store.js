@@ -313,8 +313,6 @@ const EXPLORE_OPTIONS = [
 const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
-/** Screen gap between the last mission dot and the + node. */
-const PLUS_GAP_PX = 26;
 const MISSION_STEP = 34;
 const MISSION_TITLE_GAP_PX = 16;
 const TASK_STACK_STEP = 30;
@@ -593,7 +591,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   /** @param {number} index */
   const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;
   const lastDist = milestones.length ? milestoneDist(milestones.length - 1) : chosenDist;
-  const plusDist = lastDist + (PLUS_GAP_PX / (mapPxPerUnit() * 0.5)) * spread;
+  const plusScreen = isMobileMapLayout() ? 12 : 18;
+  const plusDist = lastDist + (plusScreen / (mapPxPerUnit() * 0.5)) * spread;
   const originY = YOU_LINKED.y;
   const columnStep = stepForTitles([], { singleLine: true });
   const siblingStep = columnStep;

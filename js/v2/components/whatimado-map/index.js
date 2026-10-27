@@ -1357,8 +1357,57 @@ export class WhatimadoMap extends HTMLElement {
     }
     if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
     if (!desktopCrosshair) this._keepSpokeTitlesOnStage();
-    else this._keepNotesTitleOnStage();
+    else this._keepGraphUnderTimeline();
     return true;
+  }
+
+  /**
+   * Spoke titles sit above the fitted branch. Slide the graph down until they
+   * clear the timeline, and stop before the lowest label crosses the prompt.
+   */
+  _keepGraphUnderTimeline() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    const frame = document.getElementById("dynamic-frame");
+    const layer = this._liveLayer;
+    const svg = this._svg;
+    const chrome = stage?.querySelector(".whatimado-map__chrome");
+    if (!stage || !(frame instanceof HTMLElement) || !layer || !svg || !(chrome instanceof HTMLElement)) return;
+    const minTop = chrome.getBoundingClientRect().bottom + 8;
+    const maxBottom = frame.getBoundingClientRect().top - 12;
+    let top = Infinity;
+    let bottom = -Infinity;
+    layer.querySelectorAll(".whatimado-map__node--live").forEach((group) => {
+      const float = group.querySelector(".whatimado-map__node-float");
+      if (float && getComputedStyle(float).visibility === "hidden") return;
+      const take = (el) => {
+        if (!(el instanceof Element)) return;
+        if (el instanceof SVGTextElement && !el.textContent?.trim()) return;
+        const style = getComputedStyle(el);
+        if (style.visibility === "hidden" || style.display === "none") return;
+        const box = el.getBoundingClientRect();
+        if (box.width < 2 || box.height < 2) return;
+        top = Math.min(top, box.top);
+        bottom = Math.max(bottom, box.bottom);
+      };
+      take(group.querySelector(".whatimado-map__node-body"));
+      group.querySelectorAll("text").forEach(take);
+    });
+    if (!Number.isFinite(top)) return;
+    const needDown = minTop - top;
+    if (needDown < 4) return;
+    const dy = Math.min(needDown, Math.max(0, maxBottom - bottom - 4));
+    if (dy < 4) return;
+    const inv = invertCtm(layer.getScreenCTM());
+    if (!inv) return;
+    const shifted = svg.createSVGPoint();
+    shifted.y = dy;
+    const zero = svg.createSVGPoint().matrixTransform(inv);
+    const local = shifted.matrixTransform(inv);
+    const panDy = (local.y - zero.y) * (this._zoom || 1);
+    if (!Number.isFinite(panDy) || Math.abs(panDy) < 0.5) return;
+    this._panY += panDy;
+    this._applyPanTransform();
+    this._layoutCallouts();
   }
 
   /** The Notes title sits above its dot. Slide the map down if that word would leave the stage. */
@@ -2734,7 +2783,7 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Keep the plus a fixed gap past the title that runs along the line before it, however long that title is.
+   * Keep the plus a short gap past the previous dot. A long title must not stretch this line.
    */
   _seatPlusPastTitle() {
     if (!roadmapFocusLinked) return;
@@ -2747,25 +2796,21 @@ export class WhatimadoMap extends HTMLElement {
       .find((line) => line.getAttribute("data-to") === plusId)
       ?.getAttribute("data-from");
     const before = beforeId ? layer.querySelector(`.whatimado-map__node[data-node-id="${CSS.escape(beforeId)}"]`) : null;
-    const label = before?.querySelector(".whatimado-map__label");
+    const fromBody = before?.querySelector(".whatimado-map__node-body");
     const plusBody = plus?.querySelector(".whatimado-map__node-body");
-    if (!(plus instanceof SVGGElement) || !(label instanceof SVGTextElement) || !(plusBody instanceof SVGCircleElement)) return;
+    if (!(plus instanceof SVGGElement) || !(fromBody instanceof SVGCircleElement) || !(plusBody instanceof SVGCircleElement)) return;
 
-    const titleGap = 8;
-    const labelBox = label.getBoundingClientRect();
+    const fromBox = fromBody.getBoundingClientRect();
     const plusBox = plusBody.getBoundingClientRect();
-    if (labelBox.width < 2 || plusBox.width < 2) return;
-    const labelFloat = this._floatScreenOffset(label);
+    if (fromBox.width < 2 || plusBox.width < 2) return;
+    const fromFloat = this._floatScreenOffset(fromBody);
     const plusFloat = this._floatScreenOffset(plusBody);
-    const labelRight = labelBox.right - labelFloat.x;
+    const fromRight = fromBox.right - fromFloat.x;
     const plusCenter = plusBox.left + plusBox.width / 2 - plusFloat.x;
-    const plusCenterY = plusBox.top + plusBox.height / 2 - plusFloat.y;
     const plusR = plusBox.width / 2;
-    /* A title centered over its dot never reaches the line, so the plus keeps its own gap. */
-    const labelTop = labelBox.top - labelFloat.y;
-    if (labelTop > plusCenterY + plusR || labelTop + labelBox.height < plusCenterY - plusR) return;
-    const dx = labelRight + titleGap + plusR - plusCenter;
-    if (dx < 1) return;
+    const cap = window.matchMedia("(max-width: 900px)").matches ? 12 : 18;
+    const dx = fromRight + cap + plusR - plusCenter;
+    if (Math.abs(dx) < 1) return;
 
     const ctm = plus.getScreenCTM();
     const inv = invertCtm(ctm);
