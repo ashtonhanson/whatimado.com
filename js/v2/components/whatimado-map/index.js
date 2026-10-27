@@ -464,6 +464,9 @@ export class WhatimadoMap extends HTMLElement {
     if (chrome && this._roadmapSticky && this._roadmapSticky.parentElement !== chrome) {
       chrome.prepend(this._roadmapSticky);
     }
+    const timeline = document.getElementById("map-timeline");
+    const col = this.querySelector(".whatimado-map__timeline-col");
+    if (timeline && col && timeline.parentElement !== col) col.append(timeline);
   }
 
   /**
@@ -2748,7 +2751,7 @@ export class WhatimadoMap extends HTMLElement {
     const plusBody = plus?.querySelector(".whatimado-map__node-body");
     if (!(plus instanceof SVGGElement) || !(label instanceof SVGTextElement) || !(plusBody instanceof SVGCircleElement)) return;
 
-    const titleGap = 20;
+    const titleGap = 8;
     const labelBox = label.getBoundingClientRect();
     const plusBox = plusBody.getBoundingClientRect();
     if (labelBox.width < 2 || plusBox.width < 2) return;

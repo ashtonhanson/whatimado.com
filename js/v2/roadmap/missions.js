@@ -294,6 +294,7 @@ function mountMapTimeline(stages) {
     }
     if (show) bindTimelineScroll(host);
   }
+  document.querySelector("whatimado-map")?._syncMobileHeaderMapTools?.();
   document.getElementById("dynamic-frame")?.applyTimelineInset?.();
 }
 

@@ -314,7 +314,7 @@ const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
 /** Screen gap between the last mission dot and the + node. */
-const PLUS_GAP_PX = 30;
+const PLUS_GAP_PX = 26;
 const MISSION_STEP = 34;
 const MISSION_TITLE_GAP_PX = 16;
 const TASK_STACK_STEP = 30;
@@ -680,7 +680,7 @@ export function placeUnlinkedBranch(nodes, chosenId) {
     else if (node.id === chosenId) slot = chosenSlot;
     else if (node.type === "more") {
       slot = {
-        dx: chosenSlot.dx + milestoneStep * (milestones.length + 1) + 18,
+        dx: chosenSlot.dx + milestoneStep * (milestones.length + 1) + 8,
         dy: chosenSlot.dy
       };
     } else if (milestones.includes(node)) {
