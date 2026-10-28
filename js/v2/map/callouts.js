@@ -96,13 +96,8 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
     const stayAbove = item.role === "mission" || item.kind === "main";
     const roomRight = Math.max(bounds.left + edgePad, bounds.right - edgePad - item.w);
     const clamped = Math.min(Math.max(item.left, bounds.left + edgePad), roomRight);
-    /* A mission title belongs above its dot. Sliding it right puts it on the line to the next mission.
-       A dot that is off the stage keeps its title, so the title is not pulled onto the previous mission. */
+    /* A mission title belongs above its dot. Sliding it right puts it on the line to the next mission. */
     const dotInside = item.nx > bounds.left && item.nx < bounds.right;
-    if (stayAbove && !dotInside) {
-      item.left = ideal;
-      return;
-    }
     if (stayAbove || (dotInside && Math.abs(clamped - ideal) <= 12)) {
       item.left = clamped;
       return;
