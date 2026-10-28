@@ -81,7 +81,7 @@ export function pinSpokeTitles(items, bounds = null) {
  * Title sits on the node the way the constellation reference does:
  * mission titles above that mission's dot, task titles level with that task's dot.
  * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, role?: string, side?: string }>} items
- * @param {{ left: number, right: number } | null} [bounds] visible stage edges in screen px
+ * @param {{ left: number, right: number, top?: number, bottom?: number } | null} [bounds] visible stage edges in screen px
  * @param {{ spineAbove?: boolean }} [options] center every spine title on the horizontal line over its dot
  */
 export function placeTitleBesideNode(items, bounds = null, { spineAbove = false } = {}) {
@@ -97,8 +97,17 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
     const roomRight = Math.max(bounds.left + edgePad, bounds.right - edgePad - item.w);
     const clamped = Math.min(Math.max(item.left, bounds.left + edgePad), roomRight);
     /* A mission title belongs above its dot. Sliding it right puts it on the line to the next mission. */
-    const dotInside = item.nx > bounds.left && item.nx < bounds.right;
-    if (stayAbove || (dotInside && Math.abs(clamped - ideal) <= 12)) {
+    const dotInside =
+      item.nx > bounds.left &&
+      item.nx < bounds.right &&
+      (bounds.top == null || item.ny >= bounds.top) &&
+      (bounds.bottom == null || item.ny <= bounds.bottom);
+    /* Once the dot leaves the band above the prompt, the title leaves with it. */
+    if (!dotInside) {
+      item.left = ideal;
+      return;
+    }
+    if (stayAbove || Math.abs(clamped - ideal) <= 12) {
       item.left = clamped;
       return;
     }

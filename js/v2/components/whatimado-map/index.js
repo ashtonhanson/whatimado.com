@@ -48,7 +48,6 @@ import {
   computePanForFocalNode,
   computePanForNodeAboveFrame,
   computeTimelineFrameFit,
-  isActiveRoadmapBranchNode,
   isOpenHomePhase,
   ROADMAP_CROSSHAIR_ZOOM_MIN
 } from "../../map/pan.js";
@@ -474,7 +473,9 @@ export class WhatimadoMap extends HTMLElement {
    * and a higher floor snaps a pinch-out larger instead of smaller.
    */
   _pinchZoomFloor() {
-    return MOBILE_MQ.matches ? ZOOM_MIN_MOBILE : ZOOM_MIN;
+    const base = MOBILE_MQ.matches ? ZOOM_MIN_MOBILE : ZOOM_MIN;
+    const fitted = this._fitZoomFloor;
+    return typeof fitted === "number" && fitted > 0 ? Math.min(base, fitted) : base;
   }
 
   /** Stop following prompt frame after hero dismiss completes. */
@@ -1027,6 +1028,7 @@ export class WhatimadoMap extends HTMLElement {
 
       if (Math.hypot(this._panVelX, this._panVelY) < GLIDE_MIN_SPEED) {
         this._stopPanGlide();
+        this._layoutCallouts();
         return;
       }
 
@@ -1211,29 +1213,26 @@ export class WhatimadoMap extends HTMLElement {
     if (window.matchMedia("(max-width: 900px)").matches) {
       if (isOpenHomePhase() || this.dataset.focusPinned === "1") return false;
       const snap = frame._dock?.activeSnap;
-      if (snap !== "mobile-collapsed" && snap !== "mobile-focus") return false;
+      /* Home and the lower three-quarter sheet both leave a map band. The expanded sheet covers it. */
+      if (snap && snap !== "mobile-collapsed" && snap !== "mobile-focus" && snap !== "home") return false;
       if (frame._dock?._keyboardDocked || document.body.classList.contains("is-mobile-composer-focus")) return false;
     } else {
       const anchors = measureAnchors(main, frame);
       const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
       if (top < anchors.homeBase - 1) return false;
     }
-    if (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId)) {
-      this.centerOnNode(this._focusNodeId, { animate: false });
-      return true;
-    }
     const selectedId = this._selectedId || graphStore.selectedId;
     const selected = this._liveNodes.find((node) => node.type === "path" && node.id === selectedId);
-    const chosenPathId = appStore.journey.roadmapPathId || selectedId;
     const hasRoadmapColumns = this._liveNodes.some((node) => node.type === "task");
-    const desktopCrosshair = !window.matchMedia("(max-width: 900px)").matches;
+    const focusId =
+      this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId) ? this._focusNodeId : null;
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
     const options = {
-      centerNodeId: hasRoadmapColumns ? null : roadmapFocusLinked ? null : selected?.id,
+      centerNodeId: hasRoadmapColumns ? focusId : roadmapFocusLinked ? null : selected?.id,
       reserve: null,
-      includeNode: hasRoadmapColumns
-        ? (node) => isActiveRoadmapBranchNode(node, chosenPathId)
-        : undefined,
-      minZoom: hasRoadmapColumns && desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : undefined
+      /* Desktop shows every node. A phone shows the branch, and can leave a spoke at the edge. */
+      includeNode: undefined,
+      minZoom: hasRoadmapColumns ? (mobile ? ZOOM_MIN_MOBILE : 0.2) : mobile ? undefined : ROADMAP_CROSSHAIR_ZOOM_MIN
     };
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
     this._userPanned = false;
@@ -1245,6 +1244,7 @@ export class WhatimadoMap extends HTMLElement {
       if (!reserve) break;
       options.reserve = reserve;
     }
+    this._fitZoomFloor = this._zoom;
     if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
     return true;
   }
@@ -1337,15 +1337,25 @@ export class WhatimadoMap extends HTMLElement {
     if (!hasRoadmapColumns) return false;
     this._userPanned = false;
     this.syncDesktopViewBox();
-    const selectedId = this._selectedId || graphStore.selectedId;
-    const chosenPathId = appStore.journey.roadmapPathId || selectedId;
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
-    const desktopCrosshair = !window.matchMedia("(max-width: 900px)").matches;
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    this._fitBand({ mostly: mobile, animate, from });
+    return true;
+  }
+
+  /**
+   * Scale the map into the band under the timeline and above the prompt.
+   * Desktop (`mostly: false`) fits every node. A phone fits as much as the band allows.
+   * @param {{ mostly?: boolean, centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null }} [options]
+   */
+  _fitBand({ mostly = false, centerNodeId = null, animate = false, from = null } = {}) {
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const start = from || { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    /** @type {{ centerNodeId: string|null, reserve: { above: number, below: number, left: number, right: number }|null, minZoom: number }} */
     const options = {
-      centerNodeId: null,
+      centerNodeId,
       reserve: null,
-      includeNode: (node) => isActiveRoadmapBranchNode(node, chosenPathId),
-      minZoom: desktopCrosshair ? ROADMAP_CROSSHAIR_ZOOM_MIN : 0.44
+      minZoom: mobile || mostly ? ZOOM_MIN_MOBILE : 0.2
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
@@ -1354,10 +1364,11 @@ export class WhatimadoMap extends HTMLElement {
       options.reserve = this._measureTitleReserve();
       if (!options.reserve) break;
     }
-    if (animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
-    if (!desktopCrosshair) this._keepSpokeTitlesOnStage();
+    this._fitZoomFloor = this._zoom;
+    if (mobile) this._keepSpokeTitlesOnStage();
     else this._keepGraphUnderTimeline();
-    return true;
+    if (centerNodeId && !this._nodeSitsInOpenBand(centerNodeId)) this._pullNodeIntoOpenBand(centerNodeId);
+    if (animate) this._easeCameraFrom(start, 420);
   }
 
   /**
@@ -1465,14 +1476,25 @@ export class WhatimadoMap extends HTMLElement {
     this._layoutCallouts();
   }
 
-  /** Fit the current roadmap/task nodes (labels and badges) between timeline and prompt. */
+  /**
+   * Crosshair: put the selected node in the open band and scale so most of the map is visible there.
+   * @param {{ animate?: boolean }} [options]
+   */
   resetToYou({ animate = true } = {}) {
-    this._userPanned = false;
     const preferred =
+      (this._selectedId && this._liveNodes.some((node) => node.id === this._selectedId) && this._selectedId) ||
       (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId) && this._focusNodeId) ||
-      this._selectedId ||
-      "start";
-    this.centerOnNode(preferred, { animate });
+      (this._liveNodes.some((node) => node.id === "start") ? "start" : "");
+    if (!preferred) return;
+    this._userPanned = false;
+    this._focalLocked = true;
+    this._focalNodeId = preferred;
+    this._focusNodeId = preferred;
+    this._youBtn?.classList.add("is-active");
+    this._youBtn?.setAttribute("aria-pressed", "true");
+    this.syncDesktopViewBox();
+    const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    this._fitBand({ mostly: true, centerNodeId: preferred, animate, from });
   }
 
   /** @param {TouchList} touches */
@@ -1655,6 +1677,7 @@ export class WhatimadoMap extends HTMLElement {
     }
     this._pinch = null;
     this.classList.remove("is-pinch-zooming");
+    this._layoutCallouts();
   }
 
   /** Apply camera transform: built-in graph shift + user pan offset + pinch zoom */
@@ -1731,6 +1754,8 @@ export class WhatimadoMap extends HTMLElement {
       this._panVelX = vx;
       this._panVelY = vy;
       this._startPanGlide();
+    } else {
+      this._layoutCallouts();
     }
   }
 
@@ -2001,6 +2026,13 @@ export class WhatimadoMap extends HTMLElement {
         driftAnchorX: 0,
         driftAnchorY: 0,
         isTask: groupEl.classList.contains("is-task") || groupEl.classList.contains("is-alternate"),
+        /* The roadmap runs past the 800-unit box. The camera frames it; pulling those dots back collapses the gaps. */
+        isBranch:
+          groupEl.classList.contains("is-mission") ||
+          groupEl.classList.contains("is-task") ||
+          groupEl.classList.contains("is-roadmap") ||
+          groupEl.classList.contains("is-more") ||
+          groupEl.classList.contains("is-alternate"),
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
         auraEl: aura ? /** @type {SVGCircleElement} */ (aura) : null,
@@ -2085,11 +2117,11 @@ export class WhatimadoMap extends HTMLElement {
     let ny = node.baseY;
     let adjusted = false;
 
-    if (cx < minX) {
+    if (!node.isBranch && cx < minX) {
       nx += (minX - cx) * BOUND_PULL;
       if (node.glideVx < 0) node.glideVx *= BOUND_GLIDE_DAMP;
       adjusted = true;
-    } else if (cx > maxX) {
+    } else if (!node.isBranch && cx > maxX) {
       nx += (maxX - cx) * BOUND_PULL;
       if (node.glideVx > 0) node.glideVx *= BOUND_GLIDE_DAMP;
       adjusted = true;
@@ -2601,7 +2633,6 @@ export class WhatimadoMap extends HTMLElement {
    * SVG space, so they ride with their nodes and are not placed again.
    */
   _userIsMovingMap() {
-    if (!window.matchMedia("(max-width: 900px)").matches) return false;
     return Boolean(this._panPointer || this._panGliding || this._pinch);
   }
 
@@ -2702,6 +2733,13 @@ export class WhatimadoMap extends HTMLElement {
         if (rest) dots.push(rest);
       });
       const hostRect = this.getBoundingClientRect();
+      const band = this._openBand();
+      const titleBounds = {
+        left: Math.max(0, hostRect.left),
+        right: Math.min(window.innerWidth, hostRect.right),
+        top: band?.top,
+        bottom: band?.bottom
+      };
       const mobile = window.matchMedia("(max-width: 900px)").matches;
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-label-crowded"));
       const shown = (item) => getComputedStyle(item.text).visibility !== "hidden";
@@ -2735,21 +2773,11 @@ export class WhatimadoMap extends HTMLElement {
         this._fitLabelFont(texts, 13);
         items = buildItems();
         if (!items.length) return;
-        placeTitleBesideNode(
-          items,
-          {
-            left: Math.max(0, hostRect.left),
-            right: Math.min(window.innerWidth, hostRect.right)
-          },
-          { spineAbove: false }
-        );
+        placeTitleBesideNode(items, titleBounds, { spineAbove: false });
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
-        pinSpokeTitles(items, {
-          left: Math.max(0, hostRect.left),
-          right: Math.min(window.innerWidth, hostRect.right)
-        });
+        pinSpokeTitles(items, titleBounds);
         if (!kickerDisplaced(items)) break;
         items.forEach((item) => {
           if (item.kicker && item.group.classList.contains("is-roadmap")) item.group.classList.add("is-kicker-off");
@@ -2761,6 +2789,7 @@ export class WhatimadoMap extends HTMLElement {
         const keepLabel = (item) =>
           item.kind === "path" ||
           item.kind === "main" ||
+          item.role === "mission" ||
           item.nodeId === "option-settings" ||
           item.nodeId === "option-analytics" ||
           item.nodeId === "option-notes" ||

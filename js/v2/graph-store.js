@@ -582,14 +582,16 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const milestoneStep = linkedMilestoneStep(milestones, nodes);
   const firstStep = linkedFirstMilestoneStep(pathSiblings, milestoneStep, nodes, milestones);
   const mobile = isMobileMapLayout();
-  /* On a phone, You → first roadmap matches the gap between missions. */
-  const chosenReach = mobile && milestones.length ? milestoneStep : spoke;
+  /* You → first roadmap matches the gap between missions. On a phone that
+     roadmap sits a quarter of that gap closer to You. */
+  const columnGap = milestones.length ? milestoneStep : spoke;
+  const chosenReach = mobile ? columnGap * 0.75 : columnGap;
   const chosenDist = chosenReach * spread;
   /** @param {number} index */
   const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;
   const lastDist = milestones.length ? milestoneDist(milestones.length - 1) : chosenDist;
   const plusScreen = mobile ? 12 : 18;
-  const plusGap = mobile && milestones.length ? milestoneStep : plusScreen / (mapPxPerUnit() * 0.5);
+  const plusGap = milestones.length ? milestoneStep : plusScreen / (mapPxPerUnit() * 0.5);
   const plusDist = lastDist + plusGap * spread;
   const originY = YOU_LINKED.y;
   const columnStep = stepForTitles([], { singleLine: true });
