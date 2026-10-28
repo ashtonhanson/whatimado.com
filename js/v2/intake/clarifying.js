@@ -88,7 +88,7 @@ export function buildClarifyingPrompt(userText, options = {}) {
     "PRIVACY: Do not collect or repeat medical, substance-use, or mental-health details.\n" +
     "Ask exactly ONE short clarifying question about either what they enjoy / are good at, or one concrete skill they already have — not both.\n" +
     "Leave room for them to correct a misunderstanding. Do not rush them toward a plan.\n" +
-    "Do not ask about ID, housing, or transport unless they already said that is in the way. Do not list career options yet. Plain text only.\n\n" +
+    "Do not ask about ID, housing, transport, children, or where they live — the app asks those as separate choices next. Do not list career options yet. Plain text only.\n\n" +
     `User: ${safe}${pathNote}`
   );
 }

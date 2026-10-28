@@ -36,29 +36,6 @@ export function wrapMapLabel(text, maxLine = 18) {
  * @param {Array<{ nodeId?: string, nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string }>} items
  * @param {{ left: number, right: number } | null} [bounds]
  */
-function separateMissionTitles(items, bounds) {
-  const above = items
-    .filter((item) => item.side === "above" && (item.role === "mission" || item.kind === "main"))
-    .sort((a, b) => a.nx - b.nx);
-  for (let pass = 0; pass < 3; pass += 1) {
-    for (let i = 0; i < above.length - 1; i += 1) {
-      const a = above[i];
-      const b = above[i + 1];
-      const overlapX = Math.min(a.left + a.w, b.left + b.w + 8) - Math.max(a.left, b.left);
-      const overlapY = Math.min(a.top + a.h, b.top + b.h) - Math.max(a.top, b.top);
-      if (overlapX <= 0 || overlapY <= 0) continue;
-      const shift = overlapX / 2 + 4;
-      a.left -= shift;
-      b.left += shift;
-    }
-  }
-  if (!bounds) return;
-  for (const item of above) {
-    const roomRight = Math.max(bounds.left + 6, bounds.right - 6 - item.w);
-    item.left = Math.min(Math.max(item.left, bounds.left + 6), roomRight);
-  }
-}
-
 export function pinSpokeTitles(items, bounds = null) {
   const edge = 8;
   const gaps = {
@@ -211,5 +188,4 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
     else placeSide(item, item.nx - (you?.nx ?? item.nx));
   });
   pinSpokeTitles(items, bounds);
-  separateMissionTitles(items, bounds);
 }

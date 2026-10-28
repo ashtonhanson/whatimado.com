@@ -1,5 +1,5 @@
 import { escapeHtml, scrollFrameChildIntoView } from "../ui.js";
-import { needsHousingFirst, needsIdFirst, needsTransportHelp } from "../intake/stability-gates.js";
+import { shouldBlockJobBoards } from "../intake/stability-gates.js";
 
 const GATE_ID = "v2-confirm-gate";
 
@@ -7,18 +7,15 @@ const FALLBACK_INTRO = "Here's a high-level plan based on what you shared. Revie
 
 /** @param {import("../state/user-profile.js").UserProfile} profile @param {string} [title] */
 export function fallbackPlanSummary(profile, title = "this path") {
-  const housing = needsHousingFirst(profile);
-  const id = needsIdFirst(profile);
-  const transport = needsTransportHelp(profile);
-  if (housing || id || transport) {
-    const bullets = [];
-    if (housing) bullets.push("Step: Sort a safe place to stay and a backup for this week");
-    if (id) bullets.push("Step: Replace the ID or documents you said you need");
-    if (transport) bullets.push("Step: Line up a way to get to the first conversation");
-    bullets.push(`Step: Take the first practical action on “${title}”`);
+  if (shouldBlockJobBoards(profile)) {
     return {
       intro: FALLBACK_INTRO,
-      bullets: bullets.map((bullet, index) => bullet.replace(/^Step/, `Step ${index + 1}`))
+      bullets: [
+        "Step 1: Sort a safe place to stay and a backup for this week",
+        "Step 2: Replace ID and essential documents",
+        "Step 3: Set up mail and basic benefits so later work is possible",
+        `Step 4: Return to “${title}” once the basics are stable`
+      ]
     };
   }
   return {
@@ -90,7 +87,7 @@ export function buildPlanSummaryPrompt(idea, contextBlock, revision = "") {
     '{"intro":"2-3 short supportive sentences asking if this looks right","bullets":["Step 1: ...","Step 2: ..."]}\n' +
     "- 3 to 7 bullets.\n" +
     "- Simple, scannable language — no jargon.\n" +
-    "- Add a housing, ID, or transportation step only when the profile confirms that specific need. An unanswered question is not a need. Needing income soon is not homelessness or missing ID. Keep their stated goals, skills, experience, and constraints.\n"
+    "- Stability-first when ID or housing is not confirmed as has. Do not open with job boards in that case.\n"
   );
 }
 

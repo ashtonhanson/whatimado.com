@@ -129,7 +129,6 @@ export function renderIntakeChips(container, spec) {
             `<button type="button" class="v2-intake-chip v2-text-box v2-text-box--chrome" data-field="${escapeHtml(option.field || "")}" data-value="${escapeHtml(option.value)}"${pressed}>${escapeHtml(option.label)}</button>`
         )
         .join("")}</div>` +
-      `<p class="v2-intake-chips__free">Or type your own answer below.</p>` +
       (spec.multiple
         ? `<div class="v2-intake-chips__done-row">
             <span class="v2-intake-chips__hint">Pick all that apply</span>

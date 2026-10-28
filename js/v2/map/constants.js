@@ -25,7 +25,7 @@ export const HOME_RETURN_KICK = 0.014;
 export const HOME_RETURN_KICK_MAX = 1.35;
 
 /** Pinch and wheel zoom. Fitted maps sit below the old 0.72 floor, which snapped a zoom-out larger. */
-export const ZOOM_MIN = 0.28;
+export const ZOOM_MIN = 0.36;
 /** Phone maps are fitted even smaller. Pinch has to reach that size. */
 export const ZOOM_MIN_MOBILE = 0.28;
 export const ZOOM_MAX = 2.45;
