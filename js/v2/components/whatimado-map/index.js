@@ -2759,6 +2759,8 @@ export class WhatimadoMap extends HTMLElement {
         const rank = (item) =>
           item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;
         const keepLabel = (item) =>
+          item.kind === "path" ||
+          item.kind === "main" ||
           item.nodeId === "option-settings" ||
           item.nodeId === "option-analytics" ||
           item.nodeId === "option-notes" ||
@@ -2944,6 +2946,12 @@ export class WhatimadoMap extends HTMLElement {
    */
   _renderLayer(layer, nodes, edges, options) {
     if (!layer) return;
+    if (options.layer === "live") {
+      this.classList.toggle(
+        "is-roadmap-open",
+        nodes.some((node) => node.type === "path" && node.id === this._selectedId)
+      );
+    }
 
     const parts = [];
     /** @type {{ isAnchor: boolean, html: string }[]} */
