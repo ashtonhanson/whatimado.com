@@ -314,10 +314,9 @@ const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
 const MISSION_STEP = 34;
+const MISSION_TITLE_GAP_PX = 16;
 const TASK_STACK_STEP = 30;
-const MAP_LABEL_FONT_PX = 12.5;
-/** Column gap is measured at twice the map-label size so mission nodes stay further apart. */
-const MISSION_COLUMN_FONT_PX = MAP_LABEL_FONT_PX * 2;
+const MAP_LABEL_FONT = "500 12.5px sans-serif";
 /** Screen length of every line that leaves You, so each title stays with its own dot after the map is fitted. */
 const SPOKE_SCREEN_PX = { mobile: 64, desktop: 100 };
 
@@ -512,27 +511,15 @@ function tasksForMilestone(nodes, milestoneId) {
 /**
  * @param {string} text
  */
-function measureTitlePx(text, fontPx = MAP_LABEL_FONT_PX, maxLine = 18) {
-  const lines = wrapMapLabel(text || "", maxLine);
+function measureTitlePx(text) {
+  const lines = wrapMapLabel(text || "");
   const label = lines.reduce((best, line) => (line.length > best.length ? line : best), "").toUpperCase();
-  const size = Math.max(8, fontPx);
-  if (typeof document === "undefined") return label.length * size * 0.56;
+  if (typeof document === "undefined") return label.length * 7;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-  if (!ctx) return label.length * size * 0.56;
-  ctx.font = `500 ${size}px sans-serif`;
-  return ctx.measureText(label).width + label.length * size * 0.04;
-}
-
-/** One tab is four figure-widths of the mission and task title. */
-function tabLengthPx(fontPx = MISSION_COLUMN_FONT_PX) {
-  const size = Math.max(8, fontPx);
-  if (typeof document === "undefined") return size * 2.2;
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return size * 2.2;
-  ctx.font = `500 ${size}px sans-serif`;
-  return ctx.measureText("0000").width;
+  if (!ctx) return label.length * 7;
+  ctx.font = MAP_LABEL_FONT;
+  return ctx.measureText(label).width + label.length * 0.5;
 }
 
 /**
@@ -541,30 +528,21 @@ function tabLengthPx(fontPx = MISSION_COLUMN_FONT_PX) {
  * @param {GraphNode[]} nodes
  */
 function linkedMilestoneStep(milestones, nodes) {
-  let maxTaskPx = 0;
-  let maxMissionPx = 0;
-  const missionWrap = isMobileMapLayout() ? 14 : 18;
+  let maxColPx = 0;
   for (const milestone of milestones) {
-    maxMissionPx = Math.max(
-      maxMissionPx,
-      measureTitlePx(milestone.title || milestone.label || "", MISSION_COLUMN_FONT_PX, missionWrap)
-    );
+    let colPx = measureTitlePx(milestone.title || milestone.label || "");
     for (const task of tasksForMilestone(nodes, milestone.id)) {
-      maxTaskPx = Math.max(
-        maxTaskPx,
-        measureTitlePx(mapNodeLabel(task.title || task.label || "", { compact: isMobileMapLayout() }), MISSION_COLUMN_FONT_PX)
-      );
+      colPx = Math.max(colPx, measureTitlePx(mapNodeLabel(task.title || task.label || "", { compact: isMobileMapLayout() })));
     }
+    maxColPx = Math.max(maxColPx, colPx);
   }
-  const unit = mapPxPerUnit();
-  const zoom = 0.5;
-  const radiusPx = nodeRadiusSvg() * unit * zoom;
-  const tab = tabLengthPx(MISSION_COLUMN_FONT_PX);
-  /* Task titles sit to the right of the dot. Mission titles sit centered above it. */
-  const taskGap = radiusPx + 8 + maxTaskPx + tab + radiusPx;
-  const missionGap = maxMissionPx + tab;
-  const gapPx = Math.max(radiusPx * 2 + tab, taskGap, missionGap);
-  return Math.max(MISSION_STEP, gapPx / (unit * zoom));
+  const pxPerUnit = mapPxPerUnit();
+  let gapPx = Math.max(88, maxColPx + MISSION_TITLE_GAP_PX + 10);
+  if (isMobileMapLayout()) {
+    gapPx = Math.max(28, maxColPx + 4);
+  }
+  const stepSvg = gapPx / (pxPerUnit * 0.5);
+  return Math.max(MISSION_STEP, stepSvg);
 }
 
 /**
