@@ -314,7 +314,6 @@ const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
 const MISSION_STEP = 34;
-const MISSION_TITLE_GAP_PX = 16;
 const TASK_STACK_STEP = 30;
 const MAP_LABEL_FONT = "500 12.5px sans-serif";
 /** Screen length of every line that leaves You, so each title stays with its own dot after the map is fitted. */
@@ -527,40 +526,37 @@ function measureTitlePx(text) {
  * @param {GraphNode[]} milestones
  * @param {GraphNode[]} nodes
  */
-function linkedMilestoneStep(milestones, nodes) {
-  let maxColPx = 0;
+function linkedMilestoneStep(milestones, nodes, extraTitles = []) {
+  let maxTitlePx = 0;
+  for (const title of extraTitles) maxTitlePx = Math.max(maxTitlePx, measureTitlePx(title));
   for (const milestone of milestones) {
-    let colPx = measureTitlePx(milestone.title || milestone.label || "");
     for (const task of tasksForMilestone(nodes, milestone.id)) {
-      colPx = Math.max(colPx, measureTitlePx(mapNodeLabel(task.title || task.label || "", { compact: isMobileMapLayout() })));
+      maxTitlePx = Math.max(
+        maxTitlePx,
+        measureTitlePx(mapNodeLabel(task.title || task.label || "", { compact: isMobileMapLayout() }))
+      );
     }
-    maxColPx = Math.max(maxColPx, colPx);
   }
-  const pxPerUnit = mapPxPerUnit();
-  let gapPx = Math.max(88, maxColPx + MISSION_TITLE_GAP_PX + 10);
-  if (isMobileMapLayout()) {
-    gapPx = Math.max(28, maxColPx + 4);
-  }
-  const stepSvg = gapPx / (pxPerUnit * 0.5);
-  return Math.max(MISSION_STEP, stepSvg);
+  const unit = mapPxPerUnit();
+  /* Size the gap for the zoom the roadmap fit can reach, so a later shrink
+     does not pull the next column back over the title. */
+  const zoom = isMobileMapLayout() ? 0.44 : 0.42;
+  const radiusPx = nodeRadiusSvg() * unit * zoom;
+  const gapPx = radiusPx + 8 + maxTitlePx + 12 + radiusPx;
+  return Math.max(MISSION_STEP, gapPx / (unit * zoom));
 }
 
 /**
- * Roadmap → first mission. Only needs to clear the two titles over those dots and the
- * alternate roadmap titles that run right of the roadmap column, level with the first tasks.
- * @param {GraphNode|undefined} chosen
- * @param {GraphNode[]} milestones
+ * The first mission uses the same column step, widened when an alternate roadmap
+ * title beside that column is longer than the task titles.
  * @param {GraphNode[]} pathSiblings
  * @param {number} milestoneStep
+ * @param {GraphNode[]} nodes
+ * @param {GraphNode[]} milestones
  */
-function linkedFirstMilestoneStep(chosen, milestones, pathSiblings, milestoneStep) {
-  if (!milestones.length) return milestoneStep;
-  const titlePx = (node) => measureTitlePx(node?.title || node?.label || "") * (13 / 12.5);
-  const kickerPx = measureTitlePx("Roadmaps") * 0.82;
-  const mainPx = Math.max(titlePx(chosen), kickerPx);
-  let gapPx = (mainPx + titlePx(milestones[0])) / 2 + (isMobileMapLayout() ? 12 : 18);
-  for (const sibling of pathSiblings) gapPx = Math.max(gapPx, titlePx(sibling) + 18);
-  return Math.min(milestoneStep, Math.max(MISSION_STEP, gapPx / (mapPxPerUnit() * 0.5)));
+function linkedFirstMilestoneStep(pathSiblings, milestoneStep, nodes, milestones) {
+  const titles = pathSiblings.map((node) => node.title || node.label || "");
+  return Math.max(milestoneStep, linkedMilestoneStep(milestones, nodes, titles));
 }
 
 /**
@@ -584,8 +580,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
       !linkedOffsets[node.id]
   );
   const milestoneStep = linkedMilestoneStep(milestones, nodes);
-  const chosen = nodes.find((node) => node.id === chosenId);
-  const firstStep = linkedFirstMilestoneStep(chosen, milestones, pathSiblings, milestoneStep);
+  const firstStep = linkedFirstMilestoneStep(pathSiblings, milestoneStep, nodes, milestones);
   const chosenReach = spoke;
   const chosenDist = chosenReach * spread;
   /** @param {number} index */

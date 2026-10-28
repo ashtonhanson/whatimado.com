@@ -429,7 +429,6 @@ export class WhatimadoMap extends HTMLElement {
           this._animatePanTo(target.panX, target.panY, false);
         }
       }
-      this._seatPlusPastTitle();
     };
     window.addEventListener("resize", this._onViewportResize);
     requestAnimationFrame(() => {
@@ -527,7 +526,6 @@ export class WhatimadoMap extends HTMLElement {
     this.removeEventListener("pointerup", this._onPointerUp);
     this.removeEventListener("pointercancel", this._onPointerUp);
     window.removeEventListener("resize", this._onViewportResize);
-    if (this._plusSeatRaf) cancelAnimationFrame(this._plusSeatRaf);
     window.removeEventListener("pointermove", this._onHoverPointerMove, true);
     window.removeEventListener("mousemove", this._onHoverMouseMove, true);
     window.removeEventListener("wheel", this._onWheel, true);
@@ -2772,79 +2770,8 @@ export class WhatimadoMap extends HTMLElement {
         }
       }
       this._writeCallouts(items);
-      this._seatPlusPastTitle();
-      if (this._plusSeatRaf) cancelAnimationFrame(this._plusSeatRaf);
-      this._plusSeatRaf = requestAnimationFrame(() => {
-        this._plusSeatRaf = 0;
-        this._seatPlusPastTitle();
-      });
     } finally {
       this._layingOut = false;
-    }
-  }
-
-  /**
-   * Keep the plus a short gap past the previous dot. A long title must not stretch this line.
-   */
-  _seatPlusPastTitle() {
-    if (!roadmapFocusLinked) return;
-    const svg = this._svg;
-    const layer = this._liveLayer;
-    if (!svg || !layer) return;
-    const plus = layer.querySelector(".whatimado-map__node.is-more");
-    const plusId = plus?.getAttribute("data-node-id") || "";
-    const beforeId = [...layer.querySelectorAll(".whatimado-map__edge")]
-      .find((line) => line.getAttribute("data-to") === plusId)
-      ?.getAttribute("data-from");
-    const before = beforeId ? layer.querySelector(`.whatimado-map__node[data-node-id="${CSS.escape(beforeId)}"]`) : null;
-    const fromBody = before?.querySelector(".whatimado-map__node-body");
-    const plusBody = plus?.querySelector(".whatimado-map__node-body");
-    if (!(plus instanceof SVGGElement) || !(fromBody instanceof SVGCircleElement) || !(plusBody instanceof SVGCircleElement)) return;
-
-    const fromBox = fromBody.getBoundingClientRect();
-    const plusBox = plusBody.getBoundingClientRect();
-    if (fromBox.width < 2 || plusBox.width < 2) return;
-    const fromFloat = this._floatScreenOffset(fromBody);
-    const plusFloat = this._floatScreenOffset(plusBody);
-    const fromRight = fromBox.right - fromFloat.x;
-    const plusCenter = plusBox.left + plusBox.width / 2 - plusFloat.x;
-    const plusR = plusBox.width / 2;
-    const cap = window.matchMedia("(max-width: 900px)").matches ? 12 : 18;
-    const dx = fromRight + cap + plusR - plusCenter;
-    if (Math.abs(dx) < 1) return;
-
-    const ctm = plus.getScreenCTM();
-    const inv = invertCtm(ctm);
-    if (!inv) return;
-    const origin = svg.createSVGPoint();
-    const shifted = svg.createSVGPoint();
-    shifted.x = dx;
-    const localDelta = shifted.matrixTransform(inv).x - origin.matrixTransform(inv).x;
-    if (!Number.isFinite(localDelta) || Math.abs(localDelta) < 0.4) return;
-
-    const shift = (el, name) => {
-      const value = parseFloat(el.getAttribute(name) || "");
-      if (Number.isFinite(value)) el.setAttribute(name, (value + localDelta).toFixed(1));
-    };
-    plus.querySelectorAll("[cx]").forEach((el) => shift(el, "cx"));
-    plus.querySelectorAll("line").forEach((el) => {
-      shift(el, "x1");
-      shift(el, "x2");
-    });
-    if (plusId) {
-      layer.querySelectorAll(".whatimado-map__edge").forEach((line) => {
-        if (line.getAttribute("data-to") === plusId) shift(line, "x2");
-        if (line.getAttribute("data-from") === plusId) shift(line, "x1");
-      });
-    }
-    const graphNode = this._liveNodes.find((node) => node.id === plusId);
-    if (graphNode) graphNode.x += localDelta / VIEW_W;
-    const drift = this._driftNodes?.get(plusId);
-    if (drift) {
-      drift.baseX += localDelta;
-      drift.originX += localDelta;
-      drift.homeVx = 0;
-      drift.glideVx = 0;
     }
   }
 
@@ -3106,7 +3033,7 @@ export class WhatimadoMap extends HTMLElement {
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}" style="${styleVars}">
           <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r + 16, 30)}" />
           <g class="whatimado-map__node-float">
-            <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
+          <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${bodyR}" />
             ${node.type === "more"
               ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.5}" y1="${cy}" x2="${cx + r * 0.5}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.5}" x2="${cx}" y2="${cy + r * 0.5}" /></g>`
