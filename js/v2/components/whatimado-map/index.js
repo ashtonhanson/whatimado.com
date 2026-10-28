@@ -1312,10 +1312,10 @@ export class WhatimadoMap extends HTMLElement {
     const pad = 4;
     const reach = (value, cap) => Math.min(cap, Math.max(0, value)) + pad;
     return {
-      above: reach(dots.top - all.top, 58),
-      below: reach(all.bottom - dots.bottom, 24),
+      above: reach(dots.top - all.top, 96),
+      below: reach(all.bottom - dots.bottom, 48),
       left: reach(dots.left - all.left, 130),
-      right: reach(all.right - dots.right, 130)
+      right: reach(all.right - dots.right, 280)
     };
   }
 
@@ -2565,12 +2565,13 @@ export class WhatimadoMap extends HTMLElement {
    * choose a font that lands near 13px on screen.
    * @param {SVGTextElement[]} texts
    */
-  _applyLabelFont(texts, fontPx) {
+  _applyLabelFont(texts, fontPx, sizeKickers = false) {
     texts.forEach((text) => {
       text.style.fontSize = `${fontPx}px`;
       text.style.letterSpacing = "0.04em";
       text.style.strokeWidth = "1px";
     });
+    if (!sizeKickers) return;
     this._liveLayer?.querySelectorAll(".whatimado-map__kicker").forEach((kicker) => {
       if (!(kicker instanceof SVGTextElement)) return;
       kicker.style.fontSize = `${fontPx * KICKER_SCALE}px`;
@@ -2579,22 +2580,29 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   _fitLabelFont(texts, target = 13) {
+    if (!texts.length) return target;
     const zoomKey = Math.round((this._zoom || 1) * 20);
-    if (this._labelZoomKey === zoomKey && this._labelFontPx) {
-      this._applyLabelFont(texts, this._labelFontPx);
-      return this._labelFontPx;
+    if (!this._labelFontByTarget || this._labelZoomKey !== zoomKey) {
+      this._labelFontByTarget = new Map();
+      this._labelZoomKey = zoomKey;
+    }
+    const sizeKickers = target <= 13;
+    const cached = this._labelFontByTarget.get(target);
+    if (cached) {
+      this._applyLabelFont(texts, cached, sizeKickers);
+      return cached;
     }
     const probe = 20;
+    const sample = texts.find((text) => text.querySelectorAll("tspan").length < 2) || texts[0];
     texts.forEach((text) => {
       text.style.fontSize = `${probe}px`;
     });
-    const painted = texts[0].getBoundingClientRect().height || target;
+    const line = sample.querySelector("tspan") || sample;
+    const painted = line.getBoundingClientRect().height || target;
     const scale = painted / probe;
-    let fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
-    if (this._labelFontPx && fontPx < this._labelFontPx) fontPx = this._labelFontPx;
-    this._labelZoomKey = zoomKey;
-    this._labelFontPx = fontPx;
-    this._applyLabelFont(texts, fontPx);
+    const fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
+    this._labelFontByTarget.set(target, fontPx);
+    this._applyLabelFont(texts, fontPx, sizeKickers);
     return fontPx;
   }
 
@@ -2734,7 +2742,15 @@ export class WhatimadoMap extends HTMLElement {
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        this._fitLabelFont(texts, 13);
+        const doubled = [];
+        const rest = [];
+        texts.forEach((text) => {
+          const group = text.closest(".whatimado-map__node");
+          if (group?.classList.contains("is-mission") || group?.classList.contains("is-task")) doubled.push(text);
+          else rest.push(text);
+        });
+        this._fitLabelFont(rest, 13);
+        this._fitLabelFont(doubled, 26);
         items = buildItems();
         if (!items.length) return;
         placeTitleBesideNode(

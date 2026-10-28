@@ -79,10 +79,10 @@ export function shortenMapLabel(value) {
   return (kept.length ? kept : words).slice(0, 2).join(" ");
 }
 
-/** Phone map titles stay one short word when two words would run off the screen. */
+/** Phone map titles stay one word. Two words at the larger title size run off the screen. */
 export function mapNodeLabel(value, { compact = false } = {}) {
   const short = shortenMapLabel(value);
-  if (!compact || short.length <= 14) return short;
+  if (!compact) return short;
   return short.split(/\s+/)[0] || short;
 }
 
@@ -314,9 +314,11 @@ const MAP_W = 800;
 const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
 const MISSION_STEP = 34;
-const MISSION_TITLE_GAP_PX = 16;
 const TASK_STACK_STEP = 30;
-const MAP_LABEL_FONT = "500 12.5px sans-serif";
+const MAP_LABEL_FONT_PX = 12.5;
+/** Mission and task titles paint at twice the other map labels. */
+const MISSION_TASK_TITLE_SCALE = 2;
+const MISSION_TASK_FONT_PX = MAP_LABEL_FONT_PX * MISSION_TASK_TITLE_SCALE;
 /** Screen length of every line that leaves You, so each title stays with its own dot after the map is fitted. */
 const SPOKE_SCREEN_PX = { mobile: 64, desktop: 100 };
 
@@ -346,7 +348,7 @@ export function setExtraExploreOptions(options) {
 
 /** @returns {number} */
 function taskLabelLinePx() {
-  return measureCssVarLength("--v2-map-task-label-line-h") || 17.5;
+  return (measureCssVarLength("--v2-map-task-label-line-h") || 17.5) * MISSION_TASK_TITLE_SCALE;
 }
 
 /** @returns {number} Painted node radius in SVG units. */
@@ -511,15 +513,27 @@ function tasksForMilestone(nodes, milestoneId) {
 /**
  * @param {string} text
  */
-function measureTitlePx(text) {
-  const lines = wrapMapLabel(text || "");
+function measureTitlePx(text, fontPx = MAP_LABEL_FONT_PX, maxLine = 18) {
+  const lines = wrapMapLabel(text || "", maxLine);
   const label = lines.reduce((best, line) => (line.length > best.length ? line : best), "").toUpperCase();
-  if (typeof document === "undefined") return label.length * 7;
+  const size = Math.max(8, fontPx);
+  if (typeof document === "undefined") return label.length * size * 0.56;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-  if (!ctx) return label.length * 7;
-  ctx.font = MAP_LABEL_FONT;
-  return ctx.measureText(label).width + label.length * 0.5;
+  if (!ctx) return label.length * size * 0.56;
+  ctx.font = `500 ${size}px sans-serif`;
+  return ctx.measureText(label).width + label.length * size * 0.04;
+}
+
+/** One tab is four figure-widths of the mission and task title. */
+function tabLengthPx(fontPx = MISSION_TASK_FONT_PX) {
+  const size = Math.max(8, fontPx);
+  if (typeof document === "undefined") return size * 2.2;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return size * 2.2;
+  ctx.font = `500 ${size}px sans-serif`;
+  return ctx.measureText("0000").width;
 }
 
 /**
@@ -528,21 +542,30 @@ function measureTitlePx(text) {
  * @param {GraphNode[]} nodes
  */
 function linkedMilestoneStep(milestones, nodes) {
-  let maxColPx = 0;
+  let maxTaskPx = 0;
+  let maxMissionPx = 0;
+  const missionWrap = isMobileMapLayout() ? 14 : 18;
   for (const milestone of milestones) {
-    let colPx = measureTitlePx(milestone.title || milestone.label || "");
+    maxMissionPx = Math.max(
+      maxMissionPx,
+      measureTitlePx(milestone.title || milestone.label || "", MISSION_TASK_FONT_PX, missionWrap)
+    );
     for (const task of tasksForMilestone(nodes, milestone.id)) {
-      colPx = Math.max(colPx, measureTitlePx(mapNodeLabel(task.title || task.label || "", { compact: isMobileMapLayout() })));
+      maxTaskPx = Math.max(
+        maxTaskPx,
+        measureTitlePx(mapNodeLabel(task.title || task.label || "", { compact: isMobileMapLayout() }), MISSION_TASK_FONT_PX)
+      );
     }
-    maxColPx = Math.max(maxColPx, colPx);
   }
-  const pxPerUnit = mapPxPerUnit();
-  let gapPx = Math.max(88, maxColPx + MISSION_TITLE_GAP_PX + 10);
-  if (isMobileMapLayout()) {
-    gapPx = Math.max(28, maxColPx + 4);
-  }
-  const stepSvg = gapPx / (pxPerUnit * 0.5);
-  return Math.max(MISSION_STEP, stepSvg);
+  const unit = mapPxPerUnit();
+  const zoom = 0.5;
+  const radiusPx = nodeRadiusSvg() * unit * zoom;
+  const tab = tabLengthPx(MISSION_TASK_FONT_PX);
+  /* Task titles sit to the right of the dot. Mission titles sit centered above it. */
+  const taskGap = radiusPx + 8 + maxTaskPx + tab + radiusPx;
+  const missionGap = maxMissionPx + tab;
+  const gapPx = Math.max(radiusPx * 2 + tab, taskGap, missionGap);
+  return Math.max(MISSION_STEP, gapPx / (unit * zoom));
 }
 
 /**
