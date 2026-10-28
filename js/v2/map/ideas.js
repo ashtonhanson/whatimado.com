@@ -1,4 +1,4 @@
-import { shouldBlockJobBoards } from "../intake/stability-gates.js";
+import { needsHousingFirst, needsIdFirst, needsTransportHelp } from "../intake/stability-gates.js";
 
 export const MAX_MAP_PATHS = 6;
 
@@ -122,9 +122,26 @@ export function ideaCountForMode(_pathMode) {
  * @param {import("../state/user-profile.js").UserProfile} profile
  * @param {string | null} [pathMode]
  */
+const TRANSPORT_FALLBACK = {
+  title: "Sort a way to get there",
+  type: "Stability — transportation",
+  tagline: "Line up a bus pass, a ride, or another way to reach the first real step.",
+  why: "They said getting around is the barrier, so the plan starts there.",
+  cost: "$0",
+  timeline: "This week",
+  income: "Keeps the rest of the plan reachable"
+};
+
 export function fallbackIdeas(profile, pathMode = null) {
-  const source = shouldBlockJobBoards(profile) ? STABILITY_FALLBACKS : DEFAULT_FALLBACKS;
-  return normalizeIdeas(source).slice(0, ideaCountForMode(pathMode));
+  const picked = [];
+  if (needsHousingFirst(profile)) picked.push(STABILITY_FALLBACKS[0]);
+  if (needsIdFirst(profile)) picked.push(STABILITY_FALLBACKS[1]);
+  if (needsTransportHelp(profile)) picked.push(TRANSPORT_FALLBACK);
+  for (const item of DEFAULT_FALLBACKS) {
+    if (picked.length >= ideaCountForMode(pathMode)) break;
+    picked.push(item);
+  }
+  return normalizeIdeas(picked).slice(0, ideaCountForMode(pathMode));
 }
 
 /** @param {string} raw */
@@ -211,6 +228,8 @@ export function buildIdeasPrompt(messages, contextBlock, spec) {
     "Each path must use a different primary strategy (employment, self-employment, short training, gig/local work, or community route) unless stability-first rules say otherwise.\n" +
     "Every set must include at least one $0 path. Keep income projections modest and realistic.\n" +
     "Titles, taglines, and first steps should feel specific to what THIS person said — not generic hustle templates.\n" +
+    "Preserve the goals, skills, experience, and constraints they stated.\n" +
+    "Do not add housing, shelter, ID, or transportation unless they confirmed that specific need. An unanswered question is not a need. Needing income soon, or other financial pressure, is not homelessness and is not missing ID.\n" +
     "Keep tagline and why short enough to scan on a phone.\n" +
     `${modeNote}${excludeBlock}${replaceBlock}` +
     extra +

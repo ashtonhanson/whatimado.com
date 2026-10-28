@@ -591,7 +591,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   /** @param {number} index */
   const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;
   const lastDist = milestones.length ? milestoneDist(milestones.length - 1) : chosenDist;
-  const plusScreen = isMobileMapLayout() ? 12 : 18;
+  const plusScreen = isMobileMapLayout() ? 20 : 30;
   const plusDist = lastDist + (plusScreen / (mapPxPerUnit() * 0.5)) * spread;
   const originY = YOU_LINKED.y;
   const columnStep = stepForTitles([], { singleLine: true });

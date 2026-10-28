@@ -18,7 +18,7 @@ export const STABILITY_CONTEXT = {
 
 export function mentionsIdNeed(text = "") {
   const blob = String(text || "").toLowerCase();
-  return /\b(need(?:s|ed)? (?:an? )?(?:id|identification|birth certificate|driver'?s licen[sc]e|state id|ssn|social security)|don'?t have (?:a |an )?(?:id|birth certificate|driver'?s licen[sc]e|social security)|no (?:valid )?id\b|no job or id|no id or job|missing (?:my )?(?:id|documents|papers)|lost my (?:id|licen[sc]e)|get(?:ting)? (?:an? )?(?:id|birth certificate|documents)|replace (?:my )?(?:id|licen[sc]e)|sort (?:my )?id|id and housing|without (?:an? )?id|expired (?:id|licen[sc]e))\b/.test(
+  return /\b(need(?:s|ed)? (?:an? )?(?:id|identification|birth certificate|driver'?s licen[sc]e|state id|ssn|social security)|don'?t have (?:a |an )?(?:state )?(?:id|birth certificate|driver'?s licen[sc]e|social security)|no (?:valid |state )?id\b|no job or id|no id or job|missing (?:my )?(?:id|documents|papers)|lost my (?:id|licen[sc]e)|get(?:ting)? (?:an? )?(?:id|birth certificate|documents)|replace (?:my )?(?:id|licen[sc]e)|sort (?:my )?id|id and housing|without (?:an? )?id|expired (?:id|licen[sc]e))\b/.test(
     blob
   );
 }
@@ -33,7 +33,7 @@ export function confirmsHasId(text = "") {
 
 export function mentionsHousingInstability(text = "") {
   const blob = String(text || "").toLowerCase();
-  return /\b(no place to stay|nowhere to stay|no(?:where| )?(?:to )?(?:live|stay|sleep)|(?:don'?t|do not) have (?:a )?(?:place|home|housing|somewhere to stay)|homeless|unhoused|in a shelter|living in (?:a |my )?(?:car|motel|shelter|van)|no home|no housing|evict|between places|couch ?surf|staying with friends temporarily|no permanent address)\b/.test(
+  return /\b(no place to stay|nowhere to stay|no(?:where| )?(?:to )?(?:live|stay|sleep)|(?:don'?t|do not) have (?:a )?(?:place|home|housing|somewhere to stay)|homeless|unhoused|in a shelter|staying at a shelter|living in (?:a |my )?(?:car|motel|shelter|van)|no home|no housing|need(?:s|ed)? (?:a )?(?:place to stay|housing|shelter)|evict|between places|couch ?surf|staying with friends temporarily|no permanent address)\b/.test(
     blob
   );
 }
@@ -57,6 +57,14 @@ export function mentionsReentryHardship(text = "") {
     ) ||
     /\b(background check).{0,48}\b(record|felony|conviction|jail|prison)\b/.test(blob) ||
     /\b(record|felony|conviction|jail|prison).{0,48}\b(background check)\b/.test(blob)
+  );
+}
+
+/** A stated transportation barrier. Money trouble alone is not one. */
+export function mentionsTransportBarrier(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(no (?:car|vehicle|transport|transportation|ride)|don'?t have (?:a )?(?:car|vehicle|transport|transportation)|can'?t get (?:there|around)|no way to get (?:there|around)|stranded|need (?:a )?bus pass|transportation is (?:a )?(?:problem|barrier|issue)|without (?:a )?ride)\b/.test(
+    blob
   );
 }
 
@@ -233,17 +241,33 @@ export function classifyStabilityContext(text = "", ctx = {}) {
  */
 export function shouldSuppressIdStep(text = "", ctx = {}) {
   if (confirmsHasId(text)) return true;
-  return !hasPersonalStabilityNeed(text, ctx);
+  if (mentionsIdNeed(text)) return false;
+  if (asksForLocalServices(text) && !isProductAudienceReentry(text, ctx)) return false;
+  return true;
 }
 
 /**
  * @param {string} text
  * @param {{ founder?: boolean }} [ctx]
  */
-export function shouldSuppressHousingStep(text = "", ctx = {}) {
+export function shouldSuppressHousingStep(text = "", _ctx = {}) {
   if (confirmsHasHousing(text)) return true;
-  if (ctx.founder || isClosedTestingFlow(text)) {
-    return !mentionsHousingInstability(text);
-  }
-  return !hasPersonalStabilityNeed(text, ctx);
+  return !mentionsHousingInstability(text);
+}
+
+/** Ask about getting around only when they describe that barrier. */
+export function shouldSuppressTransportStep(text = "") {
+  return !mentionsTransportBarrier(text);
+}
+
+/**
+ * Unclear, and not an obvious professional or crisis. One short question,
+ * not the shelter checklist.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function shouldAskSituationQuestion(text = "", ctx = {}) {
+  if (hasPersonalStabilityNeed(text, ctx) || mentionsTransportBarrier(text)) return false;
+  if (isTrustedProfessionalFlow(text, ctx)) return false;
+  return true;
 }

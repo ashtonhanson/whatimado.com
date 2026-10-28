@@ -24,17 +24,22 @@ export function renderPathCards(container, spec) {
 
   const { paths, selectedId } = spec;
   const cards = paths
-    .map((path) => {
+    .map((path, index) => {
       const selected = path.id === selectedId;
       const meta = [path.cost, path.timeline, path.income].filter(Boolean);
       return `
       <article class="v2-path-card${selected ? " is-selected" : ""}" data-path-id="${escapeHtml(path.id)}" style="--path-accent: ${escapeHtml(path.accent || "#2ee8d6")}">
         <button type="button" class="v2-path-card__open" data-path-open="${escapeHtml(path.id)}">
-          ${path.ideaType ? `<p class="v2-path-card__type">${escapeHtml(path.ideaType)}</p>` : ""}
-          <h3>${escapeHtml(path.title || path.label)}</h3>
-          ${path.tagline || path.description ? `<p class="v2-path-card__tagline">${escapeHtml(path.tagline || path.description || "")}</p>` : ""}
-          ${meta.length ? `<p class="v2-path-card__meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</p>` : ""}
-          ${path.why ? `<p class="v2-path-card__why">${escapeHtml(path.why)}</p>` : ""}
+          <div class="v2-choice-row">
+            <span class="v2-dropcap">${index + 1}</span>
+            <div class="v2-choice-copy">
+              ${path.ideaType ? `<p class="v2-path-card__type">${escapeHtml(path.ideaType)}</p>` : ""}
+              <h3>${escapeHtml(path.title || path.label)}</h3>
+              ${path.tagline || path.description ? `<p class="v2-path-card__tagline">${escapeHtml(path.tagline || path.description || "")}</p>` : ""}
+              ${meta.length ? `<p class="v2-path-card__meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</p>` : ""}
+              ${path.why ? `<p class="v2-path-card__why">${escapeHtml(path.why)}</p>` : ""}
+            </div>
+          </div>
         </button>
         <div class="v2-path-card__actions">
           <button type="button" class="v2-path-card__action v2-text-box v2-text-box--chrome" data-path-discuss="${escapeHtml(path.id)}">Discuss</button>

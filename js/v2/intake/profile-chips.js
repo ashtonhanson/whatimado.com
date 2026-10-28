@@ -8,6 +8,7 @@ export const INTAKE_STEP = {
   ID: "id_status",
   HOUSING: "housing_status",
   TRANSPORT: "transport_status",
+  SITUATION: "situation",
   DEPENDENTS: "dependent_support",
   INCOME: "income",
   PATH: "path",
@@ -51,6 +52,17 @@ export function getChipStep(step, ctx = {}) {
           { field: "housingStatus", value: "has", label: "I have a reliable place" },
           { field: "housingStatus", value: "needs", label: "Only temporary — keep that in the plan" },
           { field: "housingStatus", value: "needs", label: "Not right now — help me find housing" }
+        ]
+      };
+    case INTAKE_STEP.SITUATION:
+      return {
+        prompt:
+          "Quick check before I map this: is a place to stay, an ID, or a way to get around actually in the way? If not, we'll stay with the work you described.",
+        options: [
+          { field: "practicalBarrier", value: "none", label: "Nothing like that — stay with my goal" },
+          { field: "practicalBarrier", value: "housing", label: "I need a stable place to stay" },
+          { field: "practicalBarrier", value: "id", label: "I need an ID or documents" },
+          { field: "practicalBarrier", value: "transport", label: "Getting around is the barrier" }
         ]
       };
     case INTAKE_STEP.TRANSPORT:
@@ -171,12 +183,9 @@ function chipSequence(ctx = {}) {
   const steps = [];
   if (!ctx.suppressId) steps.push(INTAKE_STEP.ID);
   if (!ctx.suppressHousing) steps.push(INTAKE_STEP.HOUSING);
-  steps.push(
-    INTAKE_STEP.TRANSPORT,
-    INTAKE_STEP.DEPENDENTS,
-    INTAKE_STEP.INCOME,
-    INTAKE_STEP.PATH
-  );
+  if (!ctx.suppressTransport) steps.push(INTAKE_STEP.TRANSPORT);
+  if (ctx.askSituation) steps.push(INTAKE_STEP.SITUATION);
+  steps.push(INTAKE_STEP.DEPENDENTS, INTAKE_STEP.INCOME, INTAKE_STEP.PATH);
   if (founder) {
     steps.push(INTAKE_STEP.FOUNDER);
     return steps;
@@ -197,6 +206,8 @@ export function chipStepAnswered(profile, step) {
       return p.housingStatus === "has" || p.housingStatus === "needs";
     case INTAKE_STEP.TRANSPORT:
       return p.transportStatus === "has" || p.transportStatus === "limited" || p.transportStatus === "needs";
+    case INTAKE_STEP.SITUATION:
+      return p.practicalBarrier === "none" || p.practicalBarrier === "housing" || p.practicalBarrier === "id" || p.practicalBarrier === "transport";
     case INTAKE_STEP.DEPENDENTS:
       return p.dependentSupport === "none" || p.dependentSupport === "no_help" || p.dependentSupport === "needs_help";
     case INTAKE_STEP.INCOME:
@@ -221,7 +232,7 @@ export function chipStepAnswered(profile, step) {
  * Next chip step that is still unknown. Location/name are handled separately.
  * Completed steps are skipped even if a parser missed the field, so we never loop.
  * @param {import("../state/user-profile.js").UserProfile} profile
- * @param {{ founder?: boolean, completedSteps?: string[], skipStep?: string, suppressId?: boolean, suppressHousing?: boolean }} [ctx]
+ * @param {{ founder?: boolean, completedSteps?: string[], skipStep?: string, suppressId?: boolean, suppressHousing?: boolean, suppressTransport?: boolean, askSituation?: boolean }} [ctx]
  */
 export function nextChipStep(profile, ctx = {}) {
   const p = normalizeUserProfile(profile);
@@ -350,6 +361,19 @@ export function parseFounderStage(text) {
   return "";
 }
 
+export function parseSituationAnswer(text) {
+  const q = String(text || "").toLowerCase();
+  const housing = /\b(place to stay|housing|shelter|homeless|no place|nowhere to stay)\b/.test(q);
+  const id = /\b(no id|need (?:an )?id|missing id|documents|driver'?s license|photo id)\b/.test(q);
+  const transport = /\b(no car|no transport|getting around|bus pass|no ride|transportation)\b/.test(q);
+  const clear = /\b(nothing|none of that|not in the way|stay with my goal|no barrier|focus on the work)\b/.test(q);
+  if (clear && !housing && !id && !transport) return { field: "practicalBarrier", value: "none" };
+  if (housing && !id && !transport) return { field: "practicalBarrier", value: "housing" };
+  if (id && !housing && !transport) return { field: "practicalBarrier", value: "id" };
+  if (transport && !housing && !id) return { field: "practicalBarrier", value: "transport" };
+  return { field: "", value: "" };
+}
+
 /**
  * @param {string} step
  * @param {string} text
@@ -362,6 +386,8 @@ export function parseChipAnswer(step, text) {
       return { field: "housingStatus", value: parseHousingStatus(text) };
     case INTAKE_STEP.TRANSPORT:
       return { field: "transportStatus", value: parseTransportStatus(text) };
+    case INTAKE_STEP.SITUATION:
+      return parseSituationAnswer(text);
     case INTAKE_STEP.DEPENDENTS:
       return { field: "dependentSupport", value: parseDependentSupport(text) };
     case INTAKE_STEP.INCOME:

@@ -21,8 +21,10 @@ import { applyLocationAnswer, isLocationStep, locationPrompt } from "./location.
 import {
   classifyStabilityContext,
   isClosedTestingFlow,
+  shouldAskSituationQuestion,
   shouldSuppressHousingStep,
-  shouldSuppressIdStep
+  shouldSuppressIdStep,
+  shouldSuppressTransportStep
 } from "./persona-signals.js";
 
 function firstUserText() {
@@ -96,6 +98,14 @@ export function createIntakeController(ui) {
     appStore.journey.completedIntakeSteps = list;
   }
 
+  function applyBarrierChoice(profile, field, value) {
+  if (field !== "practicalBarrier") return profile;
+  if (value === "housing") return setUserProfileField(profile, "housingStatus", "needs");
+  if (value === "id") return setUserProfileField(profile, "idStatus", "needs");
+  if (value === "transport") return setUserProfileField(profile, "transportStatus", "needs");
+  return profile;
+}
+
   function chipCtx(extra = {}) {
     const blob = userBlob();
     const founder = founderMode();
@@ -104,6 +114,8 @@ export function createIntakeController(ui) {
       completedSteps: completedSteps(),
       suppressId: shouldSuppressIdStep(blob, { founder }),
       suppressHousing: shouldSuppressHousingStep(blob, { founder }),
+      suppressTransport: shouldSuppressTransportStep(blob),
+      askSituation: shouldAskSituationQuestion(blob, { founder }),
       ...extra
     };
   }
@@ -321,6 +333,7 @@ export function createIntakeController(ui) {
     if (!alreadyLogged) pushUser(option.label);
     markStepComplete(step);
     appStore.profile = setUserProfileField(appStore.profile, option.field, option.value);
+    appStore.profile = applyBarrierChoice(appStore.profile, option.field, option.value);
     acknowledgeStabilityAnswer(option.field, option.value);
     const next = nextChipStep(appStore.profile, chipCtx({ skipStep: step }));
     if (next) askChipStep(next);

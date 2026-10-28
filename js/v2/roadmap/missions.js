@@ -1,7 +1,7 @@
 import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
 import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
-import { shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
+import { needsHousingFirst, needsIdFirst, needsTransportHelp, writingVoice } from "../intake/stability-gates.js";
 import { buildSharedPromptContext, markMissionsAcceptedForGoal } from "../state/goal-brief.js";
 import { formatUserLocation } from "../state/location.js";
 import { normalizeResources, parseResourcesResponse, renderResourcesRail, resourcesForRail, resourcesMatchingFirstMissions } from "./resources.js";
@@ -41,38 +41,45 @@ const circleBackUnsaved = new Map();
  */
 export function fallbackStages(idea, profile) {
   const title = idea?.title || idea?.label || "this path";
-  if (shouldBlockJobBoards(profile)) {
-    return [
-      {
-        label: "Get the basics in place",
-        desc: "A safe place to stay and the documents you need come before any job board.",
-        missions: [
-          {
-            title: "Confirm a safe place to stay this week",
-            text: "Call a local shelter or housing navigator and ask about beds tonight, waitlists, and what to bring. Write down the name, the earliest opening, and the documents they require."
-          },
-          {
-            title: "Replace missing ID and essential papers",
-            text: "Ask which ID or mail address you can get first, what it costs, and who can help you apply. Do not start job-board applications until this step has a real next appointment."
-          }
-        ]
-      }
-    ];
+  const housing = needsHousingFirst(profile);
+  const id = needsIdFirst(profile);
+  const transport = needsTransportHelp(profile);
+  const missions = [];
+  if (housing) {
+    missions.push({
+      title: "Confirm a safe place to stay this week",
+      text: "Call a local shelter or housing navigator and ask about beds tonight, waitlists, and what to bring. Write down the name, the earliest opening, and the documents they require."
+    });
+  }
+  if (id) {
+    missions.push({
+      title: "Replace missing ID and essential papers",
+      text: "Ask which ID or mail address you can get first, what it costs, and who can help you apply. Keep the rest of the plan moving while that appointment is set."
+    });
+  }
+  if (transport) {
+    missions.push({
+      title: "Line up a way to get to the first step",
+      text: "Find one bus route, ride, or pass that gets you to the first conversation. Write down the time and the cost before you schedule anything else."
+    });
+  }
+  missions.push({
+    title: `Open one real conversation about ${title}`,
+    text: "Write to someone who already does this work and name the specific overlap with what you do. Ask for a short conversation, not a favor or a job. Send it before you collect more research."
+  });
+  if (!housing && !id && !transport) {
+    missions.push({
+      title: "Keep what changes the plan",
+      text: "After you talk, write down the one thing that changes how you'll proceed, and the next move with a date. Set aside advice that doesn't fit how you already work."
+    });
   }
   return [
     {
-      label: "Start this week",
-      desc: `The first concrete moves on “${title}”.`,
-      missions: [
-        {
-          title: `Open one real conversation about ${title}`,
-          text: "Write to someone who already does this work and name the specific overlap with what you do. Ask for a short conversation, not a favor or a job. Send it before you collect more research."
-        },
-        {
-          title: "Keep what changes the plan",
-          text: "After you talk, write down the one thing that changes how you'll proceed, and the next move with a date. Set aside advice that doesn't fit how you already work."
-        }
-      ]
+      label: housing || id || transport ? "Start with what you confirmed" : "Start this week",
+      desc: housing || id || transport
+        ? `The barrier you confirmed, then the first move on “${title}”.`
+        : `The first concrete moves on “${title}”.`,
+      missions: missions.slice(0, 3)
     }
   ];
 }
@@ -167,9 +174,14 @@ function buildMissionsPrompt(idea, bullets) {
     profile: appStore.profile,
     location: appStore.location
   });
-  const stability = shouldBlockJobBoards(appStore.profile)
-    ? "STABILITY FIRST: ID or housing is not confirmed. Do not assign job boards, Indeed, or a contact-tracking spreadsheet. Open with shelter, documents, or ID steps that match the profile."
-    : "Do not insert ID, shelter, or basic-needs steps unless the profile says they are needed.";
+  const confirmed = [
+    needsHousingFirst(appStore.profile) ? "housing" : "",
+    needsIdFirst(appStore.profile) ? "ID or documents" : "",
+    needsTransportHelp(appStore.profile) ? "transportation" : ""
+  ].filter(Boolean);
+  const stability = confirmed.length
+    ? `They confirmed: ${confirmed.join(", ")}. Include a task only for those confirmed barriers, and keep the goal, skills, and constraints they stated. Do not add an unconfirmed housing, ID, or transportation task.`
+    : "No housing, ID, or transportation need is confirmed. Do not insert shelter, ID, document, or transportation steps. Needing income soon is not homelessness and is not missing ID. Preserve their stated goals, skills, experience, and constraints.";
   const plan = (bullets || []).map((bullet) => `- ${bullet}`).join("\n");
   const austin = /^austin$/i.test(String(appStore.location?.city || "").trim());
   const austinNote = austin
@@ -339,7 +351,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
     .map(
       (stage, index) => `
         <article class="v2-stage" id="stage-${index}">
-          <h3 class="v2-stage__label">${index + 1}. ${escapeHtml(stage.label)}</h3>
+          <h3 class="v2-stage__label"><span class="v2-dropcap">${index + 1}</span><span>${escapeHtml(stage.label)}</span></h3>
           ${stage.desc ? `<p class="v2-stage__desc">${escapeHtml(stage.desc)}</p>` : ""}
           <ol class="v2-mission-list">
             ${stage.missions
@@ -411,6 +423,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                                 aria-label="${mission.done ? "Task completed" : "Mark task complete"}"
                               />
                             </label>
+                            <span class="v2-dropcap" aria-hidden="true">${missionIndex + 1}</span>
                             <h4 class="v2-mission__title" tabindex="-1">${escapeHtml(mission.title)}</h4>
                           </div>
                           ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
@@ -938,7 +951,8 @@ export function createMissionsController(ui) {
   }
 
   function continuationHost() {
-    const parent = messagesEl || sectionEl;
+    const stages = document.getElementById("mission-stages");
+    const parent = stages || sectionEl || messagesEl;
     if (!parent) return null;
     let host = document.getElementById("mission-continuations");
     if (!host) {
@@ -946,10 +960,31 @@ export function createMissionsController(ui) {
       host.id = "mission-continuations";
       host.className = "v2-continuations v2-text-box v2-text-box--chrome";
       host.setAttribute("aria-label", "Next mission choices");
-      parent.appendChild(host);
       host.addEventListener("click", onContinuationClick);
     }
+    const nav = stages?.querySelector(".v2-mission-nav");
+    if (nav && nav.parentElement === stages) stages.insertBefore(host, nav);
+    else if (host.parentElement !== parent) parent.appendChild(host);
     return host;
+  }
+
+  const CONTINUATION_DOTS =
+    `<span class="v2-typing-dots" aria-label="Finding the next mission choices">` +
+    `<span class="v2-typing-dots__dot"></span><span class="v2-typing-dots__dot"></span><span class="v2-typing-dots__dot"></span>` +
+    `</span>`;
+
+  function showContinuationPending() {
+    const host = continuationHost();
+    if (!host) return;
+    host.innerHTML = `<p class="v2-continuations__kicker">Next mission</p><p class="v2-continuations__pending" role="status">${CONTINUATION_DOTS}</p>`;
+    scrollFrameChildIntoView(host);
+  }
+
+  function showContinuationError() {
+    const host = continuationHost();
+    if (!host) return;
+    host.innerHTML = `<p class="v2-continuations__kicker">Next mission</p><p class="v2-continuations__error">I couldn't draft the next mission options. Try again in a moment.</p>`;
+    scrollFrameChildIntoView(host);
   }
 
   function renderContinuations() {
@@ -962,9 +997,14 @@ export function createMissionsController(ui) {
         const tasks = (stage.missions || []).map((mission) => mission.title).filter(Boolean).join(" · ");
         const kept = savedIds.has(stage.id);
         return `<article class="v2-continuations__choice">
-          <h3>${escapeHtml(stage.label)}</h3>
-          ${stage.desc ? `<p>${escapeHtml(stage.desc)}</p>` : ""}
-          ${tasks ? `<p class="v2-continuations__tasks">${escapeHtml(tasks)}</p>` : ""}
+          <div class="v2-choice-row">
+            <span class="v2-dropcap">${index + 1}</span>
+            <div class="v2-choice-copy">
+              <h3>${escapeHtml(stage.label)}</h3>
+              ${stage.desc ? `<p>${escapeHtml(stage.desc)}</p>` : ""}
+              ${tasks ? `<p class="v2-continuations__tasks">${escapeHtml(tasks)}</p>` : ""}
+            </div>
+          </div>
           <div class="v2-continuations__actions">
             <button type="button" data-continuation-choose="${index}">Choose this mission</button>
             <button type="button" data-continuation-save="${index}" ${kept ? "disabled" : ""}>${kept ? "Saved" : "Save for later"}</button>
@@ -1062,13 +1102,20 @@ export function createMissionsController(ui) {
     if (!pathNode || pending) return;
     const ticket = ++serial;
     pending = true;
-    setStatusMessage(statusEl(), "Finding three ways the next mission could go");
+    showContinuationPending();
     const existing = flatMissions().map((mission) => mission.title);
     const stageNames = (appStore.journey.missionsStages || []).map((stage) => stage.label).filter(Boolean);
+    const confirmed = [
+      needsHousingFirst(appStore.profile) ? "housing" : "",
+      needsIdFirst(appStore.profile) ? "ID or documents" : "",
+      needsTransportHelp(appStore.profile) ? "transportation" : ""
+    ].filter(Boolean);
     const prompt =
       `You are whatimado. Offer THREE different possible NEXT missions for "${pathNode.title || pathNode.label}". ` +
       `They are alternatives, not a sequence. Do not repeat these missions: ${stageNames.join("; ") || "none"}. ` +
       `Do not repeat these tasks: ${existing.join("; ") || "none"}.\n` +
+      `${confirmed.length ? `They confirmed: ${confirmed.join(", ")}. Include that only when the next mission is still about it. ` : "Do not add housing, shelter, ID, or transportation. Needing income is not a housing or ID need. "}` +
+      `Keep their stated goals, skills, experience, and constraints.\n` +
       `Return ONLY JSON: {"stages":[{"label":"short mission name","desc":"one sentence","missions":[{"title":"6-14 word action","text":"2 concrete sentences","resources":[]}]}]}\n` +
       `Exactly 3 stages. Each stage is one mission with 2 tasks. ${writingVoice(appStore.profile)}`;
     try {
@@ -1076,6 +1123,7 @@ export function createMissionsController(ui) {
       if (ticket !== serial) return;
       const added = parseStagesResponse(raw, []).slice(0, 3);
       if (added.length < 1) {
+        showContinuationError();
         setNavFeedback("I couldn't draft the next mission options. Try again in a moment.");
         return;
       }
@@ -1083,6 +1131,7 @@ export function createMissionsController(ui) {
       renderContinuations();
     } catch {
       if (ticket !== serial) return;
+      showContinuationError();
       setNavFeedback("I couldn't draft the next mission options. Try again in a moment.");
     } finally {
       if (ticket !== serial) return;

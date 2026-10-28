@@ -820,3 +820,66 @@ whatimado-map .whatimado-map__node--live.is-selected.is-path-preview .whatimado-
     --node-float-amp: -8px;
   }
 }
+
+/* Node canvas uses the map-label teal; nodes, lines, and labels reverse to the page dark. Chat stays dark. */
+whatimado-map .whatimado-map__stage {
+  background: var(--v2-teal);
+}
+
+whatimado-map .whatimado-map__edge--ghost,
+whatimado-map .whatimado-map__edge--live,
+whatimado-map .whatimado-map__leader {
+  stroke: var(--v2-bg);
+}
+
+whatimado-map .whatimado-map__node--live .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-support .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-complete .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-more .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-more.is-selected .whatimado-map__node-body {
+  fill: var(--v2-bg);
+  stroke: var(--v2-bg);
+}
+
+whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-complete .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-start .whatimado-map__node-body,
+whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start .whatimado-map__node-body {
+  fill: var(--v2-bg);
+  stroke: var(--v2-yellow);
+  stroke-width: 1.6;
+}
+
+whatimado-map .whatimado-map__node--live.is-more .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-more.is-selected .whatimado-map__node-body {
+  fill: var(--v2-bg);
+  stroke: var(--v2-teal);
+  stroke-width: 1.6;
+}
+
+whatimado-map .whatimado-map__node--live text,
+whatimado-map .whatimado-map__node--live.is-support text,
+whatimado-map .whatimado-map__node--live.is-selected text {
+  fill: var(--v2-bg);
+  stroke: var(--v2-teal);
+  stroke-width: 0.35px;
+}
+
+whatimado-map .whatimado-map__node--live text.whatimado-map__kicker,
+whatimado-map .whatimado-map__node--live.is-selected text.whatimado-map__kicker,
+whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start text {
+  fill: var(--v2-teal);
+  stroke: none;
+}
+
+whatimado-map:not(:has(.whatimado-map__node--live.is-selected)) .whatimado-map__node--live.is-start text.whatimado-map__label {
+  fill: var(--v2-bg);
+  stroke: var(--v2-teal);
+  stroke-width: 0.35px;
+}
+
+whatimado-map .whatimado-map__node--live.is-more .whatimado-map__plus line {
+  stroke: var(--v2-teal);
+  stroke-width: 2.4px;
+}

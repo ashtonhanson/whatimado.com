@@ -269,7 +269,7 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
     if (includeNode && !includeNode(node)) continue;
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
-    const r = lg;
+    const r = node.type === "more" ? lg * 1.5 : lg;
     const labelLift = node.type === "mission" || node.type === "task" ? labelOffset + labelCap * 0.65 : 0;
     const badgeLift = node.waiting ? 10 : 0;
     minX = Math.min(minX, cx - r - (node.waiting ? 8 : 0));

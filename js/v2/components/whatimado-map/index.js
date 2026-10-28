@@ -1205,22 +1205,21 @@ export class WhatimadoMap extends HTMLElement {
    * @returns {boolean} Whether the camera was fitted
    */
   syncSpreadForFrame(frameTop) {
-    if (this._userPanned) return false;
+    const frameDriven = Number.isFinite(frameTop);
+    if (this._userPanned && !frameDriven) return false;
     if (!this._liveNodes.some((node) => node.type === "more")) return false;
     const frame = document.getElementById("dynamic-frame");
     const main = document.querySelector(".v2-main");
     if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
     if (window.matchMedia("(max-width: 900px)").matches) {
       if (isOpenHomePhase() || this.dataset.focusPinned === "1") return false;
-      const snap = frame._dock?.activeSnap;
-      if (snap !== "mobile-collapsed" && snap !== "mobile-focus") return false;
       if (frame._dock?._keyboardDocked || document.body.classList.contains("is-mobile-composer-focus")) return false;
-    } else {
-      const anchors = measureAnchors(main, frame);
-      const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
-      if (top < anchors.homeBase - 1) return false;
+      if (!frameDriven) {
+        const snap = frame._dock?.activeSnap;
+        if (snap !== "mobile-collapsed" && snap !== "mobile-focus") return false;
+      }
     }
-    if (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId)) {
+    if (!frameDriven && this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId)) {
       this.centerOnNode(this._focusNodeId, { animate: false });
       return true;
     }
@@ -2809,7 +2808,7 @@ export class WhatimadoMap extends HTMLElement {
     const fromRight = fromBox.right - fromFloat.x;
     const plusCenter = plusBox.left + plusBox.width / 2 - plusFloat.x;
     const plusR = plusBox.width / 2;
-    const cap = window.matchMedia("(max-width: 900px)").matches ? 12 : 18;
+    const cap = window.matchMedia("(max-width: 900px)").matches ? 20 : 30;
     const dx = fromRight + cap + plusR - plusCenter;
     if (Math.abs(dx) < 1) return;
 
@@ -3083,7 +3082,7 @@ export class WhatimadoMap extends HTMLElement {
         const titleLines = options.layer === "live" ? nodeMapTitleLines(node) : [];
         const title = titleLines[0] || "";
         const isAlternate = spineAlternatePaths && node.type === "path" && !isSelected;
-        const bodyR = node.type === "more" ? r : isAlternate ? r * 0.72 : r;
+        const bodyR = node.type === "more" ? r * 1.5 : isAlternate ? r * 0.72 : r;
         const kickerText =
           title && node.type === "path" && node.id === branchRootId
             ? "Roadmaps"
@@ -3104,12 +3103,12 @@ export class WhatimadoMap extends HTMLElement {
           isAnchor: isLayoutAnchor,
           html: `
         <g class="${classes}" data-node-id="${escapeHtml(node.id)}" data-layer="${options.layer}" data-drift-delay="${driftDelay}" data-drift-duration="${driftDuration}" style="${styleVars}">
-          <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(r + 16, 30)}" />
+          <circle class="whatimado-map__node-hit" cx="${cx}" cy="${cy}" r="${Math.max(bodyR + 16, 30)}" />
           <g class="whatimado-map__node-float">
-            <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${r + 4}" />
+            <circle class="whatimado-map__node-aura" cx="${cx}" cy="${cy}" r="${bodyR + 4}" />
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${bodyR}" />
             ${node.type === "more"
-              ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.5}" y1="${cy}" x2="${cx + r * 0.5}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.5}" x2="${cx}" y2="${cy + r * 0.5}" /></g>`
+              ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - bodyR * 0.5}" y1="${cy}" x2="${cx + bodyR * 0.5}" y2="${cy}" /><line x1="${cx}" y1="${cy - bodyR * 0.5}" x2="${cx}" y2="${cy + bodyR * 0.5}" /></g>`
               : ""}
             ${kickerText
               ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`

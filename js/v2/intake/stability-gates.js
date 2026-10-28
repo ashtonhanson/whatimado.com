@@ -10,20 +10,20 @@ import { STABILITY_CONTEXT } from "./persona-signals.js";
  */
 
 export function needsIdFirst(profile) {
-  const p = normalizeUserProfile(profile);
-  if (p.idStatus === "needs") return true;
-  if (p.idStatus === "has") return false;
-  return p.stabilityContext === STABILITY_CONTEXT.SIGNALS;
+  return normalizeUserProfile(profile).idStatus === "needs";
 }
 
 export function needsHousingFirst(profile) {
-  const p = normalizeUserProfile(profile);
-  if (p.housingStatus === "needs") return true;
-  if (p.housingStatus === "has") return false;
-  return p.stabilityContext === STABILITY_CONTEXT.SIGNALS;
+  return normalizeUserProfile(profile).housingStatus === "needs";
 }
 
-/** If ID or housing is not confirmed `has`, never open with job boards. */
+/** Confirmed transportation barrier. Unknown is not a need. */
+export function needsTransportHelp(profile) {
+  const status = normalizeUserProfile(profile).transportStatus;
+  return status === "needs" || status === "limited";
+}
+
+/** Only a confirmed ID or housing need changes the order of first steps. */
 export function shouldBlockJobBoards(profile) {
   return needsIdFirst(profile) || needsHousingFirst(profile);
 }
@@ -63,6 +63,8 @@ export function buildIntakeContextBlock(profile, location = "", pathMode = null)
     p.pathPreference ? `- Path preference: ${p.pathPreference}` : "",
     p.workMode ? `- Work / business setup: ${p.workMode}` : "",
     p.skills ? `- Skills: ${p.skills}` : "",
+    p.goals ? `- Goals: ${p.goals}` : "",
+    p.constraints ? `- Constraints: ${p.constraints}` : "",
     p.willingToRelocate ? `- Relocate: ${p.willingToRelocate}` : "",
     p.founderStage ? `- Founder stage: ${p.founderStage}` : "",
     p.name ? `- Name: ${p.name}` : "",
@@ -73,21 +75,34 @@ export function buildIntakeContextBlock(profile, location = "", pathMode = null)
       : ""
   ].filter(Boolean);
 
-  if (shouldBlockJobBoards(p)) {
-    lines.push(
-      "STABILITY FIRST: ID or housing is not confirmed as has.",
-      "Do NOT propose Indeed, Google Jobs, job-board hunting, or a Contact Tracking Spreadsheet as early steps.",
-      "Prefer shelter, ID, documents, and local stability resources first.",
-      p.idStatus === "needs"
-        ? "They said ID is not sorted yet. Include getting ID as a concrete, supportive step — never as a prerequisite that stalls everything else."
-        : ""
-    );
+  if (needsHousingFirst(p) || needsIdFirst(p) || needsTransportHelp(p)) {
+    lines.push("CONFIRMED BARRIERS ONLY. Add a step only for a need they confirmed or described.");
+    if (needsHousingFirst(p)) {
+      lines.push("They confirmed housing is a need. Include one concrete housing step, and keep their stated goal in the plan.");
+    }
+    if (needsIdFirst(p)) {
+      lines.push("They confirmed ID or documents are a need. Include getting that sorted as its own step. Do not stall every other goal on it.");
+    }
+    if (needsTransportHelp(p)) {
+      lines.push("They confirmed transportation is a barrier. Include a practical way to get around.");
+    }
+    lines.push("Do not add a housing, ID, or transportation task they did not confirm.");
   } else if (p.stabilityContext === STABILITY_CONTEXT.PROFESSIONAL) {
     lines.push(
       "This person presents as an experienced professional or operator.",
-      "ID and housing were intentionally not asked. Do NOT raise ID, shelter, or basic-needs steps unless they bring it up."
+      "Do NOT raise ID, shelter, housing, or transportation steps unless they bring it up."
+    );
+  } else {
+    lines.push(
+      "No housing, ID, or transportation need is confirmed.",
+      "Do NOT add shelter, housing, ID, document, or transportation tasks.",
+      "An unanswered question is not evidence of a need.",
+      "Needing income soon, or other financial pressure, is not homelessness and is not missing ID."
     );
   }
+  lines.push(
+    "Preserve the goals, skills, experience, and constraints they actually stated. Do not replace their plan with a default shelter checklist."
+  );
 
   return lines.filter(Boolean).join("\n");
 }
