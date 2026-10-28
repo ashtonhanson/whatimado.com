@@ -510,8 +510,8 @@ function tasksForMilestone(nodes, milestoneId) {
 /**
  * @param {string} text
  */
-function measureTitlePx(text) {
-  const lines = wrapMapLabel(text || "");
+function measureTitlePx(text, maxLine = 18) {
+  const lines = wrapMapLabel(text || "", maxLine);
   const label = lines.reduce((best, line) => (line.length > best.length ? line : best), "").toUpperCase();
   if (typeof document === "undefined") return label.length * 7;
   const canvas = document.createElement("canvas");
@@ -537,13 +537,28 @@ function linkedMilestoneStep(milestones, nodes, extraTitles = []) {
       );
     }
   }
+  /* Mission titles sit centered above their dots, so neighbors share the gap half and half. */
+  let maxMissionPx = 0;
+  for (const milestone of milestones) {
+    maxMissionPx = Math.max(
+      maxMissionPx,
+      measureTitlePx(milestone.title || milestone.label || "", isMobileMapLayout() ? 14 : 18)
+    );
+  }
   const unit = mapPxPerUnit();
-  /* Size the gap for the zoom the roadmap fit can reach, so a later shrink
-     does not pull the next column back over the title. */
-  const zoom = isMobileMapLayout() ? 0.44 : 0.42;
+  const zoom = mapLayoutZoom();
   const radiusPx = nodeRadiusSvg() * unit * zoom;
-  const gapPx = radiusPx + 8 + maxTitlePx + 12 + radiusPx;
+  const gapPx = Math.max(radiusPx + 8 + maxTitlePx + 12 + radiusPx, maxMissionPx + 16);
   return Math.max(MISSION_STEP, gapPx / (unit * zoom));
+}
+
+/**
+ * The smallest zoom the roadmap fit uses. Titles keep a fixed screen size,
+ * so columns are spaced for this zoom and the fit never goes below it.
+ * @returns {number}
+ */
+export function mapLayoutZoom() {
+  return isMobileMapLayout() ? 0.44 : 0.42;
 }
 
 /**

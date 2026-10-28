@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
@@ -48,6 +48,7 @@ import {
   computePanForFocalNode,
   computePanForNodeAboveFrame,
   computeTimelineFrameFit,
+  isActiveRoadmapBranchNode,
   isOpenHomePhase,
   ROADMAP_CROSSHAIR_ZOOM_MIN
 } from "../../map/pan.js";
@@ -1227,15 +1228,18 @@ export class WhatimadoMap extends HTMLElement {
     const focusId =
       this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId) ? this._focusNodeId : null;
     const mobile = window.matchMedia("(max-width: 900px)").matches;
-    const options = {
-      centerNodeId: hasRoadmapColumns ? focusId : roadmapFocusLinked ? null : selected?.id,
-      reserve: null,
-      /* Desktop shows every node. A phone shows the branch, and can leave a spoke at the edge. */
-      includeNode: undefined,
-      minZoom: hasRoadmapColumns ? (mobile ? ZOOM_MIN_MOBILE : 0.2) : mobile ? undefined : ROADMAP_CROSSHAIR_ZOOM_MIN
-    };
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
     this._userPanned = false;
+    if (hasRoadmapColumns) {
+      this._fitBand({ centerNodeId: focusId, from });
+      if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
+      return true;
+    }
+    const options = {
+      centerNodeId: roadmapFocusLinked ? null : selected?.id,
+      reserve: null,
+      minZoom: mobile ? undefined : ROADMAP_CROSSHAIR_ZOOM_MIN
+    };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
       this._zoom = fit.zoom;
@@ -1338,24 +1342,26 @@ export class WhatimadoMap extends HTMLElement {
     this._userPanned = false;
     this.syncDesktopViewBox();
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
-    const mobile = window.matchMedia("(max-width: 900px)").matches;
-    this._fitBand({ mostly: mobile, animate, from });
+    this._fitBand({ animate, from });
     return true;
   }
 
   /**
    * Scale the map into the band under the timeline and above the prompt.
-   * Desktop (`mostly: false`) fits every node. A phone fits as much as the band allows.
-   * @param {{ mostly?: boolean, centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null }} [options]
+   * Desktop fits every node. A phone fits the roadmap branch and as much else as the band allows.
+   * @param {{ centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null }} [options]
    */
-  _fitBand({ mostly = false, centerNodeId = null, animate = false, from = null } = {}) {
+  _fitBand({ centerNodeId = null, animate = false, from = null } = {}) {
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const start = from || { zoom: this._zoom, panX: this._panX, panY: this._panY };
-    /** @type {{ centerNodeId: string|null, reserve: { above: number, below: number, left: number, right: number }|null, minZoom: number }} */
+    const chosenPathId = appStore.journey.roadmapPathId || this._selectedId || graphStore.selectedId;
     const options = {
       centerNodeId,
       reserve: null,
-      minZoom: mobile || mostly ? ZOOM_MIN_MOBILE : 0.2
+      /* A phone frames the roadmap branch and lets the spokes sit at the edge. Desktop frames every node. */
+      includeNode: mobile ? (node) => isActiveRoadmapBranchNode(node, chosenPathId) : undefined,
+      /* Below the layout zoom the columns shrink under fixed-size titles and the titles collide. */
+      minZoom: mapLayoutZoom()
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
@@ -1494,7 +1500,7 @@ export class WhatimadoMap extends HTMLElement {
     this._youBtn?.setAttribute("aria-pressed", "true");
     this.syncDesktopViewBox();
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
-    this._fitBand({ mostly: true, centerNodeId: preferred, animate, from });
+    this._fitBand({ centerNodeId: preferred, animate, from });
   }
 
   /** @param {TouchList} touches */
@@ -2609,6 +2615,12 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   _fitLabelFont(texts, target = 13) {
+    /* A new viewport width changes the paint scale, so the size from the old width no longer holds. */
+    if (this._labelViewportW !== window.innerWidth) {
+      this._labelViewportW = window.innerWidth;
+      this._labelFontPx = 0;
+      this._labelZoomKey = null;
+    }
     const zoomKey = Math.round((this._zoom || 1) * 20);
     if (this._labelZoomKey === zoomKey && this._labelFontPx) {
       this._applyLabelFont(texts, this._labelFontPx);
