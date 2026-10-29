@@ -35,7 +35,7 @@ import {
   svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
-import { missionNumberLabel, pinSpokeTitles, placeTitleBesideNode, wrapMapLabel } from "../../map/callouts.js";
+import { missionNumberLabel, pinSpokeTitles, placeTitleBesideNode, placeTitlesAbove, trailNodeIds, wrapMapLabel } from "../../map/callouts.js";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -2361,6 +2361,39 @@ export class WhatimadoMap extends HTMLElement {
       group.classList.toggle("is-selected", isSelected);
       group.classList.toggle("is-current", this._currentIds.has(id));
     }
+    this._applyTrail();
+  }
+
+  /** On an open roadmap, light the line from You to the current mission, and on to its task. */
+  _applyTrail() {
+    const layer = this._liveLayer;
+    if (!layer) return;
+    const lines = [...layer.querySelectorAll(".whatimado-map__edge--live")];
+    lines.forEach((line) => line.classList.remove("is-trail"));
+    layer.querySelectorAll(".is-trail-node").forEach((group) => group.classList.remove("is-trail-node"));
+    const start = this._liveNodes.find((node) => node.type === "start");
+    if (!start || !this.classList.contains("is-roadmap-open")) return;
+    const current = this._liveNodes.filter((node) => this._currentIds.has(node.id));
+    const target =
+      current.find((node) => node.type === "task") ||
+      current.find((node) => node.type === "mission") ||
+      this._liveNodes.find((node) => node.id === this._selectedId && node.type === "path");
+    if (!target) return;
+    const edges = lines.map((line) => ({ from: line.getAttribute("data-from") || "", to: line.getAttribute("data-to") || "" }));
+    const trail = trailNodeIds(edges, start.id, target.id);
+    if (!trail.length) return;
+    const steps = new Set();
+    for (let i = 1; i < trail.length; i += 1) {
+      steps.add(`${trail[i - 1]}>${trail[i]}`);
+      steps.add(`${trail[i]}>${trail[i - 1]}`);
+    }
+    lines.forEach((line, index) => {
+      if (steps.has(`${edges[index].from}>${edges[index].to}`)) line.classList.add("is-trail");
+    });
+    this._driftNodes.get(start.id)?.groupEl.classList.add("is-trail-node");
+    for (const node of current) {
+      if (node.type === "mission" || node.type === "task") this._driftNodes.get(node.id)?.groupEl.classList.add("is-trail-node");
+    }
   }
 
   /**
@@ -2795,6 +2828,7 @@ export class WhatimadoMap extends HTMLElement {
           if (item.kicker && item.group.classList.contains("is-roadmap")) item.group.classList.add("is-kicker-off");
         });
       }
+      if (this._anchorId === GHOST_GRAPH.nodes[0].id) placeTitlesAbove(items, titleBounds);
       if (mobile) {
         const rank = (item) =>
           item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;

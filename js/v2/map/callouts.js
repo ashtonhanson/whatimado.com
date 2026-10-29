@@ -78,6 +78,60 @@ export function pinSpokeTitles(items, bounds = null) {
 }
 
 /**
+ * Every title centered above its own dot, slid just enough to stay inside the stage.
+ * @param {Array<{ nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string }>} items
+ * @param {{ left: number, right: number } | null} [bounds]
+ */
+export function placeTitlesAbove(items, bounds = null, gap = 6) {
+  const edge = 8;
+  for (const item of items) {
+    item.side = "above";
+    item.left = item.nx - item.w / 2;
+    item.top = item.ny - (item.nr || 6) - gap - item.h;
+    if (!bounds) continue;
+    item.left = Math.min(Math.max(item.left, bounds.left + edge), Math.max(bounds.left + edge, bounds.right - edge - item.w));
+  }
+}
+
+/**
+ * Node ids from one node to another along the drawn lines, shortest first.
+ * @param {Array<{ from: string, to: string }>} edges
+ * @param {string} fromId
+ * @param {string} toId
+ * @returns {string[]} empty when the two are not connected
+ */
+export function trailNodeIds(edges, fromId, toId) {
+  if (!fromId || !toId) return [];
+  /** @type {Map<string, string[]>} */
+  const links = new Map();
+  const link = (a, b) => {
+    if (!links.has(a)) links.set(a, []);
+    links.get(a).push(b);
+  };
+  for (const { from, to } of edges) {
+    if (!from || !to) continue;
+    link(from, to);
+    link(to, from);
+  }
+  /** @type {Map<string, string>} */
+  const cameFrom = new Map([[fromId, ""]]);
+  const queue = [fromId];
+  while (queue.length) {
+    const id = queue.shift();
+    if (id === toId) break;
+    for (const next of links.get(id) || []) {
+      if (cameFrom.has(next)) continue;
+      cameFrom.set(next, id);
+      queue.push(next);
+    }
+  }
+  if (!cameFrom.has(toId)) return [];
+  const trail = [];
+  for (let id = toId; id; id = cameFrom.get(id) || "") trail.unshift(id);
+  return trail;
+}
+
+/**
  * Title sits on the node the way the constellation reference does:
  * mission titles above that mission's dot, task titles level with that task's dot.
  * @param {Array<{ nx: number, ny: number, nr: number, w: number, h: number, left: number, top: number, kind: string, role?: string, side?: string }>} items

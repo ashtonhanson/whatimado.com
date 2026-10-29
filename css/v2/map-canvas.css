@@ -748,6 +748,39 @@ whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
     drop-shadow(0 0 28px color-mix(in srgb, var(--v2-yellow) 48%, transparent));
 }
 
+/* The user's current path on an open roadmap: You, the open mission, and a clicked task */
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-trail-node .whatimado-map__node-body {
+  fill: var(--v2-yellow);
+  stroke: none;
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, var(--v2-yellow) 95%, transparent))
+    drop-shadow(0 0 16px color-mix(in srgb, var(--v2-yellow) 72%, transparent))
+    drop-shadow(0 0 28px color-mix(in srgb, var(--v2-yellow) 48%, transparent));
+}
+
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-trail-node .whatimado-map__node-aura {
+  opacity: 1;
+  animation: whatimado-anchor-aura-breathe 3.6s ease-in-out infinite;
+}
+
+/* A trail node stays yellow while it is hovered or pulled */
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-support.is-trail-node:not(.is-start):not(.is-selected):is(:hover, .is-hover, .is-dragging, .is-path-preview) .whatimado-map__node-body {
+  fill: var(--v2-yellow);
+}
+
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-support.is-trail-node:not(.is-start):not(.is-selected):is(:hover, .is-hover, .is-dragging, .is-path-preview) .whatimado-map__node-aura {
+  fill: var(--v2-yellow);
+}
+
+whatimado-map.is-roadmap-open .whatimado-map__edge--live.is-trail {
+  stroke: var(--v2-yellow);
+  stroke-width: calc(var(--v2-map-edge-width, 1.45) * 2.4);
+  stroke-dasharray: none;
+  filter:
+    drop-shadow(0 0 2px color-mix(in srgb, var(--v2-yellow) 90%, transparent))
+    drop-shadow(0 0 7px color-mix(in srgb, var(--v2-yellow) 60%, transparent));
+}
+
 /* Hovering or pulling the selected node lifts that same glow rather than replacing it */
 whatimado-map .whatimado-map__node--live.is-selected.is-hover .whatimado-map__node-body,
 whatimado-map .whatimado-map__node--live.is-selected.is-dragging .whatimado-map__node-body,
