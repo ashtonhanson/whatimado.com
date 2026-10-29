@@ -781,6 +781,14 @@ whatimado-map.is-roadmap-open .whatimado-map__node--live.is-support.is-trail-nod
   fill: var(--v2-yellow);
 }
 
+/* Titles on the path glow gold. The small Mission and Roadmaps labels above them keep their color. */
+whatimado-map.is-roadmap-open .whatimado-map__node--live:is(.is-trail-node, .is-selected):not(.is-start) text.whatimado-map__label,
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-support.is-trail-node:not(.is-start):not(.is-selected):is(:hover, .is-hover, .is-dragging, .is-path-preview) text.whatimado-map__label {
+  fill: var(--v2-yellow);
+  font-weight: 600;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--v2-yellow) 70%, transparent));
+}
+
 whatimado-map.is-roadmap-open .whatimado-map__edge--live.is-trail {
   stroke: var(--v2-yellow);
   stroke-width: calc(var(--v2-map-edge-width, 1.45) * 2.4);

@@ -2393,8 +2393,9 @@ export class WhatimadoMap extends HTMLElement {
       if (steps.has(`${edges[index].from}>${edges[index].to}`)) line.classList.add("is-trail");
     });
     this._driftNodes.get(start.id)?.groupEl.classList.add("is-trail-node");
-    for (const node of current) {
-      if (node.type === "mission" || node.type === "task") this._driftNodes.get(node.id)?.groupEl.classList.add("is-trail-node");
+    for (const id of trail) {
+      const node = this._liveNodes.find((n) => n.id === id);
+      if (node?.type === "mission" || node?.type === "task") this._driftNodes.get(id)?.groupEl.classList.add("is-trail-node");
     }
   }
 
