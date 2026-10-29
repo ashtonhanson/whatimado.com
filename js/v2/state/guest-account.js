@@ -20,6 +20,7 @@
 const GUEST_ID_KEY = "whatimado_v2_guest_user_id";
 const SESSION_KEY = "whatimado_v2_session";
 const ACCOUNT_PREFIX = "whatimado_v2_account_";
+const GUEST_ROADMAPS_KEY = "whatimado_v2_guest_roadmaps";
 
 /** @returns {Storage | null} */
 function browserStorage() {
@@ -166,6 +167,136 @@ export function createRoadmapId(now = Date.now()) {
   return `roadmap_${now.toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** @param {object} snapshot */
+function roadmapPart(snapshot) {
+  return {
+    journey: snapshot.journey,
+    graph: snapshot.graph || { nodes: [], edges: [], selectedId: null },
+    profile: snapshot.profile || null,
+    location: snapshot.location || null,
+    locationDraft: snapshot.locationDraft || null
+  };
+}
+
+/**
+ * A saved roadmap entry carrying its own copy of the map.
+ * @param {object} snapshot live or stored snapshot with journey/graph/profile/location
+ * @param {string} id
+ * @param {number} [stamp]
+ * @param {object | null} [previous] entry being replaced, to keep its createdAt
+ */
+export function roadmapEntryFromSnapshot(snapshot, id, stamp = Date.now(), previous = null) {
+  return {
+    id,
+    title: roadmapName(snapshot) || previous?.title || "Roadmap",
+    createdAt: previous?.createdAt || Number(snapshot?.journey?.createdAt) || stamp,
+    savedAt: stamp,
+    snapshot: JSON.parse(JSON.stringify(roadmapPart(snapshot)))
+  };
+}
+
+/**
+ * @param {object[]} roadmaps
+ * @param {object} entry
+ */
+export function upsertRoadmapEntry(roadmaps, entry) {
+  const list = [...(roadmaps || [])];
+  const at = list.findIndex((item) => item?.id === entry.id);
+  if (at >= 0) list[at] = entry;
+  else list.push(entry);
+  return list;
+}
+
+/**
+ * Account roadmaps without the live entry, plus the live map shelved with its own copy.
+ * @param {object} base
+ * @param {number} stamp
+ */
+function shelveLiveRoadmap(base, stamp) {
+  const liveId = base.activeRoadmapId || base.journey?.id || null;
+  const roadmaps = (base.roadmaps || []).filter((entry) => entry?.id && entry.id !== liveId);
+  if (hasLiveRoadmap(base)) {
+    const previous = (base.roadmaps || []).find((entry) => entry?.id === liveId);
+    roadmaps.push({
+      id: liveId,
+      title: roadmapName(base) || previous?.title || "Roadmap",
+      createdAt: previous?.createdAt || Number(base.journey.createdAt) || stamp,
+      savedAt: stamp,
+      snapshot: roadmapPart(base)
+    });
+  }
+  return roadmaps;
+}
+
+/**
+ * Shelve the live account roadmap and make a saved or imported one live.
+ * @param {object | null} accountSnapshot
+ * @param {string} roadmapId
+ * @param {Date} [now]
+ * @returns {object | null} the next account snapshot, or null if the roadmap is not saved
+ */
+export function openAccountRoadmap(accountSnapshot, roadmapId, now = new Date()) {
+  const base = accountSnapshot || {};
+  const stamp = now.getTime();
+  const liveId = base.activeRoadmapId || base.journey?.id || null;
+  if (!roadmapId || roadmapId === liveId) return null;
+  let roadmaps = shelveLiveRoadmap(base, stamp);
+  let importedRoadmaps = [...(base.importedRoadmaps || [])];
+  let entry = roadmaps.find((item) => item.id === roadmapId && item.snapshot?.journey?.id) || null;
+  let part = entry?.snapshot || null;
+  if (entry) {
+    roadmaps = roadmaps.filter((item) => item.id !== roadmapId);
+  } else {
+    const imported = importedRoadmaps.find((item) => item?.id === roadmapId && item.journey?.id);
+    if (!imported) return null;
+    importedRoadmaps = importedRoadmaps.filter((item) => item?.id !== roadmapId);
+    entry = { id: roadmapId, title: imported.title, createdAt: imported.savedAt };
+    part = roadmapPart(imported);
+  }
+  roadmaps.push({
+    id: roadmapId,
+    title: entry.title || roadmapName(part) || "Roadmap",
+    createdAt: entry.createdAt || stamp,
+    savedAt: stamp,
+    snapshot: null
+  });
+  return {
+    ...base,
+    savedAt: stamp,
+    activeRoadmapId: roadmapId,
+    ...roadmapPart(part),
+    roadmaps,
+    importedRoadmaps
+  };
+}
+
+/** @param {Storage | null} [storage] */
+export function loadGuestRoadmaps(storage = browserStorage()) {
+  if (!storage) return [];
+  try {
+    const parsed = JSON.parse(storage.getItem(GUEST_ROADMAPS_KEY) || "null");
+    const list = Array.isArray(parsed?.roadmaps) ? parsed.roadmaps : [];
+    return list.filter((entry) => entry?.id && entry.snapshot?.journey?.id);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * @param {object[]} roadmaps
+ * @param {Storage | null} [storage]
+ */
+export function saveGuestRoadmaps(roadmaps, storage = browserStorage()) {
+  if (!storage) return false;
+  try {
+    if (!roadmaps.length) storage.removeItem(GUEST_ROADMAPS_KEY);
+    else storage.setItem(GUEST_ROADMAPS_KEY, JSON.stringify({ version: 1, roadmaps }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Every roadmap on an account has an entry in `roadmaps`. The live fields
  * (journey, graph, profile, location) belong to `activeRoadmapId`, so its
@@ -179,24 +310,7 @@ export function createRoadmapId(now = Date.now()) {
 export function startFreshAccountRoadmap(accountSnapshot, accountUserId, now = new Date(), roadmapId = createRoadmapId(now.getTime())) {
   const base = accountSnapshot || {};
   const stamp = now.getTime();
-  const liveId = base.activeRoadmapId || base.journey?.id || null;
-  let roadmaps = (base.roadmaps || []).filter((entry) => entry?.id && entry.id !== liveId);
-  if (hasLiveRoadmap(base)) {
-    const previous = (base.roadmaps || []).find((entry) => entry?.id === liveId);
-    roadmaps.push({
-      id: liveId,
-      title: roadmapName(base) || previous?.title || "Roadmap",
-      createdAt: previous?.createdAt || Number(base.journey.createdAt) || stamp,
-      savedAt: stamp,
-      snapshot: {
-        journey: base.journey,
-        graph: base.graph || { nodes: [], edges: [], selectedId: null },
-        profile: base.profile || null,
-        location: base.location || null,
-        locationDraft: base.locationDraft || null
-      }
-    });
-  }
+  let roadmaps = shelveLiveRoadmap(base, stamp);
   roadmaps = [...roadmaps, { id: roadmapId, title: "New roadmap", createdAt: stamp, savedAt: stamp, snapshot: null }];
   return {
     ...base,
@@ -305,6 +419,43 @@ export function migrateGuestSnapshot(guestSnapshot, accountSnapshot, accountUser
       importedRoadmaps
     }
   };
+}
+
+/**
+ * Carry a guest's saved roadmaps onto an account as shelved roadmaps.
+ * @param {object | null} accountSnapshot
+ * @param {object[]} guestRoadmaps
+ * @param {string} accountUserId
+ * @param {Date} [now]
+ */
+export function addGuestRoadmapsToAccount(accountSnapshot, guestRoadmaps, accountUserId, now = new Date()) {
+  const list = (guestRoadmaps || []).filter((entry) => entry?.id && entry.snapshot?.journey?.id);
+  if (!list.length || !accountUserId) return accountSnapshot;
+  const stamp = now.getTime();
+  const base = accountSnapshot || {
+    version: 1,
+    savedAt: stamp,
+    sessionOwner: accountUserId,
+    guestUserId: null,
+    journey: null,
+    graph: { nodes: [], edges: [], selectedId: null },
+    profile: null,
+    location: null,
+    locationDraft: null,
+    importedRoadmaps: []
+  };
+  const taken = new Set([
+    base.activeRoadmapId,
+    base.journey?.id,
+    ...(base.roadmaps || []).map((entry) => entry?.id),
+    ...(base.importedRoadmaps || []).map((entry) => entry?.id)
+  ]);
+  const added = list.filter((entry) => {
+    if (taken.has(entry.id)) return false;
+    taken.add(entry.id);
+    return true;
+  });
+  return { ...base, userId: accountUserId, roadmaps: [...(base.roadmaps || []), ...added] };
 }
 
 /**

@@ -5,18 +5,36 @@ import { normalizeUserProfile } from "./user-profile.js";
 import { normalizeLocationDraft, normalizeUserLocation } from "./location.js";
 import {
   accountStorageKey,
+  addGuestRoadmapsToAccount,
   adoptLegacyAccount,
   clearGuestRecord,
+  createRoadmapId,
   ensureGuestUserId,
   loadAccountSnapshot,
+  loadGuestRoadmaps,
   migrateGuestSnapshot,
+  openAccountRoadmap,
   readSession,
   removeAccountSnapshot,
+  roadmapEntryFromSnapshot,
+  roadmapName,
   saveAccountSnapshot,
+  saveGuestRoadmaps,
   startFreshAccountRoadmap,
   touchActiveRoadmapEntry,
+  upsertRoadmapEntry,
   writeSession
 } from "./guest-account.js";
+
+export const ROADMAPS_CHANGED_EVENT = "whatimado:roadmaps-changed";
+
+function announceRoadmapsChanged() {
+  try {
+    window.dispatchEvent(new CustomEvent(ROADMAPS_CHANGED_EVENT));
+  } catch {
+    /* no window in tests */
+  }
+}
 
 const STORAGE_KEY = "whatimado_v2_journey_guest";
 const VERSION = 1;
@@ -136,9 +154,134 @@ export function saveGuestJourney() {
       importedRoadmaps: existing?.importedRoadmaps || []
     });
     if (saved) notifyAccountSaved(session.userId);
+    if (saved) announceRoadmapsChanged();
     return saved;
   }
-  return writeRaw(JSON.stringify(snapshot));
+  const saved = writeRaw(JSON.stringify(snapshot));
+  if (saved) announceRoadmapsChanged();
+  return saved;
+}
+
+/** Save the open map now (Save Map). It is listed under Roadmaps as the current map. */
+export function saveCurrentMap() {
+  if (!persistEnabled || !buildGuestSnapshot()) return false;
+  if (saveTimer) window.clearTimeout(saveTimer);
+  saveTimer = 0;
+  return saveGuestJourney();
+}
+
+/**
+ * Guest: put the open map into the saved roadmaps list before it is cleared.
+ * Accounts shelve through startFreshAccountRoadmap instead.
+ */
+export function shelveGuestMap() {
+  if (!persistEnabled) return false;
+  const session = readSession();
+  if (session?.mode === "account") return false;
+  const live = buildGuestSnapshot();
+  if (!live) return false;
+  const list = loadGuestRoadmaps();
+  const previous = list.find((entry) => entry.id === live.journey.id) || null;
+  const saved = saveGuestRoadmaps(upsertRoadmapEntry(list, roadmapEntryFromSnapshot(live, live.journey.id, Date.now(), previous)));
+  if (saved) announceRoadmapsChanged();
+  return saved;
+}
+
+/** Keep a copy of the open roadmap in the list before a different roadmap replaces it. */
+export function saveRoadmapCopy() {
+  if (!persistEnabled) return false;
+  const live = buildGuestSnapshot();
+  if (!live) return false;
+  const stamp = Date.now();
+  const id = createRoadmapId(stamp);
+  const entry = roadmapEntryFromSnapshot(live, id, stamp);
+  entry.snapshot.journey.id = id;
+  const session = readSession();
+  let saved = false;
+  if (session?.mode === "account" && session.userId) {
+    const account = loadAccountSnapshot(session.userId);
+    if (!account) return false;
+    saved = saveAccountSnapshot({ ...account, roadmaps: upsertRoadmapEntry(account.roadmaps, entry) });
+    if (saved) notifyAccountSaved(session.userId);
+  } else {
+    saved = saveGuestRoadmaps(upsertRoadmapEntry(loadGuestRoadmaps(), entry));
+  }
+  if (saved) announceRoadmapsChanged();
+  return saved;
+}
+
+/**
+ * The open map (when it has any work) followed by saved roadmaps, newest first.
+ * @returns {{ id: string, title: string, savedAt: number, current: boolean }[]}
+ */
+export function listSavedRoadmaps() {
+  const session = readSession();
+  const live = buildGuestSnapshot();
+  /** @type {{ id: string, title: string, savedAt: number, current: boolean }[]} */
+  const saved = [];
+  let liveId = live?.journey?.id || null;
+  if (session?.mode === "account" && session.userId) {
+    const account = loadAccountSnapshot(session.userId);
+    if (live && account?.activeRoadmapId) liveId = account.activeRoadmapId;
+    for (const entry of account?.roadmaps || []) {
+      if (!entry?.id || entry.id === liveId || !entry.snapshot?.journey?.id) continue;
+      saved.push({ id: entry.id, title: roadmapName(entry.snapshot) || entry.title || "Roadmap", savedAt: Number(entry.savedAt) || 0, current: false });
+    }
+    for (const entry of account?.importedRoadmaps || []) {
+      if (!entry?.id || entry.id === liveId || !entry.journey?.id) continue;
+      saved.push({ id: entry.id, title: entry.title || roadmapName(entry) || "Roadmap", savedAt: Number(entry.savedAt) || 0, current: false });
+    }
+  } else {
+    for (const entry of loadGuestRoadmaps()) {
+      if (entry.id === liveId) continue;
+      saved.push({ id: entry.id, title: roadmapName(entry.snapshot) || entry.title || "Roadmap", savedAt: Number(entry.savedAt) || 0, current: false });
+    }
+  }
+  saved.sort((a, b) => b.savedAt - a.savedAt);
+  if (!live || !liveId) return saved;
+  return [{ id: liveId, title: roadmapName(live) || "Untitled map", savedAt: live.savedAt, current: true }, ...saved];
+}
+
+/**
+ * Save the open map, then make a saved roadmap the open one. Persistence stays
+ * off afterwards; the caller reloads.
+ * @param {string} roadmapId
+ * @returns {boolean} whether the saved roadmap was opened
+ */
+export function openSavedRoadmap(roadmapId) {
+  if (!persistEnabled || !roadmapId) return false;
+  const session = readSession();
+  if (session?.mode === "account" && session.userId) {
+    flushPersist();
+    const next = openAccountRoadmap(loadAccountSnapshot(session.userId), roadmapId);
+    if (!next || !saveAccountSnapshot(next)) return false;
+    freezePersist();
+    notifyAccountSaved(session.userId);
+    return true;
+  }
+  let list = loadGuestRoadmaps();
+  const target = list.find((entry) => entry.id === roadmapId);
+  if (!target) return false;
+  const live = buildGuestSnapshot();
+  if (live && live.journey.id !== roadmapId) {
+    const previous = list.find((entry) => entry.id === live.journey.id) || null;
+    list = upsertRoadmapEntry(list, roadmapEntryFromSnapshot(live, live.journey.id, Date.now(), previous));
+    if (!saveGuestRoadmaps(list)) return false;
+  }
+  const opened = writeRaw(
+    JSON.stringify({
+      version: VERSION,
+      savedAt: Date.now(),
+      sessionOwner: "guest",
+      guestUserId: ensureGuestUserId(),
+      userId: null,
+      ...target.snapshot
+    })
+  );
+  if (!opened) return false;
+  freezePersist();
+  saveGuestRoadmaps(list.filter((entry) => entry.id !== roadmapId));
+  return true;
 }
 
 /**
@@ -178,6 +321,7 @@ export function adoptAccountSession(userId, email) {
   const guest = session?.mode === "account" ? null : buildGuestSnapshot() || loadGuestSnapshot();
   let moved = { imported: false, replacedLive: false };
   if (guest) moved = migrateGuestToAccount(userId, email);
+  else if (session?.mode !== "account") carryGuestRoadmaps(userId);
   if (!moved.imported) writeSession({ mode: "account", userId, email });
   freezePersist();
   return { keptGuest: Boolean(moved.imported), replacedLive: Boolean(moved.replacedLive), adoptedLegacy };
@@ -198,6 +342,7 @@ export function clearAllLocalRoadmaps() {
   const session = readSession();
   freezePersist();
   removeRaw();
+  if (session?.mode !== "account") saveGuestRoadmaps([]);
   if (session?.mode === "account" && session.userId) {
     removeAccountSnapshot(session.userId);
     return session.userId;
@@ -228,7 +373,19 @@ export function migrateGuestToAccount(accountUserId, email = "") {
   saveAccountSnapshot(moved.accountSnapshot);
   writeSession({ mode: "account", userId: accountUserId, email });
   clearGuestRecord(window.localStorage, STORAGE_KEY);
+  carryGuestRoadmaps(accountUserId);
   return moved;
+}
+
+/**
+ * Move the guest's saved roadmaps onto the account, then forget the guest list.
+ * @param {string} accountUserId
+ */
+function carryGuestRoadmaps(accountUserId) {
+  const guestRoadmaps = loadGuestRoadmaps();
+  if (!guestRoadmaps.length) return;
+  const next = addGuestRoadmapsToAccount(loadAccountSnapshot(accountUserId), guestRoadmaps, accountUserId);
+  if (next && saveAccountSnapshot(next)) saveGuestRoadmaps([]);
 }
 
 /** @param {string} userId */

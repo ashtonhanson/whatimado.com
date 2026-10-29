@@ -47,7 +47,7 @@ export function initMobileNav() {
     if (event.key === "Escape") closeMobileMenu();
   });
 
-  rail.querySelectorAll(".v2-nav-btn:not([disabled])").forEach((btn) => {
+  rail.querySelectorAll(".v2-nav-btn:not([disabled]):not(#nav-roadmaps)").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (MOBILE_MQ.matches) closeMobileMenu();
     });

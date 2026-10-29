@@ -16,10 +16,14 @@ import {
   clearGuestJourney,
   flushPersist,
   openFreshAccountRoadmap,
+  openSavedRoadmap,
   restoreGuestJourney,
+  saveRoadmapCopy,
   schedulePersist,
-  setPersistEnabled
+  setPersistEnabled,
+  shelveGuestMap
 } from "../state/persistence.js";
+import { bindRoadmapsNav, bindSaveMapButton } from "./roadmaps-nav.js";
 import {
   bindComposerDraftLifecycle,
   cancelPendingComposerDraftSave,
@@ -440,6 +444,7 @@ export function initChatFlow(ctx) {
       return;
     }
     const switching = Boolean(appStore.journey.roadmapPathId && appStore.journey.roadmapPathId !== nodeId);
+    if (switching && appStore.journey.missionsStages?.length) saveRoadmapCopy();
     if (appStore.journey.selectedPathId && appStore.journey.selectedPathId !== nodeId) clearPathThread();
     if (switching) missions.clear();
     selectGraphNode(nodeId);
@@ -736,16 +741,30 @@ export function initChatFlow(ctx) {
 
   let newMapResetInFlight = false;
 
+  function reloadWithoutDemo() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("demo");
+    window.location.assign(`${url.pathname}${url.hash}`);
+  }
+
   function startNewJourney() {
     cancelPendingComposerDraftSave();
     clearComposerDraft();
+    shelveGuestMap();
     openFreshAccountRoadmap();
     setPersistEnabled(true);
     clearGuestJourney();
     resetAppStore();
-    const url = new URL(window.location.href);
-    url.searchParams.delete("demo");
-    window.location.assign(`${url.pathname}${url.hash}`);
+    reloadWithoutDemo();
+  }
+
+  /** @param {string} roadmapId */
+  function openRoadmapFromList(roadmapId) {
+    if (newMapResetInFlight) return;
+    cancelPendingComposerDraftSave();
+    if (!openSavedRoadmap(roadmapId)) return;
+    newMapResetInFlight = true;
+    reloadWithoutDemo();
   }
 
   async function requestStartNewJourney(trigger) {
@@ -1119,6 +1138,9 @@ export function initChatFlow(ctx) {
   document.getElementById("nav-new-map")?.addEventListener("click", (event) => {
     void requestStartNewJourney(/** @type {HTMLElement} */ (event.currentTarget));
   });
+
+  bindRoadmapsNav({ onOpen: openRoadmapFromList });
+  bindSaveMapButton(/** @type {HTMLButtonElement | null} */ (document.getElementById("missions-save-map")));
 
   window.addEventListener("resize", () => layout());
 

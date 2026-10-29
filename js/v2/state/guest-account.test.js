@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { migrateGuestSnapshot, startFreshAccountRoadmap, touchActiveRoadmapEntry } from "./guest-account.js";
+import {
+  addGuestRoadmapsToAccount,
+  migrateGuestSnapshot,
+  openAccountRoadmap,
+  roadmapEntryFromSnapshot,
+  startFreshAccountRoadmap,
+  touchActiveRoadmapEntry,
+  upsertRoadmapEntry
+} from "./guest-account.js";
 import { applyStructuredMissionUpdate, parseDifficultyUpdate } from "../roadmap/difficulty.js";
 
 function guestSnapshot() {
@@ -147,4 +155,52 @@ test("applying a chat rewrite stores structured fields and leaves other missions
   assert.equal(next[0].missions[0].transcript, undefined);
   assert.equal(next[0].missions[1].title, "Save the list");
   assert.equal(stages[0].missions[0].title, "Email two studios");
+});
+
+test("opening a saved account roadmap shelves the live one and keeps both", () => {
+  const live = {
+    userId: "u1",
+    activeRoadmapId: "live",
+    journey: { id: "journey-live", roadmapPathId: "p1" },
+    graph: { nodes: [{ id: "p1", title: "Live path" }], edges: [] },
+    roadmaps: [
+      { id: "live", title: "Live path", createdAt: 1, savedAt: 1, snapshot: null },
+      { id: "old", title: "Old", createdAt: 1, savedAt: 1, snapshot: { journey: { id: "journey-old", roadmapPathId: "p2" }, graph: { nodes: [{ id: "p2", title: "Old path" }], edges: [] } } }
+    ],
+    importedRoadmaps: []
+  };
+  const next = openAccountRoadmap(live, "old", new Date(5));
+  assert.equal(next.activeRoadmapId, "old");
+  assert.equal(next.journey.id, "journey-old");
+  const shelved = next.roadmaps.find((entry) => entry.id === "live");
+  assert.equal(shelved.snapshot.journey.id, "journey-live");
+  assert.equal(next.roadmaps.find((entry) => entry.id === "old").snapshot, null);
+  assert.equal(next.roadmaps.length, 2);
+  assert.equal(openAccountRoadmap(live, "live"), null);
+  assert.equal(openAccountRoadmap(live, "missing"), null);
+});
+
+test("opening an imported roadmap moves it into the account roadmaps", () => {
+  const account = {
+    userId: "u1",
+    activeRoadmapId: "live",
+    journey: { id: "journey-live" },
+    roadmaps: [{ id: "live", title: "Live", createdAt: 1, savedAt: 1, snapshot: null }],
+    importedRoadmaps: [{ id: "import_x", title: "Guest · 2026", savedAt: 2, journey: { id: "journey-g" }, graph: { nodes: [], edges: [] } }]
+  };
+  const next = openAccountRoadmap(account, "import_x", new Date(9));
+  assert.equal(next.importedRoadmaps.length, 0);
+  assert.equal(next.journey.id, "journey-g");
+  assert.deepEqual(next.roadmaps.map((entry) => entry.id).sort(), ["import_x", "live"]);
+});
+
+test("guest saved roadmaps carry onto an account without duplicates", () => {
+  const entry = roadmapEntryFromSnapshot({ journey: { id: "j2", roadmapPathId: "p" }, graph: { nodes: [{ id: "p", title: "Path" }], edges: [] } }, "j2", 7);
+  assert.equal(entry.title, "Path");
+  const account = addGuestRoadmapsToAccount({ userId: "u1", journey: { id: "j1" }, roadmaps: [] }, [entry, entry], "u1");
+  assert.equal(account.roadmaps.length, 1);
+  const fresh = addGuestRoadmapsToAccount(null, [entry], "u1");
+  assert.equal(fresh.userId, "u1");
+  assert.equal(fresh.roadmaps[0].snapshot.journey.id, "j2");
+  assert.deepEqual(upsertRoadmapEntry([entry], { ...entry, title: "New" }).map((item) => item.title), ["New"]);
 });
