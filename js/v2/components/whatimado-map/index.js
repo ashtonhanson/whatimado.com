@@ -70,6 +70,8 @@ const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
 /** Unscaled dot diameter the home sample paints on a phone. */
 const MOBILE_HOME_DOT_PX = 15.6;
+/** Thumb target across a phone roadmap dot at the default scale. Task rows sit about 22px apart. */
+const MOBILE_HIT_PX = 30;
 
 /**
  * Stretch the dot spacing so a tether of this length starts and ends on a dot.
@@ -720,6 +722,43 @@ export class WhatimadoMap extends HTMLElement {
     return out;
   }
 
+  /**
+   * Run a redraw that must not move the phone camera, such as a task's done state
+   * changing. Zoom and pan stay exactly where they were, user panning included.
+   * @param {() => void} redraw
+   */
+  holdCamera(redraw) {
+    if (!window.matchMedia("(max-width: 900px)").matches) {
+      redraw();
+      return;
+    }
+    const kept = {
+      zoom: this._zoom,
+      panX: this._panX,
+      panY: this._panY,
+      userPanned: this._userPanned,
+      focalLocked: this._focalLocked,
+      focalNodeId: this._focalNodeId
+    };
+    this._cameraHeld = true;
+    try {
+      redraw();
+    } finally {
+      this._cameraHeld = false;
+      if (this._gravityRaf !== null) {
+        cancelAnimationFrame(this._gravityRaf);
+        this._gravityRaf = null;
+      }
+      this._zoom = kept.zoom;
+      this._panX = kept.panX;
+      this._panY = kept.panY;
+      this._userPanned = kept.userPanned;
+      this._focalLocked = kept.focalLocked;
+      this._focalNodeId = kept.focalNodeId;
+      this._applyPanTransform();
+    }
+  }
+
   /** Sync live layer from graph-store */
   syncLiveFromStore() {
     this.loadLiveGraph(graphStore.nodes, graphStore.edges);
@@ -792,6 +831,7 @@ export class WhatimadoMap extends HTMLElement {
    * @param {{ animate?: boolean }} [options]
    */
   centerOnNode(id, { animate = true } = {}) {
+    if (this._cameraHeld) return;
     if (!id || !this._liveNodes.some((node) => node.id === id)) return;
     this._userPanned = false;
     this._focalLocked = true;
@@ -1212,6 +1252,7 @@ export class WhatimadoMap extends HTMLElement {
    * @returns {boolean} Whether the camera was fitted
    */
   syncSpreadForFrame(frameTop) {
+    if (this._cameraHeld) return true;
     if (this._userPanned) return false;
     if (!this._liveNodes.some((node) => node.type === "more")) return false;
     const frame = document.getElementById("dynamic-frame");
@@ -1344,6 +1385,7 @@ export class WhatimadoMap extends HTMLElement {
    * @returns {boolean}
    */
   syncRoadmapBranchFit({ animate = false } = {}) {
+    if (this._cameraHeld) return true;
     const hasRoadmapColumns = this._liveNodes.some((node) => node.type === "task");
     if (!hasRoadmapColumns) return false;
     this._userPanned = false;
@@ -1637,6 +1679,7 @@ export class WhatimadoMap extends HTMLElement {
     if (this._panPointer) {
       this.cancelPanFromFrameDrag();
     }
+    this._cancelNodeDrag();
 
     const center = this._touchCenter(event.touches);
     const focal = this._clientToSvg(center.x, center.y);
@@ -1788,6 +1831,8 @@ export class WhatimadoMap extends HTMLElement {
     if (this._pinch) return;
     if (this.getAttribute("mode") === "hidden") return;
     if (document.body.classList.contains("is-frame-dragging")) return;
+    /* On phones one finger is for nodes; moving the map takes two fingers. */
+    if (event.pointerType === "touch" && window.matchMedia("(max-width: 900px)").matches) return;
 
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -2223,7 +2268,7 @@ export class WhatimadoMap extends HTMLElement {
     const shiftY = node.baseY - parseFloat(node.circleEl.getAttribute("cy") || String(node.baseY));
     if (shiftX || shiftY) {
       /* Laid-out titles use absolute tspan coordinates, so carry them with the node. */
-      node.groupEl.querySelectorAll(".whatimado-map__label tspan, .whatimado-map__kicker tspan").forEach((el) => {
+      node.groupEl.querySelectorAll(".whatimado-map__label tspan, .whatimado-map__kicker tspan, .whatimado-map__label-hit").forEach((el) => {
         const x = parseFloat(el.getAttribute("x") || "");
         const y = parseFloat(el.getAttribute("y") || "");
         if (Number.isFinite(x)) el.setAttribute("x", (x + shiftX).toFixed(2));
@@ -2435,8 +2480,31 @@ export class WhatimadoMap extends HTMLElement {
    * @param {PointerEvent} event
    * @param {string} nodeId
    */
+  /** A second finger turns a node drag into a pinch; the node stays where it was. */
+  _cancelNodeDrag() {
+    const pointer = this._pointer;
+    if (!pointer) return;
+    this._pointer = null;
+    const driftNode = this._driftNodes.get(pointer.nodeId);
+    if (!driftNode) return;
+    driftNode.baseX = pointer.startBaseX;
+    driftNode.baseY = pointer.startBaseY;
+    driftNode.dragX = 0;
+    driftNode.dragY = 0;
+    driftNode.glideVx = 0;
+    driftNode.glideVy = 0;
+    driftNode.groupEl.classList.remove("is-dragging");
+    try {
+      driftNode.groupEl.releasePointerCapture(pointer.pointerId);
+    } catch {
+      /* Capture may already be gone. */
+    }
+    this._syncNodePosition(driftNode);
+  }
+
   _onNodePointerDown(event, nodeId) {
     if (event.button !== 0) return;
+    if (this._pinch) return;
 
     const driftNode = this._driftNodes.get(nodeId);
     if (!driftNode) return;
@@ -2724,6 +2792,11 @@ export class WhatimadoMap extends HTMLElement {
       const pxPerSvg = Math.hypot(ctm.a, ctm.b) / (this._zoom || 1);
       const restPx = 2 * r * pxPerSvg * mapLayoutZoom();
       if (restPx > 0.5) boost = Math.max(1, MOBILE_HOME_DOT_PX / restPx);
+      const hit = body.closest(".whatimado-map__node")?.querySelector(".whatimado-map__node-hit");
+      const hitPx = 2 * parseFloat(hit?.getAttribute("r") || "0") * pxPerSvg * mapLayoutZoom();
+      if (hitPx > 0.5) this.style.setProperty("--v2-roadmap-hit-scale", Math.max(1, MOBILE_HIT_PX / hitPx).toFixed(3));
+    } else {
+      this.style.removeProperty("--v2-roadmap-hit-scale");
     }
     if (boost === 1) this.style.removeProperty("--v2-roadmap-dot-boost");
     else this.style.setProperty("--v2-roadmap-dot-boost", boost.toFixed(3));
@@ -2993,6 +3066,27 @@ export class WhatimadoMap extends HTMLElement {
       }
     });
 
+    const thumbTargets = this._mapHoldsStill();
+    items.forEach((item) => {
+      const hit = item.group.querySelector(".whatimado-map__label-hit");
+      if (!(hit instanceof SVGRectElement)) return;
+      const ctm = item.group.getScreenCTM();
+      const shown = thumbTargets && ctm && getComputedStyle(item.text).visibility !== "hidden";
+      if (!shown) {
+        hit.setAttribute("width", "0");
+        hit.setAttribute("height", "0");
+        return;
+      }
+      const unit = 1 / (Math.hypot(ctm.a, ctm.b) || 1);
+      const box = item.text.getBBox();
+      const padX = 10 * unit;
+      const padY = 4 * unit;
+      hit.setAttribute("x", (box.x - padX).toFixed(1));
+      hit.setAttribute("y", (box.y - padY).toFixed(1));
+      hit.setAttribute("width", (box.width + padX * 2).toFixed(1));
+      hit.setAttribute("height", (box.height + padY * 2).toFixed(1));
+    });
+
     items.forEach((item) => {
       const line = item.leader;
       if (!line) return;
@@ -3192,6 +3286,7 @@ export class WhatimadoMap extends HTMLElement {
             ${kickerText
               ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`
               : ""}
+            ${titleLines.length ? `<rect class="whatimado-map__label-hit" x="${cx}" y="${cy}" width="0" height="0" />` : ""}
             ${titleLines.length
               ? `<text class="whatimado-map__label" text-anchor="middle">${titleLines
                   .map(

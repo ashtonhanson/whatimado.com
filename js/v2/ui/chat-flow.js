@@ -324,6 +324,12 @@ export function initChatFlow(ctx) {
     appStore.journey.planConfirmed = confirmed;
   }
 
+  let shownBranchKey = "";
+  /** Everything that places a node on the branch; done state is left out on purpose. */
+  function roadmapBranchKey(pathId, stages) {
+    return JSON.stringify([pathId, stages.map((stage) => [stage.label, (stage.missions || []).map((m) => [m.id, m.title])])]);
+  }
+
   const missions = createMissionsController({
     sectionEl: document.getElementById("missions"),
     listEl: document.getElementById("mission-stages"),
@@ -337,15 +343,24 @@ export function initChatFlow(ctx) {
       setExtraExploreOptions([{ id: "option-analytics", label: "Analytics" }]);
       const pathId = appStore.journey.roadmapPathId;
       if (stages?.length && pathId) {
-        showRoadmapBranch(pathId, stages);
-        const keep = mapEl?._selectedId;
-        mapEl?.syncLiveFromStore();
-        const still = keep && graphStore.nodes.some((node) => node.id === keep);
-        mapEl?.setSelectedNode(still ? keep : pathId);
-        mapEl?.syncRoadmapBranchFit?.({ animate: false });
+        /* Ticking a task redraws the same branch. The phone map keeps its zoom and position for that. */
+        const branchKey = roadmapBranchKey(pathId, stages);
+        const sameBranch = branchKey === shownBranchKey;
+        shownBranchKey = branchKey;
+        const redraw = () => {
+          showRoadmapBranch(pathId, stages);
+          const keep = mapEl?._selectedId;
+          mapEl?.syncLiveFromStore();
+          const still = keep && graphStore.nodes.some((node) => node.id === keep);
+          mapEl?.setSelectedNode(still ? keep : pathId);
+          if (!sameBranch) mapEl?.syncRoadmapBranchFit?.({ animate: false });
+        };
+        if (sameBranch && mapEl?.holdCamera) mapEl.holdCamera(redraw);
+        else redraw();
         markMapCurrent();
         paintOpenContext(resolvedChatFocusId());
       } else if (!stages?.length) {
+        shownBranchKey = "";
         restorePossibilityMap();
         mapEl?.syncLiveFromStore();
       }

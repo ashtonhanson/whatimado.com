@@ -17,6 +17,7 @@ const FOCUS_HERO_PROMPT_GAP_PX = 13;
 /** Mid-glide fits read a moving frame, so fit once more after the sheet stops. */
 const SETTLE_FIT_MS = 140;
 let settleFitTimer = 0;
+let settleFitPending = false;
 
 function lockDocumentScroll() {
   if (window.scrollX || window.scrollY) {
@@ -84,9 +85,15 @@ function fitPinnedMap(map) {
   if (heightChanged || frameMoved || map.dataset.sceneFit !== "1") {
     map.dataset.sceneFit = "1";
     requestAnimationFrame(() => requestAnimationFrame(run));
+    settleFitPending = true;
   }
+  /* Chat re-renders (ticking a task) sync without moving anything; they must not refit the map. */
+  if (!settleFitPending) return;
   window.clearTimeout(settleFitTimer);
-  settleFitTimer = window.setTimeout(run, SETTLE_FIT_MS);
+  settleFitTimer = window.setTimeout(() => {
+    settleFitPending = false;
+    run();
+  }, SETTLE_FIT_MS);
 }
 
 /**
