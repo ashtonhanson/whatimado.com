@@ -66,6 +66,8 @@ const EDGE_TUCK = 0.6;
 /** "Roadmaps" over the selected roadmap title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
+/** Unscaled dot diameter the home sample paints on a phone. */
+const MOBILE_HOME_DOT_PX = 15.6;
 
 /**
  * Stretch the dot spacing so a tether of this length starts and ends on a dot.
@@ -2682,6 +2684,27 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
+   * Phone roadmap dots are sized against the layout zoom, not the live zoom, so a pinch grows
+   * and shrinks them with the map the same way the home sample does.
+   * @returns {number} scale on mission and task dots
+   */
+  _syncRoadmapDotSize() {
+    let boost = 1;
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const body = this._liveLayer?.querySelector(".is-mission .whatimado-map__node-body, .is-task .whatimado-map__node-body");
+    const ctm = body?.closest(".whatimado-map__node")?.getScreenCTM();
+    if (mobile && this.classList.contains("is-roadmap-open") && body && ctm) {
+      const r = parseFloat(body.getAttribute("r") || "0");
+      const pxPerSvg = Math.hypot(ctm.a, ctm.b) / (this._zoom || 1);
+      const restPx = 2 * r * pxPerSvg * mapLayoutZoom();
+      if (restPx > 0.5) boost = Math.max(1, MOBILE_HOME_DOT_PX / restPx);
+    }
+    if (boost === 1) this.style.removeProperty("--v2-roadmap-dot-boost");
+    else this.style.setProperty("--v2-roadmap-dot-boost", boost.toFixed(3));
+    return boost;
+  }
+
+  /**
    * Place each title beside its own node, then pin it so it stays with the dot while the map pans.
    */
   _layoutCallouts() {
@@ -2699,6 +2722,7 @@ export class WhatimadoMap extends HTMLElement {
 
     this._layingOut = true;
     try {
+      const dotBoost = this._syncRoadmapDotSize();
       const restCenter = (body) => {
         const host = body?.closest(".whatimado-map__node");
         const ctm = host?.getScreenCTM();
@@ -2714,7 +2738,8 @@ export class WhatimadoMap extends HTMLElement {
         edge.y = cy;
         const screen = center.matrixTransform(ctm);
         const edgeScreen = edge.matrixTransform(ctm);
-        const nr = Math.hypot(edgeScreen.x - screen.x, edgeScreen.y - screen.y);
+        const boosted = host.classList.contains("is-mission") || host.classList.contains("is-task");
+        const nr = Math.hypot(edgeScreen.x - screen.x, edgeScreen.y - screen.y) * (boosted ? dotBoost : 1);
         return {
           nx: screen.x,
           ny: screen.y,
@@ -2778,14 +2803,17 @@ export class WhatimadoMap extends HTMLElement {
         if (rest) dots.push(rest);
       });
       const hostRect = this.getBoundingClientRect();
-      const band = this._openBand();
-      const titleBounds = {
-        left: Math.max(0, hostRect.left),
-        right: Math.min(window.innerWidth, hostRect.right),
-        top: band?.top,
-        bottom: band?.bottom
-      };
       const mobile = window.matchMedia("(max-width: 900px)").matches;
+      const band = mobile ? null : this._openBand();
+      /* A phone title stays put beside its dot and the map edge crops it. */
+      const titleBounds = mobile
+        ? null
+        : {
+            left: Math.max(0, hostRect.left),
+            right: Math.min(window.innerWidth, hostRect.right),
+            top: band?.top,
+            bottom: band?.bottom
+          };
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-label-crowded"));
       const shown = (item) => getComputedStyle(item.text).visibility !== "hidden";
       const crowdedPairs = (list) => {

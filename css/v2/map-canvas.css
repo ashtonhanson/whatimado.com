@@ -509,6 +509,15 @@ whatimado-map .whatimado-map__node--live.is-task .whatimado-map__node-body {
   transform: scale(0.7);
 }
 
+/* Phone roadmap: mission and task dots paint at the home sample's dot size. */
+@media (max-width: 900px) {
+  whatimado-map.is-roadmap-open .whatimado-map__node--live:is(.is-mission, .is-task) :is(.whatimado-map__node-body, .whatimado-map__node-aura) {
+    transform-box: fill-box;
+    transform-origin: center;
+    scale: var(--v2-roadmap-dot-boost, 1);
+  }
+}
+
 whatimado-map .whatimado-map__node--live.is-more .whatimado-map__node-body {
   fill: transparent;
   stroke: var(--v2-teal);
