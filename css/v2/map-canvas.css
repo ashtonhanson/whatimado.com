@@ -99,6 +99,38 @@ whatimado-map .whatimado-map__chrome {
   display: none !important;
 }
 
+.whatimado-map__gesture-hint {
+  display: none;
+}
+
+/*
+ * Phones: the roadmap title and timeline give way to one line of gesture help.
+ * They stay in the layout (only unseen) so the map band and every node keep their place.
+ */
+@media (max-width: 900px) {
+  whatimado-map .whatimado-map__chrome .whatimado-map__roadmap-sticky,
+  whatimado-map .whatimado-map__chrome #map-timeline {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  whatimado-map:is(:has(.whatimado-map__roadmap-sticky:not([hidden])), :has(#map-timeline:not([hidden]))) .whatimado-map__gesture-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 0;
+    padding: 0 0.3rem;
+    color: var(--v2-text-muted, #9aa8a6);
+    font-size: clamp(0.5rem, 2.3vw, 0.68rem);
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    text-align: center;
+    pointer-events: none;
+  }
+}
+
 whatimado-map .whatimado-map__timeline-col,
 whatimado-map .whatimado-map__timeline-col:has(#map-timeline:not([hidden])) {
   display: flex;
@@ -548,10 +580,6 @@ whatimado-map .whatimado-map__node--live.is-task .whatimado-map__node-body {
     scale: calc(var(--v2-roadmap-dot-boost, 1) * var(--v2-dot-even, 1));
   }
 
-  whatimado-map.is-roadmap-open .whatimado-map__node-float {
-    animation: none;
-  }
-
   whatimado-map.is-roadmap-open .whatimado-map__edge--live {
     stroke-width: calc(var(--v2-map-edge-width, 1.45) * 2.4);
   }
@@ -866,6 +894,26 @@ whatimado-map.is-roadmap-open .whatimado-map__edge--live.is-trail {
     transform-box: fill-box;
     transform-origin: center;
     scale: var(--v2-roadmap-hit-scale, 1);
+  }
+
+  /* The plus is a full-size teal dot with a dark plus inside. */
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-more .whatimado-map__node-body,
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-more.is-selected .whatimado-map__node-body {
+    fill: var(--v2-teal);
+    stroke: none;
+    transform-box: fill-box;
+    transform-origin: center;
+    scale: var(--v2-roadmap-plus-scale, 1);
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-more .whatimado-map__plus {
+    transform-box: fill-box;
+    transform-origin: center;
+    scale: var(--v2-roadmap-plus-scale, 1);
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-more .whatimado-map__plus line {
+    stroke: var(--v2-bg);
   }
 }
 

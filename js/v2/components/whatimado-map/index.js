@@ -70,6 +70,8 @@ const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
 /** Unscaled dot diameter the home sample paints on a phone. */
 const MOBILE_HOME_DOT_PX = 15.6;
+/** Every phone roadmap dot paints at the open mission's size: the home dot at the mission's 0.84 rest scale. */
+const MOBILE_ROADMAP_DOT_PX = MOBILE_HOME_DOT_PX * 0.84;
 /** Thumb target across a phone roadmap dot at the default scale. Task rows sit about 22px apart. */
 const MOBILE_HIT_PX = 30;
 
@@ -241,6 +243,7 @@ const MAP_TEMPLATE = `
     </svg>
       <div class="whatimado-map__chrome">
       <p class="whatimado-map__roadmap-sticky" hidden></p>
+      <p class="whatimado-map__gesture-hint">Use two fingers to pan and zoom the map. Tap or drag with one finger to select a node.</p>
       <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
       <div class="whatimado-map__timeline-col">
         <div class="whatimado-map__timeline-tools">
@@ -2124,7 +2127,7 @@ export class WhatimadoMap extends HTMLElement {
     }
   }
 
-  /** A phone roadmap is one rigid piece: no idle drift, so only the camera moves it. */
+  /** A phone roadmap: titles laid out at the default scale, trail-width lines, thumb-sized targets. */
   _mapHoldsStill() {
     return this.classList.contains("is-roadmap-open") && window.matchMedia("(max-width: 900px)").matches;
   }
@@ -2132,7 +2135,7 @@ export class WhatimadoMap extends HTMLElement {
   /** Bake ambient drift into base coords; record anchor so transform stays continuous */
   _commitDriftToBase(nodeId) {
     const node = this._driftNodes.get(nodeId);
-    if (!node || this._driftReducedMotion || this._mapHoldsStill()) return;
+    if (!node || this._driftReducedMotion) return;
 
     const elapsed = performance.now() - this._driftStartMs;
     const drift = driftOffset(elapsed, node.delay, node.duration);
@@ -2155,7 +2158,7 @@ export class WhatimadoMap extends HTMLElement {
    * @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node
    */
   _driftTransform(elapsed, node) {
-    if (this._driftReducedMotion || this._mapHoldsStill()) return { x: 0, y: 0 };
+    if (this._driftReducedMotion) return { x: 0, y: 0 };
     const drift = driftOffset(elapsed, node.delay, node.duration);
     return {
       x: drift.x - node.driftAnchorX,
@@ -2789,14 +2792,25 @@ export class WhatimadoMap extends HTMLElement {
     const ctm = body?.closest(".whatimado-map__node")?.getScreenCTM();
     if (mobile && this.classList.contains("is-roadmap-open") && body && ctm) {
       const r = parseFloat(body.getAttribute("r") || "0");
-      const pxPerSvg = Math.hypot(ctm.a, ctm.b) / (this._zoom || 1);
+      /* Read the camera's scale off the DOM, not this._zoom: mid-ease the two disagree and every dot would jump. */
+      const stage = this._panLayer?.parentNode;
+      const stageCtm = stage instanceof SVGGraphicsElement ? stage.getScreenCTM() : null;
+      const panCtm = this._panLayer?.getScreenCTM();
+      const pxPerSvg =
+        stageCtm && panCtm
+          ? Math.hypot(stageCtm.a, stageCtm.b) * (Math.hypot(ctm.a, ctm.b) / (Math.hypot(panCtm.a, panCtm.b) || 1))
+          : Math.hypot(ctm.a, ctm.b) / (this._zoom || 1);
       const restPx = 2 * r * pxPerSvg * mapLayoutZoom();
       if (restPx > 0.5) boost = Math.max(1, MOBILE_HOME_DOT_PX / restPx);
       const hit = body.closest(".whatimado-map__node")?.querySelector(".whatimado-map__node-hit");
       const hitPx = 2 * parseFloat(hit?.getAttribute("r") || "0") * pxPerSvg * mapLayoutZoom();
       if (hitPx > 0.5) this.style.setProperty("--v2-roadmap-hit-scale", Math.max(1, MOBILE_HIT_PX / hitPx).toFixed(3));
+      const plus = this._liveLayer?.querySelector(".whatimado-map__node--live.is-more .whatimado-map__node-body");
+      const plusPx = 2 * parseFloat(plus?.getAttribute("r") || "0") * pxPerSvg * mapLayoutZoom();
+      if (plusPx > 0.5) this.style.setProperty("--v2-roadmap-plus-scale", (MOBILE_ROADMAP_DOT_PX / plusPx).toFixed(3));
     } else {
       this.style.removeProperty("--v2-roadmap-hit-scale");
+      this.style.removeProperty("--v2-roadmap-plus-scale");
     }
     if (boost === 1) this.style.removeProperty("--v2-roadmap-dot-boost");
     else this.style.setProperty("--v2-roadmap-dot-boost", boost.toFixed(3));

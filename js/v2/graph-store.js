@@ -401,6 +401,9 @@ function youSpokeRadius() {
   return Math.min(radius, maxRadius);
 }
 
+/** Phone option spokes reach a little past the cap so the Settings title clears its neighbours. */
+const MOBILE_OPTION_SPOKE_PUSH = 1.15;
+
 /** Settings, Analytics, Notes, and Roadmaps sit further from You than the chosen path. */
 function optionSpokeRadius() {
   const base = youSpokeRadius();
@@ -409,7 +412,7 @@ function optionSpokeRadius() {
   const wanted = unit > 0 ? 120 / (unit * 0.5) : base * 1.7;
   const leftCos = Math.cos((205 * Math.PI) / 180);
   const maxRadius = (YOU_LINKED.x + 48) / -leftCos;
-  return Math.min(Math.max(base, wanted), maxRadius);
+  return Math.min(Math.max(base, wanted), maxRadius) * MOBILE_OPTION_SPOKE_PUSH;
 }
 
 /**
