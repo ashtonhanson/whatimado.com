@@ -509,12 +509,51 @@ whatimado-map .whatimado-map__node--live.is-task .whatimado-map__node-body {
   transform: scale(0.7);
 }
 
-/* Phone roadmap: mission and task dots paint at the home sample's dot size. */
+/*
+ * Phone roadmap: every dot paints at the open mission's size (the home sample's mission dot).
+ * --v2-dot-even undoes each kind's rest scale so they all land on the mission's 0.84.
+ */
 @media (max-width: 900px) {
-  whatimado-map.is-roadmap-open .whatimado-map__node--live:is(.is-mission, .is-task) :is(.whatimado-map__node-body, .whatimado-map__node-aura) {
+  whatimado-map.is-roadmap-open .whatimado-map__node--live {
+    --v2-dot-even: 1.077;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-start {
+    --v2-dot-even: 0.84;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-roadmap {
+    --v2-dot-even: 0.875;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-roadmap.is-alternate {
+    --v2-dot-even: 1.215;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-roadmap.is-selected {
+    --v2-dot-even: 0.689;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-mission {
+    --v2-dot-even: 1;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live.is-task {
+    --v2-dot-even: 1.2;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-more) :is(.whatimado-map__node-body, .whatimado-map__node-aura) {
     transform-box: fill-box;
     transform-origin: center;
-    scale: var(--v2-roadmap-dot-boost, 1);
+    scale: calc(var(--v2-roadmap-dot-boost, 1) * var(--v2-dot-even, 1));
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node-float {
+    animation: none;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__edge--live {
+    stroke-width: calc(var(--v2-map-edge-width, 1.45) * 2.4);
   }
 }
 
@@ -796,6 +835,18 @@ whatimado-map.is-roadmap-open .whatimado-map__edge--live.is-trail {
   filter:
     drop-shadow(0 0 2px color-mix(in srgb, var(--v2-yellow) 90%, transparent))
     drop-shadow(0 0 7px color-mix(in srgb, var(--v2-yellow) 60%, transparent));
+}
+
+/* Phone roadmap: every dot and title off the path shares one full teal, alternate roadmaps included. */
+@media (max-width: 900px) {
+  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-selected, .is-trail-node, .is-complete, .is-more) .whatimado-map__node-body {
+    fill: var(--v2-teal);
+    stroke: none;
+  }
+
+  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-selected, .is-trail-node, .is-complete, .is-more) text.whatimado-map__label {
+    fill: var(--v2-teal);
+  }
 }
 
 /* Hovering or pulling the selected node lifts that same glow rather than replacing it */

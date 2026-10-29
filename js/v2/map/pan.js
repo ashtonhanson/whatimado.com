@@ -322,7 +322,7 @@ function svgMeetPaint(mapEl, stageRect) {
  *   minZoom?: number
  * }} [options]
  */
-export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom } = {}) {
+export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, fixedZoom } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const frame = document.getElementById("dynamic-frame");
   if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
@@ -382,9 +382,12 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   const mobileMin = explicitMin ? Math.min(minZoom, FIT_ZOOM_MIN) : FIT_ZOOM_MIN;
   const fitted = Math.min(ZOOM_MAX, zoomY, zoomX);
   const desktopFloor = explicitMin ? minZoom : ZOOM_MIN;
-  const zoom = MOBILE_MQ.matches
-    ? Math.max(mobileMin, Math.min(ZOOM_MAX, zoomX, Math.max(floor, zoomY)))
-    : Math.max(desktopFloor, fitted);
+  const zoom =
+    typeof fixedZoom === "number" && fixedZoom > 0
+      ? fixedZoom
+      : MOBILE_MQ.matches
+        ? Math.max(mobileMin, Math.min(ZOOM_MAX, zoomX, Math.max(floor, zoomY)))
+        : Math.max(desktopFloor, fitted);
   const scale = pxPerUnit * zoom;
   const margin = (stageRect.width - usableW) / 2;
   const overRight = screenCx + (bounds.maxX - cx) * scale + room.right - (stageRect.width - margin);

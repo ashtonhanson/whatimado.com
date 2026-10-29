@@ -63,6 +63,8 @@ const EDGE_DASH_ON = 1.35;
 const EDGE_DASH_OFF = 5.75;
 /** Tethers end this far inside the dot so no hairline shows between line and node. */
 const EDGE_TUCK = 0.6;
+/** The glowing trail line's width over a normal edge; must match map-canvas.css. */
+const EDGE_THICK_SCALE = 2.4;
 /** "Roadmaps" over the selected roadmap title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
@@ -73,12 +75,14 @@ const MOBILE_HOME_DOT_PX = 15.6;
  * Stretch the dot spacing so a tether of this length starts and ends on a dot.
  * @param {number} length
  */
-function dashesEndingOnDots(length) {
-  const period = EDGE_DASH_ON + EDGE_DASH_OFF;
+function dashesEndingOnDots(length, scale = 1) {
+  const on = EDGE_DASH_ON * scale;
+  const off = EDGE_DASH_OFF * scale;
+  const period = on + off;
   if (length < period) return "";
-  const count = Math.max(1, Math.round((length - EDGE_DASH_ON) / period));
-  const stretch = length / (count * period + EDGE_DASH_ON);
-  return `${(EDGE_DASH_ON * stretch).toFixed(3)} ${(EDGE_DASH_OFF * stretch).toFixed(3)}`;
+  const count = Math.max(1, Math.round((length - on) / period));
+  const stretch = length / (count * period + on);
+  return `${(on * stretch).toFixed(3)} ${(off * stretch).toFixed(3)}`;
 }
 
 /** @param {import("../../graph-store.js").GraphNode} node */
@@ -1240,7 +1244,8 @@ export class WhatimadoMap extends HTMLElement {
     const options = {
       centerNodeId: roadmapFocusLinked ? null : selected?.id,
       reserve: null,
-      minZoom: mobile ? undefined : ROADMAP_CROSSHAIR_ZOOM_MIN
+      minZoom: mobile ? undefined : ROADMAP_CROSSHAIR_ZOOM_MIN,
+      fixedZoom: mobile ? mapLayoutZoom() : undefined
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
@@ -1363,7 +1368,9 @@ export class WhatimadoMap extends HTMLElement {
       /* A phone frames the roadmap branch and lets the spokes sit at the edge. Desktop frames every node. */
       includeNode: mobile ? (node) => isActiveRoadmapBranchNode(node, chosenPathId) : undefined,
       /* Below the layout zoom the columns shrink under fixed-size titles and the titles collide. */
-      minZoom: mapLayoutZoom()
+      minZoom: mapLayoutZoom(),
+      /* A phone roadmap always opens at the same scale. */
+      fixedZoom: mobile ? mapLayoutZoom() : undefined
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
@@ -1691,13 +1698,18 @@ export class WhatimadoMap extends HTMLElement {
   /** Apply camera transform: built-in graph shift + user pan offset + pinch zoom */
   _applyPanTransform() {
     if (!this._panLayer) return;
+    this._writePanTransform(this._zoom);
+    this._layoutCallouts();
+  }
+
+  /** @param {number} z */
+  _writePanTransform(z) {
+    if (!this._panLayer) return;
     const shiftY = readGraphShiftY();
-    const z = this._zoom;
     this._panLayer.setAttribute(
       "transform",
       `translate(${this._panX}, ${shiftY + this._panY}) translate(${SCALE_CENTER_X}, ${SCALE_CENTER_Y}) scale(${z}) translate(${-SCALE_CENTER_X}, ${-SCALE_CENTER_Y})`
     );
-    this._layoutCallouts();
   }
 
   _detachGlobalPanListeners() {
@@ -2067,10 +2079,15 @@ export class WhatimadoMap extends HTMLElement {
     }
   }
 
+  /** A phone roadmap is one rigid piece: no idle drift, so only the camera moves it. */
+  _mapHoldsStill() {
+    return this.classList.contains("is-roadmap-open") && window.matchMedia("(max-width: 900px)").matches;
+  }
+
   /** Bake ambient drift into base coords; record anchor so transform stays continuous */
   _commitDriftToBase(nodeId) {
     const node = this._driftNodes.get(nodeId);
-    if (!node || this._driftReducedMotion) return;
+    if (!node || this._driftReducedMotion || this._mapHoldsStill()) return;
 
     const elapsed = performance.now() - this._driftStartMs;
     const drift = driftOffset(elapsed, node.delay, node.duration);
@@ -2093,7 +2110,7 @@ export class WhatimadoMap extends HTMLElement {
    * @param {typeof this._driftNodes extends Map<string, infer N> ? N : never} node
    */
   _driftTransform(elapsed, node) {
-    if (this._driftReducedMotion) return { x: 0, y: 0 };
+    if (this._driftReducedMotion || this._mapHoldsStill()) return { x: 0, y: 0 };
     const drift = driftOffset(elapsed, node.delay, node.duration);
     return {
       x: drift.x - node.driftAnchorX,
@@ -2327,6 +2344,9 @@ export class WhatimadoMap extends HTMLElement {
       centers.set(id, this._visualCenterForEdge(node, ox, oy, trimRadius, scale));
     }
 
+    /* Phone roadmap lines are drawn at the trail's thickness, so their dots spread by the same factor. */
+    const still = this._mapHoldsStill();
+    const dashScale = still ? EDGE_THICK_SCALE : 1;
     for (const edge of this._driftEdges) {
       const a = centers.get(edge.fromId);
       const b = centers.get(edge.toId);
@@ -2337,7 +2357,10 @@ export class WhatimadoMap extends HTMLElement {
       edge.lineEl.setAttribute("y1", String(trimmed.y1));
       edge.lineEl.setAttribute("x2", String(trimmed.x2));
       edge.lineEl.setAttribute("y2", String(trimmed.y2));
-      edge.lineEl.style.strokeDasharray = dashesEndingOnDots(Math.hypot(trimmed.x2 - trimmed.x1, trimmed.y2 - trimmed.y1));
+      edge.lineEl.style.strokeDasharray =
+        still && edge.lineEl.classList.contains("is-trail")
+          ? ""
+          : dashesEndingOnDots(Math.hypot(trimmed.x2 - trimmed.x1, trimmed.y2 - trimmed.y1), dashScale);
     }
 
     this._driftFrame = requestAnimationFrame((t) => this._tickDrift(t));
@@ -2687,12 +2710,14 @@ export class WhatimadoMap extends HTMLElement {
   /**
    * Phone roadmap dots are sized against the layout zoom, not the live zoom, so a pinch grows
    * and shrinks them with the map the same way the home sample does.
-   * @returns {number} scale on mission and task dots
+   * @returns {number} scale on every roadmap dot
    */
   _syncRoadmapDotSize() {
     let boost = 1;
     const mobile = window.matchMedia("(max-width: 900px)").matches;
-    const body = this._liveLayer?.querySelector(".is-mission .whatimado-map__node-body, .is-task .whatimado-map__node-body");
+    const body = this._liveLayer?.querySelector(
+      ".whatimado-map__node--live:not(.is-more):not(.is-alternate) .whatimado-map__node-body"
+    );
     const ctm = body?.closest(".whatimado-map__node")?.getScreenCTM();
     if (mobile && this.classList.contains("is-roadmap-open") && body && ctm) {
       const r = parseFloat(body.getAttribute("r") || "0");
@@ -2722,6 +2747,14 @@ export class WhatimadoMap extends HTMLElement {
     if (stageRect.width < 40 || stageRect.height < 40) return;
 
     this._layingOut = true;
+    /* A phone roadmap lays its titles out at the default scale, so they sit in map units and zoom with the dots. */
+    const layoutZoom = mapLayoutZoom();
+    const liveZoom = this._zoom;
+    const atLayoutZoom = this._mapHoldsStill() && Math.abs(liveZoom - layoutZoom) > 0.0005;
+    if (atLayoutZoom) {
+      this._zoom = layoutZoom;
+      this._writePanTransform(layoutZoom);
+    }
     try {
       const dotBoost = this._syncRoadmapDotSize();
       const restCenter = (body) => {
@@ -2739,8 +2772,10 @@ export class WhatimadoMap extends HTMLElement {
         edge.y = cy;
         const screen = center.matrixTransform(ctm);
         const edgeScreen = edge.matrixTransform(ctm);
-        const boosted = host.classList.contains("is-mission") || host.classList.contains("is-task");
-        const nr = Math.hypot(edgeScreen.x - screen.x, edgeScreen.y - screen.y) * (boosted ? dotBoost : 1);
+        /* Phone roadmap dots all paint at one size, alternates included, so they share one radius. */
+        const even = dotBoost > 1 && !host.classList.contains("is-more");
+        const alternateR = even && host.classList.contains("is-alternate") ? 0.72 : 1;
+        const nr = (Math.hypot(edgeScreen.x - screen.x, edgeScreen.y - screen.y) / alternateR) * (even ? dotBoost : 1);
         return {
           nx: screen.x,
           ny: screen.y,
@@ -2877,6 +2912,10 @@ export class WhatimadoMap extends HTMLElement {
       }
       this._writeCallouts(items);
     } finally {
+      if (atLayoutZoom) {
+        this._zoom = liveZoom;
+        this._writePanTransform(liveZoom);
+      }
       this._layingOut = false;
     }
   }
