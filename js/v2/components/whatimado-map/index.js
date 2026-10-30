@@ -75,6 +75,10 @@ const MOBILE_ROADMAP_DOT_PX = MOBILE_HOME_DOT_PX * 0.84;
 /** Thumb target across a phone roadmap dot at the default scale. Task rows sit about 22px apart. */
 const MOBILE_HIT_PX = 30;
 
+const MAP_HELP_MOBILE = "Use two fingers to pan and zoom the map. Tap or drag with one finger to select a node.";
+const MAP_HELP_DESKTOP =
+  "Pinch or scroll with two fingers on the trackpad, or use the mouse wheel, to zoom. Click and drag the background to move the map. Click a node to select it.";
+
 /**
  * Stretch the dot spacing so a tether of this length starts and ends on a dot.
  * @param {number} length
@@ -243,10 +247,15 @@ const MAP_TEMPLATE = `
     </svg>
       <div class="whatimado-map__chrome">
       <p class="whatimado-map__roadmap-sticky" hidden></p>
-      <p class="whatimado-map__gesture-hint">Use two fingers to pan and zoom the map. Tap or drag with one finger to select a node.</p>
       <button type="button" class="whatimado-map__new-roadmap hidden" part="new-roadmap">New roadmap</button>
       <div class="whatimado-map__timeline-col">
         <div class="whatimado-map__timeline-tools">
+          <button type="button" class="whatimado-map__help-btn" part="map-help" aria-haspopup="dialog" aria-label="How to use the map">
+            <svg class="whatimado-map__help-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9.4 9.2a2.7 2.7 0 1 1 3.8 2.5c-.8.4-1.2 1-1.2 1.9v.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              <circle cx="12" cy="17.4" r="1.1" fill="currentColor" />
+            </svg>
+          </button>
           <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
             <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
@@ -286,6 +295,8 @@ export class WhatimadoMap extends HTMLElement {
     this._panSurface = null;
     /** @type {HTMLButtonElement|null} */
     this._youBtn = null;
+    /** @type {HTMLButtonElement|null} */
+    this._helpBtn = null;
     /** @type {number} */
     this._panX = 0;
     /** @type {number} */
@@ -450,6 +461,20 @@ export class WhatimadoMap extends HTMLElement {
     this._syncMobileHeaderMapTools();
   }
 
+  /** Full-screen help explaining the touch or mouse gestures for this layout. */
+  _openMapHelp() {
+    const dialog = document.getElementById("map-help-dialog");
+    if (!(dialog instanceof HTMLDialogElement) || dialog.open) return;
+    const text = dialog.querySelector(".v2-map-help__text");
+    if (text) text.textContent = MOBILE_MQ.matches ? MAP_HELP_MOBILE : MAP_HELP_DESKTOP;
+    if (!dialog.dataset.wired) {
+      dialog.dataset.wired = "1";
+      dialog.querySelector(".v2-map-help__close")?.addEventListener("click", () => dialog.close());
+      dialog.addEventListener("close", () => this._helpBtn?.focus({ preventScroll: true }));
+    }
+    dialog.showModal();
+  }
+
   /** Mobile: Link + crosshair live in the header beside Undo; desktop keeps map chrome. */
   _syncMobileHeaderMapTools() {
     const mobile = window.matchMedia("(max-width: 900px)").matches;
@@ -463,6 +488,7 @@ export class WhatimadoMap extends HTMLElement {
       if (this._linkBtn.parentElement !== slot) slot.append(this._linkBtn);
       if (this._youBtn.parentElement !== slot) slot.append(this._youBtn);
       if (tools) tools.hidden = true;
+      if (chrome && this._helpBtn && this._helpBtn.parentElement !== chrome) chrome.append(this._helpBtn);
     } else {
       slot.hidden = true;
       slot.setAttribute("aria-hidden", "true");
@@ -470,6 +496,7 @@ export class WhatimadoMap extends HTMLElement {
         tools.hidden = false;
         if (this._linkBtn && this._linkBtn.parentElement !== tools) tools.prepend(this._linkBtn);
         if (this._youBtn && this._youBtn.parentElement !== tools) tools.append(this._youBtn);
+        if (this._helpBtn) tools.prepend(this._helpBtn);
       }
     }
     if (chrome && this._roadmapSticky && this._roadmapSticky.parentElement !== chrome) {
@@ -1629,7 +1656,7 @@ export class WhatimadoMap extends HTMLElement {
     if (hit.closest("whatimado-frame, .v2-frame-kicker, .v2-sidebar, .v2-rail, header, .v2-header, .v2-topbar")) {
       return false;
     }
-    if (hit.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) {
+    if (hit.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__help-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) {
       return false;
     }
     return Boolean(hit.closest("whatimado-map"));
@@ -1673,7 +1700,7 @@ export class WhatimadoMap extends HTMLElement {
     const touches = Array.from(event.touches);
     if (!touches.every((touch) => this._mapBandContains(touch.clientX, touch.clientY))) return;
     const target = event.target;
-    if (target instanceof Element && target.closest("whatimado-frame, .whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) {
+    if (target instanceof Element && target.closest("whatimado-frame, .whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__help-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) {
       return;
     }
 
@@ -1841,7 +1868,7 @@ export class WhatimadoMap extends HTMLElement {
     if (!(target instanceof Element)) return;
     if (target.closest("whatimado-frame")) return;
     if (target.closest(".whatimado-map__node")) return;
-    if (target.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) return;
+    if (target.closest(".whatimado-map__you-btn, .whatimado-map__link-btn, .whatimado-map__help-btn, .whatimado-map__new-roadmap, .v2-map-timeline")) return;
 
     this._beginPanPointer(event);
   }
@@ -1913,6 +1940,8 @@ export class WhatimadoMap extends HTMLElement {
     this._linkBtn = this.querySelector(".whatimado-map__link-btn");
     this._syncLinkButton();
     this._linkBtn?.addEventListener("click", () => this._toggleFocusLink());
+    this._helpBtn = this.querySelector(".whatimado-map__help-btn");
+    this._helpBtn?.addEventListener("click", () => this._openMapHelp());
     this._syncMobileHeaderMapTools();
     this.querySelector(".whatimado-map__new-roadmap")?.addEventListener("click", () => {
       this.dispatchEvent(new CustomEvent("map-new-roadmap", { bubbles: true }));

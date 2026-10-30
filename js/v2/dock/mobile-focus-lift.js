@@ -223,7 +223,12 @@ export function syncMobileReadingMap(controller) {
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const gutter = measureCssVarLength("--v2-main-gutter") || 14;
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
-  const frameTop = controller.frameEl.getBoundingClientRect().top;
+  /* Above the reading snap the frame slides over a map held at its reading size, so dragging to the top and back never resizes it. */
+  const anchors = controller._anchors;
+  const readingTop = anchors?.readingTop ?? anchors?.collapsedTop;
+  const readingFrameTop =
+    typeof readingTop === "number" ? controller._mobileFrameScreenTop(readingTop) : -Infinity;
+  const frameTop = Math.max(controller.frameEl.getBoundingClientRect().top, readingFrameTop);
   const mapTop = headerH;
   const svgH = Math.max(120, Math.round(frameTop - mapTop - clearance));
   const contentLeft = gutter;

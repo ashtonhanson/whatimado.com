@@ -870,6 +870,16 @@ export class FrameDockController {
     return measureCssVarLength("--v2-timeline-h") || 0;
   }
 
+  /**
+   * Where the phone frame paints for a dock top.
+   * @param {number} topPx
+   */
+  _mobileFrameScreenTop(topPx) {
+    const mainTop = this.mainEl?.getBoundingClientRect().top ?? 0;
+    const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
+    return topPx + mainTop + promptDrop + this._timelineInsetPx();
+  }
+
   /** Re-apply the current dock top after the timeline shows or hides. */
   refreshTimelineInset() {
     if (!Number.isFinite(this._topPx) || !this._docked) return;
@@ -888,8 +898,6 @@ export class FrameDockController {
     this._topPx = topPx;
 
     if (this._mobileMode) {
-      const mainRect = this.mainEl.getBoundingClientRect();
-      const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
       const bottomInset = measureCssVarLength("--v2-mobile-bottom-inset") || 0;
       const floored =
         this._mobileChatSheet &&
@@ -897,8 +905,7 @@ export class FrameDockController {
           this.frameEl.classList.contains("is-mobile-reading") ||
           this.frameEl.classList.contains("is-mobile-expanded") ||
           this.activeSnap === SNAP.MOBILE_FOCUS);
-      const inset = this._timelineInsetPx();
-      this.frameEl.style.top = `${topPx + mainRect.top + promptDrop + inset}px`;
+      this.frameEl.style.top = `${this._mobileFrameScreenTop(topPx)}px`;
       if (floored) {
         this.frameEl.classList.add("is-mobile-sheet-floored");
         this.frameEl.style.bottom = `${bottomInset}px`;

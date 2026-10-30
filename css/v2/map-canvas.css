@@ -99,36 +99,11 @@ whatimado-map .whatimado-map__chrome {
   display: none !important;
 }
 
-.whatimado-map__gesture-hint {
-  display: none;
-}
-
-/*
- * Phones: the roadmap title and timeline give way to one line of gesture help.
- * They stay in the layout (only unseen) so the map band and every node keep their place.
- */
-@media (max-width: 900px) {
-  whatimado-map .whatimado-map__chrome .whatimado-map__roadmap-sticky,
-  whatimado-map .whatimado-map__chrome #map-timeline {
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  whatimado-map:is(:has(.whatimado-map__roadmap-sticky:not([hidden])), :has(#map-timeline:not([hidden]))) .whatimado-map__gesture-hint {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    margin: 0;
-    padding: 0 0.3rem;
-    color: var(--v2-text-muted, #9aa8a6);
-    font-size: clamp(0.5rem, 2.3vw, 0.68rem);
-    line-height: 1.25;
-    letter-spacing: 0.01em;
-    text-align: center;
-    pointer-events: none;
-  }
+/* The roadmap title and timeline stay in the layout (only unseen) so the map fit and every node keep their place. */
+whatimado-map .whatimado-map__chrome .whatimado-map__roadmap-sticky,
+whatimado-map .whatimado-map__chrome #map-timeline {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 whatimado-map .whatimado-map__timeline-col,
@@ -352,6 +327,114 @@ whatimado-map .whatimado-map__link-btn:not(.is-linked) .whatimado-map__link-icon
 
 whatimado-map .whatimado-map__link-btn:hover {
   color: var(--v2-yellow-bright);
+}
+
+whatimado-map .whatimado-map__help-btn {
+  z-index: 8;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--v2-border);
+  border-radius: 50%;
+  background: var(--v2-glass-bg);
+  backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+  color: rgba(232, 244, 242, 0.72);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+body.v2-app whatimado-map .whatimado-map__help-btn,
+body.v2-app .v2-map-help__close {
+  border-radius: 50%;
+}
+
+whatimado-map .whatimado-map__help-btn:hover {
+  color: var(--v2-yellow-bright);
+}
+
+whatimado-map .whatimado-map__help-icon {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+@media (max-width: 900px) {
+  whatimado-map .whatimado-map__chrome > .whatimado-map__help-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  whatimado-map .whatimado-map__chrome > .whatimado-map__help-btn .whatimado-map__help-icon {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+}
+
+.v2-map-help {
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 1.5rem;
+  border: 0;
+  background: rgba(3, 8, 10, 0.9);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--v2-text, #e8f4f2);
+}
+
+.v2-map-help[open] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v2-map-help::backdrop {
+  background: transparent;
+}
+
+.v2-map-help__text {
+  max-width: 30rem;
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.v2-map-help__close {
+  position: absolute;
+  top: max(0.9rem, env(safe-area-inset-top));
+  right: max(0.9rem, env(safe-area-inset-right));
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--v2-border);
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.v2-map-help__close:hover {
+  color: var(--v2-yellow-bright);
+}
+
+.v2-map-help__close svg {
+  display: block;
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 whatimado-map[data-mode="ghost"],
