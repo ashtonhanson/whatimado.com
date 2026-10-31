@@ -51,14 +51,9 @@
     overflow-x: visible;
   }
 
-  /* Map paints under the side rails; the rails frost whatever sits behind them. */
+  /* Keep the map column; let nodes and titles paint under the frosted side rails. */
   .v2-main > whatimado-map {
-    left: calc(-1 * var(--v2-left-sidebar-offset));
-    right: calc(-1 * var(--v2-rail-inset));
-  }
-
-  .v2-shell:has(#resources-rail:not(.hidden)) .v2-main > whatimado-map {
-    right: calc(-1 * (var(--v2-rail-inset) + var(--v2-rail-w) + var(--v2-rail-gap)));
+    overflow: visible;
   }
 }
 

@@ -799,6 +799,7 @@ export class WhatimadoMap extends HTMLElement {
     fresh?.classList.toggle("hidden", !onRoadmap);
     if (isOpenHomePhase()) return;
     this.syncDesktopViewBox();
+    if (this._userPanned) return;
     if (this.syncSnapCamera()) return;
     if (this._liveNodes.some((node) => node.type === "task")) {
       if (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId)) {
@@ -896,38 +897,59 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {string} id */
   _nodeScreenCenter(id) {
-    const body = this._liveLayer?.querySelector(
-      `.whatimado-map__node[data-node-id="${CSS.escape(id)}"] .whatimado-map__node-body`
-    );
+    const box = this._nodeScreenBox(id);
+    return box ? { x: box.cx, y: box.cy } : null;
+  }
+
+  /**
+   * Dot plus its title, so a focus pass can keep both in the open band.
+   * @param {string} id
+   */
+  _nodeScreenBox(id) {
+    const group = this._liveLayer?.querySelector(`.whatimado-map__node[data-node-id="${CSS.escape(id)}"]`);
+    const body = group?.querySelector(".whatimado-map__node-body");
     if (!(body instanceof SVGCircleElement)) return null;
     const rect = body.getBoundingClientRect();
     if (rect.width <= 0) return null;
-    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    let left = rect.left;
+    let right = rect.right;
+    let top = rect.top;
+    let bottom = rect.bottom;
+    group.querySelectorAll("text").forEach((text) => {
+      if (!text.textContent?.trim() || getComputedStyle(text).visibility === "hidden") return;
+      const label = text.getBoundingClientRect();
+      if (label.width < 2 || label.height < 2) return;
+      left = Math.min(left, label.left);
+      right = Math.max(right, label.right);
+      top = Math.min(top, label.top);
+      bottom = Math.max(bottom, label.bottom);
+    });
+    return { left, right, top, bottom, cx: (left + right) / 2, cy: (top + bottom) / 2 };
   }
 
   /** @param {string} id */
   _nodeSitsInOpenBand(id) {
     const band = this._openBand();
-    const center = this._nodeScreenCenter(id);
-    if (!band || !center) return false;
-    return center.y >= band.top && center.y <= band.bottom && center.x >= band.left && center.x <= band.right;
+    const box = this._nodeScreenBox(id);
+    if (!band || !box) return false;
+    return box.top >= band.top - 2 && box.bottom <= band.bottom + 2 && box.left >= band.left - 2 && box.right <= band.right + 2;
   }
 
   /**
-   * If a centering pass left the dot under the prompt, pull it back into the band.
+   * If a centering pass left the node or its title under the prompt, pull the pair back into the band.
    * A node already in the band is left where it is.
    * @param {string} id
    */
   _pullNodeIntoOpenBand(id) {
     const band = this._openBand();
-    const center = this._nodeScreenCenter(id);
+    const box = this._nodeScreenBox(id);
     const layer = this._liveLayer;
     const svg = this._svg;
-    if (!band || !center || !layer || !svg) return;
+    if (!band || !box || !layer || !svg) return;
     let dx = 0;
     let dy = 0;
-    if (center.y < band.top || center.y > band.bottom) dy = band.top + (band.bottom - band.top) * 0.42 - center.y;
-    if (center.x < band.left || center.x > band.right) dx = (band.left + band.right) / 2 - center.x;
+    if (box.top < band.top || box.bottom > band.bottom) dy = band.top + (band.bottom - band.top) / 2 - box.cy;
+    if (box.left < band.left || box.right > band.right) dx = (band.left + band.right) / 2 - box.cx;
     if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
     const inv = invertCtm(layer.getScreenCTM());
     if (!inv) return;
@@ -1370,7 +1392,14 @@ export class WhatimadoMap extends HTMLElement {
     const snap = frame._dock?.activeSnap;
     const fillBand = snap === "mobile-focus" || snap === "bottom";
     if (hasRoadmapColumns) {
-      this._fitBand({ centerNodeId: workId, from, fillBand, animate });
+      this._fitBand({
+        centerNodeId: workId,
+        from,
+        fillBand,
+        animate,
+        /* Phone 3/4 and bottom: frame the open mission and its tasks. Desktop default stays a full-band fit. */
+        section: Boolean(mobile && workId)
+      });
       if (!animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
       return true;
     }
@@ -1424,9 +1453,10 @@ export class WhatimadoMap extends HTMLElement {
 
   /**
    * How far the visible titles reach past the dots, in screen pixels.
+   * @param {Set<string>|null} [ids] When set, only those nodes count (mission/task focus).
    * @returns {{ above: number, below: number, left: number, right: number }|null}
    */
-  _measureTitleReserve() {
+  _measureTitleReserve(ids = null) {
     const layer = this._liveLayer;
     if (!layer) return null;
     const dots = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
@@ -1438,6 +1468,7 @@ export class WhatimadoMap extends HTMLElement {
       box.bottom = Math.max(box.bottom, rect.bottom);
     };
     layer.querySelectorAll(".whatimado-map__node--live").forEach((group) => {
+      if (ids && !ids.has(group.getAttribute("data-node-id") || "")) return;
       const float = group.querySelector(".whatimado-map__node-float");
       if (float && getComputedStyle(float).visibility !== "visible") return;
       const body = group.querySelector(".whatimado-map__node-body");
@@ -1481,6 +1512,7 @@ export class WhatimadoMap extends HTMLElement {
    */
   syncRoadmapBranchFit({ animate = false } = {}) {
     if (this._cameraHeld) return true;
+    if (this._userPanned) return false;
     const hasRoadmapColumns = this._liveNodes.some((node) => node.type === "task");
     if (!hasRoadmapColumns) return false;
     this._userPanned = false;
@@ -1502,7 +1534,7 @@ export class WhatimadoMap extends HTMLElement {
     const sectionIds = section ? this._missionSectionIds(centerNodeId) : null;
     const options = {
       centerNodeId,
-      reserve: null,
+      reserve: sectionIds ? { above: 8, below: 6, left: 18, right: 18 } : null,
       /* A selected mission/task frames that column. Otherwise the open branch (phone) or the whole graph (desktop). */
       includeNode: sectionIds
         ? (node) => sectionIds.has(node.id)
@@ -1512,19 +1544,28 @@ export class WhatimadoMap extends HTMLElement {
       /* Below the layout zoom the columns shrink under fixed-size titles and the titles collide. */
       minZoom: mapLayoutZoom(),
       /* Section focus can grow, but not so far that titles blow past the band. */
-      maxZoom: sectionIds ? 1.05 : undefined,
-      /* Default phone scale at 3/4. The bottom snap may grow to fill the open band. */
-      fixedZoom: mobile && !fillBand ? mapLayoutZoom() : undefined
+      maxZoom: sectionIds ? (mobile ? 1.05 : 0.72) : undefined,
+      /* Default 3/4 stays at the layout scale. Bottom / crosshair may grow to fill. */
+      fixedZoom: !fillBand && !sectionIds ? mapLayoutZoom() : undefined
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
       this._zoom = fit.zoom;
       this._animatePanTo(fit.panX, fit.panY, false);
-      options.reserve = this._measureTitleReserve();
-      if (!options.reserve) break;
+      const measured = this._measureTitleReserve(sectionIds);
+      if (!measured) break;
+      /* Section titles already sit in the bounds. Keep a small gutter so the next pass can still grow. */
+      options.reserve = sectionIds
+        ? {
+            above: Math.min(12, measured.above),
+            below: Math.min(10, measured.below),
+            left: Math.min(36, measured.left),
+            right: Math.min(36, measured.right)
+          }
+        : measured;
     }
     this._fitZoomFloor = this._zoom;
-    if (!sectionIds) {
+    if (!sectionIds && !this._userPanned) {
       if (mobile) this._keepSpokeTitlesOnStage();
       else this._keepGraphUnderTimeline();
     }
@@ -1617,6 +1658,7 @@ export class WhatimadoMap extends HTMLElement {
    * Slide just enough that those dots, and a title above them, sit inside the stage.
    */
   _keepSpokeTitlesOnStage() {
+    if (this._userPanned) return;
     const stage = this.querySelector(".whatimado-map__stage");
     const layer = this._liveLayer;
     const svg = this._svg;
@@ -3139,11 +3181,6 @@ export class WhatimadoMap extends HTMLElement {
         this._writePanTransform(liveZoom);
       }
       this._layingOut = false;
-    }
-    if (window.matchMedia("(max-width: 900px)").matches && !this._spokeTitlePass) {
-      this._spokeTitlePass = true;
-      this._keepSpokeTitlesOnStage();
-      this._spokeTitlePass = false;
     }
   }
 

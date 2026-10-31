@@ -137,6 +137,20 @@ whatimado-map .whatimado-map__timeline-tools {
   pointer-events: none;
 }
 
+@media (min-width: 901px) {
+  body.v2-app whatimado-map {
+    overflow: visible;
+  }
+
+  /* Stay on the map column so help / link / crosshair do not slide under a rail. */
+  whatimado-map .whatimado-map__timeline-tools {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 9;
+  }
+}
+
 whatimado-map .v2-timeline__label {
   font-size: 0.64rem;
 }
