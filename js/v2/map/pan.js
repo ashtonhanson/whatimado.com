@@ -265,7 +265,6 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
-  const { offset: labelOffset, cap: labelCap } = getNodeLabelMetrics(lg);
   for (const node of mapEl._liveNodes) {
     if (node.type === "goal") continue;
     if (includeNode && !includeNode(node)) continue;
@@ -273,14 +272,10 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
     const cy = node.y * VIEW_H;
     const r = lg;
     const badgeLift = node.waiting ? 10 : 0;
-    /* Titles sit above many nodes — keep headroom so home framing does not clip them. */
-    const labelLift =
-      node.type === "mission" || node.type === "task" || node.type === "start" || node.id?.startsWith("option-")
-        ? labelOffset + labelCap * 0.55
-        : 0;
+    /* Dot bounds only — titles ride with pan/zoom; `reserve` keeps screen headroom. */
     minX = Math.min(minX, cx - r - (node.waiting ? 8 : 0));
     maxX = Math.max(maxX, cx + r + (node.waiting ? 8 : 0));
-    minY = Math.min(minY, cy - r - lift - labelLift - badgeLift);
+    minY = Math.min(minY, cy - r - lift - badgeLift);
     maxY = Math.max(maxY, cy + r + (node.waiting ? 6 : 0));
   }
   return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
@@ -341,7 +336,9 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
 
   const timeline = document.getElementById("map-timeline");
-  let top = menuClearScreenY(stageRect);
+  /* Optical mid uses menu→prompt. Chrome/timeline only shrink the fit box so titles clear controls. */
+  const visualBandTop = menuClearScreenY(stageRect);
+  let top = visualBandTop;
   const chrome = stage.querySelector(".whatimado-map__chrome");
   if (chrome instanceof HTMLElement) {
     const bar = chrome.getBoundingClientRect();
@@ -354,9 +351,11 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   }
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 12;
   const room = reserve || { above: 16, below: 10, left: 20, right: 20 };
-  const bottom = frameRect.top - clearance - room.below;
+  const bandBottom = frameRect.top - clearance;
+  const bottom = bandBottom - room.below;
   top += room.above;
   const availablePx = Math.max(24, bottom - top);
+  const bandMidY = (visualBandTop + bandBottom) / 2;
 
   const bounds = getNodeBounds(mapEl, { includeNode });
   const focus = centerNodeId ? mapEl._liveNodes.find((node) => node.id === centerNodeId) : null;
@@ -406,12 +405,35 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   if (keepLeft && overLeft > 0) screenCx += overLeft;
   else if (overRight > 0 && overLeft < 0) screenCx -= Math.min(overRight, -overLeft);
   else if (overLeft > 0 && overRight < 0) screenCx += Math.min(overLeft, -overRight);
-  const fittedPx = naturalH * zoom;
-  const graphTop = top + Math.max(0, availablePx - fittedPx) / 2 - (Number(liftY) || 0) * availablePx;
 
   const shiftY = readGraphShiftY();
-  const userY = (graphTop - stageRect.top - paintY - originY) / pxPerUnit;
-  const panY = userY - shiftY - SCALE_CENTER_Y - zoom * (bounds.minY - SCALE_CENTER_Y);
+  const bandH = Math.max(24, bandBottom - visualBandTop);
+  const lift = (Number(liftY) || 0) * bandH;
+  const fittedPx = naturalH * zoom;
+  let panY;
+  if (focus) {
+    /* Optical mid of the selected mission column (mission + its tasks), not just the path-row dot. */
+    let focusCy = focus.y * VIEW_H;
+    if (focus.type === "mission") {
+      let colMin = focusCy;
+      let colMax = focusCy;
+      for (const node of mapEl._liveNodes) {
+        if (node.type !== "task" || node.parentId !== focus.id) continue;
+        if (includeNode && !includeNode(node)) continue;
+        const ny = node.y * VIEW_H;
+        colMin = Math.min(colMin, ny);
+        colMax = Math.max(colMax, ny);
+      }
+      focusCy = (colMin + colMax) / 2;
+    }
+    const focusScreenY = bandMidY - lift;
+    const userY = (focusScreenY - stageRect.top - paintY - originY) / pxPerUnit;
+    panY = userY - shiftY - SCALE_CENTER_Y - zoom * (focusCy - SCALE_CENTER_Y);
+  } else {
+    const graphTop = top + Math.max(0, availablePx - fittedPx) / 2 - lift;
+    const userY = (graphTop - stageRect.top - paintY - originY) / pxPerUnit;
+    panY = userY - shiftY - SCALE_CENTER_Y - zoom * (bounds.minY - SCALE_CENTER_Y);
+  }
   const userX = (screenCx - originX) / pxPerUnit;
   const panX = userX - SCALE_CENTER_X - zoom * (cx - SCALE_CENTER_X);
   return { panX, panY, zoom };

@@ -1483,22 +1483,25 @@ export class WhatimadoMap extends HTMLElement {
   _fitBand({ centerNodeId = null, animate = false, from = null, neighborhood = false, liftY = 0 } = {}) {
     const start = from || { zoom: this._zoom, panX: this._panX, panY: this._panY };
     const nearIds = neighborhood ? this._workNeighborhoodIds() : null;
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
     const layoutZoom = mapLayoutZoom();
+    /* Desktop 3/4 may shrink so You's spokes clear a short band. Phone keeps layout zoom so missions stay readable. */
+    const mayShrink = Boolean(neighborhood && !mobile);
     const options = {
       centerNodeId: neighborhood ? centerNodeId : null,
       includeNode: nearIds ? (node) => nearIds.has(node.id) : undefined,
-      /* Home framing may shrink a little so You's spokes and the mission titles both clear the band. */
-      minZoom: neighborhood ? Math.min(layoutZoom, 0.32) : layoutZoom,
+      minZoom: mayShrink ? Math.min(layoutZoom, 0.32) : layoutZoom,
       maxZoom: layoutZoom,
-      fixedZoom: neighborhood ? undefined : layoutZoom,
+      fixedZoom: mayShrink ? undefined : layoutZoom,
       keepLeft: Boolean(neighborhood),
       liftY,
       /* Room for mission/task titles above the dots and for You's left spokes. */
       reserve: neighborhood
         ? {
-            above: 34,
-            below: 16,
-            left: window.matchMedia("(max-width: 900px)").matches ? 72 : 96,
+            above: mobile ? 24 : 34,
+            below: mobile ? 18 : 16,
+            /* Phone: tiny left pad — keepLeft already holds You's dots on stage. */
+            left: mobile ? 12 : 96,
             right: 24
           }
         : undefined
@@ -1530,17 +1533,10 @@ export class WhatimadoMap extends HTMLElement {
       if (!(body instanceof SVGCircleElement)) continue;
       const rect = body.getBoundingClientRect();
       if (rect.width <= 0) continue;
+      /* Dots only — titles ride with the pan and must not pull the camera. */
       minX = Math.min(minX, rect.left);
       minY = Math.min(minY, rect.top);
       maxY = Math.max(maxY, rect.bottom);
-      group.querySelectorAll("text").forEach((text) => {
-        if (!text.textContent?.trim() || getComputedStyle(text).visibility === "hidden") return;
-        const label = text.getBoundingClientRect();
-        if (label.width < 2 || label.height < 2) return;
-        minX = Math.min(minX, label.left);
-        minY = Math.min(minY, label.top);
-        maxY = Math.max(maxY, label.bottom);
-      });
     }
     if (!Number.isFinite(minX)) return;
     /* Prefer keeping You's cluster on stage over the stricter band pad.
