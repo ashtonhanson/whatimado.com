@@ -274,10 +274,8 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
     const r = lg;
     const labelLift = node.type === "mission" || node.type === "task" ? labelOffset + labelCap * 0.65 : 0;
     const badgeLift = node.waiting ? 10 : 0;
-    const title = String(node.title || node.label || "");
-    const titleHalf = node.type === "mission" || node.type === "task" ? Math.min(72, Math.max(18, title.length * 3.1)) : 0;
-    minX = Math.min(minX, cx - r - titleHalf - (node.waiting ? 8 : 0));
-    maxX = Math.max(maxX, cx + r + titleHalf + (node.waiting ? 8 : 0));
+    minX = Math.min(minX, cx - r - (node.waiting ? 8 : 0));
+    maxX = Math.max(maxX, cx + r + (node.waiting ? 8 : 0));
     minY = Math.min(minY, cy - r - lift - labelLift - badgeLift);
     maxY = Math.max(maxY, cy + r + (node.waiting ? 6 : 0));
   }
@@ -341,7 +339,7 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   const chrome = stage.querySelector(".whatimado-map__chrome");
   if (chrome instanceof HTMLElement) {
     const bar = chrome.getBoundingClientRect();
-    if (bar.height > 8 && bar.bottom > stageRect.top) top = Math.max(top, bar.bottom + (includeNode ? 8 : 22));
+    if (bar.height > 8 && bar.bottom > stageRect.top) top = Math.max(top, bar.bottom + 22);
   }
   if (timeline instanceof HTMLElement && !timeline.hidden && stage.contains(timeline) === false) {
     const bar = timeline.getBoundingClientRect();
@@ -349,9 +347,7 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
     if (bar.height > 4 && overStage) top = Math.max(top, bar.bottom + 8);
   }
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 12;
-  const room = reserve || (includeNode
-    ? { above: 8, below: 6, left: 18, right: 18 }
-    : { above: 34, below: 0, left: 96, right: 96 });
+  const room = reserve || { above: 34, below: 0, left: 96, right: 96 };
   const bottom = frameRect.top - clearance - room.below;
   top += room.above;
   const availablePx = Math.max(24, bottom - top);
