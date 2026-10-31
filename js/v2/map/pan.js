@@ -265,6 +265,7 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
+  const { offset: labelOffset, cap: labelCap } = getNodeLabelMetrics(lg);
   for (const node of mapEl._liveNodes) {
     if (node.type === "goal") continue;
     if (includeNode && !includeNode(node)) continue;
@@ -272,9 +273,14 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
     const cy = node.y * VIEW_H;
     const r = lg;
     const badgeLift = node.waiting ? 10 : 0;
+    /* Titles sit above many nodes — keep headroom so home framing does not clip them. */
+    const labelLift =
+      node.type === "mission" || node.type === "task" || node.type === "start" || node.id?.startsWith("option-")
+        ? labelOffset + labelCap * 0.55
+        : 0;
     minX = Math.min(minX, cx - r - (node.waiting ? 8 : 0));
     maxX = Math.max(maxX, cx + r + (node.waiting ? 8 : 0));
-    minY = Math.min(minY, cy - r - lift - badgeLift);
+    minY = Math.min(minY, cy - r - lift - labelLift - badgeLift);
     maxY = Math.max(maxY, cy + r + (node.waiting ? 6 : 0));
   }
   return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
@@ -320,10 +326,12 @@ function svgMeetPaint(mapEl, stageRect) {
  *   reserve?: { above: number, below: number, left: number, right: number } | null,
  *   includeNode?: (node: import("../graph-store.js").GraphNode) => boolean,
  *   minZoom?: number,
- *   maxZoom?: number
+ *   maxZoom?: number,
+ *   keepLeft?: boolean,
+ *   liftY?: number
  * }} [options]
  */
-export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom } = {}) {
+export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom, keepLeft = false, liftY = 0 } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const frame = document.getElementById("dynamic-frame");
   if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
@@ -395,10 +403,11 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   const margin = (stageRect.width - usableW) / 2;
   const overRight = screenCx + (bounds.maxX - cx) * scale + room.right - (stageRect.width - margin);
   const overLeft = margin - (screenCx - (cx - bounds.minX) * scale - room.left);
-  if (overRight > 0 && overLeft < 0) screenCx -= Math.min(overRight, -overLeft);
+  if (keepLeft && overLeft > 0) screenCx += overLeft;
+  else if (overRight > 0 && overLeft < 0) screenCx -= Math.min(overRight, -overLeft);
   else if (overLeft > 0 && overRight < 0) screenCx += Math.min(overLeft, -overRight);
   const fittedPx = naturalH * zoom;
-  const graphTop = top + Math.max(0, availablePx - fittedPx) / 2;
+  const graphTop = top + Math.max(0, availablePx - fittedPx) / 2 - (Number(liftY) || 0) * availablePx;
 
   const shiftY = readGraphShiftY();
   const userY = (graphTop - stageRect.top - paintY - originY) / pxPerUnit;

@@ -52,6 +52,8 @@ import {
   isOpenHomePhase
 } from "../../map/pan.js";
 
+/** How long the camera eases into a snap or crosshair home. */
+const CAMERA_EASE_MS = 360;
 /** How long nodes take to ease into a new layout, such as a roadmap slotting into the stack. */
 const LAYOUT_GLIDE_MS = 560;
 /** Reduced motion keeps the slot-in legible but short. */
@@ -1299,18 +1301,31 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Selected path plus its missions and tasks — the phone 3/4 crop.
-   * You and the option spokes stay off the left so the open work sits in the band.
+   * You, its first branches, the open path, and the current missions/tasks.
+   * The camera can center the selected work without clipping You off the left.
    * @returns {Set<string>|null}
    */
   _workNeighborhoodIds() {
     const chosenPathId = appStore.journey.roadmapPathId || this._selectedId || graphStore.selectedId;
-    const ids = new Set();
+    const ids = new Set(["start", "option-settings", "option-analytics", "option-notes", "option-roadmaps"]);
     for (const node of this._liveNodes) {
       if (node.type === "mission" || node.type === "task" || node.type === "more") ids.add(node.id);
       if (chosenPathId && node.id === chosenPathId) ids.add(node.id);
     }
     return ids.size ? ids : null;
+  }
+
+  /**
+   * Mission id for a selected mission/task — the column the home camera should sit on.
+   * @param {string|null|undefined} focusId
+   * @returns {string|null}
+   */
+  _missionFocusId(focusId) {
+    const node = focusId ? this._liveNodes.find((entry) => entry.id === focusId) : null;
+    if (!node) return null;
+    if (node.type === "mission") return node.id;
+    if (node.type === "task" && node.parentId) return node.parentId;
+    return node.id;
   }
 
   /**
@@ -1367,13 +1382,14 @@ export class WhatimadoMap extends HTMLElement {
     this._userPanned = false;
     const snap = frame._dock?.activeSnap;
     const atBottom = snap === "mobile-focus" || snap === "bottom";
+    const desktopBottom = !mobile && atBottom;
     if (hasRoadmapColumns) {
       this._fitBand({
-        centerNodeId: workId,
+        centerNodeId: this._missionFocusId(workId) || workId,
         from,
         animate,
-        /* Phone 3/4: crop to the open path and missions. Bottom and desktop: the whole constellation. */
-        neighborhood: Boolean(mobile && workId && !atBottom)
+        neighborhood: !desktopBottom,
+        liftY: desktopBottom ? 0.03 : 0
       });
       if (!animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
       return true;
@@ -1381,13 +1397,14 @@ export class WhatimadoMap extends HTMLElement {
     const options = {
       centerNodeId: roadmapFocusLinked ? null : selected?.id,
       minZoom: mapLayoutZoom(),
-      fixedZoom: mapLayoutZoom()
+      fixedZoom: mapLayoutZoom(),
+      liftY: desktopBottom ? 0.03 : 0
     };
     const fit = computeTimelineFrameFit(this, options);
     this._zoom = fit.zoom;
     this._animatePanTo(fit.panX, fit.panY, false);
     this._fitZoomFloor = this._zoom;
-    if (animate) this._easeCameraFrom(from, 420);
+    if (animate) this._easeCameraFrom(from, CAMERA_EASE_MS);
     else if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
     return true;
   }
@@ -1443,33 +1460,121 @@ export class WhatimadoMap extends HTMLElement {
     if (!hasRoadmapColumns) return false;
     this._userPanned = false;
     this.syncDesktopViewBox();
+    const frame = document.getElementById("dynamic-frame");
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const snap = frame?._dock?.activeSnap;
+    const desktopBottom = !mobile && (snap === "mobile-focus" || snap === "bottom");
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
-    this._fitBand({ animate, from });
+    const workId = this._workFocusId();
+    this._fitBand({
+      animate,
+      from,
+      centerNodeId: this._missionFocusId(workId) || workId,
+      neighborhood: !desktopBottom,
+      liftY: desktopBottom ? 0.03 : 0
+    });
     return true;
   }
 
   /**
    * Scale the map into the band under the menu and above the prompt.
-   * Phone 3/4 crops to the open path and missions. Bottom and desktop frame the whole constellation.
-   * @param {{ centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null, neighborhood?: boolean }} [options]
+   * Home snaps center the selected mission while keeping You and its first branches on the left.
+   * Desktop bottom keeps the full constellation and lifts it a little.
+   * @param {{ centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null, neighborhood?: boolean, liftY?: number }} [options]
    */
-  _fitBand({ centerNodeId = null, animate = false, from = null, neighborhood = false } = {}) {
+  _fitBand({ centerNodeId = null, animate = false, from = null, neighborhood = false, liftY = 0 } = {}) {
     const start = from || { zoom: this._zoom, panX: this._panX, panY: this._panY };
     const nearIds = neighborhood ? this._workNeighborhoodIds() : null;
+    const layoutZoom = mapLayoutZoom();
     const options = {
       centerNodeId: neighborhood ? centerNodeId : null,
       includeNode: nearIds ? (node) => nearIds.has(node.id) : undefined,
-      minZoom: mapLayoutZoom(),
-      fixedZoom: mapLayoutZoom()
+      /* Home framing may shrink a little so You's spokes and the mission titles both clear the band. */
+      minZoom: neighborhood ? Math.min(layoutZoom, 0.32) : layoutZoom,
+      maxZoom: layoutZoom,
+      fixedZoom: neighborhood ? undefined : layoutZoom,
+      keepLeft: Boolean(neighborhood),
+      liftY,
+      /* Room for mission/task titles above the dots and for You's left spokes. */
+      reserve: neighborhood
+        ? {
+            above: 34,
+            below: 16,
+            left: window.matchMedia("(max-width: 900px)").matches ? 72 : 96,
+            right: 24
+          }
+        : undefined
     };
     const fit = computeTimelineFrameFit(this, options);
     this._zoom = fit.zoom;
     this._animatePanTo(fit.panX, fit.panY, false);
     this._fitZoomFloor = this._zoom;
-    if (neighborhood && centerNodeId && !this._nodeSitsInOpenBand(centerNodeId)) {
-      this._pullNodeIntoOpenBand(centerNodeId);
+    if (neighborhood) this._keepYouClusterOnStage();
+    if (animate) this._easeCameraFrom(start, CAMERA_EASE_MS);
+  }
+
+  /**
+   * After a home fit, nudge only if You or its first branches are clipped.
+   * Do not re-center that cluster — the mission column owns the framing.
+   */
+  _keepYouClusterOnStage() {
+    const band = this._openBand();
+    const layer = this._liveLayer;
+    const svg = this._svg;
+    const stage = this.querySelector(".whatimado-map__stage")?.getBoundingClientRect();
+    if (!band || !layer || !svg || !stage) return;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const id of ["start", "option-settings", "option-analytics", "option-notes", "option-roadmaps"]) {
+      const group = layer.querySelector(`.whatimado-map__node[data-node-id="${CSS.escape(id)}"]`);
+      const body = group?.querySelector(".whatimado-map__node-body");
+      if (!(body instanceof SVGCircleElement)) continue;
+      const rect = body.getBoundingClientRect();
+      if (rect.width <= 0) continue;
+      minX = Math.min(minX, rect.left);
+      minY = Math.min(minY, rect.top);
+      maxY = Math.max(maxY, rect.bottom);
+      group.querySelectorAll("text").forEach((text) => {
+        if (!text.textContent?.trim() || getComputedStyle(text).visibility === "hidden") return;
+        const label = text.getBoundingClientRect();
+        if (label.width < 2 || label.height < 2) return;
+        minX = Math.min(minX, label.left);
+        minY = Math.min(minY, label.top);
+        maxY = Math.max(maxY, label.bottom);
+      });
     }
-    if (animate) this._easeCameraFrom(start, 420);
+    if (!Number.isFinite(minX)) return;
+    /* Prefer keeping You's cluster on stage over the stricter band pad.
+       On desktop, stay clear of the frosted left rail instead of the bleed edge. */
+    const main = document.querySelector(".v2-main")?.getBoundingClientRect();
+    const desktop = !window.matchMedia("(max-width: 900px)").matches;
+    const topLimit = Math.max(stage.top + 6, band.top - 10);
+    const bottomLimit = Math.min(stage.bottom - 6, band.bottom + 10);
+    const leftLimit = desktop && main
+      ? Math.max(main.left + 14, band.left)
+      : Math.max(stage.left + 6, band.left - 8);
+    let dx = 0;
+    let dy = 0;
+    if (minX < leftLimit) dx = leftLimit - minX;
+    if (minY < topLimit) dy = topLimit - minY;
+    else if (maxY > bottomLimit) dy = bottomLimit - maxY;
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+    const inv = invertCtm(layer.getScreenCTM());
+    if (!inv) return;
+    const origin = svg.createSVGPoint();
+    const shifted = svg.createSVGPoint();
+    shifted.x = dx;
+    shifted.y = dy;
+    const local = shifted.matrixTransform(inv);
+    const zero = origin.matrixTransform(inv);
+    const zoom = this._zoom || 1;
+    const panDx = (local.x - zero.x) * zoom;
+    const panDy = (local.y - zero.y) * zoom;
+    if (!Number.isFinite(panDx) || !Number.isFinite(panDy)) return;
+    this._panX += panDx;
+    this._panY += panDy;
+    this._applyPanTransform();
   }
 
   /**
@@ -1492,8 +1597,18 @@ export class WhatimadoMap extends HTMLElement {
     this._youBtn?.setAttribute("aria-pressed", "true");
     this.syncDesktopViewBox();
     if (!this.syncSnapCamera({ force: true, animate })) {
+      const frame = document.getElementById("dynamic-frame");
+      const mobile = window.matchMedia("(max-width: 900px)").matches;
+      const snap = frame?._dock?.activeSnap;
+      const desktopBottom = !mobile && (snap === "mobile-focus" || snap === "bottom");
       const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
-      this._fitBand({ centerNodeId: preferred, from, animate });
+      this._fitBand({
+        centerNodeId: this._missionFocusId(preferred) || preferred,
+        from,
+        animate,
+        neighborhood: !desktopBottom,
+        liftY: desktopBottom ? 0.03 : 0
+      });
     }
   }
 
