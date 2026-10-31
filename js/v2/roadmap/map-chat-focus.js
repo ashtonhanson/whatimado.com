@@ -22,7 +22,7 @@ export function resolveMapNodeActivation(node, journey, { openRoadmap = false } 
     activatesRoadmap: false
   };
 
-  if (!node || node.type === "start" || node.type === "more" || node.type === "action") {
+  if (!node || node.type === "start" || node.type === "more" || node.type === "goal" || node.type === "action") {
     return {
       action: "passthrough",
       ...kept,

@@ -1,4 +1,5 @@
 import { GHOST_GRAPH, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { goalIncomeRange } from "../../map/goal-income.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
 import {
@@ -89,9 +90,20 @@ function dashesEndingOnDots(length, scale = 1) {
   return `${(on * stretch).toFixed(3)} ${(off * stretch).toFixed(3)}`;
 }
 
+/** Five-point star around a node, point-up. */
+function starPolygonPoints(cx, cy, outerR, innerR) {
+  const pts = [];
+  for (let i = 0; i < 10; i += 1) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    pts.push(`${(cx + Math.cos(a) * r).toFixed(2)},${(cy + Math.sin(a) * r).toFixed(2)}`);
+  }
+  return pts.join(" ");
+}
+
 /** @param {import("../../graph-store.js").GraphNode} node */
 function nodeMapTitleLines(node) {
-  if (!node || node.type === "more") return [];
+  if (!node || node.type === "more" || node.type === "goal") return [];
   if (node.type === "start") return [node.label || "You"];
   const mobile = window.matchMedia("(max-width: 900px)").matches;
   if (node.type === "task" || (mobile && node.type === "path")) {
@@ -2010,7 +2022,7 @@ export class WhatimadoMap extends HTMLElement {
 
     for (const [id, drift] of this._driftNodes) {
       const graphNode = this._liveNodes.find((entry) => entry.id === id);
-      if (!graphNode || graphNode.type === "start") continue;
+      if (!graphNode || graphNode.type === "start" || graphNode.type === "goal") continue;
 
       const hit =
         drift.groupEl.querySelector(".whatimado-map__node-hit") ??
@@ -2113,6 +2125,7 @@ export class WhatimadoMap extends HTMLElement {
           groupEl.classList.contains("is-task") ||
           groupEl.classList.contains("is-roadmap") ||
           groupEl.classList.contains("is-more") ||
+          groupEl.classList.contains("is-goal") ||
           groupEl.classList.contains("is-alternate"),
         groupEl: /** @type {SVGGElement} */ (groupEl),
         circleEl: /** @type {SVGCircleElement} */ (circle),
@@ -2443,6 +2456,7 @@ export class WhatimadoMap extends HTMLElement {
       group.classList.toggle("is-mission", graphNode?.type === "mission");
       group.classList.toggle("is-task", graphNode?.type === "task");
       group.classList.toggle("is-more", graphNode?.type === "more");
+      group.classList.toggle("is-goal", graphNode?.type === "goal");
       group.classList.toggle("is-complete", Boolean(graphNode?.done));
       group.classList.toggle("is-selected", isSelected);
       group.classList.toggle("is-current", this._currentIds.has(id));
@@ -2708,7 +2722,7 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {string} nodeId */
   _handleNodeClick(nodeId) {
     const node = this._liveNodes.find((n) => n.id === nodeId);
-    if (!node) return;
+    if (!node || node.type === "goal") return;
     if (node.type !== "start") this._focusNodeId = nodeId;
     this.centerOnNode(nodeId);
 
@@ -2733,7 +2747,7 @@ export class WhatimadoMap extends HTMLElement {
   _bindNodeInteractions(layer) {
     layer.querySelectorAll('.whatimado-map__node[data-layer="live"]').forEach((el) => {
       const id = el.getAttribute("data-node-id");
-      if (!id) return;
+      if (!id || el.classList.contains("is-goal")) return;
 
       el.addEventListener("pointerdown", (event) => this._onNodePointerDown(event, id));
     });
@@ -2754,6 +2768,18 @@ export class WhatimadoMap extends HTMLElement {
       if (!(kicker instanceof SVGTextElement)) return;
       kicker.style.fontSize = `${fontPx * KICKER_SCALE}px`;
       kicker.style.strokeWidth = "1px";
+    });
+    this._liveLayer?.querySelectorAll(".whatimado-map__goal-title").forEach((title) => {
+      if (!(title instanceof SVGTextElement)) return;
+      title.style.fontSize = `${fontPx * 0.82}px`;
+      title.style.letterSpacing = "0.02em";
+      title.style.strokeWidth = "0";
+    });
+    this._liveLayer?.querySelectorAll(".whatimado-map__goal-income").forEach((income) => {
+      if (!(income instanceof SVGTextElement)) return;
+      income.style.fontSize = `${fontPx * 0.72}px`;
+      income.style.letterSpacing = "0.01em";
+      income.style.strokeWidth = "0";
     });
   }
 
@@ -2800,7 +2826,7 @@ export class WhatimadoMap extends HTMLElement {
     let boost = 1;
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const body = this._liveLayer?.querySelector(
-      ".whatimado-map__node--live:not(.is-more):not(.is-alternate) .whatimado-map__node-body"
+      ".whatimado-map__node--live:not(.is-more):not(.is-goal):not(.is-alternate) .whatimado-map__node-body"
     );
     const ctm = body?.closest(".whatimado-map__node")?.getScreenCTM();
     if (mobile && this.classList.contains("is-roadmap-open") && body && ctm) {
@@ -2873,7 +2899,7 @@ export class WhatimadoMap extends HTMLElement {
         const screen = center.matrixTransform(ctm);
         const edgeScreen = edge.matrixTransform(ctm);
         /* Phone roadmap dots all paint at one size, alternates included, so they share one radius. */
-        const even = dotBoost > 1 && !host.classList.contains("is-more");
+        const even = dotBoost > 1 && !host.classList.contains("is-more") && !host.classList.contains("is-goal");
         const alternateR = even && host.classList.contains("is-alternate") ? 0.72 : 1;
         const nr = (Math.hypot(edgeScreen.x - screen.x, edgeScreen.y - screen.y) / alternateR) * (even ? dotBoost : 1);
         return {
@@ -2934,7 +2960,7 @@ export class WhatimadoMap extends HTMLElement {
 
       const dots = [];
       layer.querySelectorAll(".whatimado-map__node-body").forEach((el) => {
-        if (el.closest(".is-more")) return;
+        if (el.closest(".is-more") || el.closest(".is-goal")) return;
         const rest = restCenter(el);
         if (rest) dots.push(rest);
       });
@@ -3238,8 +3264,9 @@ export class WhatimadoMap extends HTMLElement {
           spineAlternatePaths &&
           b.type === "path" &&
           b.id !== this._selectedId;
+        const futureEdge = options.layer === "live" && (a.type === "goal" || b.type === "goal");
         parts.push(
-          `<line class="whatimado-map__edge whatimado-map__edge--${options.layer}${alternateEdge ? " is-alternate-edge" : ""}" data-from="${escapeHtml(from)}" data-to="${escapeHtml(to)}" x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" />`
+          `<line class="whatimado-map__edge whatimado-map__edge--${options.layer}${alternateEdge ? " is-alternate-edge" : ""}${futureEdge ? " is-future-edge" : ""}" data-from="${escapeHtml(from)}" data-to="${escapeHtml(to)}" x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" />`
         );
       });
     }
@@ -3267,6 +3294,7 @@ export class WhatimadoMap extends HTMLElement {
           node.type === "mission" ? "is-mission" : "",
           node.type === "task" ? "is-task" : "",
           node.type === "more" ? "is-more" : "",
+          node.type === "goal" ? "is-goal" : "",
           node.done ? "is-complete" : "",
           node.waiting ? "is-waiting" : "",
           node.bypassed ? "is-bypassed" : "",
@@ -3282,7 +3310,15 @@ export class WhatimadoMap extends HTMLElement {
         const titleLines = options.layer === "live" ? nodeMapTitleLines(node) : [];
         const title = titleLines[0] || "";
         const isAlternate = spineAlternatePaths && node.type === "path" && !isSelected;
-        const bodyR = node.type === "more" ? r : isAlternate ? r * 0.72 : r;
+        const isGoal = node.type === "goal";
+        const bodyR = node.type === "more" || isGoal ? r : isAlternate ? r * 0.72 : r;
+        const goalTitle = isGoal ? mapNodeLabel(node.title || node.label || "Goal", { compact: true }) : "";
+        const goalIncomeFull = isGoal ? goalIncomeRange(node, appStore.location) : "";
+        const goalIncomeMain = goalIncomeFull.replace(/\s+per year$/i, "");
+        const mobileMap = window.matchMedia("(max-width: 900px)").matches;
+        const starOuter = r * (mobileMap ? 3.5 : 1.42);
+        const starInner = r * (mobileMap ? 1.4 : 0.56);
+        const goalStar = isGoal ? starPolygonPoints(cx, cy, starOuter, starInner) : "";
         const kickerText =
           title && node.type === "path" && node.id === branchRootId
             ? "Roadmaps"
@@ -3309,6 +3345,11 @@ export class WhatimadoMap extends HTMLElement {
             <circle class="whatimado-map__node-body" cx="${cx}" cy="${cy}" r="${bodyR}" />
             ${node.type === "more"
               ? `<g class="whatimado-map__plus" aria-hidden="true"><line x1="${cx - r * 0.5}" y1="${cy}" x2="${cx + r * 0.5}" y2="${cy}" /><line x1="${cx}" y1="${cy - r * 0.5}" x2="${cx}" y2="${cy + r * 0.5}" /></g>`
+              : ""}
+            ${isGoal
+              ? `<polygon class="whatimado-map__goal-star" points="${goalStar}" aria-hidden="true" />
+            ${goalTitle ? `<text class="whatimado-map__goal-title" text-anchor="middle"><tspan x="${cx}" y="${cy - starOuter - r * 0.85}">${escapeHtml(goalTitle)}</tspan></text>` : ""}
+            ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan><tspan x="${cx}" dy="1.15em">per year</tspan></text>` : ""}`
               : ""}
             ${kickerText
               ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`

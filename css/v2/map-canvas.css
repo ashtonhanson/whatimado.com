@@ -672,7 +672,7 @@ whatimado-map .whatimado-map__node--live.is-task .whatimado-map__node-body {
     --v2-dot-even: 1.2;
   }
 
-  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-more) :is(.whatimado-map__node-body, .whatimado-map__node-aura) {
+  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-more, .is-goal) :is(.whatimado-map__node-body, .whatimado-map__node-aura) {
     transform-box: fill-box;
     transform-origin: center;
     scale: calc(var(--v2-roadmap-dot-boost, 1) * var(--v2-dot-even, 1));
@@ -756,6 +756,56 @@ whatimado-map .whatimado-map__node--live.is-more .whatimado-map__plus line {
   stroke-linecap: round;
   fill: none;
   pointer-events: none;
+}
+
+whatimado-map .whatimado-map__node--live.is-goal,
+whatimado-map .whatimado-map__node--live.is-goal .whatimado-map__node-hit,
+whatimado-map .whatimado-map__node--live.is-goal .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-goal .whatimado-map__node-aura,
+whatimado-map .whatimado-map__node--live.is-goal text {
+  pointer-events: none;
+  cursor: default;
+}
+
+whatimado-map .whatimado-map__node--live.is-goal .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-goal.is-selected .whatimado-map__node-body,
+whatimado-map .whatimado-map__node--live.is-goal .whatimado-map__node-aura {
+  fill: transparent;
+  stroke: none;
+  transform: none;
+}
+
+whatimado-map .whatimado-map__goal-star {
+  fill: rgba(215, 255, 246, 0.22);
+  stroke: rgba(215, 255, 246, 0.42);
+  stroke-width: 0.85;
+  pointer-events: none;
+}
+
+whatimado-map .whatimado-map__node--live.is-goal text.whatimado-map__goal-title,
+whatimado-map .whatimado-map__node--live.is-goal text.whatimado-map__goal-income,
+whatimado-map .whatimado-map__node--live.is-goal.is-selected text.whatimado-map__goal-title,
+whatimado-map .whatimado-map__node--live.is-goal.is-selected text.whatimado-map__goal-income,
+whatimado-map .whatimado-map__node--live.is-goal.is-support text.whatimado-map__goal-title,
+whatimado-map .whatimado-map__node--live.is-goal.is-support text.whatimado-map__goal-income {
+  fill: rgba(215, 255, 246, 0.4);
+  stroke: none;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  filter: none;
+}
+
+whatimado-map .whatimado-map__node--live.is-goal text.whatimado-map__goal-income,
+whatimado-map .whatimado-map__node--live.is-goal.is-selected text.whatimado-map__goal-income,
+whatimado-map .whatimado-map__node--live.is-goal.is-support text.whatimado-map__goal-income {
+  fill: rgba(215, 255, 246, 0.3);
+}
+
+whatimado-map .whatimado-map__edge--live.is-future-edge {
+  stroke: rgba(215, 255, 246, 0.22);
+  stroke-dasharray: 1.2 6.5;
+  opacity: 0.65;
 }
 
 whatimado-map .whatimado-map__node--live.is-selected text {
@@ -965,12 +1015,12 @@ whatimado-map.is-roadmap-open .whatimado-map__edge--live.is-trail {
 
 /* Phone roadmap: every dot and title off the path shares one full teal, alternate roadmaps included. */
 @media (max-width: 900px) {
-  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-selected, .is-trail-node, .is-complete, .is-more) .whatimado-map__node-body {
+  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-selected, .is-trail-node, .is-complete, .is-more, .is-goal) .whatimado-map__node-body {
     fill: var(--v2-teal);
     stroke: none;
   }
 
-  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-selected, .is-trail-node, .is-complete, .is-more) text.whatimado-map__label {
+  whatimado-map.is-roadmap-open .whatimado-map__node--live:not(.is-selected, .is-trail-node, .is-complete, .is-more, .is-goal) text.whatimado-map__label {
     fill: var(--v2-teal);
   }
 

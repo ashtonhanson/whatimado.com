@@ -409,7 +409,7 @@ export function initChatFlow(ctx) {
   /** @param {string} nodeId @param {{ startConfirm?: boolean, openRoadmap?: boolean }} [options] */
   function handleNodeSelect(nodeId, { startConfirm = true, openRoadmap = false } = {}) {
     const node = graphStore.nodes.find((n) => n.id === nodeId);
-    if (!node || node.type === "start") return;
+    if (!node || node.type === "start" || node.type === "goal") return;
     if (node.type === "more") {
       missions.confirmExtend();
       return;

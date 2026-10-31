@@ -2,7 +2,7 @@ import { measureCssVarLength } from "./layout/measure-css-var.js";
 import { wrapMapLabel } from "./map/callouts.js";
 import { branchStepSvg, childOffset } from "./map/spines.js";
 
-/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, bypassed?: boolean, chainIndex?: number, taskIndex?: number, stageIndex?: number, homeAngle?: number }} GraphNode */
+/** @typedef {{ id: string, type: "start"|"path"|"mission"|"task"|"action"|"more"|"goal", label: string, x: number, y: number, parentId?: string, title?: string, description?: string, accent?: string, ideaType?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string, done?: boolean, waiting?: boolean, bypassed?: boolean, chainIndex?: number, taskIndex?: number, stageIndex?: number, homeAngle?: number }} GraphNode */
 /** @typedef {{ from: string, to: string }} GraphEdge */
 /** @typedef {{ id?: string, label: string, title: string, description?: string, type?: string, tagline?: string, why?: string, cost?: string, timeline?: string, income?: string }} AdvisorPath */
 export const graphStore = {
@@ -265,6 +265,7 @@ let possibilityEdges = null;
 let branchChosenId = null;
 
 export const ROADMAP_MORE_ID = "roadmap-more";
+export const ROADMAP_GOAL_ID = "roadmap-goal";
 
 function rememberPossibilities() {
   if (possibilityNodes) return;
@@ -584,7 +585,7 @@ function linkedFirstMilestoneStep(pathSiblings, milestoneStep, nodes, milestones
 export function placeLinkedBranch(nodes, rotation, chosenId) {
   const spread = mapSpread;
   const originX = YOU_LINKED.x;
-  const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
+  const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.type !== "goal" && node.id !== chosenId);
   const pathSiblings = satellites.filter((node) => node.type === "path");
   const milestones = milestoneChain(satellites);
   const tasks = satellites.filter((node) => node.type === "task");
@@ -611,6 +612,8 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   const plusScreen = mobile ? 12 : 18;
   const plusGap = milestones.length ? milestoneStep : plusScreen / (mapPxPerUnit() * 0.5);
   const plusDist = lastDist + plusGap * spread;
+  /* Sit just past the plus so the star stays in the current camera. */
+  const goalDist = plusDist + plusGap * 0.32 * spread;
   const originY = YOU_LINKED.y;
   const columnStep = stepForTitles([], { singleLine: true });
   const siblingStep = columnStep;
@@ -631,6 +634,11 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
     if (node.type === "more") {
       node.x = (originX + Math.cos(rotation) * plusDist) / MAP_W;
       node.y = (originY + Math.sin(rotation) * plusDist) / MAP_H;
+      return;
+    }
+    if (node.type === "goal") {
+      node.x = (originX + Math.cos(rotation) * goalDist) / MAP_W;
+      node.y = (originY + Math.sin(rotation) * goalDist) / MAP_H;
       return;
     }
     const milestoneIndex = milestones.findIndex((entry) => entry.id === node.id);
@@ -671,7 +679,7 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
  */
 export function placeUnlinkedBranch(nodes, chosenId) {
   const { x: youX, y: youY } = YOU_UNLINKED;
-  const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.id !== chosenId);
+  const satellites = nodes.filter((node) => node.type !== "start" && node.type !== "more" && node.type !== "goal" && node.id !== chosenId);
   const column = satellites.filter((node) => node.type === "path");
   const milestones = milestoneChain(satellites);
   const tasks = satellites.filter((node) => node.type === "task");
@@ -698,6 +706,11 @@ export function placeUnlinkedBranch(nodes, chosenId) {
     else if (node.type === "more") {
       slot = {
         dx: chosenSlot.dx + milestoneStep * (milestones.length + 1) + 8,
+        dy: chosenSlot.dy
+      };
+    } else if (node.type === "goal") {
+      slot = {
+        dx: chosenSlot.dx + milestoneStep * (milestones.length + 1) + 30,
         dy: chosenSlot.dy
       };
     } else if (milestones.includes(node)) {
@@ -836,6 +849,18 @@ export function showRoadmapBranch(pathId, stages = null) {
       homeAngle: chosen.homeAngle
     });
     edges.push({ from: attachId, to: ROADMAP_MORE_ID });
+    const goalTitle = String(chosenSource.title || chosenSource.label || "Goal").trim() || "Goal";
+    nodes.push({
+      id: ROADMAP_GOAL_ID,
+      type: "goal",
+      label: goalTitle,
+      title: goalTitle,
+      income: String(chosenSource.income || "").trim(),
+      x: chosen.x,
+      y: chosen.y - 0.28,
+      homeAngle: chosen.homeAngle
+    });
+    edges.push({ from: ROADMAP_MORE_ID, to: ROADMAP_GOAL_ID });
   }
 
   const target = 0;

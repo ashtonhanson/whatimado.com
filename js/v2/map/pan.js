@@ -44,6 +44,7 @@ export function getGraphBounds(mapEl) {
   let maxY = -Infinity;
 
   for (const node of mapEl._liveNodes) {
+    if (node.type === "goal") continue;
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
     const r = lg;
@@ -266,6 +267,7 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
   let maxY = -Infinity;
   const { offset: labelOffset, cap: labelCap } = getNodeLabelMetrics(lg);
   for (const node of mapEl._liveNodes) {
+    if (node.type === "goal") continue;
     if (includeNode && !includeNode(node)) continue;
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
