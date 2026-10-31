@@ -552,7 +552,9 @@ function linkedMilestoneStep(milestones, nodes, extraTitles = []) {
   const unit = mapPxPerUnit();
   const zoom = mapLayoutZoom();
   const radiusPx = nodeRadiusSvg() * unit * zoom;
-  const gapPx = Math.max(radiusPx + 8 + maxTitlePx + 12 + radiusPx, maxMissionPx + 16);
+  /* Desktop 3/4 can sit below layout zoom, so leave extra title air between columns. */
+  const titleAir = isMobileMapLayout() ? 12 : 28;
+  const gapPx = Math.max(radiusPx + 8 + maxTitlePx + titleAir + radiusPx, maxMissionPx + (isMobileMapLayout() ? 16 : 28));
   return Math.max(MISSION_STEP, gapPx / (unit * zoom));
 }
 
@@ -600,14 +602,16 @@ export function placeLinkedBranch(nodes, rotation, chosenId) {
   );
   const milestoneStep = linkedMilestoneStep(milestones, nodes);
   const firstStep = linkedFirstMilestoneStep(pathSiblings, milestoneStep, nodes, milestones);
+  /* One equal column step: You→roadmap, roadmap→mission, and mission→mission. */
+  const columnStepX = Math.max(milestoneStep, firstStep);
   const mobile = isMobileMapLayout();
   /* You → first roadmap matches the gap between missions. On a phone that
      roadmap sits a quarter of that gap closer to You. */
-  const columnGap = milestones.length ? milestoneStep : spoke;
+  const columnGap = milestones.length ? columnStepX : spoke;
   const chosenReach = mobile ? columnGap * 0.75 : columnGap;
   const chosenDist = chosenReach * spread;
   /** @param {number} index */
-  const milestoneDist = (index) => chosenDist + (firstStep + milestoneStep * index) * spread;
+  const milestoneDist = (index) => chosenDist + columnStepX * (index + 1) * spread;
   const lastDist = milestones.length ? milestoneDist(milestones.length - 1) : chosenDist;
   const plusScreen = mobile ? 12 : 18;
   const plusGap = milestones.length ? milestoneStep : plusScreen / (mapPxPerUnit() * 0.5);

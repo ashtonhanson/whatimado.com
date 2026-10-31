@@ -1486,28 +1486,31 @@ export class WhatimadoMap extends HTMLElement {
     const nearIds = neighborhood ? this._workNeighborhoodIds() : null;
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const layoutZoom = mapLayoutZoom();
-    /* Desktop 3/4 may shrink so You's spokes clear a short band.
-       Phone home uses a smaller fixed zoom so the mission sits right of center with You on the left edge. */
+    /* Desktop 3/4 may shrink for a short band, but stays ~25% larger than the old 0.32 floor.
+       Phone home picks zoom so the mission sits right of center with You on the left edge. */
     const mayShrink = Boolean(neighborhood && !mobile);
     const mobileHome = Boolean(mobile && neighborhood);
+    const desktopHomeZoom = Math.min(layoutZoom, 0.4);
     const stageW = this.querySelector(".whatimado-map__stage")?.clientWidth || this.clientWidth || 390;
     const options = {
       centerNodeId: neighborhood ? centerNodeId : null,
       includeNode: nearIds ? (node) => nearIds.has(node.id) : undefined,
-      minZoom: mayShrink ? Math.min(layoutZoom, 0.32) : mobileHome ? 0.3 : layoutZoom,
+      minZoom: mayShrink ? desktopHomeZoom : mobileHome ? 0.3 : layoutZoom,
       maxZoom: mobileHome ? 0.38 : layoutZoom,
-      /* Phone home picks zoom from You-left + mission bias; desktop home may shrink. */
+      /* Phone home picks zoom from You-left + mission bias; desktop home may shrink to the 0.4 floor. */
       fixedZoom: mayShrink || mobileHome ? undefined : layoutZoom,
       keepLeft: Boolean(neighborhood),
       pinLeftFocus: mobileHome,
+      /* Phone 3/4: equal pad above/below the selected roadmap in the menu→prompt band. */
+      centerRoadmapBand: mobileHome,
       liftY,
       /* Phone: mission a little right of center while You's spokes sit on the left edge. */
       biasX: mobileHome ? stageW * 0.08 : 0,
       /* Room for mission/task titles above the dots and for You's left spokes. */
       reserve: neighborhood
         ? {
-            above: mobile ? 28 : 34,
-            below: mobile ? 18 : 16,
+            above: mobile ? 22 : 34,
+            below: mobile ? 22 : 16,
             left: mobile ? 8 : 96,
             right: 24
           }

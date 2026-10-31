@@ -325,10 +325,11 @@ function svgMeetPaint(mapEl, stageRect) {
  *   keepLeft?: boolean,
  *   liftY?: number,
  *   biasX?: number,
- *   pinLeftFocus?: boolean
+ *   pinLeftFocus?: boolean,
+ *   centerRoadmapBand?: boolean
  * }} [options]
  */
-export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom, keepLeft = false, liftY = 0, biasX = 0, pinLeftFocus = false } = {}) {
+export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom, keepLeft = false, liftY = 0, biasX = 0, pinLeftFocus = false, centerRoadmapBand = false } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const frame = document.getElementById("dynamic-frame");
   if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
@@ -436,9 +437,21 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   const fittedPx = naturalH * zoom;
   let panY;
   if (focus) {
-    /* Optical mid of the selected mission column (mission + its tasks), not just the path-row dot. */
+    /* Optical mid of the selected work — mission column, or the whole roadmap branch on phone 3/4. */
     let focusCy = focus.y * VIEW_H;
-    if (focus.type === "mission") {
+    if (centerRoadmapBand) {
+      let colMin = Infinity;
+      let colMax = -Infinity;
+      for (const node of mapEl._liveNodes) {
+        if (includeNode && !includeNode(node)) continue;
+        if (node.id?.startsWith("option-") || node.id === "start") continue;
+        if (node.type !== "path" && node.type !== "mission" && node.type !== "task" && node.type !== "more") continue;
+        const ny = node.y * VIEW_H;
+        colMin = Math.min(colMin, ny);
+        colMax = Math.max(colMax, ny);
+      }
+      if (Number.isFinite(colMin) && Number.isFinite(colMax)) focusCy = (colMin + colMax) / 2;
+    } else if (focus.type === "mission") {
       let colMin = focusCy;
       let colMax = focusCy;
       for (const node of mapEl._liveNodes) {
