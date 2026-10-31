@@ -265,18 +265,16 @@ function getNodeBounds(mapEl, { includeNode } = {}) {
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
-  const { offset: labelOffset, cap: labelCap } = getNodeLabelMetrics(lg);
   for (const node of mapEl._liveNodes) {
     if (node.type === "goal") continue;
     if (includeNode && !includeNode(node)) continue;
     const cx = node.x * VIEW_W;
     const cy = node.y * VIEW_H;
     const r = lg;
-    const labelLift = node.type === "mission" || node.type === "task" ? labelOffset + labelCap * 0.65 : 0;
     const badgeLift = node.waiting ? 10 : 0;
     minX = Math.min(minX, cx - r - (node.waiting ? 8 : 0));
     maxX = Math.max(maxX, cx + r + (node.waiting ? 8 : 0));
-    minY = Math.min(minY, cy - r - lift - labelLift - badgeLift);
+    minY = Math.min(minY, cy - r - lift - badgeLift);
     maxY = Math.max(maxY, cy + r + (node.waiting ? 6 : 0));
   }
   return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
@@ -339,7 +337,7 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   const chrome = stage.querySelector(".whatimado-map__chrome");
   if (chrome instanceof HTMLElement) {
     const bar = chrome.getBoundingClientRect();
-    if (bar.height > 8 && bar.bottom > stageRect.top) top = Math.max(top, bar.bottom + 22);
+    if (bar.height > 8 && bar.bottom > stageRect.top) top = Math.max(top, bar.bottom + 12);
   }
   if (timeline instanceof HTMLElement && !timeline.hidden && stage.contains(timeline) === false) {
     const bar = timeline.getBoundingClientRect();
@@ -347,7 +345,7 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
     if (bar.height > 4 && overStage) top = Math.max(top, bar.bottom + 8);
   }
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 12;
-  const room = reserve || { above: 34, below: 0, left: 96, right: 96 };
+  const room = reserve || { above: 16, below: 10, left: 20, right: 20 };
   const bottom = frameRect.top - clearance - room.below;
   top += room.above;
   const availablePx = Math.max(24, bottom - top);

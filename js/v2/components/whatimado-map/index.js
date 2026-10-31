@@ -1469,12 +1469,6 @@ export class WhatimadoMap extends HTMLElement {
     if (neighborhood && centerNodeId && !this._nodeSitsInOpenBand(centerNodeId)) {
       this._pullNodeIntoOpenBand(centerNodeId);
     }
-    /* Pin growth slides the svg in CSS. Keep the 3/4 camera so a settle fit does not pull it back. */
-    const bandShift = Number.parseFloat(this.style.getPropertyValue("--v2-map-band-shift")) || 0;
-    if (this.dataset.readingPinned === "1" && bandShift > 8) {
-      this._panY = start.panY;
-      this._applyPanTransform();
-    }
     if (animate) this._easeCameraFrom(start, 420);
   }
 
@@ -2887,17 +2881,13 @@ export class WhatimadoMap extends HTMLElement {
         const rest = restCenter(el);
         if (rest) dots.push(rest);
       });
-      const hostRect = this.getBoundingClientRect();
       const mobile = window.matchMedia("(max-width: 900px)").matches;
-      const band = this._openBand();
-      const titleBounds = mobile
-        ? null
-        : {
-            left: Math.max(0, hostRect.left),
-            right: Math.min(window.innerWidth, hostRect.right),
-            top: band?.top,
-            bottom: band?.bottom
-          };
+      const titleBounds = {
+        left: stageRect.left,
+        right: stageRect.right,
+        top: stageRect.top,
+        bottom: stageRect.bottom
+      };
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-label-crowded"));
       const shown = (item) => getComputedStyle(item.text).visibility !== "hidden";
       const crowdedPairs = (list) => {
