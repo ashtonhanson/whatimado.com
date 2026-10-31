@@ -1280,7 +1280,9 @@ export class WhatimadoMap extends HTMLElement {
   syncSpreadForFrame(frameTop) {
     if (this._cameraHeld) return true;
     if (this._userPanned) return false;
-    if (!this._liveNodes.some((node) => node.type === "more")) return false;
+    if (!this._liveNodes.some((node) => node.type === "more" || node.type === "path" || node.type === "start")) {
+      return false;
+    }
     const frame = document.getElementById("dynamic-frame");
     const main = document.querySelector(".v2-main");
     if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
@@ -1303,16 +1305,18 @@ export class WhatimadoMap extends HTMLElement {
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
     this._userPanned = false;
+    const snap = frame._dock?.activeSnap;
+    const fillBand = snap === "mobile-focus" || snap === "bottom";
     if (hasRoadmapColumns) {
-      this._fitBand({ centerNodeId: focusId, from });
+      this._fitBand({ centerNodeId: focusId, from, fillBand });
       if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
       return true;
     }
     const options = {
       centerNodeId: roadmapFocusLinked ? null : selected?.id,
       reserve: null,
-      minZoom: mobile ? undefined : ROADMAP_CROSSHAIR_ZOOM_MIN,
-      fixedZoom: mobile ? mapLayoutZoom() : undefined
+      minZoom: mobile ? mapLayoutZoom() : ROADMAP_CROSSHAIR_ZOOM_MIN,
+      fixedZoom: mobile && !fillBand ? mapLayoutZoom() : undefined
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);
@@ -1396,7 +1400,8 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** Re-fit the roadmap to wherever the prompt currently sits. */
-  syncSnapCamera() {
+  syncSnapCamera({ force = false } = {}) {
+    if (force) this._userPanned = false;
     const frame = document.getElementById("dynamic-frame");
     const main = document.querySelector(".v2-main");
     if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
@@ -1424,9 +1429,9 @@ export class WhatimadoMap extends HTMLElement {
   /**
    * Scale the map into the band under the timeline and above the prompt.
    * Desktop fits every node. A phone fits the roadmap branch and as much else as the band allows.
-   * @param {{ centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null }} [options]
+   * @param {{ centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null, fillBand?: boolean }} [options]
    */
-  _fitBand({ centerNodeId = null, animate = false, from = null } = {}) {
+  _fitBand({ centerNodeId = null, animate = false, from = null, fillBand = false } = {}) {
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const start = from || { zoom: this._zoom, panX: this._panX, panY: this._panY };
     const chosenPathId = appStore.journey.roadmapPathId || this._selectedId || graphStore.selectedId;
@@ -1437,8 +1442,8 @@ export class WhatimadoMap extends HTMLElement {
       includeNode: mobile ? (node) => isActiveRoadmapBranchNode(node, chosenPathId) : undefined,
       /* Below the layout zoom the columns shrink under fixed-size titles and the titles collide. */
       minZoom: mapLayoutZoom(),
-      /* A phone roadmap always opens at the same scale. */
-      fixedZoom: mobile ? mapLayoutZoom() : undefined
+      /* Default phone scale at 3/4. The bottom snap may grow to fill the open band. */
+      fixedZoom: mobile && !fillBand ? mapLayoutZoom() : undefined
     };
     for (let pass = 0; pass < 3; pass++) {
       const fit = computeTimelineFrameFit(this, options);

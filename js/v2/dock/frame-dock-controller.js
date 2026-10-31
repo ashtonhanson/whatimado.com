@@ -528,14 +528,27 @@ export class FrameDockController {
     const target = {
       [SNAP.TOP]: anchors.topLock,
       [SNAP.HOME]: anchors.homeBase,
-      [SNAP.BOTTOM]: anchors.bottomCushion
+      [SNAP.BOTTOM]: anchors.bottomCushion,
+      [SNAP.MOBILE_EXPANDED]: anchors.expandedTop ?? anchors.topLock,
+      [SNAP.MOBILE_COLLAPSED]: anchors.readingTop ?? anchors.collapsedTop,
+      [SNAP.MOBILE_FOCUS]: anchors.mapFocusTop ?? anchors.typingTop
     }[snapId];
+    if (!Number.isFinite(target)) return;
 
     this.activeSnap = snapId;
+    if (this._mobileMode) this._applyMobileSnapClasses(snapId);
     if (animate && this._motionEnabled) {
-      this._easeToAnchor(target, snapId);
+      this._easeToAnchor(target, snapId, {
+        onTick: this._mobileMode ? () => this._syncMobileSheetMap() : undefined,
+        onComplete: () => {
+          if (this._mobileMode) this._syncMobileSheetMap({ fit: true });
+          this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
+        }
+      });
     } else {
       this._applyTop(target, { snap: snapId });
+      if (this._mobileMode) this._syncMobileSheetMap({ fit: true });
+      this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
     }
   }
 
@@ -770,11 +783,15 @@ export class FrameDockController {
       this._easeToAnchor(target, snap, {
         durationMs: this._mobileMode ? MOBILE_GLIDE_EASE_MS : SNAP_EASE_MS,
         onTick: this._mobileMode ? () => this._syncMobileSheetMap() : undefined,
-        onComplete: this._mobileMode ? () => this._syncMobileSheetMap() : undefined
+        onComplete: () => {
+          if (this._mobileMode) this._syncMobileSheetMap({ fit: true });
+          this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
+        }
       });
     } else {
       this._applyTop(target, { snap });
-      if (this._mobileMode) this._syncMobileSheetMap();
+      if (this._mobileMode) this._syncMobileSheetMap({ fit: true });
+      this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
     }
   }
 
@@ -797,9 +814,11 @@ export class FrameDockController {
    * Bottom snap: fill the screen above the composer strip.
    * Top snap: leave map frozen (no resize).
    */
-  _syncMobileSheetMap() {
+  _syncMobileSheetMap({ fit = false } = {}) {
     if (!this._mobileMode) return;
+    this._fitSheetMap = fit;
     syncMobileReadingMap(this);
+    this._fitSheetMap = false;
   }
 
   /** Finalize hero dismiss — sync map band once, then map locks from frame. */

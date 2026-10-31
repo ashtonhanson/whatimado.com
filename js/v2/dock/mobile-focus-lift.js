@@ -223,18 +223,17 @@ export function syncMobileReadingMap(controller) {
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const gutter = measureCssVarLength("--v2-main-gutter") || 14;
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
-  /* Cover the band above the sheet. Fit once at the three-quarter size; later moves only grow or shrink the canvas. */
+  /* Pin covers the live menu→frame band. Paint scale stays at the 3/4 height so dots do not jump from meet. */
   const anchors = controller._anchors;
   const readingTop = anchors?.readingTop ?? anchors?.collapsedTop;
   const readingFrameTop =
     typeof readingTop === "number" ? controller._mobileFrameScreenTop(readingTop) : NaN;
   const actualTop = controller.frameEl.getBoundingClientRect().top;
-  const pinBottom = Number.isFinite(readingFrameTop) ? Math.max(actualTop, readingFrameTop) : actualTop;
   const mapTop = headerH;
   const readingSvgH = Number.isFinite(readingFrameTop)
     ? Math.max(120, Math.round(readingFrameTop - mapTop - clearance))
     : Math.max(120, Math.round(actualTop - mapTop - clearance));
-  const pinH = Math.max(readingSvgH, Math.round(pinBottom - mapTop - clearance));
+  const pinH = Math.max(120, Math.round(actualTop - mapTop - clearance));
   const contentLeft = gutter;
   const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
 
@@ -248,7 +247,7 @@ export function syncMobileReadingMap(controller) {
   });
   map.dataset.readingPinned = "1";
   delete map.dataset.focusPinned;
-  if (map.dataset.sceneFit !== "1") fitPinnedMap(map);
+  if (controller._fitSheetMap || map.dataset.sceneFit !== "1") fitPinnedMap(map);
 }
 
 export function unpinMobileReadingMap() {

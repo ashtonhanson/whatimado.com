@@ -262,6 +262,28 @@ export function initChatFlow(ctx) {
         (entry) => entry.type === "task" && entry.id === progressId && entry.parentId === node.id
       );
       if (task) markTaskCard(task.id);
+      return;
+    }
+    if (node?.type === "path") {
+      document
+        .querySelector(`.v2-path-card[data-path-id="${CSS.escape(node.id)}"]`)
+        ?.classList.add("is-open-context");
+      selectionPanel?.classList.add("is-open-context");
+    }
+  }
+
+  /** Scroll the chat to the roadmap card that matches this path node. */
+  function scrollChatToRoadmap(node) {
+    if (!node || node.type !== "path") return;
+    paintOpenContext(node.id);
+    document.getElementById("possibilities")?.classList.remove("hidden");
+    const card = document.querySelector(`.v2-path-card[data-path-id="${CSS.escape(node.id)}"]`);
+    if (card) {
+      scrollFrameChildIntoView(card);
+      return;
+    }
+    if (selectionPanel && !selectionPanel.classList.contains("hidden")) {
+      scrollFrameChildIntoView(selectionPanel);
     }
   }
 
@@ -443,15 +465,15 @@ export function initChatFlow(ctx) {
       showAlternatePath(node);
       reflectNodeInChat(node);
       markMapCurrent();
+      scrollChatToRoadmap(node);
       return;
     }
     if (decision.action === "show-active-roadmap") {
       mapEl?.setFocusedNode(null);
-      showSelectedPath(node, { scroll: true, keepGate: true });
+      showSelectedPath(node, { scroll: false, keepGate: true });
       reflectNodeInChat(node);
       markMapCurrent();
-      const missionsEl = document.getElementById("missions");
-      if (missionsEl && !missionsEl.classList.contains("hidden")) scrollFrameChildIntoView(missionsEl);
+      scrollChatToRoadmap(node);
       return;
     }
     if (decision.action === "open-working-context") {
@@ -467,10 +489,11 @@ export function initChatFlow(ctx) {
     appStore.journey.selectedPathId = nodeId;
     if (startConfirm) appStore.journey.planConfirmed = false;
     setPhase(PHASE.PATH_SELECTED);
-    showSelectedPath(node, { generating: startConfirm, keepGate: !switching });
+    showSelectedPath(node, { generating: startConfirm, keepGate: !switching, scroll: false });
     reflectNodeInChat(node);
     renderPathCards();
     layout();
+    scrollChatToRoadmap(node);
     if (startConfirm) void confirmGate.begin(node);
     else confirmGate.hide();
   }
@@ -604,7 +627,7 @@ export function initChatFlow(ctx) {
       markMapCurrent();
       reflectNodeInChat(graphStore.nodes.find((entry) => entry.id === id) || node);
     });
-    scrollFrameChildIntoView(note);
+    if (node.type !== "path") scrollFrameChildIntoView(note);
   }
 
   /** After a roadmap is chosen, the others stay available to save. */
@@ -1108,7 +1131,8 @@ export function initChatFlow(ctx) {
       type === "mission" ||
       type === "more" ||
       type === "action" ||
-      (roadmapOpen && (type === "task" || type === "path")) ||
+      type === "path" ||
+      (roadmapOpen && type === "task") ||
       !detail.promptEmpty
     ) {
       handleNodeSelect(detail.nodeId);
@@ -1132,18 +1156,13 @@ export function initChatFlow(ctx) {
     void requestStartNewJourney(mapEl);
   });
 
-  frameEl?.addEventListener("dock-progress", (event) => {
-    const frameTop = /** @type {CustomEvent<{ frameTop?: number }>} */ (event).detail?.frameTop;
-    if (typeof frameTop === "number") mapEl?.syncSpreadForFrame(frameTop);
-  });
-
   frameEl?.addEventListener("dock-settled", () => {
     mapEl?.lockFromFrame();
-    mapEl?.syncSnapCamera();
+    mapEl?.syncSnapCamera({ force: true });
   });
 
   frameEl?.addEventListener("frame-drag-end", () => {
-    if (MOBILE_MQ.matches) window.setTimeout(() => mapEl?.syncSnapCamera(), MOBILE_GLIDE_EASE_MS + 40);
+    window.setTimeout(() => mapEl?.syncSnapCamera({ force: true }), MOBILE_MQ.matches ? MOBILE_GLIDE_EASE_MS + 40 : 40);
   });
 
   document.getElementById("nav-home")?.addEventListener("click", () => {

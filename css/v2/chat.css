@@ -359,12 +359,34 @@ body.v2-app .v2-path-card__meta {
   box-shadow: none;
 }
 
+.v2-path-card.is-open-context,
+.v2-path-card.is-selected.is-open-context,
+#selection-panel.is-open-context {
+  border: 1.5px solid var(--v2-yellow);
+  border-radius: 14px;
+  background: var(--v2-bg);
+  box-shadow:
+    0 0 6px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
+    0 0 16px color-mix(in srgb, var(--v2-yellow) 28%, transparent);
+}
+
 /* Phones: the current task, its checkbox and its buttons sit inside one glowing yellow frame. */
 @media (max-width: 900px) {
   #mission-stages .v2-mission.is-open-context:not(.is-done),
   #mission-stages:not(:has(.v2-mission.is-open-context:not(.is-done))) .v2-mission.is-focused:not(.is-done) {
     margin: 0.6rem 0;
     padding: 0.85rem 0.95rem;
+    border: 1.5px solid var(--v2-yellow);
+    border-radius: 14px;
+    background: var(--v2-bg);
+    box-shadow:
+      0 0 6px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
+      0 0 16px color-mix(in srgb, var(--v2-yellow) 28%, transparent);
+  }
+
+  .v2-path-card.is-open-context,
+  .v2-path-card.is-selected.is-open-context,
+  #selection-panel.is-open-context {
     border: 1.5px solid var(--v2-yellow);
     border-radius: 14px;
     background: var(--v2-bg);
