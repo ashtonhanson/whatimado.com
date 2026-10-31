@@ -884,15 +884,13 @@ export class WhatimadoMap extends HTMLElement {
   /** The open strip under the menu and above the prompt. */
   _openBand() {
     const stage = this.querySelector(".whatimado-map__stage")?.getBoundingClientRect();
-    const paint = this._svg?.getBoundingClientRect();
     const frame = document.getElementById("dynamic-frame")?.getBoundingClientRect();
-    const box = paint && paint.height > 40 ? paint : stage;
-    if (!box || !frame || box.width < 40 || box.height < 40) return null;
+    if (!stage || !frame || stage.width < 40 || stage.height < 40) return null;
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const railBottom = document.querySelector(".v2-rail-brand")?.getBoundingClientRect().bottom;
-    const top = mobile && railBottom > 0 ? Math.max(railBottom + 10, box.top + 8) : box.top + 18;
-    const bottom = Math.max(top + 36, Math.min(box.bottom - 8, frame.top - 20));
-    return { top, bottom, left: box.left + 16, right: box.right - 16 };
+    const top = mobile && railBottom > 0 ? Math.max(railBottom + 10, stage.top + 8) : stage.top + 18;
+    const bottom = Math.max(top + 36, Math.min(stage.bottom - 8, frame.top - 20));
+    return { top, bottom, left: stage.left + 16, right: stage.right - 16 };
   }
 
   /** @param {string} id */

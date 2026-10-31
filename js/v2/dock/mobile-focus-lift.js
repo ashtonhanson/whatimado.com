@@ -264,6 +264,9 @@ export function syncMobileReadingMap(controller) {
     ? Math.max(120, Math.round(readingFrameTop - mapTop - clearance))
     : Math.max(120, Math.round(actualTop - mapTop - clearance));
   const pinH = Math.max(120, Math.round(actualTop - mapTop - clearance));
+  /* At 3/4 the stage matches the pin. At the bottom snap, fill the tall menu→frame
+     band so the camera can center the mission with You still on the left. */
+  const atBottom = pinH > readingSvgH + 24;
   const contentLeft = 0;
   const contentWidth = Math.max(0, window.innerWidth);
 
@@ -272,7 +275,7 @@ export function syncMobileReadingMap(controller) {
     left: contentLeft,
     width: contentWidth,
     height: pinH,
-    svgHeight: readingSvgH,
+    svgHeight: atBottom ? pinH : readingSvgH,
     zIndex: "40"
   });
   map.dataset.readingPinned = "1";
