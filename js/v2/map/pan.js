@@ -321,10 +321,11 @@ function svgMeetPaint(mapEl, stageRect) {
  *   centerNodeId?: string|null,
  *   reserve?: { above: number, below: number, left: number, right: number } | null,
  *   includeNode?: (node: import("../graph-store.js").GraphNode) => boolean,
- *   minZoom?: number
+ *   minZoom?: number,
+ *   maxZoom?: number
  * }} [options]
  */
-export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, fixedZoom } = {}) {
+export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const frame = document.getElementById("dynamic-frame");
   if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
@@ -380,16 +381,18 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
     screenCx += (room.left - room.right) / 2;
   }
   const explicitMin = typeof minZoom === "number" && Number.isFinite(minZoom);
+  const zoomCeil =
+    typeof maxZoom === "number" && Number.isFinite(maxZoom) ? Math.min(ZOOM_MAX, maxZoom) : ZOOM_MAX;
   /* A phone roadmap is wider than the stage at the usual floor, so the left spokes clip. */
   const mobileMin = explicitMin ? Math.min(minZoom, FIT_ZOOM_MIN) : FIT_ZOOM_MIN;
-  const fitted = Math.min(ZOOM_MAX, zoomY, zoomX);
+  const fitted = Math.min(zoomCeil, zoomY, zoomX);
   const desktopFloor = explicitMin ? minZoom : ZOOM_MIN;
   const zoom =
     typeof fixedZoom === "number" && fixedZoom > 0
       ? fixedZoom
       : MOBILE_MQ.matches
-        ? Math.max(mobileMin, Math.min(ZOOM_MAX, zoomX, Math.max(floor, zoomY)))
-        : Math.max(desktopFloor, fitted);
+        ? Math.max(mobileMin, Math.min(zoomCeil, zoomX, Math.max(floor, zoomY)))
+        : Math.max(desktopFloor, Math.min(zoomCeil, fitted));
   const scale = pxPerUnit * zoom;
   const margin = (stageRect.width - usableW) / 2;
   const overRight = screenCx + (bounds.maxX - cx) * scale + room.right - (stageRect.width - margin);

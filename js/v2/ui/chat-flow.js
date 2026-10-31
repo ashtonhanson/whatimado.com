@@ -1158,11 +1158,14 @@ export function initChatFlow(ctx) {
 
   frameEl?.addEventListener("dock-settled", () => {
     mapEl?.lockFromFrame();
-    mapEl?.syncSnapCamera({ force: true });
+    mapEl?.syncSnapCamera({ force: true, animate: true });
   });
 
   frameEl?.addEventListener("frame-drag-end", () => {
-    window.setTimeout(() => mapEl?.syncSnapCamera({ force: true }), MOBILE_MQ.matches ? MOBILE_GLIDE_EASE_MS + 40 : 40);
+    window.setTimeout(
+      () => mapEl?.syncSnapCamera({ force: true, animate: true }),
+      MOBILE_MQ.matches ? MOBILE_GLIDE_EASE_MS + 40 : 40
+    );
   });
 
   document.getElementById("nav-home")?.addEventListener("click", () => {

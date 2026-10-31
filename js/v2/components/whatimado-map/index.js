@@ -883,13 +883,15 @@ export class WhatimadoMap extends HTMLElement {
   /** The open strip under the menu and above the prompt. */
   _openBand() {
     const stage = this.querySelector(".whatimado-map__stage")?.getBoundingClientRect();
+    const paint = this._svg?.getBoundingClientRect();
     const frame = document.getElementById("dynamic-frame")?.getBoundingClientRect();
-    if (!stage || !frame || stage.width < 40 || stage.height < 40) return null;
+    const box = paint && paint.height > 40 ? paint : stage;
+    if (!box || !frame || box.width < 40 || box.height < 40) return null;
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const railBottom = document.querySelector(".v2-rail-brand")?.getBoundingClientRect().bottom;
-    const top = mobile && railBottom > 0 ? railBottom + 10 : stage.top + 18;
-    const bottom = Math.max(top + 36, Math.min(stage.bottom - 8, frame.top - 20));
-    return { top, bottom, left: stage.left + 16, right: stage.right - 16 };
+    const top = mobile && railBottom > 0 ? Math.max(railBottom + 10, box.top + 8) : box.top + 18;
+    const bottom = Math.max(top + 36, Math.min(box.bottom - 8, frame.top - 20));
+    return { top, bottom, left: box.left + 16, right: box.right - 16 };
   }
 
   /** @param {string} id */
@@ -1271,13 +1273,80 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
+   * Selected mission or task the crosshair and sheet snaps should frame.
+   * Prefers the open working context over You or a path.
+   * @returns {string|null}
+   */
+  _workFocusId() {
+    const workOf = (id) => {
+      if (!id) return null;
+      const node = this._liveNodes.find((entry) => entry.id === id);
+      return node && (node.type === "mission" || node.type === "task") ? node : null;
+    };
+    const focused = workOf(this._focusNodeId);
+    if (focused) return focused.id;
+    let mission = null;
+    let task = null;
+    for (const id of this._currentIds || []) {
+      const node = workOf(id);
+      if (node?.type === "task") task = node;
+      else if (node?.type === "mission") mission = node;
+    }
+    if (task) return task.id;
+    if (mission) return mission.id;
+    return workOf(appStore.journey.focusMissionId)?.id || workOf(this._selectedId)?.id || null;
+  }
+
+  /**
+   * Mission node plus its task column — the section the camera should sit on.
+   * @param {string|null|undefined} focusId
+   * @returns {Set<string>|null}
+   */
+  _missionSectionIds(focusId) {
+    const node = focusId ? this._liveNodes.find((entry) => entry.id === focusId) : null;
+    if (!node || (node.type !== "mission" && node.type !== "task")) return null;
+    const missionId = node.type === "mission" ? node.id : node.parentId;
+    const ids = new Set();
+    if (missionId) ids.add(missionId);
+    ids.add(node.id);
+    for (const entry of this._liveNodes) {
+      if (entry.type === "task" && entry.parentId === missionId) ids.add(entry.id);
+    }
+    return ids.size ? ids : null;
+  }
+
+  /**
+   * Sheet is covering the map (top snap, or still above the 3/4 line).
+   * @param {HTMLElement} frame
+   * @param {HTMLElement} main
+   * @param {number} [frameTop]
+   */
+  _frameCoversMap(frame, main, frameTop) {
+    const snap = frame._dock?.activeSnap;
+    if (snap === "mobile-expanded" || snap === "top") return true;
+    const anchors = measureAnchors(main, frame);
+    const top =
+      Number.isFinite(frameTop)
+        ? frameTop
+        : Number.isFinite(frame._dock?.topPx)
+          ? frame._dock.topPx
+          : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      const reading = anchors.readingTop ?? anchors.homeBase;
+      return Number.isFinite(reading) && top < reading - 8;
+    }
+    return top < anchors.homeBase - 1;
+  }
+
+  /**
    * At home or lower, zoom and center the roadmap between the timeline and the prompt.
    * Tucked above home, the map holds where it was.
    * On mobile this only runs while the sheet rests low enough to show the map band.
    * @param {number} [frameTop] Frame top in main coordinates
+   * @param {{ animate?: boolean }} [options]
    * @returns {boolean} Whether the camera was fitted
    */
-  syncSpreadForFrame(frameTop) {
+  syncSpreadForFrame(frameTop, { animate = false } = {}) {
     if (this._cameraHeld) return true;
     if (this._userPanned) return false;
     if (!this._liveNodes.some((node) => node.type === "more" || node.type === "path" || node.type === "start")) {
@@ -1286,30 +1355,23 @@ export class WhatimadoMap extends HTMLElement {
     const frame = document.getElementById("dynamic-frame");
     const main = document.querySelector(".v2-main");
     if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
+    if (this._frameCoversMap(frame, main, frameTop)) return false;
     if (window.matchMedia("(max-width: 900px)").matches) {
       if (isOpenHomePhase() || this.dataset.focusPinned === "1") return false;
-      const snap = frame._dock?.activeSnap;
-      /* Home and the lower three-quarter sheet both leave a map band. The expanded sheet covers it. */
-      if (snap && snap !== "mobile-collapsed" && snap !== "mobile-focus" && snap !== "home") return false;
       if (frame._dock?._keyboardDocked || document.body.classList.contains("is-mobile-composer-focus")) return false;
-    } else {
-      const anchors = measureAnchors(main, frame);
-      const top = Number.isFinite(frameTop) ? frameTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
-      if (top < anchors.homeBase - 1) return false;
     }
     const selectedId = this._selectedId || graphStore.selectedId;
     const selected = this._liveNodes.find((node) => node.type === "path" && node.id === selectedId);
     const hasRoadmapColumns = this._liveNodes.some((node) => node.type === "task");
-    const focusId =
-      this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId) ? this._focusNodeId : null;
+    const workId = this._workFocusId();
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
     this._userPanned = false;
     const snap = frame._dock?.activeSnap;
     const fillBand = snap === "mobile-focus" || snap === "bottom";
     if (hasRoadmapColumns) {
-      this._fitBand({ centerNodeId: focusId, from, fillBand });
-      if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
+      this._fitBand({ centerNodeId: workId, from, fillBand, animate });
+      if (!animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
       return true;
     }
     const options = {
@@ -1327,7 +1389,8 @@ export class WhatimadoMap extends HTMLElement {
       options.reserve = reserve;
     }
     this._fitZoomFloor = this._zoom;
-    if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
+    if (animate) this._easeCameraFrom(from, 420);
+    else if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
     return true;
   }
 
@@ -1400,14 +1463,14 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /** Re-fit the roadmap to wherever the prompt currently sits. */
-  syncSnapCamera({ force = false } = {}) {
+  syncSnapCamera({ force = false, animate = false } = {}) {
     if (force) this._userPanned = false;
     const frame = document.getElementById("dynamic-frame");
     const main = document.querySelector(".v2-main");
     if (!(frame instanceof HTMLElement) || !(main instanceof HTMLElement)) return false;
     const dockTop = frame._dock?.topPx;
     const top = Number.isFinite(dockTop) ? dockTop : frame.getBoundingClientRect().top - main.getBoundingClientRect().top;
-    return this.syncSpreadForFrame(top);
+    return this.syncSpreadForFrame(top, { animate });
   }
 
   /**
@@ -1429,19 +1492,26 @@ export class WhatimadoMap extends HTMLElement {
   /**
    * Scale the map into the band under the timeline and above the prompt.
    * Desktop fits every node. A phone fits the roadmap branch and as much else as the band allows.
-   * @param {{ centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null, fillBand?: boolean }} [options]
+   * @param {{ centerNodeId?: string|null, animate?: boolean, from?: { zoom: number, panX: number, panY: number }|null, fillBand?: boolean, section?: boolean }} [options]
    */
-  _fitBand({ centerNodeId = null, animate = false, from = null, fillBand = false } = {}) {
+  _fitBand({ centerNodeId = null, animate = false, from = null, fillBand = false, section = false } = {}) {
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const start = from || { zoom: this._zoom, panX: this._panX, panY: this._panY };
     const chosenPathId = appStore.journey.roadmapPathId || this._selectedId || graphStore.selectedId;
+    const sectionIds = section ? this._missionSectionIds(centerNodeId) : null;
     const options = {
       centerNodeId,
       reserve: null,
-      /* A phone frames the roadmap branch and lets the spokes sit at the edge. Desktop frames every node. */
-      includeNode: mobile ? (node) => isActiveRoadmapBranchNode(node, chosenPathId) : undefined,
+      /* A selected mission/task frames that column. Otherwise the open branch (phone) or the whole graph (desktop). */
+      includeNode: sectionIds
+        ? (node) => sectionIds.has(node.id)
+        : mobile
+          ? (node) => isActiveRoadmapBranchNode(node, chosenPathId)
+          : undefined,
       /* Below the layout zoom the columns shrink under fixed-size titles and the titles collide. */
       minZoom: mapLayoutZoom(),
+      /* Section focus can grow, but not so far that titles blow past the band. */
+      maxZoom: sectionIds ? 1.05 : undefined,
       /* Default phone scale at 3/4. The bottom snap may grow to fill the open band. */
       fixedZoom: mobile && !fillBand ? mapLayoutZoom() : undefined
     };
@@ -1453,9 +1523,17 @@ export class WhatimadoMap extends HTMLElement {
       if (!options.reserve) break;
     }
     this._fitZoomFloor = this._zoom;
-    if (mobile) this._keepSpokeTitlesOnStage();
-    else this._keepGraphUnderTimeline();
+    if (!sectionIds) {
+      if (mobile) this._keepSpokeTitlesOnStage();
+      else this._keepGraphUnderTimeline();
+    }
     if (centerNodeId && !this._nodeSitsInOpenBand(centerNodeId)) this._pullNodeIntoOpenBand(centerNodeId);
+    /* Pin growth slides the svg in CSS. Keep the 3/4 camera so a settle fit does not pull it back. */
+    const bandShift = Number.parseFloat(this.style.getPropertyValue("--v2-map-band-shift")) || 0;
+    if (this.dataset.readingPinned === "1" && bandShift > 8) {
+      this._panY = start.panY;
+      this._applyPanTransform();
+    }
     if (animate) this._easeCameraFrom(start, 420);
   }
 
@@ -1565,11 +1643,13 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Crosshair: put the selected node in the open band and scale so most of the map is visible there.
+   * Crosshair: frame the selected mission/task section in the open band.
    * @param {{ animate?: boolean }} [options]
    */
   resetToYou({ animate = true } = {}) {
+    const workId = this._workFocusId();
     const preferred =
+      workId ||
       (this._selectedId && this._liveNodes.some((node) => node.id === this._selectedId) && this._selectedId) ||
       (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId) && this._focusNodeId) ||
       (this._liveNodes.some((node) => node.id === "start") ? "start" : "");
@@ -1581,8 +1661,17 @@ export class WhatimadoMap extends HTMLElement {
     this._youBtn?.classList.add("is-active");
     this._youBtn?.setAttribute("aria-pressed", "true");
     this.syncDesktopViewBox();
+    const frame = document.getElementById("dynamic-frame");
+    const snap = frame?._dock?.activeSnap;
+    const atBottom = snap === "mobile-focus" || snap === "bottom";
     const from = { zoom: this._zoom, panX: this._panX, panY: this._panY };
-    this._fitBand({ centerNodeId: preferred, animate, from });
+    this._fitBand({
+      centerNodeId: preferred,
+      animate,
+      from,
+      fillBand: Boolean(workId) || atBottom,
+      section: Boolean(workId)
+    });
   }
 
   /** @param {TouchList} touches */

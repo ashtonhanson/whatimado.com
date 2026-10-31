@@ -969,6 +969,13 @@
     overflow: visible;
   }
 
+  /* Keep paint scale at the 3/4 svg height; slide that slice into the live menu→frame band. */
+  body.v2-app whatimado-map[data-reading-pinned="1"] .whatimado-map__svg {
+    top: var(--v2-map-band-shift, 0px);
+    bottom: auto;
+    height: var(--v2-map-svg-h);
+  }
+
   body.v2-app whatimado-map[data-reading-pinned="1"],
   body.v2-app whatimado-map[data-focus-pinned="1"] {
     margin: 0;
@@ -1033,22 +1040,32 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 48px;
+    height: 14px;
     margin: 0;
-    padding: 0.65rem 0 0.4rem;
+    padding: 0.2rem 0 0.15rem;
     cursor: grab;
     touch-action: none;
     border-bottom: 1px solid rgba(46, 232, 214, 0.1);
     background: linear-gradient(180deg, rgba(46, 232, 214, 0.08) 0%, transparent 100%);
   }
 
+  /* Invisible slop only — the pill stays small, the thumb target is larger. */
   whatimado-frame.is-mobile-docked .whatimado-frame__drag-rail::before {
     content: "";
     position: absolute;
     left: 0;
     right: 0;
-    top: -18px;
-    height: 18px;
+    top: -22px;
+    height: 22px;
+  }
+
+  whatimado-frame.is-mobile-docked .whatimado-frame__drag-rail::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -10px;
+    height: 10px;
   }
 
   whatimado-frame.is-mobile-docked.is-dragging .whatimado-frame__drag-rail {
@@ -1056,10 +1073,10 @@
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__drag-grip {
-    width: min(46vw, 8rem);
-    height: 6px;
-    background: rgba(66, 255, 240, 0.62);
-    box-shadow: 0 0 12px rgba(46, 232, 214, 0.4);
+    width: min(18vw, 4.5rem);
+    height: 4px;
+    background: rgba(66, 255, 240, 0.48);
+    box-shadow: 0 0 8px rgba(46, 232, 214, 0.28);
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__body-wrap {
@@ -1092,8 +1109,8 @@
   }
 
   whatimado-frame.is-mobile-docked.is-mobile-typing .whatimado-frame__drag-rail {
-    height: 48px;
-    padding: 0.55rem 0 0.35rem;
+    height: 14px;
+    padding: 0.15rem 0 0.1rem;
     border-bottom: none;
   }
 

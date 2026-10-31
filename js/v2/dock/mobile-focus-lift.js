@@ -19,6 +19,18 @@ const SETTLE_FIT_MS = 140;
 let settleFitTimer = 0;
 let settleFitPending = false;
 
+function sheetCoversMap() {
+  const frame = document.getElementById("dynamic-frame");
+  if (!(frame instanceof HTMLElement)) return false;
+  return frame.classList.contains("is-mobile-expanded") || frame._dock?.activeSnap === "mobile-expanded";
+}
+
+function cancelPendingMapFit() {
+  window.clearTimeout(settleFitTimer);
+  settleFitTimer = 0;
+  settleFitPending = false;
+}
+
 function lockDocumentScroll() {
   if (window.scrollX || window.scrollY) {
     window.scrollTo(0, 0);
@@ -43,6 +55,7 @@ function clearPinStyles(el) {
   el.style.removeProperty("z-index");
   el.style.removeProperty("overflow");
   el.style.removeProperty("--v2-map-svg-h");
+  el.style.removeProperty("--v2-map-band-shift");
   delete el.dataset.focusPinned;
   delete el.dataset.readingPinned;
   delete el.dataset.pinH;
@@ -65,10 +78,15 @@ function applyMapPin(map, box) {
   map.style.zIndex = box.zIndex;
   const svgH = Math.round(box.svgHeight ?? box.height);
   map.style.setProperty("--v2-map-svg-h", `${svgH}px`);
+  map.style.setProperty("--v2-map-band-shift", `${Math.max(0, Math.round((box.height - svgH) / 2))}px`);
 }
 
 /** Recenter the constellation in the pinned stage when height changes. */
 function fitPinnedMap(map) {
+  if (sheetCoversMap()) {
+    cancelPendingMapFit();
+    return;
+  }
   const nextH = Math.round(
     Number.parseFloat(map.style.getPropertyValue("--v2-map-svg-h")) ||
       map.getBoundingClientRect().height
@@ -81,7 +99,10 @@ function fitPinnedMap(map) {
   map.dataset.pinH = String(nextH);
   map.dataset.pinFrameTop = String(frameTop);
   const host = /** @type {HTMLElement & { fitLockedScene?: (opts?: { animate?: boolean }) => void }} */ (map);
-  const run = () => host.fitLockedScene?.({ animate: false });
+  const run = () => {
+    if (sheetCoversMap()) return;
+    host.fitLockedScene?.({ animate: false });
+  };
   if (heightChanged || frameMoved || map.dataset.sceneFit !== "1") {
     map.dataset.sceneFit = "1";
     requestAnimationFrame(() => requestAnimationFrame(run));
@@ -217,8 +238,13 @@ export function syncMobileReadingMap(controller) {
     return;
   }
 
-  const expanded = controller.frameEl.classList.contains("is-mobile-expanded");
-  if (expanded) return;
+  const expanded =
+    controller.frameEl.classList.contains("is-mobile-expanded") ||
+    controller.activeSnap === "mobile-expanded";
+  if (expanded) {
+    cancelPendingMapFit();
+    return;
+  }
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const gutter = measureCssVarLength("--v2-main-gutter") || 14;
@@ -229,6 +255,11 @@ export function syncMobileReadingMap(controller) {
   const readingFrameTop =
     typeof readingTop === "number" ? controller._mobileFrameScreenTop(readingTop) : NaN;
   const actualTop = controller.frameEl.getBoundingClientRect().top;
+  /* Sheet above the 3/4 line (covering the map): leave pin and camera alone. */
+  if (Number.isFinite(readingFrameTop) && actualTop < readingFrameTop - 8) {
+    cancelPendingMapFit();
+    return;
+  }
   const mapTop = headerH;
   const readingSvgH = Number.isFinite(readingFrameTop)
     ? Math.max(120, Math.round(readingFrameTop - mapTop - clearance))

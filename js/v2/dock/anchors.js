@@ -139,7 +139,7 @@ export function measureMobileAnchors(mainEl, frameEl) {
   const expandedTop = Math.max(-promptDrop, headerH - mainRect.top - promptDrop);
   /** 3/4 of the way up the screen: frame top sits at one quarter of the viewport. */
   const readingTop = Math.max(expandedTop + 24, vh * 0.25 - mainRect.top - promptDrop);
-  const dragH = frameEl.querySelector(".whatimado-frame__drag-rail")?.getBoundingClientRect().height ?? 48;
+  const dragH = frameEl.querySelector(".whatimado-frame__drag-rail")?.getBoundingClientRect().height ?? 14;
   const compactChrome = (composer?.getBoundingClientRect().height ?? 68) + dragH + 8;
   const mapFocusTop = Math.max(
     readingTop + 24,
