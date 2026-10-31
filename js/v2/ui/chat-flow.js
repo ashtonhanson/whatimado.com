@@ -3,7 +3,7 @@ import { graphStore, restorePossibilityMap, selectGraphNode, setExtraExploreOpti
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
-import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ } from "../dock/constants.js";
+import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ, SNAP } from "../dock/constants.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
 import { buildSharedPromptContext, refreshGoalBrief } from "../state/goal-brief.js";
 import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
@@ -127,6 +127,59 @@ export function initChatFlow(ctx) {
     appStore.journey.ghostDismissed = true;
     mapEl?.dismissGhost({ instant });
     setPhase(appStore.journey.phase, { animate: !instant, instant });
+  }
+
+  /** True while a new roadmap is still being written — map stays hidden. */
+  function isPreRoadmapCompose() {
+    const phase = appStore.journey.phase;
+    return (
+      phase === PHASE.OPEN ||
+      phase === PHASE.EXPLORING ||
+      phase === PHASE.COACHING ||
+      !appStore.journey.pathsGenerated
+    );
+  }
+
+  /** Lift the chat/prompt to the top so the keyboard cannot crop it; map stays covered. */
+  function ensureTypingFullStage() {
+    const dock = frameEl?._dock;
+    if (!dock) return;
+    document.body.classList.add("is-chat-full-stage");
+    if (MOBILE_MQ.matches) {
+      if (!dock._mobileChatSheet) dock.enterMobileChatMode?.();
+      if (dock.activeSnap !== SNAP.MOBILE_EXPANDED) {
+        dock.snapTo(SNAP.MOBILE_EXPANDED, { animate: true });
+      }
+      return;
+    }
+    if (!frameEl?.classList.contains("is-docked")) {
+      frameEl?.onHeroDismissed?.({ animate: false });
+    }
+    if (dock.activeSnap !== SNAP.TOP) {
+      dock.snapTo(SNAP.TOP, { animate: true });
+    }
+  }
+
+  /** After paths exist, drop the sheet so chat has room; map waits for a selection. */
+  function settleFrameAfterPathsReady() {
+    const dock = frameEl?._dock;
+    document.body.classList.remove("is-chat-full-stage");
+    dock?.releaseMobileComposerFocus?.();
+    if (!dock) return;
+    if (MOBILE_MQ.matches) {
+      dock.mobileGlideToBottom?.() || dock.snapTo(SNAP.MOBILE_COLLAPSED, { animate: true });
+      return;
+    }
+    dock.snapTo(SNAP.HOME, { animate: true });
+  }
+
+  /** Selected roadmap: show the map and fit it in the menu→prompt band. */
+  function revealMapForSelectedRoadmap() {
+    document.body.classList.remove("is-chat-full-stage");
+    mapEl?.syncLiveFromStore();
+    window.setTimeout(() => {
+      mapEl?.syncSnapCamera({ force: true, animate: true });
+    }, MOBILE_MQ.matches ? 80 : 40);
   }
 
   function renderPathCards() {
@@ -494,6 +547,8 @@ export function initChatFlow(ctx) {
     renderPathCards();
     layout();
     scrollChatToRoadmap(node);
+    settleFrameAfterPathsReady();
+    revealMapForSelectedRoadmap();
     if (startConfirm) void confirmGate.begin(node);
     else confirmGate.hide();
   }
@@ -838,6 +893,7 @@ export function initChatFlow(ctx) {
     ensureJourneyStarted(appStore.journey);
     trackEvent("prompt_submitted");
     dismissGhostMap();
+    if (isPreRoadmapCompose()) ensureTypingFullStage();
     setComposerEnabled(false);
 
     if (appStore.journey.phase === PHASE.OPEN) {
@@ -1140,7 +1196,9 @@ export function initChatFlow(ctx) {
   });
 
   frameEl?.composerInput?.addEventListener("input", () => {
-    if (frameEl.composerInput?.value.trim()) dismissGhostMap();
+    if (!frameEl.composerInput?.value.trim()) return;
+    dismissGhostMap();
+    if (isPreRoadmapCompose()) ensureTypingFullStage();
   });
 
   frameEl?.addEventListener("composer-submit", (event) => {

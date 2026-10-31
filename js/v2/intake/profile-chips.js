@@ -171,18 +171,15 @@ function chipSequence(ctx = {}) {
   const steps = [];
   if (!ctx.suppressId) steps.push(INTAKE_STEP.ID);
   if (!ctx.suppressHousing) steps.push(INTAKE_STEP.HOUSING);
-  steps.push(
-    INTAKE_STEP.TRANSPORT,
-    INTAKE_STEP.DEPENDENTS,
-    INTAKE_STEP.INCOME,
-    INTAKE_STEP.PATH
-  );
+  if (!ctx.suppressTransport) steps.push(INTAKE_STEP.TRANSPORT);
+  steps.push(INTAKE_STEP.DEPENDENTS, INTAKE_STEP.INCOME);
+  if (!ctx.suppressPath) steps.push(INTAKE_STEP.PATH);
   if (founder) {
     steps.push(INTAKE_STEP.FOUNDER);
     return steps;
   }
   steps.push(ownBusiness ? INTAKE_STEP.BUSINESS_SETUP : INTAKE_STEP.WORK_MODE);
-  steps.push(INTAKE_STEP.SKILLS);
+  if (!ctx.suppressSkills) steps.push(INTAKE_STEP.SKILLS);
   if (!ownBusiness && ctx.profile?.pathPreference === "employment") steps.push(INTAKE_STEP.RELOCATE);
   return steps;
 }
@@ -273,9 +270,10 @@ export function parseHousingStatus(text) {
 
 export function parseTransportStatus(text) {
   const q = String(text || "").toLowerCase().trim();
-  if (/\b(yes|car|drive|reliable)\b/.test(q) && !/\b(no|don'?t|limited|bus)\b/.test(q)) return "has";
+  if (/\b(no|nope|don'?t have|no car|no van|no truck|no transport|no vehicle)\b/.test(q)) return "needs";
+  if (/\b(box van|cargo van|van|truck|pickup|suv|motorcycle)\b/.test(q)) return "has";
+  if (/\b(yes|car|drive|reliable|vehicle)\b/.test(q) && !/\b(limited|bus|sometimes)\b/.test(q)) return "has";
   if (/\b(sometimes|limited|bus|transit|uber|lyft|bike)\b/.test(q)) return "limited";
-  if (/\b(no|nope|don'?t have|no car|no transport)\b/.test(q)) return "needs";
   return "";
 }
 

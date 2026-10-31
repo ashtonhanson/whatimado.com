@@ -176,10 +176,17 @@ whatimado-map .whatimado-map__chrome .whatimado-map__help-btn {
   right: auto;
 }
 
+whatimado-map[data-mode="hidden"] {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
 whatimado-map[data-mode="ghost"],
 whatimado-map[data-mode="faint"],
 whatimado-map[data-mode="visible"] {
   opacity: 1;
+  visibility: visible;
 }
 
 whatimado-map[data-mode="ghost"] .whatimado-map__pan-surface,

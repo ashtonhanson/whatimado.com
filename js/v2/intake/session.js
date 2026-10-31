@@ -15,14 +15,23 @@ import {
   parseFounderStage,
   parseHousingStatus,
   parseIdStatus,
+  parsePathPreference,
+  parseTransportStatus,
+  parseDependentSupport,
+  parseBusinessSetup,
   chipStepAnswered
 } from "./profile-chips.js";
 import { applyLocationAnswer, isLocationStep, locationPrompt } from "./location.js";
 import {
   classifyStabilityContext,
+  confirmsHasHousing,
+  confirmsHasId,
+  confirmsHasTransport,
   isClosedTestingFlow,
   shouldSuppressHousingStep,
-  shouldSuppressIdStep
+  shouldSuppressIdStep,
+  shouldSuppressSkillsStep,
+  shouldSuppressTransportStep
 } from "./persona-signals.js";
 
 function firstUserText() {
@@ -99,13 +108,63 @@ export function createIntakeController(ui) {
   function chipCtx(extra = {}) {
     const blob = userBlob();
     const founder = founderMode();
+    const pathPref = appStore.profile.pathPreference || parsePathPreference(blob);
     return {
       founder,
       completedSteps: completedSteps(),
       suppressId: shouldSuppressIdStep(blob, { founder }),
       suppressHousing: shouldSuppressHousingStep(blob, { founder }),
+      suppressTransport: shouldSuppressTransportStep(blob, { founder }),
+      suppressPath: Boolean(pathPref),
+      suppressSkills: shouldSuppressSkillsStep(blob) || Boolean(String(appStore.profile.skills || "").trim()),
       ...extra
     };
+  }
+
+  /** Pull facts from what they already said so chips do not re-ask. */
+  function prefillKnownFactsFromPrompt() {
+    const blob = userBlob();
+    if (!blob.trim()) return;
+    const pathPref = parsePathPreference(blob);
+    if (pathPref && !appStore.profile.pathPreference) {
+      appStore.profile = setUserProfileField(appStore.profile, "pathPreference", pathPref);
+      markStepComplete(INTAKE_STEP.PATH);
+    }
+    if (!appStore.profile.transportStatus) {
+      const transport = parseTransportStatus(blob) || (confirmsHasTransport(blob) ? "has" : "");
+      if (transport) {
+        appStore.profile = setUserProfileField(appStore.profile, "transportStatus", transport);
+        markStepComplete(INTAKE_STEP.TRANSPORT);
+      }
+    }
+    if (!appStore.profile.idStatus && confirmsHasId(blob)) {
+      appStore.profile = setUserProfileField(appStore.profile, "idStatus", "has");
+      markStepComplete(INTAKE_STEP.ID);
+    }
+    if (!appStore.profile.housingStatus && confirmsHasHousing(blob)) {
+      appStore.profile = setUserProfileField(appStore.profile, "housingStatus", "has");
+      markStepComplete(INTAKE_STEP.HOUSING);
+    }
+    if (!appStore.profile.dependentSupport) {
+      const dependents = parseDependentSupport(blob);
+      if (dependents) {
+        appStore.profile = setUserProfileField(appStore.profile, "dependentSupport", dependents);
+        markStepComplete(INTAKE_STEP.DEPENDENTS);
+      }
+    }
+    if (pathPref === "business" && !appStore.profile.workMode) {
+      const setup = parseBusinessSetup(blob);
+      if (setup) {
+        appStore.profile = setUserProfileField(appStore.profile, "workMode", setup);
+        markStepComplete(INTAKE_STEP.BUSINESS_SETUP);
+      }
+    }
+    if (!String(appStore.profile.skills || "").trim() && shouldSuppressSkillsStep(blob)) {
+      const hint = blob.replace(/\s+/g, " ").trim().slice(0, 180);
+      appStore.profile = setUserProfileField(appStore.profile, "skills", hint);
+      markStepComplete(INTAKE_STEP.SKILLS);
+    }
+    flush();
   }
 
   /** Record why we did or did not ask, so roadmap gates can read it later. */
@@ -404,6 +463,7 @@ export function createIntakeController(ui) {
 
   function startAfterFirstPrompt() {
     recordStabilityContext();
+    prefillKnownFactsFromPrompt();
     useFlexiblePaths();
     void askClarifying();
   }

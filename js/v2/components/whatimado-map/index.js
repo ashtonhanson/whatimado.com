@@ -436,9 +436,7 @@ export class WhatimadoMap extends HTMLElement {
     if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
     }
-    if (this._liveLayer?.childElementCount === 0) {
-      this.loadAmbientLiveGraph();
-    }
+    /* Do not paint the ambient ghost silhouette — the map stays empty until a roadmap is selected. */
     this._refreshDrift();
     this._onViewportResize = () => {
       this._syncMobileHeaderMapTools();

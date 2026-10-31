@@ -3,18 +3,23 @@ import {
   classifyStabilityContext,
   isClosedTestingFlow,
   shouldSuppressHousingStep,
-  shouldSuppressIdStep
+  shouldSuppressIdStep,
+  shouldSuppressSkillsStep,
+  shouldSuppressTransportStep
 } from "./persona-signals.js";
 import { isFounderOrProjectPrompt } from "./clarifying.js";
 import { emptyUserProfile } from "../state/user-profile.js";
-import { nextChipStep, parseFounderStage } from "./profile-chips.js";
+import { nextChipStep, parseFounderStage, parsePathPreference } from "./profile-chips.js";
 
 function firstChip(text, extra = {}) {
   const founder = extra.founder ?? isFounderOrProjectPrompt(text);
   return nextChipStep(emptyUserProfile(), {
     founder,
     suppressId: shouldSuppressIdStep(text, { founder }),
-    suppressHousing: shouldSuppressHousingStep(text, { founder })
+    suppressHousing: shouldSuppressHousingStep(text, { founder }),
+    suppressTransport: shouldSuppressTransportStep(text, { founder }),
+    suppressPath: Boolean(parsePathPreference(text)),
+    suppressSkills: shouldSuppressSkillsStep(text)
   });
 }
 
@@ -63,5 +68,15 @@ const audienceOnly =
   "Grant-funded workforce program building a possibility map for reentry and jail-to-work transitions. Closed beta next month.";
 assert.equal(shouldSuppressIdStep(audienceOnly, { founder: isFounderOrProjectPrompt(audienceOnly) }), true);
 assert.notEqual(firstChip(audienceOnly), "id_status");
+
+// Vehicle already named — do not open with transport; business intent skips path chip
+const vanBusiness =
+  "I work at a grooming salon and I have a box van. I want to start my own mobile grooming business.";
+assert.equal(shouldSuppressTransportStep(vanBusiness, { founder: false }), true);
+assert.equal(parsePathPreference(vanBusiness), "business");
+assert.equal(shouldSuppressSkillsStep(vanBusiness), true);
+assert.notEqual(firstChip(vanBusiness), "transport_status");
+assert.notEqual(firstChip(vanBusiness), "path");
+assert.notEqual(firstChip(vanBusiness), "skills");
 
 console.log("persona-signals.test.mjs: all assertions passed");

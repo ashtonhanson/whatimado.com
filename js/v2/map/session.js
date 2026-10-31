@@ -190,6 +190,15 @@ export function createPathMapController(ui) {
       flush();
       trackEvent("map_generated", { paths: ideas.length });
       scrollFrameChildIntoView(possibilitiesEl());
+      /* Drop the full-stage typing sheet; map stays hidden until a path is chosen. */
+      document.body.classList.remove("is-chat-full-stage");
+      const frame = document.getElementById("dynamic-frame");
+      frame?._dock?.releaseMobileComposerFocus?.();
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        frame?._dock?.mobileGlideToBottom?.() || frame?._dock?.snapTo?.("mobile-collapsed", { animate: true });
+      } else {
+        frame?._dock?.snapTo?.("home", { animate: true });
+      }
     } catch (error) {
       if (serial !== appStore.journey.pathsGenerationSerial) return;
       typingEl?.remove();

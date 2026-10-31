@@ -247,3 +247,50 @@ export function shouldSuppressHousingStep(text = "", ctx = {}) {
   }
   return !hasPersonalStabilityNeed(text, ctx);
 }
+
+export function mentionsTransportAsset(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(box van|cargo van|van|truck|car|vehicle|pickup|suv|motorcycle|bike that runs|my ride)\b/.test(blob);
+}
+
+export function mentionsTransportNeed(text = "") {
+  const blob = String(text || "").toLowerCase();
+  return /\b(no (?:car|van|truck|vehicle|transport|ride)|don'?t have (?:a )?(?:car|van|truck|vehicle|transport)|need (?:a )?(?:car|van|truck|vehicle|transport|ride)|unreliable (?:car|van|truck|vehicle)|broken[- ]down)\b/.test(
+    blob
+  );
+}
+
+export function confirmsHasTransport(text = "") {
+  const blob = String(text || "").toLowerCase();
+  if (mentionsTransportNeed(blob)) return false;
+  return (
+    mentionsTransportAsset(blob) ||
+    /\b(have (?:a |my )?(?:car|van|truck|vehicle)|drive|driving|reliable transport|transit|bus pass)\b/.test(blob)
+  );
+}
+
+/**
+ * Ask about transport only when a gap shows up — not by default.
+ * @param {string} text
+ * @param {{ founder?: boolean }} [ctx]
+ */
+export function shouldSuppressTransportStep(text = "", ctx = {}) {
+  if (confirmsHasTransport(text)) return true;
+  if (mentionsTransportNeed(text)) return false;
+  if (ctx.founder || isClosedTestingFlow(text)) return true;
+  return true;
+}
+
+/** Skip the generic skills chip list when they already described work or skills. */
+export function shouldSuppressSkillsStep(text = "") {
+  const blob = String(text || "").toLowerCase();
+  if (!blob.trim()) return false;
+  if (/\b(customer service|writing|hands-on|creative|teaching|coaching|admin)\b/.test(blob) && blob.length < 80) {
+    return false;
+  }
+  return (
+    /\b(work(?:s|ing)? (?:at|as)|i(?:'m| am) a\b|job at|salon|grooming|mechanic|warehouse|kitchen|retail|nurs(?:e|ing)|teach(?:er|ing)|driver|trades?|contractor|freelance|my (?:own )?business|start(?:ing)? (?:my )?own)\b/.test(
+      blob
+    ) || blob.split(/\s+/).length >= 18
+  );
+}

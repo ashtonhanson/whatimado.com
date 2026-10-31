@@ -1029,6 +1029,14 @@
   /* Top snap: the sheet covers the whole map, so it is solid rather than glass. */
   whatimado-frame.is-mobile-docked.is-mobile-expanded .whatimado-frame__inner {
     background-color: var(--v2-bg);
+    border-top: none;
+    box-shadow: none;
+  }
+
+  /* Keyboard open: no border cropping the map band above the sheet. */
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard .whatimado-frame__inner,
+  body.is-mobile-keyboard-open whatimado-frame.is-mobile-docked .whatimado-frame__inner {
+    border-top: none;
   }
 
   whatimado-frame.is-mobile-docked::before,
