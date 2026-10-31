@@ -247,7 +247,6 @@ export function syncMobileReadingMap(controller) {
   }
 
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
-  const gutter = measureCssVarLength("--v2-main-gutter") || 14;
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
   /* Pin covers the live menu→frame band. Paint scale stays at the 3/4 height so dots do not jump from meet. */
   const anchors = controller._anchors;
@@ -265,8 +264,8 @@ export function syncMobileReadingMap(controller) {
     ? Math.max(120, Math.round(readingFrameTop - mapTop - clearance))
     : Math.max(120, Math.round(actualTop - mapTop - clearance));
   const pinH = Math.max(120, Math.round(actualTop - mapTop - clearance));
-  const contentLeft = gutter;
-  const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
+  const contentLeft = 0;
+  const contentWidth = Math.max(0, window.innerWidth);
 
   applyMapPin(map, {
     top: mapTop,

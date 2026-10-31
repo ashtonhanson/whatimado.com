@@ -1454,11 +1454,12 @@ export class WhatimadoMap extends HTMLElement {
     if (!Number.isFinite(dots.top)) return null;
     const pad = 4;
     const reach = (value, cap) => Math.min(cap, Math.max(0, value)) + pad;
+    const sideCap = window.matchMedia("(max-width: 900px)").matches ? 160 : 130;
     return {
       above: reach(dots.top - all.top, 58),
       below: reach(all.bottom - dots.bottom, 24),
-      left: reach(dots.left - all.left, 130),
-      right: reach(all.right - dots.right, 130)
+      left: reach(dots.left - all.left, sideCap),
+      right: reach(all.right - dots.right, sideCap)
     };
   }
 
@@ -1620,13 +1621,17 @@ export class WhatimadoMap extends HTMLElement {
     const layer = this._liveLayer;
     const svg = this._svg;
     if (!stage || !layer || !svg) return;
-    const stageLeft = stage.getBoundingClientRect().left;
-    const pad = 40;
+    const box = this.getBoundingClientRect();
+    const pad = 8;
     let shift = 0;
-    for (const id of ["option-settings", "option-analytics"]) {
+    for (const id of ["option-settings", "option-analytics", "option-notes", "option-roadmaps"]) {
       const center = this._nodeScreenCenter(id);
-      if (!center) continue;
-      shift = Math.max(shift, stageLeft + pad - center.x);
+      if (center) shift = Math.max(shift, box.left + pad - (center.x - 10));
+      const title = layer.querySelector(`[data-node-id="${CSS.escape(id)}"] text`);
+      if (title instanceof SVGTextElement && title.textContent?.trim()) {
+        const label = title.getBoundingClientRect();
+        if (label.width > 2) shift = Math.max(shift, box.left + pad - label.left);
+      }
     }
     if (shift < 4) return;
     const inv = invertCtm(layer.getScreenCTM());
@@ -1720,10 +1725,10 @@ export class WhatimadoMap extends HTMLElement {
    * @param {number} clientY
    */
   _mapBandContains(clientX, clientY) {
+    const pinned = this.dataset.readingPinned === "1" || this.dataset.focusPinned === "1";
     const stage = this.querySelector(".whatimado-map__stage");
-    if (!stage) return false;
-    const rect = stage.getBoundingClientRect();
-    if (rect.width < 40 || rect.height < 40) return false;
+    const rect = pinned ? this.getBoundingClientRect() : stage?.getBoundingClientRect();
+    if (!rect || rect.width < 40 || rect.height < 40) return false;
     const frame = document.getElementById("dynamic-frame");
     let bottom = rect.bottom;
     if (frame instanceof HTMLElement) {
@@ -3060,16 +3065,13 @@ export class WhatimadoMap extends HTMLElement {
       });
       const hostRect = this.getBoundingClientRect();
       const mobile = window.matchMedia("(max-width: 900px)").matches;
-      const band = mobile ? null : this._openBand();
-      /* A phone title stays put beside its dot and the map edge crops it. */
-      const titleBounds = mobile
-        ? null
-        : {
-            left: Math.max(0, hostRect.left),
-            right: Math.min(window.innerWidth, hostRect.right),
-            top: band?.top,
-            bottom: band?.bottom
-          };
+      const band = this._openBand();
+      const titleBounds = {
+        left: Math.max(0, hostRect.left),
+        right: Math.min(window.innerWidth, hostRect.right),
+        top: band?.top ?? hostRect.top,
+        bottom: band?.bottom ?? hostRect.bottom
+      };
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-label-crowded"));
       const shown = (item) => getComputedStyle(item.text).visibility !== "hidden";
       const crowdedPairs = (list) => {
@@ -3137,6 +3139,11 @@ export class WhatimadoMap extends HTMLElement {
         this._writePanTransform(liveZoom);
       }
       this._layingOut = false;
+    }
+    if (window.matchMedia("(max-width: 900px)").matches && !this._spokeTitlePass) {
+      this._spokeTitlePass = true;
+      this._keepSpokeTitlesOnStage();
+      this._spokeTitlePass = false;
     }
   }
 
