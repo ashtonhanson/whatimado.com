@@ -1511,7 +1511,8 @@ export class WhatimadoMap extends HTMLElement {
         ? {
             above: mobile ? 22 : 34,
             below: mobile ? 22 : 16,
-            left: mobile ? 8 : 96,
+            /* Desktop 3/4 pins You's spokes to the band's left edge after fit. */
+            left: mobile ? 8 : 14,
             right: 24
           }
         : undefined
@@ -1521,7 +1522,10 @@ export class WhatimadoMap extends HTMLElement {
     this._animatePanTo(fit.panX, fit.panY, false);
     this._fitZoomFloor = this._zoom;
     if (neighborhood) {
-      this._keepYouClusterOnStage();
+      /* Desktop home: pull left until You's first branches kiss the map-band edge. */
+      this._keepYouClusterOnStage({ pinLeft: !mobile });
+      /* Phone 3/4: sit 5px lower in the menu→prompt band. */
+      if (mobileHome) this._nudgePanByScreen(0, 5);
       /* Desktop 3/4: keepYou may pin You to the short band top — ease the whole framing down a touch. */
       if (!mobile && liftY < 0) {
         const band = this._openBand();
@@ -1560,9 +1564,11 @@ export class WhatimadoMap extends HTMLElement {
 
   /**
    * After a home fit, nudge only if You or its first branches are clipped.
+   * With pinLeft, also pull the leftmost spokes flush to the map-band left edge.
    * Do not re-center that cluster — the mission column owns the framing.
+   * @param {{ pinLeft?: boolean }} [options]
    */
-  _keepYouClusterOnStage() {
+  _keepYouClusterOnStage({ pinLeft = false } = {}) {
     const band = this._openBand();
     const layer = this._liveLayer;
     const svg = this._svg;
@@ -1595,6 +1601,7 @@ export class WhatimadoMap extends HTMLElement {
     let dx = 0;
     let dy = 0;
     if (minX < leftLimit) dx = leftLimit - minX;
+    else if (pinLeft && minX > leftLimit + 2) dx = leftLimit - minX;
     if (minY < topLimit) dy = topLimit - minY;
     else if (maxY > bottomLimit) dy = bottomLimit - maxY;
     if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
