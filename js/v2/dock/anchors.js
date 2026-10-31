@@ -104,12 +104,12 @@ export function measureMobileAnchors(mainEl, frameEl) {
   const promptKickerGap = measureCssVarLength("--v2-mobile-prompt-kicker-gap") || 6;
   const composerOffset = measureMobileComposerOffset(frameEl);
   const chromeH = measureMobileFrameChrome(frameEl);
+  const composer = frameEl.querySelector(".whatimado-frame__composer");
 
   const kicker = document.getElementById("frame-kicker");
   let homePromptTop = Math.max(0, vh * 0.5 - quarterIn - mainRect.top - composerOffset);
   if (kicker) {
     const kickerRect = kicker.getBoundingClientRect();
-    const composer = frameEl.querySelector(".whatimado-frame__composer");
     const typingCompact =
       frameEl.classList.contains("is-mobile-typing") &&
       !frameEl.classList.contains("is-mobile-reading");
@@ -130,18 +130,19 @@ export function measureMobileAnchors(mainEl, frameEl) {
    * Three mobile sheet tops (screen Y via _applyTop + mainRect.top + promptDrop):
    * - expanded: under menu (conversation; composer stays floor-pinned)
    * - reading: ¼ viewport (sheet covers lower ¾; composer floor-pinned)
-   * - mapFocus: low strip — frame top just above floor-pinned composer
+   * - mapFocus: low strip — only the prompt box, parked at the bottom
    * Landing (pre-chat) still uses homePromptTop under the kicker.
    */
   const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
-  const lineH = measureCssVarLength("--v2-kicker-sub-line-h") || 0;
-  const expandedTop = Math.max(0, headerH + 4 - mainRect.top - promptDrop);
-  const readingTop =
-    Math.max(expandedTop + 24, vh * 0.31 - mainRect.top - promptDrop) + lineH * 2;
+  /* Flush under the menu bar so the top snap covers the whole map, including the prompt drop. */
+  const expandedTop = Math.max(-promptDrop, headerH - mainRect.top - promptDrop);
+  /** 3/4 of the way up the screen: frame top sits at one quarter of the viewport. */
+  const readingTop = Math.max(expandedTop + 24, vh * 0.25 - mainRect.top - promptDrop);
+  const compactChrome = (composer?.getBoundingClientRect().height ?? 68) + 18;
   const mapFocusTop = Math.max(
     readingTop + 24,
-    mainH - chromeH - bottomInset - promptDrop
+    mainH - compactChrome - bottomInset - promptDrop
   );
 
   return {

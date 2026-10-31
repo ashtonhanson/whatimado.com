@@ -246,6 +246,7 @@ export class FrameDockController {
 
     this._unbindMobileViewportWatch();
     this._mobileMode = true;
+    this._mobileChatSheet = false;
     this._stopMotion();
     this._docked = true;
     this.activeSnap = SNAP.MOBILE_FOCUS;
@@ -268,13 +269,15 @@ export class FrameDockController {
         document.body.classList.add("is-mobile-shell-ready");
         return;
       }
-      this._mobileChatSheet = false;
-      this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
-      this.frameEl.classList.add("is-mobile-typing");
-      this.frameEl.classList.remove("is-mobile-reading", "is-mobile-sheet-floored");
-      document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
-      this.frameEl.classList.remove("is-mobile-expanded");
-      unpinMobileReadingMap();
+      /* A restored chat enters the sheet in the same frame; landing layout must not undo it. */
+      if (!this._mobileChatSheet) {
+        this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
+        this.frameEl.classList.add("is-mobile-typing");
+        this.frameEl.classList.remove("is-mobile-reading", "is-mobile-sheet-floored");
+        document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
+        this.frameEl.classList.remove("is-mobile-expanded");
+        unpinMobileReadingMap();
+      }
       this._bindMobileViewportWatch();
       requestAnimationFrame(() => {
         document.body.classList.add("is-mobile-shell-ready");
@@ -780,9 +783,7 @@ export class FrameDockController {
     const expanded = snap === SNAP.MOBILE_EXPANDED;
     const reading = snap === SNAP.MOBILE_COLLAPSED || expanded;
     const mapFocus = snap === SNAP.MOBILE_FOCUS;
-    const floored =
-      this._mobileChatSheet &&
-      (expanded || snap === SNAP.MOBILE_COLLAPSED || mapFocus);
+    const floored = this._mobileChatSheet && (expanded || snap === SNAP.MOBILE_COLLAPSED);
     this.frameEl.classList.toggle("is-mobile-typing", mapFocus);
     this.frameEl.classList.toggle("is-mobile-reading", reading);
     this.frameEl.classList.toggle("is-mobile-expanded", expanded);
@@ -903,8 +904,7 @@ export class FrameDockController {
         this._mobileChatSheet &&
         (this.frameEl.classList.contains("is-mobile-sheet-floored") ||
           this.frameEl.classList.contains("is-mobile-reading") ||
-          this.frameEl.classList.contains("is-mobile-expanded") ||
-          this.activeSnap === SNAP.MOBILE_FOCUS);
+          this.frameEl.classList.contains("is-mobile-expanded"));
       this.frameEl.style.top = `${this._mobileFrameScreenTop(topPx)}px`;
       if (floored) {
         this.frameEl.classList.add("is-mobile-sheet-floored");

@@ -402,8 +402,15 @@
     outline-offset: 2px;
   }
 
+  /* Help, Link and crosshair: one row pinned to the map's top-right corner, out of the chrome's flow. */
   whatimado-map .whatimado-map__timeline-tools {
-    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    pointer-events: none;
   }
 
   .v2-header-undo {
@@ -967,6 +974,7 @@
     margin: 0;
     overflow: hidden;
     touch-action: none;
+    background: var(--v2-bg);
   }
 
   /* ── Mobile floating prompt bar (fixed, full-bleed, decoupled from hero/map) ── */
@@ -1002,11 +1010,17 @@
     backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
     -webkit-backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
     max-height: calc(100dvh - var(--v2-mobile-header-h) - var(--v2-mobile-bottom-inset));
+    transition: background-color 0.2s ease;
   }
 
   whatimado-frame.is-mobile-docked.is-mobile-sheet-floored .whatimado-frame__inner {
     height: 100%;
     max-height: none;
+  }
+
+  /* Top snap: the sheet covers the whole map, so it is solid rather than glass. */
+  whatimado-frame.is-mobile-docked.is-mobile-expanded .whatimado-frame__inner {
+    background-color: var(--v2-bg);
   }
 
   whatimado-frame.is-mobile-docked::before,

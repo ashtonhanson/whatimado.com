@@ -148,13 +148,15 @@ whatimado-map .v2-timeline__name {
 whatimado-map .whatimado-map__chrome .whatimado-map__new-roadmap,
 whatimado-map .whatimado-map__chrome .whatimado-map__you-btn,
 whatimado-map .whatimado-map__chrome .whatimado-map__link-btn,
+whatimado-map .whatimado-map__chrome .whatimado-map__help-btn,
 whatimado-map .whatimado-map__chrome .v2-map-timeline {
   pointer-events: auto;
 }
 
 whatimado-map .whatimado-map__chrome .whatimado-map__new-roadmap,
 whatimado-map .whatimado-map__chrome .whatimado-map__you-btn,
-whatimado-map .whatimado-map__chrome .whatimado-map__link-btn {
+whatimado-map .whatimado-map__chrome .whatimado-map__link-btn,
+whatimado-map .whatimado-map__chrome .whatimado-map__help-btn {
   position: static;
   top: auto;
   right: auto;
@@ -363,15 +365,14 @@ whatimado-map .whatimado-map__help-icon {
 }
 
 @media (max-width: 900px) {
-  whatimado-map .whatimado-map__chrome > .whatimado-map__help-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
+  whatimado-map .whatimado-map__timeline-tools > button {
     width: 1.75rem;
     height: 1.75rem;
   }
 
-  whatimado-map .whatimado-map__chrome > .whatimado-map__help-btn .whatimado-map__help-icon {
+  whatimado-map .whatimado-map__timeline-tools .whatimado-map__help-icon,
+  whatimado-map .whatimado-map__timeline-tools .whatimado-map__link-icon,
+  whatimado-map .whatimado-map__timeline-tools .whatimado-map__you-crosshair {
     width: 0.9rem;
     height: 0.9rem;
   }
@@ -408,6 +409,20 @@ whatimado-map .whatimado-map__help-icon {
   font-size: 1.05rem;
   line-height: 1.55;
   text-align: center;
+}
+
+.v2-map-help__text--desktop {
+  display: none;
+}
+
+@media (min-width: 901px) {
+  .v2-map-help__text--mobile {
+    display: none;
+  }
+
+  .v2-map-help__text--desktop {
+    display: block;
+  }
 }
 
 .v2-map-help__close {

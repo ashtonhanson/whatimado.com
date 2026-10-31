@@ -75,10 +75,6 @@ const MOBILE_ROADMAP_DOT_PX = MOBILE_HOME_DOT_PX * 0.84;
 /** Thumb target across a phone roadmap dot at the default scale. Task rows sit about 22px apart. */
 const MOBILE_HIT_PX = 30;
 
-const MAP_HELP_MOBILE = "Use two fingers to pan and zoom the map. Tap or drag with one finger to select a node.";
-const MAP_HELP_DESKTOP =
-  "Pinch or scroll with two fingers on the trackpad, or use the mouse wheel, to zoom. Click and drag the background to move the map. Click a node to select it.";
-
 /**
  * Stretch the dot spacing so a tether of this length starts and ends on a dot.
  * @param {number} length
@@ -465,8 +461,6 @@ export class WhatimadoMap extends HTMLElement {
   _openMapHelp() {
     const dialog = document.getElementById("map-help-dialog");
     if (!(dialog instanceof HTMLDialogElement) || dialog.open) return;
-    const text = dialog.querySelector(".v2-map-help__text");
-    if (text) text.textContent = MOBILE_MQ.matches ? MAP_HELP_MOBILE : MAP_HELP_DESKTOP;
     if (!dialog.dataset.wired) {
       dialog.dataset.wired = "1";
       dialog.querySelector(".v2-map-help__close")?.addEventListener("click", () => dialog.close());
@@ -475,29 +469,19 @@ export class WhatimadoMap extends HTMLElement {
     dialog.showModal();
   }
 
-  /** Mobile: Link + crosshair live in the header beside Undo; desktop keeps map chrome. */
+  /** Help, Link and crosshair sit in one row in the map's top-right corner on every screen. */
   _syncMobileHeaderMapTools() {
-    const mobile = window.matchMedia("(max-width: 900px)").matches;
     const slot = document.getElementById("header-map-tools");
     const tools = this.querySelector(".whatimado-map__timeline-tools");
     const chrome = this.querySelector(".whatimado-map__chrome");
-    if (!slot) return;
-    if (mobile && this._linkBtn && this._youBtn) {
-      slot.hidden = false;
-      slot.setAttribute("aria-hidden", "false");
-      if (this._linkBtn.parentElement !== slot) slot.append(this._linkBtn);
-      if (this._youBtn.parentElement !== slot) slot.append(this._youBtn);
-      if (tools) tools.hidden = true;
-      if (chrome && this._helpBtn && this._helpBtn.parentElement !== chrome) chrome.append(this._helpBtn);
-    } else {
+    if (slot) {
       slot.hidden = true;
       slot.setAttribute("aria-hidden", "true");
-      if (tools) {
-        tools.hidden = false;
-        if (this._linkBtn && this._linkBtn.parentElement !== tools) tools.prepend(this._linkBtn);
-        if (this._youBtn && this._youBtn.parentElement !== tools) tools.append(this._youBtn);
-        if (this._helpBtn) tools.prepend(this._helpBtn);
-      }
+    }
+    if (tools) {
+      tools.hidden = false;
+      const order = [this._helpBtn, this._linkBtn, this._youBtn].filter(Boolean);
+      if (order.some((btn, i) => tools.children[i] !== btn)) tools.append(...order);
     }
     if (chrome && this._roadmapSticky && this._roadmapSticky.parentElement !== chrome) {
       chrome.prepend(this._roadmapSticky);
