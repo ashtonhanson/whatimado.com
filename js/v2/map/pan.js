@@ -323,10 +323,12 @@ function svgMeetPaint(mapEl, stageRect) {
  *   minZoom?: number,
  *   maxZoom?: number,
  *   keepLeft?: boolean,
- *   liftY?: number
+ *   liftY?: number,
+ *   biasX?: number,
+ *   pinLeftFocus?: boolean
  * }} [options]
  */
-export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom, keepLeft = false, liftY = 0 } = {}) {
+export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom, keepLeft = false, liftY = 0, biasX = 0, pinLeftFocus = false } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const frame = document.getElementById("dynamic-frame");
   if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
@@ -366,7 +368,8 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   const usableW = stageRect.width * 0.96;
   let zoomX;
   let cx;
-  let screenCx = stageRect.width / 2;
+  /* Positive biasX parks the focus a little right of stage center (phone home framing). */
+  let screenCx = stageRect.width / 2 + (Number(biasX) || 0);
   const floor =
     typeof minZoom === "number" && Number.isFinite(minZoom)
       ? minZoom
@@ -392,19 +395,40 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   const mobileMin = explicitMin ? Math.min(minZoom, FIT_ZOOM_MIN) : FIT_ZOOM_MIN;
   const fitted = Math.min(zoomCeil, zoomY, zoomX);
   const desktopFloor = explicitMin ? minZoom : ZOOM_MIN;
-  const zoom =
+  let zoom =
     typeof fixedZoom === "number" && fixedZoom > 0
       ? fixedZoom
       : MOBILE_MQ.matches
         ? Math.max(mobileMin, Math.min(zoomCeil, zoomX, Math.max(floor, zoomY)))
         : Math.max(desktopFloor, Math.min(zoomCeil, fitted));
+  /* Phone home: scale so the leftmost You spoke sits on the left edge while the mission is a little right of center. */
+  if (pinLeftFocus && focus && Number.isFinite(cx)) {
+    const leftScreen = Math.max(10, room.left);
+    const targetFocus = stageRect.width / 2 + (Number(biasX) || 0);
+    /* Span from You's leftmost spoke only — not the full neighborhood width. */
+    let leftGraph = bounds.minX;
+    for (const node of mapEl._liveNodes) {
+      if (!node.id?.startsWith("option-") && node.id !== "start") continue;
+      if (includeNode && !includeNode(node)) continue;
+      leftGraph = Math.min(leftGraph, node.x * VIEW_W);
+    }
+    const spanGraph = Math.max(1, cx - leftGraph);
+    const pinZoom = (targetFocus - leftScreen) / (spanGraph * pxPerUnit);
+    if (Number.isFinite(pinZoom) && pinZoom > 0) {
+      const lo = explicitMin ? Math.min(minZoom, 0.28) : 0.28;
+      const hi = typeof maxZoom === "number" && Number.isFinite(maxZoom) ? maxZoom : Math.min(zoomCeil, 0.38);
+      zoom = Math.max(lo, Math.min(hi, pinZoom));
+      screenCx = targetFocus;
+    }
+  }
   const scale = pxPerUnit * zoom;
   const margin = (stageRect.width - usableW) / 2;
   const overRight = screenCx + (bounds.maxX - cx) * scale + room.right - (stageRect.width - margin);
   const overLeft = margin - (screenCx - (cx - bounds.minX) * scale - room.left);
-  if (keepLeft && overLeft > 0) screenCx += overLeft;
-  else if (overRight > 0 && overLeft < 0) screenCx -= Math.min(overRight, -overLeft);
-  else if (overLeft > 0 && overRight < 0) screenCx += Math.min(overLeft, -overRight);
+  if (keepLeft && overLeft > 0 && !pinLeftFocus) screenCx += overLeft;
+  else if (pinLeftFocus && overLeft > 0) screenCx += overLeft;
+  else if (!pinLeftFocus && overRight > 0 && overLeft < 0) screenCx -= Math.min(overRight, -overLeft);
+  else if (!pinLeftFocus && overLeft > 0 && overRight < 0) screenCx += Math.min(overLeft, -overRight);
 
   const shiftY = readGraphShiftY();
   const bandH = Math.max(24, bandBottom - visualBandTop);

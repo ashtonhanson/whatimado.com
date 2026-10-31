@@ -1387,7 +1387,8 @@ export class WhatimadoMap extends HTMLElement {
         from,
         animate,
         neighborhood: !desktopBottom,
-        liftY: desktopBottom ? 0.03 : 0
+        /* Desktop bottom lifts a little; desktop 3/4 sits a touch lower. */
+        liftY: desktopBottom ? 0.03 : !mobile && !atBottom ? -0.05 : 0
       });
       if (!animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
       return true;
@@ -1469,7 +1470,7 @@ export class WhatimadoMap extends HTMLElement {
       from,
       centerNodeId: this._missionFocusId(workId) || workId,
       neighborhood: !desktopBottom,
-      liftY: desktopBottom ? 0.03 : 0
+      liftY: desktopBottom ? 0.03 : !mobile ? -0.05 : 0
     });
     return true;
   }
@@ -1485,23 +1486,29 @@ export class WhatimadoMap extends HTMLElement {
     const nearIds = neighborhood ? this._workNeighborhoodIds() : null;
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const layoutZoom = mapLayoutZoom();
-    /* Desktop 3/4 may shrink so You's spokes clear a short band. Phone keeps layout zoom so missions stay readable. */
+    /* Desktop 3/4 may shrink so You's spokes clear a short band.
+       Phone home uses a smaller fixed zoom so the mission sits right of center with You on the left edge. */
     const mayShrink = Boolean(neighborhood && !mobile);
+    const mobileHome = Boolean(mobile && neighborhood);
+    const stageW = this.querySelector(".whatimado-map__stage")?.clientWidth || this.clientWidth || 390;
     const options = {
       centerNodeId: neighborhood ? centerNodeId : null,
       includeNode: nearIds ? (node) => nearIds.has(node.id) : undefined,
-      minZoom: mayShrink ? Math.min(layoutZoom, 0.32) : layoutZoom,
-      maxZoom: layoutZoom,
-      fixedZoom: mayShrink ? undefined : layoutZoom,
+      minZoom: mayShrink ? Math.min(layoutZoom, 0.32) : mobileHome ? 0.3 : layoutZoom,
+      maxZoom: mobileHome ? 0.38 : layoutZoom,
+      /* Phone home picks zoom from You-left + mission bias; desktop home may shrink. */
+      fixedZoom: mayShrink || mobileHome ? undefined : layoutZoom,
       keepLeft: Boolean(neighborhood),
+      pinLeftFocus: mobileHome,
       liftY,
+      /* Phone: mission a little right of center while You's spokes sit on the left edge. */
+      biasX: mobileHome ? stageW * 0.08 : 0,
       /* Room for mission/task titles above the dots and for You's left spokes. */
       reserve: neighborhood
         ? {
-            above: mobile ? 24 : 34,
+            above: mobile ? 28 : 34,
             below: mobile ? 18 : 16,
-            /* Phone: tiny left pad — keepLeft already holds You's dots on stage. */
-            left: mobile ? 12 : 96,
+            left: mobile ? 8 : 96,
             right: 24
           }
         : undefined
@@ -1510,8 +1517,42 @@ export class WhatimadoMap extends HTMLElement {
     this._zoom = fit.zoom;
     this._animatePanTo(fit.panX, fit.panY, false);
     this._fitZoomFloor = this._zoom;
-    if (neighborhood) this._keepYouClusterOnStage();
+    if (neighborhood) {
+      this._keepYouClusterOnStage();
+      /* Desktop 3/4: keepYou may pin You to the short band top — ease the whole framing down a touch. */
+      if (!mobile && liftY < 0) {
+        const band = this._openBand();
+        const drop = Math.round(Math.abs(liftY) * Math.max(80, (band?.bottom ?? 0) - (band?.top ?? 0)));
+        if (drop >= 4) this._nudgePanByScreen(0, drop);
+      }
+    }
     if (animate) this._easeCameraFrom(start, CAMERA_EASE_MS);
+  }
+
+  /**
+   * Shift the live pan by a screen-pixel delta (positive dy moves content down).
+   * @param {number} dx
+   * @param {number} dy
+   */
+  _nudgePanByScreen(dx, dy) {
+    const layer = this._liveLayer;
+    const svg = this._svg;
+    if (!layer || !svg || (Math.abs(dx) < 1 && Math.abs(dy) < 1)) return;
+    const inv = invertCtm(layer.getScreenCTM());
+    if (!inv) return;
+    const origin = svg.createSVGPoint();
+    const shifted = svg.createSVGPoint();
+    shifted.x = dx;
+    shifted.y = dy;
+    const local = shifted.matrixTransform(inv);
+    const zero = origin.matrixTransform(inv);
+    const zoom = this._zoom || 1;
+    const panDx = (local.x - zero.x) * zoom;
+    const panDy = (local.y - zero.y) * zoom;
+    if (!Number.isFinite(panDx) || !Number.isFinite(panDy)) return;
+    this._panX += panDx;
+    this._panY += panDy;
+    this._applyPanTransform();
   }
 
   /**
@@ -1547,28 +1588,14 @@ export class WhatimadoMap extends HTMLElement {
     const bottomLimit = Math.min(stage.bottom - 6, band.bottom + 10);
     const leftLimit = desktop && main
       ? Math.max(main.left + 14, band.left)
-      : Math.max(stage.left + 6, band.left - 8);
+      : Math.max(stage.left + 8, band.left - 4);
     let dx = 0;
     let dy = 0;
     if (minX < leftLimit) dx = leftLimit - minX;
     if (minY < topLimit) dy = topLimit - minY;
     else if (maxY > bottomLimit) dy = bottomLimit - maxY;
     if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
-    const inv = invertCtm(layer.getScreenCTM());
-    if (!inv) return;
-    const origin = svg.createSVGPoint();
-    const shifted = svg.createSVGPoint();
-    shifted.x = dx;
-    shifted.y = dy;
-    const local = shifted.matrixTransform(inv);
-    const zero = origin.matrixTransform(inv);
-    const zoom = this._zoom || 1;
-    const panDx = (local.x - zero.x) * zoom;
-    const panDy = (local.y - zero.y) * zoom;
-    if (!Number.isFinite(panDx) || !Number.isFinite(panDy)) return;
-    this._panX += panDx;
-    this._panY += panDy;
-    this._applyPanTransform();
+    this._nudgePanByScreen(dx, dy);
   }
 
   /**
@@ -1601,7 +1628,7 @@ export class WhatimadoMap extends HTMLElement {
         from,
         animate,
         neighborhood: !desktopBottom,
-        liftY: desktopBottom ? 0.03 : 0
+        liftY: desktopBottom ? 0.03 : !mobile ? -0.05 : 0
       });
     }
   }
