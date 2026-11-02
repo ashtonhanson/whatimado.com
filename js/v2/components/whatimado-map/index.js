@@ -247,6 +247,26 @@ const MAP_TEMPLATE = `
             <feMergeNode in="soft" />
           </feMerge>
         </filter>
+        <filter id="whatimado-gold-smoke-aura" x="-380%" y="-420%" width="860%" height="920%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.018 0.045" numOctaves="2" seed="4" result="noise">
+            <animate attributeName="baseFrequency" dur="7.5s" values="0.018 0.045;0.032 0.07;0.015 0.038;0.026 0.058;0.018 0.045" repeatCount="indefinite" />
+          </feTurbulence>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="11" result="glow" />
+          <feDisplacementMap in="glow" in2="noise" scale="16" xChannelSelector="R" yChannelSelector="G" result="smoked" />
+          <feColorMatrix
+            in="smoked"
+            type="matrix"
+            values="1 0 0 0 0.04
+                    0 0.92 0 0 0.04
+                    0 0 0.35 0 0
+                    0 0 0 0.58 0"
+            result="tint"
+          />
+          <feGaussianBlur in="tint" stdDeviation="3.2" result="soft" />
+          <feMerge>
+            <feMergeNode in="soft" />
+          </feMerge>
+        </filter>
       </defs>
       <g class="whatimado-map__pan">
         <g class="whatimado-map__layer whatimado-map__layer--ghost"></g>
