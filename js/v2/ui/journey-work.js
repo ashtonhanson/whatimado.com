@@ -41,14 +41,14 @@ export function journeyHasActiveWork(journey, graph, options = {}) {
  */
 export function newMapConfirmMessage(session, authState) {
   let message =
-    "Starting over opens a fresh conversation and clears any unsent message in the composer. Your current map is saved to Roadmaps in the sidebar.";
+    "Starting over opens a fresh conversation and clears any unsent message in the composer. Your current map is saved to My Paths in the sidebar.";
   if (session?.mode === "account") {
-    message += " Other roadmaps already saved on your account are not deleted.";
+    message += " Other paths already saved on your account are not deleted.";
     if (authState?.sync !== "ok") {
       message += " Your latest changes on this device may not be backed up yet.";
     }
   } else {
-    message += " As a guest, saved roadmaps stay on this device.";
+    message += " As a guest, saved paths stay on this device.";
   }
   return message;
 }

@@ -162,7 +162,7 @@ export function saveGuestJourney() {
   return saved;
 }
 
-/** Save the open map now (Save Map). It is listed under Roadmaps as the current map. */
+/** Save the open map now (Save Map). It is listed under My Paths as the current map. */
 export function saveCurrentMap() {
   if (!persistEnabled || !buildGuestSnapshot()) return false;
   if (saveTimer) window.clearTimeout(saveTimer);
@@ -225,16 +225,16 @@ export function listSavedRoadmaps() {
     if (live && account?.activeRoadmapId) liveId = account.activeRoadmapId;
     for (const entry of account?.roadmaps || []) {
       if (!entry?.id || entry.id === liveId || !entry.snapshot?.journey?.id) continue;
-      saved.push({ id: entry.id, title: roadmapName(entry.snapshot) || entry.title || "Roadmap", savedAt: Number(entry.savedAt) || 0, current: false });
+      saved.push({ id: entry.id, title: roadmapName(entry.snapshot) || entry.title || "My Paths", savedAt: Number(entry.savedAt) || 0, current: false });
     }
     for (const entry of account?.importedRoadmaps || []) {
       if (!entry?.id || entry.id === liveId || !entry.journey?.id) continue;
-      saved.push({ id: entry.id, title: entry.title || roadmapName(entry) || "Roadmap", savedAt: Number(entry.savedAt) || 0, current: false });
+      saved.push({ id: entry.id, title: entry.title || roadmapName(entry) || "My Paths", savedAt: Number(entry.savedAt) || 0, current: false });
     }
   } else {
     for (const entry of loadGuestRoadmaps()) {
       if (entry.id === liveId) continue;
-      saved.push({ id: entry.id, title: roadmapName(entry.snapshot) || entry.title || "Roadmap", savedAt: Number(entry.savedAt) || 0, current: false });
+      saved.push({ id: entry.id, title: roadmapName(entry.snapshot) || entry.title || "My Paths", savedAt: Number(entry.savedAt) || 0, current: false });
     }
   }
   saved.sort((a, b) => b.savedAt - a.savedAt);

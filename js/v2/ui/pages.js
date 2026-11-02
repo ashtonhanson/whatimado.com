@@ -127,7 +127,7 @@ export function renderLaunchStats(data) {
       ["Visits", visits, "visits"],
       ["Started", started, "started"],
       ["Got map", maps, "maps"],
-      ["Roadmap", roadmaps, "roadmaps"]
+      ["My Paths", roadmaps, "roadmaps"]
     ];
     steps.forEach(([label, value, tone], index) => {
       if (index > 0) {
@@ -287,14 +287,14 @@ function renderSettingsAccount(state) {
     setText("settings-account-line", `Signed in as ${state.user.email || "your account"}.`);
     setText(
       "settings-account-sync",
-      state.sync === "error" ? `Not synced yet: ${state.syncError}` : state.sync === "syncing" ? "Syncing…" : "Roadmaps back up to this account."
+      state.sync === "error" ? `Not synced yet: ${state.syncError}` : state.sync === "syncing" ? "Syncing…" : "My Paths back up to this account."
     );
     if (primary) primary.textContent = "Account and sync";
     if (secondary) secondary.hidden = true;
     return;
   }
   setText("settings-account-line", "You're using whatimado as a guest. Maps save in this browser.");
-  setText("settings-account-sync", "Create an account to back roadmaps up and open them on other devices.");
+  setText("settings-account-sync", "Create an account to back paths up and open them on other devices.");
   if (primary) primary.textContent = "Create account";
   if (secondary) secondary.hidden = false;
 }
@@ -350,8 +350,8 @@ function initSettings() {
     const signedIn = Boolean(authState().user);
     const ok = window.confirm(
       signedIn
-        ? "Delete every roadmap and note from this browser and from your account? This can't be undone."
-        : "Delete every roadmap and note from this browser? This can't be undone."
+        ? "Delete every path and note from this browser and from your account? This can't be undone."
+        : "Delete every path and note from this browser? This can't be undone."
     );
     if (!ok) return;
     setText("settings-delete-status", "Deleting…");

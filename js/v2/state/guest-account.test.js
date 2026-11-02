@@ -93,7 +93,7 @@ test("a new roadmap shelves the live one as its own entry and starts empty", () 
   assert.equal(shelved.snapshot.journey.missionDrafts[0].body, "keep this note");
   assert.deepEqual(next.roadmaps.find((entry) => entry.id === "roadmap_new"), {
     id: "roadmap_new",
-    title: "New roadmap",
+    title: "New path",
     createdAt: now.getTime(),
     savedAt: now.getTime(),
     snapshot: null

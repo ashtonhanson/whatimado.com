@@ -154,7 +154,7 @@ export function roadmapName(snapshot) {
  * @param {string} stamp
  */
 function guestRoadmapTitle(snapshot, stamp) {
-  return `${roadmapName(snapshot) || "Guest roadmap"} · ${stamp}`;
+  return `${roadmapName(snapshot) || "Guest path"} · ${stamp}`;
 }
 
 /** @param {object | null | undefined} snapshot */
@@ -188,7 +188,7 @@ function roadmapPart(snapshot) {
 export function roadmapEntryFromSnapshot(snapshot, id, stamp = Date.now(), previous = null) {
   return {
     id,
-    title: roadmapName(snapshot) || previous?.title || "Roadmap",
+    title: roadmapName(snapshot) || previous?.title || "My Paths",
     createdAt: previous?.createdAt || Number(snapshot?.journey?.createdAt) || stamp,
     savedAt: stamp,
     snapshot: JSON.parse(JSON.stringify(roadmapPart(snapshot)))
@@ -219,7 +219,7 @@ function shelveLiveRoadmap(base, stamp) {
     const previous = (base.roadmaps || []).find((entry) => entry?.id === liveId);
     roadmaps.push({
       id: liveId,
-      title: roadmapName(base) || previous?.title || "Roadmap",
+      title: roadmapName(base) || previous?.title || "My Paths",
       createdAt: previous?.createdAt || Number(base.journey.createdAt) || stamp,
       savedAt: stamp,
       snapshot: roadmapPart(base)
@@ -255,7 +255,7 @@ export function openAccountRoadmap(accountSnapshot, roadmapId, now = new Date())
   }
   roadmaps.push({
     id: roadmapId,
-    title: entry.title || roadmapName(part) || "Roadmap",
+    title: entry.title || roadmapName(part) || "My Paths",
     createdAt: entry.createdAt || stamp,
     savedAt: stamp,
     snapshot: null
@@ -311,7 +311,7 @@ export function startFreshAccountRoadmap(accountSnapshot, accountUserId, now = n
   const base = accountSnapshot || {};
   const stamp = now.getTime();
   let roadmaps = shelveLiveRoadmap(base, stamp);
-  roadmaps = [...roadmaps, { id: roadmapId, title: "New roadmap", createdAt: stamp, savedAt: stamp, snapshot: null }];
+  roadmaps = [...roadmaps, { id: roadmapId, title: "New path", createdAt: stamp, savedAt: stamp, snapshot: null }];
   return {
     ...base,
     version: 1,
@@ -344,7 +344,7 @@ export function touchActiveRoadmapEntry(accountSnapshot, liveSnapshot) {
   const previous = at >= 0 ? roadmaps[at] : null;
   const entry = {
     id,
-    title: roadmapName(liveSnapshot) || previous?.title || "Roadmap",
+    title: roadmapName(liveSnapshot) || previous?.title || "My Paths",
     createdAt: previous?.createdAt || Number(liveSnapshot?.journey?.createdAt) || savedAt,
     savedAt,
     snapshot: null

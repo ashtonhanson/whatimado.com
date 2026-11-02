@@ -12,7 +12,7 @@ function savedLabel(savedAt) {
 }
 
 /**
- * Sidebar Roadmaps button: shows the open map and saved roadmaps; picking one reopens it.
+ * Sidebar My Paths button: shows the open map and saved paths; picking one reopens it.
  * @param {{ onOpen: (roadmapId: string) => void }} options
  */
 export function bindRoadmapsNav({ onOpen }) {
@@ -25,7 +25,7 @@ export function bindRoadmapsNav({ onOpen }) {
   function render() {
     const roadmaps = listSavedRoadmaps();
     if (!roadmaps.length) {
-      listEl.innerHTML = `<li class="v2-roadmaps-empty">No saved roadmaps yet.</li>`;
+      listEl.innerHTML = `<li class="v2-roadmaps-empty">No saved paths yet.</li>`;
       return;
     }
     listEl.innerHTML = roadmaps

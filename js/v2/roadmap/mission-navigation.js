@@ -84,7 +84,7 @@ export function missionStatusLabel(mission, focusId) {
 export function continueRoadmap(journey, fromMissionId) {
   const stages = journey.missionsStages || [];
   const all = flattenMissions(stages);
-  if (!all.length) return { ok: false, end: true, reason: "No tasks on this roadmap yet." };
+  if (!all.length) return { ok: false, end: true, reason: "No tasks on this path yet." };
 
   const focusId = fromMissionId || effectiveFocusMissionId(journey, stages) || all[0].id;
   const fromIndex = Math.max(0, all.findIndex((mission) => mission.id === focusId));
@@ -106,7 +106,7 @@ export function continueRoadmap(journey, fromMissionId) {
   }
 
   journey.focusMissionId = current?.id || focusId;
-  return { ok: false, end: true, reason: "You reached the last task on this roadmap.", focusId: journey.focusMissionId };
+  return { ok: false, end: true, reason: "You reached the last task on this path.", focusId: journey.focusMissionId };
 }
 
 /**

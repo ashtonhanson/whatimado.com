@@ -36,7 +36,7 @@ function accountCopy(state) {
       name: session.email,
       initial: initialOf(session.email),
       detail: "Signed out",
-      menuDetail: "Sign in to sync your roadmaps"
+      menuDetail: "Sign in to sync your paths"
     };
   }
   return {

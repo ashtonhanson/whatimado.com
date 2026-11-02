@@ -16,7 +16,7 @@ const EMPTY_GRAPH = { nodes: [], edges: [], selectedId: null };
 const FREE_TEXT_PROFILE_FIELDS = ["skills", "constraints", "goals", "summary"];
 
 export const RESTORED_NOTE =
-  "This roadmap was restored from your account. The chat that built it stays on the device where it happened.";
+  "This path was restored from your account. The chat that built it stays on the device where it happened.";
 
 /** @param {unknown} value */
 function clone(value) {
@@ -77,7 +77,7 @@ export function accountRowsFromSnapshot(account, userId) {
       user_id: userId,
       roadmap_key: clip(liveId, 120),
       kind: "roadmap",
-      title: clip(roadmapName(account) || entry?.title || "Roadmap", 200),
+      title: clip(roadmapName(account) || entry?.title || "My Paths", 200),
       is_active: true,
       payload: cloudPayload(account),
       created_at: iso(entry?.createdAt || account.journey.createdAt || savedAt),
@@ -91,7 +91,7 @@ export function accountRowsFromSnapshot(account, userId) {
       user_id: userId,
       roadmap_key: clip(entry.id, 120),
       kind: "roadmap",
-      title: clip(entry.title || "Roadmap", 200),
+      title: clip(entry.title || "My Paths", 200),
       is_active: false,
       payload: cloudPayload(entry.snapshot),
       created_at: iso(entry.createdAt || entry.savedAt),
@@ -105,7 +105,7 @@ export function accountRowsFromSnapshot(account, userId) {
       user_id: userId,
       roadmap_key: clip(item.id, 120),
       kind: "imported",
-      title: clip(item.title || "Guest roadmap", 200),
+      title: clip(item.title || "Guest path", 200),
       is_active: false,
       payload: { ...cloudPayload(item), guestUserId: item.guestUserId || null },
       created_at: iso(item.savedAt),
@@ -201,7 +201,7 @@ export function mergeCloudRows(account, rows, userId) {
       if (imported.some((item) => item?.id === id)) continue;
       imported.push({
         id,
-        title: row.title || "Guest roadmap",
+        title: row.title || "Guest path",
         savedAt: at,
         guestUserId: payload.guestUserId || null,
         ...partFromPayload(payload, null)
@@ -228,14 +228,14 @@ export function mergeCloudRows(account, rows, userId) {
       roadmaps = roadmaps.filter((entry) => entry?.id !== base.activeRoadmapId && entry?.id !== id);
       base.activeRoadmapId = id;
       applyLive(partFromPayload(payload, null), at);
-      roadmaps.push({ id, title: row.title || "Roadmap", createdAt: Date.parse(row.created_at) || at, savedAt: at, snapshot: null });
+      roadmaps.push({ id, title: row.title || "My Paths", createdAt: Date.parse(row.created_at) || at, savedAt: at, snapshot: null });
       continue;
     }
 
     if (index >= 0) continue;
     roadmaps.push({
       id,
-      title: row.title || "Roadmap",
+      title: row.title || "My Paths",
       createdAt: Date.parse(row.created_at) || at,
       savedAt: at,
       snapshot: partFromPayload(payload, null)

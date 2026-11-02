@@ -66,7 +66,7 @@ export function createConfirmGateController(ui) {
     touchJourney();
     renderConfirmGate(gateHost(), {
       label: update
-        ? "Here's the updated plan based on what you shared. Does this look right before I build your roadmap?"
+        ? "Here's the updated plan based on what you shared. Does this look right before I build your path?"
         : "Here's the plan I'd suggest — does this look right?",
       bullets,
       onConfirm: () => accept(),
@@ -126,7 +126,7 @@ export function createConfirmGateController(ui) {
     appStore.journey.selectedPathId = idea.id;
     setPhase(PHASE.PATH_SELECTED);
     renderDetail?.(idea, { generating: true });
-    setStatusMessage(statusEl(), options.revision ? "Updating this roadmap" : "Generating this roadmap");
+    setStatusMessage(statusEl(), options.revision ? "Updating this path" : "Generating this path");
     setComposerEnabled(false);
     layout();
     scrollFrameChildIntoView(panelEl || messagesEl);

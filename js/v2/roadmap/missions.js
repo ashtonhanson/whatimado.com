@@ -225,7 +225,7 @@ function renderMissionTimeline(stages, focusId) {
     <div class="v2-timeline">
       <span class="v2-timeline__label">Timeline</span>
       <div class="v2-timeline__rail"><span class="v2-timeline__cutoff" aria-hidden="true"></span>${steps}</div>
-      <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Add more missions to this roadmap">+</button>
+      <button type="button" class="v2-timeline__add" data-timeline-add="1" aria-label="Add more missions to this path">+</button>
     </div>`;
 }
 
@@ -450,7 +450,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
 
 function renderMissionNavBar() {
   return `
-    <div class="v2-mission-nav" role="group" aria-label="Roadmap task navigation">
+    <div class="v2-mission-nav" role="group" aria-label="Path task navigation">
       <button type="button" class="v2-mission-action" data-mission-continue="1">Continue</button>
       <p class="v2-mission-nav__feedback" id="mission-nav-feedback" role="status" aria-live="polite"></p>
     </div>`;
@@ -463,13 +463,13 @@ function renderNextPathOptions() {
   if (!paths.length) return "";
   const saved = new Set(appStore.journey.savedPathIds || []);
   return `
-    <section class="v2-next-paths" aria-label="Other roadmaps">
+    <section class="v2-next-paths" aria-label="Other paths">
       <h3 class="v2-next-paths__title">What's next for you</h3>
-      <p class="v2-next-paths__copy">You finished the first missions. Open another roadmap, or save it for later.</p>
+      <p class="v2-next-paths__copy">You finished the first missions. Open another path, or save it for later.</p>
       <div class="v2-next-paths__grid">
         ${paths
           .map((path) => {
-            const title = path.title || path.label || "Roadmap";
+            const title = path.title || path.label || "My Paths";
             const isSaved = saved.has(path.id);
             return `
               <article class="v2-next-path${isSaved ? " is-saved" : ""}">
@@ -891,7 +891,7 @@ export function createMissionsController(ui) {
         const focus = appStore.journey.focusMissionId;
         rerender({ scroll: false });
         if (focus) focusMissionInUi(focus);
-        setNavFeedback("Restored the previous roadmap state.");
+        setNavFeedback("Restored the previous path state.");
         return;
       }
       const returnBtn = target?.closest("[data-mission-return]");
@@ -985,7 +985,7 @@ export function createMissionsController(ui) {
       .join("");
     host.innerHTML = `
       <p class="v2-continuations__kicker">Next mission</p>
-      ${choices ? `<p>Three ways this roadmap could continue. Pick one. Save any you are not ready to use.</p>${choices}` : ""}
+      ${choices ? `<p>Three ways this path could continue. Pick one. Save any you are not ready to use.</p>${choices}` : ""}
       ${kept ? `<p class="v2-continuations__kicker">Saved continuations</p>${kept}` : ""}
       <button type="button" data-continuation-dismiss="1">Not now</button>`;
     layout();
@@ -1034,11 +1034,11 @@ export function createMissionsController(ui) {
   function adoptContinuation(stage) {
     const stages = appStore.journey.missionsStages || [];
     if (stages.some((item) => item.label === stage.label)) {
-      setNavFeedback(`“${stage.label}” is already on this roadmap.`);
+      setNavFeedback(`“${stage.label}” is already on this path.`);
       return;
     }
     if (stages.length >= 8) {
-      setNavFeedback("This roadmap already has as many missions as it can hold.");
+      setNavFeedback("This path already has as many missions as it can hold.");
       return;
     }
     pushRoadmapUndo(appStore.journey);

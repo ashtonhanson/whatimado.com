@@ -204,7 +204,7 @@ export function initChatFlow(ctx) {
         <div id="selection-gate-host"></div>
       `;
       if (generating) {
-        setStatusMessage(selectionPanel.querySelector("#selection-status"), "Generating this roadmap");
+        setStatusMessage(selectionPanel.querySelector("#selection-status"), "Generating this path");
       }
       if (existingGate && keepGate) {
         selectionPanel.querySelector("#selection-gate-host")?.appendChild(existingGate);
@@ -585,7 +585,7 @@ export function initChatFlow(ctx) {
       body = paths
         .map((path) => {
           const mark = path.id === appStore.journey.roadmapPathId ? "On now — " : "";
-          return `<p class="v2-selection__why">${escapeHtml(mark + (path.title || path.label || "Roadmap"))}</p>`;
+          return `<p class="v2-selection__why">${escapeHtml(mark + (path.title || path.label || "My Paths"))}</p>`;
         })
         .join("");
       document.getElementById("possibilities")?.classList.remove("hidden");
@@ -624,7 +624,7 @@ export function initChatFlow(ctx) {
       };
     }
     return {
-      title: node.title || node.label || "Roadmap",
+      title: node.title || node.label || "My Paths",
       body: node.tagline || node.description || node.why || "",
       workId: ""
     };
@@ -652,9 +652,9 @@ export function initChatFlow(ctx) {
     const actions = [];
     if (canSwitch) {
       actions.push(
-        `<button type="button" data-map-save-path="${escapeHtml(node.id)}">${saved ? "Saved" : "Save this roadmap"}</button>`
+        `<button type="button" data-map-save-path="${escapeHtml(node.id)}">${saved ? "Saved" : "Save this path"}</button>`
       );
-      actions.push(`<button type="button" data-map-use-path="${escapeHtml(node.id)}">Use this roadmap</button>`);
+      actions.push(`<button type="button" data-map-use-path="${escapeHtml(node.id)}">Use this path</button>`);
     }
     if (!here && info.workId && info.workId !== appStore.journey.focusMissionId) {
       actions.push(`<button type="button" data-map-work="${escapeHtml(info.workId)}">Work on this step</button>`);
@@ -699,13 +699,13 @@ export function initChatFlow(ctx) {
     }
     const saved = new Set(appStore.journey.savedPathIds || []);
     note.innerHTML = `
-      <p class="v2-map-focus__kicker">Other roadmaps</p>
-      <p>These stay on the map. Save any you might want later. Opening one takes the button on that roadmap.</p>
+      <p class="v2-map-focus__kicker">Other paths</p>
+      <p>These stay on the map. Save any you might want later. Opening one takes the button on that path.</p>
       <div class="v2-map-focus__actions">
         ${others
           .map(
             (node) =>
-              `<button type="button" data-save-other="${escapeHtml(node.id)}">${saved.has(node.id) ? "Saved" : "Save"} ${escapeHtml(node.title || node.label || "roadmap")}</button>`
+              `<button type="button" data-save-other="${escapeHtml(node.id)}">${saved.has(node.id) ? "Saved" : "Save"} ${escapeHtml(node.title || node.label || "path")}</button>`
           )
           .join("")}
       </div>`;
@@ -730,8 +730,8 @@ export function initChatFlow(ctx) {
     const saved = (appStore.journey.savedPathIds || []).includes(node.id);
     const meta = [node.cost, node.timeline, node.income].filter(Boolean);
     selectionPanel.innerHTML = `
-      <h2 class="v2-section-label">Other roadmap</h2>
-      <h3 class="v2-selection__title">${escapeHtml(node.title || node.label || "Roadmap")}</h3>
+      <h2 class="v2-section-label">Other path</h2>
+      <h3 class="v2-selection__title">${escapeHtml(node.title || node.label || "My Paths")}</h3>
       ${node.tagline || node.description ? `<p class="v2-selection__tagline">${escapeHtml(node.tagline || node.description || "")}</p>` : ""}
       ${meta.length ? `<p class="v2-selection-meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</p>` : ""}
       ${node.why ? `<p class="v2-selection__why">${escapeHtml(node.why)}</p>` : ""}
@@ -740,7 +740,7 @@ export function initChatFlow(ctx) {
           <input type="checkbox" data-focus-save="1" ${saved ? "checked" : ""} />
           Save map for later.
         </label>
-        <button type="button" class="v2-next-path__open" data-focus-open="1">Open this roadmap</button>
+        <button type="button" class="v2-next-path__open" data-focus-open="1">Open this path</button>
       </div>`;
     selectionPanel.querySelector("[data-focus-save]")?.addEventListener("change", () => {
       toggleSavedPath(appStore.journey, node.id);
@@ -1042,8 +1042,8 @@ export function initChatFlow(ctx) {
     const offer = document.createElement("div");
     offer.className = "v2-difficulty-offer v2-text-box v2-text-box--response";
     offer.innerHTML =
-      `<p>Apply this to the roadmap, or discard it. The mission stays as it is until you apply.</p>` +
-      `<button type="button" data-apply-difficulty="1">Apply to roadmap</button>` +
+      `<p>Apply this to the path, or discard it. The mission stays as it is until you apply.</p>` +
+      `<button type="button" data-apply-difficulty="1">Apply to path</button>` +
       `<button type="button" data-discard-difficulty="1">Discard</button>`;
     thread.appendChild(offer);
     offer.querySelector("[data-apply-difficulty]")?.addEventListener("click", () => {
@@ -1057,7 +1057,7 @@ export function initChatFlow(ctx) {
       flushPersist();
       missions.refresh();
       offer.remove();
-      appendMessage(thread, "advisor", "Updated that mission on the roadmap.");
+      appendMessage(thread, "advisor", "Updated that mission on the path.");
       layout();
     });
     offer.querySelector("[data-discard-difficulty]")?.addEventListener("click", () => {
@@ -1113,7 +1113,7 @@ export function initChatFlow(ctx) {
     offer.innerHTML =
       `<p>What do you want to do next?</p>` +
       `<button type="button" data-continue="finish">Finish current missions</button>` +
-      `<button type="button" data-continue="roadmap">Open another roadmap</button>` +
+      `<button type="button" data-continue="roadmap">Open another path</button>` +
       `<button type="button" data-continue="save">Save for later</button>`;
     thread.appendChild(offer);
     offer.querySelector("[data-continue=finish]")?.addEventListener("click", () => {
@@ -1131,7 +1131,7 @@ export function initChatFlow(ctx) {
         touchJourney();
         flushPersist();
       }
-      appendMessage(thread, "advisor", "Saved this roadmap for later. It stays on this device.");
+      appendMessage(thread, "advisor", "Saved this path for later. It stays on this device.");
     });
     layout();
     scrollFrameChildIntoView(offer, { toEnd: true });

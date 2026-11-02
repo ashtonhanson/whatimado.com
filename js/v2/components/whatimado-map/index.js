@@ -66,7 +66,7 @@ const EDGE_DASH_OFF = 5.75;
 const EDGE_TUCK = 0.6;
 /** The glowing trail line's width over a normal edge; must match map-canvas.css. */
 const EDGE_THICK_SCALE = 2.4;
-/** "Roadmaps" over the selected roadmap title, relative to the title size. */
+/** "My Paths" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
 /** Unscaled dot diameter the home sample paints on a phone. */
@@ -3051,7 +3051,7 @@ export class WhatimadoMap extends HTMLElement {
 
       let items = [];
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-kicker-off"));
-      /** The selected roadmap title was pushed off its spot over the dot to make room for "Roadmaps". Mission numbers stay. */
+      /** The selected path title was pushed off its spot over the dot to make room for "My Paths". Mission numbers stay. */
       const kickerDisplaced = (list) =>
         list.some(
           (item) =>
@@ -3377,7 +3377,7 @@ export class WhatimadoMap extends HTMLElement {
         const goalStar = isGoal ? starPolygonPoints(cx, cy, starOuter, starInner) : "";
         const kickerText =
           title && node.type === "path" && node.id === branchRootId
-            ? "Roadmaps"
+            ? "My Paths"
             : title && node.type === "mission"
               ? missionNumberLabel(node.chainIndex ?? 0)
               : "";

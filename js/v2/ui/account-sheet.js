@@ -24,11 +24,11 @@ function acknowledge() {
 
 /** @param {import("../state/auth.js").AuthState} state */
 function syncLine(state) {
-  if (state.sync === "syncing") return "Syncing your roadmaps…";
-  if (state.sync === "ok") return "Roadmaps backed up to your account.";
+  if (state.sync === "syncing") return "Syncing your paths…";
+  if (state.sync === "ok") return "My Paths backed up to your account.";
   if (state.sync === "error") return `Not synced yet: ${state.syncError}`;
-  if (state.sync === "offline") return "Offline. Roadmaps are saved on this device and sync when you're back.";
-  return "Roadmaps save on this device and back up to your account.";
+  if (state.sync === "offline") return "Offline. My Paths are saved on this device and sync when you're back.";
+  return "My Paths save on this device and back up to your account.";
 }
 
 /** @param {HTMLElement | null} root */
@@ -44,7 +44,7 @@ function renderImports(root) {
   const list = document.createElement("ul");
   for (const item of imported) {
     const li = document.createElement("li");
-    li.textContent = item.title || "Guest roadmap";
+    li.textContent = item.title || "Guest path";
     list.append(li);
   }
   root.append(heading, list);
@@ -146,8 +146,8 @@ export function initAccountSheet() {
     acknowledge();
     if (signinStatus) {
       signinStatus.textContent = result.keptGuest
-        ? "Signed in. Your guest roadmap moved onto the account. Opening it…"
-        : "Signed in. Opening your roadmap…";
+        ? "Signed in. Your guest path moved onto the account. Opening it…"
+        : "Signed in. Opening your path…";
     }
     reloadApp();
   });
@@ -206,14 +206,14 @@ export function initAccountSheet() {
     if (result.needsConfirmation) {
       if (status) {
         status.textContent =
-          "Check your email to confirm the account. This roadmap stays here and moves onto the account when you open the link or sign in.";
+          "Check your email to confirm the account. This path stays here and moves onto the account when you open the link or sign in.";
       }
       return;
     }
     if (status) {
       status.textContent = result.replacedLive
-        ? "Account created. This roadmap is now on your account."
-        : "Account created. Your account already had a roadmap, so this one was saved beside it with today's date.";
+        ? "Account created. This path is now on your account."
+        : "Account created. Your account already had a path, so this one was saved beside it with today's date.";
     }
     reloadApp();
   });
@@ -234,7 +234,7 @@ export function initAccountSheet() {
     }
     if (field) field.value = "";
     acknowledge();
-    if (recoveryStatus) recoveryStatus.textContent = "Password saved. Opening your roadmap…";
+    if (recoveryStatus) recoveryStatus.textContent = "Password saved. Opening your path…";
     reloadApp();
   });
 
