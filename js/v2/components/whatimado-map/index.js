@@ -2832,13 +2832,13 @@ export class WhatimadoMap extends HTMLElement {
     });
     this._liveLayer?.querySelectorAll(".whatimado-map__goal-title").forEach((title) => {
       if (!(title instanceof SVGTextElement)) return;
-      title.style.fontSize = `${fontPx * 0.82}px`;
+      title.style.fontSize = `${fontPx * 0.82 * 1.5}px`;
       title.style.letterSpacing = "0.02em";
       title.style.strokeWidth = "0";
     });
     this._liveLayer?.querySelectorAll(".whatimado-map__goal-income").forEach((income) => {
       if (!(income instanceof SVGTextElement)) return;
-      income.style.fontSize = `${fontPx * 0.72}px`;
+      income.style.fontSize = `${fontPx * 0.72 * 1.5}px`;
       income.style.letterSpacing = "0.01em";
       income.style.strokeWidth = "0";
     });
@@ -3372,8 +3372,10 @@ export class WhatimadoMap extends HTMLElement {
         const goalIncomeFull = isGoal ? goalIncomeRange(node, appStore.location) : "";
         const goalIncomeMain = goalIncomeFull.replace(/\s+per year$/i, "");
         const mobileMap = window.matchMedia("(max-width: 900px)").matches;
-        const starOuter = r * (mobileMap ? 3.5 : 1.42);
-        const starInner = r * (mobileMap ? 1.4 : 0.56);
+        /* Goal destination star is 50% larger than the prior painted size. */
+        const goalScale = 1.5;
+        const starOuter = r * (mobileMap ? 3.5 : 1.42) * goalScale;
+        const starInner = r * (mobileMap ? 1.4 : 0.56) * goalScale;
         const goalStar = isGoal ? starPolygonPoints(cx, cy, starOuter, starInner) : "";
         const kickerText =
           title && node.type === "path" && node.id === branchRootId

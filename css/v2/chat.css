@@ -363,7 +363,7 @@ body.v2-app .v2-path-card__meta {
 .v2-path-card.is-selected.is-open-context,
 #selection-panel.is-open-context {
   border: 1.5px solid var(--v2-yellow);
-  border-radius: 14px;
+  border-radius: var(--v2-prompt-radius);
   background: transparent;
   box-shadow:
     0 0 6px color-mix(in srgb, var(--v2-yellow) 90%, transparent),
@@ -371,14 +371,15 @@ body.v2-app .v2-path-card__meta {
     0 0 28px color-mix(in srgb, var(--v2-yellow) 32%, transparent);
 }
 
-/* Phones: the current task, its checkbox and its buttons sit inside one glowing yellow frame. */
+/* Phones: the current task, its checkbox and its buttons sit inside one glowing yellow frame.
+   Frame sides go edge-to-edge with the screen (no inset crop inside the prompt sheet). */
 @media (max-width: 900px) {
   #mission-stages .v2-mission.is-open-context:not(.is-done),
   #mission-stages:not(:has(.v2-mission.is-open-context:not(.is-done))) .v2-mission.is-focused:not(.is-done) {
-    margin: 0.6rem 0;
-    padding: 0.85rem 0.95rem;
+    margin: 0.6rem calc(-1 * var(--v2-frame-pad-r, 1.1rem)) 0.6rem calc(-1 * var(--v2-frame-pad-x, 0.85rem));
+    padding: 0.85rem max(0.95rem, env(safe-area-inset-right, 0px)) 0.85rem max(0.95rem, env(safe-area-inset-left, 0px));
     border: 1.5px solid var(--v2-yellow);
-    border-radius: 14px;
+    border-radius: 0;
     background: var(--v2-bg);
     box-shadow:
       0 0 6px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
@@ -389,7 +390,7 @@ body.v2-app .v2-path-card__meta {
   .v2-path-card.is-selected.is-open-context,
   #selection-panel.is-open-context {
     border: 1.5px solid var(--v2-yellow);
-    border-radius: 14px;
+    border-radius: var(--v2-prompt-radius);
     background: transparent;
     box-shadow:
       0 0 6px color-mix(in srgb, var(--v2-yellow) 90%, transparent),

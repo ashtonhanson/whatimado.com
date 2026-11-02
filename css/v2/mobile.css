@@ -199,11 +199,28 @@
     box-shadow: none;
   }
 
+  whatimado-frame.is-mobile-docked .whatimado-frame__body {
+    --v2-frame-pad-x: clamp(0.85rem, 2.5vw, 1.25rem);
+    --v2-frame-pad-r: clamp(1.1rem, 2.8vw, 1.35rem);
+    padding-left: var(--v2-frame-pad-x);
+    padding-right: var(--v2-frame-pad-r);
+  }
+
   whatimado-frame.is-mobile-docked .whatimado-frame__body,
   whatimado-frame.is-mobile-docked .whatimado-frame__body-content,
   whatimado-frame.is-mobile-docked #mission-stages {
     overflow-x: hidden;
     max-width: 100%;
+  }
+
+  /* Tasks bleed to the screen edges — cancel sheet body inset so sides are not cropped. */
+  whatimado-frame.is-mobile-docked #mission-stages .v2-mission {
+    margin-left: calc(-1 * var(--v2-frame-pad-x));
+    margin-right: calc(-1 * var(--v2-frame-pad-r));
+    padding-left: max(var(--v2-frame-pad-x), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--v2-frame-pad-r), env(safe-area-inset-right, 0px));
+    max-width: none;
+    box-sizing: border-box;
   }
 
   .v2-mission__controls {
