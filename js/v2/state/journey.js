@@ -3,6 +3,7 @@ import { normalizeMissionFields } from "../roadmap/mission-model.js";
 import { normalizeResources, stripEphemeralResourceDrafts } from "../roadmap/resources.js";
 import { normalizeTaskChats } from "../roadmap/task-chat.js";
 import { normalizeGoalBrief } from "./goal-brief.js";
+import { normalizeMapTopics } from "../map/intake-facts.js";
 
 /** @typedef {import("../phases.js").Phase} Phase */
 /** @typedef {{ role: "user"|"assistant", content: string }} JourneyMessage */
@@ -15,7 +16,7 @@ import { normalizeGoalBrief } from "./goal-brief.js";
  *   turnCount: number,
  *   ghostDismissed: boolean,
  *   mapPromptLabel: string | null,
- *   mapTopics: string[],
+ *   mapTopics: { id: string, label: string, title: string, value?: string, editable?: boolean, factKey?: string }[],
  *   pathsGenerated: boolean,
  *   selectedPathId: string | null,
  *   roadmapPathId: string | null,
@@ -165,9 +166,7 @@ export function normalizeJourney(raw) {
       typeof source.mapPromptLabel === "string" && source.mapPromptLabel.trim()
         ? source.mapPromptLabel.trim().slice(0, 48)
         : null,
-    mapTopics: Array.isArray(source.mapTopics)
-      ? source.mapTopics.map((topic) => String(topic || "").trim()).filter(Boolean).slice(0, 8)
-      : [],
+    mapTopics: normalizeMapTopics(source.mapTopics),
     pathsGenerated: Boolean(source.pathsGenerated),
     selectedPathId: typeof source.selectedPathId === "string" ? source.selectedPathId : null,
     roadmapPathId:

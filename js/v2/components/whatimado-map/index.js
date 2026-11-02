@@ -3381,7 +3381,11 @@ export class WhatimadoMap extends HTMLElement {
         const kickerText =
           title && node.type === "path" && node.id === branchRootId
             ? "My Paths"
-            : title && node.type === "mission" && !String(node.id || "").startsWith("convo-topic-")
+            : title &&
+                node.type === "mission" &&
+                !String(node.id || "").startsWith("convo-topic-") &&
+                !String(node.id || "").startsWith("convo-fact-") &&
+                !String(node.id || "").startsWith("convo-phase-")
               ? missionNumberLabel(node.chainIndex ?? 0)
               : "";
         const driftDelay = (index * 0.85) % 5;

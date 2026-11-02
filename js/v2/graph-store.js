@@ -943,13 +943,39 @@ export function showRoadmapBranch(pathId, stages = null) {
 
 /**
  * YOU hub + default spokes, with the first prompt on the horizontal selected path
- * and conversation topics continuing that line (no + / goal yet).
- * @param {{ promptTitle: string, topics?: string[] }} spec
+ * and conversation topics / intake facts continuing that line (no + / goal yet).
+ * @param {{
+ *   promptTitle: string,
+ *   topics?: Array<string | { id?: string, label?: string, title?: string, value?: string, editable?: boolean }>
+ * }} spec
  */
 export function showConversationSpine(spec) {
   const promptTitle = String(spec?.promptTitle || "").trim() || "Goal";
   const topics = Array.isArray(spec?.topics)
-    ? spec.topics.map((topic) => String(topic || "").trim()).filter(Boolean).slice(0, 8)
+    ? spec.topics
+        .map((topic, index) => {
+          if (typeof topic === "string") {
+            const label = topic.trim();
+            if (!label) return null;
+            return {
+              id: `convo-topic-${index + 1}`,
+              label,
+              title: label,
+              editable: false
+            };
+          }
+          if (!topic || typeof topic !== "object") return null;
+          const label = String(topic.label || topic.title || "").trim();
+          if (!label) return null;
+          return {
+            id: String(topic.id || `convo-topic-${index + 1}`).trim(),
+            label,
+            title: String(topic.title || topic.value || label).trim() || label,
+            editable: Boolean(topic.editable)
+          };
+        })
+        .filter(Boolean)
+        .slice(0, 8)
     : [];
 
   /** @type {GraphNode[]} */
@@ -988,12 +1014,13 @@ export function showConversationSpine(spec) {
 
   let attachId = CONVO_PROMPT_ID;
   topics.forEach((topic, index) => {
-    const id = `convo-topic-${index + 1}`;
+    const id = topic.id;
     nodes.push({
       id,
       type: "mission",
-      label: shortenMapLabel(topic) || topic,
-      title: topic,
+      label: shortenMapLabel(topic.label) || topic.label,
+      title: topic.title,
+      description: topic.editable ? "Tap to edit" : "",
       chainIndex: index,
       stageIndex: index,
       parentId: attachId
