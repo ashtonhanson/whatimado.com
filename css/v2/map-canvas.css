@@ -721,10 +721,11 @@ whatimado-map .whatimado-map__node--live.is-complete text {
 }
 
 whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
-  fill: var(--v2-yellow);
+  fill: #060a0c;
   transform: scale(1.22);
-  stroke: none;
-  stroke-width: 0;
+  stroke: var(--v2-yellow);
+  stroke-width: 2.1;
+  vector-effect: non-scaling-stroke;
 }
 
 whatimado-map .whatimado-map__node--live.is-more .whatimado-map__node-body,
@@ -994,9 +995,21 @@ whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-body {
 }
 
 /* The user's current path on an open roadmap: You, the open mission, and a clicked task */
-whatimado-map.is-roadmap-open .whatimado-map__node--live.is-trail-node .whatimado-map__node-body {
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-trail-node:not(.is-selected) .whatimado-map__node-body {
   fill: var(--v2-yellow);
   stroke: none;
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, var(--v2-yellow) 95%, transparent))
+    drop-shadow(0 0 16px color-mix(in srgb, var(--v2-yellow) 72%, transparent))
+    drop-shadow(0 0 28px color-mix(in srgb, var(--v2-yellow) 48%, transparent));
+}
+
+/* Selected node: no fill color — yellow edge + glow matching the highlighted path line. */
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-selected .whatimado-map__node-body {
+  fill: #060a0c;
+  stroke: var(--v2-yellow);
+  stroke-width: 2.1;
+  vector-effect: non-scaling-stroke;
   filter:
     drop-shadow(0 0 6px color-mix(in srgb, var(--v2-yellow) 95%, transparent))
     drop-shadow(0 0 16px color-mix(in srgb, var(--v2-yellow) 72%, transparent))

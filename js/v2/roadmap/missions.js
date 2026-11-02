@@ -397,8 +397,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                 const deleteLabel = `Delete task: ${mission.title || "Task"}`;
                 return `
                   <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
+                    <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                     <div class="v2-mission__panel">
-                      <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                       <div class="v2-mission__content">
                         <div class="v2-mission__head">
                           <div class="v2-mission__head-main">
@@ -423,9 +423,9 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                         ${steps}
                         ${timing}
                         ${resources}
-                        ${action}
                         <div class="v2-mission__foot">
                           <div class="v2-mission__controls">
+                            ${action}
                             <button type="button" class="v2-mission-action v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
                             <button type="button" class="v2-mission-action v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
                             <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>

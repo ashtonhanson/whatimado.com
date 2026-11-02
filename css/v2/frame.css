@@ -932,10 +932,23 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-mission__controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.28rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  width: 100%;
   margin-top: 0.55rem;
+}
+
+.v2-mission__controls > .v2-draft-open,
+.v2-mission__controls > .v2-mission-action:not(.v2-circle-back__close),
+.v2-mission__controls > .v2-mission-chat-open {
+  width: 100%;
+  max-width: none;
+  justify-content: center;
+}
+
+.v2-mission__controls > .v2-mission__return.hidden {
+  display: none;
 }
 
 .v2-mission-action:not(.v2-circle-back__close) {
@@ -1064,10 +1077,10 @@ body.v2-app .v2-timeline__stop.is-bypassed {
   max-width: 100%;
 }
 
-/* Same top-right corner on every task; 5px from the right edge. */
+/* Same top-right corner on every task card; 5px from the card's right edge. */
 .v2-mission__delete {
   position: absolute;
-  top: 0.45rem;
+  top: 5px;
   right: 5px;
   z-index: 3;
   display: inline-flex;
@@ -1076,7 +1089,7 @@ body.v2-app .v2-timeline__stop.is-bypassed {
   width: 2.25rem;
   height: 2.25rem;
   margin: 0;
-  padding: 0.2rem 0;
+  padding: 0;
   border: none;
   border-radius: 0;
   background: transparent;
@@ -1106,8 +1119,8 @@ body.v2-app .v2-timeline__stop.is-bypassed {
   position: relative;
   min-width: 0;
   max-width: 100%;
-  padding-top: 0.35rem;
-  padding-right: 2.6rem;
+  padding-top: 0.2rem;
+  padding-right: 2.4rem;
 }
 
 .v2-mission__foot {
@@ -1420,11 +1433,12 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 
 .v2-path-card.is-selected {
   animation: none;
-  border-color: color-mix(in srgb, var(--v2-yellow) 72%, transparent);
-  background: color-mix(in srgb, var(--v2-yellow) 16%, rgba(46, 232, 214, 0.08));
+  border: 1.5px solid var(--v2-yellow);
+  background: transparent;
   box-shadow:
-    0 0 16px color-mix(in srgb, var(--v2-yellow) 32%, transparent),
-    0 4px 14px rgba(0, 0, 0, 0.16);
+    0 0 6px color-mix(in srgb, var(--v2-yellow) 90%, transparent),
+    0 0 16px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
+    0 0 28px color-mix(in srgb, var(--v2-yellow) 32%, transparent);
 }
 
 .v2-path-card h3 {

@@ -28,7 +28,7 @@ export function getExamplePrompts() {
  * @param {Document} [doc]
  */
 export async function initBrand(doc = document) {
-  const res = await fetch("/brand/whatimado.default.json?v=20261102-task-type");
+  const res = await fetch("/brand/whatimado.default.json?v=20261102-task-layout");
   if (!res.ok) throw new Error(`Brand config failed (${res.status})`);
   brand = await res.json();
   applyBrand(brand, doc);
