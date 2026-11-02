@@ -3,7 +3,6 @@ import { normalizeMissionFields } from "../roadmap/mission-model.js";
 import { normalizeResources, stripEphemeralResourceDrafts } from "../roadmap/resources.js";
 import { normalizeTaskChats } from "../roadmap/task-chat.js";
 import { normalizeGoalBrief } from "./goal-brief.js";
-import { normalizeMapTopics } from "../map/intake-facts.js";
 
 /** @typedef {import("../phases.js").Phase} Phase */
 /** @typedef {{ role: "user"|"assistant", content: string }} JourneyMessage */
@@ -15,8 +14,6 @@ import { normalizeMapTopics } from "../map/intake-facts.js";
  *   messages: JourneyMessage[],
  *   turnCount: number,
  *   ghostDismissed: boolean,
- *   mapPromptLabel: string | null,
- *   mapTopics: { id: string, label: string, title: string, value?: string, editable?: boolean, factKey?: string }[],
  *   pathsGenerated: boolean,
  *   selectedPathId: string | null,
  *   roadmapPathId: string | null,
@@ -63,8 +60,6 @@ export function createEmptyJourney() {
     messages: [],
     turnCount: 0,
     ghostDismissed: false,
-    mapPromptLabel: null,
-    mapTopics: [],
     pathsGenerated: false,
     selectedPathId: null,
     roadmapPathId: null,
@@ -162,11 +157,6 @@ export function normalizeJourney(raw) {
     messages,
     turnCount: Number(source.turnCount) || messages.filter((m) => m.role === "user").length,
     ghostDismissed: Boolean(source.ghostDismissed),
-    mapPromptLabel:
-      typeof source.mapPromptLabel === "string" && source.mapPromptLabel.trim()
-        ? source.mapPromptLabel.trim().slice(0, 48)
-        : null,
-    mapTopics: normalizeMapTopics(source.mapTopics),
     pathsGenerated: Boolean(source.pathsGenerated),
     selectedPathId: typeof source.selectedPathId === "string" ? source.selectedPathId : null,
     roadmapPathId:

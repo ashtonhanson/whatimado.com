@@ -11,7 +11,6 @@ import {
   flattenMissions
 } from "./mission-model.js";
 import { taskChatStorageKey, getTaskThread } from "./task-chat.js";
-import { confirmStartNewMap } from "../ui/new-map-dialog.js";
 
 /** @typedef {"phone_script"|"outreach_email"|"notes"} DraftKind */
 /** @typedef {{ id: string, kind: DraftKind, label: string, missionTitle: string, missionText: string }} DraftCatalogItem */
@@ -381,48 +380,13 @@ function buildDraftPrompt(item) {
  * @param {DraftCatalogItem[]} catalog
  * @param {MissionDraft[]} saved
  */
-/**
- * @param {HTMLButtonElement | null} button
- * @param {string} body
- */
-async function copyDraftBody(button, body) {
-  if (!(button instanceof HTMLButtonElement)) return;
-  const check = validateDraftForCopy(body);
-  if (!check.ok) {
-    button.textContent = check.reason || "Fix draft first";
-    return;
-  }
-  try {
-    await navigator.clipboard.writeText(body);
-    button.textContent = "Copied";
-    window.setTimeout(() => {
-      if (button.isConnected) button.textContent = "Copy";
-    }, 1600);
-  } catch {
-    button.textContent = "Select the draft to copy";
-  }
-}
-
-/**
- * @param {HTMLElement} drawer
- * @param {string | null} draftId
- */
-function setReaderChrome(drawer, draftId) {
-  const del = drawer.querySelector("#drafts-delete");
-  const topCopy = drawer.querySelector("#drafts-copy-top");
-  const reading = Boolean(draftId);
-  del?.classList.toggle("hidden", !reading);
-  topCopy?.classList.toggle("hidden", !reading);
-  if (del instanceof HTMLElement) del.dataset.draftId = draftId || "";
-  if (topCopy instanceof HTMLElement) topCopy.dataset.draftId = draftId || "";
-}
-
 function renderCatalog(drawer, catalog, saved) {
   const body = drawer.querySelector("#drafts-body");
   const title = drawer.querySelector("#drafts-title");
-  if (!body || !title) return;
+  const back = drawer.querySelector("#drafts-back");
+  if (!body || !title || !back) return;
   title.textContent = "Drafts";
-  setReaderChrome(drawer, null);
+  back.classList.add("hidden");
   const pathId = appStore.journey.roadmapPathId;
   const current = (saved || []).filter((draft) => !pathId || draft.pathId === pathId || draft.id.startsWith(`${pathId}:`));
   const newest = [...current].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -455,9 +419,10 @@ function renderCatalog(drawer, catalog, saved) {
 function renderReader(drawer, draft, status) {
   const body = drawer.querySelector("#drafts-body");
   const title = drawer.querySelector("#drafts-title");
-  if (!body || !title) return;
+  const back = drawer.querySelector("#drafts-back");
+  if (!body || !title || !back) return;
   title.textContent = draft?.label || "Draft";
-  setReaderChrome(drawer, draft?.id || null);
+  back.classList.remove("hidden");
   body.innerHTML = "";
   if (status) {
     const note = document.createElement("p");
@@ -476,7 +441,19 @@ function renderReader(drawer, draft, status) {
   copy.type = "button";
   copy.className = "v2-drafts__copy";
   copy.textContent = "Copy";
-  copy.addEventListener("click", () => void copyDraftBody(copy, draft.body));
+  copy.addEventListener("click", async () => {
+    const check = validateDraftForCopy(draft.body);
+    if (!check.ok) {
+      copy.textContent = check.reason || "Fix draft first";
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(draft.body);
+      copy.textContent = "Copied";
+    } catch {
+      copy.textContent = "Select the draft to copy";
+    }
+  });
   body.append(mission, text, copy);
 }
 
@@ -488,9 +465,10 @@ function renderReader(drawer, draft, status) {
 function renderDraftRetry(drawer, item, retry) {
   const body = drawer.querySelector("#drafts-body");
   const title = drawer.querySelector("#drafts-title");
-  if (!body || !title) return;
+  const back = drawer.querySelector("#drafts-back");
+  if (!body || !title || !back) return;
   title.textContent = item.label || "Draft";
-  setReaderChrome(drawer, item.id || null);
+  back.classList.remove("hidden");
   body.innerHTML = "";
   const note = document.createElement("p");
   note.className = "v2-drafts__status";
@@ -527,25 +505,14 @@ export function createDraftsController(ui) {
     el.setAttribute("aria-labelledby", "drafts-title");
     el.innerHTML = `
       <div class="v2-drafts__bar">
-        <button type="button" class="v2-drafts__delete hidden" id="drafts-delete">Delete</button>
-        <button type="button" class="v2-drafts__copy v2-drafts__copy--top hidden" id="drafts-copy-top">Copy</button>
+        <button type="button" class="v2-drafts__back hidden" id="drafts-back">Back</button>
         <h2 class="v2-drafts__title" id="drafts-title">Drafts</h2>
-        <button type="button" class="v2-drafts__close" id="drafts-close" aria-label="Close note">
-          <span aria-hidden="true">×</span>
-        </button>
+        <button type="button" class="v2-drafts__close" id="drafts-close">Close</button>
       </div>
       <div class="v2-drafts__body" id="drafts-body"></div>`;
     frameEl.appendChild(el);
     el.querySelector("#drafts-close")?.addEventListener("click", close);
-    el.querySelector("#drafts-delete")?.addEventListener("click", () => void deleteActiveDraft());
-    el.querySelector("#drafts-copy-top")?.addEventListener("click", (event) => {
-      const button = event.currentTarget;
-      if (!(button instanceof HTMLButtonElement)) return;
-      const id = button.dataset.draftId || "";
-      const draft = (appStore.journey.missionDrafts || []).find((entry) => entry.id === id && entry.body);
-      if (!draft?.body) return;
-      void copyDraftBody(button, draft.body);
-    });
+    el.querySelector("#drafts-back")?.addEventListener("click", () => showCatalog());
     return el;
   }
 
@@ -558,25 +525,6 @@ export function createDraftsController(ui) {
 
   function close() {
     drawer()?.classList.add("hidden");
-  }
-
-  async function deleteActiveDraft() {
-    const el = drawer();
-    const del = el?.querySelector("#drafts-delete");
-    const id = del instanceof HTMLElement ? del.dataset.draftId || "" : "";
-    if (!id) return;
-    const ok = await confirmStartNewMap({
-      title: "Delete this note?",
-      message: "Delete this note? This can't be undone.",
-      confirmLabel: "Delete",
-      cancelLabel: "Cancel",
-      returnFocus: del instanceof HTMLElement ? del : null
-    });
-    if (!ok) return;
-    appStore.journey.missionDrafts = (appStore.journey.missionDrafts || []).filter((entry) => entry.id !== id);
-    touchJourney();
-    flush();
-    showCatalog();
   }
 
   /**

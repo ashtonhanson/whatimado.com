@@ -79,47 +79,6 @@ export function shortenMapLabel(value) {
   return (kept.length ? kept : words).slice(0, 2).join(" ");
 }
 
-/**
- * Short title for the first prompt node on the conversation spine.
- * Prefers the trailing goal phrase ("mobile pet grooming") over lead-in words.
- * @param {string} value
- */
-export function promptMapLabel(value) {
-  let text = String(value || "")
-    .replace(/[/|]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!text) return "Goal";
-  text = text
-    .replace(
-      /^(i\s+(want\s+to|would\s+like\s+to|need\s+to|am\s+trying\s+to|am\s+looking\s+(to|for)|hope\s+to)\s+)/i,
-      ""
-    )
-    .replace(/^(i'?m\s+(wanting\s+to|interested\s+in|into|starting|building|launching)\s+)/i, "")
-    .replace(/^(looking\s+(to|for)\s+)/i, "")
-    .trim();
-  const words = text
-    .split(/\s+/)
-    .map((word) => word.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, ""))
-    .filter(Boolean)
-    .filter((word) => !MAP_LABEL_SKIP.has(word.toLowerCase()));
-  if (!words.length) return "Goal";
-  let useful = words;
-  if (/^(business|job|career|work|company|sidehustle)$/i.test(useful[useful.length - 1])) {
-    useful = useful.slice(0, -1);
-  }
-  useful = useful.filter((word) => !/^(start|starting|own|my)$/i.test(word));
-  if (!useful.length) useful = words;
-  const take = useful.length >= 3 ? useful.slice(-3) : useful.slice(-2);
-  return (take.length ? take : words.slice(-2)).join(" ");
-}
-
-/** First node on the horizontal conversation path from YOU. */
-export const CONVO_PROMPT_ID = "convo-prompt";
-
-/** Landing demo roadmap until the first prompt. */
-export const PATH_EXAMPLE_ID = "path-example";
-
 /** Phone map titles stay one short word when two words would run off the screen. */
 export function mapNodeLabel(value, { compact = false } = {}) {
   const short = shortenMapLabel(value);
@@ -230,14 +189,7 @@ export function appendAdvisorPaths(paths) {
     added.push(node);
   });
 
-  if (
-    possibilityNodes &&
-    branchChosenId &&
-    branchChosenId !== CONVO_PROMPT_ID &&
-    added.length
-  ) {
-    showRoadmapBranch(branchChosenId);
-  }
+  if (possibilityNodes && branchChosenId && added.length) showRoadmapBranch(branchChosenId);
   return added;
 }
 
@@ -315,33 +267,10 @@ let branchChosenId = null;
 export const ROADMAP_MORE_ID = "roadmap-more";
 export const ROADMAP_GOAL_ID = "roadmap-goal";
 
-/** @param {string | null | undefined} id */
-export function isPathExampleNodeId(id) {
-  const value = String(id || "");
-  return (
-    value === PATH_EXAMPLE_ID ||
-    value === ROADMAP_MORE_ID ||
-    value === ROADMAP_GOAL_ID ||
-    value.startsWith("ex-") ||
-    /^milestone-\d+$/.test(value)
-  );
-}
-
 function rememberPossibilities() {
   if (possibilityNodes) return;
   possibilityNodes = graphStore.nodes.map((node) => ({ ...node }));
   possibilityEdges = graphStore.edges.map((edge) => ({ ...edge }));
-}
-
-/** Snapshot the path constellation so the live map can show the conversation spine instead. */
-export function snapshotPossibilityMap() {
-  rememberPossibilities();
-}
-
-/** Path cards and selection read shelved possibilities while the conversation spine is live. */
-export function listedPathNodes() {
-  const source = possibilityNodes || graphStore.nodes;
-  return source.filter((node) => node.type === "path");
 }
 
 export function restorePossibilityMap() {
@@ -952,156 +881,6 @@ export function showRoadmapBranch(pathId, stages = null) {
     placeUnlinkedBranch(nodes, chosenSource.id);
   }
 
-  graphStore.nodes = nodes;
-  graphStore.edges = edges;
-}
-
-/**
- * Landing demo: YOU + default spokes + a selected Path Example roadmap with sample missions.
- * Replaced by {@link showConversationSpine} on the first chat prompt.
- */
-export function showPathExample() {
-  possibilityNodes = null;
-  possibilityEdges = null;
-  branchChosenId = null;
-  setSpineAlternatePaths(false);
-
-  const examplePath = {
-    id: PATH_EXAMPLE_ID,
-    type: /** @type {const} */ ("path"),
-    label: "Path Example",
-    title: "Path Example",
-    accent: pathAccentForIndex(0),
-    income: "$40k–$80k / year"
-  };
-
-  graphStore.nodes = [
-    { id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.76 },
-    { ...examplePath, x: 0.72, y: 0.5 }
-  ];
-  graphStore.edges = [{ from: "start", to: PATH_EXAMPLE_ID }];
-  graphStore.selectedId = PATH_EXAMPLE_ID;
-  graphStore.focusRotation = 0;
-  graphStore.focusSpin = null;
-
-  showRoadmapBranch(PATH_EXAMPLE_ID, [
-    {
-      label: "Start",
-      missions: [
-        { id: "ex-name-goal", title: "Name the goal" },
-        { id: "ex-list-skills", title: "List skills" }
-      ]
-    },
-    {
-      label: "Choose",
-      missions: [{ id: "ex-compare", title: "Compare paths" }]
-    },
-    {
-      label: "Act",
-      missions: [{ id: "ex-first-win", title: "Land a first win" }]
-    }
-  ]);
-}
-
-/**
- * YOU hub + default spokes, with the first prompt on the horizontal selected path
- * and conversation topics / intake facts continuing that line (no + / goal yet).
- * @param {{
- *   promptTitle: string,
- *   topics?: Array<string | { id?: string, label?: string, title?: string, value?: string, editable?: boolean }>
- * }} spec
- */
-export function showConversationSpine(spec) {
-  const rawPrompt = String(spec?.promptTitle || "").trim() || "Goal";
-  const shortPrompt = promptMapLabel(rawPrompt) || shortenMapLabel(rawPrompt) || "Goal";
-  const topics = Array.isArray(spec?.topics)
-    ? spec.topics
-        .map((topic, index) => {
-          if (typeof topic === "string") {
-            const label = topic.trim();
-            if (!label) return null;
-            const short = shortenMapLabel(label) || label.slice(0, 18);
-            return {
-              id: `convo-topic-${index + 1}`,
-              label: short,
-              title: short,
-              editable: false
-            };
-          }
-          if (!topic || typeof topic !== "object") return null;
-          const mapLabel = String(topic.label || "").trim() || String(topic.title || "").trim();
-          if (!mapLabel) return null;
-          const short = shortenMapLabel(mapLabel) || mapLabel.slice(0, 18);
-          const detail = String(topic.value || topic.title || mapLabel).trim() || short;
-          return {
-            id: String(topic.id || `convo-topic-${index + 1}`).trim(),
-            label: short,
-            title: short,
-            detail,
-            editable: Boolean(topic.editable)
-          };
-        })
-        .filter(Boolean)
-        .slice(0, 8)
-    : [];
-
-  /** @type {GraphNode[]} */
-  const spokes = [
-    {
-      id: CONVO_PROMPT_ID,
-      type: "path",
-      label: shortPrompt,
-      title: shortPrompt,
-      accent: pathAccentForIndex(0)
-    }
-  ];
-  [...EXPLORE_OPTIONS, ...extraExploreOptions].forEach((option) => {
-    if (spokes.some((node) => node.id === option.id)) return;
-    spokes.push({
-      id: option.id,
-      type: "action",
-      label: option.label,
-      title: option.label
-    });
-  });
-
-  const ordered = [...spokes].sort((a, b) => a.id.localeCompare(b.id));
-  ordered.forEach((node, index) => {
-    node.homeAngle = angleFor(node.id, index, ordered.length);
-  });
-
-  /** @type {GraphNode[]} */
-  const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.76 }];
-  /** @type {GraphEdge[]} */
-  const edges = [];
-  spokes.forEach((node) => {
-    nodes.push({ ...node });
-    edges.push({ from: "start", to: node.id });
-  });
-
-  let attachId = CONVO_PROMPT_ID;
-  topics.forEach((topic, index) => {
-    const id = topic.id;
-    nodes.push({
-      id,
-      type: "mission",
-      label: topic.label,
-      title: topic.label,
-      description: topic.detail || (topic.editable ? "Tap to edit" : ""),
-      chainIndex: index,
-      stageIndex: index,
-      parentId: attachId
-    });
-    edges.push({ from: attachId, to: id });
-    attachId = id;
-  });
-
-  /* Keep branchChosenId clear so path-card "more" does not rebuild a roadmap branch. */
-  branchChosenId = null;
-  graphStore.selectedId = CONVO_PROMPT_ID;
-  graphStore.focusSpin = null;
-  placeLinkedBranch(nodes, 0, CONVO_PROMPT_ID);
-  graphStore.focusRotation = 0;
   graphStore.nodes = nodes;
   graphStore.edges = edges;
 }

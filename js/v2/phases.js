@@ -21,24 +21,25 @@ export function getPhaseVisibility(phase, options = {}) {
 
   switch (phase) {
     case PHASE.OPEN:
-      /* Path Example stays on stage; first message resets to the YOU + conversation spine. */
+      /* No default/ghost map — keep the stage clear until a roadmap is chosen. */
       return {
-        map: "visible",
+        map: "hidden",
         resources: false,
         possibilities: false,
         homePrompt: true
       };
     case PHASE.EXPLORING:
     case PHASE.COACHING:
-      return { map: "visible", resources: false, possibilities: false, homePrompt: false };
+      return { map: "hidden", resources: false, possibilities: false, homePrompt: false };
     case PHASE.POSSIBILITIES:
-      return { map: "visible", resources: false, possibilities: true, homePrompt: false };
+      /* Paths exist in chat cards; map waits until one is selected. */
+      return { map: "hidden", resources: false, possibilities: true, homePrompt: false };
     case PHASE.PATH_SELECTED:
       return { map: "visible", resources: false, possibilities: true, homePrompt: false };
     case PHASE.MISSIONS:
       return { map: "visible", resources: true, possibilities: true, homePrompt: false };
     default:
-      return { map: "visible", resources: false, possibilities: false, homePrompt: true };
+      return { map: "hidden", resources: false, possibilities: false, homePrompt: true };
   }
 }
 

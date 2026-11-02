@@ -1,37 +1,15 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
-import {
-  CONVO_PROMPT_ID,
-  graphStore,
-  isPathExampleNodeId,
-  listedPathNodes,
-  PATH_EXAMPLE_ID,
-  promptMapLabel,
-  restorePossibilityMap,
-  selectGraphNode,
-  setExtraExploreOptions,
-  setSpineAlternatePaths,
-  showConversationSpine,
-  showRoadmapBranch
-} from "../graph-store.js";
+import { graphStore, restorePossibilityMap, selectGraphNode, setExtraExploreOptions, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ, SNAP } from "../dock/constants.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
-import { buildSharedPromptContext, invalidateDownstreamWork, refreshGoalBrief } from "../state/goal-brief.js";
+import { buildSharedPromptContext, refreshGoalBrief } from "../state/goal-brief.js";
 import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
-import { formatUserLocation, parseLocationAnswer } from "../state/location.js";
-import { setUserProfileField } from "../state/user-profile.js";
+import { formatUserLocation } from "../state/location.js";
 import { applyPrefsToStore } from "../state/prefs.js";
 import { trackEvent } from "../state/analytics.js";
-import { hideIntakeChips, renderIntakeChips } from "../components/profile-chips.js";
-import {
-  deriveIntakeFactNodes,
-  intakeFactDefForId,
-  isIntakeFactId
-} from "../map/intake-facts.js";
-import { getChipStep, INTAKE_STEP } from "../intake/profile-chips.js";
-import { isFounderOrProjectPrompt } from "../intake/clarifying.js";
 import {
   activeAccountRoadmap,
   bindPersistLifecycle,
@@ -52,7 +30,6 @@ import {
   clearComposerDraft
 } from "../state/composer-draft.js";
 import { authState, onAuthChange } from "../state/auth.js";
-import { analyticsPageAllowed } from "../state/home-access.js";
 import { readSession } from "../state/guest-account.js";
 import { closeActivePageIfOpen } from "./pages.js";
 import { journeyHasActiveWork, newMapConfirmMessage } from "./journey-work.js";
@@ -152,7 +129,7 @@ export function initChatFlow(ctx) {
     setPhase(appStore.journey.phase, { animate: !instant, instant });
   }
 
-  /** True while a new roadmap is still being written — prompt still lifts for the keyboard. */
+  /** True while a new roadmap is still being written — map stays hidden. */
   function isPreRoadmapCompose() {
     const phase = appStore.journey.phase;
     return (
@@ -163,7 +140,7 @@ export function initChatFlow(ctx) {
     );
   }
 
-  /** Lift the chat/prompt to the top so the keyboard cannot crop it. Map stays visible behind. */
+  /** Lift the chat/prompt to the top so the keyboard cannot crop it; map stays covered. */
   function ensureTypingFullStage() {
     const dock = frameEl?._dock;
     if (!dock) return;
@@ -183,7 +160,7 @@ export function initChatFlow(ctx) {
     }
   }
 
-  /** After paths exist, drop the sheet so chat has room; conversation spine stays on the map. */
+  /** After paths exist, drop the sheet so chat has room; map waits for a selection. */
   function settleFrameAfterPathsReady() {
     const dock = frameEl?._dock;
     document.body.classList.remove("is-chat-full-stage");
@@ -196,310 +173,13 @@ export function initChatFlow(ctx) {
     dock.snapTo(SNAP.HOME, { animate: true });
   }
 
-  /** Fit the live map in the menu→prompt band after a path select or spine paint. */
+  /** Selected roadmap: show the map and fit it in the menu→prompt band. */
   function revealMapForSelectedRoadmap() {
     document.body.classList.remove("is-chat-full-stage");
     mapEl?.syncLiveFromStore();
     window.setTimeout(() => {
       mapEl?.syncSnapCamera({ force: true, animate: true });
     }, MOBILE_MQ.matches ? 80 : 40);
-  }
-
-  function syncExploreOptions() {
-    setExtraExploreOptions(
-      analyticsPageAllowed(authState().user) ? [{ id: "option-analytics", label: "Analytics" }] : []
-    );
-  }
-
-  /** Intake answers + phase markers on the horizontal path from the first prompt. */
-  function deriveConversationTopics() {
-    return deriveIntakeFactNodes(appStore.profile, appStore.location, appStore.journey);
-  }
-
-  function topicsSignature(topics) {
-    return JSON.stringify(
-      (topics || []).map((topic) => [
-        topic.id || "",
-        topic.label || "",
-        topic.title || topic.value || "",
-        topic.editable ? 1 : 0
-      ])
-    );
-  }
-
-  /** @type {{ key: string, mode: "chips"|"text"|"location"|"prompt" } | null} */
-  let pendingFactEdit = null;
-
-  function paintConversationMap({ fit = false, selectId = CONVO_PROMPT_ID } = {}) {
-    const label = appStore.journey.mapPromptLabel;
-    if (!label || appStore.journey.planConfirmed) return;
-    syncExploreOptions();
-    const topics = deriveConversationTopics();
-    appStore.journey.mapTopics = topics;
-    showConversationSpine({ promptTitle: label, topics });
-    mapEl?.syncLiveFromStore();
-    if (selectId && graphStore.nodes.some((node) => node.id === selectId)) {
-      mapEl?.setSelectedNode?.(selectId);
-      mapEl?.setFocusedNode?.(selectId);
-    } else {
-      mapEl?.setSelectedNode?.(CONVO_PROMPT_ID);
-    }
-    if (fit) {
-      window.setTimeout(() => {
-        mapEl?.syncSnapCamera({ force: true, animate: true });
-      }, MOBILE_MQ.matches ? 80 : 40);
-    }
-  }
-
-  function refreshConversationMap() {
-    if (!appStore.journey.mapPromptLabel || appStore.journey.planConfirmed) return;
-    const next = deriveConversationTopics();
-    const prev = appStore.journey.mapTopics || [];
-    if (topicsSignature(next) === topicsSignature(prev)) return;
-    appStore.journey.mapTopics = next;
-    paintConversationMap();
-    touchJourney();
-    schedulePersist();
-  }
-
-  function resetMapForFirstPrompt(text) {
-    const label = promptMapLabel(text);
-    appStore.journey.mapPromptLabel = label;
-    appStore.journey.mapTopics = [];
-    syncExploreOptions();
-    paintConversationMap({ fit: true });
-    touchJourney();
-  }
-
-  function clearPendingFactEdit() {
-    pendingFactEdit = null;
-    hideIntakeChips(messagesEl);
-  }
-
-  /**
-   * @param {{ category: string, affectsPaths: boolean }} fact
-   */
-  async function confirmFactRipple(fact) {
-    const hasMissions = Boolean(appStore.journey.planConfirmed || (appStore.journey.missionsStages || []).length);
-    const hasPaths = Boolean(appStore.journey.pathsGenerated);
-    if (!hasPaths && !hasMissions) return true;
-    const ripple = hasMissions
-      ? "Possibility maps, missions, and tasks that depended on the old answer may regenerate."
-      : "Possibility maps that depended on the old answer may regenerate.";
-    return confirmStartNewMap({
-      title: `Update ${fact.category}?`,
-      message: `This edit will change the roadmap choices being offered. ${ripple}`,
-      confirmLabel: "Update and refresh",
-      cancelLabel: "Keep current",
-      returnFocus: frameEl?.composerInput || null
-    });
-  }
-
-  /**
-   * @param {import("../map/intake-facts.js").IntakeFactDef | { key: string, category: string, affectsPaths: boolean }} fact
-   * @param {string} value
-   * @param {{ display?: string }} [options]
-   */
-  async function applyEditedFact(fact, value, options = {}) {
-    const nextValue = String(value || "").trim();
-    if (!nextValue) return false;
-    if (fact.affectsPaths) {
-      const ok = await confirmFactRipple(fact);
-      if (!ok) return false;
-    }
-
-    const hadMissions = Boolean(appStore.journey.planConfirmed || (appStore.journey.missionsStages || []).length);
-    const hadPaths = Boolean(appStore.journey.pathsGenerated);
-
-    if (fact.key === "location") {
-      const parsed = parseLocationAnswer(nextValue);
-      appStore.location = parsed.city || parsed.region || parsed.country ? parsed : { ...parsed, raw: nextValue };
-      appStore.journey.locationConfirmed = true;
-    } else if (fact.key === "prompt") {
-      appStore.journey.mapPromptLabel = promptMapLabel(nextValue) || nextValue.slice(0, 48);
-    } else if (fact.field) {
-      appStore.profile = setUserProfileField(appStore.profile, fact.field, nextValue);
-    }
-
-    const brief = refreshGoalBrief(appStore.journey, appStore.profile, appStore.location, {
-      latestUserText: `Correction: ${fact.category} is now ${options.display || nextValue}`
-    });
-    appStore.profile = brief.profile;
-
-    if (hadMissions || hadPaths) {
-      invalidateDownstreamWork(appStore.journey);
-      missions.clear();
-      appStore.journey.selectedPathId = null;
-      appStore.journey.roadmapPathId = null;
-      confirmGate.hide();
-    }
-
-    clearPendingFactEdit();
-    paintConversationMap({
-      fit: true,
-      selectId: fact.key === "prompt" ? CONVO_PROMPT_ID : `convo-fact-${fact.key}`
-    });
-    touchJourney();
-    flushPersist();
-
-    const thread = continuationThread(messagesEl) || messagesEl;
-    if (thread) {
-      appendMessage(
-        thread,
-        "advisor",
-        hadPaths || hadMissions
-          ? `Updated ${fact.category.toLowerCase()} to “${options.display || nextValue}”. Refreshing what depended on it.`
-          : `Updated ${fact.category.toLowerCase()} to “${options.display || nextValue}”.`
-      );
-    }
-
-    if (hadPaths || hadMissions) {
-      appStore.journey.pathsGenerated = false;
-      await pathMap.generate();
-    } else {
-      layout();
-    }
-    return true;
-  }
-
-  function startFactChipEdit(def) {
-    if (!def.step || !messagesEl) return;
-    const founder = isFounderOrProjectPrompt(
-      appStore.journey.messages.find((turn) => turn.role === "user")?.content || ""
-    );
-    const spec = getChipStep(def.step, { founder });
-    if (!spec?.options?.length) {
-      pendingFactEdit = { key: def.key, mode: "text" };
-      appendMessage(
-        continuationThread(messagesEl) || messagesEl,
-        "advisor",
-        `What should I use for ${def.category.toLowerCase()} instead? Type the corrected answer.`
-      );
-      frameEl?.focusComposer?.({ glideOnMobile: true });
-      return;
-    }
-    pendingFactEdit = { key: def.key, mode: "chips" };
-    hideIntakeChips(messagesEl);
-    appendMessage(
-      continuationThread(messagesEl) || messagesEl,
-      "advisor",
-      `Update ${def.category.toLowerCase()}. Pick a new answer below, or type it.`
-    );
-    renderIntakeChips(messagesEl, {
-      options: spec.options,
-      multiple: Boolean(spec.multiple),
-      exclusiveValues: spec.exclusiveValues,
-      onSelect: (option) => {
-        void applyEditedFact(def, option.value, { display: option.label });
-      }
-    });
-    layout();
-    scrollFrameChildIntoView(messagesEl, { toEnd: true });
-  }
-
-  function beginIntakeFactEdit(nodeId) {
-    if (nodeId === CONVO_PROMPT_ID) {
-      pendingFactEdit = { key: "prompt", mode: "prompt" };
-      hideIntakeChips(messagesEl);
-      appendMessage(
-        continuationThread(messagesEl) || messagesEl,
-        "advisor",
-        "What should this first path node say instead? Type a short corrected goal."
-      );
-      frameEl?.focusComposer?.({ glideOnMobile: true });
-      return;
-    }
-    const def = intakeFactDefForId(nodeId);
-    if (!def) return;
-    if (def.key === "location") {
-      pendingFactEdit = { key: "location", mode: "location" };
-      hideIntakeChips(messagesEl);
-      appendMessage(
-        continuationThread(messagesEl) || messagesEl,
-        "advisor",
-        "Type your corrected place — for example “Austin, Texas” or “Austin, TX, USA”."
-      );
-      frameEl?.focusComposer?.({ glideOnMobile: true });
-      return;
-    }
-    if (def.key === "name" || def.key === "skills") {
-      pendingFactEdit = { key: def.key, mode: "text" };
-      hideIntakeChips(messagesEl);
-      appendMessage(
-        continuationThread(messagesEl) || messagesEl,
-        "advisor",
-        def.key === "name"
-          ? "What name should I use instead?"
-          : "What skills or background should I use instead? Type a short correction."
-      );
-      frameEl?.focusComposer?.({ glideOnMobile: true });
-      return;
-    }
-    startFactChipEdit(def);
-  }
-
-  /** @param {string} text */
-  async function handlePendingFactEdit(text) {
-    if (!pendingFactEdit) return false;
-    const pending = pendingFactEdit;
-    if (pending.mode === "prompt") {
-      return applyEditedFact({ key: "prompt", category: "Goal", affectsPaths: true, field: null, step: null, id: CONVO_PROMPT_ID }, text);
-    }
-    if (pending.key === "location") {
-      return applyEditedFact(
-        { key: "location", category: "Location", affectsPaths: true, field: null, step: null, id: "convo-fact-location" },
-        text,
-        { display: text }
-      );
-    }
-    const def = intakeFactDefForId(`${pending.key === "name" ? "convo-fact-name" : `convo-fact-${pending.key}`}`);
-    if (!def) {
-      clearPendingFactEdit();
-      return false;
-    }
-    if (pending.mode === "chips") {
-      const founder = isFounderOrProjectPrompt(
-        appStore.journey.messages.find((turn) => turn.role === "user")?.content || ""
-      );
-      const spec = getChipStep(def.step || "", { founder });
-      const match = spec?.options?.find(
-        (option) =>
-          option.label.toLowerCase() === text.toLowerCase() ||
-          option.value.toLowerCase() === text.toLowerCase()
-      );
-      if (match) return applyEditedFact(def, match.value, { display: match.label });
-    }
-    return applyEditedFact(def, text, { display: text });
-  }
-
-  function reflectIntakeFact(node) {
-    const host = document.getElementById("messages-tail") || messagesEl;
-    if (!host || !node) return;
-    let note = document.getElementById("map-focus-note");
-    if (!note) {
-      note = document.createElement("article");
-      note.id = "map-focus-note";
-      note.className = "v2-map-focus v2-text-box v2-text-box--chrome";
-      host.appendChild(note);
-    }
-    const def = intakeFactDefForId(node.id);
-    const editable = node.id === CONVO_PROMPT_ID || Boolean(def);
-    const category =
-      node.id === CONVO_PROMPT_ID ? "Goal" : def?.category || node.label || "Detail";
-    const detail = node.description || node.title || node.label || "";
-    note.innerHTML = `
-      <p class="v2-map-focus__kicker">What I know</p>
-      <h3>${escapeHtml(category)}</h3>
-      <p>${escapeHtml(detail)}</p>
-      ${
-        editable
-          ? `<div class="v2-map-focus__actions"><button type="button" data-edit-fact="${escapeHtml(node.id)}">Edit this answer</button></div>`
-          : ""
-      }`;
-    note.querySelector("[data-edit-fact]")?.addEventListener("click", () => {
-      beginIntakeFactEdit(node.id);
-    });
-    scrollFrameChildIntoView(note);
   }
 
   function renderPathCards() {
@@ -539,14 +219,11 @@ export function initChatFlow(ctx) {
   function applyPathsToMap() {
     mapEl?.syncLiveFromStore();
     setPhase(appStore.journey.selectedPathId ? PHASE.PATH_SELECTED : PHASE.POSSIBILITIES);
-    const selectedPathId = appStore.journey.selectedPathId || null;
     const selected =
-      (selectedPathId &&
-        listedPathNodes().find((node) => node.id === selectedPathId && node.id !== CONVO_PROMPT_ID)) ||
-      null;
-    if (selected) {
+      graphStore.nodes.find((node) => node.id === (appStore.journey.selectedPathId || graphStore.selectedId)) || null;
+    if (selected && selected.type !== "start") {
       showSelectedPath(selected, { scroll: false });
-    } else if (!appStore.journey.selectedPathId) {
+    } else {
       selectionPanel?.classList.add("hidden");
       if (activePathEl) {
         activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
@@ -570,10 +247,6 @@ export function initChatFlow(ctx) {
       layout();
       scrollFrameChildIntoView(continuationThread(messagesEl), { toEnd: true });
       frameEl?.focusComposer({ glideOnMobile: false });
-    },
-    onPathsReady: () => {
-      refreshConversationMap();
-      paintConversationMap({ fit: true });
     }
   });
 
@@ -742,7 +415,7 @@ export function initChatFlow(ctx) {
     onShown: (stages) => {
       drafts.sync(stages);
       setSpineAlternatePaths(Boolean(stages?.length));
-      syncExploreOptions();
+      setExtraExploreOptions([{ id: "option-analytics", label: "Analytics" }]);
       const pathId = appStore.journey.roadmapPathId;
       if (stages?.length && pathId) {
         /* Ticking a task redraws the same branch. The phone map keeps its zoom and position for that. */
@@ -802,7 +475,6 @@ export function initChatFlow(ctx) {
     layout,
     flush: flushPersist,
     setComposerEnabled,
-    onProgress: () => refreshConversationMap(),
     onComplete: async () => {
       if (appStore.journey.phase === PHASE.EXPLORING) setPhase(PHASE.COACHING);
       if (!appStore.journey.pathsGenerated) await pathMap.generate();
@@ -811,24 +483,8 @@ export function initChatFlow(ctx) {
 
   /** @param {string} nodeId @param {{ startConfirm?: boolean, openRoadmap?: boolean }} [options] */
   function handleNodeSelect(nodeId, { startConfirm = true, openRoadmap = false } = {}) {
-    const node =
-      graphStore.nodes.find((n) => n.id === nodeId) ||
-      listedPathNodes().find((n) => n.id === nodeId) ||
-      null;
+    const node = graphStore.nodes.find((n) => n.id === nodeId);
     if (!node || node.type === "start" || node.type === "goal") return;
-    /* Landing Path Example is illustrative only until the first prompt. */
-    if (!appStore.journey.mapPromptLabel && isPathExampleNodeId(nodeId)) {
-      mapEl?.setFocusedNode(nodeId);
-      mapEl?.setSelectedNode?.(PATH_EXAMPLE_ID);
-      return;
-    }
-    if (node.id === CONVO_PROMPT_ID || isIntakeFactId(nodeId) || String(nodeId).startsWith("convo-phase-")) {
-      mapEl?.setFocusedNode(nodeId);
-      mapEl?.setSelectedNode?.(nodeId);
-      if (isIntakeFactId(nodeId) || node.id === CONVO_PROMPT_ID) reflectIntakeFact(node);
-      else reflectNodeInChat(node);
-      return;
-    }
     if (node.type === "more") {
       missions.confirmExtend();
       return;
@@ -1144,33 +800,28 @@ export function initChatFlow(ctx) {
       mapEl?.dismissGhost({ instant: true });
     }
 
-    const hasPaths = listedPathNodes().length > 0 || graphStore.nodes.some((node) => node.type === "path");
-    if (journey.mapPromptLabel && !journey.planConfirmed) {
-      paintConversationMap({ fit: true });
-      if (hasPaths) renderPathCards();
-    } else if (hasPaths) {
+    const hasPaths = graphStore.nodes.some((node) => node.type === "path");
+    if (hasPaths) {
       mapEl?.syncLiveFromStore();
       renderPathCards();
     }
 
     const selected =
-      listedPathNodes().find((node) => node.id === (journey.selectedPathId || "")) ||
       graphStore.nodes.find((node) => node.id === (journey.selectedPathId || graphStore.selectedId)) ||
       null;
-    if (selected && selected.type === "path" && selected.id !== CONVO_PROMPT_ID) {
+    if (selected && selected.type !== "start") {
       selectGraphNode(selected.id);
       mapEl?.setSelectedNode(selected.id);
       showSelectedPath(selected, { scroll: false });
-    } else if (hasPaths && !journey.mapPromptLabel && activePathEl) {
+    } else if (hasPaths && activePathEl) {
       activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
     }
 
     setPhase(journey.phase, { animate: false, instant: true });
     intake.restoreChips();
     if (hasPaths) pathMap.restore();
-    if (selected && selected.type === "path" && selected.id !== CONVO_PROMPT_ID) confirmGate.restore(selected);
+    if (selected && selected.type !== "start") confirmGate.restore(selected);
     if (journey.planConfirmed) missions.restore();
-    else refreshConversationMap();
     layout();
     const endEl = journey.planConfirmed
       ? document.getElementById("missions")
@@ -1245,24 +896,6 @@ export function initChatFlow(ctx) {
     if (isPreRoadmapCompose()) ensureTypingFullStage();
     setComposerEnabled(false);
 
-    if (pendingFactEdit) {
-      const thread = continuationThread(messagesEl);
-      appendMessage(thread, "user", trimmed);
-      appStore.journey.messages.push({ role: "user", content: trimmed });
-      appStore.journey.turnCount += 1;
-      touchJourney();
-      flushPersist();
-      layout();
-      try {
-        const handled = await handlePendingFactEdit(trimmed);
-        if (handled) return;
-      } finally {
-        setComposerEnabled(true);
-      }
-    }
-
-    const firstPromptForMap = !appStore.journey.mapPromptLabel;
-
     if (appStore.journey.phase === PHASE.OPEN) {
       setPhase(PHASE.EXPLORING);
     }
@@ -1276,21 +909,13 @@ export function initChatFlow(ctx) {
       latestUserText: trimmed
     });
     appStore.profile = briefRefresh.profile;
-    if (firstPromptForMap && !appStore.journey.planConfirmed) {
-      resetMapForFirstPrompt(trimmed);
-    } else {
-      refreshConversationMap();
-    }
     touchJourney();
     flushPersist();
 
     try {
       if (intake.isBlocking()) {
         const handled = await intake.handleTypedAnswer(trimmed);
-        if (handled) {
-          refreshConversationMap();
-          return;
-        }
+        if (handled) return;
       }
 
       if (pathMap.isBlocking()) {
@@ -1300,16 +925,13 @@ export function initChatFlow(ctx) {
 
       if (confirmGate.isBlocking()) {
         const idea =
-          listedPathNodes().find((node) => node.id === appStore.journey.selectedPathId) ||
-          graphStore.nodes.find((node) => node.id === appStore.journey.selectedPathId) ||
-          null;
+          graphStore.nodes.find((node) => node.id === appStore.journey.selectedPathId) || null;
         const handled = await confirmGate.handleTypedAnswer(trimmed, idea);
         if (handled) return;
       }
 
       if (!appStore.journey.intakeComplete && !appStore.journey.pathMode) {
         intake.startAfterFirstPrompt();
-        refreshConversationMap();
         return;
       }
 
@@ -1618,21 +1240,18 @@ export function initChatFlow(ctx) {
   window.addEventListener("resize", () => layout());
 
   onAuthChange(() => {
-    syncExploreOptions();
+    setExtraExploreOptions([{ id: "option-analytics", label: "Analytics" }]);
+    const has = graphStore.nodes.some((node) => node.id === "option-analytics");
+    if (has) return;
     const pathId = appStore.journey.roadmapPathId;
     const stages = appStore.journey.missionsStages;
-    if (pathId && appStore.journey.planConfirmed && stages?.length) {
-      showRoadmapBranch(pathId, stages);
-      const keep = mapEl?._selectedId;
-      mapEl?.syncLiveFromStore();
-      const still = keep && graphStore.nodes.some((node) => node.id === keep);
-      mapEl?.setSelectedNode(still ? keep : pathId);
-      mapEl?.syncRoadmapBranchFit?.({ animate: false });
-      return;
-    }
-    if (appStore.journey.mapPromptLabel && !appStore.journey.planConfirmed) {
-      paintConversationMap();
-    }
+    if (!pathId || !appStore.journey.planConfirmed || !stages?.length) return;
+    showRoadmapBranch(pathId, stages);
+    const keep = mapEl?._selectedId;
+    mapEl?.syncLiveFromStore();
+    const still = keep && graphStore.nodes.some((node) => node.id === keep);
+    mapEl?.setSelectedNode(still ? keep : pathId);
+    mapEl?.syncRoadmapBranchFit?.({ animate: false });
   });
 
   document.addEventListener(

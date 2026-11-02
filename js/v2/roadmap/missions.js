@@ -29,7 +29,6 @@ import {
 } from "./mission-navigation.js";
 import { canRoadmapUndo, popRoadmapUndo, pushRoadmapUndo } from "./roadmap-undo.js";
 import { timelineShowsInOpenChat } from "./map-chat-focus.js";
-import { confirmStartNewMap } from "../ui/new-map-dialog.js";
 
 /** @type {Set<string>} */
 const circleBackEditorOpen = new Set();
@@ -397,7 +396,7 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                 const deleteLabel = `Delete task: ${mission.title || "Task"}`;
                 return `
                   <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
-                    <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}">Delete</button>
+                    <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                     <div class="v2-mission__panel">
                       <div class="v2-mission__content">
                         <div class="v2-mission__head">
@@ -913,25 +912,16 @@ export function createMissionsController(ui) {
       const deleteBtn = target?.closest("[data-mission-delete]");
       const deleteId = deleteBtn?.getAttribute("data-mission-delete");
       if (deleteId) {
-        void (async () => {
-          const ok = await confirmStartNewMap({
-            title: "Delete this task?",
-            message: "Delete this task? This can't be undone.",
-            confirmLabel: "Delete",
-            cancelLabel: "Cancel",
-            returnFocus: deleteBtn instanceof HTMLElement ? deleteBtn : null
-          });
-          if (!ok) return;
-          const stages = appStore.journey.missionsStages || [];
-          pushRoadmapUndo(appStore.journey);
-          appStore.journey.missionsStages = deleteMissionFromStages(stages, deleteId);
-          const nextFocus = pickNextFocusAfterDelete(appStore.journey.missionsStages, deleteId);
-          appStore.journey.focusMissionId = nextFocus;
-          touchJourney();
-          flush();
-          rerender();
-          if (nextFocus) focusMissionInUi(nextFocus);
-        })();
+        if (!window.confirm("Are you sure you want to delete this task?")) return;
+        const stages = appStore.journey.missionsStages || [];
+        pushRoadmapUndo(appStore.journey);
+        appStore.journey.missionsStages = deleteMissionFromStages(stages, deleteId);
+        const nextFocus = pickNextFocusAfterDelete(appStore.journey.missionsStages, deleteId);
+        appStore.journey.focusMissionId = nextFocus;
+        touchJourney();
+        flush();
+        rerender();
+        if (nextFocus) focusMissionInUi(nextFocus);
         return;
       }
     });
