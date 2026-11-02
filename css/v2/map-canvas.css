@@ -1025,13 +1025,24 @@ whatimado-map.is-roadmap-open .whatimado-map__node--live.is-support.is-trail-nod
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--v2-yellow) 70%, transparent));
 }
 
+/* Selected / active path trail: yellow stroke plus the same soft bloom as selected nodes. */
 whatimado-map.is-roadmap-open .whatimado-map__edge--live.is-trail {
   stroke: var(--v2-yellow);
   stroke-width: calc(var(--v2-map-edge-width, 1.45) * 2.4);
   stroke-dasharray: none;
   filter:
-    drop-shadow(0 0 2px color-mix(in srgb, var(--v2-yellow) 90%, transparent))
-    drop-shadow(0 0 7px color-mix(in srgb, var(--v2-yellow) 60%, transparent));
+    drop-shadow(0 0 4px color-mix(in srgb, var(--v2-yellow) 95%, transparent))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--v2-yellow) 72%, transparent))
+    drop-shadow(0 0 22px color-mix(in srgb, var(--v2-yellow) 48%, transparent));
+}
+
+/* Selected path node on an open roadmap also keeps the soft yellow glow. */
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-roadmap.is-selected .whatimado-map__node-body,
+whatimado-map.is-roadmap-open .whatimado-map__node--live.is-trail-node.is-roadmap .whatimado-map__node-body {
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, var(--v2-yellow) 95%, transparent))
+    drop-shadow(0 0 16px color-mix(in srgb, var(--v2-yellow) 72%, transparent))
+    drop-shadow(0 0 28px color-mix(in srgb, var(--v2-yellow) 48%, transparent));
 }
 
 /* Phone roadmap: every dot and title off the path shares one full teal, alternate roadmaps included. */

@@ -2557,7 +2557,9 @@ export class WhatimadoMap extends HTMLElement {
     this._driftNodes.get(start.id)?.groupEl.classList.add("is-trail-node");
     for (const id of trail) {
       const node = this._liveNodes.find((n) => n.id === id);
-      if (node?.type === "mission" || node?.type === "task") this._driftNodes.get(id)?.groupEl.classList.add("is-trail-node");
+      if (node?.type === "mission" || node?.type === "task" || node?.type === "path") {
+        this._driftNodes.get(id)?.groupEl.classList.add("is-trail-node");
+      }
     }
   }
 
