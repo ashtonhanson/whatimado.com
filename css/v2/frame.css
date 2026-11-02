@@ -1092,6 +1092,36 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   gap: 0.4rem;
 }
 
+/* Save Map + Drafts: chat bubbles with square upper-right only. */
+#missions-save-map.v2-mission-action--bubble-prompt,
+#drafts-open.v2-mission-action--bubble-prompt,
+.v2-missions__actions > .v2-mission-action--bubble-prompt {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(46, 232, 214, 0.42);
+  border-radius: var(--v2-prompt-radius);
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.v2-possibilities__title {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 0.65rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(46, 232, 214, 0.42);
+  border-radius: var(--v2-response-radius);
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--v2-yellow);
+}
+
 .v2-mission-nav {
   display: flex;
   flex-wrap: wrap;
@@ -1203,40 +1233,44 @@ body.v2-app .v2-timeline__stop.is-bypassed {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 0.55rem 1.6rem 0.65rem 0.65rem;
-  border-radius: var(--v2-btn-radius);
+  padding: 0.55rem 2.4rem 0.65rem 0.65rem;
+  border: none;
+  border-radius: 0;
   background: color-mix(in srgb, var(--v2-surface) 96%, #000 4%);
 }
 
+/* Match task-card delete X — plain glyph, no chat-bubble frame. */
 .v2-mission-chat__close {
   position: absolute;
-  top: 0.22rem;
-  right: 0.28rem;
-  grid-column: auto;
-  grid-row: auto;
+  top: 5px;
+  right: 5px;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  height: auto;
+  width: 2.25rem;
+  height: 2.25rem;
   margin: 0;
-  padding: 0.1rem;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  padding: 0;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none;
   color: var(--v2-text-muted);
-  font-size: 1.2rem;
+  font-size: 2.75rem;
   line-height: 1;
   cursor: pointer;
 }
 
+.v2-mission-chat__close > span {
+  display: block;
+  line-height: 0.75;
+  transform: translateY(-0.08em);
+}
+
 .v2-mission-chat__head {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  align-items: start;
-  gap: 0.15rem 0.5rem;
+  display: block;
   padding-right: 0.15rem;
 }
 
@@ -1273,12 +1307,15 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 
 .v2-mission-chat__close:hover {
   color: var(--v2-text);
-  background: transparent;
+  background: transparent !important;
+  border: none !important;
 }
 
 .v2-mission-chat__close:focus-visible {
   outline: 2px solid var(--v2-yellow);
   outline-offset: 2px;
+  border: none !important;
+  background: transparent !important;
 }
 
 .v2-mission-chat__thread {

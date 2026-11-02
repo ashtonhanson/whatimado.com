@@ -441,15 +441,15 @@ export function renderMissionChatDrawer(missionId, missionTitle) {
           aria-label="Task chat"
           data-mission-chat-panel="${escapeHtml(missionId)}"
         >
+          <button type="button" class="v2-mission-chat__close" data-mission-chat-close="${escapeHtml(missionId)}" aria-label="Close chat">
+            <span aria-hidden="true">×</span>
+          </button>
           <header class="v2-mission-chat__head">
             <div class="v2-mission-chat__titles">
               <p class="v2-mission-chat__kicker">Task chat</p>
               <h3 class="v2-mission-chat__heading">${escapeHtml(missionTitle)}</h3>
               <p class="v2-mission-chat__status" aria-live="polite"></p>
             </div>
-            <button type="button" class="v2-mission-chat__close" data-mission-chat-close="${escapeHtml(missionId)}" aria-label="Close chat">
-              <span aria-hidden="true">×</span>
-            </button>
           </header>
           <div class="v2-mission-chat__thread" role="log" aria-live="polite"></div>
           <form class="v2-mission-chat__composer" data-mission-chat-form="${escapeHtml(missionId)}" novalidate>
