@@ -146,6 +146,7 @@ export function deriveIntakeFactNodes(profile, location, journey) {
       value = friendlyFactValue(def.step, def.field, p[def.field]);
     }
     if (!ready || !value) continue;
+    /* Short map label (category); full answer stays in value/title for edit/reflect. */
     nodes.push({
       id: def.id,
       factKey: def.key,

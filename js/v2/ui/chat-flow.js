@@ -2,7 +2,9 @@ import { PHASE, applyPhaseToDom } from "../phases.js";
 import {
   CONVO_PROMPT_ID,
   graphStore,
+  isPathExampleNodeId,
   listedPathNodes,
+  PATH_EXAMPLE_ID,
   promptMapLabel,
   restorePossibilityMap,
   selectGraphNode,
@@ -286,7 +288,7 @@ export function initChatFlow(ctx) {
       : "Possibility maps that depended on the old answer may regenerate.";
     return confirmStartNewMap({
       title: `Update ${fact.category}?`,
-      message: `Save the new ${fact.category.toLowerCase()} answer? ${ripple}`,
+      message: `This edit will change the roadmap choices being offered. ${ripple}`,
       confirmLabel: "Update and refresh",
       cancelLabel: "Keep current",
       returnFocus: frameEl?.composerInput || null
@@ -484,10 +486,11 @@ export function initChatFlow(ctx) {
     const editable = node.id === CONVO_PROMPT_ID || Boolean(def);
     const category =
       node.id === CONVO_PROMPT_ID ? "Goal" : def?.category || node.label || "Detail";
+    const detail = node.description || node.title || node.label || "";
     note.innerHTML = `
       <p class="v2-map-focus__kicker">What I know</p>
       <h3>${escapeHtml(category)}</h3>
-      <p>${escapeHtml(node.title || node.label || "")}</p>
+      <p>${escapeHtml(detail)}</p>
       ${
         editable
           ? `<div class="v2-map-focus__actions"><button type="button" data-edit-fact="${escapeHtml(node.id)}">Edit this answer</button></div>`
@@ -813,6 +816,12 @@ export function initChatFlow(ctx) {
       listedPathNodes().find((n) => n.id === nodeId) ||
       null;
     if (!node || node.type === "start" || node.type === "goal") return;
+    /* Landing Path Example is illustrative only until the first prompt. */
+    if (!appStore.journey.mapPromptLabel && isPathExampleNodeId(nodeId)) {
+      mapEl?.setFocusedNode(nodeId);
+      mapEl?.setSelectedNode?.(PATH_EXAMPLE_ID);
+      return;
+    }
     if (node.id === CONVO_PROMPT_ID || isIntakeFactId(nodeId) || String(nodeId).startsWith("convo-phase-")) {
       mapEl?.setFocusedNode(nodeId);
       mapEl?.setSelectedNode?.(nodeId);

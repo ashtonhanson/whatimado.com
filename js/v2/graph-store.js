@@ -95,7 +95,7 @@ export function promptMapLabel(value) {
       /^(i\s+(want\s+to|would\s+like\s+to|need\s+to|am\s+trying\s+to|am\s+looking\s+(to|for)|hope\s+to)\s+)/i,
       ""
     )
-    .replace(/^(i'?m\s+(interested\s+in|into|starting|building|launching)\s+)/i, "")
+    .replace(/^(i'?m\s+(wanting\s+to|interested\s+in|into|starting|building|launching)\s+)/i, "")
     .replace(/^(looking\s+(to|for)\s+)/i, "")
     .trim();
   const words = text
@@ -116,6 +116,9 @@ export function promptMapLabel(value) {
 
 /** First node on the horizontal conversation path from YOU. */
 export const CONVO_PROMPT_ID = "convo-prompt";
+
+/** Landing demo roadmap until the first prompt. */
+export const PATH_EXAMPLE_ID = "path-example";
 
 /** Phone map titles stay one short word when two words would run off the screen. */
 export function mapNodeLabel(value, { compact = false } = {}) {
@@ -311,6 +314,18 @@ let branchChosenId = null;
 
 export const ROADMAP_MORE_ID = "roadmap-more";
 export const ROADMAP_GOAL_ID = "roadmap-goal";
+
+/** @param {string | null | undefined} id */
+export function isPathExampleNodeId(id) {
+  const value = String(id || "");
+  return (
+    value === PATH_EXAMPLE_ID ||
+    value === ROADMAP_MORE_ID ||
+    value === ROADMAP_GOAL_ID ||
+    value.startsWith("ex-") ||
+    /^milestone-\d+$/.test(value)
+  );
+}
 
 function rememberPossibilities() {
   if (possibilityNodes) return;
@@ -942,6 +957,53 @@ export function showRoadmapBranch(pathId, stages = null) {
 }
 
 /**
+ * Landing demo: YOU + default spokes + a selected Path Example roadmap with sample missions.
+ * Replaced by {@link showConversationSpine} on the first chat prompt.
+ */
+export function showPathExample() {
+  possibilityNodes = null;
+  possibilityEdges = null;
+  branchChosenId = null;
+  setSpineAlternatePaths(false);
+
+  const examplePath = {
+    id: PATH_EXAMPLE_ID,
+    type: /** @type {const} */ ("path"),
+    label: "Path Example",
+    title: "Path Example",
+    accent: pathAccentForIndex(0),
+    income: "$40k–$80k / year"
+  };
+
+  graphStore.nodes = [
+    { id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.76 },
+    { ...examplePath, x: 0.72, y: 0.5 }
+  ];
+  graphStore.edges = [{ from: "start", to: PATH_EXAMPLE_ID }];
+  graphStore.selectedId = PATH_EXAMPLE_ID;
+  graphStore.focusRotation = 0;
+  graphStore.focusSpin = null;
+
+  showRoadmapBranch(PATH_EXAMPLE_ID, [
+    {
+      label: "Start",
+      missions: [
+        { id: "ex-name-goal", title: "Name the goal" },
+        { id: "ex-list-skills", title: "List skills" }
+      ]
+    },
+    {
+      label: "Choose",
+      missions: [{ id: "ex-compare", title: "Compare paths" }]
+    },
+    {
+      label: "Act",
+      missions: [{ id: "ex-first-win", title: "Land a first win" }]
+    }
+  ]);
+}
+
+/**
  * YOU hub + default spokes, with the first prompt on the horizontal selected path
  * and conversation topics / intake facts continuing that line (no + / goal yet).
  * @param {{
@@ -950,27 +1012,32 @@ export function showRoadmapBranch(pathId, stages = null) {
  * }} spec
  */
 export function showConversationSpine(spec) {
-  const promptTitle = String(spec?.promptTitle || "").trim() || "Goal";
+  const rawPrompt = String(spec?.promptTitle || "").trim() || "Goal";
+  const shortPrompt = promptMapLabel(rawPrompt) || shortenMapLabel(rawPrompt) || "Goal";
   const topics = Array.isArray(spec?.topics)
     ? spec.topics
         .map((topic, index) => {
           if (typeof topic === "string") {
             const label = topic.trim();
             if (!label) return null;
+            const short = shortenMapLabel(label) || label.slice(0, 18);
             return {
               id: `convo-topic-${index + 1}`,
-              label,
-              title: label,
+              label: short,
+              title: short,
               editable: false
             };
           }
           if (!topic || typeof topic !== "object") return null;
-          const label = String(topic.label || topic.title || "").trim();
-          if (!label) return null;
+          const mapLabel = String(topic.label || "").trim() || String(topic.title || "").trim();
+          if (!mapLabel) return null;
+          const short = shortenMapLabel(mapLabel) || mapLabel.slice(0, 18);
+          const detail = String(topic.value || topic.title || mapLabel).trim() || short;
           return {
             id: String(topic.id || `convo-topic-${index + 1}`).trim(),
-            label,
-            title: String(topic.title || topic.value || label).trim() || label,
+            label: short,
+            title: short,
+            detail,
             editable: Boolean(topic.editable)
           };
         })
@@ -983,8 +1050,8 @@ export function showConversationSpine(spec) {
     {
       id: CONVO_PROMPT_ID,
       type: "path",
-      label: shortenMapLabel(promptTitle) || promptTitle,
-      title: promptTitle,
+      label: shortPrompt,
+      title: shortPrompt,
       accent: pathAccentForIndex(0)
     }
   ];
@@ -1018,9 +1085,9 @@ export function showConversationSpine(spec) {
     nodes.push({
       id,
       type: "mission",
-      label: shortenMapLabel(topic.label) || topic.label,
-      title: topic.title,
-      description: topic.editable ? "Tap to edit" : "",
+      label: topic.label,
+      title: topic.label,
+      description: topic.detail || (topic.editable ? "Tap to edit" : ""),
       chainIndex: index,
       stageIndex: index,
       parentId: attachId

@@ -21,9 +21,9 @@ export function getPhaseVisibility(phase, options = {}) {
 
   switch (phase) {
     case PHASE.OPEN:
-      /* Landing silhouette stays on stage; first message resets to the YOU hub. */
+      /* Path Example stays on stage; first message resets to the YOU + conversation spine. */
       return {
-        map: "faint",
+        map: "visible",
         resources: false,
         possibilities: false,
         homePrompt: true
@@ -38,7 +38,7 @@ export function getPhaseVisibility(phase, options = {}) {
     case PHASE.MISSIONS:
       return { map: "visible", resources: true, possibilities: true, homePrompt: false };
     default:
-      return { map: "faint", resources: false, possibilities: false, homePrompt: true };
+      return { map: "visible", resources: false, possibilities: false, homePrompt: true };
   }
 }
 

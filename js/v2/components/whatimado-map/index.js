@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { GHOST_GRAPH, graphStore, mapLayoutZoom, mapNodeLabel, PATH_EXAMPLE_ID, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showPathExample, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
 import { goalIncomeRange } from "../../map/goal-income.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
@@ -106,14 +106,17 @@ function nodeMapTitleLines(node) {
   if (!node || node.type === "more" || node.type === "goal") return [];
   if (node.type === "start") return [node.label || "You"];
   const mobile = window.matchMedia("(max-width: 900px)").matches;
-  if (node.type === "task" || (mobile && node.type === "path")) {
-    const short = mapNodeLabel(node.title || node.label || "", { compact: mobile });
+  /* Prefer the short map label — never paint a long conversation title on the stage. */
+  const source = String(node.label || node.title || "").trim();
+  if (node.type === "task" || node.type === "path" || node.type === "action") {
+    const short = mapNodeLabel(source, { compact: mobile || node.type === "path" });
     /* A two-word roadmap title runs into the mission tasks beside that column. */
     const label = mobile && node.type === "path" && short.length > 10 ? short.split(/\s+/)[0] : short;
     return label ? [label] : [];
   }
   /* Phone mission titles stack so the last mission stays above its dot instead of riding the connector. */
-  return wrapMapLabel(node.title || node.label || "", mobile && node.type === "mission" ? 14 : 18);
+  const missionSource = String(node.label || node.title || "").trim();
+  return wrapMapLabel(missionSource, mobile && node.type === "mission" ? 14 : 18);
 }
 
 /** @param {DOMMatrix|null|undefined} ctm */
@@ -436,7 +439,7 @@ export class WhatimadoMap extends HTMLElement {
     if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
     }
-    /* Landing silhouette until the first prompt resets to the YOU hub. */
+    /* Path Example until the first prompt resets to the YOU + conversation spine. */
     if (!graphStore.nodes.some((node) => node.type === "start" && node.id === "start")) {
       this.loadAmbientLiveGraph();
     }
@@ -595,14 +598,18 @@ export class WhatimadoMap extends HTMLElement {
     if (this._ghostLayer) this._ghostLayer.innerHTML = "";
   }
 
-  /** Floating nodes on load — edges live on the live layer so they persist after ghost dismiss */
+  /** Landing Path Example: YOU + default spokes + a sample selected roadmap in the menu→prompt band. */
   loadAmbientLiveGraph() {
-    this._liveNodes = GHOST_GRAPH.nodes;
-    this._anchorId = "ghost-start";
-    this._renderLayer(this._liveLayer, GHOST_GRAPH.nodes, GHOST_GRAPH.edges, {
-      layer: "live"
+    showPathExample();
+    this._anchorId = "start";
+    this.syncLiveFromStore();
+    this.setSelectedNode?.(PATH_EXAMPLE_ID);
+    this.setFocusedNode?.(PATH_EXAMPLE_ID);
+    requestAnimationFrame(() => {
+      /* Open-home uses menu→Path Finder framing; after chat, syncSnapCamera owns the band. */
+      if (isOpenHomePhase()) this.syncFrameGravity({ animate: false });
+      else this.syncSnapCamera({ force: true, animate: false });
     });
-    this._applyAnchorStyles();
   }
 
   _syncLinkButton() {
