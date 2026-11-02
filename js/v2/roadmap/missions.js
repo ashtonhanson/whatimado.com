@@ -347,8 +347,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
               .map((mission, missionIndex) => {
                 const draft = byTitle.get(mission.title);
                 const action = draft
-                  ? `<button type="button" class="v2-draft-open" data-draft-id="${escapeHtml(draft.id)}">${escapeHtml(draft.label)}</button>`
-                  : "";
+                  ? `<button type="button" class="v2-draft-open v2-mission__ctrl v2-mission__ctrl--left" data-draft-id="${escapeHtml(draft.id)}">${escapeHtml(draft.label)}</button>`
+                  : `<span class="v2-mission__ctrl v2-mission__ctrl--left v2-mission__ctrl--spacer" aria-hidden="true"></span>`;
                 const resources = renderResourcesAccordion({
                   id: `task-resources-${index}-${missionIndex}`,
                   resources: resourcesForTask(mission.resources, sharedResources),
@@ -426,11 +426,11 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                         <div class="v2-mission__foot">
                           <div class="v2-mission__controls">
                             ${action}
-                            <button type="button" class="v2-mission-action v2-circle-back-toggle" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
-                            <button type="button" class="v2-mission-action v2-difficulty" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
-                            <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
+                            <button type="button" class="v2-mission-action v2-circle-back-toggle v2-mission__ctrl v2-mission__ctrl--right" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
+                            <button type="button" class="v2-mission-action v2-difficulty v2-mission__ctrl v2-mission__ctrl--left" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
                             ${renderMissionChatOpenButton(id)}
                           </div>
+                          <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
                           ${renderMissionChatDrawer(id, mission.title)}
                           ${circlePanel}
                         </div>

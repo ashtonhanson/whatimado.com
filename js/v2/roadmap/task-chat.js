@@ -425,7 +425,7 @@ export function createTaskChatController(ui) {
 
 export function renderMissionChatOpenButton(missionId) {
   return `
-    <button type="button" class="v2-mission-chat-open" data-mission-chat-open="${escapeHtml(missionId)}" aria-label="Chat about this task">
+    <button type="button" class="v2-mission-chat-open v2-mission__ctrl v2-mission__ctrl--right" data-mission-chat-open="${escapeHtml(missionId)}" aria-label="Chat about this task">
       ${CHAT_ICON}
       <span class="v2-mission-chat-open__label">Chat</span>
     </button>`;
