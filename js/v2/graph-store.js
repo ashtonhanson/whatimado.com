@@ -79,6 +79,44 @@ export function shortenMapLabel(value) {
   return (kept.length ? kept : words).slice(0, 2).join(" ");
 }
 
+/**
+ * Short title for the first prompt node on the conversation spine.
+ * Prefers the trailing goal phrase ("mobile pet grooming") over lead-in words.
+ * @param {string} value
+ */
+export function promptMapLabel(value) {
+  let text = String(value || "")
+    .replace(/[/|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return "Goal";
+  text = text
+    .replace(
+      /^(i\s+(want\s+to|would\s+like\s+to|need\s+to|am\s+trying\s+to|am\s+looking\s+(to|for)|hope\s+to)\s+)/i,
+      ""
+    )
+    .replace(/^(i'?m\s+(interested\s+in|into|starting|building|launching)\s+)/i, "")
+    .replace(/^(looking\s+(to|for)\s+)/i, "")
+    .trim();
+  const words = text
+    .split(/\s+/)
+    .map((word) => word.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, ""))
+    .filter(Boolean)
+    .filter((word) => !MAP_LABEL_SKIP.has(word.toLowerCase()));
+  if (!words.length) return "Goal";
+  let useful = words;
+  if (/^(business|job|career|work|company|sidehustle)$/i.test(useful[useful.length - 1])) {
+    useful = useful.slice(0, -1);
+  }
+  useful = useful.filter((word) => !/^(start|starting|own|my)$/i.test(word));
+  if (!useful.length) useful = words;
+  const take = useful.length >= 3 ? useful.slice(-3) : useful.slice(-2);
+  return (take.length ? take : words.slice(-2)).join(" ");
+}
+
+/** First node on the horizontal conversation path from YOU. */
+export const CONVO_PROMPT_ID = "convo-prompt";
+
 /** Phone map titles stay one short word when two words would run off the screen. */
 export function mapNodeLabel(value, { compact = false } = {}) {
   const short = shortenMapLabel(value);
@@ -189,7 +227,14 @@ export function appendAdvisorPaths(paths) {
     added.push(node);
   });
 
-  if (possibilityNodes && branchChosenId && added.length) showRoadmapBranch(branchChosenId);
+  if (
+    possibilityNodes &&
+    branchChosenId &&
+    branchChosenId !== CONVO_PROMPT_ID &&
+    added.length
+  ) {
+    showRoadmapBranch(branchChosenId);
+  }
   return added;
 }
 
@@ -271,6 +316,17 @@ function rememberPossibilities() {
   if (possibilityNodes) return;
   possibilityNodes = graphStore.nodes.map((node) => ({ ...node }));
   possibilityEdges = graphStore.edges.map((edge) => ({ ...edge }));
+}
+
+/** Snapshot the path constellation so the live map can show the conversation spine instead. */
+export function snapshotPossibilityMap() {
+  rememberPossibilities();
+}
+
+/** Path cards and selection read shelved possibilities while the conversation spine is live. */
+export function listedPathNodes() {
+  const source = possibilityNodes || graphStore.nodes;
+  return source.filter((node) => node.type === "path");
 }
 
 export function restorePossibilityMap() {
@@ -881,6 +937,77 @@ export function showRoadmapBranch(pathId, stages = null) {
     placeUnlinkedBranch(nodes, chosenSource.id);
   }
 
+  graphStore.nodes = nodes;
+  graphStore.edges = edges;
+}
+
+/**
+ * YOU hub + default spokes, with the first prompt on the horizontal selected path
+ * and conversation topics continuing that line (no + / goal yet).
+ * @param {{ promptTitle: string, topics?: string[] }} spec
+ */
+export function showConversationSpine(spec) {
+  const promptTitle = String(spec?.promptTitle || "").trim() || "Goal";
+  const topics = Array.isArray(spec?.topics)
+    ? spec.topics.map((topic) => String(topic || "").trim()).filter(Boolean).slice(0, 8)
+    : [];
+
+  /** @type {GraphNode[]} */
+  const spokes = [
+    {
+      id: CONVO_PROMPT_ID,
+      type: "path",
+      label: shortenMapLabel(promptTitle) || promptTitle,
+      title: promptTitle,
+      accent: pathAccentForIndex(0)
+    }
+  ];
+  [...EXPLORE_OPTIONS, ...extraExploreOptions].forEach((option) => {
+    if (spokes.some((node) => node.id === option.id)) return;
+    spokes.push({
+      id: option.id,
+      type: "action",
+      label: option.label,
+      title: option.label
+    });
+  });
+
+  const ordered = [...spokes].sort((a, b) => a.id.localeCompare(b.id));
+  ordered.forEach((node, index) => {
+    node.homeAngle = angleFor(node.id, index, ordered.length);
+  });
+
+  /** @type {GraphNode[]} */
+  const nodes = [{ id: "start", type: "start", label: "You", title: "You", x: 0.5, y: 0.76 }];
+  /** @type {GraphEdge[]} */
+  const edges = [];
+  spokes.forEach((node) => {
+    nodes.push({ ...node });
+    edges.push({ from: "start", to: node.id });
+  });
+
+  let attachId = CONVO_PROMPT_ID;
+  topics.forEach((topic, index) => {
+    const id = `convo-topic-${index + 1}`;
+    nodes.push({
+      id,
+      type: "mission",
+      label: shortenMapLabel(topic) || topic,
+      title: topic,
+      chainIndex: index,
+      stageIndex: index,
+      parentId: attachId
+    });
+    edges.push({ from: attachId, to: id });
+    attachId = id;
+  });
+
+  /* Keep branchChosenId clear so path-card "more" does not rebuild a roadmap branch. */
+  branchChosenId = null;
+  graphStore.selectedId = CONVO_PROMPT_ID;
+  graphStore.focusSpin = null;
+  placeLinkedBranch(nodes, 0, CONVO_PROMPT_ID);
+  graphStore.focusRotation = 0;
   graphStore.nodes = nodes;
   graphStore.edges = edges;
 }

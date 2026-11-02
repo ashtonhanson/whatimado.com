@@ -6,9 +6,11 @@ import { renderPathCards } from "../components/path-cards.js";
 import {
   appendAdvisorPaths,
   graphStore,
+  listedPathNodes,
   loadAdvisorPaths,
   MAX_PATH_NODES,
-  selectGraphNode
+  selectGraphNode,
+  snapshotPossibilityMap
 } from "../graph-store.js";
 import { buildSharedPromptContext, markPathsAcceptedForGoal, refreshGoalBrief } from "../state/goal-brief.js";
 import { trackEvent } from "../state/analytics.js";
@@ -24,7 +26,7 @@ import {
 } from "./ideas.js";
 
 function pathNodes() {
-  return graphStore.nodes.filter((node) => node.type === "path");
+  return listedPathNodes();
 }
 
 function contextBlock() {
@@ -54,11 +56,23 @@ function contextBlock() {
  *   setComposerEnabled: (enabled: boolean) => void,
  *   setPhasePossibilities: () => void,
  *   onSelectPath: (id: string, options?: { startConfirm?: boolean }) => void,
- *   onShowChat?: () => void
+ *   onShowChat?: () => void,
+ *   onPathsReady?: () => void
  * }} ui
  */
 export function createPathMapController(ui) {
-  const { messagesEl, pathCardsEl, mapEl, layout, flush, setComposerEnabled, setPhasePossibilities, onSelectPath, onShowChat } = ui;
+  const {
+    messagesEl,
+    pathCardsEl,
+    mapEl,
+    layout,
+    flush,
+    setComposerEnabled,
+    setPhasePossibilities,
+    onSelectPath,
+    onShowChat,
+    onPathsReady
+  } = ui;
   let moreBusy = false;
   let regenBusy = false;
   function pathStatusEl() {
@@ -122,9 +136,10 @@ export function createPathMapController(ui) {
 
   function applyIdeasToMap(ideas, { keepSelectedId = appStore.journey.selectedPathId } = {}) {
     loadAdvisorPaths(ideas, { keepSelectedId });
-    mapEl?.syncLiveFromStore();
-    if (graphStore.selectedId) mapEl?.setSelectedNode(graphStore.selectedId);
+    snapshotPossibilityMap();
     markPathsAcceptedForGoal(appStore.journey);
+    /* Live map keeps the conversation spine; path cards read shelved possibilities. */
+    onPathsReady?.();
     setPhasePossibilities();
     render();
     layout();
@@ -180,17 +195,17 @@ export function createPathMapController(ui) {
       const { intro, ideas } = await requestIdeas({ count, mode: "generate", feature: "v2_paths" });
       if (serial !== appStore.journey.pathsGenerationSerial) return;
       typingEl?.remove();
+      appStore.journey.pathsGenerated = true;
       applyIdeasToMap(ideas.slice(0, count), { keepSelectedId: null });
       pushAdvisor(intro, { skipScroll: true, head: true });
       closeIntakeThread();
-      appStore.journey.pathsGenerated = true;
       appStore.journey.mapChatType = null;
       appStore.journey.mapChatPathId = null;
       touchJourney();
       flush();
       trackEvent("map_generated", { paths: ideas.length });
       scrollFrameChildIntoView(possibilitiesEl());
-      /* Drop the full-stage typing sheet; map stays hidden until a path is chosen. */
+      /* Drop the full-stage typing sheet; conversation spine stays on the map. */
       document.body.classList.remove("is-chat-full-stage");
       const frame = document.getElementById("dynamic-frame");
       frame?._dock?.releaseMobileComposerFocus?.();
