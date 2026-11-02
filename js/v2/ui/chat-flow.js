@@ -16,20 +16,11 @@ import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ, SNAP } from "../dock/constants.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
-import { buildSharedPromptContext, invalidateDownstreamWork, refreshGoalBrief } from "../state/goal-brief.js";
+import { buildSharedPromptContext, refreshGoalBrief } from "../state/goal-brief.js";
 import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
-import { formatUserLocation, parseLocationAnswer } from "../state/location.js";
-import { setUserProfileField } from "../state/user-profile.js";
+import { formatUserLocation } from "../state/location.js";
 import { applyPrefsToStore } from "../state/prefs.js";
 import { trackEvent } from "../state/analytics.js";
-import { hideIntakeChips, renderIntakeChips } from "../components/profile-chips.js";
-import {
-  deriveIntakeFactNodes,
-  intakeFactDefForId,
-  isIntakeFactId
-} from "../map/intake-facts.js";
-import { getChipStep, INTAKE_STEP } from "../intake/profile-chips.js";
-import { isFounderOrProjectPrompt } from "../intake/clarifying.js";
 import {
   activeAccountRoadmap,
   bindPersistLifecycle,
@@ -52,6 +43,7 @@ import {
 import { authState, onAuthChange } from "../state/auth.js";
 import { analyticsPageAllowed } from "../state/home-access.js";
 import { readSession } from "../state/guest-account.js";
+import { INTAKE_STEP } from "../intake/profile-chips.js";
 import { closeActivePageIfOpen } from "./pages.js";
 import { journeyHasActiveWork, newMapConfirmMessage } from "./journey-work.js";
 import { confirmStartNewMap } from "./new-map-dialog.js";
@@ -209,26 +201,31 @@ export function initChatFlow(ctx) {
     );
   }
 
-  /** Intake answers + phase markers on the horizontal path from the first prompt. */
+  /** Main conversation themes that grow the horizontal path from the first prompt. */
   function deriveConversationTopics() {
-    return deriveIntakeFactNodes(appStore.profile, appStore.location, appStore.journey);
+    const journey = appStore.journey;
+    const steps = new Set(journey.completedIntakeSteps || []);
+    const current = journey.profileIntakeStep;
+    const touched = (step) => steps.has(step) || current === step;
+    /** @type {string[]} */
+    const topics = [];
+    if (touched(INTAKE_STEP.TRANSPORT)) topics.push("Transportation");
+    if (touched(INTAKE_STEP.ID)) topics.push("ID");
+    if (touched(INTAKE_STEP.HOUSING)) topics.push("Shelter");
+    if (
+      touched(INTAKE_STEP.SKILLS) ||
+      touched(INTAKE_STEP.WORK_MODE) ||
+      touched(INTAKE_STEP.FOUNDER) ||
+      touched(INTAKE_STEP.BUSINESS_SETUP)
+    ) {
+      topics.push("Skills");
+    }
+    if (journey.pathsGenerated) topics.push("Possibility Maps");
+    if (journey.planConfirmed || (journey.missionsStages || []).length) topics.push("Missions");
+    return topics;
   }
 
-  function topicsSignature(topics) {
-    return JSON.stringify(
-      (topics || []).map((topic) => [
-        topic.id || "",
-        topic.label || "",
-        topic.title || topic.value || "",
-        topic.editable ? 1 : 0
-      ])
-    );
-  }
-
-  /** @type {{ key: string, mode: "chips"|"text"|"location"|"prompt" } | null} */
-  let pendingFactEdit = null;
-
-  function paintConversationMap({ fit = false, selectId = CONVO_PROMPT_ID } = {}) {
+  function paintConversationMap({ fit = false } = {}) {
     const label = appStore.journey.mapPromptLabel;
     if (!label || appStore.journey.planConfirmed) return;
     syncExploreOptions();
@@ -236,12 +233,7 @@ export function initChatFlow(ctx) {
     appStore.journey.mapTopics = topics;
     showConversationSpine({ promptTitle: label, topics });
     mapEl?.syncLiveFromStore();
-    if (selectId && graphStore.nodes.some((node) => node.id === selectId)) {
-      mapEl?.setSelectedNode?.(selectId);
-      mapEl?.setFocusedNode?.(selectId);
-    } else {
-      mapEl?.setSelectedNode?.(CONVO_PROMPT_ID);
-    }
+    mapEl?.setSelectedNode?.(CONVO_PROMPT_ID);
     if (fit) {
       window.setTimeout(() => {
         mapEl?.syncSnapCamera({ force: true, animate: true });
@@ -253,7 +245,7 @@ export function initChatFlow(ctx) {
     if (!appStore.journey.mapPromptLabel || appStore.journey.planConfirmed) return;
     const next = deriveConversationTopics();
     const prev = appStore.journey.mapTopics || [];
-    if (topicsSignature(next) === topicsSignature(prev)) return;
+    if (next.length === prev.length && next.every((topic, index) => topic === prev[index])) return;
     appStore.journey.mapTopics = next;
     paintConversationMap();
     touchJourney();
@@ -267,236 +259,6 @@ export function initChatFlow(ctx) {
     syncExploreOptions();
     paintConversationMap({ fit: true });
     touchJourney();
-  }
-
-  function clearPendingFactEdit() {
-    pendingFactEdit = null;
-    hideIntakeChips(messagesEl);
-  }
-
-  /**
-   * @param {{ category: string, affectsPaths: boolean }} fact
-   */
-  async function confirmFactRipple(fact) {
-    const hasMissions = Boolean(appStore.journey.planConfirmed || (appStore.journey.missionsStages || []).length);
-    const hasPaths = Boolean(appStore.journey.pathsGenerated);
-    if (!hasPaths && !hasMissions) return true;
-    const ripple = hasMissions
-      ? "Possibility maps, missions, and tasks that depended on the old answer may regenerate."
-      : "Possibility maps that depended on the old answer may regenerate.";
-    return confirmStartNewMap({
-      title: `Update ${fact.category}?`,
-      message: `Save the new ${fact.category.toLowerCase()} answer? ${ripple}`,
-      confirmLabel: "Update and refresh",
-      cancelLabel: "Keep current",
-      returnFocus: frameEl?.composerInput || null
-    });
-  }
-
-  /**
-   * @param {import("../map/intake-facts.js").IntakeFactDef | { key: string, category: string, affectsPaths: boolean }} fact
-   * @param {string} value
-   * @param {{ display?: string }} [options]
-   */
-  async function applyEditedFact(fact, value, options = {}) {
-    const nextValue = String(value || "").trim();
-    if (!nextValue) return false;
-    if (fact.affectsPaths) {
-      const ok = await confirmFactRipple(fact);
-      if (!ok) return false;
-    }
-
-    const hadMissions = Boolean(appStore.journey.planConfirmed || (appStore.journey.missionsStages || []).length);
-    const hadPaths = Boolean(appStore.journey.pathsGenerated);
-
-    if (fact.key === "location") {
-      const parsed = parseLocationAnswer(nextValue);
-      appStore.location = parsed.city || parsed.region || parsed.country ? parsed : { ...parsed, raw: nextValue };
-      appStore.journey.locationConfirmed = true;
-    } else if (fact.key === "prompt") {
-      appStore.journey.mapPromptLabel = promptMapLabel(nextValue) || nextValue.slice(0, 48);
-    } else if (fact.field) {
-      appStore.profile = setUserProfileField(appStore.profile, fact.field, nextValue);
-    }
-
-    const brief = refreshGoalBrief(appStore.journey, appStore.profile, appStore.location, {
-      latestUserText: `Correction: ${fact.category} is now ${options.display || nextValue}`
-    });
-    appStore.profile = brief.profile;
-
-    if (hadMissions || hadPaths) {
-      invalidateDownstreamWork(appStore.journey);
-      missions.clear();
-      appStore.journey.selectedPathId = null;
-      appStore.journey.roadmapPathId = null;
-      confirmGate.hide();
-    }
-
-    clearPendingFactEdit();
-    paintConversationMap({
-      fit: true,
-      selectId: fact.key === "prompt" ? CONVO_PROMPT_ID : `convo-fact-${fact.key}`
-    });
-    touchJourney();
-    flushPersist();
-
-    const thread = continuationThread(messagesEl) || messagesEl;
-    if (thread) {
-      appendMessage(
-        thread,
-        "advisor",
-        hadPaths || hadMissions
-          ? `Updated ${fact.category.toLowerCase()} to “${options.display || nextValue}”. Refreshing what depended on it.`
-          : `Updated ${fact.category.toLowerCase()} to “${options.display || nextValue}”.`
-      );
-    }
-
-    if (hadPaths || hadMissions) {
-      appStore.journey.pathsGenerated = false;
-      await pathMap.generate();
-    } else {
-      layout();
-    }
-    return true;
-  }
-
-  function startFactChipEdit(def) {
-    if (!def.step || !messagesEl) return;
-    const founder = isFounderOrProjectPrompt(
-      appStore.journey.messages.find((turn) => turn.role === "user")?.content || ""
-    );
-    const spec = getChipStep(def.step, { founder });
-    if (!spec?.options?.length) {
-      pendingFactEdit = { key: def.key, mode: "text" };
-      appendMessage(
-        continuationThread(messagesEl) || messagesEl,
-        "advisor",
-        `What should I use for ${def.category.toLowerCase()} instead? Type the corrected answer.`
-      );
-      frameEl?.focusComposer?.({ glideOnMobile: true });
-      return;
-    }
-    pendingFactEdit = { key: def.key, mode: "chips" };
-    hideIntakeChips(messagesEl);
-    appendMessage(
-      continuationThread(messagesEl) || messagesEl,
-      "advisor",
-      `Update ${def.category.toLowerCase()}. Pick a new answer below, or type it.`
-    );
-    renderIntakeChips(messagesEl, {
-      options: spec.options,
-      multiple: Boolean(spec.multiple),
-      exclusiveValues: spec.exclusiveValues,
-      onSelect: (option) => {
-        void applyEditedFact(def, option.value, { display: option.label });
-      }
-    });
-    layout();
-    scrollFrameChildIntoView(messagesEl, { toEnd: true });
-  }
-
-  function beginIntakeFactEdit(nodeId) {
-    if (nodeId === CONVO_PROMPT_ID) {
-      pendingFactEdit = { key: "prompt", mode: "prompt" };
-      hideIntakeChips(messagesEl);
-      appendMessage(
-        continuationThread(messagesEl) || messagesEl,
-        "advisor",
-        "What should this first path node say instead? Type a short corrected goal."
-      );
-      frameEl?.focusComposer?.({ glideOnMobile: true });
-      return;
-    }
-    const def = intakeFactDefForId(nodeId);
-    if (!def) return;
-    if (def.key === "location") {
-      pendingFactEdit = { key: "location", mode: "location" };
-      hideIntakeChips(messagesEl);
-      appendMessage(
-        continuationThread(messagesEl) || messagesEl,
-        "advisor",
-        "Type your corrected place — for example “Austin, Texas” or “Austin, TX, USA”."
-      );
-      frameEl?.focusComposer?.({ glideOnMobile: true });
-      return;
-    }
-    if (def.key === "name" || def.key === "skills") {
-      pendingFactEdit = { key: def.key, mode: "text" };
-      hideIntakeChips(messagesEl);
-      appendMessage(
-        continuationThread(messagesEl) || messagesEl,
-        "advisor",
-        def.key === "name"
-          ? "What name should I use instead?"
-          : "What skills or background should I use instead? Type a short correction."
-      );
-      frameEl?.focusComposer?.({ glideOnMobile: true });
-      return;
-    }
-    startFactChipEdit(def);
-  }
-
-  /** @param {string} text */
-  async function handlePendingFactEdit(text) {
-    if (!pendingFactEdit) return false;
-    const pending = pendingFactEdit;
-    if (pending.mode === "prompt") {
-      return applyEditedFact({ key: "prompt", category: "Goal", affectsPaths: true, field: null, step: null, id: CONVO_PROMPT_ID }, text);
-    }
-    if (pending.key === "location") {
-      return applyEditedFact(
-        { key: "location", category: "Location", affectsPaths: true, field: null, step: null, id: "convo-fact-location" },
-        text,
-        { display: text }
-      );
-    }
-    const def = intakeFactDefForId(`${pending.key === "name" ? "convo-fact-name" : `convo-fact-${pending.key}`}`);
-    if (!def) {
-      clearPendingFactEdit();
-      return false;
-    }
-    if (pending.mode === "chips") {
-      const founder = isFounderOrProjectPrompt(
-        appStore.journey.messages.find((turn) => turn.role === "user")?.content || ""
-      );
-      const spec = getChipStep(def.step || "", { founder });
-      const match = spec?.options?.find(
-        (option) =>
-          option.label.toLowerCase() === text.toLowerCase() ||
-          option.value.toLowerCase() === text.toLowerCase()
-      );
-      if (match) return applyEditedFact(def, match.value, { display: match.label });
-    }
-    return applyEditedFact(def, text, { display: text });
-  }
-
-  function reflectIntakeFact(node) {
-    const host = document.getElementById("messages-tail") || messagesEl;
-    if (!host || !node) return;
-    let note = document.getElementById("map-focus-note");
-    if (!note) {
-      note = document.createElement("article");
-      note.id = "map-focus-note";
-      note.className = "v2-map-focus v2-text-box v2-text-box--chrome";
-      host.appendChild(note);
-    }
-    const def = intakeFactDefForId(node.id);
-    const editable = node.id === CONVO_PROMPT_ID || Boolean(def);
-    const category =
-      node.id === CONVO_PROMPT_ID ? "Goal" : def?.category || node.label || "Detail";
-    note.innerHTML = `
-      <p class="v2-map-focus__kicker">What I know</p>
-      <h3>${escapeHtml(category)}</h3>
-      <p>${escapeHtml(node.title || node.label || "")}</p>
-      ${
-        editable
-          ? `<div class="v2-map-focus__actions"><button type="button" data-edit-fact="${escapeHtml(node.id)}">Edit this answer</button></div>`
-          : ""
-      }`;
-    note.querySelector("[data-edit-fact]")?.addEventListener("click", () => {
-      beginIntakeFactEdit(node.id);
-    });
-    scrollFrameChildIntoView(note);
   }
 
   function renderPathCards() {
@@ -813,11 +575,9 @@ export function initChatFlow(ctx) {
       listedPathNodes().find((n) => n.id === nodeId) ||
       null;
     if (!node || node.type === "start" || node.type === "goal") return;
-    if (node.id === CONVO_PROMPT_ID || isIntakeFactId(nodeId) || String(nodeId).startsWith("convo-phase-")) {
+    if (node.id === CONVO_PROMPT_ID) {
       mapEl?.setFocusedNode(nodeId);
-      mapEl?.setSelectedNode?.(nodeId);
-      if (isIntakeFactId(nodeId) || node.id === CONVO_PROMPT_ID) reflectIntakeFact(node);
-      else reflectNodeInChat(node);
+      reflectNodeInChat(node);
       return;
     }
     if (node.type === "more") {
@@ -1235,22 +995,6 @@ export function initChatFlow(ctx) {
     dismissGhostMap();
     if (isPreRoadmapCompose()) ensureTypingFullStage();
     setComposerEnabled(false);
-
-    if (pendingFactEdit) {
-      const thread = continuationThread(messagesEl);
-      appendMessage(thread, "user", trimmed);
-      appStore.journey.messages.push({ role: "user", content: trimmed });
-      appStore.journey.turnCount += 1;
-      touchJourney();
-      flushPersist();
-      layout();
-      try {
-        const handled = await handlePendingFactEdit(trimmed);
-        if (handled) return;
-      } finally {
-        setComposerEnabled(true);
-      }
-    }
 
     const firstPromptForMap = !appStore.journey.mapPromptLabel;
 
