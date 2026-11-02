@@ -1063,27 +1063,33 @@ body.v2-app .v2-timeline__stop.is-bypassed {
   max-width: 100%;
 }
 
-/* The hit area stays 2.25rem; the glyph is pinned to its top-right so it reads as the card corner. */
+/* Same top-right corner on every task; glyph is 3× the prior size with top/right padding. */
 .v2-mission__delete {
   position: absolute;
-  top: 0.2rem;
-  right: 0.28rem;
+  top: 0.45rem;
+  right: 0.5rem;
   z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  height: auto;
+  width: 2.75rem;
+  height: 2.75rem;
   margin: 0;
-  padding: 0.1rem;
+  padding: 0.35rem 0.4rem 0.15rem 0.15rem;
   border: none;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   color: var(--v2-text-muted);
-  font-size: 1.25rem;
+  font-size: 3.75rem;
   line-height: 1;
   cursor: pointer;
+}
+
+.v2-mission__delete > span {
+  display: block;
+  line-height: 0.75;
+  transform: translateY(-0.08em);
 }
 
 .v2-mission__delete:hover {
@@ -1099,8 +1105,8 @@ body.v2-app .v2-timeline__stop.is-bypassed {
   position: relative;
   min-width: 0;
   max-width: 100%;
-  padding-top: 0.15rem;
-  padding-right: 1.65rem;
+  padding-top: 0.35rem;
+  padding-right: 3.25rem;
 }
 
 .v2-mission__foot {

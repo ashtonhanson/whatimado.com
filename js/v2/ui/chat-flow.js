@@ -46,7 +46,7 @@ import { createPathMapController } from "../map/session.js";
 import { createConfirmGateController } from "../roadmap/session.js";
 import { createMissionsController } from "../roadmap/missions.js";
 import { applyStructuredMissionUpdate, buildDifficultyPrompt, fallbackDifficultyUpdate, parseDifficultyUpdate } from "../roadmap/difficulty.js";
-import { pushRoadmapUndo } from "../roadmap/roadmap-undo.js";
+import { canRoadmapUndo, pushRoadmapUndo } from "../roadmap/roadmap-undo.js";
 import { createDraftsController } from "../roadmap/drafts.js";
 import { createTaskChatController } from "../roadmap/task-chat.js";
 import { highlightIdsForChatFocus, hoverChatTargetId, resolveMapNodeActivation } from "../roadmap/map-chat-focus.js";
@@ -810,12 +810,26 @@ export function initChatFlow(ctx) {
     }
   }
 
+  function syncChatUndoButtons() {
+    const enabled = canRoadmapUndo(appStore.journey);
+    document.querySelectorAll("[data-mission-undo]").forEach((button) => {
+      if (!(button instanceof HTMLButtonElement)) return;
+      button.disabled = !enabled;
+      button.setAttribute("aria-disabled", enabled ? "false" : "true");
+      button.classList.toggle("is-ready", enabled);
+    });
+  }
+
   /** @param {number} index @param {string} text */
   async function applyEditedUserMessage(index, text) {
     const trimmed = text.trim();
     if (!trimmed) return;
     const turn = appStore.journey.messages[index];
     if (!turn || turn.role !== "user") return;
+
+    /* Snapshot pre-edit chat so Undo restores the statement they changed by mistake. */
+    pushRoadmapUndo(appStore.journey, { kind: "chat" });
+    syncChatUndoButtons();
 
     appStore.journey.messages[index] = { ...turn, content: trimmed };
     appStore.journey.messages = appStore.journey.messages.slice(0, index + 1);
@@ -1336,6 +1350,13 @@ export function initChatFlow(ctx) {
   frameEl?.addEventListener("composer-submit", (event) => {
     const detail = /** @type {CustomEvent<{ text: string }>} */ (event).detail;
     void handleSubmit(detail?.text || "");
+  });
+
+  document.addEventListener("roadmap-undo-restored", () => {
+    rebuildMessagesDom();
+    layout();
+    syncChatUndoButtons();
+    flushPersist();
   });
 
   frameEl?.addEventListener("click", (event) => {

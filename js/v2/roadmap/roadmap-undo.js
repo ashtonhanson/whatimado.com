@@ -5,7 +5,10 @@ import { reconcileResourceDraftStamps } from "./drafts.js";
  *   missionsStages: unknown[],
  *   missionDrafts: unknown[],
  *   taskChats: Record<string, unknown>,
- *   focusMissionId: string | null
+ *   focusMissionId: string | null,
+ *   messages?: unknown[],
+ *   threadBreak?: number | null,
+ *   kind?: "roadmap" | "chat"
  * }} RoadmapUndoSnapshot */
 
 export const ROADMAP_UNDO_MAX = 25;
@@ -17,23 +20,28 @@ function clone(value) {
 
 /**
  * @param {import("../state/journey.js").Journey} journey
+ * @param {{ kind?: "roadmap" | "chat" }} [options]
  * @returns {RoadmapUndoSnapshot}
  */
-export function snapshotRoadmapState(journey) {
+export function snapshotRoadmapState(journey, options = {}) {
   return {
+    kind: options.kind || "roadmap",
     missionsStages: clone(journey.missionsStages || []),
     missionDrafts: clone(journey.missionDrafts || []),
     taskChats: clone(journey.taskChats || {}),
-    focusMissionId: typeof journey.focusMissionId === "string" ? journey.focusMissionId : null
+    focusMissionId: typeof journey.focusMissionId === "string" ? journey.focusMissionId : null,
+    messages: clone(journey.messages || []),
+    threadBreak: Number.isInteger(journey.threadBreak) ? journey.threadBreak : null
   };
 }
 
 /**
  * @param {import("../state/journey.js").Journey} journey
+ * @param {{ kind?: "roadmap" | "chat" }} [options]
  */
-export function pushRoadmapUndo(journey) {
+export function pushRoadmapUndo(journey, options = {}) {
   if (!Array.isArray(journey.roadmapUndoStack)) journey.roadmapUndoStack = [];
-  journey.roadmapUndoStack.push(snapshotRoadmapState(journey));
+  journey.roadmapUndoStack.push(snapshotRoadmapState(journey, options));
   if (journey.roadmapUndoStack.length > ROADMAP_UNDO_MAX) journey.roadmapUndoStack.shift();
 }
 
@@ -67,7 +75,7 @@ function reconcileDraftsAfterRestore(journey, drafts) {
 
 /**
  * @param {import("../state/journey.js").Journey} journey
- * @returns {{ ok: true } | { ok: false, reason: string }}
+ * @returns {{ ok: true, kind: "roadmap" | "chat" } | { ok: false, reason: string }}
  */
 export function popRoadmapUndo(journey) {
   const stack = journey.roadmapUndoStack;
@@ -80,5 +88,11 @@ export function popRoadmapUndo(journey) {
   journey.focusMissionId = snap.focusMissionId || null;
   journey.missionDrafts = reconcileDraftsAfterRestore(journey, snap.missionDrafts);
   journey.missionResources = reconcileResourceDraftStamps(journey);
-  return { ok: true };
+  if (Array.isArray(snap.messages)) {
+    journey.messages = clone(snap.messages) || [];
+  }
+  if (snap.threadBreak === null || Number.isInteger(snap.threadBreak)) {
+    journey.threadBreak = snap.threadBreak ?? null;
+  }
+  return { ok: true, kind: snap.kind || "roadmap" };
 }

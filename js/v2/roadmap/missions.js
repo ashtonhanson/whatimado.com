@@ -1,6 +1,7 @@
 import { appStore, touchJourney } from "../state/store.js";
 import { callAdvisor } from "../advisor.js";
 import { escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
+import { confirmStartNewMap } from "../ui/new-map-dialog.js";
 import { shouldBlockJobBoards, writingVoice } from "../intake/stability-gates.js";
 import { buildSharedPromptContext, markMissionsAcceptedForGoal } from "../state/goal-brief.js";
 import { formatUserLocation } from "../state/location.js";
@@ -396,8 +397,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                 const deleteLabel = `Delete task: ${mission.title || "Task"}`;
                 return `
                   <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
-                    <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                     <div class="v2-mission__panel">
+                      <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                       <div class="v2-mission__content">
                         <div class="v2-mission__head">
                           <div class="v2-mission__head-main">
@@ -842,6 +843,7 @@ export function createMissionsController(ui) {
           }
         }
         if (mission) {
+          /* One snapshot before the edit so Undo restores the pre-edit task state. */
           pushRoadmapUndo(appStore.journey);
           applyCircleBack(mission, { reason, instructions, returnDate });
           circleBackEditorOpen.delete(saveId);
@@ -850,7 +852,6 @@ export function createMissionsController(ui) {
           flush();
           rerender();
           void (async () => {
-            pushRoadmapUndo(appStore.journey);
             appStore.journey.missionsStages = await rippleCircleBackNotes(appStore.journey, mission, stageLabel);
             touchJourney();
             flush();
@@ -890,8 +891,18 @@ export function createMissionsController(ui) {
         flush();
         const focus = appStore.journey.focusMissionId;
         rerender({ scroll: false });
+        syncUndoButtons();
         if (focus) focusMissionInUi(focus);
-        setNavFeedback("Restored the previous path state.");
+        document.dispatchEvent(
+          new CustomEvent("roadmap-undo-restored", {
+            detail: { kind: restored.kind || "roadmap" }
+          })
+        );
+        setNavFeedback(
+          restored.kind === "chat"
+            ? "Restored your previous chat edit."
+            : "Restored the previous path state."
+        );
         return;
       }
       const returnBtn = target?.closest("[data-mission-return]");
@@ -912,16 +923,25 @@ export function createMissionsController(ui) {
       const deleteBtn = target?.closest("[data-mission-delete]");
       const deleteId = deleteBtn?.getAttribute("data-mission-delete");
       if (deleteId) {
-        if (!window.confirm("Are you sure you want to delete this task?")) return;
-        const stages = appStore.journey.missionsStages || [];
-        pushRoadmapUndo(appStore.journey);
-        appStore.journey.missionsStages = deleteMissionFromStages(stages, deleteId);
-        const nextFocus = pickNextFocusAfterDelete(appStore.journey.missionsStages, deleteId);
-        appStore.journey.focusMissionId = nextFocus;
-        touchJourney();
-        flush();
-        rerender();
-        if (nextFocus) focusMissionInUi(nextFocus);
+        void (async () => {
+          const confirmed = await confirmStartNewMap({
+            title: "Delete this task?",
+            message: "Are you sure you want to delete this task?",
+            confirmLabel: "Yes",
+            cancelLabel: "No",
+            returnFocus: deleteBtn instanceof HTMLElement ? deleteBtn : null
+          });
+          if (!confirmed) return;
+          const stages = appStore.journey.missionsStages || [];
+          pushRoadmapUndo(appStore.journey);
+          appStore.journey.missionsStages = deleteMissionFromStages(stages, deleteId);
+          const nextFocus = pickNextFocusAfterDelete(appStore.journey.missionsStages, deleteId);
+          appStore.journey.focusMissionId = nextFocus;
+          touchJourney();
+          flush();
+          rerender();
+          if (nextFocus) focusMissionInUi(nextFocus);
+        })();
         return;
       }
     });
