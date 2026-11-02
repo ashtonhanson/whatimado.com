@@ -90,7 +90,8 @@ export function createPathMapController(ui) {
   function pushAdvisor(text, { skipScroll = false, head = false } = {}) {
     const thread = head ? messagesEl : threadEl();
     if (!thread) return;
-    appendMessage(thread, "advisor", text, { skipScroll });
+    const messageIndex = appStore.journey.messages.length;
+    appendMessage(thread, "advisor", text, { skipScroll, messageIndex });
     appStore.journey.messages.push({ role: "assistant", content: text });
     touchJourney();
     layout();
@@ -100,7 +101,8 @@ export function createPathMapController(ui) {
   function pushUser(text) {
     const thread = threadEl();
     if (!thread) return;
-    appendMessage(thread, "user", text);
+    const messageIndex = appStore.journey.messages.length;
+    appendMessage(thread, "user", text, { messageIndex, editable: true });
     appStore.journey.messages.push({ role: "user", content: text });
     appStore.journey.turnCount += 1;
     touchJourney();

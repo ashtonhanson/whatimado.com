@@ -1,7 +1,14 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
 import { graphStore, restorePossibilityMap, selectGraphNode, setExtraExploreOptions, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
-import { appendMessage, continuationThread, escapeHtml, scrollFrameChildIntoView, setStatusMessage } from "../ui.js";
+import {
+  appendMessage,
+  continuationThread,
+  escapeHtml,
+  scrollFrameChildIntoView,
+  setStatusMessage,
+  syncFrameHasChat
+} from "../ui.js";
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ, SNAP } from "../dock/constants.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
@@ -761,12 +768,122 @@ export function initChatFlow(ctx) {
     if (Number.isInteger(breakAt)) appStore.journey.messages = appStore.journey.messages.slice(0, breakAt);
   }
 
+  /** @type {number | null} */
+  let pendingEditIndex = null;
+
+  function clearPendingEdit() {
+    pendingEditIndex = null;
+    document.querySelectorAll(".v2-msg.is-editing").forEach((el) => el.classList.remove("is-editing"));
+    frameEl?.composerInput?.removeAttribute("data-editing-msg");
+  }
+
+  function rebuildMessagesDom() {
+    if (!messagesEl) return;
+    messagesEl.innerHTML = "";
+    const tailEl = document.getElementById("messages-tail");
+    if (tailEl) tailEl.innerHTML = "";
+    const journey = appStore.journey;
+    const breakAt = Number.isInteger(journey.threadBreak) ? journey.threadBreak : journey.messages.length;
+    journey.messages.forEach((turn, index) => {
+      const host = index < breakAt ? messagesEl : tailEl || messagesEl;
+      appendMessage(host, turn.role === "user" ? "user" : "advisor", turn.content, {
+        skipScroll: true,
+        messageIndex: index,
+        editable: turn.role === "user"
+      });
+    });
+    syncFrameHasChat();
+  }
+
+  /** @param {number} index */
+  function beginEditUserMessage(index) {
+    const turn = appStore.journey.messages[index];
+    if (!turn || turn.role !== "user") return;
+    pendingEditIndex = index;
+    document.querySelectorAll(".v2-msg.is-editing").forEach((el) => el.classList.remove("is-editing"));
+    document.querySelector(`.v2-msg[data-msg-index="${index}"]`)?.classList.add("is-editing");
+    if (frameEl?.composerInput) {
+      frameEl.composerInput.value = turn.content;
+      frameEl.composerInput.setAttribute("data-editing-msg", String(index));
+      frameEl.composerInput.focus({ preventScroll: true });
+      frameEl.focusComposer?.({ glideOnMobile: true });
+    }
+  }
+
+  /** @param {number} index @param {string} text */
+  async function applyEditedUserMessage(index, text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const turn = appStore.journey.messages[index];
+    if (!turn || turn.role !== "user") return;
+
+    appStore.journey.messages[index] = { ...turn, content: trimmed };
+    appStore.journey.messages = appStore.journey.messages.slice(0, index + 1);
+    if (Number.isInteger(appStore.journey.threadBreak) && appStore.journey.threadBreak > index + 1) {
+      appStore.journey.threadBreak = index + 1;
+    }
+    clearPendingEdit();
+    rebuildMessagesDom();
+    layout();
+    touchJourney();
+    flushPersist();
+
+    const thread = continuationThread(messagesEl);
+    setComposerEnabled(false);
+    const typingEl = appendMessage(thread, "advisor", "…", { typing: true });
+    layout();
+    try {
+      const reply = await callAdvisor(
+        buildExplorationPrompt(
+          appStore.journey.messages,
+          buildSharedPromptContext({
+            journey: appStore.journey,
+            profile: appStore.profile,
+            location: appStore.location
+          })
+        ),
+        { maxTokens: 450, feature: "v2_exploration" }
+      );
+      typingEl.remove();
+      const finalText = reply || "Thanks for the correction — what else should I adjust?";
+      const messageIndex = appStore.journey.messages.length;
+      appendMessage(thread, "advisor", finalText, { messageIndex });
+      appStore.journey.messages.push({ role: "assistant", content: finalText });
+      touchJourney();
+      flushPersist();
+      layout();
+    } catch (error) {
+      typingEl.remove();
+      const messageIndex = appStore.journey.messages.length;
+      appendMessage(
+        thread,
+        "advisor",
+        "I saved your edit, but could not refresh the reply. Send another message when you are ready.",
+        { messageIndex }
+      );
+      appStore.journey.messages.push({
+        role: "assistant",
+        content: "I saved your edit, but could not refresh the reply. Send another message when you are ready."
+      });
+      touchJourney();
+      flushPersist();
+      layout();
+      void error;
+    } finally {
+      setComposerEnabled(true);
+    }
+  }
+
   function seedHypotheticalChat() {
     if (!messagesEl) return;
 
     ensureJourneyStarted(appStore.journey);
     for (const turn of DEMO_CHAT) {
-      appendMessage(messagesEl, turn.role, turn.content);
+      const messageIndex = appStore.journey.messages.length;
+      appendMessage(messagesEl, turn.role, turn.content, {
+        messageIndex,
+        editable: turn.role === "user"
+      });
       appStore.journey.messages.push({
         role: turn.role === "user" ? "user" : "assistant",
         content: turn.content
@@ -789,12 +906,15 @@ export function initChatFlow(ctx) {
 
     const breakAt = Number.isInteger(journey.threadBreak) ? journey.threadBreak : journey.messages.length;
     const tailEl = document.getElementById("messages-tail");
-    journey.messages.slice(0, breakAt).forEach((turn) => {
-      appendMessage(messagesEl, turn.role === "user" ? "user" : "advisor", turn.content, { skipScroll: true });
+    journey.messages.forEach((turn, index) => {
+      const host = index < breakAt ? messagesEl : tailEl || messagesEl;
+      appendMessage(host, turn.role === "user" ? "user" : "advisor", turn.content, {
+        skipScroll: true,
+        messageIndex: index,
+        editable: turn.role === "user"
+      });
     });
-    journey.messages.slice(breakAt).forEach((turn) => {
-      appendMessage(tailEl || messagesEl, turn.role === "user" ? "user" : "advisor", turn.content, { skipScroll: true });
-    });
+    syncFrameHasChat();
 
     if (journey.ghostDismissed) {
       mapEl?.dismissGhost({ instant: true });
@@ -890,6 +1010,12 @@ export function initChatFlow(ctx) {
     cancelPendingComposerDraftSave();
     clearComposerDraft();
 
+    if (pendingEditIndex != null) {
+      const editIndex = pendingEditIndex;
+      await applyEditedUserMessage(editIndex, trimmed);
+      return;
+    }
+
     ensureJourneyStarted(appStore.journey);
     trackEvent("prompt_submitted");
     dismissGhostMap();
@@ -901,7 +1027,8 @@ export function initChatFlow(ctx) {
     }
 
     const thread = continuationThread(messagesEl);
-    appendMessage(thread, "user", trimmed);
+    const messageIndex = appStore.journey.messages.length;
+    appendMessage(thread, "user", trimmed, { messageIndex, editable: true });
     layout();
     appStore.journey.messages.push({ role: "user", content: trimmed });
     appStore.journey.turnCount += 1;
@@ -955,7 +1082,8 @@ export function initChatFlow(ctx) {
         );
         typingEl.remove();
         const finalText = reply || "I'm here — tell me a bit more about what you're hoping changes.";
-        appendMessage(thread, "advisor", finalText);
+        const advisorIndex = appStore.journey.messages.length;
+        appendMessage(thread, "advisor", finalText, { messageIndex: advisorIndex });
         layout();
         appStore.journey.messages.push({ role: "assistant", content: finalText });
         touchJourney();
@@ -974,10 +1102,12 @@ export function initChatFlow(ctx) {
         }
       } catch (error) {
         typingEl.remove();
+        const errIndex = appStore.journey.messages.length;
         appendMessage(
           thread,
           "advisor",
-          `I couldn't reach the advisor right now (${error?.message || "unknown error"}). Check your connection or OpenRouter balance.`
+          `I couldn't reach the advisor right now (${error?.message || "unknown error"}). Check your connection or OpenRouter balance.`,
+          { messageIndex: errIndex }
         );
         layout();
         flushPersist();
@@ -1010,7 +1140,8 @@ export function initChatFlow(ctx) {
 
     const thread = continuationThread(messagesEl);
     const ask = `I'm having difficulties with “${found.title}”. Help me make it smaller.`;
-    appendMessage(thread, "user", ask);
+    const askIndex = appStore.journey.messages.length;
+    appendMessage(thread, "user", ask, { messageIndex: askIndex, editable: true });
     appStore.journey.messages.push({ role: "user", content: ask });
     touchJourney();
     flushPersist();
@@ -1035,7 +1166,8 @@ export function initChatFlow(ctx) {
     }
     if (ticket !== difficultyTicket) return;
     typingEl.remove();
-    appendMessage(thread, "advisor", spoken);
+    const spokenIndex = appStore.journey.messages.length;
+    appendMessage(thread, "advisor", spoken, { messageIndex: spokenIndex });
     appStore.journey.messages.push({ role: "advisor", content: spoken });
     touchJourney();
 
@@ -1204,6 +1336,30 @@ export function initChatFlow(ctx) {
   frameEl?.addEventListener("composer-submit", (event) => {
     const detail = /** @type {CustomEvent<{ text: string }>} */ (event).detail;
     void handleSubmit(detail?.text || "");
+  });
+
+  frameEl?.addEventListener("click", (event) => {
+    const target = /** @type {HTMLElement | null} */ (event.target instanceof HTMLElement ? event.target : null);
+    if (!target) return;
+    const editBtn = target.closest("[data-edit-msg]");
+    if (editBtn instanceof HTMLElement) {
+      const index = Number.parseInt(editBtn.getAttribute("data-edit-msg") || "", 10);
+      if (Number.isInteger(index)) beginEditUserMessage(index);
+      return;
+    }
+    const clarifyBtn = target.closest(".v2-msg-check__clarify");
+    if (clarifyBtn instanceof HTMLElement) {
+      const ask =
+        clarifyBtn.closest(".v2-msg-check")?.querySelector(".v2-msg-check__ask")?.textContent?.trim() ||
+        "Here's the correction:";
+      if (frameEl.composerInput) {
+        const existing = frameEl.composerInput.value.trim();
+        frameEl.composerInput.value = existing || `Clarifying: `;
+        frameEl.composerInput.focus({ preventScroll: true });
+        frameEl.focusComposer?.({ glideOnMobile: true });
+      }
+      void ask;
+    }
   });
 
   frameEl?.addEventListener("frame-drag-start", () => {

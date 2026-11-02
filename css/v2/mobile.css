@@ -1092,13 +1092,24 @@
     min-height: 0;
   }
 
-  whatimado-frame.is-mobile-docked.is-mobile-typing:not(.is-mobile-reading) .whatimado-frame__body-wrap {
+  /* No transcript yet — collapse the body so the map stays visible while typing. */
+  whatimado-frame.is-mobile-docked.is-mobile-typing:not(.is-mobile-reading):not(.has-chat) .whatimado-frame__body-wrap {
     flex: 0 0 0;
     max-height: 0;
     min-height: 0;
     overflow: hidden;
     opacity: 0;
     pointer-events: none;
+  }
+
+  /* With chat history, keep a scrollable band above the composer so users can review/edit. */
+  whatimado-frame.is-mobile-docked.is-mobile-typing:not(.is-mobile-reading).has-chat .whatimado-frame__body-wrap {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 5.5rem;
+    overflow: hidden;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   /* Top / mid snaps — conversation fills between handle and floor-pinned composer */

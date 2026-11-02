@@ -43,7 +43,8 @@ export function createConfirmGateController(ui) {
   function pushAdvisor(text, { skipScroll = false } = {}) {
     const thread = continuationThread(messagesEl);
     if (!thread) return;
-    appendMessage(thread, "advisor", text, { skipScroll });
+    const messageIndex = appStore.journey.messages.length;
+    appendMessage(thread, "advisor", text, { skipScroll, messageIndex });
     appStore.journey.messages.push({ role: "assistant", content: text });
     touchJourney();
     layout();

@@ -136,6 +136,9 @@ whatimado-frame .whatimado-frame__body {
   min-height: 0;
   padding: 0.85rem clamp(0.85rem, 2.5vw, 1.25rem) var(--v2-composer-content-gap);
   padding-right: clamp(1.1rem, 2.8vw, 1.35rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   overscroll-behavior: contain;
   background: transparent;
@@ -482,6 +485,7 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   background: var(--v2-frame-glass-tint);
   color: #ffffff;
   border-radius: var(--v2-prompt-radius);
+  position: relative;
 }
 
 .v2-msg--advisor {
@@ -492,6 +496,80 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   color: var(--v2-text);
   background: transparent;
   backdrop-filter: none;
+}
+
+.v2-msg__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.35rem;
+}
+
+.v2-msg__edit {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  font: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.2rem 0.15rem;
+  min-height: 28px;
+}
+
+.v2-msg__edit:hover,
+.v2-msg__edit:focus-visible {
+  color: var(--v2-teal);
+  outline: none;
+}
+
+.v2-msg.is-editing {
+  outline: 1px solid color-mix(in srgb, var(--v2-teal) 55%, transparent);
+}
+
+.v2-msg-check {
+  margin-top: 0.7rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(46, 232, 214, 0.18);
+}
+
+.v2-msg-check__label {
+  margin: 0 0 0.3rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--v2-yellow, #f0d35a);
+}
+
+.v2-msg-check__off,
+.v2-msg-check__ask {
+  margin: 0 0 0.35rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--v2-text-muted);
+}
+
+.v2-msg-check__clarify {
+  appearance: none;
+  margin-top: 0.15rem;
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgba(46, 232, 214, 0.42);
+  border-radius: var(--v2-btn-radius);
+  background: transparent;
+  color: var(--v2-teal);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.v2-msg-check__clarify:hover,
+.v2-msg-check__clarify:focus-visible {
+  border-color: var(--v2-teal);
+  outline: none;
 }
 
 .v2-msg-label {

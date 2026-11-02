@@ -70,7 +70,8 @@ export function createIntakeController(ui) {
 
   function pushAdvisor(text) {
     if (!messagesEl) return;
-    appendMessage(messagesEl, "advisor", text);
+    const messageIndex = appStore.journey.messages.length;
+    appendMessage(messagesEl, "advisor", text, { messageIndex });
     appStore.journey.messages.push({ role: "assistant", content: text });
     touchJourney();
     layout();
@@ -79,7 +80,8 @@ export function createIntakeController(ui) {
 
   function pushUser(text) {
     if (!messagesEl) return;
-    appendMessage(messagesEl, "user", text);
+    const messageIndex = appStore.journey.messages.length;
+    appendMessage(messagesEl, "user", text, { messageIndex, editable: true });
     appStore.journey.messages.push({ role: "user", content: text });
     appStore.journey.turnCount += 1;
     touchJourney();

@@ -23,23 +23,94 @@ const TYPING_DOTS_HTML =
   `</span>`;
 
 /**
+ * Pull optional [[check]] confusion block from an advisor reply.
+ * @param {string} value
+ * @returns {{ body: string, check: { off: string, clarify: string } | null }}
+ */
+export function parseAdvisorCheck(value) {
+  const text = String(value || "");
+  const match = text.match(/\[\[check\]\]([\s\S]*?)\[\[\/check\]\]/i);
+  if (!match) return { body: text.trim(), check: null };
+  const block = match[1] || "";
+  const body = text.replace(match[0], "").trim();
+  const offMatch = block.match(/What might be off:\s*(.+)/i);
+  const clarifyMatch = block.match(/Clarify:\s*(.+)/i);
+  const off = String(offMatch?.[1] || "").trim();
+  const clarify = String(clarifyMatch?.[1] || "").trim();
+  if (!off && !clarify) return { body: body || text.replace(match[0], "").trim(), check: null };
+  return {
+    body: body || text.replace(match[0], "").trim(),
+    check: {
+      off: off || "I may have misunderstood something.",
+      clarify: clarify || "What should I correct?"
+    }
+  };
+}
+
+/**
+ * Heuristic fallback when the model did not emit [[check]] but sounds unsure.
+ * @param {string} value
+ */
+export function advisorSoundsUncertain(value) {
+  const text = String(value || "");
+  if (/\[\[check\]\]/i.test(text)) return false;
+  return /\b(i'?m not (entirely )?sure|i may have (this|that|you) wrong|if i'?m (reading|understanding) (this|you|that) (right|correctly)|did i get that right|correct me if|not clear (to me|whether|if)|could mean a few|ambiguous|i might be missing)\b/i.test(
+    text
+  );
+}
+
+/**
  * @param {HTMLElement} container
  * @param {"user"|"advisor"} role
  * @param {string} content
- * @param {{ typing?: boolean, skipScroll?: boolean }} [options]
+ * @param {{
+ *   typing?: boolean,
+ *   skipScroll?: boolean,
+ *   messageIndex?: number,
+ *   editable?: boolean
+ * }} [options]
  */
 export function appendMessage(container, role, content, options = {}) {
   const wrap = document.createElement("div");
   wrap.className = `v2-msg v2-msg--${role} v2-text-box v2-text-box--${role === "user" ? "prompt" : "response"}${options.typing ? " v2-msg--typing" : ""}`;
+
+  if (Number.isInteger(options.messageIndex)) {
+    wrap.dataset.msgIndex = String(options.messageIndex);
+  }
 
   if (options.typing && role === "advisor") {
     wrap.innerHTML =
       `<div class="v2-msg-label">whatimado</div>` +
       `<div class="v2-msg-body v2-msg-body--typing" aria-label="Generating response">${TYPING_DOTS_HTML}</div>`;
   } else if (role === "advisor") {
-    wrap.innerHTML = `<div class="v2-msg-label">whatimado</div><div class="v2-msg-body">${formatMessageHtml(content)}</div>`;
+    const parsed = parseAdvisorCheck(content);
+    const showCheck = parsed.check || advisorSoundsUncertain(parsed.body);
+    const check = parsed.check || (showCheck
+      ? {
+          off: "I may have misunderstood part of what you said.",
+          clarify: "What should I correct so I have this right?"
+        }
+      : null);
+    const bodyHtml = formatMessageHtml(parsed.body || content);
+    wrap.innerHTML =
+      `<div class="v2-msg-label">whatimado</div>` +
+      `<div class="v2-msg-body">${bodyHtml}</div>` +
+      (check
+        ? `<aside class="v2-msg-check" data-msg-check="1">
+            <p class="v2-msg-check__label">I might have this wrong</p>
+            <p class="v2-msg-check__off">${escapeHtml(check.off)}</p>
+            <p class="v2-msg-check__ask">${escapeHtml(check.clarify)}</p>
+            <button type="button" class="v2-msg-check__clarify">Clarify</button>
+          </aside>`
+        : "");
   } else {
     wrap.innerHTML = `<div class="v2-msg-body">${formatMessageHtml(content)}</div>`;
+    if (options.editable !== false && Number.isInteger(options.messageIndex)) {
+      const actions = document.createElement("div");
+      actions.className = "v2-msg__actions";
+      actions.innerHTML = `<button type="button" class="v2-msg__edit" data-edit-msg="${options.messageIndex}">Edit</button>`;
+      wrap.appendChild(actions);
+    }
   }
 
   container.appendChild(wrap);
@@ -48,7 +119,22 @@ export function appendMessage(container, role, content, options = {}) {
     scrollFrameChildIntoView(wrap, { toEnd: true });
   }
 
+  syncFrameHasChat();
   return wrap;
+}
+
+/** Mark the prompt frame when transcript content exists so mobile keeps a scrollable band. */
+export function syncFrameHasChat() {
+  const frame = document.getElementById("dynamic-frame");
+  if (!frame) return;
+  const messages = document.getElementById("messages");
+  const tail = document.getElementById("messages-tail");
+  const has =
+    Boolean(messages?.querySelector(".v2-msg")) || Boolean(tail?.querySelector(".v2-msg"));
+  frame.classList.toggle("has-chat", has);
+  if (typeof /** @type {{ notifyContentChange?: () => void }} */ (frame).notifyContentChange === "function") {
+    /** @type {{ notifyContentChange?: () => void }} */ (frame).notifyContentChange?.();
+  }
 }
 
 /**
