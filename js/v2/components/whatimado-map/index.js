@@ -436,10 +436,7 @@ export class WhatimadoMap extends HTMLElement {
     if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
     }
-    /* Landing silhouette until the first prompt resets to the YOU hub. */
-    if (!graphStore.nodes.some((node) => node.type === "start" && node.id === "start")) {
-      this.loadAmbientLiveGraph();
-    }
+    /* Do not paint the ambient ghost silhouette — the map stays empty until a roadmap is selected. */
     this._refreshDrift();
     this._onViewportResize = () => {
       this._syncMobileHeaderMapTools();
@@ -3383,7 +3380,7 @@ export class WhatimadoMap extends HTMLElement {
         const kickerText =
           title && node.type === "path" && node.id === branchRootId
             ? "My Paths"
-            : title && node.type === "mission" && !String(node.id || "").startsWith("convo-topic-")
+            : title && node.type === "mission"
               ? missionNumberLabel(node.chainIndex ?? 0)
               : "";
         const driftDelay = (index * 0.85) % 5;

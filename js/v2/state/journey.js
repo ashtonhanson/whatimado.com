@@ -14,8 +14,6 @@ import { normalizeGoalBrief } from "./goal-brief.js";
  *   messages: JourneyMessage[],
  *   turnCount: number,
  *   ghostDismissed: boolean,
- *   mapPromptLabel: string | null,
- *   mapTopics: string[],
  *   pathsGenerated: boolean,
  *   selectedPathId: string | null,
  *   roadmapPathId: string | null,
@@ -62,8 +60,6 @@ export function createEmptyJourney() {
     messages: [],
     turnCount: 0,
     ghostDismissed: false,
-    mapPromptLabel: null,
-    mapTopics: [],
     pathsGenerated: false,
     selectedPathId: null,
     roadmapPathId: null,
@@ -161,13 +157,6 @@ export function normalizeJourney(raw) {
     messages,
     turnCount: Number(source.turnCount) || messages.filter((m) => m.role === "user").length,
     ghostDismissed: Boolean(source.ghostDismissed),
-    mapPromptLabel:
-      typeof source.mapPromptLabel === "string" && source.mapPromptLabel.trim()
-        ? source.mapPromptLabel.trim().slice(0, 48)
-        : null,
-    mapTopics: Array.isArray(source.mapTopics)
-      ? source.mapTopics.map((topic) => String(topic || "").trim()).filter(Boolean).slice(0, 8)
-      : [],
     pathsGenerated: Boolean(source.pathsGenerated),
     selectedPathId: typeof source.selectedPathId === "string" ? source.selectedPathId : null,
     roadmapPathId:

@@ -62,12 +62,11 @@ function founderMode() {
  *   layout: () => void,
  *   flush: () => void,
  *   onComplete: () => Promise<void> | void,
- *   onProgress?: () => void,
  *   setComposerEnabled: (enabled: boolean) => void
  * }} ui
  */
 export function createIntakeController(ui) {
-  const { messagesEl, layout, flush, onComplete, onProgress, setComposerEnabled } = ui;
+  const { messagesEl, layout, flush, onComplete, setComposerEnabled } = ui;
 
   function pushAdvisor(text) {
     if (!messagesEl) return;
@@ -88,20 +87,11 @@ export function createIntakeController(ui) {
     flush();
   }
 
-  function notifyProgress() {
-    try {
-      onProgress?.();
-    } catch {
-      /* map progress is best-effort */
-    }
-  }
-
   function setStep(step) {
     appStore.journey.profileIntakeStep = step;
     appStore.journey.awaitingPathModeChoice = step === INTAKE_STEP.PATH_MODE;
     touchJourney();
     flush();
-    notifyProgress();
   }
 
   function completedSteps() {
@@ -113,7 +103,6 @@ export function createIntakeController(ui) {
     const list = completedSteps();
     if (!list.includes(step)) list.push(step);
     appStore.journey.completedIntakeSteps = list;
-    notifyProgress();
   }
 
   function chipCtx(extra = {}) {
