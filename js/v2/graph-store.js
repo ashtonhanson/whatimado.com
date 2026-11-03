@@ -307,7 +307,7 @@ export function setRoadmapFocusLinked(linked) {
 const EXPLORE_OPTIONS = [
   { id: "option-settings", label: "Settings" },
   { id: "option-notes", label: "Notes" },
-  { id: "option-roadmaps", label: "My Paths" }
+  { id: "option-roadmaps", label: "Possibility Maps" }
 ];
 
 /** You on the left, selected spoke pointing right, in SVG units of the 800×240 map. */
@@ -405,7 +405,7 @@ function youSpokeRadius() {
 /** Phone option spokes reach a little past the cap so the Settings title clears its neighbours. */
 const MOBILE_OPTION_SPOKE_PUSH = 1.15;
 
-/** Settings, Analytics, Notes, and My Paths sit further from You than the chosen path. */
+/** Settings, Analytics, Notes, and Possibility Maps sit further from You than the chosen path. */
 function optionSpokeRadius() {
   const base = youSpokeRadius();
   if (!isMobileMapLayout()) return base;

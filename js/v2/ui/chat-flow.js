@@ -631,7 +631,7 @@ export function initChatFlow(ctx) {
       body = paths
         .map((path) => {
           const mark = path.id === appStore.journey.roadmapPathId ? "On now — " : "";
-          return `<p class="v2-selection__why">${escapeHtml(mark + (path.title || path.label || "My Paths"))}</p>`;
+          return `<p class="v2-selection__why">${escapeHtml(mark + (path.title || path.label || "Possibility Map"))}</p>`;
         })
         .join("");
       document.getElementById("possibilities")?.classList.remove("hidden");
@@ -670,7 +670,7 @@ export function initChatFlow(ctx) {
       };
     }
     return {
-      title: node.title || node.label || "My Paths",
+      title: node.title || node.label || "Possibility Map",
       body: node.tagline || node.description || node.why || "",
       workId: ""
     };
@@ -777,7 +777,7 @@ export function initChatFlow(ctx) {
     const meta = [node.cost, node.timeline, node.income].filter(Boolean);
     selectionPanel.innerHTML = `
       <h2 class="v2-section-label">Other path</h2>
-      <h3 class="v2-selection__title">${escapeHtml(node.title || node.label || "My Paths")}</h3>
+      <h3 class="v2-selection__title">${escapeHtml(node.title || node.label || "Possibility Map")}</h3>
       ${node.tagline || node.description ? `<p class="v2-selection__tagline">${escapeHtml(node.tagline || node.description || "")}</p>` : ""}
       ${meta.length ? `<p class="v2-selection-meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</p>` : ""}
       ${node.why ? `<p class="v2-selection__why">${escapeHtml(node.why)}</p>` : ""}
@@ -947,14 +947,20 @@ export function initChatFlow(ctx) {
     appStore.journey.ghostDismissed = true;
     appStore.journey.intakeComplete = true;
     mapEl?.dismissGhost();
-    setPhase(PHASE.COACHING);
     /* Demo preview: static fallback paths only — never call the advisor on load. */
     const ideas = fallbackIdeas(appStore.profile);
     loadAdvisorPaths(ideas, { keepSelectedId: null });
     markPathsAcceptedForGoal(appStore.journey);
     appStore.journey.pathsGenerated = true;
-    mapEl?.syncLiveFromStore();
-    pathMap.render();
+    if (appStore.journey.threadBreak == null) {
+      appStore.journey.threadBreak = appStore.journey.messages.length;
+    }
+    const intro = "Here are a few directions that could fit — tap a node or card to explore.";
+    const introIndex = appStore.journey.messages.length;
+    appendMessage(messagesEl, "advisor", intro, { messageIndex: introIndex, skipScroll: true });
+    appStore.journey.messages.push({ role: "assistant", content: intro });
+    applyPathsToMap();
+    settleFrameAfterPathsReady();
     layout();
   }
 
@@ -1122,6 +1128,24 @@ export function initChatFlow(ctx) {
 
       if (!appStore.journey.intakeComplete && !appStore.journey.pathMode) {
         intake.startAfterFirstPrompt();
+        return;
+      }
+
+      /* Paths already loaded (e.g. demo) but cards hidden — surface them without another AI call. */
+      if (
+        appStore.journey.pathsGenerated &&
+        graphStore.nodes.some((node) => node.type === "path") &&
+        /\b(show|see|view|open)\b.{0,24}\bpaths?\b|\bpossibility maps?\b/i.test(trimmed)
+      ) {
+        applyPathsToMap();
+        settleFrameAfterPathsReady();
+        const note = "Here are the paths again — tap a card to explore.";
+        const noteIndex = appStore.journey.messages.length;
+        appendMessage(thread, "advisor", note, { messageIndex: noteIndex });
+        appStore.journey.messages.push({ role: "assistant", content: note });
+        touchJourney();
+        flushPersist();
+        layout();
         return;
       }
 

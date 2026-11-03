@@ -25,10 +25,10 @@ function acknowledge() {
 /** @param {import("../state/auth.js").AuthState} state */
 function syncLine(state) {
   if (state.sync === "syncing") return "Syncing your paths…";
-  if (state.sync === "ok") return "My Paths backed up to your account.";
+  if (state.sync === "ok") return "Possibility Maps backed up to your account.";
   if (state.sync === "error") return `Not synced yet: ${state.syncError}`;
-  if (state.sync === "offline") return "Offline. My Paths are saved on this device and sync when you're back.";
-  return "My Paths save on this device and back up to your account.";
+  if (state.sync === "offline") return "Offline. Possibility Maps are saved on this device and sync when you're back.";
+  return "Possibility Maps save on this device and back up to your account.";
 }
 
 /** @param {HTMLElement | null} root */

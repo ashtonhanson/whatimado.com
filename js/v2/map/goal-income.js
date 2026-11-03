@@ -1,5 +1,5 @@
 /**
- * Pay ranges for the future-path star. Keep the source unit (/hr, /mo, year, …).
+ * Pay ranges for the future-path star. Keep the source unit (/hr, /mo, /wk, /yr).
  */
 
 /** @typedef {{ city?: string, region?: string, country?: string, raw?: string }} GoalLocation */
@@ -25,6 +25,9 @@ const ROLE_BANDS = [
 ];
 
 const DEFAULT_BAND = { low: 36000, high: 64000 };
+
+/** Number with optional thousands commas and decimals. */
+const MONEY_NUM = String.raw`\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?`;
 
 /**
  * @param {string} role
@@ -104,14 +107,14 @@ export function formatYearlyIncomeRange(low, high, currency = "$") {
     a = Math.max(1000, a * 0.85);
     b = b * 1.15;
   }
-  return `${formatPayAmount(a, currency)}–${formatPayAmount(b, currency)} per year`;
+  return `${formatPayAmount(a, currency)}–${formatPayAmount(b, currency)}/yr`;
 }
 
 /**
  * @param {number} low
  * @param {number} high
  * @param {string} currency
- * @param {string} suffix  e.g. "/hr", "/mo", "/wk"
+ * @param {string} suffix  e.g. "/hr", "/mo", "/wk", "/yr"
  */
 function formatUnitIncomeRange(low, high, currency, suffix) {
   let a = Number(low);
@@ -122,24 +125,41 @@ function formatUnitIncomeRange(low, high, currency, suffix) {
     if (Number.isInteger(n)) return String(n);
     return String(Math.round(n * 100) / 100);
   };
+  if (a === b) return `${currency}${fmt(a)}${suffix}`;
   return `${currency}${fmt(a)}–${currency}${fmt(b)}${suffix}`;
 }
 
 /**
- * Detect pay period from labels like /hr, hour, /mo, month, /wk, week, year.
+ * Detect pay period from unit markers on the amount (/hr, /mo, per hour, …).
+ * Do not treat bare words like "hours" as the pay unit — those are often duration.
  * @param {string} raw
  * @returns {"hour" | "month" | "week" | "year" | ""}
  */
 function detectIncomeUnit(raw) {
-  if (/\/\s*hr\b|per\s*hour|\bhourly\b|\bhours?\b/i.test(raw)) return "hour";
-  if (/\/\s*mo\b|per\s*month|\bmonthly\b|\bmonths?\b/i.test(raw)) return "month";
-  if (/\/\s*wk\b|per\s*week|\bweekly\b|\bweeks?\b/i.test(raw)) return "week";
-  if (/\/\s*yr\b|per\s*year|\byearly\b|\bannual(?:ly)?\b|\byears?\b/i.test(raw)) return "year";
+  const text = String(raw || "");
+  /* Prefer a unit attached to the money range / amount. */
+  const nearAmount = text.match(
+    new RegExp(
+      `(?:[\\$£€]|A\\$|C\\$|NZ\\$)?\\s*(?:${MONEY_NUM})\\s*(k)?\\s*[–—-]\\s*(?:[\\$£€]|A\\$|C\\$|NZ\\$)?\\s*(?:${MONEY_NUM})\\s*(k)?\\s*(/\\s*hr|/\\s*mo|/\\s*wk|/\\s*yr|per\\s*hour|per\\s*month|per\\s*week|per\\s*year|a\\s*year|hourly|monthly|weekly|yearly|annually)?`,
+      "i"
+    )
+  );
+  const unitToken = nearAmount?.[3] || "";
+  if (/\/\s*hr\b|per\s*hour|\bhourly\b/i.test(unitToken)) return "hour";
+  if (/\/\s*mo\b|per\s*month|\bmonthly\b/i.test(unitToken)) return "month";
+  if (/\/\s*wk\b|per\s*week|\bweekly\b/i.test(unitToken)) return "week";
+  if (/\/\s*yr\b|per\s*year|a\s*year|\byearly\b|\bannual(?:ly)?\b/i.test(unitToken)) return "year";
+
+  /* Fallback: explicit pay-unit phrases anywhere (still no bare "hours"/"weeks"). */
+  if (/\/\s*hr\b|per\s*hour|\bhourly\b/i.test(text)) return "hour";
+  if (/\/\s*mo\b|per\s*month|\bmonthly\b/i.test(text)) return "month";
+  if (/\/\s*wk\b|per\s*week|\bweekly\b/i.test(text)) return "week";
+  if (/\/\s*yr\b|per\s*year|a\s*year|\byearly\b|\bannual(?:ly)?\b/i.test(text)) return "year";
   return "";
 }
 
 /**
- * Reuse a path income string, preserving /hr /mo /wk or normalizing yearly ranges.
+ * Reuse a path income string, preserving /hr /mo /wk /yr or normalizing yearly ranges.
  * @param {string} text
  */
 export function readExistingIncomeRange(text) {
@@ -148,16 +168,21 @@ export function readExistingIncomeRange(text) {
 
   const unit = detectIncomeUnit(raw);
   const range = raw.match(
-    /([\$£€]|A\$|C\$|NZ\$)?\s*(\d+(?:\.\d+)?)\s*(k)?\s*[–—-]\s*([\$£€]|A\$|C\$|NZ\$)?\s*(\d+(?:\.\d+)?)\s*(k)?/i
+    new RegExp(
+      `([\\$£€]|A\\$|C\\$|NZ\\$)?\\s*(${MONEY_NUM})\\s*(k)?\\s*[–—-]\\s*([\\$£€]|A\\$|C\\$|NZ\\$)?\\s*(${MONEY_NUM})\\s*(k)?`,
+      "i"
+    )
   );
-  if (!range) return "";
+  const single = range
+    ? null
+    : raw.match(new RegExp(`([\\$£€]|A\\$|C\\$|NZ\\$)?\\s*(${MONEY_NUM})\\s*(k)?`, "i"));
 
-  const currency = range[1] || range[4] || "$";
-  const lowRaw = Number(range[2]);
-  const highRaw = Number(range[5]);
+  const currency = range?.[1] || range?.[4] || single?.[1] || "$";
+  const lowRaw = Number(String(range?.[2] || single?.[2] || "").replace(/,/g, ""));
+  const highRaw = Number(String(range?.[5] || single?.[2] || "").replace(/,/g, ""));
   if (!Number.isFinite(lowRaw) || !Number.isFinite(highRaw)) return "";
-  const lowIsK = Boolean(range[3]);
-  const highIsK = Boolean(range[6]);
+  const lowIsK = Boolean(range?.[3] || single?.[3]);
+  const highIsK = Boolean(range?.[6] || single?.[3]);
 
   if (unit === "hour") return formatUnitIncomeRange(lowRaw, highRaw, currency, "/hr");
   if (unit === "month") return formatUnitIncomeRange(lowRaw, highRaw, currency, "/mo");

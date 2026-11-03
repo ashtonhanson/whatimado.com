@@ -12,7 +12,7 @@ function savedLabel(savedAt) {
 }
 
 /**
- * Sidebar My Paths button: shows the open map and saved paths; picking one reopens it.
+ * Sidebar Possibility Maps button: shows the open map and saved paths; picking one reopens it.
  * @param {{ onOpen: (roadmapId: string) => void }} options
  */
 export function bindRoadmapsNav({ onOpen }) {

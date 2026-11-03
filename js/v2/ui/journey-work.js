@@ -41,7 +41,7 @@ export function journeyHasActiveWork(journey, graph, options = {}) {
  */
 export function newMapConfirmMessage(session, authState) {
   let message =
-    "Starting over opens a fresh conversation and clears any unsent message in the composer. Your current map is saved to My Paths in the sidebar.";
+    "Starting over opens a fresh conversation and clears any unsent message in the composer. Your current map is saved to Possibility Maps in the sidebar.";
   if (session?.mode === "account") {
     message += " Other paths already saved on your account are not deleted.";
     if (authState?.sync !== "ok") {

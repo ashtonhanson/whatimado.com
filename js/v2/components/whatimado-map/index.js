@@ -67,7 +67,7 @@ const EDGE_DASH_OFF = 5.75;
 const EDGE_TUCK = 0.6;
 /** The glowing trail line's width over a normal edge; must match map-canvas.css. */
 const EDGE_THICK_SCALE = 2.4;
-/** "My Paths" over the selected path title, relative to the title size. */
+/** "Possibility Maps" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
 /** Unscaled dot diameter the home sample paints on a phone. */
@@ -3232,7 +3232,7 @@ export class WhatimadoMap extends HTMLElement {
 
       let items = [];
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-kicker-off"));
-      /** The selected path title was pushed off its spot over the dot to make room for "My Paths". Mission numbers stay. */
+      /** The selected path title was pushed off its spot over the dot to make room for "Possibility Maps". Mission numbers stay. */
       const kickerDisplaced = (list) =>
         list.some(
           (item) =>
@@ -3550,9 +3550,7 @@ export class WhatimadoMap extends HTMLElement {
         const isGoal = node.type === "goal";
         const bodyR = node.type === "more" || isGoal ? r : isAlternate ? r * 0.72 : r;
         const goalTitle = isGoal ? mapNodeLabel(node.title || node.label || "Goal", { compact: true }) : "";
-        const goalIncomeFull = isGoal ? goalIncomeRange(node, appStore.location) : "";
-        const isYearlyGoalIncome = /\sper year$/i.test(goalIncomeFull);
-        const goalIncomeMain = goalIncomeFull.replace(/\s+per year$/i, "");
+        const goalIncomeMain = isGoal ? goalIncomeRange(node, appStore.location) : "";
         const mobileMap = window.matchMedia("(max-width: 900px)").matches;
         /* Goal destination star: prior 1.5×, then +25%. */
         const goalScale = 1.5 * 1.25;
@@ -3561,7 +3559,7 @@ export class WhatimadoMap extends HTMLElement {
         const goalStar = isGoal ? starPolygonPoints(cx, cy, starOuter, starInner) : "";
         const kickerText =
           title && node.type === "path" && node.id === branchRootId
-            ? "My Paths"
+            ? "Possibility Maps"
             : title && node.type === "mission"
               ? missionNumberLabel(node.chainIndex ?? 0)
               : "";
@@ -3589,7 +3587,7 @@ export class WhatimadoMap extends HTMLElement {
             ${isGoal
               ? `<polygon class="whatimado-map__goal-star" points="${goalStar}" aria-hidden="true" />
             ${goalTitle ? `<text class="whatimado-map__goal-title" text-anchor="middle"><tspan x="${cx}" y="${cy - starOuter - r * 0.85}">${escapeHtml(goalTitle)}</tspan></text>` : ""}
-            ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan>${isYearlyGoalIncome ? `<tspan x="${cx}" dy="1.15em">per year</tspan>` : ""}</text>` : ""}`
+            ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan></text>` : ""}`
               : ""}
             ${kickerText
               ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`

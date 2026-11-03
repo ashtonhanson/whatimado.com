@@ -127,7 +127,7 @@ export function renderLaunchStats(data) {
       ["Visits", visits, "visits"],
       ["Started", started, "started"],
       ["Got map", maps, "maps"],
-      ["My Paths", roadmaps, "roadmaps"]
+      ["Possibility Maps", roadmaps, "roadmaps"]
     ];
     steps.forEach(([label, value, tone], index) => {
       if (index > 0) {
@@ -287,7 +287,7 @@ function renderSettingsAccount(state) {
     setText("settings-account-line", `Signed in as ${state.user.email || "your account"}.`);
     setText(
       "settings-account-sync",
-      state.sync === "error" ? `Not synced yet: ${state.syncError}` : state.sync === "syncing" ? "Syncing…" : "My Paths back up to this account."
+      state.sync === "error" ? `Not synced yet: ${state.syncError}` : state.sync === "syncing" ? "Syncing…" : "Possibility Maps back up to this account."
     );
     if (primary) primary.textContent = "Account and sync";
     if (secondary) secondary.hidden = true;

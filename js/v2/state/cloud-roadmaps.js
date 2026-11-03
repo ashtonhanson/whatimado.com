@@ -77,7 +77,7 @@ export function accountRowsFromSnapshot(account, userId) {
       user_id: userId,
       roadmap_key: clip(liveId, 120),
       kind: "roadmap",
-      title: clip(roadmapName(account) || entry?.title || "My Paths", 200),
+      title: clip(roadmapName(account) || entry?.title || "Possibility Map", 200),
       is_active: true,
       payload: cloudPayload(account),
       created_at: iso(entry?.createdAt || account.journey.createdAt || savedAt),
@@ -91,7 +91,7 @@ export function accountRowsFromSnapshot(account, userId) {
       user_id: userId,
       roadmap_key: clip(entry.id, 120),
       kind: "roadmap",
-      title: clip(entry.title || "My Paths", 200),
+      title: clip(entry.title || "Possibility Map", 200),
       is_active: false,
       payload: cloudPayload(entry.snapshot),
       created_at: iso(entry.createdAt || entry.savedAt),
@@ -228,14 +228,14 @@ export function mergeCloudRows(account, rows, userId) {
       roadmaps = roadmaps.filter((entry) => entry?.id !== base.activeRoadmapId && entry?.id !== id);
       base.activeRoadmapId = id;
       applyLive(partFromPayload(payload, null), at);
-      roadmaps.push({ id, title: row.title || "My Paths", createdAt: Date.parse(row.created_at) || at, savedAt: at, snapshot: null });
+      roadmaps.push({ id, title: row.title || "Possibility Map", createdAt: Date.parse(row.created_at) || at, savedAt: at, snapshot: null });
       continue;
     }
 
     if (index >= 0) continue;
     roadmaps.push({
       id,
-      title: row.title || "My Paths",
+      title: row.title || "Possibility Map",
       createdAt: Date.parse(row.created_at) || at,
       savedAt: at,
       snapshot: partFromPayload(payload, null)

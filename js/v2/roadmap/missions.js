@@ -516,7 +516,7 @@ function renderNextPathOptions() {
       <div class="v2-next-paths__grid">
         ${paths
           .map((path) => {
-            const title = path.title || path.label || "My Paths";
+            const title = path.title || path.label || "Possibility Map";
             const isSaved = saved.has(path.id);
             return `
               <article class="v2-next-path${isSaved ? " is-saved" : ""}">

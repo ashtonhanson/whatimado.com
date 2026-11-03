@@ -11,7 +11,11 @@ export function escapeHtml(value) {
 /** @param {string} value */
 export function formatMessageHtml(value) {
   let html = escapeHtml(value);
-  html = html.replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>");
+  /* Markdown emphasis: **bold**, then *italic*; bullets become •; leftover * stripped. */
+  html = html.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/(^|\n)\*(\s+)/g, "$1•$2");
+  html = html.replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+  html = html.replace(/\*/g, "");
   return html.replaceAll("\n\n", "<br><br>").replaceAll("\n", "<br>");
 }
 
