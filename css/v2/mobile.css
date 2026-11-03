@@ -201,8 +201,15 @@
 
   whatimado-frame.is-mobile-docked .whatimado-frame__body {
     --v2-frame-pad-x: clamp(0.85rem, 2.5vw, 1.25rem);
-    --v2-frame-pad-r: clamp(1.1rem, 2.8vw, 1.35rem);
+    /* ~10px closer to Resources than the prior 1.1–1.35rem inset. */
+    --v2-frame-pad-r: clamp(0.7rem, 2.2vw, 0.95rem);
     padding-left: var(--v2-frame-pad-x);
+    padding-right: var(--v2-frame-pad-r);
+  }
+
+  /* Clear the vertical Resources tab with a small gap (~10px), no overlap. */
+  whatimado-frame.is-mobile-docked.has-resources-sticky .whatimado-frame__body {
+    --v2-frame-pad-r: calc(1.55rem + 0.35rem + 10px);
     padding-right: var(--v2-frame-pad-r);
   }
 
@@ -447,15 +454,22 @@
     outline-offset: 2px;
   }
 
-  /* Help, Link and crosshair: one row pinned to the map's top-right corner, out of the chrome's flow. */
+  /* Help, Link and crosshair: map top-right, below the undo + hamburger row. */
   whatimado-map .whatimado-map__timeline-tools {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: calc(var(--v2-mobile-header-h, 3.55rem) + 0.2rem);
+    right: 0.35rem;
+    z-index: 6;
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    visibility: visible;
     pointer-events: none;
+  }
+
+  whatimado-map .whatimado-map__timeline-tools > button {
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .v2-header-undo {

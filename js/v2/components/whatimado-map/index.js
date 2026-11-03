@@ -936,7 +936,8 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Smooth horizontal pan to a chat-visible mission/task. Y locks after first settle.
+   * Smooth pan so the chat-visible mission/task sits in the open band above the prompt.
+   * Same on mobile and desktop. User drag / wheel-zoom / pinch still pause this via pauseChatFollow.
    * @param {string|null|undefined} id
    * @param {{ animate?: boolean, soft?: boolean }} [options]
    */
@@ -947,7 +948,7 @@ export class WhatimadoMap extends HTMLElement {
     const alreadyHere =
       this._chatFollowId === id &&
       this._chatFollowTargetId === id &&
-      this._nodeCenteredOnFollowX(id);
+      this._nodeSitsInOpenBand(id);
     if (soft && (alreadyHere || this._gravityRaf != null)) return;
     if (!soft && alreadyHere) return;
     /* Same target already easing in — do not restart mid-glide. */
@@ -955,8 +956,6 @@ export class WhatimadoMap extends HTMLElement {
 
     const keptZoom = this._zoom;
     const target = computePanForNodeAboveFrame(this, id);
-    /* First settle places the focal line; later moves change panX only. */
-    const panY = this._chatFollowHasY ? this._panY : target.panY;
     this._chatFollowHasY = true;
     this._chatFollowId = id;
     this._chatFollowTargetId = id;
@@ -964,13 +963,13 @@ export class WhatimadoMap extends HTMLElement {
 
     if (!animate || this._driftReducedMotion) {
       this._panX = target.panX;
-      this._panY = panY;
+      this._panY = target.panY;
       this._applyPanTransform();
       return;
     }
 
-    /* Retargetable X-only ease — never reflows titles. */
-    this._animatePanTo(target.panX, panY, true, { duration: 640, ease: "inout", layout: false });
+    /* Retargetable ease into the open band — never reflows titles. */
+    this._animatePanTo(target.panX, target.panY, true, { duration: 640, ease: "inout", layout: false });
   }
 
   /**

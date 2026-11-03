@@ -44,24 +44,6 @@ export function buildFrameTemplate(labels = {}) {
         <div class="whatimado-frame__scroll-thumb"></div>
       </div>
     </div>
-    <button
-      type="button"
-      class="whatimado-frame__scroll-bottom"
-      aria-label="Scroll to bottom"
-      aria-hidden="true"
-      tabindex="-1"
-    >
-      <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-        <path
-          d="M5.2 7.6 10 12.4 14.8 7.6"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        ></path>
-      </svg>
-    </button>
     <form class="whatimado-frame__composer" part="composer" novalidate>
       <label class="sr-only" for="whatimado-composer-input">${inputLabel}</label>
       <textarea
@@ -74,5 +56,23 @@ export function buildFrameTemplate(labels = {}) {
       <button type="submit" class="whatimado-frame__composer-send">${sendLabel}</button>
     </form>
   </div>
+  <button
+    type="button"
+    class="whatimado-frame__scroll-bottom"
+    aria-label="Scroll to bottom"
+    aria-hidden="true"
+    tabindex="-1"
+  >
+    <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <path
+        d="M5.2 7.6 10 12.4 14.8 7.6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      ></path>
+    </svg>
+  </button>
 `;
 }

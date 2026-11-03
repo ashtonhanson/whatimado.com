@@ -7,7 +7,7 @@ import { appStore } from "../state/store.js";
 
 const NEAR_BOTTOM_PX = 72;
 /** Shared mobile/desktop hysteresis before switching the followed card. */
-const FOLLOW_SWITCH_HITS = 3;
+const FOLLOW_SWITCH_HITS = 1;
 
 /**
  * @param {{
