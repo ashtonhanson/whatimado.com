@@ -19,15 +19,33 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
 
   let raf = 0;
   let lastId = "";
+  let pendingId = "";
+  let pendingHits = 0;
 
-  const sync = ({ animate = true } = {}) => {
+  const sync = ({ animate = true, force = false } = {}) => {
     if (!mapEl.canChatFollow?.()) return;
     const id = visibleChatWorkId(frameEl);
-    if (!id || id === lastId) {
-      if (id && id === lastId) mapEl.followChatNode?.(id, { animate: false, soft: true });
+    if (!id) return;
+
+    if (id === lastId) {
+      pendingId = "";
+      pendingHits = 0;
       return;
     }
+
+    /* Hysteresis: require two consecutive frames on a new card before switching. */
+    if (!force && lastId) {
+      if (id === pendingId) pendingHits += 1;
+      else {
+        pendingId = id;
+        pendingHits = 1;
+      }
+      if (pendingHits < 2) return;
+    }
+
     lastId = id;
+    pendingId = "";
+    pendingHits = 0;
     mapEl.followChatNode?.(id, { animate });
   };
 
@@ -43,11 +61,13 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
   body?.addEventListener("scroll", onScroll, { passive: true });
   mapEl.addEventListener("chat-follow-resume", () => {
     lastId = "";
-    sync({ animate: true });
+    pendingId = "";
+    pendingHits = 0;
+    sync({ animate: true, force: true });
   });
 
   /* First paint after missions render. */
-  requestAnimationFrame(() => sync({ animate: false }));
+  requestAnimationFrame(() => sync({ animate: false, force: true }));
 }
 
 /**

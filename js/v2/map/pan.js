@@ -551,9 +551,31 @@ export function computeDefaultScenePan(mapEl) {
   return { panX, panY };
 }
 
-/** Screen-Y nudge for the chat focal line (mobile +5px; desktop uses CSS map shift). */
+/** Screen-Y nudge for the chat focal line (mobile +5px, desktop +15px). */
 export function chatFocalNudgePx() {
-  return MOBILE_MQ.matches ? 5 : 0;
+  return MOBILE_MQ.matches ? 5 : 15;
+}
+
+/**
+ * Open band above the prompt where chat-follow centers a node.
+ * @param {DOMRect} stageRect
+ * @param {DOMRect} frameRect
+ * @returns {{ top: number, bottom: number, midY: number, left: number, right: number }}
+ */
+export function chatFocalBand(stageRect, frameRect) {
+  const mobile = MOBILE_MQ.matches;
+  const railBottom = document.querySelector(".v2-rail-brand")?.getBoundingClientRect().bottom ?? 0;
+  const top = mobile && railBottom > 0
+    ? Math.max(railBottom + 10, stageRect.top + 8)
+    : menuClearScreenY(stageRect);
+  const bottom = Math.max(top + 48, Math.min(stageRect.bottom - 8, frameRect.top - 20));
+  return {
+    top,
+    bottom,
+    midY: (top + bottom) / 2 + chatFocalNudgePx(),
+    left: stageRect.left + 16,
+    right: stageRect.right - 16
+  };
 }
 
 /**
@@ -572,16 +594,14 @@ export function computePanForNodeAboveFrame(mapEl, nodeId) {
   const frameRect = frame.getBoundingClientRect();
   if (stageRect.width <= 0 || stageRect.height <= 0) return computeChatFrameGravityPan(mapEl);
 
-  const top = menuClearScreenY(stageRect);
-  const bottom = Math.max(top + 48, frameRect.top);
+  const band = chatFocalBand(stageRect, frameRect);
   const { scaleX, scaleY } = unitsPerPixel(mapEl, stageRect);
   const shiftY = readGraphShiftY();
   const zoom = mapEl._zoom || 1;
   const nodeX = node.x * VIEW_W;
   const nodeY = node.y * VIEW_H;
   const anchorX = (stageRect.width / 2) * scaleX;
-  const midScreenY = (top + bottom) / 2 + chatFocalNudgePx();
-  const anchorY = (midScreenY - stageRect.top) * scaleY;
+  const anchorY = (band.midY - stageRect.top) * scaleY;
 
   return {
     panX: anchorX - SCALE_CENTER_X - zoom * (nodeX - SCALE_CENTER_X),
