@@ -1170,7 +1170,7 @@
   }
 
   whatimado-frame.is-mobile-docked.is-mobile-keyboard.is-mobile-reading .whatimado-frame__inner {
-    min-height: 0;
+    min-height: 5.5rem;
   }
 
   whatimado-frame.is-mobile-docked.is-mobile-keyboard .whatimado-frame__composer {
@@ -1179,9 +1179,15 @@
     z-index: 2;
   }
 
+  /* Never let the keyboard-docked sheet collapse to an invisible sliver. */
   whatimado-frame.is-mobile-docked.is-mobile-keyboard {
     z-index: 80;
     transition: none;
+    min-height: 5.5rem;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard .whatimado-frame__inner {
+    min-height: 5.5rem;
   }
 
   body.is-mobile-keyboard-open .v2-rail--left {

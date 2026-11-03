@@ -88,6 +88,8 @@ export class FrameDockController {
     this._keyboardDocked = false;
     /** Frozen frame top (px) while the keyboard is open on a chat sheet. */
     this._keyboardFrozenTop = null;
+    /** @type {number|null} */
+    this._keyboardCloseTimer = null;
     /** @type {boolean} */
     this._focusLiftResyncScheduled = false;
     /** @type {number|null} */
@@ -294,11 +296,16 @@ export class FrameDockController {
 
     this._mobileChatSheet = true;
     // Drop keyboard pin + focus packing so the sheet can settle to the floor.
-    if (this._keyboardDocked) {
+    if (this._keyboardDocked || this.frameEl.classList.contains("is-mobile-keyboard")) {
       this._keyboardDocked = false;
       this._keyboardFrozenTop = null;
+      if (this._keyboardCloseTimer != null) {
+        window.clearTimeout(this._keyboardCloseTimer);
+        this._keyboardCloseTimer = null;
+      }
       this.frameEl.classList.remove("is-mobile-keyboard");
       document.body.classList.remove("is-mobile-keyboard-open");
+      this.frameEl.style.removeProperty("transform");
     }
     releaseMobileComposerFocus(this);
 
