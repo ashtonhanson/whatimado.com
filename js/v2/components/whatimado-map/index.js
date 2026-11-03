@@ -937,7 +937,8 @@ export class WhatimadoMap extends HTMLElement {
 
   /**
    * Smooth pan so the chat-visible mission/task sits in the open band above the prompt.
-   * Same on mobile and desktop. User drag / wheel-zoom / pinch still pause this via pauseChatFollow.
+   * Same on mobile and desktop. Prefer horizontal glide; only re-anchor Y when the node
+   * leaves the open band (avoids snap-jumping up/down on a horizontal roadmap).
    * @param {string|null|undefined} id
    * @param {{ animate?: boolean, soft?: boolean }} [options]
    */
@@ -948,7 +949,8 @@ export class WhatimadoMap extends HTMLElement {
     const alreadyHere =
       this._chatFollowId === id &&
       this._chatFollowTargetId === id &&
-      this._nodeSitsInOpenBand(id);
+      this._nodeCenteredOnFollowX(id) &&
+      this._nodeVerticallyInOpenBand(id);
     if (soft && (alreadyHere || this._gravityRaf != null)) return;
     if (!soft && alreadyHere) return;
     /* Same target already easing in — do not restart mid-glide. */
@@ -956,20 +958,41 @@ export class WhatimadoMap extends HTMLElement {
 
     const keptZoom = this._zoom;
     const target = computePanForNodeAboveFrame(this, id);
+    const prev = this._liveNodes.find((node) => node.id === this._chatFollowId);
+    const next = this._liveNodes.find((node) => node.id === id);
+    const rowChanged =
+      prev && next && Number.isFinite(prev.y) && Number.isFinite(next.y) && Math.abs(prev.y - next.y) > 0.045;
+    const needsY = !this._chatFollowHasY || rowChanged || !this._nodeVerticallyInOpenBand(id);
+    const panY = needsY ? target.panY : this._panY;
     this._chatFollowHasY = true;
     this._chatFollowId = id;
     this._chatFollowTargetId = id;
     this._zoom = keptZoom;
 
-    if (!animate || this._driftReducedMotion) {
+    if (!animate) {
       this._panX = target.panX;
-      this._panY = target.panY;
+      this._panY = panY;
       this._applyPanTransform();
       return;
     }
 
-    /* Retargetable ease into the open band — never reflows titles. */
-    this._animatePanTo(target.panX, target.panY, true, { duration: 640, ease: "inout", layout: false });
+    /* Longer inout ease — retargetable, no title reflow. Always glide (never hard-snap). */
+    const duration = this._driftReducedMotion ? 480 : 860;
+    this._animatePanTo(target.panX, panY, true, {
+      duration,
+      ease: "inout",
+      layout: false,
+      forceSlide: true
+    });
+  }
+
+  /** True when the node's screen Y sits inside the open band (menu→prompt). */
+  _nodeVerticallyInOpenBand(id) {
+    const band = this._openBand();
+    const center = this._nodeScreenCenter(id);
+    if (!band || !center) return false;
+    const bandH = Math.max(1, band.bottom - band.top);
+    return Math.abs(center.y - band.midY) <= bandH * 0.28;
   }
 
   /**
@@ -1311,11 +1334,12 @@ export class WhatimadoMap extends HTMLElement {
    * @param {boolean} [animate]
    * @param {{ duration?: number, ease?: "out"|"inout", layout?: boolean }} [options]
    */
-  _animatePanTo(targetX, targetY, animate = false, { duration = 680, ease = "out", layout = false } = {}) {
+  _animatePanTo(targetX, targetY, animate = false, { duration = 680, ease = "out", layout = false, forceSlide = false } = {}) {
     this._stopPanGlide();
 
     const distance = Math.hypot(targetX - this._panX, targetY - this._panY);
-    const slide = animate && distance > 1.5 && !this._driftReducedMotion;
+    /* forceSlide: chat→map follow stays a glide even when OS reduce-motion is on. */
+    const slide = animate && distance > 1.5 && (forceSlide || !this._driftReducedMotion);
     if (!slide) {
       this._stopCameraEase();
       this._panX = targetX;

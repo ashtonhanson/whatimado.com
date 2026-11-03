@@ -6,8 +6,8 @@
 import { appStore } from "../state/store.js";
 
 const NEAR_BOTTOM_PX = 72;
-/** Shared mobile/desktop hysteresis before switching the followed card. */
-const FOLLOW_SWITCH_HITS = 1;
+/** Shared mobile/desktop hysteresis — 2 keeps follow smooth without feeling stuck. */
+const FOLLOW_SWITCH_HITS = 2;
 
 /**
  * @param {{

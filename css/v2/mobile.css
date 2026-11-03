@@ -201,16 +201,34 @@
 
   whatimado-frame.is-mobile-docked .whatimado-frame__body {
     --v2-frame-pad-x: clamp(0.85rem, 2.5vw, 1.25rem);
-    /* ~10px closer to Resources than the prior 1.1–1.35rem inset. */
-    --v2-frame-pad-r: clamp(0.7rem, 2.2vw, 0.95rem);
+    --v2-frame-pad-r: clamp(0.85rem, 2.5vw, 1.1rem);
     padding-left: var(--v2-frame-pad-x);
     padding-right: var(--v2-frame-pad-r);
   }
 
-  /* Clear the vertical Resources tab with a small gap (~10px), no overlap. */
+  /*
+   * Resources tab is 1.55rem at right:0.35rem. Chat content butts up to its left
+   * edge with a 6px gap — no extra FAB gutter (the FAB sits in that same strip).
+   */
+  whatimado-frame.is-mobile-docked.has-resources-sticky {
+    --v2-resources-gutter: calc(1.55rem + 0.35rem + 6px);
+  }
+
   whatimado-frame.is-mobile-docked.has-resources-sticky .whatimado-frame__body {
-    --v2-frame-pad-r: calc(1.55rem + 0.35rem + 10px);
+    --v2-frame-pad-r: var(--v2-resources-gutter);
     padding-right: var(--v2-frame-pad-r);
+  }
+
+  whatimado-frame.is-mobile-docked.has-resources-sticky .whatimado-frame__composer {
+    padding-right: var(--v2-resources-gutter);
+  }
+
+  body.v2-app whatimado-frame.is-mobile-docked.has-resources-sticky > button.whatimado-frame__scroll-bottom {
+    right: var(--v2-resources-gutter);
+  }
+
+  whatimado-frame.is-mobile-docked.has-resources-sticky.is-scrollable:has(> .whatimado-frame__scroll-bottom.is-visible) .whatimado-frame__body-content {
+    padding-right: 0;
   }
 
   whatimado-frame.is-mobile-docked .whatimado-frame__body,
@@ -454,10 +472,10 @@
     outline-offset: 2px;
   }
 
-  /* Help, Link and crosshair: map top-right, below the undo + hamburger row. */
+  /* Help, Link and crosshair: map top-right, clearly under the undo + hamburger row. */
   whatimado-map .whatimado-map__timeline-tools {
     position: absolute;
-    top: calc(var(--v2-mobile-header-h, 3.55rem) + 0.2rem);
+    top: calc(var(--v2-mobile-header-h, 3.55rem) + 0.55rem);
     right: 0.35rem;
     z-index: 6;
     display: flex;

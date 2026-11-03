@@ -235,7 +235,8 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
   others.forEach((item) => {
     if (item.nodeId === "option-settings" || item.nodeId === "option-analytics") return;
     if (item.kind === "main" || item.role === "mission") {
-      placeAbove(item, 4);
+      /* One text line of air between the title bottom and the dot. */
+      placeAbove(item, 18);
       return;
     }
     if (item.role === "task" || item.kind === "path") {
