@@ -551,6 +551,11 @@ export function computeDefaultScenePan(mapEl) {
   return { panX, panY };
 }
 
+/** Screen-Y nudge for the chat focal line (mobile +5px; desktop uses CSS map shift). */
+export function chatFocalNudgePx() {
+  return MOBILE_MQ.matches ? 5 : 0;
+}
+
 /**
  * Place one node in the middle of the open gap above the prompt, not the frame's center.
  * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
@@ -575,7 +580,8 @@ export function computePanForNodeAboveFrame(mapEl, nodeId) {
   const nodeX = node.x * VIEW_W;
   const nodeY = node.y * VIEW_H;
   const anchorX = (stageRect.width / 2) * scaleX;
-  const anchorY = ((top + bottom) / 2 - stageRect.top) * scaleY;
+  const midScreenY = (top + bottom) / 2 + chatFocalNudgePx();
+  const anchorY = (midScreenY - stageRect.top) * scaleY;
 
   return {
     panX: anchorX - SCALE_CENTER_X - zoom * (nodeX - SCALE_CENTER_X),

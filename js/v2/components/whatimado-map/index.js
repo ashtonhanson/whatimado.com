@@ -47,6 +47,7 @@ import {
   computeMobileOpenHomePan,
   computeOpenHomeGravityPan,
   computePanForFocalNode,
+  chatFocalNudgePx,
   computePanForNodeAboveFrame,
   computeTimelineFrameFit,
   isOpenHomePhase
@@ -434,6 +435,8 @@ export class WhatimadoMap extends HTMLElement {
     this._chatFollowResumeTimer = null;
     /** @type {string} */
     this._chatFollowId = "";
+    /** Vertical chat-follow line is locked after the first settle. */
+    this._chatFollowHasY = false;
 
     this._onPinchTouchStart = (event) => this._handlePinchTouchStart(event);
     this._onPinchTouchMove = (event) => this._handlePinchTouchMove(event);
@@ -931,34 +934,40 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Smoothly pan to a chat-visible mission/task without changing zoom or progress.
+   * Smooth horizontal pan to a chat-visible mission/task — Y stays locked.
    * @param {string|null|undefined} id
    * @param {{ animate?: boolean, soft?: boolean }} [options]
    */
   followChatNode(id, { animate = true, soft = false } = {}) {
     if (!this.canChatFollow()) return;
     if (!id || !this._liveNodes.some((node) => node.id === id)) return;
-    if (soft && this._chatFollowId === id && this._nodeSitsInOpenBand(id)) return;
-    if (!soft && this._chatFollowId === id && this._nodeSitsInOpenBand(id)) return;
+    if (soft && this._chatFollowId === id && this._nodeSitsInOpenBand(id, { horizontalOnly: true })) return;
+    if (!soft && this._chatFollowId === id && this._nodeSitsInOpenBand(id, { horizontalOnly: true })) return;
 
     const keptZoom = this._zoom;
+    const fromX = this._panX;
+    const fromY = this._panY;
     this._chatFollowId = id;
-    const from = { panX: this._panX, panY: this._panY };
     const target = computePanForNodeAboveFrame(this, id);
-    this._animatePanTo(target.panX, target.panY, false);
-    this._pullNodeIntoOpenBand(id);
+    /* First settle places the focal line; later moves are X-only. */
+    const lockY = this._chatFollowHasY;
+    this._panX = target.panX;
+    this._panY = lockY ? fromY : target.panY;
+    this._pullNodeIntoOpenBand(id, { axis: lockY ? "x" : "xy" });
     this._zoom = keptZoom;
     const landedX = this._panX;
     const landedY = this._panY;
+    this._chatFollowHasY = true;
     if (!animate || this._driftReducedMotion) {
       this._applyPanTransform();
       return;
     }
-    this._panX = from.panX;
-    this._panY = from.panY;
+    /* Y is already at destination — animate only the horizontal glide. */
+    this._panX = fromX;
+    this._panY = landedY;
     this._zoom = keptZoom;
     this._applyPanTransform();
-    this._animatePanTo(landedX, landedY, true);
+    this._animatePanTo(landedX, landedY, true, { duration: 860, ease: "inout" });
   }
 
   /**
@@ -967,6 +976,7 @@ export class WhatimadoMap extends HTMLElement {
    */
   pauseChatFollow(resumeMs = 1400) {
     this._chatFollowPaused = true;
+    this._chatFollowHasY = false;
     if (this._chatFollowResumeTimer != null) {
       window.clearTimeout(this._chatFollowResumeTimer);
       this._chatFollowResumeTimer = null;
@@ -988,7 +998,8 @@ export class WhatimadoMap extends HTMLElement {
     const railBottom = document.querySelector(".v2-rail-brand")?.getBoundingClientRect().bottom;
     const top = mobile && railBottom > 0 ? Math.max(railBottom + 10, stage.top + 8) : stage.top + 18;
     const bottom = Math.max(top + 36, Math.min(stage.bottom - 8, frame.top - 20));
-    return { top, bottom, left: stage.left + 16, right: stage.right - 16 };
+    const midY = (top + bottom) / 2 + chatFocalNudgePx();
+    return { top, bottom, midY, left: stage.left + 16, right: stage.right - 16 };
   }
 
   /** @param {string} id */
@@ -1002,14 +1013,20 @@ export class WhatimadoMap extends HTMLElement {
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }
 
-  /** @param {string} id */
-  _nodeSitsInOpenBand(id) {
+  /**
+   * @param {string} id
+   * @param {{ horizontalOnly?: boolean }} [options]
+   */
+  _nodeSitsInOpenBand(id, { horizontalOnly = false } = {}) {
     const band = this._openBand();
     const center = this._nodeScreenCenter(id);
     if (!band || !center) return false;
-    const midY = band.top + (band.bottom - band.top) * 0.5;
+    const midY = band.midY ?? band.top + (band.bottom - band.top) * 0.5;
     const midX = (band.left + band.right) / 2;
     const bandH = Math.max(1, band.bottom - band.top);
+    if (horizontalOnly) {
+      return Math.abs(center.x - midX) <= 40 && center.y >= band.top - 8 && center.y <= band.bottom + 8;
+    }
     /* Chat follow wants the looked-at mission centered in the gap above the prompt. */
     return Math.abs(center.y - midY) <= bandH * 0.16 && Math.abs(center.x - midX) <= 40;
   }
@@ -1017,17 +1034,18 @@ export class WhatimadoMap extends HTMLElement {
   /**
    * Center the node in the open band above the prompt frame.
    * @param {string} id
+   * @param {{ axis?: "xy"|"x"|"y" }} [options]
    */
-  _pullNodeIntoOpenBand(id) {
+  _pullNodeIntoOpenBand(id, { axis = "xy" } = {}) {
     const band = this._openBand();
     const center = this._nodeScreenCenter(id);
     const layer = this._liveLayer;
     const svg = this._svg;
     if (!band || !center || !layer || !svg) return;
-    const midY = band.top + (band.bottom - band.top) * 0.5;
+    const midY = band.midY ?? band.top + (band.bottom - band.top) * 0.5;
     const midX = (band.left + band.right) / 2;
-    const dy = midY - center.y;
-    const dx = midX - center.x;
+    const dy = axis === "x" ? 0 : midY - center.y;
+    const dx = axis === "y" ? 0 : midX - center.x;
     if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
     const inv = invertCtm(layer.getScreenCTM());
     if (!inv) return;
@@ -1295,8 +1313,9 @@ export class WhatimadoMap extends HTMLElement {
    * @param {number} targetX
    * @param {number} targetY
    * @param {boolean} [animate]
+   * @param {{ duration?: number, ease?: "out"|"inout" }} [options]
    */
-  _animatePanTo(targetX, targetY, animate = false) {
+  _animatePanTo(targetX, targetY, animate = false, { duration = 680, ease = "out" } = {}) {
     this._stopPanGlide();
     if (this._gravityRaf !== null) {
       cancelAnimationFrame(this._gravityRaf);
@@ -1315,11 +1334,16 @@ export class WhatimadoMap extends HTMLElement {
     const startX = this._panX;
     const startY = this._panY;
     const startTime = performance.now();
-    const duration = 680;
+    const ms = Math.max(120, duration);
 
     const tick = (now) => {
-      const t = Math.min(1, (now - startTime) / duration);
-      const eased = 1 - (1 - t) ** 5;
+      const t = Math.min(1, (now - startTime) / ms);
+      const eased =
+        ease === "inout"
+          ? t < 0.5
+            ? 4 * t * t * t
+            : 1 - (-2 * t + 2) ** 3 / 2
+          : 1 - (1 - t) ** 5;
       this._panX = startX + (targetX - startX) * eased;
       this._panY = startY + (targetY - startY) * eased;
       this._applyPanTransform();
