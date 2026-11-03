@@ -519,6 +519,17 @@ whatimado-map .whatimado-map__node-float {
   animation-play-state: running;
 }
 
+/* Freeze title/dot float while the camera eases so labels do not drift off their nodes. */
+whatimado-map.is-camera-easing .whatimado-map__node-float,
+whatimado-map.is-camera-easing .whatimado-map__node--live .whatimado-map__node-float,
+whatimado-map.is-camera-easing .whatimado-map__node--live:hover .whatimado-map__node-float,
+whatimado-map.is-camera-easing .whatimado-map__node--live.is-hover .whatimado-map__node-float,
+whatimado-map.is-camera-easing .whatimado-map__node--live.is-selected .whatimado-map__node-float,
+whatimado-map.is-camera-easing .whatimado-map__node--live.is-dragging .whatimado-map__node-float,
+whatimado-map.is-camera-easing .whatimado-map__node--live.is-path-preview .whatimado-map__node-float {
+  animation-play-state: paused !important;
+}
+
 whatimado-map .whatimado-map__node--live:hover .whatimado-map__node-float,
 whatimado-map .whatimado-map__node--live.is-hover .whatimado-map__node-float,
 whatimado-map .whatimado-map__node--live.is-selected .whatimado-map__node-float,

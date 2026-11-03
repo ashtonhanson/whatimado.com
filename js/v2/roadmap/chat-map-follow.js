@@ -33,14 +33,14 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
       return;
     }
 
-    /* Hysteresis: require two consecutive frames on a new card before switching. */
+    /* Hysteresis: require a few consecutive frames before switching (cuts desktop flicker). */
     if (!force && lastId) {
       if (id === pendingId) pendingHits += 1;
       else {
         pendingId = id;
         pendingHits = 1;
       }
-      if (pendingHits < 2) return;
+      if (pendingHits < 3) return;
     }
 
     lastId = id;

@@ -551,9 +551,9 @@ export function computeDefaultScenePan(mapEl) {
   return { panX, panY };
 }
 
-/** Screen-Y nudge for the chat focal line (mobile +5px, desktop +15px). */
+/** Screen-Y nudge for the chat focal line (mobile +10px, desktop +15px). */
 export function chatFocalNudgePx() {
-  return MOBILE_MQ.matches ? 5 : 15;
+  return MOBILE_MQ.matches ? 10 : 15;
 }
 
 /**

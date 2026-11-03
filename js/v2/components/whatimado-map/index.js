@@ -358,6 +358,15 @@ export class WhatimadoMap extends HTMLElement {
     this._panResetRaf = null;
     /** @type {number|null} */
     this._gravityRaf = null;
+    /** Live camera-ease targets — retarget mid-flight without canceling the RAF. */
+    this._panAnimFromX = 0;
+    this._panAnimFromY = 0;
+    this._panAnimTargetX = 0;
+    this._panAnimTargetY = 0;
+    this._panAnimStartMs = 0;
+    this._panAnimDurationMs = 680;
+    /** @type {"out"|"inout"} */
+    this._panAnimEase = "out";
     /** @type {boolean} */
     this._focalLocked = false;
     /** @type {string|null} */
@@ -566,14 +575,20 @@ export class WhatimadoMap extends HTMLElement {
     this.lockFromFrame();
   }
 
-  /** Frame slide must not take the constellation with it. */
-  cancelPanFromFrameDrag() {
-    this._cancelPanMoveFrame();
-    this._stopPanGlide();
+  /** Stop a camera ease without touching title layout. */
+  _stopCameraEase() {
     if (this._gravityRaf !== null) {
       cancelAnimationFrame(this._gravityRaf);
       this._gravityRaf = null;
     }
+    this.classList.remove("is-camera-easing");
+  }
+
+  /** Frame slide must not take the constellation with it. */
+  cancelPanFromFrameDrag() {
+    this._cancelPanMoveFrame();
+    this._stopPanGlide();
+    this._stopCameraEase();
     this._releasePanCapture();
     if (this._globalPanActive) {
       this._detachGlobalPanListeners();
@@ -592,10 +607,7 @@ export class WhatimadoMap extends HTMLElement {
       cancelAnimationFrame(this._panResetRaf);
       this._panResetRaf = null;
     }
-    if (this._gravityRaf !== null) {
-      cancelAnimationFrame(this._gravityRaf);
-      this._gravityRaf = null;
-    }
+    this._stopCameraEase();
     this._onSelect = null;
     this._promptEmptyChecker = null;
     this.removeEventListener("pointermove", this._onPointerMove);
@@ -812,10 +824,7 @@ export class WhatimadoMap extends HTMLElement {
       redraw();
     } finally {
       this._cameraHeld = false;
-      if (this._gravityRaf !== null) {
-        cancelAnimationFrame(this._gravityRaf);
-        this._gravityRaf = null;
-      }
+      this._stopCameraEase();
       this._zoom = kept.zoom;
       this._panX = kept.panX;
       this._panY = kept.panY;
@@ -960,7 +969,8 @@ export class WhatimadoMap extends HTMLElement {
       return;
     }
 
-    this._animatePanTo(target.panX, panY, true, { duration: 560, ease: "inout" });
+    /* Retargetable X-only ease — never reflows titles. */
+    this._animatePanTo(target.panX, panY, true, { duration: 640, ease: "inout", layout: false });
   }
 
   /**
@@ -1300,47 +1310,55 @@ export class WhatimadoMap extends HTMLElement {
    * @param {number} targetX
    * @param {number} targetY
    * @param {boolean} [animate]
-   * @param {{ duration?: number, ease?: "out"|"inout" }} [options]
+   * @param {{ duration?: number, ease?: "out"|"inout", layout?: boolean }} [options]
    */
-  _animatePanTo(targetX, targetY, animate = false, { duration = 680, ease = "out" } = {}) {
+  _animatePanTo(targetX, targetY, animate = false, { duration = 680, ease = "out", layout = false } = {}) {
     this._stopPanGlide();
-    if (this._gravityRaf !== null) {
-      cancelAnimationFrame(this._gravityRaf);
-      this._gravityRaf = null;
-    }
 
     const distance = Math.hypot(targetX - this._panX, targetY - this._panY);
     const slide = animate && distance > 1.5 && !this._driftReducedMotion;
     if (!slide) {
+      this._stopCameraEase();
       this._panX = targetX;
       this._panY = targetY;
       this._applyPanTransform();
-      this._layoutCallouts();
+      /* Camera moves must not reflow titles — they stay in node SVG space. */
+      if (layout) this._layoutCallouts();
       return;
     }
 
-    const startX = this._panX;
-    const startY = this._panY;
-    const startTime = performance.now();
-    const ms = Math.max(120, duration);
+    /* Mid-flight retarget: keep the RAF, restart the ease from the live pan. */
+    this._panAnimFromX = this._panX;
+    this._panAnimFromY = this._panY;
+    this._panAnimTargetX = targetX;
+    this._panAnimTargetY = targetY;
+    this._panAnimStartMs = performance.now();
+    this._panAnimDurationMs = Math.max(120, duration);
+    this._panAnimEase = ease;
+    this.classList.add("is-camera-easing");
+
+    if (this._gravityRaf !== null) return;
 
     const tick = (now) => {
-      const t = Math.min(1, (now - startTime) / ms);
+      const ms = this._panAnimDurationMs;
+      const t = Math.min(1, (now - this._panAnimStartMs) / ms);
       const eased =
-        ease === "inout"
+        this._panAnimEase === "inout"
           ? t < 0.5
             ? 4 * t * t * t
             : 1 - (-2 * t + 2) ** 3 / 2
           : 1 - (1 - t) ** 5;
-      this._panX = startX + (targetX - startX) * eased;
-      this._panY = startY + (targetY - startY) * eased;
+      this._panX = this._panAnimFromX + (this._panAnimTargetX - this._panAnimFromX) * eased;
+      this._panY = this._panAnimFromY + (this._panAnimTargetY - this._panAnimFromY) * eased;
       this._applyPanTransform();
       if (t < 1) {
         this._gravityRaf = requestAnimationFrame(tick);
       } else {
         this._gravityRaf = null;
-        /* Titles stay pinned in SVG space during the ease; reflow once at rest. */
-        this._layoutCallouts();
+        this.classList.remove("is-camera-easing");
+        this._panX = this._panAnimTargetX;
+        this._panY = this._panAnimTargetY;
+        this._applyPanTransform();
       }
     };
 
@@ -1539,7 +1557,8 @@ export class WhatimadoMap extends HTMLElement {
     const to = { zoom: this._zoom, panX: this._panX, panY: this._panY };
     if (Math.abs(to.zoom - from.zoom) < 0.005 && Math.hypot(to.panX - from.panX, to.panY - from.panY) < 1) return;
     this._stopPanGlide();
-    if (this._gravityRaf !== null) cancelAnimationFrame(this._gravityRaf);
+    this._stopCameraEase();
+    this.classList.add("is-camera-easing");
     const started = performance.now();
     const tick = (now) => {
       const t = Math.min(1, Math.max(0, (now - started) / durationMs));
@@ -1548,7 +1567,12 @@ export class WhatimadoMap extends HTMLElement {
       this._panX = from.panX + (to.panX - from.panX) * eased;
       this._panY = from.panY + (to.panY - from.panY) * eased;
       this._applyPanTransform();
-      this._gravityRaf = t < 1 ? requestAnimationFrame(tick) : null;
+      if (t < 1) {
+        this._gravityRaf = requestAnimationFrame(tick);
+      } else {
+        this._gravityRaf = null;
+        this.classList.remove("is-camera-easing");
+      }
     };
     this._zoom = from.zoom;
     this._panX = from.panX;
@@ -1964,12 +1988,10 @@ export class WhatimadoMap extends HTMLElement {
     if (!this._panLayer) return;
     this._writePanTransform(this._zoom);
     /*
-     * Titles live in each node's SVG space and must ride with the dots.
-     * Re-running collision layout mid-pan/camera-ease shoves titles around
-     * at staggered times — skip until the map is still.
+     * Titles live in each node's SVG space and ride with the dots.
+     * Never reflow callouts from a camera write — collision layout mid-pan
+     * is what made titles drift at staggered times.
      */
-    if (this._userIsMovingMap()) return;
-    this._layoutCallouts();
   }
 
   /** @param {number} z */
@@ -3018,7 +3040,13 @@ export class WhatimadoMap extends HTMLElement {
    * sit in SVG space, so they ride with their nodes and are not placed again.
    */
   _userIsMovingMap() {
-    return Boolean(this._panPointer || this._panGliding || this._pinch || this._gravityRaf != null);
+    return Boolean(
+      this._panPointer ||
+        this._panGliding ||
+        this._pinch ||
+        this._gravityRaf != null ||
+        this.classList.contains("is-camera-easing")
+    );
   }
 
   /**
@@ -3065,6 +3093,7 @@ export class WhatimadoMap extends HTMLElement {
    */
   _layoutCallouts() {
     if (this._layingOut) return;
+    /* Camera ease / user pan: titles must stay glued in SVG space above their dots. */
     if (this._userIsMovingMap()) return;
     const layer = this._liveLayer;
     const svg = this._svg;
