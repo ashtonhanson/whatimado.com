@@ -37,13 +37,27 @@ import { timelineShowsInOpenChat } from "./map-chat-focus.js";
 const circleBackEditorOpen = new Set();
 /** @type {Map<string, { reason: string, instructions: string, returnDate: string }>} */
 const circleBackUnsaved = new Map();
-/** Completed tasks the user has expanded again (collapsed by default). */
-/** @type {Set<string>} */
-const doneTaskExpanded = new Set();
+/**
+ * Explicit open/closed overrides for task bars.
+ * Absent → current unfinished task open, everything else closed (done always closed).
+ * @type {Map<string, boolean>}
+ */
+const taskOpenOverride = new Map();
 
-const DONE_CHEVRON = `<svg class="v2-resources-acc__chevron" viewBox="0 0 16 16" aria-hidden="true">
+const TASK_CHEVRON = `<svg class="v2-resources-acc__chevron" viewBox="0 0 16 16" aria-hidden="true">
   <path d="M4 6.5 8 10.5 12 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>`;
+
+/**
+ * @param {string} id
+ * @param {{ done?: boolean, id?: string }} mission
+ * @param {string | null} focusId
+ */
+function isTaskBarExpanded(id, mission, focusId) {
+  if (taskOpenOverride.has(id)) return Boolean(taskOpenOverride.get(id));
+  if (mission?.done) return false;
+  return Boolean(focusId) && (mission?.id === focusId || id === focusId);
+}
 
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
@@ -415,6 +429,10 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                       aria-label="${mission.done ? "Task completed" : "Mark task complete"}"
                     />
                   </label>`;
+                const badges = `
+                  ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
+                  ${bypassed ? `<span class="v2-mission__badge v2-mission__badge--bypassed">Not completed</span>` : ""}
+                  ${status === "Now" && !waiting ? `<span class="v2-mission__badge v2-mission__badge--now">Now</span>` : ""}`;
                 const instructions = `
                   ${detail}
                   ${mission.text && actionLines.length > 1 ? `<p class="v2-mission__text">${escapeHtml(mission.text)}</p>` : ""}
@@ -432,45 +450,36 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                     ${renderMissionChatDrawer(id, mission.title)}
                     ${circlePanel}
                   </div>`;
-                if (mission.done) {
-                  const expanded = doneTaskExpanded.has(id);
-                  const panelId = `task-done-panel-${escapeHtml(id)}`;
-                  return `
-                  <li class="v2-mission is-done${expanded ? " is-done-expanded" : " is-done-collapsed"}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
-                    <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
+                const expanded = isTaskBarExpanded(id, mission, focus);
+                const panelId = `task-panel-${escapeHtml(id)}`;
+                const stateClass = [
+                  mission.done ? "is-done" : "",
+                  waiting ? "is-waiting" : "",
+                  bypassed ? "is-bypassed" : "",
+                  mission.id === focus ? "is-focused" : "",
+                  expanded ? "is-task-expanded" : "is-task-collapsed"
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+                return `
+                  <li class="v2-mission ${stateClass}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
                     <div class="v2-mission__panel">
                       <div class="v2-mission-done-acc">
                         <div class="v2-mission-done-acc__bar">
                           ${checkbox}
-                          <button type="button" class="v2-mission-done-acc__toggle" data-done-toggle="${escapeHtml(id)}" aria-expanded="${expanded ? "true" : "false"}" aria-controls="${panelId}">
+                          <button type="button" class="v2-mission-done-acc__toggle" data-task-toggle="${escapeHtml(id)}" aria-expanded="${expanded ? "true" : "false"}" aria-controls="${panelId}">
                             <span class="v2-mission-done-acc__title">${escapeHtml(mission.title)}</span>
-                            ${DONE_CHEVRON}
+                            ${badges}
+                            ${TASK_CHEVRON}
                           </button>
                         </div>
                         <div class="v2-mission-done-acc__panel${expanded ? "" : " is-collapsed"}" id="${panelId}" role="region" aria-label="${escapeHtml(mission.title)}" ${expanded ? "" : 'aria-hidden="true" inert'}>
                           <div class="v2-mission__content">
+                            <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
+                            <h4 class="v2-mission__title sr-only" tabindex="-1">${escapeHtml(mission.title)}</h4>
                             ${instructions}
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </li>`;
-                }
-                return `
-                  <li class="v2-mission${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
-                    <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
-                    <div class="v2-mission__panel">
-                      <div class="v2-mission__content">
-                        <div class="v2-mission__head">
-                          <div class="v2-mission__head-main">
-                            ${checkbox}
-                            <h4 class="v2-mission__title" tabindex="-1">${escapeHtml(mission.title)}</h4>
-                          </div>
-                          ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
-                          ${bypassed ? `<span class="v2-mission__badge v2-mission__badge--bypassed">Not completed</span>` : ""}
-                          ${status === "Now" && !waiting ? `<span class="v2-mission__badge v2-mission__badge--now">Now</span>` : ""}
-                        </div>
-                        ${instructions}
                       </div>
                     </div>
                   </li>`;
@@ -577,6 +586,7 @@ export function createMissionsController(ui) {
   function focusMissionInUi(missionId) {
     if (!missionId) return;
     appStore.journey.focusMissionId = missionId;
+    taskOpenOverride.delete(missionId);
     highlightTimelineMission(timelineHost(), missionId);
     listEl?.dispatchEvent(new CustomEvent("mission-focus", { bubbles: true, detail: { id: missionId } }));
     const target = document.getElementById(`mission-${missionId}`);
@@ -755,13 +765,14 @@ export function createMissionsController(ui) {
       }
     }
     if (done) {
-      doneTaskExpanded.delete(completeId);
+      taskOpenOverride.set(completeId, false);
       if (appStore.journey.focusMissionId === completeId) {
         const next = pickDefaultFocusMission(stages);
         appStore.journey.focusMissionId = next;
+        if (next) taskOpenOverride.delete(next);
       }
     } else {
-      doneTaskExpanded.delete(completeId);
+      taskOpenOverride.delete(completeId);
     }
     touchJourney();
     flush();
@@ -772,6 +783,7 @@ export function createMissionsController(ui) {
   function focusStage(stageIndex) {
     const stages = appStore.journey.missionsStages || [];
     const id = focusStageTasks(appStore.journey, stageIndex);
+    if (id) taskOpenOverride.delete(id);
     touchJourney();
     flush();
     rerender({ scroll: false });
@@ -847,11 +859,11 @@ export function createMissionsController(ui) {
         if (Number.isFinite(stageIndex)) focusStage(stageIndex);
         return;
       }
-      const doneToggle = target?.closest("[data-done-toggle]");
-      const doneId = doneToggle?.getAttribute("data-done-toggle");
-      if (doneId) {
-        if (doneTaskExpanded.has(doneId)) doneTaskExpanded.delete(doneId);
-        else doneTaskExpanded.add(doneId);
+      const taskToggle = target?.closest("[data-task-toggle]");
+      const taskId = taskToggle?.getAttribute("data-task-toggle");
+      if (taskId) {
+        const open = taskToggle.getAttribute("aria-expanded") === "true";
+        taskOpenOverride.set(taskId, !open);
         rerender({ scroll: false });
         return;
       }

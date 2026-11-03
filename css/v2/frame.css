@@ -267,9 +267,35 @@ whatimado-frame .whatimado-frame__composer {
   pointer-events: none;
 }
 
+/* One soft glow under the prompt + Send pair (not separate shadows). */
+whatimado-frame .whatimado-frame__composer::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  right: 0.15rem;
+  bottom: 0;
+  height: 6.75rem;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 98% 88% at 50% 68%,
+    rgba(0, 0, 0, 0.88) 0%,
+    rgba(0, 0, 0, 0.62) 32%,
+    rgba(0, 0, 0, 0.34) 55%,
+    rgba(0, 0, 0, 0.12) 72%,
+    transparent 86%
+  );
+  filter: blur(14px);
+  opacity: 1;
+}
+
 whatimado-frame .whatimado-frame__composer-input,
 whatimado-frame .whatimado-frame__composer-send {
+  position: relative;
+  z-index: 1;
   pointer-events: auto;
+  opacity: 1;
+  background-image: none;
 }
 
 whatimado-frame .whatimado-frame__composer-input {
@@ -279,7 +305,7 @@ whatimado-frame .whatimado-frame__composer-input {
   padding: 0.55rem 1rem;
   border: 1px solid rgba(46, 232, 214, 0.32);
   border-radius: var(--v2-prompt-radius);
-  background: var(--v2-frame-glass-tint);
+  background-color: #0d1a1d;
   color: #ffffff;
   font: inherit;
   font-size: 0.9rem;
@@ -310,7 +336,7 @@ whatimado-frame .whatimado-frame__composer-send {
   border: 1px solid var(--v2-border);
   /* Horizontally flipped vs prompt boxes — square sits top-left */
   border-radius: var(--v2-btn-radius);
-  background: transparent;
+  background-color: #0d1a1d;
   color: var(--v2-teal);
   font-size: 0.78rem;
   font-weight: 600;
@@ -325,7 +351,7 @@ whatimado-frame .whatimado-frame__composer-send:disabled {
 }
 
 whatimado-frame .whatimado-frame__composer-send:not(:disabled):hover {
-  background: rgba(46, 232, 214, 0.08);
+  background-color: #122428;
 }
 
 @keyframes v2-kicker-enter {
@@ -935,7 +961,8 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   padding: 0;
   border: 1.5px solid color-mix(in srgb, var(--v2-teal) 85%, transparent);
   border-radius: 50%;
-  background: transparent;
+  background-color: transparent;
+  background-image: none;
   cursor: pointer;
   vertical-align: middle;
   flex: 0 0 auto;
@@ -943,9 +970,11 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 
 .v2-mission__done-check:checked {
   border-color: var(--v2-teal);
-  background:
-    radial-gradient(circle at center, var(--v2-teal) 0 38%, transparent 40%),
-    color-mix(in srgb, var(--v2-teal) 18%, transparent);
+  background-color: color-mix(in srgb, var(--v2-teal) 22%, #061014);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.2 8.2 6.4 11.3 12.8 4.6' stroke='%232ee8d6' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 0.72rem 0.72rem;
 }
 
 .v2-mission__done-check:focus-visible {
@@ -983,8 +1012,9 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
   min-height: 40px;
   padding: 0.2rem 0.45rem 0.2rem 0.15rem;
   appearance: none;
@@ -1005,8 +1035,14 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-mission-done-acc__title {
+  flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.v2-mission-done-acc__toggle .v2-resources-acc__chevron {
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
 .v2-mission-done-acc__toggle[aria-expanded="true"] .v2-resources-acc__chevron {
@@ -1014,6 +1050,7 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-mission-done-acc__panel {
+  position: relative;
   margin-top: 0.35rem;
 }
 
@@ -1024,13 +1061,19 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   visibility: hidden;
 }
 
-.v2-mission.is-done-collapsed {
+.v2-mission.is-task-collapsed {
   border-top-color: transparent;
 }
 
 .v2-mission.is-done .v2-mission-done-acc__title {
   text-decoration: line-through;
   opacity: 0.85;
+}
+
+/* Delete X lives inside the open panel only. */
+.v2-mission-done-acc__panel .v2-mission__delete {
+  top: 0.15rem;
+  right: 0.1rem;
 }
 
 .v2-mission__controls {
