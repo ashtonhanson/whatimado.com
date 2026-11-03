@@ -1085,6 +1085,10 @@ export function initChatFlow(ctx) {
       setPhase(PHASE.EXPLORING);
     }
 
+    /* Snapshot pre-send chat so sidebar/header Undo can reverse the turn. */
+    pushRoadmapUndo(appStore.journey, { kind: "chat" });
+    syncChatUndoButtons();
+
     const thread = continuationThread(messagesEl);
     const messageIndex = appStore.journey.messages.length;
     appendMessage(thread, "user", trimmed, { messageIndex, editable: true });

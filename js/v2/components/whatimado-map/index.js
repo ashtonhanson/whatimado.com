@@ -3551,6 +3551,7 @@ export class WhatimadoMap extends HTMLElement {
         const bodyR = node.type === "more" || isGoal ? r : isAlternate ? r * 0.72 : r;
         const goalTitle = isGoal ? mapNodeLabel(node.title || node.label || "Goal", { compact: true }) : "";
         const goalIncomeFull = isGoal ? goalIncomeRange(node, appStore.location) : "";
+        const isYearlyGoalIncome = /\sper year$/i.test(goalIncomeFull);
         const goalIncomeMain = goalIncomeFull.replace(/\s+per year$/i, "");
         const mobileMap = window.matchMedia("(max-width: 900px)").matches;
         /* Goal destination star: prior 1.5×, then +25%. */
@@ -3588,7 +3589,7 @@ export class WhatimadoMap extends HTMLElement {
             ${isGoal
               ? `<polygon class="whatimado-map__goal-star" points="${goalStar}" aria-hidden="true" />
             ${goalTitle ? `<text class="whatimado-map__goal-title" text-anchor="middle"><tspan x="${cx}" y="${cy - starOuter - r * 0.85}">${escapeHtml(goalTitle)}</tspan></text>` : ""}
-            ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan><tspan x="${cx}" dy="1.15em">per year</tspan></text>` : ""}`
+            ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan>${isYearlyGoalIncome ? `<tspan x="${cx}" dy="1.15em">per year</tspan>` : ""}</text>` : ""}`
               : ""}
             ${kickerText
               ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`

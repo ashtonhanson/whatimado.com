@@ -84,6 +84,19 @@ describe("roadmap navigation", () => {
     assert.equal(result.ok, false);
   });
 
+  it("chat send undo restores messages from a chat snapshot", () => {
+    const journey = journeyWithMissions([normalizeMissionFields({ id: "m1", title: "Only" })]);
+    journey.messages = [{ role: "user", content: "before" }];
+    pushRoadmapUndo(journey, { kind: "chat" });
+    journey.messages.push({ role: "user", content: "after send" });
+    journey.messages.push({ role: "assistant", content: "reply" });
+    assert.equal(canRoadmapUndo(journey), true);
+    const restored = popRoadmapUndo(journey);
+    assert.equal(restored.ok, true);
+    assert.equal(restored.kind, "chat");
+    assert.deepEqual(journey.messages, [{ role: "user", content: "before" }]);
+  });
+
   it("dependentsOf lists tasks that name a prerequisite id", () => {
     const stages = [
       {
