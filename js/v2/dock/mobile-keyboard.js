@@ -5,6 +5,11 @@ import { syncMobileFocusLift, syncMobileReadingMap } from "./mobile-focus-lift.j
 /**
  * Pin prompt above the software keyboard (Visual Viewport inset).
  * Always re-lock document scroll first — iOS scrolls the page on focus.
+ *
+ * Inside a mission (chat sheet / reading): keep the frame top frozen and only
+ * raise the bottom above the keyboard so the composer stays visible. Do not
+ * re-anchor top or refit the map — that was jumping the sheet and scaling the
+ * constellation into the menu bar.
  */
 export function syncMobileKeyboard(controller) {
   if (!controller._mobileMode) return;
@@ -29,7 +34,6 @@ export function syncMobileKeyboard(controller) {
   if (keyboardOpen && focused && (typing || chatReading)) {
     const gap = measureCssVarLength("--v2-mobile-keyboard-gap") || 12;
     const promptDrop = measureCssVarLength("--v2-mobile-prompt-drop") || 8;
-    const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
     const vv = window.visualViewport;
     // Pin to the visual viewport bottom (not layout viewport) so the prompt
     // stays above the keyboard even when Safari shifts offsetTop.
@@ -41,18 +45,29 @@ export function syncMobileKeyboard(controller) {
     controller._keyboardDocked = true;
     controller.frameEl.classList.add("is-mobile-keyboard");
     controller.frameEl.style.bottom = `${bottom}px`;
+
     if (chatReading) {
-      const anchors = controller._anchors || controller._refreshAnchors?.();
-      const readingTop = anchors?.readingTop ?? anchors?.collapsedTop;
-      if (typeof readingTop === "number" && controller.mainEl) {
-        const mainRect = controller.mainEl.getBoundingClientRect();
-        const screenTop = readingTop + mainRect.top + promptDrop;
-        controller.frameEl.style.top = `${Math.max(headerH + 8, screenTop)}px`;
+      /*
+       * Freeze the sheet top for the whole keyboard session. Re-anchoring to
+       * readingTop (or chasing a shifting getBoundingClientRect) jumped the
+       * frame up and crushed the map into the header. An explicit frozen top
+       * lets bottom shrink the sheet so the composer rides above the keyboard.
+       */
+      if (!Number.isFinite(controller._keyboardFrozenTop)) {
+        const styled = Number.parseFloat(controller.frameEl.style.top);
+        const currentTop = Number.isFinite(styled)
+          ? styled
+          : controller.frameEl.getBoundingClientRect().top;
+        controller._keyboardFrozenTop = Math.max(0, currentTop);
       }
+      controller.frameEl.style.top = `${controller._keyboardFrozenTop}px`;
     } else {
+      controller._keyboardFrozenTop = null;
       controller.frameEl.style.removeProperty("top");
     }
+
     document.body.classList.add("is-mobile-keyboard-open");
+    /* Focus lift is a no-op for chat sheets (map frozen); still lock scroll. */
     syncMobileFocusLift(controller);
     return;
   }
@@ -76,6 +91,7 @@ export function clearKeyboardDock(controller, { keepFocusLayout = false } = {}) 
   }
 
   controller._keyboardDocked = false;
+  controller._keyboardFrozenTop = null;
   controller.frameEl.classList.remove("is-mobile-keyboard");
   document.body.classList.remove("is-mobile-keyboard-open");
 

@@ -1161,6 +1161,24 @@
     transition: none;
   }
 
+  /*
+   * Mission reading + keyboard: hold the sheet's top edge; only bottom rises so
+   * the composer stays visible above the keys. Map chrome is frozen in JS.
+   */
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard.is-mobile-reading {
+    transition: none;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard.is-mobile-reading .whatimado-frame__inner {
+    min-height: 0;
+  }
+
+  whatimado-frame.is-mobile-docked.is-mobile-keyboard .whatimado-frame__composer {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+  }
+
   whatimado-frame.is-mobile-docked.is-mobile-keyboard {
     z-index: 80;
     transition: none;

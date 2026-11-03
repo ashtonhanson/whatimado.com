@@ -460,6 +460,18 @@ export class WhatimadoMap extends HTMLElement {
     this._refreshDrift();
     this._onViewportResize = () => {
       this._syncMobileHeaderMapTools();
+      /*
+       * iOS Safari fires resize when the keyboard opens. Refitting here was
+       * scaling the constellation up into the menu bar — freeze until blur.
+       */
+      if (
+        window.matchMedia("(max-width: 900px)").matches &&
+        (document.body.classList.contains("is-mobile-keyboard-open") ||
+          document.body.classList.contains("is-mobile-composer-focus") ||
+          document.getElementById("dynamic-frame")?._dock?._keyboardDocked)
+      ) {
+        return;
+      }
       if (window.matchMedia("(max-width: 900px)").matches) {
         relayoutLinkedSpread();
         if (!this._userPanned && !this._pinch) this.syncRoadmapBranchFit({ animate: false });
@@ -1387,7 +1399,13 @@ export class WhatimadoMap extends HTMLElement {
     if (this._frameCoversMap(frame, main, frameTop)) return false;
     if (window.matchMedia("(max-width: 900px)").matches) {
       if (isOpenHomePhase()) return false;
-      if (frame._dock?._keyboardDocked || document.body.classList.contains("is-mobile-composer-focus")) return false;
+      if (
+        frame._dock?._keyboardDocked ||
+        document.body.classList.contains("is-mobile-composer-focus") ||
+        document.body.classList.contains("is-mobile-keyboard-open")
+      ) {
+        return false;
+      }
     }
     const selectedId = this._selectedId || graphStore.selectedId;
     const selected = this._liveNodes.find((node) => node.type === "path" && node.id === selectedId);
@@ -1472,6 +1490,14 @@ export class WhatimadoMap extends HTMLElement {
    */
   syncRoadmapBranchFit({ animate = false } = {}) {
     if (this._cameraHeld) return true;
+    if (
+      window.matchMedia("(max-width: 900px)").matches &&
+      (document.body.classList.contains("is-mobile-keyboard-open") ||
+        document.body.classList.contains("is-mobile-composer-focus") ||
+        document.getElementById("dynamic-frame")?._dock?._keyboardDocked)
+    ) {
+      return true;
+    }
     if (this._userPanned) return false;
     const hasRoadmapColumns = this._liveNodes.some((node) => node.type === "task");
     if (!hasRoadmapColumns) return false;

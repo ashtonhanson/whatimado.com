@@ -81,9 +81,22 @@ function applyMapPin(map, box) {
   map.style.setProperty("--v2-map-band-shift", `${Math.max(0, Math.round((box.height - svgH) / 2))}px`);
 }
 
+/** True while the software keyboard or composer focus should freeze the map camera. */
+export function isMobileMapCameraFrozen() {
+  return (
+    document.body.classList.contains("is-mobile-keyboard-open") ||
+    document.body.classList.contains("is-mobile-composer-focus")
+  );
+}
+
 /** Recenter the constellation in the pinned stage when height changes. */
 function fitPinnedMap(map) {
   if (sheetCoversMap()) {
+    cancelPendingMapFit();
+    return;
+  }
+  /* Keyboard / composer focus: keep the current scale and pan — do not refit. */
+  if (isMobileMapCameraFrozen()) {
     cancelPendingMapFit();
     return;
   }
@@ -100,7 +113,7 @@ function fitPinnedMap(map) {
   map.dataset.pinFrameTop = String(frameTop);
   const host = /** @type {HTMLElement & { fitLockedScene?: (opts?: { animate?: boolean }) => void }} */ (map);
   const run = () => {
-    if (sheetCoversMap()) return;
+    if (sheetCoversMap() || isMobileMapCameraFrozen()) return;
     host.fitLockedScene?.({ animate: false });
   };
   if (heightChanged || frameMoved || map.dataset.sceneFit !== "1") {
@@ -246,6 +259,16 @@ export function syncMobileReadingMap(controller) {
     return;
   }
 
+  /*
+   * Composer focus / keyboard: keep the pinned band and camera as they were.
+   * Re-measuring against a keyboard-shrunk visual viewport was scaling the map
+   * up into the menu bar and jumping the sheet.
+   */
+  if (map.dataset.readingPinned === "1" && isMobileMapCameraFrozen()) {
+    cancelPendingMapFit();
+    return;
+  }
+
   const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
   /* Pin covers the live menu→frame band. Paint scale stays at the 3/4 height so dots do not jump from meet. */
@@ -347,6 +370,19 @@ export function syncMobileFocusLift(controller) {
   }
 
   lockDocumentScroll();
+
+  /*
+   * Mission / chat sheet: never swap the reading map pin for focus packing.
+   * That reflow was the source of the map scale-up and chrome crush on focus.
+   */
+  if (controller._mobileChatSheet) {
+    const frameRect = controller.frameEl.getBoundingClientRect();
+    document.body.style.setProperty("--v2-mobile-focus-prompt-top", `${frameRect.top}px`);
+    document.documentElement.style.setProperty("--v2-mobile-focus-lift", "0px");
+    document.documentElement.style.setProperty("--v2-mobile-focus-kicker-shift", "0px");
+    return;
+  }
+
   pinMobileFocusChrome(controller);
 
   const frameRect = controller.frameEl.getBoundingClientRect();
