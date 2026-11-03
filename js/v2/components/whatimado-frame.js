@@ -76,6 +76,10 @@ export class WhatimadoFrame extends HTMLElement {
     this._breathe = null;
     /** @type {HTMLElement|null} */
     this._dragRail = null;
+    /** @type {HTMLButtonElement|null} */
+    this._resourcesStickyBtn = null;
+    /** @type {HTMLElement|null} */
+    this._resourcesSheet = null;
 
     /** @type {boolean} */
     this._suppressMobileFocusGlide = false;
@@ -140,6 +144,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._onDragPointerDown = (event) => this._handleDragPointerDown(event);
     this._onDragPointerMove = (event) => this._handleDragPointerMove(event);
     this._onDragPointerUp = (event) => this._handleDragPointerUp(event);
+    this._onResourcesStickyClick = () => this.toggleResourcesSheet();
   }
 
   connectedCallback() {
@@ -175,6 +180,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput?.removeEventListener("input", this._onComposerInput);
     this._sendBtn?.removeEventListener("pointerdown", this._onSendPointerDown);
     this._scrollBottomBtn?.removeEventListener("click", this._onScrollBottomClick);
+    this._resourcesStickyBtn?.removeEventListener("click", this._onResourcesStickyClick);
     this._body?.removeEventListener("scroll", this._onBodyScroll);
     this._body?.removeEventListener("wheel", this._onWheel);
     this._body?.removeEventListener("touchstart", this._onTouchStart);
@@ -235,6 +241,39 @@ export class WhatimadoFrame extends HTMLElement {
     this._updateScrollFade();
     this._updateCustomScrollbar();
     this._updateScrollBottomBtn();
+  }
+
+  /**
+   * Mobile Resources tab under the drag handle.
+   * @param {boolean} [open]
+   */
+  toggleResourcesSheet(open) {
+    const btn = this._resourcesStickyBtn;
+    const sheet = this._resourcesSheet;
+    if (!btn || !sheet || btn.hidden) return;
+    const next = typeof open === "boolean" ? open : btn.getAttribute("aria-expanded") !== "true";
+    btn.setAttribute("aria-expanded", next ? "true" : "false");
+    btn.classList.toggle("is-open", next);
+    sheet.hidden = !next;
+    sheet.classList.toggle("is-open", next);
+  }
+
+  /**
+   * Sync the sticky Resources tab + sheet from the rail payload.
+   * @param {{ html: string, region: string, visible: boolean }} payload
+   */
+  setResourcesSheetContent({ html = "", region = "", visible = false } = {}) {
+    const btn = this._resourcesStickyBtn;
+    const sheet = this._resourcesSheet;
+    const list = this.querySelector("#whatimado-frame-resources-list");
+    const regionEl = this.querySelector("#whatimado-frame-resources-region");
+    if (!(btn instanceof HTMLButtonElement) || !sheet || !(list instanceof HTMLElement)) return;
+    if (regionEl instanceof HTMLElement) regionEl.textContent = region;
+    list.innerHTML = html;
+    const show = Boolean(visible && html.trim());
+    btn.hidden = !show;
+    this.classList.toggle("has-resources-sticky", show);
+    if (!show) this.toggleResourcesSheet(false);
   }
 
   /** Restore unsent composer text for the current session/journey scope. */
@@ -401,9 +440,16 @@ export class WhatimadoFrame extends HTMLElement {
     this._scrollBottomBtn = /** @type {HTMLButtonElement|null} */ (
       this.querySelector(".whatimado-frame__scroll-bottom")
     );
+    this._resourcesStickyBtn = /** @type {HTMLButtonElement|null} */ (
+      this.querySelector(".whatimado-frame__resources-sticky")
+    );
+    this._resourcesSheet = /** @type {HTMLElement|null} */ (
+      this.querySelector(".whatimado-frame__resources-sheet")
+    );
     // Prevent textarea blur before the click lands (mobile double-tap Send).
     this._sendBtn?.addEventListener("pointerdown", this._onSendPointerDown);
     this._scrollBottomBtn?.addEventListener("click", this._onScrollBottomClick);
+    this._resourcesStickyBtn?.addEventListener("click", this._onResourcesStickyClick);
     this._autosizeComposer();
 
     const contentTarget = this._bodyContent || this._body;

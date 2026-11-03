@@ -925,7 +925,9 @@ export class WhatimadoMap extends HTMLElement {
     /* Focus-pin packs the band while typing; keyboard freeze must not be fought. */
     if (this.dataset.focusPinned === "1") return false;
     if (document.body.classList.contains("is-mobile-keyboard-open")) return false;
-    return this._liveNodes.some((node) => node.type === "mission" || node.type === "task");
+    return this._liveNodes.some(
+      (node) => node.type === "mission" || node.type === "task" || node.type === "path"
+    );
   }
 
   /**
@@ -1005,12 +1007,15 @@ export class WhatimadoMap extends HTMLElement {
     const band = this._openBand();
     const center = this._nodeScreenCenter(id);
     if (!band || !center) return false;
-    return center.y >= band.top && center.y <= band.bottom && center.x >= band.left && center.x <= band.right;
+    const midY = band.top + (band.bottom - band.top) * 0.5;
+    const midX = (band.left + band.right) / 2;
+    const bandH = Math.max(1, band.bottom - band.top);
+    /* Chat follow wants the looked-at mission centered in the gap above the prompt. */
+    return Math.abs(center.y - midY) <= bandH * 0.16 && Math.abs(center.x - midX) <= 40;
   }
 
   /**
-   * If a centering pass left the dot under the prompt, pull it back into the band.
-   * A node already in the band is left where it is.
+   * Center the node in the open band above the prompt frame.
    * @param {string} id
    */
   _pullNodeIntoOpenBand(id) {
@@ -1019,10 +1024,10 @@ export class WhatimadoMap extends HTMLElement {
     const layer = this._liveLayer;
     const svg = this._svg;
     if (!band || !center || !layer || !svg) return;
-    let dx = 0;
-    let dy = 0;
-    if (center.y < band.top || center.y > band.bottom) dy = band.top + (band.bottom - band.top) * 0.42 - center.y;
-    if (center.x < band.left || center.x > band.right) dx = (band.left + band.right) / 2 - center.x;
+    const midY = band.top + (band.bottom - band.top) * 0.5;
+    const midX = (band.left + band.right) / 2;
+    const dy = midY - center.y;
+    const dx = midX - center.x;
     if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
     const inv = invertCtm(layer.getScreenCTM());
     if (!inv) return;
@@ -2950,13 +2955,13 @@ export class WhatimadoMap extends HTMLElement {
     });
     this._liveLayer?.querySelectorAll(".whatimado-map__goal-title").forEach((title) => {
       if (!(title instanceof SVGTextElement)) return;
-      title.style.fontSize = `${fontPx * 0.82 * 1.5}px`;
+      title.style.fontSize = `${fontPx * 0.82 * 1.5 * 1.25}px`;
       title.style.letterSpacing = "0.02em";
       title.style.strokeWidth = "0";
     });
     this._liveLayer?.querySelectorAll(".whatimado-map__goal-income").forEach((income) => {
       if (!(income instanceof SVGTextElement)) return;
-      income.style.fontSize = `${fontPx * 0.72 * 1.5}px`;
+      income.style.fontSize = `${fontPx * 0.72 * 1.5 * 1.25}px`;
       income.style.letterSpacing = "0.01em";
       income.style.strokeWidth = "0";
     });
@@ -3490,8 +3495,8 @@ export class WhatimadoMap extends HTMLElement {
         const goalIncomeFull = isGoal ? goalIncomeRange(node, appStore.location) : "";
         const goalIncomeMain = goalIncomeFull.replace(/\s+per year$/i, "");
         const mobileMap = window.matchMedia("(max-width: 900px)").matches;
-        /* Goal destination star is 50% larger than the prior painted size. */
-        const goalScale = 1.5;
+        /* Goal destination star: prior 1.5×, then +25%. */
+        const goalScale = 1.5 * 1.25;
         const starOuter = r * (mobileMap ? 3.5 : 1.42) * goalScale;
         const starInner = r * (mobileMap ? 1.4 : 0.56) * goalScale;
         const goalStar = isGoal ? starPolygonPoints(cx, cy, starOuter, starInner) : "";

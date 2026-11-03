@@ -17,6 +17,25 @@ export function buildFrameTemplate(labels = {}) {
     >
       <span class="whatimado-frame__drag-grip" aria-hidden="true"></span>
     </div>
+    <button
+      type="button"
+      class="whatimado-frame__resources-sticky"
+      aria-expanded="false"
+      aria-controls="whatimado-frame-resources-sheet"
+      hidden
+    >
+      <span class="whatimado-frame__resources-sticky-label">Resources</span>
+    </button>
+    <div
+      class="whatimado-frame__resources-sheet"
+      id="whatimado-frame-resources-sheet"
+      role="region"
+      aria-label="Resources"
+      hidden
+    >
+      <p class="v2-nav-group-label whatimado-frame__resources-region" id="whatimado-frame-resources-region"></p>
+      <ul class="v2-resources-list whatimado-frame__resources-list" id="whatimado-frame-resources-list"></ul>
+    </div>
     <div class="whatimado-frame__body-wrap">
       <div class="whatimado-frame__body" part="body">
         <div class="whatimado-frame__body-content"></div>

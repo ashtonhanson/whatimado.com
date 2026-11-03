@@ -94,4 +94,15 @@ export function applyPhaseToDom(doc, phase, options = {}) {
 
   const resources = doc.getElementById("resources-rail");
   if (resources) resources.classList.toggle("hidden", !vis.resources);
+
+  const frame = doc.getElementById("dynamic-frame");
+  if (frame && typeof frame.setResourcesSheetContent === "function") {
+    const list = doc.getElementById("resources-list");
+    const region = doc.getElementById("resources-region");
+    frame.setResourcesSheetContent({
+      html: list?.innerHTML || "",
+      region: region?.textContent || "",
+      visible: Boolean(vis.resources)
+    });
+  }
 }

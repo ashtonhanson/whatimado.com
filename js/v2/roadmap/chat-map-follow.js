@@ -1,7 +1,9 @@
 /**
- * Keep the node map centered on the mission/task currently visible in chat.
+ * Keep the node map centered on the mission/task/path currently visible in chat.
  * Camera only — never changes roadmap progress or path selection.
  */
+
+import { appStore } from "../state/store.js";
 
 const NEAR_BOTTOM_PX = 72;
 
@@ -49,7 +51,7 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
 }
 
 /**
- * Pick the mission or task card most centered in the visible chat column.
+ * Pick the mission, stage, or Possibility Maps path most centered in the chat column.
  * @param {import("../components/whatimado-frame.js").WhatimadoFrame} frameEl
  * @returns {string}
  */
@@ -67,18 +69,20 @@ export function visibleChatWorkId(frameEl) {
   /** @type {{ id: string, score: number, prefer: number } | null} */
   let best = null;
 
+  const consider = (id, score, prefer) => {
+    if (!id || score <= 0) return;
+    if (!best || score * prefer > best.score * best.prefer) {
+      best = { id, score, prefer };
+    }
+  };
+
   body.querySelectorAll(".v2-mission[data-mission-id]").forEach((el) => {
     if (!(el instanceof HTMLElement)) return;
     const id = el.getAttribute("data-mission-id") || "";
     if (!id) return;
     /* Prefer the bar itself so collapsed rows still count. */
     const bar = el.querySelector(".v2-mission-done-acc__bar") || el;
-    const score = visibilityScore(bar.getBoundingClientRect(), viewTop, viewBottom, midY);
-    if (score <= 0) return;
-    const prefer = 3;
-    if (!best || score * prefer > best.score * best.prefer) {
-      best = { id, score, prefer };
-    }
+    consider(id, visibilityScore(bar.getBoundingClientRect(), viewTop, viewBottom, midY), 3);
   });
 
   body.querySelectorAll(".v2-stage[data-stage-index]").forEach((el) => {
@@ -88,13 +92,33 @@ export function visibleChatWorkId(frameEl) {
     const id = `milestone-${index}`;
     /* Score the mission title only — the article wraps all tasks and would dominate. */
     const label = el.querySelector(".v2-stage__label") || el;
-    const score = visibilityScore(label.getBoundingClientRect(), viewTop, viewBottom, midY);
-    if (score <= 0) return;
-    const prefer = 1;
-    if (!best || score * prefer > best.score * best.prefer) {
-      best = { id, score, prefer };
-    }
+    consider(id, visibilityScore(label.getBoundingClientRect(), viewTop, viewBottom, midY), 1);
   });
+
+  const possibilities = body.querySelector("#possibilities");
+  if (possibilities instanceof HTMLElement && !possibilities.classList.contains("hidden")) {
+    const fallbackPath =
+      possibilities.querySelector(".v2-path-card.is-selected")?.getAttribute("data-path-id") ||
+      appStore.journey?.roadmapPathId ||
+      appStore.journey?.selectedPathId ||
+      possibilities.querySelector(".v2-path-card[data-path-id]")?.getAttribute("data-path-id") ||
+      "";
+
+    const title = possibilities.querySelector(".v2-possibilities__title") || possibilities;
+    if (title instanceof HTMLElement && fallbackPath) {
+      consider(
+        fallbackPath,
+        visibilityScore(title.getBoundingClientRect(), viewTop, viewBottom, midY),
+        2.4
+      );
+    }
+
+    possibilities.querySelectorAll(".v2-path-card[data-path-id]").forEach((el) => {
+      if (!(el instanceof HTMLElement)) return;
+      const id = el.getAttribute("data-path-id") || "";
+      consider(id, visibilityScore(el.getBoundingClientRect(), viewTop, viewBottom, midY), 2.6);
+    });
+  }
 
   return best?.id || "";
 }

@@ -377,7 +377,16 @@ export function renderResourceListHtml(items) {
 export function renderResourcesRail(resources, location, profile) {
   const list = document.getElementById("resources-list");
   const region = document.getElementById("resources-region");
-  if (!list) return;
-  if (region) region.textContent = resourcePlaceLabel(location);
-  list.innerHTML = renderResourceListHtml(resourcesForRail(resources, location, profile));
+  const railItems = resourcesForRail(resources, location, profile);
+  const html = renderResourceListHtml(railItems);
+  const place = resourcePlaceLabel(location);
+  if (list) list.innerHTML = html;
+  if (region) region.textContent = place;
+
+  const rail = document.getElementById("resources-rail");
+  const frame = document.getElementById("dynamic-frame");
+  const visible = Boolean(rail && !rail.classList.contains("hidden") && railItems.length);
+  if (frame && typeof frame.setResourcesSheetContent === "function") {
+    frame.setResourcesSheetContent({ html, region: place, visible });
+  }
 }

@@ -94,6 +94,12 @@ whatimado-frame .whatimado-frame__drag-grip {
   transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Desktop: Resources lives in the right rail. */
+whatimado-frame .whatimado-frame__resources-sticky,
+whatimado-frame .whatimado-frame__resources-sheet {
+  display: none;
+}
+
 whatimado-frame.is-docked .whatimado-frame__drag-rail:hover .whatimado-frame__drag-grip,
 whatimado-frame.is-docked .whatimado-frame__drag-rail:focus-visible .whatimado-frame__drag-grip {
   background: rgba(125, 255, 239, 0.55);
@@ -249,10 +255,11 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   }
 }
 
-/* Round scroll-to-bottom control, centered above the opaque prompt/Send pair. */
+/* Round scroll-to-bottom control, far right of the chat above the prompt. */
 whatimado-frame .whatimado-frame__scroll-bottom {
   position: absolute;
-  left: 50%;
+  left: auto;
+  right: clamp(0.55rem, 2.2vw, 0.95rem);
   bottom: calc(var(--v2-content-bottom-reserve) + 0.45rem);
   z-index: 6;
   display: inline-flex;
@@ -264,11 +271,14 @@ whatimado-frame .whatimado-frame__scroll-bottom {
   min-height: 44px;
   margin: 0;
   padding: 0;
-  border: 1px solid var(--v2-border);
+  border: 1.5px solid color-mix(in srgb, var(--v2-teal) 78%, transparent);
   border-radius: 50%;
   background-color: #0d1a1d;
   color: var(--v2-teal);
-  transform: translateX(-50%);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, #0d1a1d 92%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--v2-teal) 42%, transparent);
+  transform: none;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
