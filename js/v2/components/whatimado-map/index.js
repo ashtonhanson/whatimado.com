@@ -936,9 +936,9 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Smooth pan so the chat-visible mission/task sits in the open band above the prompt.
-   * Same on mobile and desktop. Prefer horizontal glide; only re-anchor Y when the node
-   * leaves the open band (avoids snap-jumping up/down on a horizontal roadmap).
+   * Smooth horizontal pan so the chat-visible mission/task sits in the open band.
+   * Y locks after the first settle — the focal band already covers the vertical row
+   * of nodes and titles, so focus switches only slide left/right.
    * @param {string|null|undefined} id
    * @param {{ animate?: boolean, soft?: boolean }} [options]
    */
@@ -949,8 +949,7 @@ export class WhatimadoMap extends HTMLElement {
     const alreadyHere =
       this._chatFollowId === id &&
       this._chatFollowTargetId === id &&
-      this._nodeCenteredOnFollowX(id) &&
-      this._nodeVerticallyInOpenBand(id);
+      this._nodeCenteredOnFollowX(id);
     if (soft && (alreadyHere || this._gravityRaf != null)) return;
     if (!soft && alreadyHere) return;
     /* Same target already easing in — do not restart mid-glide. */
@@ -958,12 +957,8 @@ export class WhatimadoMap extends HTMLElement {
 
     const keptZoom = this._zoom;
     const target = computePanForNodeAboveFrame(this, id);
-    const prev = this._liveNodes.find((node) => node.id === this._chatFollowId);
-    const next = this._liveNodes.find((node) => node.id === id);
-    const rowChanged =
-      prev && next && Number.isFinite(prev.y) && Number.isFinite(next.y) && Math.abs(prev.y - next.y) > 0.045;
-    const needsY = !this._chatFollowHasY || rowChanged || !this._nodeVerticallyInOpenBand(id);
-    const panY = needsY ? target.panY : this._panY;
+    /* First settle places the row in the band; later focus changes are X-only. */
+    const panY = this._chatFollowHasY ? this._panY : target.panY;
     this._chatFollowHasY = true;
     this._chatFollowId = id;
     this._chatFollowTargetId = id;
@@ -984,15 +979,6 @@ export class WhatimadoMap extends HTMLElement {
       layout: false,
       forceSlide: true
     });
-  }
-
-  /** True when the node's screen Y sits inside the open band (menu→prompt). */
-  _nodeVerticallyInOpenBand(id) {
-    const band = this._openBand();
-    const center = this._nodeScreenCenter(id);
-    if (!band || !center) return false;
-    const bandH = Math.max(1, band.bottom - band.top);
-    return Math.abs(center.y - band.midY) <= bandH * 0.28;
   }
 
   /**
