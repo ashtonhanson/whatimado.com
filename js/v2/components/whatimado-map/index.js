@@ -428,6 +428,12 @@ export class WhatimadoMap extends HTMLElement {
     this._zoom = 1;
     /** @type {{ startDist: number, startZoom: number, startPanX: number, startPanY: number, focalX: number, focalY: number }|null} */
     this._pinch = null;
+    /** Chat-scroll follow paused while the user pans/pinches the map. */
+    this._chatFollowPaused = false;
+    /** @type {number|null} */
+    this._chatFollowResumeTimer = null;
+    /** @type {string} */
+    this._chatFollowId = "";
 
     this._onPinchTouchStart = (event) => this._handlePinchTouchStart(event);
     this._onPinchTouchMove = (event) => this._handlePinchTouchMove(event);
@@ -909,6 +915,66 @@ export class WhatimadoMap extends HTMLElement {
     this._panY = from.panY;
     this._zoom = from.zoom;
     this._animatePanTo(landedX, landedY, true);
+  }
+
+  /** True when chat-scroll may drive the camera. */
+  canChatFollow() {
+    if (this._cameraHeld) return false;
+    if (this._chatFollowPaused) return false;
+    if (this._panPointer || this._pinch) return false;
+    /* Focus-pin packs the band while typing; keyboard freeze must not be fought. */
+    if (this.dataset.focusPinned === "1") return false;
+    if (document.body.classList.contains("is-mobile-keyboard-open")) return false;
+    return this._liveNodes.some((node) => node.type === "mission" || node.type === "task");
+  }
+
+  /**
+   * Smoothly pan to a chat-visible mission/task without changing zoom or progress.
+   * @param {string|null|undefined} id
+   * @param {{ animate?: boolean, soft?: boolean }} [options]
+   */
+  followChatNode(id, { animate = true, soft = false } = {}) {
+    if (!this.canChatFollow()) return;
+    if (!id || !this._liveNodes.some((node) => node.id === id)) return;
+    if (soft && this._chatFollowId === id && this._nodeSitsInOpenBand(id)) return;
+    if (!soft && this._chatFollowId === id && this._nodeSitsInOpenBand(id)) return;
+
+    const keptZoom = this._zoom;
+    this._chatFollowId = id;
+    const from = { panX: this._panX, panY: this._panY };
+    const target = computePanForNodeAboveFrame(this, id);
+    this._animatePanTo(target.panX, target.panY, false);
+    this._pullNodeIntoOpenBand(id);
+    this._zoom = keptZoom;
+    const landedX = this._panX;
+    const landedY = this._panY;
+    if (!animate || this._driftReducedMotion) {
+      this._applyPanTransform();
+      return;
+    }
+    this._panX = from.panX;
+    this._panY = from.panY;
+    this._zoom = keptZoom;
+    this._applyPanTransform();
+    this._animatePanTo(landedX, landedY, true);
+  }
+
+  /**
+   * Pause chat-driven camera while the user manipulates the map.
+   * @param {number} [resumeMs]
+   */
+  pauseChatFollow(resumeMs = 1400) {
+    this._chatFollowPaused = true;
+    if (this._chatFollowResumeTimer != null) {
+      window.clearTimeout(this._chatFollowResumeTimer);
+      this._chatFollowResumeTimer = null;
+    }
+    if (resumeMs <= 0) return;
+    this._chatFollowResumeTimer = window.setTimeout(() => {
+      this._chatFollowResumeTimer = null;
+      this._chatFollowPaused = false;
+      this.dispatchEvent(new CustomEvent("chat-follow-resume", { bubbles: true }));
+    }, resumeMs);
   }
 
   /** The open strip under the menu and above the prompt. */
@@ -1783,6 +1849,7 @@ export class WhatimadoMap extends HTMLElement {
 
     event.preventDefault();
     this._stopPanGlide();
+    this.pauseChatFollow(1400);
 
     let delta = event.deltaY;
     if (event.deltaMode === 1) delta *= 16;
@@ -1808,6 +1875,7 @@ export class WhatimadoMap extends HTMLElement {
     }
 
     event.preventDefault();
+    this.pauseChatFollow(0);
     this._stopPanGlide();
     if (this._panPointer) {
       this.cancelPanFromFrameDrag();
@@ -1865,6 +1933,7 @@ export class WhatimadoMap extends HTMLElement {
     if (this._pinch) {
       this._focalLocked = true;
       this._focalNodeId = null;
+      this.pauseChatFollow(1400);
     }
     this._pinch = null;
     this.classList.remove("is-pinch-zooming");
@@ -1946,6 +2015,8 @@ export class WhatimadoMap extends HTMLElement {
       this._userPanned = true;
     }
 
+    this.pauseChatFollow(1400);
+
     if (!this._driftReducedMotion && Math.hypot(vx, vy) >= GLIDE_MIN_SPEED) {
       this._panVelX = vx;
       this._panVelY = vy;
@@ -1979,6 +2050,7 @@ export class WhatimadoMap extends HTMLElement {
   /** @param {PointerEvent} event */
   _beginPanPointer(event) {
     event.preventDefault();
+    this.pauseChatFollow(0);
     this._youBtn?.classList.remove("is-active");
     this._youBtn?.setAttribute("aria-pressed", "false");
     this._stopPanGlide();

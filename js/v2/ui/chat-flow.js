@@ -50,6 +50,7 @@ import { canRoadmapUndo, pushRoadmapUndo } from "../roadmap/roadmap-undo.js";
 import { createDraftsController } from "../roadmap/drafts.js";
 import { createTaskChatController } from "../roadmap/task-chat.js";
 import { highlightIdsForChatFocus, hoverChatTargetId, resolveMapNodeActivation } from "../roadmap/map-chat-focus.js";
+import { bindChatMapFollow } from "../roadmap/chat-map-follow.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -423,13 +424,18 @@ export function initChatFlow(ctx) {
     return JSON.stringify([pathId, stages.map((stage) => [stage.label, (stage.missions || []).map((m) => [m.id, m.title])])]);
   }
 
+  bindChatMapFollow({ frameEl, mapEl });
+
   const missions = createMissionsController({
     sectionEl: document.getElementById("missions"),
     listEl: document.getElementById("mission-stages"),
     messagesEl,
     layout,
     flush: flushPersist,
-    onRendered: () => taskChat.afterMissionRender(),
+    onRendered: () => {
+      taskChat.afterMissionRender();
+      mapEl?.dispatchEvent(new CustomEvent("chat-follow-resume", { bubbles: true }));
+    },
     onShown: (stages) => {
       drafts.sync(stages);
       setSpineAlternatePaths(Boolean(stages?.length));

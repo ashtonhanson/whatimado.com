@@ -38,10 +38,14 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput = null;
     /** @type {HTMLButtonElement|null} */
     this._sendBtn = null;
+    /** @type {HTMLButtonElement|null} */
+    this._scrollBottomBtn = null;
     /** @type {(event: Event) => void} */
     this._onSendPointerDown = (event) => {
       event.preventDefault();
     };
+    /** @type {(event: Event) => void} */
+    this._onScrollBottomClick = () => this.scrollChatToBottom({ behavior: "smooth" });
     /** @type {ResizeObserver|null} */
     this._resizeObserver = null;
     /** @type {boolean} */
@@ -127,6 +131,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._onBodyScroll = () => {
       this._updateScrollFade();
       this._updateCustomScrollbar();
+      this._updateScrollBottomBtn();
     };
     this._onWheel = (event) => this._handleWheelOverscroll(event);
     this._onTouchStart = (event) => this._handleTouchStart(event);
@@ -169,6 +174,7 @@ export class WhatimadoFrame extends HTMLElement {
     this._composerInput?.removeEventListener("blur", this._onComposerBlur);
     this._composerInput?.removeEventListener("input", this._onComposerInput);
     this._sendBtn?.removeEventListener("pointerdown", this._onSendPointerDown);
+    this._scrollBottomBtn?.removeEventListener("click", this._onScrollBottomClick);
     this._body?.removeEventListener("scroll", this._onBodyScroll);
     this._body?.removeEventListener("wheel", this._onWheel);
     this._body?.removeEventListener("touchstart", this._onTouchStart);
@@ -215,6 +221,20 @@ export class WhatimadoFrame extends HTMLElement {
     this._body.scrollTo({ top: 0, behavior: motion });
     this._updateScrollFade();
     this._updateCustomScrollbar();
+    this._updateScrollBottomBtn();
+  }
+
+  /** Scroll the chat column to the newest content at the bottom. */
+  scrollChatToBottom({ behavior = "smooth" } = {}) {
+    if (!this._body) return;
+    const motion =
+      behavior === "smooth" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "smooth"
+        : "auto";
+    this._body.scrollTo({ top: this._body.scrollHeight, behavior: motion });
+    this._updateScrollFade();
+    this._updateCustomScrollbar();
+    this._updateScrollBottomBtn();
   }
 
   /** Restore unsent composer text for the current session/journey scope. */
@@ -378,8 +398,12 @@ export class WhatimadoFrame extends HTMLElement {
     this._sendBtn = /** @type {HTMLButtonElement|null} */ (
       this._composerForm?.querySelector("button[type=submit]") ?? null
     );
+    this._scrollBottomBtn = /** @type {HTMLButtonElement|null} */ (
+      this.querySelector(".whatimado-frame__scroll-bottom")
+    );
     // Prevent textarea blur before the click lands (mobile double-tap Send).
     this._sendBtn?.addEventListener("pointerdown", this._onSendPointerDown);
+    this._scrollBottomBtn?.addEventListener("click", this._onScrollBottomClick);
     this._autosizeComposer();
 
     const contentTarget = this._bodyContent || this._body;
@@ -653,6 +677,18 @@ export class WhatimadoFrame extends HTMLElement {
     this.classList.toggle("is-fade-top", fadeTop);
   }
 
+  _updateScrollBottomBtn() {
+    const btn = this._scrollBottomBtn;
+    if (!btn || !this._body) return;
+    const scrollable = this.classList.contains("is-scrollable");
+    const remaining =
+      this._body.scrollHeight - this._body.scrollTop - this._body.clientHeight;
+    const show = scrollable && remaining > 72;
+    btn.classList.toggle("is-visible", show);
+    btn.setAttribute("aria-hidden", show ? "false" : "true");
+    btn.tabIndex = show ? 0 : -1;
+  }
+
   _updateScrollState() {
     if (!this._body) return;
 
@@ -671,6 +707,7 @@ export class WhatimadoFrame extends HTMLElement {
 
     this._updateScrollFade();
     this._updateCustomScrollbar();
+    this._updateScrollBottomBtn();
   }
 
   _onSubmit = (event) => {

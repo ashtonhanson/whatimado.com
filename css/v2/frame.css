@@ -249,6 +249,62 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   }
 }
 
+/* Round scroll-to-bottom control, centered above the opaque prompt/Send pair. */
+whatimado-frame .whatimado-frame__scroll-bottom {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--v2-content-bottom-reserve) + 0.45rem);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--v2-border);
+  border-radius: 50%;
+  background-color: #0d1a1d;
+  color: var(--v2-teal);
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  cursor: pointer;
+  transition:
+    opacity 0.28s ease,
+    visibility 0.28s ease;
+}
+
+whatimado-frame .whatimado-frame__scroll-bottom svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: block;
+}
+
+whatimado-frame .whatimado-frame__scroll-bottom.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+whatimado-frame .whatimado-frame__scroll-bottom:hover {
+  background-color: #122428;
+}
+
+whatimado-frame .whatimado-frame__scroll-bottom:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--v2-yellow) 70%, transparent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  whatimado-frame .whatimado-frame__scroll-bottom {
+    transition: none;
+  }
+}
+
 whatimado-frame.is-docked .whatimado-frame__composer,
 whatimado-frame .whatimado-frame__composer {
   display: flex;
