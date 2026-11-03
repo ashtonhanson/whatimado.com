@@ -107,6 +107,7 @@ whatimado-frame.is-dragging .whatimado-frame__drag-grip {
 }
 
 whatimado-frame .whatimado-frame__inner {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -134,7 +135,7 @@ whatimado-frame .whatimado-frame__body-wrap {
 whatimado-frame .whatimado-frame__body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0.85rem clamp(0.85rem, 2.5vw, 1.25rem) var(--v2-composer-content-gap);
+  padding: 0.85rem clamp(0.85rem, 2.5vw, 1.25rem) var(--v2-content-bottom-reserve);
   padding-right: clamp(1.1rem, 2.8vw, 1.35rem);
   overflow-x: hidden;
   overflow-y: auto;
@@ -184,21 +185,10 @@ whatimado-frame .whatimado-frame__scroll-thumb {
 whatimado-frame.is-scrollable .whatimado-frame__body {
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding-bottom: var(--v2-scroll-bottom-reserve);
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 2.75rem,
-    #000 calc(100% - var(--v2-scroll-bottom-reserve)),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 2.75rem,
-    #000 calc(100% - var(--v2-scroll-bottom-reserve)),
-    transparent 100%
-  );
+  /* Room to scroll the last message/task fully above the overlay prompt. */
+  padding-bottom: var(--v2-content-bottom-reserve);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2.75rem, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 2.75rem, #000 100%);
 }
 
 /* Masked fade steals Android taps on the last chip row — keep chips fully hittable */
@@ -224,16 +214,10 @@ whatimado-frame.is-fade-top .whatimado-frame__body-wrap::before {
   background: linear-gradient(to bottom, rgba(4, 12, 14, calc(var(--v2-frame-glass-alpha) * 0.65)) 0%, transparent 100%);
 }
 
+/* No bottom fade strip — chat scrolls behind the see-through prompt area. */
 whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--v2-scroll-bottom-reserve);
-  pointer-events: none;
-  z-index: 2;
-  background: linear-gradient(to top, rgba(4, 12, 14, calc(var(--v2-frame-glass-alpha) * 0.45)) 0%, transparent 100%);
+  content: none;
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -271,12 +255,21 @@ whatimado-frame .whatimado-frame__composer {
   align-items: flex-end;
   gap: 0.5rem;
   flex-shrink: 0;
-  position: relative;
-  z-index: 3;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
   padding: 0.65rem clamp(0.85rem, 2.5vw, 1.1rem) clamp(0.85rem, 2vw, 1rem);
-  border-top: 1px solid rgba(46, 232, 214, 0.08);
+  border-top: none;
   background: transparent;
   margin: 0;
+  pointer-events: none;
+}
+
+whatimado-frame .whatimado-frame__composer-input,
+whatimado-frame .whatimado-frame__composer-send {
+  pointer-events: auto;
 }
 
 whatimado-frame .whatimado-frame__composer-input {
@@ -813,11 +806,25 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-stage__label {
+  display: block;
+  width: 100%;
   margin: 0 0 0.2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
   font-size: 1.02rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--v2-yellow);
+}
+
+.v2-stage__label:hover,
+.v2-stage__label:focus-visible {
+  color: var(--v2-yellow-bright);
+  outline: none;
 }
 
 .v2-stage__desc,
@@ -919,16 +926,111 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
 }
 
 .v2-mission__done-check {
-  width: 1.05rem;
-  height: 1.05rem;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 1.1rem;
+  height: 1.1rem;
   margin: 0;
-  accent-color: var(--v2-teal);
+  padding: 0;
+  border: 1.5px solid color-mix(in srgb, var(--v2-teal) 85%, transparent);
+  border-radius: 50%;
+  background: transparent;
   cursor: pointer;
+  vertical-align: middle;
+  flex: 0 0 auto;
+}
+
+.v2-mission__done-check:checked {
+  border-color: var(--v2-teal);
+  background:
+    radial-gradient(circle at center, var(--v2-teal) 0 38%, transparent 40%),
+    color-mix(in srgb, var(--v2-teal) 18%, transparent);
+}
+
+.v2-mission__done-check:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--v2-yellow) 70%, transparent);
+  outline-offset: 2px;
 }
 
 .v2-mission__done-check:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* Completed tasks collapse into a Resources-style bar. */
+.v2-mission-done-acc {
+  width: 100%;
+}
+
+.v2-mission-done-acc__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.2rem 0.35rem 0.2rem 0.55rem;
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--v2-neon-teal) 55%, transparent);
+  border-radius: var(--v2-btn-radius);
+}
+
+.v2-mission-done-acc__bar .v2-mission__done-toggle {
+  padding: 0;
+}
+
+.v2-mission-done-acc__toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 40px;
+  padding: 0.2rem 0.45rem 0.2rem 0.15rem;
+  appearance: none;
+  cursor: pointer;
+  font-family: var(--v2-font-hero);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--v2-teal);
+  background: transparent;
+  border: 0;
+}
+
+.v2-mission-done-acc__toggle:hover {
+  color: var(--v2-yellow);
+}
+
+.v2-mission-done-acc__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.v2-mission-done-acc__toggle[aria-expanded="true"] .v2-resources-acc__chevron {
+  transform: rotate(180deg);
+}
+
+.v2-mission-done-acc__panel {
+  margin-top: 0.35rem;
+}
+
+.v2-mission-done-acc__panel.is-collapsed {
+  height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.v2-mission.is-done-collapsed {
+  border-top-color: transparent;
+}
+
+.v2-mission.is-done .v2-mission-done-acc__title {
+  text-decoration: line-through;
+  opacity: 0.85;
 }
 
 .v2-mission__controls {

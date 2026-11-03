@@ -370,7 +370,8 @@ export function initChatFlow(ctx) {
 
   /**
    * Open the mission stage or task card that belongs to this node.
-   * Progress (focusMissionId, completion) and the active roadmap stay as they are.
+   * Selecting a mission focuses its first unfinished task. Selecting a task opens
+   * that card without moving roadmap progress unless progress already points there.
    * @param {import("../graph-store.js").GraphNode} node
    */
   function openWorkingContext(node) {
@@ -383,24 +384,34 @@ export function initChatFlow(ctx) {
     document.getElementById("map-focus-note")?.remove();
     if (node.type === "mission") {
       taskChat.closeOpen({ restoreFocus: false });
-      paintOpenContext(node.id);
-      markTimelineOpen("");
       const index = Number.isInteger(node.chainIndex)
         ? node.chainIndex
         : Number(String(node.id).replace("milestone-", "")) || 0;
-      const stage = document.getElementById(`stage-${index}`);
-      if (stage) scrollFrameChildIntoView(stage);
-      else {
-        const missionsEl = document.getElementById("missions");
-        if (missionsEl) scrollFrameChildIntoView(missionsEl);
+      const focusId = missions.focusStage?.(index) ?? null;
+      if (focusId) {
+        chatFocusId = focusId;
+        paintOpenContext(focusId);
+        markTimelineOpen(focusId);
+      } else {
+        paintOpenContext(node.id);
+        markTimelineOpen("");
+        const stage = document.getElementById(`stage-${index}`);
+        if (stage) scrollFrameChildIntoView(stage);
+        else {
+          const missionsEl = document.getElementById("missions");
+          if (missionsEl) scrollFrameChildIntoView(missionsEl);
+        }
       }
-    } else {
-      paintOpenContext(node.id);
-      markTimelineOpen(node.id);
-      taskChat.open(node.id);
-      const card = document.getElementById(`mission-${node.id}`);
-      if (card) scrollFrameChildIntoView(card);
+      markMapCurrent();
+      appStore.journey.roadmapPathId = activePath;
+      appStore.journey.planConfirmed = confirmed;
+      return;
     }
+    paintOpenContext(node.id);
+    markTimelineOpen(node.id);
+    taskChat.open(node.id);
+    const card = document.getElementById(`mission-${node.id}`);
+    if (card) scrollFrameChildIntoView(card);
     appStore.journey.focusMissionId = progressFocus;
     appStore.journey.roadmapPathId = activePath;
     appStore.journey.planConfirmed = confirmed;
@@ -1239,6 +1250,14 @@ export function initChatFlow(ctx) {
   }
   timelineEl?.addEventListener("mission-focus", onMissionFocus);
   missionRoot?.addEventListener("mission-focus", onMissionFocus);
+  missionRoot?.addEventListener("mission-stage-focus", (event) => {
+    const id = event instanceof CustomEvent && typeof event.detail?.id === "string" ? event.detail.id : "";
+    if (!id) return;
+    chatFocusId = id;
+    markMapCurrent();
+    paintOpenContext(id);
+    markTimelineOpen(id);
+  });
   function offerTimelineContinuation() {
     const thread = continuationThread(messagesEl);
     if (!thread) return;

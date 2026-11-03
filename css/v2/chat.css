@@ -353,10 +353,23 @@ body.v2-app .v2-path-card__meta {
 }
 
 .v2-stage.is-open-context,
-.v2-mission.is-open-context,
 .v2-mission.is-hover-context {
   background: transparent;
   box-shadow: none;
+}
+
+/* Current / open task highlight — desktop and mobile. */
+#mission-stages .v2-mission.is-open-context:not(.is-done),
+#mission-stages:not(:has(.v2-mission.is-open-context:not(.is-done))) .v2-mission.is-focused:not(.is-done) {
+  margin-top: 0.55rem;
+  padding: 0.65rem 0.75rem 0.75rem;
+  border: 1.5px solid var(--v2-yellow);
+  border-radius: var(--v2-prompt-radius);
+  background: transparent;
+  box-shadow:
+    0 0 6px color-mix(in srgb, var(--v2-yellow) 70%, transparent),
+    0 0 16px color-mix(in srgb, var(--v2-yellow) 40%, transparent),
+    0 0 28px color-mix(in srgb, var(--v2-yellow) 22%, transparent);
 }
 
 .v2-path-card.is-open-context,

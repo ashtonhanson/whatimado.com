@@ -1,6 +1,35 @@
 import { flattenMissions, isMissionReadyToWork } from "./mission-model.js";
 
 /**
+ * First unfinished task in a mission stage (ready work first, then any open).
+ * @param {{ missions?: object[] } | null | undefined} stage
+ */
+export function firstUnfinishedInStage(stage) {
+  const missions = stage?.missions || [];
+  const ready = missions.find((mission) => isMissionReadyToWork(mission) && !mission.bypassed);
+  if (ready) return ready;
+  const waiting = missions.find((mission) => (mission.waiting || mission.circleBack?.active) && !mission.done);
+  if (waiting) return waiting;
+  return missions.find((mission) => !mission.done) || null;
+}
+
+/**
+ * Point progress at the first unfinished task of a stage.
+ * @param {import("../state/journey.js").Journey} journey
+ * @param {number} stageIndex
+ * @returns {string | null} focused task id
+ */
+export function focusStageTasks(journey, stageIndex) {
+  const stages = journey?.missionsStages || [];
+  const stage = stages[stageIndex];
+  if (!stage) return null;
+  const task = firstUnfinishedInStage(stage);
+  if (!task?.id) return null;
+  journey.focusMissionId = task.id;
+  return task.id;
+}
+
+/**
  * @param {{ dependsOn?: string[] }} mission
  */
 export function missionDependsOn(mission) {

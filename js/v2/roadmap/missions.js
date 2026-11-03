@@ -26,7 +26,9 @@ import {
   deleteMissionFromStages,
   dependentsOf,
   effectiveFocusMissionId,
-  missionStatusLabel
+  focusStageTasks,
+  missionStatusLabel,
+  pickDefaultFocusMission
 } from "./mission-navigation.js";
 import { canRoadmapUndo, popRoadmapUndo, pushRoadmapUndo } from "./roadmap-undo.js";
 import { timelineShowsInOpenChat } from "./map-chat-focus.js";
@@ -35,6 +37,13 @@ import { timelineShowsInOpenChat } from "./map-chat-focus.js";
 const circleBackEditorOpen = new Set();
 /** @type {Map<string, { reason: string, instructions: string, returnDate: string }>} */
 const circleBackUnsaved = new Map();
+/** Completed tasks the user has expanded again (collapsed by default). */
+/** @type {Set<string>} */
+const doneTaskExpanded = new Set();
+
+const DONE_CHEVRON = `<svg class="v2-resources-acc__chevron" viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M4 6.5 8 10.5 12 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>`;
 
 /**
  * @param {import("../graph-store.js").GraphNode | { title?: string, label?: string }} idea
@@ -339,8 +348,8 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
   root.innerHTML = master + stages
     .map(
       (stage, index) => `
-        <article class="v2-stage" id="stage-${index}">
-          <h3 class="v2-stage__label">${index + 1}. ${escapeHtml(stage.label)}</h3>
+        <article class="v2-stage" id="stage-${index}" data-stage-index="${index}">
+          <button type="button" class="v2-stage__label" data-stage-focus="${index}">${index + 1}. ${escapeHtml(stage.label)}</button>
           ${stage.desc ? `<p class="v2-stage__desc">${escapeHtml(stage.desc)}</p>` : ""}
           <ol class="v2-mission-list">
             ${stage.missions
@@ -395,45 +404,73 @@ export function renderMissionStages(root, stages, catalog = [], sharedResources 
                     </div>`
                   : "";
                 const deleteLabel = `Delete task: ${mission.title || "Task"}`;
+                const checkbox = `
+                  <label class="v2-mission__done-toggle">
+                    <input
+                      type="checkbox"
+                      class="v2-mission__done-check"
+                      data-mission-complete="${escapeHtml(id)}"
+                      ${mission.done ? "checked" : ""}
+                      ${waiting ? "disabled" : ""}
+                      aria-label="${mission.done ? "Task completed" : "Mark task complete"}"
+                    />
+                  </label>`;
+                const instructions = `
+                  ${detail}
+                  ${mission.text && actionLines.length > 1 ? `<p class="v2-mission__text">${escapeHtml(mission.text)}</p>` : ""}
+                  ${steps}
+                  ${timing}
+                  ${resources}
+                  <div class="v2-mission__foot">
+                    <div class="v2-mission__controls">
+                      ${action}
+                      <button type="button" class="v2-mission-action v2-circle-back-toggle v2-mission__ctrl v2-mission__ctrl--right" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
+                      <button type="button" class="v2-mission-action v2-difficulty v2-mission__ctrl v2-mission__ctrl--left" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
+                      ${renderMissionChatOpenButton(id)}
+                    </div>
+                    <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
+                    ${renderMissionChatDrawer(id, mission.title)}
+                    ${circlePanel}
+                  </div>`;
+                if (mission.done) {
+                  const expanded = doneTaskExpanded.has(id);
+                  const panelId = `task-done-panel-${escapeHtml(id)}`;
+                  return `
+                  <li class="v2-mission is-done${expanded ? " is-done-expanded" : " is-done-collapsed"}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
+                    <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
+                    <div class="v2-mission__panel">
+                      <div class="v2-mission-done-acc">
+                        <div class="v2-mission-done-acc__bar">
+                          ${checkbox}
+                          <button type="button" class="v2-mission-done-acc__toggle" data-done-toggle="${escapeHtml(id)}" aria-expanded="${expanded ? "true" : "false"}" aria-controls="${panelId}">
+                            <span class="v2-mission-done-acc__title">${escapeHtml(mission.title)}</span>
+                            ${DONE_CHEVRON}
+                          </button>
+                        </div>
+                        <div class="v2-mission-done-acc__panel${expanded ? "" : " is-collapsed"}" id="${panelId}" role="region" aria-label="${escapeHtml(mission.title)}" ${expanded ? "" : 'aria-hidden="true" inert'}>
+                          <div class="v2-mission__content">
+                            ${instructions}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </li>`;
+                }
                 return `
-                  <li class="v2-mission${mission.done ? " is-done" : ""}${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
+                  <li class="v2-mission${waiting ? " is-waiting" : ""}${bypassed ? " is-bypassed" : ""}${mission.id === focus ? " is-focused" : ""}" id="mission-${escapeHtml(id)}" data-mission-id="${escapeHtml(id)}">
                     <button type="button" class="v2-mission__delete" data-mission-delete="${escapeHtml(id)}" aria-label="${escapeHtml(deleteLabel)}"><span aria-hidden="true">×</span></button>
                     <div class="v2-mission__panel">
                       <div class="v2-mission__content">
                         <div class="v2-mission__head">
                           <div class="v2-mission__head-main">
-                            <label class="v2-mission__done-toggle">
-                              <input
-                                type="checkbox"
-                                class="v2-mission__done-check"
-                                data-mission-complete="${escapeHtml(id)}"
-                                ${mission.done ? "checked" : ""}
-                                ${waiting ? "disabled" : ""}
-                                aria-label="${mission.done ? "Task completed" : "Mark task complete"}"
-                              />
-                            </label>
+                            ${checkbox}
                             <h4 class="v2-mission__title" tabindex="-1">${escapeHtml(mission.title)}</h4>
                           </div>
                           ${waiting ? `<span class="v2-mission__badge">Waiting</span>` : ""}
                           ${bypassed ? `<span class="v2-mission__badge v2-mission__badge--bypassed">Not completed</span>` : ""}
                           ${status === "Now" && !waiting ? `<span class="v2-mission__badge v2-mission__badge--now">Now</span>` : ""}
                         </div>
-                        ${detail}
-                        ${mission.text && actionLines.length > 1 ? `<p class="v2-mission__text">${escapeHtml(mission.text)}</p>` : ""}
-                        ${steps}
-                        ${timing}
-                        ${resources}
-                        <div class="v2-mission__foot">
-                          <div class="v2-mission__controls">
-                            ${action}
-                            <button type="button" class="v2-mission-action v2-circle-back-toggle v2-mission__ctrl v2-mission__ctrl--right" data-circle-back="${escapeHtml(id)}">${waiting ? "Edit waiting" : "Circle back"}</button>
-                            <button type="button" class="v2-mission-action v2-difficulty v2-mission__ctrl v2-mission__ctrl--left" data-difficulty="${escapeHtml(id)}">Having difficulties</button>
-                            ${renderMissionChatOpenButton(id)}
-                          </div>
-                          <button type="button" class="v2-mission-action v2-mission__return${bypassed ? "" : " hidden"}" data-mission-return="${escapeHtml(id)}">Return to this task</button>
-                          ${renderMissionChatDrawer(id, mission.title)}
-                          ${circlePanel}
-                        </div>
+                        ${instructions}
                       </div>
                     </div>
                   </li>`;
@@ -717,9 +754,42 @@ export function createMissionsController(ui) {
         if (mission.done) mission.bypassed = false;
       }
     }
+    if (done) {
+      doneTaskExpanded.delete(completeId);
+      if (appStore.journey.focusMissionId === completeId) {
+        const next = pickDefaultFocusMission(stages);
+        appStore.journey.focusMissionId = next;
+      }
+    } else {
+      doneTaskExpanded.delete(completeId);
+    }
     touchJourney();
     flush();
     rerender();
+  }
+
+  /** Select a mission stage: focus its first unfinished task and scroll it into view. */
+  function focusStage(stageIndex) {
+    const stages = appStore.journey.missionsStages || [];
+    const id = focusStageTasks(appStore.journey, stageIndex);
+    touchJourney();
+    flush();
+    rerender({ scroll: false });
+    if (id) {
+      highlightTimelineMission(timelineHost(), id);
+      listEl?.dispatchEvent(
+        new CustomEvent("mission-stage-focus", { bubbles: true, detail: { id, stageIndex } })
+      );
+      const target = document.getElementById(`mission-${id}`);
+      if (target) {
+        scrollFrameChildIntoView(target);
+        target.querySelector(".v2-mission__title, .v2-mission-done-acc__toggle")?.focus?.();
+      }
+      return id;
+    }
+    const stageEl = document.getElementById(`stage-${stageIndex}`);
+    if (stageEl) scrollFrameChildIntoView(stageEl);
+    return stages[stageIndex] ? null : null;
   }
 
   function bindMissionActions() {
@@ -770,6 +840,21 @@ export function createMissionsController(ui) {
     });
     sectionEl.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;
+      const stageBtn = target?.closest("[data-stage-focus]");
+      const stageAttr = stageBtn?.getAttribute("data-stage-focus");
+      if (stageAttr != null && stageAttr !== "") {
+        const stageIndex = Number(stageAttr);
+        if (Number.isFinite(stageIndex)) focusStage(stageIndex);
+        return;
+      }
+      const doneToggle = target?.closest("[data-done-toggle]");
+      const doneId = doneToggle?.getAttribute("data-done-toggle");
+      if (doneId) {
+        if (doneTaskExpanded.has(doneId)) doneTaskExpanded.delete(doneId);
+        else doneTaskExpanded.add(doneId);
+        rerender({ scroll: false });
+        return;
+      }
       const open = target?.closest("[data-open-path]");
       const openId = open?.getAttribute("data-open-path");
       if (openId) {
@@ -1128,5 +1213,5 @@ export function createMissionsController(ui) {
     show(stages);
   }
 
-  return { begin, restore, clear, extend, confirmExtend, focus, refresh };
+  return { begin, restore, clear, extend, confirmExtend, focus, focusStage, refresh };
 }
