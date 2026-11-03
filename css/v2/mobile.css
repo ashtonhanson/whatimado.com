@@ -297,7 +297,8 @@
   }
 
   /* ── Fixed top bar: logo left, hamburger right ── */
-  .v2-rail--left {
+  .v2-rail--left,
+  .v2-rail--left.v2-neon-sweep-active {
     position: fixed;
     top: 0;
     left: 0;
@@ -312,17 +313,17 @@
     border: none;
     border-bottom: none;
     border-radius: 0;
-    box-shadow: none;
+    box-shadow: none !important;
     overflow: visible;
-    background: transparent;
+    background: transparent !important;
     /* backdrop-filter on the rail traps position:fixed children in the header strip */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .v2-rail--left::before,
   .v2-rail--left::after {
-    display: none;
+    display: none !important;
   }
 
   .v2-rail-brand {
@@ -337,10 +338,10 @@
       var(--v2-mobile-header-inset)
       calc(var(--v2-mobile-header-inset) - 1px);
     border-bottom: none;
-    box-shadow: none;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    box-shadow: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .v2-rail-header,

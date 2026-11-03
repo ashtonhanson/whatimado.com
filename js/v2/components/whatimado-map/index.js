@@ -437,6 +437,8 @@ export class WhatimadoMap extends HTMLElement {
     this._chatFollowId = "";
     /** @type {string} */
     this._chatFollowTargetId = "";
+    /** Vertical chat-follow line locks after the first settle so moves stay horizontal. */
+    this._chatFollowHasY = false;
 
     this._onPinchTouchStart = (event) => this._handlePinchTouchStart(event);
     this._onPinchTouchMove = (event) => this._handlePinchTouchMove(event);
@@ -925,7 +927,7 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Smoothly center a chat-visible mission/task in the open band above the prompt.
+   * Smooth horizontal pan to a chat-visible mission/task. Y locks after first settle.
    * @param {string|null|undefined} id
    * @param {{ animate?: boolean, soft?: boolean }} [options]
    */
@@ -936,7 +938,7 @@ export class WhatimadoMap extends HTMLElement {
     const alreadyHere =
       this._chatFollowId === id &&
       this._chatFollowTargetId === id &&
-      this._nodeSitsInOpenBand(id);
+      this._nodeCenteredOnFollowX(id);
     if (soft && (alreadyHere || this._gravityRaf != null)) return;
     if (!soft && alreadyHere) return;
     /* Same target already easing in — do not restart mid-glide. */
@@ -944,19 +946,21 @@ export class WhatimadoMap extends HTMLElement {
 
     const keptZoom = this._zoom;
     const target = computePanForNodeAboveFrame(this, id);
+    /* First settle places the focal line; later moves change panX only. */
+    const panY = this._chatFollowHasY ? this._panY : target.panY;
+    this._chatFollowHasY = true;
     this._chatFollowId = id;
     this._chatFollowTargetId = id;
     this._zoom = keptZoom;
 
     if (!animate || this._driftReducedMotion) {
       this._panX = target.panX;
-      this._panY = target.panY;
+      this._panY = panY;
       this._applyPanTransform();
       return;
     }
 
-    /* Retarget from the live pan — no snap/rewind (that caused the glitch). */
-    this._animatePanTo(target.panX, target.panY, true, { duration: 560, ease: "inout" });
+    this._animatePanTo(target.panX, panY, true, { duration: 560, ease: "inout" });
   }
 
   /**
@@ -966,6 +970,7 @@ export class WhatimadoMap extends HTMLElement {
   pauseChatFollow(resumeMs = 1400) {
     this._chatFollowPaused = true;
     this._chatFollowTargetId = "";
+    this._chatFollowHasY = false;
     if (this._chatFollowResumeTimer != null) {
       window.clearTimeout(this._chatFollowResumeTimer);
       this._chatFollowResumeTimer = null;
@@ -1005,6 +1010,14 @@ export class WhatimadoMap extends HTMLElement {
     const midX = (band.left + band.right) / 2;
     const bandH = Math.max(1, band.bottom - band.top);
     return Math.abs(center.y - band.midY) <= bandH * 0.18 && Math.abs(center.x - midX) <= 48;
+  }
+
+  /** Horizontal-only chat follow: node is centered on the open-band mid X. */
+  _nodeCenteredOnFollowX(id) {
+    const band = this._openBand();
+    const center = this._nodeScreenCenter(id);
+    if (!band || !center) return false;
+    return Math.abs(center.x - (band.left + band.right) / 2) <= 48;
   }
 
   /**
@@ -1297,11 +1310,12 @@ export class WhatimadoMap extends HTMLElement {
     }
 
     const distance = Math.hypot(targetX - this._panX, targetY - this._panY);
-    const slide = animate && (distance > 1.5 || !this._driftReducedMotion);
+    const slide = animate && distance > 1.5 && !this._driftReducedMotion;
     if (!slide) {
       this._panX = targetX;
       this._panY = targetY;
       this._applyPanTransform();
+      this._layoutCallouts();
       return;
     }
 
@@ -1325,6 +1339,8 @@ export class WhatimadoMap extends HTMLElement {
         this._gravityRaf = requestAnimationFrame(tick);
       } else {
         this._gravityRaf = null;
+        /* Titles stay pinned in SVG space during the ease; reflow once at rest. */
+        this._layoutCallouts();
       }
     };
 
@@ -1947,6 +1963,12 @@ export class WhatimadoMap extends HTMLElement {
   _applyPanTransform() {
     if (!this._panLayer) return;
     this._writePanTransform(this._zoom);
+    /*
+     * Titles live in each node's SVG space and must ride with the dots.
+     * Re-running collision layout mid-pan/camera-ease shoves titles around
+     * at staggered times — skip until the map is still.
+     */
+    if (this._userIsMovingMap()) return;
     this._layoutCallouts();
   }
 
@@ -2992,11 +3014,11 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * The user is dragging, gliding, or pinching the map. Titles already sit in
-   * SVG space, so they ride with their nodes and are not placed again.
+   * The map is being dragged, gliding, pinched, or camera-eased. Titles already
+   * sit in SVG space, so they ride with their nodes and are not placed again.
    */
   _userIsMovingMap() {
-    return Boolean(this._panPointer || this._panGliding || this._pinch);
+    return Boolean(this._panPointer || this._panGliding || this._pinch || this._gravityRaf != null);
   }
 
   /**
