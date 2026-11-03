@@ -142,7 +142,6 @@ export function pinMobileFocusChrome(controller) {
   const kicker = document.getElementById("frame-kicker");
   if (!map || !controller?.frameEl) return;
 
-  const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const mapHeadGap = FOCUS_MAP_HEAD_GAP_PX;
   const heroGap = FOCUS_HERO_PROMPT_GAP_PX;
   const mapHeroGap = FOCUS_MAP_HERO_GAP_PX;
@@ -152,7 +151,8 @@ export function pinMobileFocusChrome(controller) {
   const promptTop = frameRect.top;
   const contentLeft = gutter;
   const contentWidth = Math.max(0, window.innerWidth - gutter * 2);
-  const mapTop = Math.round(headerH + mapHeadGap);
+  /* Start at the viewport top so the constellation can show through the clear menu bar. */
+  const mapTop = Math.round(mapHeadGap);
   const kickerVisible =
     Boolean(kicker) &&
     document.body.dataset.phase === "open" &&
@@ -269,9 +269,8 @@ export function syncMobileReadingMap(controller) {
     return;
   }
 
-  const headerH = measureCssVarLength("--v2-mobile-header-h") || 56;
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 16;
-  /* Pin covers the live menu→frame band. Paint scale stays at the 3/4 height so dots do not jump from meet. */
+  /* Pin covers viewport-top→frame so nodes can ride into the transparent menu strip. */
   const anchors = controller._anchors;
   const readingTop = anchors?.readingTop ?? anchors?.collapsedTop;
   const readingFrameTop =
@@ -282,7 +281,7 @@ export function syncMobileReadingMap(controller) {
     cancelPendingMapFit();
     return;
   }
-  const mapTop = headerH;
+  const mapTop = 0;
   const readingSvgH = Number.isFinite(readingFrameTop)
     ? Math.max(120, Math.round(readingFrameTop - mapTop - clearance))
     : Math.max(120, Math.round(actualTop - mapTop - clearance));

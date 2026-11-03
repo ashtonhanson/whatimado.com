@@ -1,11 +1,13 @@
 /**
  * Keep the node map centered on the mission/task/path currently visible in chat.
- * Camera only — never changes roadmap progress or path selection.
+ * Same behavior on mobile and desktop: horizontal camera ease only, no progress changes.
  */
 
 import { appStore } from "../state/store.js";
 
 const NEAR_BOTTOM_PX = 72;
+/** Shared mobile/desktop hysteresis before switching the followed card. */
+const FOLLOW_SWITCH_HITS = 3;
 
 /**
  * @param {{
@@ -33,14 +35,14 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
       return;
     }
 
-    /* Hysteresis: require a few consecutive frames before switching (cuts desktop flicker). */
+    /* Same threshold on mobile and desktop so chat→map follow feels identical. */
     if (!force && lastId) {
       if (id === pendingId) pendingHits += 1;
       else {
         pendingId = id;
         pendingHits = 1;
       }
-      if (pendingHits < 3) return;
+      if (pendingHits < FOLLOW_SWITCH_HITS) return;
     }
 
     lastId = id;
@@ -59,6 +61,8 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
 
   const body = frameEl.bodyEl;
   body?.addEventListener("scroll", onScroll, { passive: true });
+  /* Desktop trackpads sometimes drive wheel before scroll settles — keep in sync. */
+  body?.addEventListener("wheel", onScroll, { passive: true });
   mapEl.addEventListener("chat-follow-resume", () => {
     lastId = "";
     pendingId = "";

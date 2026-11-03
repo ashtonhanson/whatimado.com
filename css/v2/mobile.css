@@ -233,13 +233,14 @@
   .v2-shell:has(#resources-rail.hidden) {
     --v2-left-sidebar-offset: 0px;
     padding: 0;
-    padding-top: var(--v2-mobile-header-h);
+    /* No header inset — the map paints under the clear menu bar. */
+    padding-top: 0;
     min-height: 100dvh;
   }
 
   .v2-main {
-    height: calc(100dvh - var(--v2-mobile-header-h) - env(safe-area-inset-bottom, 0px));
-    min-height: calc(100dvh - var(--v2-mobile-header-h) - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - env(safe-area-inset-bottom, 0px));
+    min-height: calc(100dvh - env(safe-area-inset-bottom, 0px));
     overflow: hidden;
     overscroll-behavior: none;
     overscroll-behavior-y: none;
@@ -249,6 +250,17 @@
   .v2-main > .v2-frame-kicker {
     left: var(--v2-main-gutter);
     right: var(--v2-main-gutter);
+  }
+
+  /*
+   * Map stage starts at the viewport top so constellation can ride up into the
+   * transparent menu strip. Header stays above for hits; map shows through.
+   */
+  .v2-main > whatimado-map {
+    top: 0;
+    z-index: 1;
+    overflow: hidden;
+    background: transparent;
   }
 
   /* Kill desktop kicker-enter on mobile — it fights landing anchors */
@@ -316,6 +328,8 @@
     box-shadow: none !important;
     overflow: visible;
     background: transparent !important;
+    /* Clear strip: map shows through; hits pass except on controls. */
+    pointer-events: none;
     /* backdrop-filter on the rail traps position:fixed children in the header strip */
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
@@ -342,6 +356,18 @@
     background: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    pointer-events: none;
+  }
+
+  .v2-rail--left .v2-brand,
+  .v2-rail--left .v2-brand-word,
+  .v2-rail--left .v2-mobile-menu-btn,
+  .v2-rail--left .v2-mobile-header-controls,
+  .v2-rail--left .v2-header-map-tools,
+  .v2-rail--left .v2-header-undo,
+  .v2-rail--left a,
+  .v2-rail--left button {
+    pointer-events: auto;
   }
 
   .v2-rail-header,
@@ -487,6 +513,10 @@
     padding: 0 0.85rem;
     font-size: clamp(0.84rem, 3.8vw, 1rem);
     letter-spacing: 0.11em;
+    /* Stay legible when constellation rides up under the clear header. */
+    text-shadow:
+      0 1px 10px rgba(0, 0, 0, 0.9),
+      0 0 14px rgba(0, 0, 0, 0.55);
   }
 
   .v2-rail--left .v2-brand-mark {

@@ -35,52 +35,28 @@ function readGraphTopPadPx() {
 }
 
 /**
- * Viewport Y that topmost labels must stay below (fixed mobile header + pad).
- * Desktop returns 0 so stage-relative top pad alone applies.
+ * Pan floor so bounds.minY stays on-stage.
+ * Mobile menu is a clear overlay — do not block panning the constellation into
+ * that strip (nodes should remain visible through the transparent header).
  */
-function readMenuClearanceScreenY() {
-  if (!window.matchMedia("(max-width: 900px)").matches) return 0;
-  const brand = document.querySelector(".v2-rail-brand");
-  if (brand) {
-    const bottom = brand.getBoundingClientRect().bottom;
-    if (bottom > 0) return bottom + 8;
-  }
-  const probe = document.createElement("div");
-  probe.style.cssText =
-    "position:absolute;visibility:hidden;pointer-events:none;height:var(--v2-mobile-header-h);width:0;";
-  document.documentElement.appendChild(probe);
-  const headerH = probe.getBoundingClientRect().height;
-  probe.remove();
-  return (headerH > 0 ? headerH : 56) + 8;
-}
-
-/** Pan floor so bounds.minY stays below the menu / stage top pad */
 function panFloorForTopClearance(bounds, stageRect, shiftY) {
   const scaleY = VIEW_H / stageRect.height;
   const topPadSvg = readGraphTopPadPx() * scaleY;
-  /* Ambient drift peaks ~7svg up — keep labels from tucking under the menu mid-cycle */
+  /* Ambient drift peaks ~7svg up — keep a little slack above the topmost node. */
   const driftSlackSvg = window.matchMedia("(max-width: 900px)").matches
     ? Math.max(10, (measureCssVarLength("--v2-mobile-open-drift-slack") || 18) * 0.72)
     : 10;
-  let panFloor = topPadSvg + driftSlackSvg - bounds.minY - shiftY;
-
-  const menuClearY = readMenuClearanceScreenY();
-  if (menuClearY > 0) {
-    const absFloor =
-      (menuClearY - stageRect.top) * scaleY + driftSlackSvg - bounds.minY - shiftY;
-    panFloor = Math.max(panFloor, absFloor);
-  }
-  return panFloor;
+  return topPadSvg + driftSlackSvg - bounds.minY - shiftY;
 }
 
-/** Prevent upward pan from clipping the topmost node labels (incl. under menu) */
+/** Prevent upward pan from clipping nodes off the top of the stage. */
 export function clampPanYForTopPad(panY, bounds, stageRect, shiftY) {
   return Math.max(panY, panFloorForTopClearance(bounds, stageRect, shiftY));
 }
 
 /**
- * Open-home pan clamp: keep top labels clear of the menu, and YOU clear of
- * Path Finder when the band allows both. Never clip under the menu bar.
+ * Open-home pan clamp: YOU clear of Path Finder when the band allows both.
+ * Mobile may ride into the transparent menu strip; desktop uses stage top pad.
  * @param {number} panY
  * @param {{ minY: number, maxY: number }} bounds
  * @param {DOMRect} stageRect
@@ -95,7 +71,6 @@ export function clampPanYForOpenHome(panY, bounds, stageRect, shiftY, maxScreenY
   if (panFloor <= panCeil) {
     return Math.min(Math.max(panY, panFloor), panCeil);
   }
-  // Band too short for both — never let nodes tuck under the menu.
   return panFloor;
 }
 
