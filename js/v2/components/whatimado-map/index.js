@@ -285,7 +285,7 @@ const MAP_TEMPLATE = `
               <circle cx="12" cy="17.4" r="1.1" fill="currentColor" />
             </svg>
           </button>
-          <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected roadmap runs left to right. Unlink to keep the constellation.">
+          <button type="button" class="whatimado-map__link-btn is-linked" part="focus-link" aria-pressed="true" aria-label="Linked. The selected path runs left to right. Unlink to keep the constellation.">
             <svg class="whatimado-map__link-icon whatimado-map__link-icon--on" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M10 13a5 5 0 0 0 7.54.54l1.92-1.92a5 5 0 0 0-7.07-7.07l-1.1 1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-1.92 1.92a5 5 0 0 0 7.07 7.07l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
@@ -662,8 +662,8 @@ export class WhatimadoMap extends HTMLElement {
     this._linkBtn?.classList.toggle("is-linked", linked);
     this._linkBtn?.setAttribute("aria-pressed", linked ? "true" : "false");
     const label = linked
-      ? "Linked. The map follows the selected roadmap and keeps it running to the right of You. Click to unlink and leave the map where it is."
-      : "Unlinked. The map stays put when you change roadmaps. Click to link it so the selected roadmap runs to the right of You.";
+      ? "Linked. The map follows the selected path and keeps it running to the right of You. Click to unlink and leave the map where it is."
+      : "Unlinked. The map stays put when you change paths. Click to link it so the selected path runs to the right of You.";
     this._linkBtn?.setAttribute("aria-label", label);
     this._linkBtn?.setAttribute("title", label);
   }

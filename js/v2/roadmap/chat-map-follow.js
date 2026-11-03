@@ -63,10 +63,20 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
   body?.addEventListener("scroll", onScroll, { passive: true });
   /* Desktop trackpads sometimes drive wheel before scroll settles — keep in sync. */
   body?.addEventListener("wheel", onScroll, { passive: true });
-  mapEl.addEventListener("chat-follow-resume", () => {
+  mapEl.addEventListener("chat-follow-resume", (event) => {
     lastId = "";
     pendingId = "";
     pendingHits = 0;
+    const detail = event instanceof CustomEvent ? event.detail : null;
+    const preferred =
+      detail && typeof detail.id === "string" && detail.id
+        ? detail.id
+        : "";
+    if (preferred && mapEl.canChatFollow?.()) {
+      lastId = preferred;
+      mapEl.followChatNode?.(preferred, { animate: true });
+      return;
+    }
     sync({ animate: true, force: true });
   });
 

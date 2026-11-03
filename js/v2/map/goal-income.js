@@ -1,5 +1,5 @@
 /**
- * Yearly pay ranges for the future-path star. Always a low–high pair, never one number.
+ * Pay ranges for the future-path star. Keep the source unit (/hr, /mo, year, …).
  */
 
 /** @typedef {{ city?: string, region?: string, country?: string, raw?: string }} GoalLocation */
@@ -108,22 +108,69 @@ export function formatYearlyIncomeRange(low, high, currency = "$") {
 }
 
 /**
- * Reuse a path income string only when it is already a yearly range.
+ * @param {number} low
+ * @param {number} high
+ * @param {string} currency
+ * @param {string} suffix  e.g. "/hr", "/mo", "/wk"
+ */
+function formatUnitIncomeRange(low, high, currency, suffix) {
+  let a = Number(low);
+  let b = Number(high);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
+  if (a > b) [a, b] = [b, a];
+  const fmt = (n) => {
+    if (Number.isInteger(n)) return String(n);
+    return String(Math.round(n * 100) / 100);
+  };
+  return `${currency}${fmt(a)}–${currency}${fmt(b)}${suffix}`;
+}
+
+/**
+ * Detect pay period from labels like /hr, hour, /mo, month, /wk, week, year.
+ * @param {string} raw
+ * @returns {"hour" | "month" | "week" | "year" | ""}
+ */
+function detectIncomeUnit(raw) {
+  if (/\/\s*hr\b|per\s*hour|\bhourly\b|\bhours?\b/i.test(raw)) return "hour";
+  if (/\/\s*mo\b|per\s*month|\bmonthly\b|\bmonths?\b/i.test(raw)) return "month";
+  if (/\/\s*wk\b|per\s*week|\bweekly\b|\bweeks?\b/i.test(raw)) return "week";
+  if (/\/\s*yr\b|per\s*year|\byearly\b|\bannual(?:ly)?\b|\byears?\b/i.test(raw)) return "year";
+  return "";
+}
+
+/**
+ * Reuse a path income string, preserving /hr /mo /wk or normalizing yearly ranges.
  * @param {string} text
  */
 export function readExistingIncomeRange(text) {
   const raw = String(text || "").trim();
   if (!raw) return "";
+
+  const unit = detectIncomeUnit(raw);
   const range = raw.match(
-    /([\$£€]|A\$|C\$|NZ\$)?\s*(\d{2,3})\s*k?\s*[–—-]\s*([\$£€]|A\$|C\$|NZ\$)?\s*(\d{2,3})\s*k?/i
+    /([\$£€]|A\$|C\$|NZ\$)?\s*(\d+(?:\.\d+)?)\s*(k)?\s*[–—-]\s*([\$£€]|A\$|C\$|NZ\$)?\s*(\d+(?:\.\d+)?)\s*(k)?/i
   );
   if (!range) return "";
-  const currency = range[1] || range[3] || "$";
-  const low = Number(range[2]) * 1000;
-  const high = Number(range[4]) * 1000;
-  const yearly = /year|annual|\/yr/i.test(raw) || !/hour|week|month/i.test(raw);
-  if (!yearly) return "";
-  return formatYearlyIncomeRange(low, high, currency);
+
+  const currency = range[1] || range[4] || "$";
+  const lowRaw = Number(range[2]);
+  const highRaw = Number(range[5]);
+  if (!Number.isFinite(lowRaw) || !Number.isFinite(highRaw)) return "";
+  const lowIsK = Boolean(range[3]);
+  const highIsK = Boolean(range[6]);
+
+  if (unit === "hour") return formatUnitIncomeRange(lowRaw, highRaw, currency, "/hr");
+  if (unit === "month") return formatUnitIncomeRange(lowRaw, highRaw, currency, "/mo");
+  if (unit === "week") return formatUnitIncomeRange(lowRaw, highRaw, currency, "/wk");
+
+  /* Yearly (explicit or implied by k / mid figures without another unit). */
+  const looksYearly =
+    unit === "year" || lowIsK || highIsK || (!unit && (lowRaw >= 10 || highRaw >= 10));
+  if (!looksYearly) return "";
+
+  /* "55k" → 55000; bare "55" in a yearly context → 55000; already "55000" stays. */
+  const toYearly = (n, hasK) => (hasK || n < 1000 ? n * 1000 : n);
+  return formatYearlyIncomeRange(toYearly(lowRaw, lowIsK), toYearly(highRaw, highIsK), currency);
 }
 
 /**

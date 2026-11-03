@@ -102,7 +102,7 @@ function describeError(error) {
   if (/email not confirmed/i.test(message)) return "Confirm your email first. The link is in your inbox (check spam too).";
   if (/rate limit|too many/i.test(message)) return "Too many tries in a row. Wait a minute and try again.";
   if (/failed to fetch|network/i.test(message)) return "Could not reach the account service. Check your connection and try again.";
-  if (/user_roadmaps|schema cache|42P01/i.test(message)) return "Cloud My Paths are not set up yet (supabase/migrations/006_user_roadmaps.sql).";
+  if (/user_roadmaps|schema cache|42P01/i.test(message)) return "Cloud path sync is not set up yet (supabase/migrations/006_user_roadmaps.sql).";
   return message.length > 140 ? `${message.slice(0, 137)}…` : message || "Something went wrong. Try again.";
 }
 

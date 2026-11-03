@@ -1,5 +1,5 @@
 import { PHASE, applyPhaseToDom } from "../phases.js";
-import { graphStore, restorePossibilityMap, selectGraphNode, setExtraExploreOptions, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
+import { graphStore, loadAdvisorPaths, restorePossibilityMap, selectGraphNode, setExtraExploreOptions, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import {
   appendMessage,
@@ -12,7 +12,7 @@ import {
 import { notifyFrameLayout } from "../layout/notify-frame-layout.js";
 import { MOBILE_GLIDE_EASE_MS, MOBILE_MQ, SNAP } from "../dock/constants.js";
 import { appStore, resetAppStore, touchJourney } from "../state/store.js";
-import { buildSharedPromptContext, refreshGoalBrief } from "../state/goal-brief.js";
+import { buildSharedPromptContext, markPathsAcceptedForGoal, refreshGoalBrief } from "../state/goal-brief.js";
 import { ensureJourneyStarted, toggleSavedPath } from "../state/journey.js";
 import { formatUserLocation } from "../state/location.js";
 import { applyPrefsToStore } from "../state/prefs.js";
@@ -43,6 +43,7 @@ import { journeyHasActiveWork, newMapConfirmMessage } from "./journey-work.js";
 import { confirmStartNewMap } from "./new-map-dialog.js";
 import { createIntakeController } from "../intake/session.js";
 import { createPathMapController } from "../map/session.js";
+import { fallbackIdeas } from "../map/ideas.js";
 import { createConfirmGateController } from "../roadmap/session.js";
 import { createMissionsController } from "../roadmap/missions.js";
 import { applyStructuredMissionUpdate, buildDifficultyPrompt, fallbackDifficultyUpdate, parseDifficultyUpdate } from "../roadmap/difficulty.js";
@@ -434,7 +435,6 @@ export function initChatFlow(ctx) {
     flush: flushPersist,
     onRendered: () => {
       taskChat.afterMissionRender();
-      mapEl?.dispatchEvent(new CustomEvent("chat-follow-resume", { bubbles: true }));
     },
     onShown: (stages) => {
       drafts.sync(stages);
@@ -458,6 +458,19 @@ export function initChatFlow(ctx) {
         else redraw();
         markMapCurrent();
         paintOpenContext(resolvedChatFocusId());
+        /* Follow after the branch is on the map — not before — so the first path locks in immediately. */
+        const followId = appStore.journey.focusMissionId || pathId;
+        requestAnimationFrame(() => {
+          mapEl?.dispatchEvent(
+            new CustomEvent("chat-follow-resume", {
+              bubbles: true,
+              detail: { id: followId, force: true }
+            })
+          );
+          if (!sameBranch && followId) {
+            mapEl?.followChatNode?.(followId, { animate: true });
+          }
+        });
       } else if (!stages?.length) {
         shownBranchKey = "";
         restorePossibilityMap();
@@ -926,8 +939,14 @@ export function initChatFlow(ctx) {
     appStore.journey.intakeComplete = true;
     mapEl?.dismissGhost();
     setPhase(PHASE.COACHING);
+    /* Demo preview: static fallback paths only — never call the advisor on load. */
+    const ideas = fallbackIdeas(appStore.profile);
+    loadAdvisorPaths(ideas, { keepSelectedId: null });
+    markPathsAcceptedForGoal(appStore.journey);
+    appStore.journey.pathsGenerated = true;
+    mapEl?.syncLiveFromStore();
+    pathMap.render();
     layout();
-    void pathMap.generate();
   }
 
   function restoreSessionUi() {
@@ -1377,8 +1396,28 @@ export function initChatFlow(ctx) {
     void handleSubmit(detail?.text || "");
   });
 
-  document.addEventListener("roadmap-undo-restored", () => {
+  document.addEventListener("roadmap-undo-restored", (event) => {
     rebuildMessagesDom();
+    const pathId = appStore.journey.roadmapPathId || appStore.journey.selectedPathId || "";
+    if (pathId && appStore.journey.planConfirmed) {
+      offerUnchosenRoadmaps(pathId);
+    }
+    const focusId =
+      (event instanceof CustomEvent && typeof event.detail?.focusId === "string" && event.detail.focusId) ||
+      appStore.journey.focusMissionId ||
+      "";
+    if (focusId) {
+      chatFocusId = focusId;
+      markMapCurrent();
+      paintOpenContext(focusId);
+      mapEl?.followChatNode?.(focusId, { animate: true });
+    }
+    mapEl?.dispatchEvent(
+      new CustomEvent("chat-follow-resume", {
+        bubbles: true,
+        detail: { id: focusId || pathId, force: true }
+      })
+    );
     layout();
     syncChatUndoButtons();
     flushPersist();

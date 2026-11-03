@@ -255,42 +255,44 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   }
 }
 
-/* Round scroll-to-bottom control, far right of the chat above the prompt. */
+/* Solid circular scroll-to-bottom — right corner above the prompt, clear of chat text. */
 whatimado-frame .whatimado-frame__scroll-bottom {
+  --v2-scroll-fab-size: 2.5rem;
+  --v2-scroll-fab-gap: 0.65rem;
   position: absolute;
   left: auto;
-  right: clamp(0.55rem, 2.2vw, 0.95rem);
-  bottom: calc(var(--v2-content-bottom-reserve) + 0.45rem);
+  right: var(--v2-scroll-fab-gap);
+  bottom: calc(var(--v2-content-bottom-reserve) + var(--v2-scroll-fab-gap));
   z-index: 6;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  min-width: 44px;
-  min-height: 44px;
+  width: var(--v2-scroll-fab-size);
+  height: var(--v2-scroll-fab-size);
+  min-width: var(--v2-scroll-fab-size);
+  min-height: var(--v2-scroll-fab-size);
+  aspect-ratio: 1 / 1;
   margin: 0;
   padding: 0;
-  border: 1.5px solid color-mix(in srgb, var(--v2-teal) 78%, transparent);
+  border: none;
   border-radius: 50%;
-  background-color: #0d1a1d;
-  color: var(--v2-teal);
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, #0d1a1d 92%, transparent),
-    0 0 0 4px color-mix(in srgb, var(--v2-teal) 42%, transparent);
+  background: var(--v2-teal);
+  color: #041014;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   transform: none;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   cursor: pointer;
   transition:
-    opacity 0.28s ease,
-    visibility 0.28s ease;
+    opacity 0.22s ease,
+    visibility 0.22s ease,
+    background-color 0.16s ease;
 }
 
 whatimado-frame .whatimado-frame__scroll-bottom svg {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.05rem;
+  height: 1.05rem;
   display: block;
 }
 
@@ -301,7 +303,12 @@ whatimado-frame .whatimado-frame__scroll-bottom.is-visible {
 }
 
 whatimado-frame .whatimado-frame__scroll-bottom:hover {
-  background-color: #122428;
+  background: color-mix(in srgb, var(--v2-teal) 88%, #fff);
+}
+
+/* Keep message text out from under the FAB when it is shown. */
+whatimado-frame.is-scrollable .whatimado-frame__body-content {
+  padding-right: calc(var(--v2-scroll-fab-gap, 0.65rem) + 2.5rem + 0.35rem);
 }
 
 whatimado-frame .whatimado-frame__scroll-bottom:focus-visible {

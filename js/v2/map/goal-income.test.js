@@ -36,6 +36,15 @@ test("an existing yearly range on the path is kept and normalized", () => {
   assert.equal(goalIncomeRange({ title: "Nurse", income: "$55k–$75k per year" }, null), "$55k–$75k per year");
 });
 
+test("hourly and monthly ranges keep their unit instead of becoming yearly k", () => {
+  assert.equal(readExistingIncomeRange("$14-18/hr"), "$14–$18/hr");
+  assert.equal(readExistingIncomeRange("$13-16/hr"), "$13–$16/hr");
+  assert.equal(readExistingIncomeRange("$400-$800/mo"), "$400–$800/mo");
+  assert.equal(readExistingIncomeRange("$18–$22 per hour"), "$18–$22/hr");
+  assert.equal(readExistingIncomeRange("$2500-$3200/month"), "$2500–$3200/mo");
+  assert.equal(goalIncomeRange({ title: "Cashier", income: "$14-18/hr" }, null), "$14–$18/hr");
+});
+
 test("role bands stay ordered low to high", () => {
   const band = rolePayBand("software engineer");
   assert.ok(band.low < band.high);

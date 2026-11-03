@@ -3,6 +3,29 @@ const ADVISOR_MODEL_RATES_USD = {
   'claude-sonnet-4-5': { inputPer1M: 3, outputPer1M: 15 }
 };
 
+/** Server-owned model. Browser must not choose this. */
+const ADVISOR_MODEL = process.env.ADVISOR_MODEL || 'anthropic/claude-sonnet-4.5';
+
+/** Server-owned reply lengths by feature. Browser max_tokens is ignored. */
+const FEATURE_MAX_TOKENS = {
+  v2_chat: 700,
+  v2_exploration: 450,
+  v2_paths: 900,
+  v2_more_paths: 900,
+  v2_paths_regen: 900,
+  v2_path_replace: 700,
+  v2_path_discuss: 320,
+  v2_missions: 1200,
+  v2_missions_more: 1100,
+  v2_plan_summary: 500,
+  v2_difficulty: 500,
+  v2_draft: 500,
+  v2_resource_draft: 450,
+  v2_circle_back: 700,
+  v2_task_chat: 700,
+  v2_intake_clarifying: 280
+};
+
 function estimateAdvisorCostUsd(model, inputTokens = 0, outputTokens = 0) {
   const rates = ADVISOR_MODEL_RATES_USD[model] || ADVISOR_MODEL_RATES_USD['anthropic/claude-sonnet-4.5'];
   return Number(
@@ -14,13 +37,20 @@ function logAdvisorUsage(entry) {
   console.log(JSON.stringify({ type: 'advisor_api_call', ...entry }));
 }
 
-// Map what the frontend sends → OpenRouter model slug
 function toOpenRouterModel(model) {
   const map = {
     'claude-sonnet-4-5': 'anthropic/claude-sonnet-4.5',
     'claude-3-5-sonnet-20241022': 'anthropic/claude-3.5-sonnet'
   };
   return map[model] || model;
+}
+
+function maxTokensForFeature(feature) {
+  const key = String(feature || '').trim();
+  if (FEATURE_MAX_TOKENS[key]) return FEATURE_MAX_TOKENS[key];
+  if (/path/i.test(key)) return 900;
+  if (/mission/i.test(key)) return 1100;
+  return 700;
 }
 
 // OpenRouter (OpenAI-style) → Anthropic shape your frontend expects
@@ -48,8 +78,9 @@ export default async function handler(req, res) {
   const apiKey = process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY;
 
   try {
-    const { model, messages, max_tokens, feature, callId } = req.body;
-    const modelUsed = toOpenRouterModel(model || 'claude-sonnet-4-5');
+    const { messages, feature, callId } = req.body || {};
+    const modelUsed = toOpenRouterModel(ADVISOR_MODEL);
+    const maxTokens = maxTokensForFeature(feature);
 
     if (!apiKey) {
       return res.status(500).json({ error: 'API key is missing (set OPENROUTER_API_KEY in Vercel).' });
@@ -79,7 +110,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: modelUsed,
-        max_tokens: max_tokens || 1024,
+        max_tokens: maxTokens,
         messages: safeMessages
       })
     });
@@ -112,7 +143,7 @@ export default async function handler(req, res) {
       ok: true,
       httpStatus: 200,
       durationMs: Date.now() - startedAt,
-      maxTokensRequested: max_tokens || 1024,
+      maxTokensRequested: maxTokens,
       inputTokens,
       outputTokens,
       estimatedCostUsd: estimateAdvisorCostUsd(modelUsed, inputTokens, outputTokens)

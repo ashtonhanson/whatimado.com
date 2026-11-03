@@ -976,32 +976,7 @@ export function createMissionsController(ui) {
         }
         return;
       }
-      const undoBtn = target?.closest("[data-mission-undo]");
-      if (undoBtn) {
-        const restored = popRoadmapUndo(appStore.journey);
-        if (!restored.ok) {
-          setNavFeedback(restored.reason);
-          syncUndoButtons();
-          return;
-        }
-        touchJourney();
-        flush();
-        const focus = appStore.journey.focusMissionId;
-        rerender({ scroll: false });
-        syncUndoButtons();
-        if (focus) focusMissionInUi(focus);
-        document.dispatchEvent(
-          new CustomEvent("roadmap-undo-restored", {
-            detail: { kind: restored.kind || "roadmap" }
-          })
-        );
-        setNavFeedback(
-          restored.kind === "chat"
-            ? "Restored your previous chat edit."
-            : "Restored the previous path state."
-        );
-        return;
-      }
+      /* Undo lives on document so sidebar + phone header share this path. */
       const returnBtn = target?.closest("[data-mission-return]");
       const returnId = returnBtn?.getAttribute("data-mission-return");
       if (returnId) {
@@ -1039,9 +1014,41 @@ export function createMissionsController(ui) {
           rerender();
           if (nextFocus) focusMissionInUi(nextFocus);
         })();
-        return;
       }
     });
+
+    if (sectionEl.dataset.missionUndoDocBound !== "1") {
+      sectionEl.dataset.missionUndoDocBound = "1";
+      document.addEventListener("click", (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const undoBtn = target?.closest("[data-mission-undo]");
+        if (!undoBtn || (undoBtn instanceof HTMLButtonElement && undoBtn.disabled)) return;
+        event.preventDefault();
+        const restored = popRoadmapUndo(appStore.journey);
+        if (!restored.ok) {
+          setNavFeedback(restored.reason);
+          syncUndoButtons();
+          return;
+        }
+        touchJourney();
+        flush();
+        const focus = appStore.journey.focusMissionId;
+        if (focus) taskOpenOverride.set(focus, true);
+        rerender({ scroll: false });
+        syncUndoButtons();
+        if (focus) focusMissionInUi(focus);
+        document.dispatchEvent(
+          new CustomEvent("roadmap-undo-restored", {
+            detail: { kind: restored.kind || "roadmap", focusId: focus || "" }
+          })
+        );
+        setNavFeedback(
+          restored.kind === "chat"
+            ? "Restored your previous chat edit."
+            : "Restored the previous path state."
+        );
+      });
+    }
   }
 
   /** @param {Array<{ missions?: { id?: string }[] }>} stages @param {string} removedId */

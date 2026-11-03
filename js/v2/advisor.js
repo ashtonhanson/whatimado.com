@@ -1,5 +1,3 @@
-const ADVISOR_MODEL = "claude-sonnet-4-5";
-
 function getApiOrigin() {
   const { origin, hostname } = window.location;
   if (hostname === "whatimado.com" || hostname === "www.whatimado.com") {
@@ -14,17 +12,16 @@ function extractAdvisorText(data) {
 }
 
 /**
+ * Browser only sends the prompt + feature. Model and reply length are set on the server.
  * @param {string} prompt
- * @param {{ maxTokens?: number, feature?: string }} [options]
+ * @param {{ feature?: string }} [options]
  */
 export async function callAdvisor(prompt, options = {}) {
-  const { maxTokens = 700, feature = "v2_chat" } = options;
+  const { feature = "v2_chat" } = options;
   const response = await fetch(`${getApiOrigin()}/api/claude`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: ADVISOR_MODEL,
-      max_tokens: maxTokens,
       feature,
       messages: [{ role: "user", content: prompt }]
     })
