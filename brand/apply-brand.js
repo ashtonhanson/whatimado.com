@@ -154,12 +154,8 @@ function applyShellCopy(doc, shell) {
   const syncNote = doc.querySelector(".v2-sync-note");
   if (syncNote && shell.syncNote) syncNote.textContent = String(shell.syncNote);
 
-  const activePath = doc.getElementById("active-path-label");
-  const empty = shell.activePathEmpty;
-  if (activePath && empty && typeof empty === "object") {
-    const e = /** @type {{ title?: string, body?: string }} */ (empty);
-    activePath.innerHTML = `<strong>${escapeText(e.title || "")}</strong>${escapeText(e.body || "")}`;
-  }
+  /* Active path label stays empty until chat-flow restores or fills it — avoids a "No active path" flash. */
+  void shell.activePathEmpty;
 
   const region = doc.querySelector(".v2-resources-region");
   if (region && shell.resourcesRegion) region.textContent = String(shell.resourcesRegion);

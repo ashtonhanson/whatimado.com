@@ -400,7 +400,18 @@ export function initPages() {
   const show = (name) => {
     if (name === "analytics" && !analyticsPageAllowed(authState().user)) {
       clearLaunchStatsDisplay();
-      statsStatus("Sign in with the founder account to see launch stats.", "error");
+      current = null;
+      for (const page of PAGES) {
+        const el = $(`page-${page}`);
+        const nav = $(`nav-${page}`);
+        el?.classList.add("hidden");
+        el?.setAttribute("aria-hidden", "true");
+        nav?.classList.remove("is-active");
+        nav?.removeAttribute("aria-current");
+      }
+      home?.classList.add("is-active");
+      delete document.body.dataset.page;
+      return;
     }
     current = name;
     for (const page of PAGES) {
@@ -420,20 +431,29 @@ export function initPages() {
     if (name) $(`page-${name}`)?.focus({ preventScroll: true });
   };
 
-  function syncAnalyticsAccess(state) {
-    const item = $("nav-analytics-item");
-    if (item) {
-      item.hidden = false;
-      item.classList.remove("hidden");
+  function syncGuestNavAccess(state) {
+    const signedIn = Boolean(state.user);
+    const notesItem = $("nav-notes-item");
+    if (notesItem) {
+      /* Notes is not implemented yet — keep it out of the guest menu. */
+      notesItem.hidden = !signedIn;
+      notesItem.classList.toggle("hidden", !signedIn);
     }
-    if (!analyticsPageAllowed(state.user) && current === "analytics") {
+    const analyticsItem = $("nav-analytics-item");
+    const analyticsAllowed = analyticsPageAllowed(state.user);
+    if (analyticsItem) {
+      analyticsItem.hidden = !analyticsAllowed;
+      analyticsItem.classList.toggle("hidden", !analyticsAllowed);
+    }
+    if (!analyticsAllowed && current === "analytics") {
       clearLaunchStatsDisplay();
-      statsStatus("Sign in with the founder account to see launch stats.", "error");
+      show(null);
     }
-    return analyticsPageAllowed(state.user);
+    return analyticsAllowed;
   }
 
   $("nav-analytics")?.addEventListener("click", () => {
+    if (!analyticsPageAllowed(authState().user)) return;
     show("analytics");
     void refreshStats();
   });
@@ -453,7 +473,7 @@ export function initPages() {
   initSettings();
 
   onAuthChange((state) => {
-    const allowed = syncAnalyticsAccess(state);
+    const allowed = syncGuestNavAccess(state);
     renderSettingsAccount(state);
     if (state.ready && allowed && current === "analytics" && !lastStats) void refreshStats();
     if (!state.ready || analyticsUrlHandled || !analyticsRequestedByUrl()) return;

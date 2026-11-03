@@ -37,6 +37,7 @@ import {
   clearComposerDraft
 } from "../state/composer-draft.js";
 import { authState, onAuthChange } from "../state/auth.js";
+import { analyticsPageAllowed } from "../state/home-access.js";
 import { readSession } from "../state/guest-account.js";
 import { closeActivePageIfOpen } from "./pages.js";
 import { journeyHasActiveWork, newMapConfirmMessage } from "./journey-work.js";
@@ -101,6 +102,18 @@ const DEMO_CHAT = [
 export function initChatFlow(ctx) {
   const { frameEl, mapEl, mainEl, messagesEl, activePathEl, selectionPanel, pathCardsEl } = ctx;
   const isDemo = new URLSearchParams(window.location.search).has("demo");
+
+  /** @param {string} html */
+  function setActivePathLabel(html) {
+    if (!activePathEl) return;
+    activePathEl.innerHTML = html;
+    activePathEl.hidden = false;
+    activePathEl.removeAttribute("aria-busy");
+  }
+
+  function showEmptyActivePath() {
+    setActivePathLabel("<strong>No active path</strong>Start a conversation below.");
+  }
 
   setPersistEnabled(!isDemo);
   bindPersistLifecycle();
@@ -220,9 +233,9 @@ export function initChatFlow(ctx) {
       }
       if (scroll) scrollFrameChildIntoView(selectionPanel);
     }
-    if (activePathEl) {
-      activePathEl.innerHTML = `<strong>${escapeHtml(displayTitle)}</strong>${appStore.journey.planConfirmed ? "Plan confirmed — missions next." : "Confirm this plan in chat, or discuss / alter below."}`;
-    }
+    setActivePathLabel(
+      `<strong>${escapeHtml(displayTitle)}</strong>${appStore.journey.planConfirmed ? "Plan confirmed — missions next." : "Confirm this plan in chat, or discuss / alter below."}`
+    );
   }
 
   function applyPathsToMap() {
@@ -234,9 +247,7 @@ export function initChatFlow(ctx) {
       showSelectedPath(selected, { scroll: false });
     } else {
       selectionPanel?.classList.add("hidden");
-      if (activePathEl) {
-        activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
-      }
+      setActivePathLabel("<strong>Exploring paths</strong>Pick one on the map or below.");
       confirmGate.hide();
     }
     renderPathCards();
@@ -448,7 +459,9 @@ export function initChatFlow(ctx) {
     onShown: (stages) => {
       drafts.sync(stages);
       setSpineAlternatePaths(Boolean(stages?.length));
-      setExtraExploreOptions([{ id: "option-analytics", label: "Analytics" }]);
+      setExtraExploreOptions(
+        analyticsPageAllowed(authState().user) ? [{ id: "option-analytics", label: "Analytics" }] : []
+      );
       const pathId = appStore.journey.roadmapPathId;
       if (stages?.length && pathId) {
         /* Ticking a task redraws the same branch. The phone map keeps its zoom and position for that. */
@@ -998,8 +1011,8 @@ export function initChatFlow(ctx) {
       selectGraphNode(selected.id);
       mapEl?.setSelectedNode(selected.id);
       showSelectedPath(selected, { scroll: false });
-    } else if (hasPaths && activePathEl) {
-      activePathEl.innerHTML = "<strong>Exploring paths</strong>Pick one on the map or below.";
+    } else if (hasPaths) {
+      setActivePathLabel("<strong>Exploring paths</strong>Pick one on the map or below.");
     }
 
     setPhase(journey.phase, { animate: false, instant: true });
@@ -1517,10 +1530,25 @@ export function initChatFlow(ctx) {
 
   window.addEventListener("resize", () => layout());
 
-  onAuthChange(() => {
-    setExtraExploreOptions([{ id: "option-analytics", label: "Analytics" }]);
+  onAuthChange((state) => {
+    setExtraExploreOptions(
+      analyticsPageAllowed(state.user) ? [{ id: "option-analytics", label: "Analytics" }] : []
+    );
     const has = graphStore.nodes.some((node) => node.id === "option-analytics");
+    if (has && !analyticsPageAllowed(state.user)) {
+      /* Drop the founder spoke for guests / non-founders. */
+      const pathId = appStore.journey.roadmapPathId;
+      const stages = appStore.journey.missionsStages;
+      if (pathId && appStore.journey.planConfirmed && stages?.length) {
+        showRoadmapBranch(pathId, stages);
+        mapEl?.syncLiveFromStore();
+        mapEl?.setSelectedNode(pathId);
+        mapEl?.syncRoadmapBranchFit?.({ animate: false });
+      }
+      return;
+    }
     if (has) return;
+    if (!analyticsPageAllowed(state.user)) return;
     const pathId = appStore.journey.roadmapPathId;
     const stages = appStore.journey.missionsStages;
     if (!pathId || !appStore.journey.planConfirmed || !stages?.length) return;
@@ -1549,8 +1577,17 @@ export function initChatFlow(ctx) {
     if (!isDemo) applyPrefsToStore(appStore);
     applyPhaseToDom(document, PHASE.OPEN, { ghostDismissed: false });
     const fresh = isDemo ? null : activeAccountRoadmap();
-    if (fresh && activePathEl) {
-      activePathEl.innerHTML = `<strong>${escapeHtml(fresh.title)}</strong>Start a conversation below.`;
+    if (fresh) {
+      setActivePathLabel(`<strong>${escapeHtml(fresh.title)}</strong>Start a conversation below.`);
+    } else if (!isDemo) {
+      showEmptyActivePath();
+    }
+  } else if (activePathEl?.hasAttribute("aria-busy")) {
+    /* Restore painted a path or left exploring; if still empty, show the empty state. */
+    if (!activePathEl.textContent.trim()) showEmptyActivePath();
+    else {
+      activePathEl.hidden = false;
+      activePathEl.removeAttribute("aria-busy");
     }
   }
 

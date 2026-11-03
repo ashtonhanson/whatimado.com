@@ -52,19 +52,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/v2/tokens.css?v=20261103-demo-income-copy" />
-  <link rel="stylesheet" href="/css/v2/glass.css?v=20261103-demo-income-copy" />
+  <link rel="stylesheet" href="/css/v2/tokens.css?v=20261103-guest-income-404" />
+  <link rel="stylesheet" href="/css/v2/glass.css?v=20261103-guest-income-404" />
   <link rel="stylesheet" href="/css/v2/text-box.css" />
-  <link rel="stylesheet" href="/css/v2/shell.css?v=20261103-demo-income-copy" />
+  <link rel="stylesheet" href="/css/v2/shell.css?v=20261103-guest-income-404" />
   <link rel="stylesheet" href="/css/v2/sidebar.css?v=20261028-roadmaps" />
   <link rel="stylesheet" href="/css/v2/resources.css?v=20260928-title" />
-  <link rel="stylesheet" href="/css/v2/map-canvas.css?v=20261103-demo-income-copy" />
-  <link rel="stylesheet" href="/css/v2/frame.css?v=20261103-demo-income-copy" />
-  <link rel="stylesheet" href="/css/v2/chat.css?v=20261103-demo-income-copy" />
+  <link rel="stylesheet" href="/css/v2/map-canvas.css?v=20261103-guest-income-404" />
+  <link rel="stylesheet" href="/css/v2/frame.css?v=20261103-guest-income-404" />
+  <link rel="stylesheet" href="/css/v2/chat.css?v=20261103-guest-income-404" />
   <link rel="stylesheet" href="/css/v2/drafts.css?v=20260921-drafts2" />
   <link rel="stylesheet" href="/css/v2/neon-frames.css" />
   <link rel="stylesheet" href="/css/v2/pages.css?v=20261023-spoke2" />
-  <link rel="stylesheet" href="/css/v2/mobile.css?v=20261103-demo-income-copy" />
+  <link rel="stylesheet" href="/css/v2/mobile.css?v=20261103-guest-income-404" />
 </head>
 <body class="v2-app" data-phase="open">
   <div class="v2-shell">
@@ -147,14 +147,14 @@
               </button>
               <ul class="v2-roadmaps-list" id="nav-roadmaps-list" aria-label="Saved paths" hidden></ul>
             </li>
-            <li>
+            <li id="nav-notes-item" hidden>
               <button type="button" class="v2-nav-btn" disabled aria-disabled="true">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"></path></svg>
                 <span class="v2-nav-label"><span>My Notes</span></span>
                 <span class="v2-rail-tip v2-text-box v2-text-box--response" role="tooltip">My Notes</span>
               </button>
             </li>
-            <li id="nav-analytics-item">
+            <li id="nav-analytics-item" hidden>
               <button type="button" class="v2-nav-btn" id="nav-analytics" aria-controls="page-analytics">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M12 20V4M20 20v-6"></path></svg>
                 <span class="v2-nav-label"><span>Analytics</span></span>
@@ -172,10 +172,7 @@
         </nav>
 
         <p class="v2-nav-group-label">Active path</p>
-        <div class="v2-active-path v2-text-box v2-text-box--chrome" id="active-path-label">
-          <strong>No active path</strong>
-          Start a conversation below.
-        </div>
+        <div class="v2-active-path v2-text-box v2-text-box--chrome" id="active-path-label" hidden aria-busy="true"></div>
 
         <div class="v2-rail-foot">
           <button
@@ -491,6 +488,6 @@
     <form method="dialog"><button type="submit" class="v2-account__close">Close</button></form>
   </dialog>
 
-  <script type="module" src="/js/v2/app.js?v=20261103-demo-income-copy"></script>
+  <script type="module" src="/js/v2/app.js?v=20261103-guest-income-404"></script>
 </body>
 </html>

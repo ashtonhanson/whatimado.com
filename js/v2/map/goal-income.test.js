@@ -42,18 +42,25 @@ test("hourly and monthly ranges keep their unit instead of becoming yearly k", (
   assert.equal(readExistingIncomeRange("$13-16/hr"), "$13–$16/hr");
   assert.equal(readExistingIncomeRange("$400-$800/mo"), "$400–$800/mo");
   assert.equal(readExistingIncomeRange("$18–$22 per hour"), "$18–$22/hr");
-  assert.equal(readExistingIncomeRange("$2500-$3200/month"), "$2500–$3200/mo");
+  assert.equal(readExistingIncomeRange("$15-$20 an hour"), "$15–$20/hr");
+  assert.equal(readExistingIncomeRange("$2500-$3200/month"), "$2,500–$3,200/mo");
   assert.equal(goalIncomeRange({ title: "Cashier", income: "$14-18/hr" }, null), "$14–$18/hr");
 });
 
-test("comma amounts parse as full dollars, not truncated", () => {
-  assert.equal(readExistingIncomeRange("$2,000-$3,000/mo"), "$2000–$3000/mo");
-  assert.equal(readExistingIncomeRange("$1,200–$1,800/wk"), "$1200–$1800/wk");
+test("comma amounts parse as full dollars and render with commas", () => {
+  assert.equal(readExistingIncomeRange("$2,000-$3,000/mo"), "$2,000–$3,000/mo");
+  assert.equal(readExistingIncomeRange("$2,000 to $3,000/mo"), "$2,000–$3,000/mo");
+  assert.equal(readExistingIncomeRange("$1,200–$1,800/wk"), "$1,200–$1,800/wk");
 });
 
 test("bare word hours does not turn a weekly amount into hourly", () => {
   assert.equal(readExistingIncomeRange("$400/wk for 10 hours"), "$400/wk");
   assert.equal(readExistingIncomeRange("$400-$600/wk (~20 hours)"), "$400–$600/wk");
+});
+
+test("dollar rate wins over a leading hours count", () => {
+  assert.equal(readExistingIncomeRange("20 hours/week at $18/hr"), "$18/hr");
+  assert.equal(readExistingIncomeRange("20 hours a week at $15-$20 an hour"), "$15–$20/hr");
 });
 
 test("role bands stay ordered low to high", () => {
