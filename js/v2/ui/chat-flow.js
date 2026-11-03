@@ -425,7 +425,16 @@ export function initChatFlow(ctx) {
     return JSON.stringify([pathId, stages.map((stage) => [stage.label, (stage.missions || []).map((m) => [m.id, m.title])])]);
   }
 
-  bindChatMapFollow({ frameEl, mapEl });
+  bindChatMapFollow({
+    frameEl,
+    mapEl,
+    onFocus: (id) => {
+      if (!id) return;
+      chatFocusId = id;
+      markMapCurrent();
+      paintOpenContext(id);
+    }
+  });
 
   const missions = createMissionsController({
     sectionEl: document.getElementById("missions"),

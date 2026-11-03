@@ -6,16 +6,17 @@
 import { appStore } from "../state/store.js";
 
 const NEAR_BOTTOM_PX = 72;
-/** Shared mobile/desktop hysteresis — 2 keeps follow smooth without feeling stuck. */
-const FOLLOW_SWITCH_HITS = 2;
+/** Shared mobile/desktop hysteresis — 1 lets scroll focus the map immediately. */
+const FOLLOW_SWITCH_HITS = 1;
 
 /**
  * @param {{
  *   frameEl: import("../components/whatimado-frame.js").WhatimadoFrame | null,
- *   mapEl: import("../components/whatimado-map.js").WhatimadoMap | null
+ *   mapEl: import("../components/whatimado-map.js").WhatimadoMap | null,
+ *   onFocus?: (id: string) => void
  * }} deps
  */
-export function bindChatMapFollow({ frameEl, mapEl }) {
+export function bindChatMapFollow({ frameEl, mapEl, onFocus }) {
   if (!frameEl || !mapEl || frameEl.dataset.chatMapFollowBound === "1") return;
   frameEl.dataset.chatMapFollowBound = "1";
 
@@ -23,6 +24,16 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
   let lastId = "";
   let pendingId = "";
   let pendingHits = 0;
+
+  /** @param {string} id @param {{ animate?: boolean }} [opts] */
+  const applyFocus = (id, { animate = true } = {}) => {
+    lastId = id;
+    pendingId = "";
+    pendingHits = 0;
+    mapEl.followChatNode?.(id, { animate });
+    /* Scroll focus owns the map highlight — no task click required. */
+    onFocus?.(id);
+  };
 
   const sync = ({ animate = true, force = false } = {}) => {
     if (!mapEl.canChatFollow?.()) return;
@@ -45,10 +56,7 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
       if (pendingHits < FOLLOW_SWITCH_HITS) return;
     }
 
-    lastId = id;
-    pendingId = "";
-    pendingHits = 0;
-    mapEl.followChatNode?.(id, { animate });
+    applyFocus(id, { animate });
   };
 
   const onScroll = () => {
@@ -73,8 +81,7 @@ export function bindChatMapFollow({ frameEl, mapEl }) {
         ? detail.id
         : "";
     if (preferred && mapEl.canChatFollow?.()) {
-      lastId = preferred;
-      mapEl.followChatNode?.(preferred, { animate: true });
+      applyFocus(preferred, { animate: true });
       return;
     }
     sync({ animate: true, force: true });
