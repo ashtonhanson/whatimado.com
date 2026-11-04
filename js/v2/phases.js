@@ -17,13 +17,13 @@ export const PHASE = {
  * @returns {{ map: MapMode, resources: boolean, possibilities: boolean, homePrompt: boolean }}
  */
 export function getPhaseVisibility(phase, options = {}) {
-  void options;
+  const { ghostDismissed = false } = options;
 
   switch (phase) {
     case PHASE.OPEN:
-      /* No default/ghost map — keep the stage clear until a roadmap is chosen. */
+      /* Preview homepage (0268242f): ghost constellation above Path Finder. */
       return {
-        map: "hidden",
+        map: ghostDismissed ? "faint" : "ghost",
         resources: false,
         possibilities: false,
         homePrompt: true
