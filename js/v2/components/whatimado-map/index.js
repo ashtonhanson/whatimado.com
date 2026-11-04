@@ -67,7 +67,7 @@ const EDGE_DASH_OFF = 5.75;
 const EDGE_TUCK = 0.6;
 /** The glowing trail line's width over a normal edge; must match map-canvas.css. */
 const EDGE_THICK_SCALE = 2.4;
-/** "Possibility Maps" over the selected path title, relative to the title size. */
+/** "My Paths" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
 /** Unscaled dot diameter the home sample paints on a phone. */
@@ -2990,7 +2990,7 @@ export class WhatimadoMap extends HTMLElement {
 
   /**
    * SVG text is scaled by the viewBox, so probe the painted height and
-   * choose a font that lands near 26px on screen (readable on phone and desktop).
+   * choose a font that lands near 13px on screen.
    * @param {SVGTextElement[]} texts
    */
   _applyLabelFont(texts, fontPx) {
@@ -3018,7 +3018,7 @@ export class WhatimadoMap extends HTMLElement {
     });
   }
 
-  _fitLabelFont(texts, target = 26) {
+  _fitLabelFont(texts, target = 13) {
     /* A new viewport width changes the paint scale, so the size from the old width no longer holds. */
     if (this._labelViewportW !== window.innerWidth) {
       this._labelViewportW = window.innerWidth;
@@ -3031,15 +3031,12 @@ export class WhatimadoMap extends HTMLElement {
       return this._labelFontPx;
     }
     const probe = 20;
-    /* Prefer a one-line label — a wrapped title's box height overstates paint scale. */
-    const sample = texts.find((text) => text.querySelectorAll("tspan").length < 2) || texts[0];
     texts.forEach((text) => {
       text.style.fontSize = `${probe}px`;
     });
-    const line = sample.querySelector("tspan") || sample;
-    const painted = line.getBoundingClientRect().height || target;
+    const painted = texts[0].getBoundingClientRect().height || target;
     const scale = painted / probe;
-    let fontPx = scale > 0.02 ? Math.max(18, Math.min(96, target / scale)) : target;
+    let fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
     if (this._labelFontPx && fontPx < this._labelFontPx) fontPx = this._labelFontPx;
     this._labelZoomKey = zoomKey;
     this._labelFontPx = fontPx;
@@ -3209,6 +3206,7 @@ export class WhatimadoMap extends HTMLElement {
         const rest = restCenter(el);
         if (rest) dots.push(rest);
       });
+      const mobile = window.matchMedia("(max-width: 900px)").matches;
       const titleBounds = {
         left: stageRect.left,
         right: stageRect.right,
@@ -3234,7 +3232,7 @@ export class WhatimadoMap extends HTMLElement {
 
       let items = [];
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-kicker-off"));
-      /** The selected path title was pushed off its spot over the dot to make room for "Possibility Maps". Mission numbers stay. */
+      /** The selected path title was pushed off its spot over the dot to make room for "My Paths". Mission numbers stay. */
       const kickerDisplaced = (list) =>
         list.some(
           (item) =>
@@ -3244,7 +3242,7 @@ export class WhatimadoMap extends HTMLElement {
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        this._fitLabelFont(texts, 26);
+        this._fitLabelFont(texts, 13);
         items = buildItems();
         if (!items.length) return;
         placeTitleBesideNode(items, titleBounds, { spineAbove: false });
@@ -3258,20 +3256,11 @@ export class WhatimadoMap extends HTMLElement {
         });
       }
       if (this._anchorId === GHOST_GRAPH.nodes[0].id) placeTitlesAbove(items, titleBounds);
-      {
+      if (mobile) {
         const rank = (item) =>
-          item.kind === "start"
-            ? 6
-            : item.kind === "main"
-              ? 5
-              : item.group.classList.contains("is-mission")
-                ? 4
-                : item.group.classList.contains("is-task")
-                  ? 3
-                  : item.kind === "path"
-                    ? 2
-                    : 1;
+          item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;
         const keepLabel = (item) =>
+          item.kind === "path" ||
           item.kind === "main" ||
           item.role === "mission" ||
           item.nodeId === "option-settings" ||
@@ -3279,9 +3268,8 @@ export class WhatimadoMap extends HTMLElement {
           item.nodeId === "option-notes" ||
           item.nodeId === "option-roadmaps";
         for (const [a, b] of crowdedPairs(items)) {
-          if (a.group.classList.contains("is-label-crowded") || b.group.classList.contains("is-label-crowded")) continue;
-          /* Large titles: unselected path labels may hide when they collide. Selected/main stays. */
           if (keepLabel(a) || keepLabel(b)) continue;
+          if (a.group.classList.contains("is-label-crowded") || b.group.classList.contains("is-label-crowded")) continue;
           (rank(a) < rank(b) ? a : b).group.classList.add("is-label-crowded");
         }
       }
@@ -3562,7 +3550,8 @@ export class WhatimadoMap extends HTMLElement {
         const isGoal = node.type === "goal";
         const bodyR = node.type === "more" || isGoal ? r : isAlternate ? r * 0.72 : r;
         const goalTitle = isGoal ? mapNodeLabel(node.title || node.label || "Goal", { compact: true }) : "";
-        const goalIncomeMain = isGoal ? goalIncomeRange(node, appStore.location) : "";
+        const goalIncomeFull = isGoal ? goalIncomeRange(node, appStore.location) : "";
+        const goalIncomeMain = goalIncomeFull.replace(/\s+per year$/i, "");
         const mobileMap = window.matchMedia("(max-width: 900px)").matches;
         /* Goal destination star: prior 1.5×, then +25%. */
         const goalScale = 1.5 * 1.25;
@@ -3571,7 +3560,7 @@ export class WhatimadoMap extends HTMLElement {
         const goalStar = isGoal ? starPolygonPoints(cx, cy, starOuter, starInner) : "";
         const kickerText =
           title && node.type === "path" && node.id === branchRootId
-            ? "Possibility Maps"
+            ? "My Paths"
             : title && node.type === "mission"
               ? missionNumberLabel(node.chainIndex ?? 0)
               : "";
@@ -3599,7 +3588,7 @@ export class WhatimadoMap extends HTMLElement {
             ${isGoal
               ? `<polygon class="whatimado-map__goal-star" points="${goalStar}" aria-hidden="true" />
             ${goalTitle ? `<text class="whatimado-map__goal-title" text-anchor="middle"><tspan x="${cx}" y="${cy - starOuter - r * 0.85}">${escapeHtml(goalTitle)}</tspan></text>` : ""}
-            ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan></text>` : ""}`
+            ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan><tspan x="${cx}" dy="1.15em">per year</tspan></text>` : ""}`
               : ""}
             ${kickerText
               ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`
