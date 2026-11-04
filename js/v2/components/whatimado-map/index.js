@@ -3044,10 +3044,17 @@ export class WhatimadoMap extends HTMLElement {
     texts.forEach((text) => {
       text.style.fontSize = `${probe}px`;
     });
-    const painted = texts[0].getBoundingClientRect().height || target;
+    /*
+     * Probe one line only. A wrapped title's full box height is ~N× a line, which
+     * overstates the paint scale and drives fontPx into the floor (illegible 8px).
+     */
+    const probeText =
+      texts.find((text) => text.querySelectorAll("tspan").length <= 1) || texts[0];
+    const lineCount = Math.max(1, probeText.querySelectorAll("tspan").length);
+    const paintedBox = probeText.getBoundingClientRect().height || target * lineCount;
+    const painted = paintedBox / lineCount;
     const scale = painted / probe;
-    let fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
-    if (this._labelFontPx && fontPx < this._labelFontPx) fontPx = this._labelFontPx;
+    const fontPx = scale > 0.02 ? Math.max(11, Math.min(96, target / scale)) : target;
     this._labelZoomKey = zoomKey;
     this._labelFontPx = fontPx;
     this._applyLabelFont(texts, fontPx);
