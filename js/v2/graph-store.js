@@ -316,9 +316,9 @@ const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
 const MISSION_STEP = 34;
 const TASK_STACK_STEP = 30;
-const MAP_LABEL_FONT = "500 12.5px sans-serif";
+const MAP_LABEL_FONT = "500 26px sans-serif";
 /** Screen length of every line that leaves You, so each title stays with its own dot after the map is fitted. */
-const SPOKE_SCREEN_PX = { mobile: 64, desktop: 100 };
+const SPOKE_SCREEN_PX = { mobile: 110, desktop: 150 };
 
 /** @returns {boolean} */
 function isMobileMapLayout() {
@@ -346,7 +346,7 @@ export function setExtraExploreOptions(options) {
 
 /** @returns {number} */
 function taskLabelLinePx() {
-  return measureCssVarLength("--v2-map-task-label-line-h") || 17.5;
+  return measureCssVarLength("--v2-map-task-label-line-h") || 28;
 }
 
 /** @returns {number} Painted node radius in SVG units. */
@@ -380,8 +380,8 @@ function stepForTitles(titles, { singleLine = false } = {}) {
     linePx: taskLabelLinePx(),
     pxPerUnit: mapPxPerUnit() * 0.5,
     nodeRadius: nodeRadiusSvg(),
-    minStep: mobile ? 16 : 28,
-    air: mobile ? 0.35 : 1.2
+    minStep: mobile ? 28 : 40,
+    air: mobile ? 0.7 : 1.4
   });
 }
 

@@ -2310,16 +2310,6 @@ export class WhatimadoMap extends HTMLElement {
     this.dataset.mode = mode;
     const hidden = mode === "hidden";
     this.setAttribute("aria-hidden", hidden ? "true" : "false");
-    if (hidden) return;
-    /* Fit to nodes once the map becomes visible, then place titles at readable size. */
-    requestAnimationFrame(() => {
-      if (this.getAttribute("mode") === "hidden") return;
-      if (!this.syncSnapCamera({ force: true, animate: false })) {
-        this.syncRoadmapBranchFit({ animate: false });
-      }
-      this._labelZoomKey = null;
-      this._layoutCallouts();
-    });
   }
 
   _stopDriftLoop() {
@@ -3000,7 +2990,7 @@ export class WhatimadoMap extends HTMLElement {
 
   /**
    * SVG text is scaled by the viewBox, so probe the painted height and
-   * choose a font that lands near 13px on screen.
+   * choose a font that lands near 26px on screen (readable on phone and desktop).
    * @param {SVGTextElement[]} texts
    */
   _applyLabelFont(texts, fontPx) {
@@ -3028,7 +3018,7 @@ export class WhatimadoMap extends HTMLElement {
     });
   }
 
-  _fitLabelFont(texts, target = 13) {
+  _fitLabelFont(texts, target = 26) {
     /* A new viewport width changes the paint scale, so the size from the old width no longer holds. */
     if (this._labelViewportW !== window.innerWidth) {
       this._labelViewportW = window.innerWidth;
@@ -3041,20 +3031,16 @@ export class WhatimadoMap extends HTMLElement {
       return this._labelFontPx;
     }
     const probe = 20;
+    /* Prefer a one-line label — a wrapped title's box height overstates paint scale. */
+    const sample = texts.find((text) => text.querySelectorAll("tspan").length < 2) || texts[0];
     texts.forEach((text) => {
       text.style.fontSize = `${probe}px`;
     });
-    /*
-     * Probe one line only. A wrapped title's full box height is ~N× a line, which
-     * overstates the paint scale and drives fontPx into the floor (illegible 8px).
-     */
-    const probeText =
-      texts.find((text) => text.querySelectorAll("tspan").length <= 1) || texts[0];
-    const lineCount = Math.max(1, probeText.querySelectorAll("tspan").length);
-    const paintedBox = probeText.getBoundingClientRect().height || target * lineCount;
-    const painted = paintedBox / lineCount;
+    const line = sample.querySelector("tspan") || sample;
+    const painted = line.getBoundingClientRect().height || target;
     const scale = painted / probe;
-    const fontPx = scale > 0.02 ? Math.max(11, Math.min(96, target / scale)) : target;
+    let fontPx = scale > 0.02 ? Math.max(18, Math.min(96, target / scale)) : target;
+    if (this._labelFontPx && fontPx < this._labelFontPx) fontPx = this._labelFontPx;
     this._labelZoomKey = zoomKey;
     this._labelFontPx = fontPx;
     this._applyLabelFont(texts, fontPx);
@@ -3259,7 +3245,7 @@ export class WhatimadoMap extends HTMLElement {
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        this._fitLabelFont(texts, 13);
+        this._fitLabelFont(texts, 26);
         items = buildItems();
         if (!items.length) return;
         placeTitleBesideNode(items, titleBounds, { spineAbove: false });
@@ -3273,11 +3259,20 @@ export class WhatimadoMap extends HTMLElement {
         });
       }
       if (this._anchorId === GHOST_GRAPH.nodes[0].id) placeTitlesAbove(items, titleBounds);
-      if (mobile) {
+      {
         const rank = (item) =>
-          item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;
+          item.kind === "start"
+            ? 6
+            : item.kind === "main"
+              ? 5
+              : item.group.classList.contains("is-mission")
+                ? 4
+                : item.group.classList.contains("is-task")
+                  ? 3
+                  : item.kind === "path"
+                    ? 2
+                    : 1;
         const keepLabel = (item) =>
-          item.kind === "path" ||
           item.kind === "main" ||
           item.role === "mission" ||
           item.nodeId === "option-settings" ||
@@ -3285,8 +3280,9 @@ export class WhatimadoMap extends HTMLElement {
           item.nodeId === "option-notes" ||
           item.nodeId === "option-roadmaps";
         for (const [a, b] of crowdedPairs(items)) {
-          if (keepLabel(a) || keepLabel(b)) continue;
           if (a.group.classList.contains("is-label-crowded") || b.group.classList.contains("is-label-crowded")) continue;
+          /* Large titles: unselected path labels may hide when they collide. Selected/main stays. */
+          if (keepLabel(a) || keepLabel(b)) continue;
           (rank(a) < rank(b) ? a : b).group.classList.add("is-label-crowded");
         }
       }
@@ -3295,9 +3291,6 @@ export class WhatimadoMap extends HTMLElement {
       if (atLayoutZoom) {
         this._zoom = liveZoom;
         this._writePanTransform(liveZoom);
-        /* Re-fit so titles paint ~13px at the live zoom after layout-zoom placement. */
-        this._labelZoomKey = null;
-        if (texts.length) this._fitLabelFont(texts, 13);
       }
       this._layingOut = false;
     }
