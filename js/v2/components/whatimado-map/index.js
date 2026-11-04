@@ -3209,7 +3209,6 @@ export class WhatimadoMap extends HTMLElement {
         const rest = restCenter(el);
         if (rest) dots.push(rest);
       });
-      const mobile = window.matchMedia("(max-width: 900px)").matches;
       const titleBounds = {
         left: stageRect.left,
         right: stageRect.right,
