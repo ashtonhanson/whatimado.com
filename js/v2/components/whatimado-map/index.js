@@ -476,10 +476,7 @@ export class WhatimadoMap extends HTMLElement {
     if (this._ghostLayer?.childElementCount === 0) {
       this.loadGhostGraph();
     }
-    /* Landing silhouette until a real You hub / roadmap replaces it. */
-    if (!graphStore.nodes.some((node) => node.type === "start" && node.id === "start")) {
-      this.loadAmbientLiveGraph();
-    }
+    /* Do not paint the ambient ghost silhouette — the map stays empty until a roadmap is selected. */
     this._refreshDrift();
     this._onViewportResize = () => {
       this._syncMobileHeaderMapTools();
