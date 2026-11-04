@@ -17,25 +17,6 @@ export function buildFrameTemplate(labels = {}) {
     >
       <span class="whatimado-frame__drag-grip" aria-hidden="true"></span>
     </div>
-    <button
-      type="button"
-      class="whatimado-frame__resources-sticky"
-      aria-expanded="false"
-      aria-controls="whatimado-frame-resources-sheet"
-      hidden
-    >
-      <span class="whatimado-frame__resources-sticky-label">Resources</span>
-    </button>
-    <div
-      class="whatimado-frame__resources-sheet"
-      id="whatimado-frame-resources-sheet"
-      role="region"
-      aria-label="Resources"
-      hidden
-    >
-      <p class="v2-nav-group-label whatimado-frame__resources-region" id="whatimado-frame-resources-region"></p>
-      <ul class="v2-resources-list whatimado-frame__resources-list" id="whatimado-frame-resources-list"></ul>
-    </div>
     <div class="whatimado-frame__body-wrap">
       <div class="whatimado-frame__body" part="body">
         <div class="whatimado-frame__body-content"></div>
@@ -55,6 +36,29 @@ export function buildFrameTemplate(labels = {}) {
       ></textarea>
       <button type="submit" class="whatimado-frame__composer-send">${sendLabel}</button>
     </form>
+  </div>
+  <button
+    type="button"
+    class="whatimado-frame__resources-sticky"
+    aria-label="Resources"
+    aria-expanded="false"
+    aria-controls="whatimado-frame-resources-sheet"
+    hidden
+  >
+    <span class="whatimado-frame__resources-sticky-label">Resources</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M6 4.5h9.2a2.3 2.3 0 0 1 2.3 2.3V19.5L12 16.2 6 19.5Z"></path>
+    </svg>
+  </button>
+  <div
+    class="whatimado-frame__resources-sheet"
+    id="whatimado-frame-resources-sheet"
+    role="region"
+    aria-label="Resources"
+    hidden
+  >
+    <p class="v2-nav-group-label whatimado-frame__resources-region" id="whatimado-frame-resources-region"></p>
+    <ul class="v2-resources-list whatimado-frame__resources-list" id="whatimado-frame-resources-list"></ul>
   </div>
   <button
     type="button"

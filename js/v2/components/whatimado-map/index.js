@@ -2310,6 +2310,16 @@ export class WhatimadoMap extends HTMLElement {
     this.dataset.mode = mode;
     const hidden = mode === "hidden";
     this.setAttribute("aria-hidden", hidden ? "true" : "false");
+    if (hidden) return;
+    /* Fit to nodes once the map becomes visible, then place titles at readable size. */
+    requestAnimationFrame(() => {
+      if (this.getAttribute("mode") === "hidden") return;
+      if (!this.syncSnapCamera({ force: true, animate: false })) {
+        this.syncRoadmapBranchFit({ animate: false });
+      }
+      this._labelZoomKey = null;
+      this._layoutCallouts();
+    });
   }
 
   _stopDriftLoop() {
@@ -3278,6 +3288,9 @@ export class WhatimadoMap extends HTMLElement {
       if (atLayoutZoom) {
         this._zoom = liveZoom;
         this._writePanTransform(liveZoom);
+        /* Re-fit so titles paint ~13px at the live zoom after layout-zoom placement. */
+        this._labelZoomKey = null;
+        if (texts.length) this._fitLabelFont(texts, 13);
       }
       this._layingOut = false;
     }

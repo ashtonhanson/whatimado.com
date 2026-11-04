@@ -151,8 +151,9 @@ body.v2-app {
   font-feature-settings: "liga" 1, "calt" 1;
 }
 
-/* Buttons + titles share hero display stack (Montserrat, caps) */
-body.v2-app button,
+/* Buttons + titles share hero display stack (Montserrat, caps).
+   Undo controls are excluded — they stay frameless (no chat-box corner). */
+body.v2-app button:not(.v2-header-undo):not(.v2-undo-btn):not(.whatimado-frame__scroll-bottom):not(.whatimado-frame__resources-sticky),
 body.v2-app .v2-section-label,
 body.v2-app .v2-nav-group-label,
 body.v2-app .v2-msg-label,
@@ -163,7 +164,7 @@ body.v2-app .v2-brand-word {
   text-transform: uppercase;
 }
 
-body.v2-app button {
+body.v2-app button:not(.v2-header-undo):not(.v2-undo-btn):not(.whatimado-frame__scroll-bottom):not(.whatimado-frame__resources-sticky) {
   border-radius: var(--v2-btn-radius);
 }
 

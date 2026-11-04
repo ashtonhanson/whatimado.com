@@ -218,25 +218,30 @@
   flex-shrink: 0;
 }
 
+body.v2-app button.v2-undo-btn,
 .v2-undo-btn {
   display: flex;
   align-items: center;
   gap: 0.55rem;
   width: 100%;
+  min-height: 44px;
   padding: 0.55rem 0.7rem;
-  border: var(--v2-rail-dotted-border);
-  border-radius: var(--v2-corner-bl-square);
+  border: none;
+  border-radius: 0;
   background: transparent;
   color: var(--v2-text-muted);
   font: inherit;
+  font-family: var(--v2-font-hero);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: not-allowed;
   opacity: 0.55;
   overflow: hidden;
   max-height: 4rem;
   box-sizing: border-box;
+  box-shadow: none;
   transition:
     opacity var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
     max-height var(--v2-rail-motion-duration) var(--v2-rail-motion-ease),
@@ -244,10 +249,15 @@
     visibility 0s;
 }
 
+body.v2-app button.v2-undo-btn:not(:disabled),
 .v2-undo-btn:not(:disabled),
+body.v2-app button.v2-undo-btn.is-ready,
 .v2-undo-btn.is-ready {
   cursor: pointer;
   opacity: 1;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .v2-undo-btn svg {

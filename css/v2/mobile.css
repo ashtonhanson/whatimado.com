@@ -206,46 +206,22 @@
     padding-right: var(--v2-frame-pad-r);
   }
 
-  /*
-   * Resources tab is 1.55rem at right:0.35rem. Chat content butts up to its left
-   * edge with a 6px gap — no extra FAB gutter (the FAB sits in that same strip).
-   */
-  whatimado-frame.is-mobile-docked.has-resources-sticky {
-    --v2-resources-gutter: calc(1.55rem + 0.35rem + 6px);
-  }
-
-  whatimado-frame.is-mobile-docked.has-resources-sticky .whatimado-frame__body {
-    --v2-frame-pad-r: var(--v2-resources-gutter);
-    padding-right: var(--v2-frame-pad-r);
-  }
-
-  whatimado-frame.is-mobile-docked.has-resources-sticky .whatimado-frame__composer {
-    padding-right: var(--v2-resources-gutter);
-  }
-
-  body.v2-app whatimado-frame.is-mobile-docked.has-resources-sticky > button.whatimado-frame__scroll-bottom {
-    right: var(--v2-resources-gutter);
-  }
-
-  whatimado-frame.is-mobile-docked.has-resources-sticky.is-scrollable:has(> .whatimado-frame__scroll-bottom.is-visible) .whatimado-frame__body-content {
-    padding-right: 0;
-  }
-
+  /* Chat keeps its full width — Resources is a floating FAB, not a side gutter. */
   whatimado-frame.is-mobile-docked .whatimado-frame__body,
   whatimado-frame.is-mobile-docked .whatimado-frame__body-content,
   whatimado-frame.is-mobile-docked #mission-stages {
-    overflow-x: hidden;
     max-width: 100%;
   }
 
-  /* Tasks bleed to the screen edges — cancel sheet body inset so sides are not cropped. */
-  whatimado-frame.is-mobile-docked #mission-stages .v2-mission {
-    margin-left: calc(-1 * var(--v2-frame-pad-x));
-    margin-right: calc(-1 * var(--v2-frame-pad-r));
-    padding-left: max(var(--v2-frame-pad-x), env(safe-area-inset-left, 0px));
-    padding-right: max(var(--v2-frame-pad-r), env(safe-area-inset-right, 0px));
-    max-width: none;
+  whatimado-frame.is-mobile-docked .whatimado-frame__body-content {
+    overflow-x: visible;
+  }
+
+  whatimado-frame.is-mobile-docked #mission-stages .v2-mission,
+  whatimado-frame.is-mobile-docked .v2-path-card,
+  whatimado-frame.is-mobile-docked .v2-possibilities {
     box-sizing: border-box;
+    max-width: 100%;
   }
 
   .v2-mission__controls {
@@ -490,6 +466,7 @@
     pointer-events: auto;
   }
 
+  body.v2-app button.v2-header-undo,
   .v2-header-undo {
     display: inline-flex;
     align-items: center;
@@ -503,9 +480,9 @@
     margin: 0;
     padding: 0;
     border: none;
-    border-radius: 0.55rem;
-    background: color-mix(in srgb, var(--v2-teal) 14%, transparent);
-    color: var(--v2-teal);
+    border-radius: 0;
+    background: transparent;
+    color: var(--v2-text-muted);
     cursor: not-allowed;
     opacity: 0.45;
     touch-action: manipulation;
@@ -513,14 +490,19 @@
     visibility: visible;
   }
 
+  body.v2-app button.v2-header-undo:not(:disabled),
   .v2-header-undo:not(:disabled),
+  body.v2-app button.v2-header-undo.is-ready,
   .v2-header-undo.is-ready {
-    color: var(--v2-teal);
-    background: color-mix(in srgb, var(--v2-teal) 28%, transparent);
+    color: var(--v2-text);
+    background: transparent;
+    border: none;
+    box-shadow: none;
     cursor: pointer;
     opacity: 1;
   }
 
+  body.v2-app button.v2-header-undo:focus-visible,
   .v2-header-undo:focus-visible {
     outline: 2px solid var(--v2-teal);
     outline-offset: 2px;
@@ -1452,69 +1434,6 @@
   body.v2-app[data-page] .v2-page__close {
     top: calc(var(--v2-mobile-header-h, 0px) + 0.35rem);
     right: 0.4rem;
-  }
-
-  /* Vertical Resources tab, sticky under the prompt drag handle. */
-  whatimado-frame.has-resources-sticky .whatimado-frame__resources-sticky {
-    display: inline-flex;
-    position: absolute;
-    top: 2.45rem;
-    right: 0.35rem;
-    z-index: 8;
-    align-items: center;
-    justify-content: center;
-    width: 1.55rem;
-    min-height: 5.5rem;
-    margin: 0;
-    padding: 0.55rem 0.12rem;
-    border: 1px solid color-mix(in srgb, var(--v2-neon-teal) 55%, transparent);
-    border-radius: var(--v2-btn-radius);
-    background: color-mix(in srgb, #0d1a1d 92%, transparent);
-    color: var(--v2-teal);
-    pointer-events: auto;
-    cursor: pointer;
-  }
-
-  whatimado-frame .whatimado-frame__resources-sticky-label {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-family: var(--v2-font-hero);
-    font-size: 0.62rem;
-    font-weight: 650;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    line-height: 1;
-  }
-
-  whatimado-frame .whatimado-frame__resources-sticky.is-open,
-  whatimado-frame .whatimado-frame__resources-sticky[aria-expanded="true"] {
-    color: var(--v2-yellow);
-    border-color: var(--v2-neon-teal);
-  }
-
-  whatimado-frame.has-resources-sticky .whatimado-frame__resources-sheet {
-    display: block;
-    position: absolute;
-    top: 2.45rem;
-    right: 2.05rem;
-    left: auto;
-    z-index: 8;
-    width: min(16.5rem, calc(100% - 3.1rem));
-    max-height: min(42vh, 18rem);
-    margin: 0;
-    padding: 0.55rem 0.65rem 0.7rem;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    border: 1px solid color-mix(in srgb, var(--v2-neon-teal) 45%, transparent);
-    border-radius: var(--v2-btn-radius);
-    background: color-mix(in srgb, #0d1a1d 94%, transparent);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
-    pointer-events: auto;
-  }
-
-  whatimado-frame .whatimado-frame__resources-sheet[hidden] {
-    display: none !important;
   }
 
   whatimado-frame .whatimado-frame__resources-region {

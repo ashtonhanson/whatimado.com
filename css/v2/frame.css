@@ -94,11 +94,7 @@ whatimado-frame .whatimado-frame__drag-grip {
   transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Desktop: Resources lives in the right rail. */
-whatimado-frame .whatimado-frame__resources-sticky,
-whatimado-frame .whatimado-frame__resources-sheet {
-  display: none;
-}
+/* Desktop right-rail Resources still exists; the floating bookmark/sheet override display below. */
 
 whatimado-frame.is-docked .whatimado-frame__drag-rail:hover .whatimado-frame__drag-grip,
 whatimado-frame.is-docked .whatimado-frame__drag-rail:focus-visible .whatimado-frame__drag-grip {
@@ -143,7 +139,8 @@ whatimado-frame .whatimado-frame__body {
   min-height: 0;
   padding: 0.85rem clamp(0.85rem, 2.5vw, 1.25rem) var(--v2-content-bottom-reserve);
   padding-right: clamp(1.1rem, 2.8vw, 1.35rem);
-  overflow-x: hidden;
+  /* Visible X so path-card / task glows are not cropped at the sides. */
+  overflow-x: visible;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
@@ -255,15 +252,17 @@ whatimado-frame.is-scrollable .whatimado-frame__body-wrap::after {
   }
 }
 
-/* Floating circular scroll-to-bottom FAB — outside the glass chat frame.
-   Specificity beats body.v2-app button { border-radius: var(--v2-btn-radius) }. */
+/* Floating circular scroll-to-bottom FAB — send-button colors, no chat resize.
+   Same edge inset as the send control; sits just above the send row. */
 body.v2-app whatimado-frame > button.whatimado-frame__scroll-bottom {
-  --v2-scroll-fab-size: 2.625rem;
-  --v2-scroll-fab-gap: 0.7rem;
+  --v2-scroll-fab-size: 2rem;
+  --v2-fab-edge: clamp(0.85rem, 2.5vw, 1.1rem);
+  --v2-fab-bottom: clamp(0.85rem, 2vw, 1rem);
+  --v2-fab-send-lift: calc(40px + 0.35rem);
   position: absolute;
   left: auto;
-  right: var(--v2-scroll-fab-gap);
-  bottom: calc(var(--v2-content-bottom-reserve) + var(--v2-scroll-fab-gap));
+  right: var(--v2-fab-edge);
+  bottom: calc(var(--v2-fab-bottom) + var(--v2-fab-send-lift));
   z-index: 7;
   box-sizing: border-box;
   display: inline-flex;
@@ -278,12 +277,12 @@ body.v2-app whatimado-frame > button.whatimado-frame__scroll-bottom {
   aspect-ratio: 1 / 1;
   margin: 0;
   padding: 0;
-  border: none;
+  border: 1px solid var(--v2-border);
   border-radius: 50%;
-  background-color: var(--v2-teal);
+  background-color: #0d1a1d;
   background-image: none;
-  color: #041014;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  color: var(--v2-teal);
+  box-shadow: none;
   overflow: hidden;
   flex: none;
   transform: none;
@@ -298,8 +297,8 @@ body.v2-app whatimado-frame > button.whatimado-frame__scroll-bottom {
 }
 
 body.v2-app whatimado-frame > button.whatimado-frame__scroll-bottom svg {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 0.95rem;
+  height: 0.95rem;
   display: block;
   flex: none;
 }
@@ -311,17 +310,98 @@ body.v2-app whatimado-frame > button.whatimado-frame__scroll-bottom.is-visible {
 }
 
 body.v2-app whatimado-frame > button.whatimado-frame__scroll-bottom:hover {
-  background-color: color-mix(in srgb, var(--v2-teal) 88%, #fff);
-}
-
-/* Only reserve FAB space while the circle is actually showing — avoid a permanent right gap. */
-whatimado-frame.is-scrollable:has(> .whatimado-frame__scroll-bottom.is-visible) .whatimado-frame__body-content {
-  padding-right: calc(var(--v2-scroll-fab-gap, 0.7rem) + 2.625rem + 0.2rem);
+  background-color: #122428;
 }
 
 body.v2-app whatimado-frame > button.whatimado-frame__scroll-bottom:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--v2-yellow) 70%, transparent);
   outline-offset: 2px;
+}
+
+/* Resources bookmark FAB — stacked just above scroll-to-bottom (outside glass overflow). */
+body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky {
+  --v2-resources-fab-size: 2rem;
+  --v2-fab-edge: clamp(0.85rem, 2.5vw, 1.1rem);
+  --v2-fab-bottom: clamp(0.85rem, 2vw, 1rem);
+  --v2-fab-send-lift: calc(40px + 0.35rem);
+  position: absolute;
+  left: auto;
+  right: var(--v2-fab-edge);
+  bottom: calc(var(--v2-fab-bottom) + var(--v2-fab-send-lift) + 2rem + 0.45rem);
+  z-index: 8;
+  box-sizing: border-box;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--v2-resources-fab-size);
+  height: var(--v2-resources-fab-size);
+  min-width: var(--v2-resources-fab-size);
+  min-height: var(--v2-resources-fab-size);
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--v2-border);
+  border-radius: 50%;
+  background-color: #0d1a1d;
+  color: var(--v2-teal);
+  box-shadow: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+body.v2-app whatimado-frame.has-resources-sticky > button.whatimado-frame__resources-sticky {
+  display: inline-flex;
+}
+
+body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky:hover,
+body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky.is-open,
+body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky[aria-expanded="true"] {
+  background-color: #122428;
+  color: var(--v2-yellow);
+}
+
+body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky .whatimado-frame__resources-sticky-label {
+  display: none;
+}
+
+/* Resources overlay over chat — does not reserve width or push content. */
+whatimado-frame > .whatimado-frame__resources-sheet {
+  display: none;
+  position: absolute;
+  right: clamp(0.85rem, 2.5vw, 1.1rem);
+  bottom: calc(clamp(0.85rem, 2vw, 1rem) + 40px + 0.35rem + 4.6rem);
+  left: auto;
+  z-index: 9;
+  width: min(18rem, calc(100% - 2.4rem));
+  max-height: min(48vh, 20rem);
+  margin: 0;
+  padding: 0.55rem 0.65rem 0.7rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid color-mix(in srgb, var(--v2-neon-teal) 45%, transparent);
+  border-radius: var(--v2-btn-radius);
+  background: color-mix(in srgb, #0d1a1d 94%, transparent);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+  pointer-events: auto;
+}
+
+whatimado-frame.has-resources-sticky > .whatimado-frame__resources-sheet:not([hidden]) {
+  display: block;
+}
+
+whatimado-frame > .whatimado-frame__resources-sheet[hidden] {
+  display: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1078,14 +1158,19 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   align-items: center;
   gap: 0.45rem;
   min-height: 44px;
-  padding: 0.2rem 0.35rem 0.2rem 0.55rem;
+  padding: 0.55rem 0.55rem;
   background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--v2-neon-teal) 55%, transparent);
   border-radius: var(--v2-btn-radius);
 }
 
 .v2-mission-done-acc__bar .v2-mission__done-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
   padding: 0;
+  margin: 0;
 }
 
 .v2-mission-done-acc__toggle {
@@ -1096,8 +1181,8 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   justify-content: flex-start;
   flex-wrap: wrap;
   gap: 0.35rem 0.55rem;
-  min-height: 40px;
-  padding: 0.2rem 0.45rem 0.2rem 0.15rem;
+  min-height: 0;
+  padding: 0;
   appearance: none;
   cursor: pointer;
   font-family: var(--v2-font-hero);
@@ -1664,12 +1749,15 @@ body.v2-app .v2-timeline__stop.is-bypassed {
 
 .v2-possibilities {
   margin-top: 0.85rem;
+  overflow: visible;
 }
 
 .v2-path-cards {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  padding: 0.35rem 0.2rem;
+  overflow: visible;
 }
 
 .v2-path-card {

@@ -358,15 +358,14 @@ body.v2-app .v2-path-card__meta {
   box-shadow: none;
 }
 
-/* Current / open task highlight — desktop and mobile. */
+/* Current / open task highlight — inset ring + glow so width never changes. */
 #mission-stages .v2-mission.is-open-context:not(.is-done),
 #mission-stages:not(:has(.v2-mission.is-open-context:not(.is-done))) .v2-mission.is-focused:not(.is-done) {
-  margin-top: 0.55rem;
-  padding: 0.65rem 0.75rem 0.75rem;
-  border: 1.5px solid var(--v2-yellow);
-  border-radius: var(--v2-prompt-radius);
+  border: none;
+  outline: none;
   background: transparent;
   box-shadow:
+    inset 0 0 0 1.5px var(--v2-yellow),
     0 0 6px color-mix(in srgb, var(--v2-yellow) 70%, transparent),
     0 0 16px color-mix(in srgb, var(--v2-yellow) 40%, transparent),
     0 0 28px color-mix(in srgb, var(--v2-yellow) 22%, transparent);
@@ -375,26 +374,27 @@ body.v2-app .v2-path-card__meta {
 .v2-path-card.is-open-context,
 .v2-path-card.is-selected.is-open-context,
 #selection-panel.is-open-context {
-  border: 1.5px solid var(--v2-yellow);
-  border-radius: var(--v2-prompt-radius);
+  border-color: var(--v2-yellow);
   background: transparent;
   box-shadow:
+    inset 0 0 0 1.5px var(--v2-yellow),
     0 0 6px color-mix(in srgb, var(--v2-yellow) 90%, transparent),
     0 0 16px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
     0 0 28px color-mix(in srgb, var(--v2-yellow) 32%, transparent);
 }
 
-/* Phones: the current task, its checkbox and its buttons sit inside one glowing yellow frame.
-   Frame sides go edge-to-edge with the screen (no inset crop inside the prompt sheet). */
+/* Phones: same inset highlight — no negative margins, no width jump. */
 @media (max-width: 900px) {
   #mission-stages .v2-mission.is-open-context:not(.is-done),
   #mission-stages:not(:has(.v2-mission.is-open-context:not(.is-done))) .v2-mission.is-focused:not(.is-done) {
-    margin: 0.6rem calc(-1 * var(--v2-frame-pad-r, 1.1rem)) 0.6rem calc(-1 * var(--v2-frame-pad-x, 0.85rem));
-    padding: 0.85rem max(0.95rem, env(safe-area-inset-right, 0px)) 0.85rem max(0.95rem, env(safe-area-inset-left, 0px));
-    border: 1.5px solid var(--v2-yellow);
-    border-radius: 0;
-    background: var(--v2-bg);
+    margin-left: 0;
+    margin-right: 0;
+    border: none;
+    outline: none;
+    border-radius: var(--v2-prompt-radius);
+    background: transparent;
     box-shadow:
+      inset 0 0 0 1.5px var(--v2-yellow),
       0 0 6px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
       0 0 16px color-mix(in srgb, var(--v2-yellow) 28%, transparent);
   }
@@ -402,10 +402,11 @@ body.v2-app .v2-path-card__meta {
   .v2-path-card.is-open-context,
   .v2-path-card.is-selected.is-open-context,
   #selection-panel.is-open-context {
-    border: 1.5px solid var(--v2-yellow);
+    border-color: var(--v2-yellow);
     border-radius: var(--v2-prompt-radius);
     background: transparent;
     box-shadow:
+      inset 0 0 0 1.5px var(--v2-yellow),
       0 0 6px color-mix(in srgb, var(--v2-yellow) 90%, transparent),
       0 0 16px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
       0 0 28px color-mix(in srgb, var(--v2-yellow) 32%, transparent);
