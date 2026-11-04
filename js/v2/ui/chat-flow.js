@@ -1,4 +1,4 @@
-import { PHASE, applyPhaseToDom } from "../phases.js";
+import { PHASE, applyPhaseToDom } from "../phases.js?v=20261104-home-map2";
 import { graphStore, loadAdvisorPaths, restorePossibilityMap, selectGraphNode, setExtraExploreOptions, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import {

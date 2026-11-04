@@ -21,9 +21,9 @@ export function getPhaseVisibility(phase, options = {}) {
 
   switch (phase) {
     case PHASE.OPEN:
-      /* No default/ghost map — keep the stage clear until a roadmap is chosen. */
+      /* Landing silhouette fills the stage above the prompt until chat starts. */
       return {
-        map: "hidden",
+        map: "visible",
         resources: false,
         possibilities: false,
         homePrompt: true
