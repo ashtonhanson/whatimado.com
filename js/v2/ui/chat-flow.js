@@ -1,4 +1,4 @@
-import { PHASE, applyPhaseToDom } from "../phases.js?v=20261104-home-0268242f";
+import { PHASE, applyPhaseToDom } from "../phases.js?v=20261104-home-map-keep2";
 import { graphStore, loadAdvisorPaths, restorePossibilityMap, selectGraphNode, setExtraExploreOptions, setSpineAlternatePaths, showRoadmapBranch } from "../graph-store.js";
 import { callAdvisor, buildExplorationPrompt } from "../advisor.js";
 import {
@@ -151,7 +151,7 @@ export function initChatFlow(ctx) {
     setPhase(appStore.journey.phase, { animate: !instant, instant });
   }
 
-  /** True while a new roadmap is still being written — map stays hidden. */
+  /** True while a new roadmap is still being written — map stays in the band above chat. */
   function isPreRoadmapCompose() {
     const phase = appStore.journey.phase;
     return (
@@ -162,23 +162,26 @@ export function initChatFlow(ctx) {
     );
   }
 
-  /** Lift the chat/prompt to the top so the keyboard cannot crop it; map stays covered. */
+  /**
+   * Keep the prompt visible without covering the node map or taking the full vertical frame.
+   * Desktop stays at HOME; mobile stays collapsed (¾) so the map band remains above the sheet.
+   */
   function ensureTypingFullStage() {
     const dock = frameEl?._dock;
     if (!dock) return;
-    document.body.classList.add("is-chat-full-stage");
+    document.body.classList.remove("is-chat-full-stage");
     if (MOBILE_MQ.matches) {
       if (!dock._mobileChatSheet) dock.enterMobileChatMode?.();
-      if (dock.activeSnap !== SNAP.MOBILE_EXPANDED) {
-        dock.snapTo(SNAP.MOBILE_EXPANDED, { animate: true });
+      if (dock.activeSnap === SNAP.MOBILE_EXPANDED) {
+        dock.snapTo(SNAP.MOBILE_COLLAPSED, { animate: true });
       }
       return;
     }
     if (!frameEl?.classList.contains("is-docked")) {
       frameEl?.onHeroDismissed?.({ animate: false });
     }
-    if (dock.activeSnap !== SNAP.TOP) {
-      dock.snapTo(SNAP.TOP, { animate: true });
+    if (dock.activeSnap === SNAP.TOP) {
+      dock.snapTo(SNAP.HOME, { animate: true });
     }
   }
 

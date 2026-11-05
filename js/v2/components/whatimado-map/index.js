@@ -102,6 +102,33 @@ function starPolygonPoints(cx, cy, outerR, innerR) {
   return pts.join(" ");
 }
 
+/**
+ * Map ambient ghost seats onto the next store graph so You and path spokes glide
+ * into the system-generated possibility map (and later the chosen roadmap).
+ * @param {{ id: string, x: number, y: number }[]} prev
+ * @param {import("../../graph-store.js").GraphNode[]} nodes
+ */
+function remapAmbientPrevToStore(prev, nodes) {
+  const ghostStart = prev.find((node) => node.id === "ghost-start") || prev.find((node) => /start/i.test(node.id));
+  const ghostPaths = prev
+    .filter((node) => node.id !== ghostStart?.id && !/mission|goal|more/i.test(node.id))
+    .slice()
+    .sort((a, b) => a.x - b.x);
+  /** @type {{ id: string, x: number, y: number }[]} */
+  const mapped = [];
+  for (const node of nodes) {
+    if (node.type === "start" && ghostStart) {
+      mapped.push({ id: node.id, x: ghostStart.x, y: ghostStart.y });
+      continue;
+    }
+    if (node.type === "path" && ghostPaths.length) {
+      const seat = ghostPaths.shift();
+      mapped.push({ id: node.id, x: seat.x, y: seat.y });
+    }
+  }
+  return mapped.length ? mapped : prev;
+}
+
 /** @param {import("../../graph-store.js").GraphNode} node */
 function nodeMapTitleLines(node) {
   if (!node || node.type === "more" || node.type === "goal") return [];
@@ -719,7 +746,11 @@ export class WhatimadoMap extends HTMLElement {
 
   /** @param {GraphNode[]} nodes @param {GraphEdge[]} edges */
   loadLiveGraph(nodes, edges) {
-    const prev = this._liveNodes.map((node) => ({ id: node.id, x: node.x, y: node.y }));
+    let prev = this._liveNodes.map((node) => ({ id: node.id, x: node.x, y: node.y }));
+    /* Ambient ghost-* silhouette → real possibility/roadmap ids: carry spoke seats so the glide is continuous. */
+    if (prev.some((node) => String(node.id).startsWith("ghost-")) && nodes.some((node) => node.id === "start")) {
+      prev = remapAmbientPrevToStore(prev, nodes);
+    }
     const spin = graphStore.focusSpin;
     graphStore.focusSpin = null;
     this._cancelLayoutSpin();

@@ -192,7 +192,7 @@ export function createPathMapController(ui) {
       flush();
       trackEvent("map_generated", { paths: ideas.length });
       scrollFrameChildIntoView(possibilitiesEl());
-      /* Drop the full-stage typing sheet; map stays hidden until a path is chosen. */
+      /* Settle the sheet so the possibility map stays visible above the prompt. */
       document.body.classList.remove("is-chat-full-stage");
       const frame = document.getElementById("dynamic-frame");
       frame?._dock?.releaseMobileComposerFocus?.();
@@ -201,6 +201,10 @@ export function createPathMapController(ui) {
       } else {
         frame?._dock?.snapTo?.("home", { animate: true });
       }
+      mapEl?.syncLiveFromStore();
+      window.setTimeout(() => {
+        mapEl?.syncSnapCamera?.({ force: true, animate: true });
+      }, window.matchMedia("(max-width: 900px)").matches ? 80 : 40);
     } catch (error) {
       if (serial !== appStore.journey.pathsGenerationSerial) return;
       typingEl?.remove();

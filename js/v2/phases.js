@@ -30,10 +30,11 @@ export function getPhaseVisibility(phase, options = {}) {
       };
     case PHASE.EXPLORING:
     case PHASE.COACHING:
-      return { map: "hidden", resources: false, possibilities: false, homePrompt: false };
+      /* Keep the landing silhouette visible while intake runs — no chat/intake nodes. */
+      return { map: "faint", resources: false, possibilities: false, homePrompt: false };
     case PHASE.POSSIBILITIES:
-      /* Paths exist in chat cards; map waits until one is selected. */
-      return { map: "hidden", resources: false, possibilities: true, homePrompt: false };
+      /* System-generated possibility maps replace the silhouette; chat stays below the band. */
+      return { map: "visible", resources: false, possibilities: true, homePrompt: false };
     case PHASE.PATH_SELECTED:
       return { map: "visible", resources: false, possibilities: true, homePrompt: false };
     case PHASE.MISSIONS:

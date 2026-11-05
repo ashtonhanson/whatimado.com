@@ -206,7 +206,8 @@ export function computeOpenHomeGravityPan(mapEl) {
   const { scaleY } = unitsPerPixel(mapEl, stageRect);
   const availablePx = Math.max(24, bottom - top);
   const naturalPx = Math.max(1, dots.maxY - dots.minY) / scaleY;
-  const zoom = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(1.15, availablePx / naturalPx));
+  /* Larger open band (frame.css) lets the homepage constellation grow up to 2× the old fit. */
+  const zoom = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(OPEN_HOME_ZOOM_MAX, availablePx / naturalPx));
   const graphTop = top + Math.max(0, availablePx - naturalPx * zoom) / 2;
   const yPrime = (graphTop - stageRect.top) * scaleY;
   return {
@@ -221,6 +222,8 @@ const OPEN_HOME_LABEL_ABOVE_PX = 18;
 const OPEN_HOME_LABEL_BELOW_PX = 26;
 /** Laptop bands are shorter than the constellation; shrink it rather than push titles past the top edge. */
 const OPEN_HOME_ZOOM_MIN = 0.6;
+/** Desktop homepage asks for a 2× constellation; allow the camera to grow past the old 1.15 fit cap. */
+const OPEN_HOME_ZOOM_MAX = 2.3;
 
 /** A short band at home can shrink the roadmap below pinch-zoom's floor rather than tuck it under the prompt. */
 const FIT_ZOOM_MIN = 0.5;

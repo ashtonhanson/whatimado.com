@@ -458,10 +458,15 @@ export class FrameDockController {
     if (!this.mainEl) return;
 
     this._stopMotion();
+    /* Body carries the open-home band; :root stays on the chat snap (25vh). */
     const openVh =
       Number.parseFloat(
+        getComputedStyle(document.body).getPropertyValue("--whatimado-frame-top-default")
+      ) ||
+      Number.parseFloat(
         getComputedStyle(document.documentElement).getPropertyValue("--whatimado-frame-top-default")
-      ) || 42;
+      ) ||
+      48;
 
     /** Draggable from landing — stay at the current vh until the user actually pulls */
     this._docked = true;
