@@ -358,17 +358,21 @@ body.v2-app .v2-path-card__meta {
   box-shadow: none;
 }
 
-/* Current / open task highlight — inset ring + glow so width never changes. */
+/* Current / open task: light up the task's own frame — no extra ring around the row. */
 #mission-stages .v2-mission.is-open-context:not(.is-done),
 #mission-stages:not(:has(.v2-mission.is-open-context:not(.is-done))) .v2-mission.is-focused:not(.is-done) {
   border: none;
   outline: none;
   background: transparent;
+  box-shadow: none;
+}
+
+#mission-stages .v2-mission.is-open-context:not(.is-done) .v2-mission-done-acc__bar,
+#mission-stages:not(:has(.v2-mission.is-open-context:not(.is-done))) .v2-mission.is-focused:not(.is-done) .v2-mission-done-acc__bar {
+  border-color: var(--v2-yellow);
   box-shadow:
-    inset 0 0 0 1.5px var(--v2-yellow),
     0 0 6px color-mix(in srgb, var(--v2-yellow) 70%, transparent),
-    0 0 16px color-mix(in srgb, var(--v2-yellow) 40%, transparent),
-    0 0 28px color-mix(in srgb, var(--v2-yellow) 22%, transparent);
+    0 0 16px color-mix(in srgb, var(--v2-yellow) 40%, transparent);
 }
 
 .v2-path-card.is-open-context,
@@ -391,12 +395,8 @@ body.v2-app .v2-path-card__meta {
     margin-right: 0;
     border: none;
     outline: none;
-    border-radius: var(--v2-prompt-radius);
     background: transparent;
-    box-shadow:
-      inset 0 0 0 1.5px var(--v2-yellow),
-      0 0 6px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
-      0 0 16px color-mix(in srgb, var(--v2-yellow) 28%, transparent);
+    box-shadow: none;
   }
 
   .v2-path-card.is-open-context,

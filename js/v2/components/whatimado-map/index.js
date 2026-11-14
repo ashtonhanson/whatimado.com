@@ -3296,12 +3296,6 @@ export class WhatimadoMap extends HTMLElement {
         if (rest) dots.push(rest);
       });
       const mobile = window.matchMedia("(max-width: 900px)").matches;
-      const titleBounds = {
-        left: stageRect.left,
-        right: stageRect.right,
-        top: stageRect.top,
-        bottom: stageRect.bottom
-      };
       texts.forEach((text) => text.closest(".whatimado-map__node")?.classList.remove("is-label-crowded"));
       const shown = (item) => getComputedStyle(item.text).visibility !== "hidden";
       const crowdedPairs = (list) => {
@@ -3333,16 +3327,30 @@ export class WhatimadoMap extends HTMLElement {
       const openHome = isOpenHomePhase();
       /* Title box height on screen; the phone landing runs a few sizes smaller. */
       const labelTarget = mobile && openHome ? LABEL_SCREEN_PX - 3 : LABEL_SCREEN_PX;
+      /* Phone: You and everything branching off it (spokes, unchosen paths) run two sizes smaller. */
+      const youSpoke = (text) => {
+        const group = text.closest(".whatimado-map__node");
+        if (!group) return false;
+        if (group.classList.contains("is-start")) return true;
+        if ((group.getAttribute("data-node-id") || "").startsWith("option-")) return true;
+        return group.classList.contains("is-roadmap") && !group.classList.contains("is-selected");
+      };
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        this._fitLabelFont(texts, labelTarget);
+        const fontPx = this._fitLabelFont(texts, labelTarget);
+        if (mobile && !openHome) {
+          const smaller = `${(fontPx * (labelTarget - 2)) / labelTarget}px`;
+          texts.forEach((text) => {
+            if (youSpoke(text)) text.style.fontSize = smaller;
+          });
+        }
         items = buildItems();
         if (!items.length) return;
-        /* Tasks to the right of their dots; every other title ~5px above its dot. */
-        placeTitlesRoadmapStyle(items, titleBounds, 5);
+        /* Placement is relative to each dot only, so moving the map never shifts a title. */
+        placeTitlesRoadmapStyle(items, null, 5);
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
-        pinSpokeTitles(items, titleBounds);
+        pinSpokeTitles(items, null);
         if (!kickerDisplaced(items)) break;
         items.forEach((item) => {
           if (item.kicker && item.group.classList.contains("is-roadmap")) item.group.classList.add("is-kicker-off");

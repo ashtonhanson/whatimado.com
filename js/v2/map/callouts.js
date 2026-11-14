@@ -95,8 +95,58 @@ export function placeTitlesAbove(items, bounds = null, gap = 6) {
 }
 
 /**
- * Task titles sit to the right of their dots; every other title sits with its
- * bottom ~gap px above the node.
+ * Slide a right-side title further right until no dot sits under it.
+ * @param {{ nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number }} item
+ * @param {Array<{ nx: number, ny: number, nr?: number }>} dots
+ */
+function stepRightPastDots(item, dots) {
+  for (let pass = 0; pass < dots.length; pass += 1) {
+    let moved = false;
+    for (const dot of dots) {
+      if (dot === item) continue;
+      const r = (dot.nr || 6) + 3;
+      if (dot.nx + r <= item.left || dot.nx - r >= item.left + item.w) continue;
+      if (dot.ny + r <= item.top || dot.ny - r >= item.top + item.h) continue;
+      item.left = dot.nx + r + 6;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+}
+
+/**
+ * Right-side titles whose boxes collide are stacked top to bottom in dot order,
+ * then each stack is centered on its dots so no title drifts far from its node.
+ * @param {Array<{ ny: number, w: number, h: number, left: number, top: number }>} items
+ */
+function stackRightTitles(items) {
+  const sorted = [...items].sort((a, b) => a.ny - b.ny);
+  const spanX = (a, b) => Math.min(a.left + a.w, b.left + b.w) - Math.max(a.left, b.left) > 0;
+  let stack = [];
+  const settle = () => {
+    if (stack.length < 2) return;
+    const drift = stack.reduce((sum, item) => sum + (item.top + item.h / 2 - item.ny), 0) / stack.length;
+    stack.forEach((item) => {
+      item.top -= drift;
+    });
+  };
+  for (const item of sorted) {
+    const prev = stack.find((other) => spanX(other, item) && item.top < other.top + other.h + 2);
+    if (prev) {
+      const floor = Math.max(...stack.filter((other) => spanX(other, item)).map((other) => other.top + other.h + 2));
+      item.top = Math.max(item.top, floor);
+      stack.push(item);
+    } else {
+      settle();
+      stack = [item];
+    }
+  }
+  settle();
+}
+
+/**
+ * Task and unchosen path titles sit to the right of their dots; every other
+ * title sits with its bottom ~gap px above the node.
  * @param {Array<{ role?: string, nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string }>} items
  * @param {{ left: number, right: number } | null} [bounds]
  */
@@ -104,7 +154,7 @@ export function placeTitlesRoadmapStyle(items, bounds = null, gap = 5) {
   const tasks = [];
   const rest = [];
   for (const item of items) {
-    if (item.role === "task") tasks.push(item);
+    if (item.role === "task" || item.kind === "path") tasks.push(item);
     else rest.push(item);
   }
   placeTitlesAbove(rest, bounds, gap);
@@ -113,6 +163,11 @@ export function placeTitlesRoadmapStyle(items, bounds = null, gap = 5) {
     item.left = item.nx + (item.nr || 6) + 8;
     item.top = item.ny - item.h / 2;
   }
+  for (let round = 0; round < 2; round += 1) {
+    tasks.forEach((item) => stepRightPastDots(item, items));
+    stackRightTitles(tasks);
+  }
+  tasks.forEach((item) => stepRightPastDots(item, items));
   /* Spokes fan out above You, so its title drops below the dot when one sits in the way. */
   const you = items.find((item) => item.kind === "start");
   if (!you) return;
