@@ -128,26 +128,14 @@ whatimado-map .whatimado-map__timeline-col #map-timeline {
   min-height: 0;
 }
 
+/* Parked off-canvas — tools move into the menu bar once a path is selected. */
 whatimado-map .whatimado-map__timeline-tools {
-  order: 1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.4rem;
-  pointer-events: none;
+  display: none !important;
 }
 
 @media (min-width: 901px) {
   body.v2-app whatimado-map {
     overflow: visible;
-  }
-
-  /* Stay on the map column so help / link / crosshair do not slide under a rail. */
-  whatimado-map .whatimado-map__timeline-tools {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 9;
   }
 }
 
@@ -749,7 +737,7 @@ whatimado-map .whatimado-map__node--live.is-more.is-selected .whatimado-map__nod
 }
 
 whatimado-map .whatimado-map__node--live text {
-  font-size: 12.5px;
+  font-size: 26px;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
   stroke: #060a0c;
@@ -765,11 +753,6 @@ whatimado-map .whatimado-map__node--live text {
   transition: fill 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (min-width: 901px) {
-  whatimado-map .whatimado-map__node--live text {
-    font-size: 15.5px;
-  }
-}
 
 whatimado-map .whatimado-map__leader {
   stroke: rgba(46, 232, 214, 0.55);

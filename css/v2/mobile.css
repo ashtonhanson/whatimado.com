@@ -59,7 +59,7 @@
     --v2-map-node-lg: 16.5;
     --v2-map-node-sm: 8.25;
     --v2-map-edge-width: 2.6;
-    --v2-map-task-label-line-h: calc(12.5px * 1.4);
+    --v2-map-task-label-line-h: calc(26px * 1.4);
     --v2-map-node-float-amp: 8px;
   }
 
@@ -410,6 +410,7 @@
     display: none !important;
   }
 
+  .v2-header-map-tools .whatimado-map__help-btn,
   .v2-header-map-tools .whatimado-map__link-btn,
   .v2-header-map-tools .whatimado-map__you-btn {
     display: inline-flex;
@@ -429,6 +430,12 @@
     -webkit-backdrop-filter: none;
     box-shadow: none;
     pointer-events: auto;
+  }
+
+  .v2-header-map-tools .whatimado-map__help-icon {
+    display: block;
+    width: 1.12rem;
+    height: 1.12rem;
   }
 
   .v2-header-map-tools .whatimado-map__link-icon {
@@ -452,28 +459,17 @@
     color: var(--v2-text-muted);
   }
 
+  .v2-header-map-tools .whatimado-map__help-btn:focus-visible,
   .v2-header-map-tools .whatimado-map__link-btn:focus-visible,
   .v2-header-map-tools .whatimado-map__you-btn:focus-visible {
     outline: 2px solid var(--v2-teal);
     outline-offset: 2px;
   }
 
-  /* Help, Link and crosshair: map top-right, clearly under the undo + hamburger row. */
-  whatimado-map .whatimado-map__timeline-tools {
-    position: absolute;
-    top: calc(var(--v2-mobile-header-h, 3.55rem) + 0.55rem);
-    right: 0.35rem;
-    z-index: 6;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    visibility: visible;
-    pointer-events: none;
-  }
-
-  whatimado-map .whatimado-map__timeline-tools > button {
-    visibility: visible;
-    pointer-events: auto;
+  /* Map-area chrome stays empty — tools live in the header left of Undo after a path is selected. */
+  whatimado-map .whatimado-map__timeline-tools,
+  .v2-rail-map-tools {
+    display: none !important;
   }
 
   body.v2-app button.v2-header-undo,

@@ -218,6 +218,85 @@
   flex-shrink: 0;
 }
 
+/* Help / Link / crosshair: frameless icons left of Undo after a path is selected. */
+.v2-rail-map-tools {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 2.2rem;
+  margin: 0 0 0.15rem;
+  padding: 0 0.35rem;
+  box-sizing: border-box;
+}
+
+.v2-rail-map-tools:not([hidden]) {
+  display: flex;
+}
+
+.v2-rail-map-tools[hidden] {
+  display: none !important;
+}
+
+.v2-rail-map-tools .whatimado-map__help-btn,
+.v2-rail-map-tools .whatimado-map__link-btn,
+.v2-rail-map-tools .whatimado-map__you-btn,
+body.v2-app .v2-rail-map-tools .whatimado-map__help-btn,
+body.v2-app .v2-rail-map-tools .whatimado-map__link-btn,
+body.v2-app .v2-rail-map-tools .whatimado-map__you-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  color: var(--v2-teal);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.v2-rail-map-tools .whatimado-map__help-icon,
+.v2-rail-map-tools .whatimado-map__link-icon,
+.v2-rail-map-tools .whatimado-map__you-crosshair {
+  display: none;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.v2-rail-map-tools .whatimado-map__help-icon,
+.v2-rail-map-tools .whatimado-map__you-crosshair {
+  display: block;
+}
+
+.v2-rail-map-tools .whatimado-map__link-btn.is-linked .whatimado-map__link-icon--on,
+.v2-rail-map-tools .whatimado-map__link-btn:not(.is-linked) .whatimado-map__link-icon--off {
+  display: block;
+}
+
+.v2-rail-map-tools .whatimado-map__link-btn:not(.is-linked) {
+  color: var(--v2-text-muted);
+}
+
+.v2-rail-map-tools .whatimado-map__help-btn:focus-visible,
+.v2-rail-map-tools .whatimado-map__link-btn:focus-visible,
+.v2-rail-map-tools .whatimado-map__you-btn:focus-visible {
+  outline: 2px solid var(--v2-teal);
+  outline-offset: 2px;
+}
+
+.v2-rail--left.is-collapsed .v2-rail-map-tools {
+  display: none !important;
+}
+
 body.v2-app button.v2-undo-btn,
 .v2-undo-btn {
   display: flex;

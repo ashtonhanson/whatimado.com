@@ -561,20 +561,42 @@ export class WhatimadoMap extends HTMLElement {
     dialog.showModal();
   }
 
-  /** Help, Link and crosshair sit in one row in the map's top-right corner on every screen. */
+  /**
+   * Help / Link / crosshair stay off the landing constellation.
+   * After a path is selected they move into the menu bar, left of Undo, with no frames.
+   */
   _syncMobileHeaderMapTools() {
-    const slot = document.getElementById("header-map-tools");
+    const headerSlot = document.getElementById("header-map-tools");
+    const railSlot = document.getElementById("rail-map-tools");
     const tools = this.querySelector(".whatimado-map__timeline-tools");
     const chrome = this.querySelector(".whatimado-map__chrome");
-    if (slot) {
-      slot.hidden = true;
-      slot.setAttribute("aria-hidden", "true");
+    const order = [this._helpBtn, this._linkBtn, this._youBtn].filter(Boolean);
+    const show = this.classList.contains("is-roadmap-open");
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const activeSlot = mobile ? headerSlot : railSlot;
+    const idleSlot = mobile ? railSlot : headerSlot;
+
+    if (tools) tools.hidden = true;
+    if (idleSlot) {
+      idleSlot.hidden = true;
+      idleSlot.setAttribute("aria-hidden", "true");
     }
-    if (tools) {
+
+    if (!show) {
+      if (activeSlot) {
+        activeSlot.hidden = true;
+        activeSlot.setAttribute("aria-hidden", "true");
+      }
+      if (tools && order.length) tools.append(...order);
+    } else if (activeSlot) {
+      activeSlot.hidden = false;
+      activeSlot.setAttribute("aria-hidden", "false");
+      activeSlot.append(...order);
+    } else if (tools) {
       tools.hidden = false;
-      const order = [this._helpBtn, this._linkBtn, this._youBtn].filter(Boolean);
-      if (order.some((btn, i) => tools.children[i] !== btn)) tools.append(...order);
+      tools.append(...order);
     }
+
     if (chrome && this._roadmapSticky && this._roadmapSticky.parentElement !== chrome) {
       chrome.prepend(this._roadmapSticky);
     }
@@ -3024,7 +3046,7 @@ export class WhatimadoMap extends HTMLElement {
 
   /**
    * SVG text is scaled by the viewBox, so probe the painted height and
-   * choose a font that lands near 13px on screen.
+   * choose a font that lands near 26px on screen (readable on phone and desktop).
    * @param {SVGTextElement[]} texts
    */
   _applyLabelFont(texts, fontPx) {
@@ -3052,7 +3074,7 @@ export class WhatimadoMap extends HTMLElement {
     });
   }
 
-  _fitLabelFont(texts, target = 13) {
+  _fitLabelFont(texts, target = 26) {
     /* A new viewport width changes the paint scale, so the size from the old width no longer holds. */
     if (this._labelViewportW !== window.innerWidth) {
       this._labelViewportW = window.innerWidth;
@@ -3275,11 +3297,17 @@ export class WhatimadoMap extends HTMLElement {
             item.side === "above" &&
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
+      const roadmapOpen = this.classList.contains("is-roadmap-open");
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        this._fitLabelFont(texts, window.matchMedia("(max-width: 900px)").matches ? 13 : 16);
+        /* Readable ~26px on screen — same target that worked before the compact revert. */
+        this._fitLabelFont(texts, 26);
         items = buildItems();
         if (!items.length) return;
         placeTitleBesideNode(items, titleBounds, { spineAbove: false });
+        /* Selected roadmap: keep every title centered above its own dot. */
+        if (roadmapOpen || this._anchorId === GHOST_GRAPH.nodes[0].id) {
+          placeTitlesAbove(items, titleBounds, 6);
+        }
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
@@ -3289,7 +3317,6 @@ export class WhatimadoMap extends HTMLElement {
           if (item.kicker && item.group.classList.contains("is-roadmap")) item.group.classList.add("is-kicker-off");
         });
       }
-      if (this._anchorId === GHOST_GRAPH.nodes[0].id) placeTitlesAbove(items, titleBounds);
       if (mobile) {
         const rank = (item) =>
           item.kind === "start" ? 6 : item.kind === "main" ? 5 : item.group.classList.contains("is-mission") ? 4 : item.group.classList.contains("is-task") ? 3 : item.kind === "path" ? 2 : 1;
@@ -3512,6 +3539,7 @@ export class WhatimadoMap extends HTMLElement {
         "is-roadmap-open",
         nodes.some((node) => node.type === "path" && node.id === this._selectedId)
       );
+      this._syncMobileHeaderMapTools();
     }
 
     const parts = [];
