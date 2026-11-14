@@ -471,6 +471,7 @@ export function initChatFlow(ctx) {
         const branchKey = roadmapBranchKey(pathId, stages);
         const sameBranch = branchKey === shownBranchKey;
         shownBranchKey = branchKey;
+        if (!sameBranch) mapEl?.releaseUserCamera?.();
         const redraw = () => {
           showRoadmapBranch(pathId, stages);
           const keep = mapEl?._selectedId;
@@ -1508,14 +1509,15 @@ export function initChatFlow(ctx) {
     void requestStartNewJourney(mapEl);
   });
 
+  /* Sheet moves refit the map only while the user has not placed it themselves. */
   frameEl?.addEventListener("dock-settled", () => {
     mapEl?.lockFromFrame();
-    mapEl?.syncSnapCamera({ force: true, animate: true });
+    mapEl?.syncSnapCamera({ animate: true });
   });
 
   frameEl?.addEventListener("frame-drag-end", () => {
     window.setTimeout(
-      () => mapEl?.syncSnapCamera({ force: true, animate: true }),
+      () => mapEl?.syncSnapCamera({ animate: true }),
       MOBILE_MQ.matches ? MOBILE_GLIDE_EASE_MS + 40 : 40
     );
   });

@@ -39,10 +39,10 @@ export function wrapMapLabel(text, maxLine = 18) {
 export function pinSpokeTitles(items, bounds = null) {
   const edge = 8;
   const gaps = {
-    "option-settings": 6,
-    "option-analytics": 6,
-    "option-notes": 4,
-    "option-roadmaps": 4
+    "option-settings": 5,
+    "option-analytics": 5,
+    "option-notes": 5,
+    "option-roadmaps": 5
   };
   for (const item of items) {
     const gap = gaps[item.nodeId];
@@ -88,7 +88,8 @@ export function placeTitlesAbove(items, bounds = null, gap = 6) {
     item.side = "above";
     item.left = item.nx - item.w / 2;
     item.top = item.ny - (item.nr || 6) - gap - item.h;
-    if (!bounds) continue;
+    /* A dot past the stage edge keeps its title with it rather than sliding into view alone. */
+    if (!bounds || item.nx < bounds.left || item.nx > bounds.right) continue;
     item.left = Math.min(Math.max(item.left, bounds.left + edge), Math.max(bounds.left + edge, bounds.right - edge - item.w));
   }
 }
@@ -111,6 +112,28 @@ export function placeTitlesRoadmapStyle(items, bounds = null, gap = 5) {
     item.side = "right";
     item.left = item.nx + (item.nr || 6) + 8;
     item.top = item.ny - item.h / 2;
+  }
+  /* Spokes fan out above You, so its title drops below the dot when one sits in the way. */
+  const you = items.find((item) => item.kind === "start");
+  if (!you) return;
+  const midY = you.top + you.h / 2;
+  const blocked = items.some((other) => {
+    if (other === you) return false;
+    const r = (other.nr || 6) + 3;
+    const dotInBox =
+      other.nx + r > you.left &&
+      other.nx - r < you.left + you.w &&
+      other.ny + r > you.top &&
+      other.ny - r < you.top + you.h;
+    if (dotInBox) return true;
+    /* Every spoke is tethered to You; a line to a dot overhead can run through the title. */
+    if (other.role === "task" || other.role === "mission" || other.ny >= midY) return false;
+    const x = you.nx + ((other.nx - you.nx) * (you.ny - midY)) / (you.ny - other.ny);
+    return x > you.left - 4 && x < you.left + you.w + 4;
+  });
+  if (blocked) {
+    you.side = "below";
+    you.top = you.ny + (you.nr || 6) + gap;
   }
 }
 

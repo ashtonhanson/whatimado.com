@@ -36,7 +36,7 @@ import {
   svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
-import { missionNumberLabel, pinSpokeTitles, placeTitleBesideNode, placeTitlesRoadmapStyle, trailNodeIds, wrapMapLabel } from "../../map/callouts.js";
+import { missionNumberLabel, pinSpokeTitles, placeTitlesRoadmapStyle, trailNodeIds, wrapMapLabel } from "../../map/callouts.js";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -67,6 +67,8 @@ const EDGE_DASH_OFF = 5.75;
 const EDGE_TUCK = 0.6;
 /** The glowing trail line's width over a normal edge; must match map-canvas.css. */
 const EDGE_THICK_SCALE = 2.4;
+/** Painted height of one title line, in screen px, at every zoom. */
+const LABEL_SCREEN_PX = 20;
 /** "My Paths" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
@@ -202,7 +204,7 @@ function holdTitlesOnNodes(items) {
           }
           continue;
         }
-        const ceiling = homeTop.get(mover) - (mover.h + 2);
+        const ceiling = homeTop.get(mover) - 3 * (mover.h + 2);
         if (mover.top <= ceiling + 1) continue;
         mover.top = Math.max(ceiling, mover.top - (mover.h + 2));
         mover.left = mover.nx - mover.w / 2;
@@ -510,6 +512,7 @@ export class WhatimadoMap extends HTMLElement {
     this._refreshDrift();
     this._onViewportResize = () => {
       this._syncMobileHeaderMapTools();
+      this._retryCalloutsWhenStill();
       /*
        * iOS Safari fires resize when the keyboard opens. Refitting here was
        * scaling the constellation up into the menu bar — freeze until blur.
@@ -981,7 +984,7 @@ export class WhatimadoMap extends HTMLElement {
   /** True when chat-scroll may drive the camera. */
   canChatFollow() {
     if (this._cameraHeld) return false;
-    if (this._chatFollowPaused) return false;
+    if (this._chatFollowPaused || this._userPanned) return false;
     if (this._panPointer || this._pinch) return false;
     /* Focus-pin packs the band while typing; keyboard freeze must not be fought. */
     if (this.dataset.focusPinned === "1") return false;
@@ -1052,9 +1055,21 @@ export class WhatimadoMap extends HTMLElement {
     if (resumeMs <= 0) return;
     this._chatFollowResumeTimer = window.setTimeout(() => {
       this._chatFollowResumeTimer = null;
+      /* The user moved the map: it stays where they put it until the crosshair or a new path. */
+      if (this._userPanned) return;
       this._chatFollowPaused = false;
       this.dispatchEvent(new CustomEvent("chat-follow-resume", { bubbles: true }));
     }, resumeMs);
+  }
+
+  /** Hand the camera back to chat follow and the default framing. */
+  releaseUserCamera() {
+    this._userPanned = false;
+    this._chatFollowPaused = false;
+    if (this._chatFollowResumeTimer != null) {
+      window.clearTimeout(this._chatFollowResumeTimer);
+      this._chatFollowResumeTimer = null;
+    }
   }
 
   /** The open strip under the menu and above the prompt. */
@@ -1838,7 +1853,7 @@ export class WhatimadoMap extends HTMLElement {
       (this._focusNodeId && this._liveNodes.some((node) => node.id === this._focusNodeId) && this._focusNodeId) ||
       (this._liveNodes.some((node) => node.id === "start") ? "start" : "");
     if (!preferred) return;
-    this._userPanned = false;
+    this.releaseUserCamera();
     this._focalLocked = true;
     this._focalNodeId = preferred;
     this._focusNodeId = preferred;
@@ -2052,6 +2067,8 @@ export class WhatimadoMap extends HTMLElement {
   _applyPanTransform() {
     if (!this._panLayer) return;
     this._writePanTransform(this._zoom);
+    /* Title size is fitted per zoom, so a new zoom refits once the camera settles. */
+    if (this._calloutZoom !== this._zoom && !this._layingOut) this._retryCalloutsWhenStill();
     /*
      * Titles live in each node's SVG space and ride with the dots.
      * Never reflow callouts from a camera write — collision layout mid-pan
@@ -3062,28 +3079,63 @@ export class WhatimadoMap extends HTMLElement {
     });
     this._liveLayer?.querySelectorAll(".whatimado-map__goal-title").forEach((title) => {
       if (!(title instanceof SVGTextElement)) return;
-      title.style.fontSize = `${fontPx * 0.82 * 1.5 * 1.25}px`;
+      title.style.fontSize = `${fontPx * 1.05}px`;
       title.style.letterSpacing = "0.02em";
       title.style.strokeWidth = "0";
     });
     this._liveLayer?.querySelectorAll(".whatimado-map__goal-income").forEach((income) => {
       if (!(income instanceof SVGTextElement)) return;
-      income.style.fontSize = `${fontPx * 0.72 * 1.5 * 1.25}px`;
+      income.style.fontSize = `${fontPx * 0.9}px`;
       income.style.letterSpacing = "0.01em";
       income.style.strokeWidth = "0";
     });
   }
 
   /**
-   * One fixed SVG font size so titles scale with their dots when the map or
-   * chat focus changes — never re-probed against zoom or stage size.
+   * Pick the SVG font size that paints `target` px tall on screen at the current
+   * camera, so titles stay one size whatever the zoom, pan, or chat focus.
    * @param {SVGTextElement[]} texts
    * @param {number} [target]
    */
   _fitLabelFont(texts, target = 26) {
-    this._labelFontPx = target;
-    this._applyLabelFont(texts, target);
-    return target;
+    const ctm = this._panLayer?.getScreenCTM();
+    const paintScale = ctm ? Math.hypot(ctm.a, ctm.b) : this._zoom || 1;
+    const key = `${paintScale.toFixed(5)}:${target}`;
+    if (this._labelFontKey === key && this._labelFontPx) {
+      this._applyLabelFont(texts, this._labelFontPx);
+      return this._labelFontPx;
+    }
+    const probe = 20;
+    texts.forEach((text) => {
+      text.style.fontSize = `${probe}px`;
+    });
+    /* Measure one line: a wrapped title is two lines tall and would halve every font. */
+    const sample = texts.find((text) => text.querySelectorAll("tspan").length <= 1) || texts[0];
+    const lines = Math.max(1, sample.querySelectorAll("tspan").length);
+    const painted = sample.getBoundingClientRect().height / lines;
+    const scale = painted / probe;
+    const fontPx = scale > 0.02 ? Math.max(4, Math.min(160, target / scale)) : target;
+    this._labelFontKey = key;
+    this._labelFontPx = fontPx;
+    this._applyLabelFont(texts, fontPx);
+    return fontPx;
+  }
+
+  _retryCalloutsWhenStill() {
+    if (this._calloutRetryRaf != null) return;
+    const wait = () => {
+      if (!this.isConnected) {
+        this._calloutRetryRaf = null;
+        return;
+      }
+      if (this._userIsMovingMap() || this._layoutGlide) {
+        this._calloutRetryRaf = requestAnimationFrame(wait);
+        return;
+      }
+      this._calloutRetryRaf = null;
+      this._layoutCallouts();
+    };
+    this._calloutRetryRaf = requestAnimationFrame(wait);
   }
 
   /**
@@ -3144,8 +3196,11 @@ export class WhatimadoMap extends HTMLElement {
    */
   _layoutCallouts() {
     if (this._layingOut) return;
-    /* Camera ease / user pan: titles must stay glued in SVG space above their dots. */
-    if (this._userIsMovingMap()) return;
+    /* Camera ease / user pan: titles ride in SVG space; lay them out once the map settles. */
+    if (this._userIsMovingMap()) {
+      this._retryCalloutsWhenStill();
+      return;
+    }
     const layer = this._liveLayer;
     const svg = this._svg;
     if (!layer || !svg) return;
@@ -3157,14 +3212,6 @@ export class WhatimadoMap extends HTMLElement {
     if (stageRect.width < 40 || stageRect.height < 40) return;
 
     this._layingOut = true;
-    /* A phone roadmap lays its titles out at the default scale, so they sit in map units and zoom with the dots. */
-    const layoutZoom = mapLayoutZoom();
-    const liveZoom = this._zoom;
-    const atLayoutZoom = this._mapHoldsStill() && Math.abs(liveZoom - layoutZoom) > 0.0005;
-    if (atLayoutZoom) {
-      this._zoom = layoutZoom;
-      this._writePanTransform(layoutZoom);
-    }
     try {
       const dotBoost = this._syncRoadmapDotSize();
       const restCenter = (body) => {
@@ -3283,19 +3330,15 @@ export class WhatimadoMap extends HTMLElement {
             item.side === "above" &&
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
-      const roadmapOpen = this.classList.contains("is-roadmap-open");
       const openHome = isOpenHomePhase();
-      const labelTarget = mobile && openHome ? 23 : 26;
+      /* Title box height on screen; the phone landing runs a few sizes smaller. */
+      const labelTarget = mobile && openHome ? LABEL_SCREEN_PX - 3 : LABEL_SCREEN_PX;
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        /* Fixed SVG size: 26 everywhere, 23 on the mobile landing constellation. */
         this._fitLabelFont(texts, labelTarget);
         items = buildItems();
         if (!items.length) return;
-        placeTitleBesideNode(items, titleBounds, { spineAbove: false });
-        /* Roadmap / ghost: tasks to the right; other titles ~5px above their dots. */
-        if (roadmapOpen || this._anchorId === GHOST_GRAPH.nodes[0].id) {
-          placeTitlesRoadmapStyle(items, titleBounds, 5);
-        }
+        /* Tasks to the right of their dots; every other title ~5px above its dot. */
+        placeTitlesRoadmapStyle(items, titleBounds, 5);
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
@@ -3323,11 +3366,8 @@ export class WhatimadoMap extends HTMLElement {
         }
       }
       this._writeCallouts(items);
+      this._calloutZoom = this._zoom;
     } finally {
-      if (atLayoutZoom) {
-        this._zoom = liveZoom;
-        this._writePanTransform(liveZoom);
-      }
       this._layingOut = false;
     }
   }
