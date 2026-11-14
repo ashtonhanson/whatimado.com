@@ -36,7 +36,7 @@ import {
   svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
-import { missionNumberLabel, pinSpokeTitles, placeTitleBesideNode, placeTitlesAbove, trailNodeIds, wrapMapLabel } from "../../map/callouts.js";
+import { missionNumberLabel, pinSpokeTitles, placeTitleBesideNode, placeTitlesRoadmapStyle, trailNodeIds, wrapMapLabel } from "../../map/callouts.js";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -3074,30 +3074,16 @@ export class WhatimadoMap extends HTMLElement {
     });
   }
 
+  /**
+   * One fixed SVG font size so titles scale with their dots when the map or
+   * chat focus changes — never re-probed against zoom or stage size.
+   * @param {SVGTextElement[]} texts
+   * @param {number} [target]
+   */
   _fitLabelFont(texts, target = 26) {
-    /* A new viewport width changes the paint scale, so the size from the old width no longer holds. */
-    if (this._labelViewportW !== window.innerWidth) {
-      this._labelViewportW = window.innerWidth;
-      this._labelFontPx = 0;
-      this._labelZoomKey = null;
-    }
-    const zoomKey = Math.round((this._zoom || 1) * 20);
-    if (this._labelZoomKey === zoomKey && this._labelFontPx) {
-      this._applyLabelFont(texts, this._labelFontPx);
-      return this._labelFontPx;
-    }
-    const probe = 20;
-    texts.forEach((text) => {
-      text.style.fontSize = `${probe}px`;
-    });
-    const painted = texts[0].getBoundingClientRect().height || target;
-    const scale = painted / probe;
-    let fontPx = scale > 0.02 ? Math.max(8, Math.min(96, target / scale)) : target;
-    if (this._labelFontPx && fontPx < this._labelFontPx) fontPx = this._labelFontPx;
-    this._labelZoomKey = zoomKey;
-    this._labelFontPx = fontPx;
-    this._applyLabelFont(texts, fontPx);
-    return fontPx;
+    this._labelFontPx = target;
+    this._applyLabelFont(texts, target);
+    return target;
   }
 
   /**
@@ -3298,15 +3284,17 @@ export class WhatimadoMap extends HTMLElement {
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
       const roadmapOpen = this.classList.contains("is-roadmap-open");
+      const openHome = isOpenHomePhase();
+      const labelTarget = mobile && openHome ? 23 : 26;
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        /* Readable ~26px on screen — same target that worked before the compact revert. */
-        this._fitLabelFont(texts, 26);
+        /* Fixed SVG size: 26 everywhere, 23 on the mobile landing constellation. */
+        this._fitLabelFont(texts, labelTarget);
         items = buildItems();
         if (!items.length) return;
         placeTitleBesideNode(items, titleBounds, { spineAbove: false });
-        /* Selected roadmap: keep every title centered above its own dot. */
+        /* Roadmap / ghost: tasks to the right; other titles ~5px above their dots. */
         if (roadmapOpen || this._anchorId === GHOST_GRAPH.nodes[0].id) {
-          placeTitlesAbove(items, titleBounds, 6);
+          placeTitlesRoadmapStyle(items, titleBounds, 5);
         }
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);

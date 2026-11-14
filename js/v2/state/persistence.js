@@ -243,6 +243,45 @@ export function listSavedRoadmaps() {
 }
 
 /**
+ * Remove a saved Possibility Map from the guest or account list. The open map
+ * cannot be deleted this way.
+ * @param {string} roadmapId
+ * @returns {boolean} whether the entry was removed
+ */
+export function deleteSavedRoadmap(roadmapId) {
+  if (!persistEnabled || !roadmapId) return false;
+  const session = readSession();
+  if (session?.mode === "account" && session.userId) {
+    const account = loadAccountSnapshot(session.userId);
+    if (!account) return false;
+    const liveId = account.activeRoadmapId || account.journey?.id || null;
+    if (roadmapId === liveId) return false;
+    const roadmaps = (account.roadmaps || []).filter((entry) => entry?.id !== roadmapId);
+    const importedRoadmaps = (account.importedRoadmaps || []).filter((entry) => entry?.id !== roadmapId);
+    if (
+      roadmaps.length === (account.roadmaps || []).length &&
+      importedRoadmaps.length === (account.importedRoadmaps || []).length
+    ) {
+      return false;
+    }
+    const saved = saveAccountSnapshot({ ...account, roadmaps, importedRoadmaps });
+    if (saved) {
+      notifyAccountSaved(session.userId);
+      announceRoadmapsChanged();
+    }
+    return saved;
+  }
+  const live = buildGuestSnapshot();
+  if (live?.journey?.id === roadmapId) return false;
+  const list = loadGuestRoadmaps();
+  const next = list.filter((entry) => entry.id !== roadmapId);
+  if (next.length === list.length) return false;
+  const saved = saveGuestRoadmaps(next);
+  if (saved) announceRoadmapsChanged();
+  return saved;
+}
+
+/**
  * Save the open map, then make a saved roadmap the open one. Persistence stays
  * off afterwards; the caller reloads.
  * @param {string} roadmapId

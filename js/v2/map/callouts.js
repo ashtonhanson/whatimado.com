@@ -94,6 +94,27 @@ export function placeTitlesAbove(items, bounds = null, gap = 6) {
 }
 
 /**
+ * Task titles sit to the right of their dots; every other title sits with its
+ * bottom ~gap px above the node.
+ * @param {Array<{ role?: string, nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string }>} items
+ * @param {{ left: number, right: number } | null} [bounds]
+ */
+export function placeTitlesRoadmapStyle(items, bounds = null, gap = 5) {
+  const tasks = [];
+  const rest = [];
+  for (const item of items) {
+    if (item.role === "task") tasks.push(item);
+    else rest.push(item);
+  }
+  placeTitlesAbove(rest, bounds, gap);
+  for (const item of tasks) {
+    item.side = "right";
+    item.left = item.nx + (item.nr || 6) + 8;
+    item.top = item.ny - item.h / 2;
+  }
+}
+
+/**
  * Node ids from one node to another along the drawn lines, shortest first.
  * @param {Array<{ from: string, to: string }>} edges
  * @param {string} fromId
@@ -235,7 +256,7 @@ export function placeTitleBesideNode(items, bounds = null, { spineAbove = false 
   others.forEach((item) => {
     if (item.nodeId === "option-settings" || item.nodeId === "option-analytics") return;
     if (item.kind === "main" || item.role === "mission") {
-      placeAbove(item, 4);
+      placeAbove(item, 5);
       return;
     }
     if (item.role === "task" || item.kind === "path") {

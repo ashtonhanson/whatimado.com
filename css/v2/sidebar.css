@@ -473,11 +473,18 @@ body.v2-app button.v2-undo-btn.is-ready,
   display: none;
 }
 
+.v2-roadmaps-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
+}
+
 .v2-roadmaps-item {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 0.45rem 0.65rem;
   border: none;
   background: transparent;
@@ -488,6 +495,28 @@ body.v2-app button.v2-undo-btn.is-ready,
   cursor: pointer;
   box-sizing: border-box;
   transition: background 0.15s, color 0.15s;
+}
+
+.v2-roadmaps-item__delete {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-right: 0.25rem;
+  padding: 0.3rem 0.5rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--v2-text-muted);
+  font: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.v2-roadmaps-item__delete:hover,
+.v2-roadmaps-item__delete:focus-visible {
+  background: rgba(232, 90, 90, 0.12);
+  color: #e85a5a;
 }
 
 .v2-roadmaps-item:hover,

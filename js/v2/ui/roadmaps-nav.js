@@ -1,5 +1,6 @@
-import { ROADMAPS_CHANGED_EVENT, listSavedRoadmaps, saveCurrentMap } from "../state/persistence.js";
+import { ROADMAPS_CHANGED_EVENT, deleteSavedRoadmap, listSavedRoadmaps, saveCurrentMap } from "../state/persistence.js";
 import { escapeHtml } from "../ui.js";
+import { confirmStartNewMap } from "./new-map-dialog.js";
 
 /** @param {number} savedAt */
 function savedLabel(savedAt) {
@@ -31,11 +32,15 @@ export function bindRoadmapsNav({ onOpen }) {
     listEl.innerHTML = roadmaps
       .map((entry) => {
         const when = entry.current ? "Open now" : savedLabel(entry.savedAt);
-        return `<li>
+        const deleteBtn = entry.current
+          ? ""
+          : `<button type="button" class="v2-roadmaps-item__delete" data-roadmap-delete="${escapeHtml(entry.id)}" aria-label="Delete ${escapeHtml(entry.title)}" title="Delete">Delete</button>`;
+        return `<li class="v2-roadmaps-row">
           <button type="button" class="v2-roadmaps-item${entry.current ? " is-current" : ""}" data-roadmap-id="${escapeHtml(entry.id)}" title="${escapeHtml(entry.title)}"${entry.current ? ' aria-current="true"' : ""}>
             <span class="v2-roadmaps-item__title">${escapeHtml(entry.title)}</span>
             ${when ? `<span class="v2-roadmaps-item__meta">${escapeHtml(when)}</span>` : ""}
           </button>
+          ${deleteBtn}
         </li>`;
       })
       .join("");
@@ -59,7 +64,30 @@ export function bindRoadmapsNav({ onOpen }) {
   });
 
   listEl.addEventListener("click", (event) => {
-    const item = /** @type {HTMLElement | null} */ (event.target instanceof Element ? event.target.closest("[data-roadmap-id]") : null);
+    const target = event.target instanceof Element ? event.target : null;
+    const deleteBtn = target?.closest("[data-roadmap-delete]");
+    if (deleteBtn instanceof HTMLElement) {
+      event.preventDefault();
+      event.stopPropagation();
+      const roadmapId = deleteBtn.dataset.roadmapDelete || "";
+      if (!roadmapId) return;
+      const title =
+        deleteBtn.closest(".v2-roadmaps-row")?.querySelector(".v2-roadmaps-item__title")?.textContent?.trim() ||
+        "this Possibility Map";
+      void (async () => {
+        const confirmed = await confirmStartNewMap({
+          title: "Delete Possibility Map?",
+          message: `Delete "${title}"? This cannot be undone.`,
+          confirmLabel: "Delete",
+          cancelLabel: "Cancel",
+          returnFocus: deleteBtn
+        });
+        if (!confirmed) return;
+        if (deleteSavedRoadmap(roadmapId)) render();
+      })();
+      return;
+    }
+    const item = /** @type {HTMLElement | null} */ (target?.closest("[data-roadmap-id]") || null);
     if (!item || item.classList.contains("is-current")) return;
     onOpen(item.dataset.roadmapId || "");
   });
