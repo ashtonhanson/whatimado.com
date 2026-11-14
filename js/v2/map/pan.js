@@ -586,6 +586,18 @@ export function chatFocalBand(stageRect, frameRect) {
 }
 
 /**
+ * Screen X of the prompt box's middle, where chat-follow centers the selected node.
+ * @param {DOMRect} stageRect
+ */
+export function chatFollowCenterX(stageRect) {
+  const prompt =
+    document.querySelector("#dynamic-frame .whatimado-frame__composer") || document.getElementById("dynamic-frame");
+  const rect = prompt?.getBoundingClientRect();
+  if (!rect || rect.width <= 0) return stageRect.left + stageRect.width / 2;
+  return rect.left + rect.width / 2;
+}
+
+/**
  * Place one node in the middle of the open gap above the prompt, not the frame's center.
  * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
  * @param {string} nodeId
@@ -607,7 +619,7 @@ export function computePanForNodeAboveFrame(mapEl, nodeId) {
   const zoom = mapEl._zoom || 1;
   const nodeX = node.x * VIEW_W;
   const nodeY = node.y * VIEW_H;
-  const anchorX = (stageRect.width / 2) * scaleX;
+  const anchorX = (chatFollowCenterX(stageRect) - stageRect.left) * scaleX;
   const anchorY = (band.midY - stageRect.top) * scaleY;
 
   return {

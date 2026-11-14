@@ -49,6 +49,7 @@ import {
   computePanForFocalNode,
   chatFocalBand,
   computePanForNodeAboveFrame,
+  chatFollowCenterX,
   computeTimelineFrameFit,
   isOpenHomePhase
 } from "../../map/pan.js";
@@ -1016,8 +1017,8 @@ export class WhatimadoMap extends HTMLElement {
 
     const keptZoom = this._zoom;
     const target = computePanForNodeAboveFrame(this, id);
-    /* First settle places the row in the band; later focus changes are X-only. */
-    const panY = this._chatFollowHasY ? this._panY : target.panY;
+    /* Chat scroll only slides the map sideways; height stays where the snap fit put it. */
+    const panY = this._panY;
     this._chatFollowHasY = true;
     this._chatFollowId = id;
     this._chatFollowTargetId = id;
@@ -1103,10 +1104,10 @@ export class WhatimadoMap extends HTMLElement {
 
   /** Horizontal-only chat follow: node is centered on the open-band mid X. */
   _nodeCenteredOnFollowX(id) {
-    const band = this._openBand();
+    const stage = this.querySelector(".whatimado-map__stage")?.getBoundingClientRect();
     const center = this._nodeScreenCenter(id);
-    if (!band || !center) return false;
-    return Math.abs(center.x - (band.left + band.right) / 2) <= 48;
+    if (!stage || !center) return false;
+    return Math.abs(center.x - chatFollowCenterX(stage)) <= 8;
   }
 
   /**
@@ -3088,6 +3089,33 @@ export class WhatimadoMap extends HTMLElement {
       income.style.fontSize = `${fontPx * 0.9}px`;
       income.style.letterSpacing = "0.01em";
       income.style.strokeWidth = "0";
+    });
+    this._spaceGoalLines(fontPx);
+  }
+
+  /**
+   * Title sits just above the star and income just below it, with even line spacing
+   * at whatever size the labels were fitted to.
+   * @param {number} fontPx
+   */
+  _spaceGoalLines(fontPx) {
+    this._liveLayer?.querySelectorAll(".whatimado-map__node.is-goal").forEach((group) => {
+      const star = group.querySelector(".whatimado-map__goal-star");
+      if (!(star instanceof SVGGraphicsElement)) return;
+      let box;
+      try {
+        box = star.getBBox();
+      } catch {
+        return;
+      }
+      const gap = fontPx * 0.3;
+      const titleSize = fontPx * 1.05;
+      const incomeSize = fontPx * 0.9;
+      const title = group.querySelector(".whatimado-map__goal-title tspan");
+      if (title) title.setAttribute("y", String(box.y - gap - titleSize * 0.22));
+      const lines = group.querySelectorAll(".whatimado-map__goal-income tspan");
+      if (lines[0]) lines[0].setAttribute("y", String(box.y + box.height + gap + incomeSize * 0.78));
+      if (lines[1]) lines[1].setAttribute("dy", "1.25em");
     });
   }
 
