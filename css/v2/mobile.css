@@ -124,9 +124,14 @@
     );
   }
 
-  /* Homepage only: drop the constellation 10px so it sits clearer above Path Finder. */
+  /* Homepage only: drop the constellation so it sits clearer above Path Finder. */
   body.v2-app[data-phase="open"]:not(.is-hero-dismissing) whatimado-map .whatimado-map__stage {
-    top: calc(var(--v2-map-band-offset-top) + 10px);
+    top: calc(var(--v2-map-band-offset-top) + 25px);
+  }
+
+  /* Open-home prompt strip: keep enough height for the absolute composer. */
+  body.v2-app[data-phase="open"] whatimado-frame.is-mobile-docked.is-mobile-typing.is-mobile-sheet-floored .whatimado-frame__inner {
+    min-height: calc(var(--v2-composer-block-h, 3.5rem) + 1.35rem);
   }
 
   /* Chat sheet: map box ends above the frame. Inline pin height matches this. */

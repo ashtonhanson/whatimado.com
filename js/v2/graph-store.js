@@ -316,7 +316,12 @@ const MAP_H = 240;
 const YOU_LINKED = { x: 200, y: 168 };
 const MISSION_STEP = 34;
 const TASK_STACK_STEP = 30;
-const MAP_LABEL_FONT = "500 12.5px sans-serif";
+const MAP_LABEL_FONT_MOBILE = "500 12.5px sans-serif";
+const MAP_LABEL_FONT_DESKTOP = "500 15.5px sans-serif";
+const MAP_LABEL_FONT = () =>
+  (typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches
+    ? MAP_LABEL_FONT_MOBILE
+    : MAP_LABEL_FONT_DESKTOP);
 /** Screen length of every line that leaves You, so each title stays with its own dot after the map is fitted. */
 const SPOKE_SCREEN_PX = { mobile: 64, desktop: 100 };
 
@@ -521,7 +526,7 @@ function measureTitlePx(text, maxLine = 18) {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return label.length * 7;
-  ctx.font = MAP_LABEL_FONT;
+  ctx.font = MAP_LABEL_FONT();
   return ctx.measureText(label).width + label.length * 0.5;
 }
 

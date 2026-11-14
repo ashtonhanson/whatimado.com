@@ -206,8 +206,12 @@ export function computeOpenHomeGravityPan(mapEl) {
   const { scaleY } = unitsPerPixel(mapEl, stageRect);
   const availablePx = Math.max(24, bottom - top);
   const naturalPx = Math.max(1, dots.maxY - dots.minY) / scaleY;
-  /* Larger open band (frame.css) lets the homepage constellation grow up to 2× the old fit. */
-  const zoom = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(OPEN_HOME_ZOOM_MAX, availablePx / naturalPx));
+  /* Larger open band (frame.css) lets the homepage constellation grow; +15px on top of the fit. */
+  const fitted = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(OPEN_HOME_ZOOM_MAX, availablePx / naturalPx));
+  const zoom = Math.max(
+    OPEN_HOME_ZOOM_MIN,
+    Math.min(OPEN_HOME_ZOOM_MAX, fitted * ((naturalPx + 15) / Math.max(1, naturalPx)))
+  );
   const graphTop = top + Math.max(0, availablePx - naturalPx * zoom) / 2;
   const yPrime = (graphTop - stageRect.top) * scaleY;
   return {

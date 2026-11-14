@@ -3276,7 +3276,7 @@ export class WhatimadoMap extends HTMLElement {
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        this._fitLabelFont(texts, 13);
+        this._fitLabelFont(texts, window.matchMedia("(max-width: 900px)").matches ? 13 : 16);
         items = buildItems();
         if (!items.length) return;
         placeTitleBesideNode(items, titleBounds, { spineAbove: false });

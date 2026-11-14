@@ -275,11 +275,12 @@ export class FrameDockController {
       }
       /* A restored chat enters the sheet in the same frame; landing layout must not undo it. */
       if (!this._mobileChatSheet) {
-        this._applyTop(anchors.homePromptTop, { snap: SNAP.MOBILE_FOCUS });
+        /* Park the homepage prompt as a floored bottom strip so overflow:hidden cannot clip it. */
         this.frameEl.classList.add("is-mobile-typing");
-        this.frameEl.classList.remove("is-mobile-reading", "is-mobile-sheet-floored");
+        this.frameEl.classList.remove("is-mobile-reading", "is-mobile-expanded");
         document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
-        this.frameEl.classList.remove("is-mobile-expanded");
+        const openPromptTop = anchors.mapFocusTop ?? anchors.typingTop ?? anchors.homePromptTop;
+        this._applyTop(openPromptTop, { snap: SNAP.MOBILE_FOCUS });
         unpinMobileReadingMap();
       }
       this._bindMobileViewportWatch();
@@ -482,7 +483,8 @@ export class FrameDockController {
     }
     document.documentElement.style.removeProperty("--v2-map-dim");
     document.documentElement.style.removeProperty("--v2-docked-frame-top");
-    document.documentElement.style.setProperty("--whatimado-frame-top", `${openVh}vh`);
+    /* +15px grows the desktop homepage map band without changing the chat snap. */
+    document.documentElement.style.setProperty("--whatimado-frame-top", `calc(${openVh}vh + 15px)`);
 
     this.frameEl.classList.add("is-docked");
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
@@ -934,11 +936,17 @@ export class FrameDockController {
 
     if (this._mobileMode) {
       const bottomInset = measureCssVarLength("--v2-mobile-bottom-inset") || 0;
+      /* Open-home typing strip must floor so the absolute composer is not clipped by a 15px inner. */
+      const openHomePrompt =
+        document.body.dataset.phase === "open" &&
+        this.frameEl.classList.contains("is-mobile-typing") &&
+        !this._mobileChatSheet;
       const floored =
-        this._mobileChatSheet &&
-        (this.frameEl.classList.contains("is-mobile-sheet-floored") ||
-          this.frameEl.classList.contains("is-mobile-reading") ||
-          this.frameEl.classList.contains("is-mobile-expanded"));
+        openHomePrompt ||
+        (this._mobileChatSheet &&
+          (this.frameEl.classList.contains("is-mobile-sheet-floored") ||
+            this.frameEl.classList.contains("is-mobile-reading") ||
+            this.frameEl.classList.contains("is-mobile-expanded")));
       this.frameEl.style.top = `${this._mobileFrameScreenTop(topPx)}px`;
       if (floored) {
         this.frameEl.classList.add("is-mobile-sheet-floored");
