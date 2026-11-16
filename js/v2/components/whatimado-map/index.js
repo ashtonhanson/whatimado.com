@@ -1632,28 +1632,36 @@ export class WhatimadoMap extends HTMLElement {
     const atBottom = snap === "mobile-focus" || snap === "bottom";
     const desktopBottom = !mobile && atBottom;
     if (hasRoadmapColumns) {
+      /* Default framing: selected path + missions up to current + that mission's tasks. */
       this._fitBand({
         centerNodeId: this._missionFocusId(workId) || workId,
         from,
         animate,
-        neighborhood: !desktopBottom,
+        neighborhood: true,
         /* Desktop bottom lifts a little; desktop 3/4 sits a touch lower. */
         liftY: desktopBottom ? 0.03 : !mobile && !atBottom ? -0.05 : 0
       });
       if (!animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
       return true;
     }
-    /* Phone landing constellation above the chat: fill the band so its titles have room apart. */
+    /* Ghost constellation above the chat: leave room so Mission/Next Step stays above its dot. */
     const allGhost = this._liveNodes.every((node) => String(node.id).startsWith("ghost-"));
-    const ghostOnly = mobile && allGhost;
-    /* The menu bar is clear in the middle, so the band starts under the status area; titles dodge the logo and buttons. */
-    const options = ghostOnly
-      ? {
-          minZoom: mapLayoutZoom(),
-          maxZoom: 1.2,
-          bandTop: (this.querySelector(".whatimado-map__stage")?.getBoundingClientRect().top ?? 0) + 8,
-          reserve: { above: 34, below: 6, left: 44, right: 44 }
-        }
+    const options = allGhost
+      ? mobile
+        ? {
+            minZoom: mapLayoutZoom(),
+            maxZoom: 1.2,
+            bandTop: (this.querySelector(".whatimado-map__stage")?.getBoundingClientRect().top ?? 0) + 8,
+            reserve: { above: 34, below: 6, left: 44, right: 44 }
+          }
+        : {
+            minZoom: mapLayoutZoom(),
+            maxZoom: mapLayoutZoom(),
+            fixedZoom: mapLayoutZoom(),
+            /* Keep the middle of the fan from sinking when the prompt frame rises. */
+            liftY: desktopBottom ? 0.02 : -0.04,
+            reserve: { above: 48, below: 10, left: 56, right: 56 }
+          }
       : {
           centerNodeId: roadmapFocusLinked ? null : selected?.id,
           minZoom: mapLayoutZoom(),
@@ -1751,7 +1759,7 @@ export class WhatimadoMap extends HTMLElement {
       animate,
       from,
       centerNodeId: this._missionFocusId(workId) || workId,
-      neighborhood: !desktopBottom,
+      neighborhood: true,
       liftY: desktopBottom ? 0.03 : !mobile ? -0.05 : 0
     });
     return true;
@@ -1765,6 +1773,10 @@ export class WhatimadoMap extends HTMLElement {
    */
   _fitBand({ centerNodeId = null, animate = false, from = null, neighborhood = false, liftY = 0 } = {}) {
     const start = from || { zoom: this._zoom, panX: this._panX, panY: this._panY };
+    if (neighborhood && this._fitWorkPicture(centerNodeId)) {
+      if (animate) this._easeCameraFrom(start, CAMERA_EASE_MS);
+      return;
+    }
     const nearIds = neighborhood ? this._workNeighborhoodIds() : null;
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const layoutZoom = mapLayoutZoom();
@@ -1816,6 +1828,113 @@ export class WhatimadoMap extends HTMLElement {
       }
     }
     if (animate) this._easeCameraFrom(start, CAMERA_EASE_MS);
+  }
+
+  /**
+   * The chosen path, its missions up to the current one, and the current mission's tasks.
+   * @param {string|null} missionId
+   * @returns {Set<string>|null}
+   */
+  _workPictureIds(missionId) {
+    const pathId = appStore.journey.roadmapPathId || this._selectedId || graphStore.selectedId;
+    const missions = this._liveNodes.filter((node) => node.type === "mission");
+    if (!missions.length) return null;
+    const chainIndex = (node) =>
+      Number.isInteger(node.chainIndex) ? node.chainIndex : Number(String(node.id).replace("milestone-", "")) || 0;
+    const current = missions.find((node) => node.id === missionId) || missions.reduce((a, b) => (chainIndex(b) < chainIndex(a) ? b : a));
+    const ids = new Set([current.id]);
+    if (pathId && this._liveNodes.some((node) => node.id === pathId)) ids.add(pathId);
+    missions.forEach((node) => {
+      if (chainIndex(node) <= chainIndex(current)) ids.add(node.id);
+    });
+    this._liveNodes.forEach((node) => {
+      if (node.type === "task" && node.parentId === current.id) ids.add(node.id);
+    });
+    return ids;
+  }
+
+  /**
+   * Default roadmap camera (3/4 snap, crosshair, first load): scale down until the
+   * chosen path, missions up to the current one, and its tasks fit with their titles.
+   * Titles hold a fixed screen size, so each pass measures how far they spill and refits.
+   * @param {string|null} missionId
+   * @returns {boolean}
+   */
+  _fitWorkPicture(missionId) {
+    const ids = this._workPictureIds(missionId);
+    if (!ids) return false;
+    const pad = 8;
+    const reserve = { above: pad, below: pad, left: pad, right: pad };
+    const bandTop = this._workPictureTop();
+    /* Floor keeps the path+mission+tasks readable; title spill can otherwise chase zoom to nothing. */
+    const floor = Math.max(0.28, mapLayoutZoom() * 0.65);
+    for (let pass = 0; pass < 4; pass++) {
+      const fit = computeTimelineFrameFit(this, {
+        includeNode: (node) => ids.has(node.id),
+        minZoom: floor,
+        maxZoom: mapLayoutZoom(),
+        reserve,
+        bandTop
+      });
+      if (!fit.fitBox) return false;
+      this._zoom = fit.zoom;
+      this._animatePanTo(fit.panX, fit.panY, false);
+      const box = this._workPictureScreenBox(ids);
+      if (!box) break;
+      const spill = {
+        above: fit.fitBox.top + pad - box.top,
+        below: box.bottom - (fit.fitBox.bottom - pad),
+        left: fit.fitBox.left + pad - box.left,
+        right: box.right - (fit.fitBox.right - pad)
+      };
+      if (Object.values(spill).every((px) => px <= 1)) break;
+      for (const side of Object.keys(spill)) {
+        if (spill[side] > 1) reserve[side] += Math.min(spill[side], 28);
+      }
+    }
+    this._fitZoomFloor = this._zoom;
+    return true;
+  }
+
+  /**
+   * Phone: the short band may reach up under the header icons, which sit in a thin row.
+   * @returns {number|null}
+   */
+  _workPictureTop() {
+    if (!window.matchMedia("(max-width: 900px)").matches) return null;
+    let bottom = -Infinity;
+    document.querySelectorAll(".v2-mobile-header-controls button:not([hidden]), .v2-brand .v2-brand-word").forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) bottom = Math.max(bottom, rect.bottom);
+    });
+    return Number.isFinite(bottom) ? bottom - 4 : null;
+  }
+
+  /**
+   * Screen box around the dots and visible titles of these nodes.
+   * @param {Set<string>} ids
+   */
+  _workPictureScreenBox(ids) {
+    const layer = this._liveLayer;
+    if (!layer) return null;
+    const box = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
+    for (const id of ids) {
+      const group = layer.querySelector(`.whatimado-map__node[data-node-id="${CSS.escape(id)}"]`);
+      if (!group) continue;
+      const parts = [group.querySelector(".whatimado-map__node-body")];
+      if (!group.classList.contains("is-label-crowded")) {
+        parts.push(...group.querySelectorAll(".whatimado-map__label, .whatimado-map__kicker"));
+      }
+      for (const el of parts) {
+        const rect = el?.getBoundingClientRect();
+        if (!rect || rect.width <= 0 || getComputedStyle(el).visibility === "hidden") continue;
+        box.left = Math.min(box.left, rect.left);
+        box.right = Math.max(box.right, rect.right);
+        box.top = Math.min(box.top, rect.top);
+        box.bottom = Math.max(box.bottom, rect.bottom);
+      }
+    }
+    return Number.isFinite(box.left) ? box : null;
   }
 
   /**
@@ -1919,7 +2038,7 @@ export class WhatimadoMap extends HTMLElement {
         centerNodeId: this._missionFocusId(preferred) || preferred,
         from,
         animate,
-        neighborhood: !desktopBottom,
+        neighborhood: true,
         liftY: desktopBottom ? 0.03 : !mobile ? -0.05 : 0
       });
     }
@@ -3517,10 +3636,11 @@ export class WhatimadoMap extends HTMLElement {
         ? Math.abs(parseFloat(floatStyle.getPropertyValue("--node-float-amp")) || 0) *
           Math.abs(float instanceof SVGGraphicsElement ? float.getScreenCTM()?.d || 1 : 1)
         : 0;
+    /* Desktop keeps the top of the map host open so Mission/Next Step can stay above its dot when the chat rises. */
     const bounds = {
       left: rect.left + 4,
       right: rect.right - 4,
-      top: (mobile ? this.getBoundingClientRect().top : rect.top) + 4,
+      top: this.getBoundingClientRect().top + 4,
       bottom: rect.bottom
     };
     const frame = document.getElementById("dynamic-frame");

@@ -76,6 +76,8 @@ export class WhatimadoFrame extends HTMLElement {
     this._breathe = null;
     /** @type {HTMLElement|null} */
     this._dragRail = null;
+    /** @type {HTMLElement|null} */
+    this._resourcesFold = null;
     /** @type {HTMLButtonElement|null} */
     this._resourcesStickyBtn = null;
     /** @type {HTMLElement|null} */
@@ -244,34 +246,37 @@ export class WhatimadoFrame extends HTMLElement {
   }
 
   /**
-   * Mobile Resources tab under the drag handle.
+   * Thin Resources fold under the drag handle — expand or collapse the list.
    * @param {boolean} [open]
    */
   toggleResourcesSheet(open) {
     const btn = this._resourcesStickyBtn;
     const sheet = this._resourcesSheet;
-    if (!btn || !sheet || btn.hidden) return;
+    const fold = this._resourcesFold;
+    if (!btn || !sheet || fold?.hidden) return;
     const next = typeof open === "boolean" ? open : btn.getAttribute("aria-expanded") !== "true";
     btn.setAttribute("aria-expanded", next ? "true" : "false");
     btn.classList.toggle("is-open", next);
+    fold?.classList.toggle("is-open", next);
     sheet.hidden = !next;
     sheet.classList.toggle("is-open", next);
   }
 
   /**
-   * Sync the sticky Resources tab + sheet from the rail payload.
+   * Sync the Resources fold from the rail payload.
    * @param {{ html: string, region: string, visible: boolean }} payload
    */
   setResourcesSheetContent({ html = "", region = "", visible = false } = {}) {
     const btn = this._resourcesStickyBtn;
     const sheet = this._resourcesSheet;
+    const fold = this._resourcesFold;
     const list = this.querySelector("#whatimado-frame-resources-list");
     const regionEl = this.querySelector("#whatimado-frame-resources-region");
     if (!(btn instanceof HTMLButtonElement) || !sheet || !(list instanceof HTMLElement)) return;
     if (regionEl instanceof HTMLElement) regionEl.textContent = region;
     list.innerHTML = html;
     const show = Boolean(visible && html.trim());
-    btn.hidden = !show;
+    if (fold) fold.hidden = !show;
     this.classList.toggle("has-resources-sticky", show);
     if (!show) this.toggleResourcesSheet(false);
   }
@@ -439,6 +444,9 @@ export class WhatimadoFrame extends HTMLElement {
     );
     this._scrollBottomBtn = /** @type {HTMLButtonElement|null} */ (
       this.querySelector(".whatimado-frame__scroll-bottom")
+    );
+    this._resourcesFold = /** @type {HTMLElement|null} */ (
+      this.querySelector(".whatimado-frame__resources-fold")
     );
     this._resourcesStickyBtn = /** @type {HTMLButtonElement|null} */ (
       this.querySelector(".whatimado-frame__resources-sticky")

@@ -2,7 +2,7 @@ import { appStore, touchJourney } from "../state/store.js";
 import { setUserProfileField } from "../state/user-profile.js";
 import { emptyLocationDraft, hasUsableLocation, isLocationSkip, locationFromDraft } from "../state/location.js";
 import { callAdvisor } from "../advisor.js";
-import { appendMessage } from "../ui.js";
+import { appendMessage, scrollFrameChildIntoView } from "../ui.js";
 import { hideIntakeChips, renderIntakeChips } from "../components/profile-chips.js";
 import { PATH_MODE, parsePathMode, pathModeLabel } from "./path-mode.js";
 import { buildClarifyingPrompt, clarifyingFallback, isFounderOrProjectPrompt, shouldAdvancePastClarifying } from "./clarifying.js";
@@ -310,6 +310,11 @@ export function createIntakeController(ui) {
     setStep(resolved);
     pushAdvisor(spec.prompt);
     showChipsForStep(resolved);
+    /* Selection just opened the next intake section — keep it in view. */
+    window.setTimeout(() => {
+      const chips = messagesEl?.querySelector("#v2-intake-chips");
+      if (chips) scrollFrameChildIntoView(chips, { toEnd: true });
+    }, 40);
   }
 
   function beginChipIntake() {

@@ -383,9 +383,9 @@ export function renderResourcesRail(resources, location, profile) {
   if (list) list.innerHTML = html;
   if (region) region.textContent = place;
 
-  const rail = document.getElementById("resources-rail");
   const frame = document.getElementById("dynamic-frame");
-  const visible = Boolean(rail && !rail.classList.contains("hidden") && railItems.length);
+  /* Fold lives in the prompt frame; the old right rail stays a hidden data host. */
+  const visible = Boolean(railItems.length);
   if (frame && typeof frame.setResourcesSheetContent === "function") {
     frame.setResourcesSheetContent({ html, region: place, visible });
   }

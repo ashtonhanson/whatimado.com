@@ -75,11 +75,11 @@ export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacle
     const outward = item.nx < cx ? [left, right] : [right, left];
     /* A centered spot may slide a few px sideways to clear an obstacle before changing sides. */
     const nudged = (spot) => [0, 6, -6, 12, -12].map((dx) => ({ ...spot, left: spot.left + dx }));
-    /* Kicker titles (Mission 1) read as one stack and only fit above or below. */
+    /* Mission kickers stay above their dots — never flip under when the chat frame rises. */
     const candidates = item.kind === "start"
       ? [current, ...nudged(above), right, left]
       : item.kicker
-        ? [current, ...nudged(above), ...nudged(below)]
+        ? [current, ...nudged(above), ...outward]
         : [current, ...nudged(above), ...outward, ...nudged(below)];
     const clear = candidates.find((spot) => {
       const box = { left: spot.left, right: spot.left + item.w, top: spot.top, bottom: spot.top + item.h };
@@ -113,11 +113,13 @@ export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacle
  */
 export function pinSpokeTitles(items, bounds = null) {
   const edge = 8;
+  /* Keep YOU + explore titles far enough apart that each word stays its own label. */
+  const minGap = 18;
   const gaps = {
-    "option-settings": 5,
-    "option-analytics": 5,
-    "option-notes": 5,
-    "option-roadmaps": 5
+    "option-settings": 8,
+    "option-analytics": 8,
+    "option-notes": 8,
+    "option-roadmaps": 8
   };
   for (const item of items) {
     const gap = gaps[item.nodeId];
@@ -132,15 +134,17 @@ export function pinSpokeTitles(items, bounds = null) {
     /* A small nudge keeps the word on screen. A bigger slide would leave the dot. */
     if (Math.abs(clamped - ideal) <= 12) item.left = clamped;
   }
+  const you = items.find((item) => item.kind === "start" || item.nodeId === "start");
   const pinned = items.filter((item) => gaps[item.nodeId] != null);
-  for (let i = 0; i < pinned.length; i += 1) {
-    for (let j = i + 1; j < pinned.length; j += 1) {
-      const a = pinned[i];
-      const b = pinned[j];
+  const group = you ? [you, ...pinned] : pinned;
+  for (let i = 0; i < group.length; i += 1) {
+    for (let j = i + 1; j < group.length; j += 1) {
+      const a = group[i];
+      const b = group[j];
       const overlapX = Math.min(a.left + a.w, b.left + b.w) - Math.max(a.left, b.left);
       const overlapY = Math.min(a.top + a.h, b.top + b.h) - Math.max(a.top, b.top);
-      if (overlapX <= 2 || overlapY <= 2) continue;
-      const shift = (overlapX + 8) / 2;
+      if (overlapX <= minGap || overlapY <= 2) continue;
+      const shift = (overlapX + minGap) / 2;
       if (a.nx <= b.nx) {
         a.left -= shift;
         b.left += shift;

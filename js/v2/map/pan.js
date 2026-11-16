@@ -362,6 +362,7 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   const clearance = measureCssVarLength("--v2-map-frame-clearance") || 12;
   const room = reserve || { above: 16, below: 10, left: 20, right: 20 };
   const bandBottom = frameRect.top - clearance;
+  const fitBox = { top, bottom: bandBottom, left: stageRect.left, right: stageRect.right };
   const bottom = bandBottom - room.below;
   top += room.above;
   const availablePx = Math.max(24, bottom - top);
@@ -480,7 +481,7 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
   }
   const userX = (screenCx - originX) / pxPerUnit;
   const panX = userX - SCALE_CENTER_X - zoom * (cx - SCALE_CENTER_X);
-  return { panX, panY, zoom };
+  return { panX, panY, zoom, fitBox };
 }
 
 /** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */

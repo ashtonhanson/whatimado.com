@@ -324,89 +324,96 @@ body.v2-app whatimado-frame > button.whatimado-frame__scroll-bottom:focus-visibl
   outline-offset: 2px;
 }
 
-/* Resources bookmark FAB — stacked just above scroll-to-bottom (outside glass overflow). */
-body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky {
-  --v2-resources-fab-size: 2rem;
-  --v2-fab-edge: clamp(0.85rem, 2.5vw, 1.1rem);
-  --v2-fab-bottom: clamp(0.85rem, 2vw, 1rem);
-  --v2-fab-send-lift: calc(40px + 0.35rem);
-  position: absolute;
-  left: auto;
-  right: var(--v2-fab-edge);
-  bottom: calc(var(--v2-fab-bottom) + var(--v2-fab-send-lift) + 2rem + 0.45rem);
-  z-index: 8;
-  box-sizing: border-box;
+/* Resources thin fold under the drag rail — expands down into the prompt frame. */
+whatimado-frame .whatimado-frame__resources-fold {
   display: none;
-  align-items: center;
-  justify-content: center;
-  width: var(--v2-resources-fab-size);
-  height: var(--v2-resources-fab-size);
-  min-width: var(--v2-resources-fab-size);
-  min-height: var(--v2-resources-fab-size);
+  flex: 0 0 auto;
+  flex-direction: column;
+  width: 100%;
   margin: 0;
-  padding: 0;
-  border: 1px solid var(--v2-border);
-  border-radius: 50%;
-  background-color: #0d1a1d;
+  border-bottom: 1px solid color-mix(in srgb, var(--v2-neon-teal) 28%, transparent);
+  background: color-mix(in srgb, #0d1a1d 88%, transparent);
+  pointer-events: auto;
+}
+
+body.v2-app whatimado-frame.has-resources-sticky .whatimado-frame__resources-fold:not([hidden]) {
+  display: flex;
+}
+
+whatimado-frame .whatimado-frame__resources-fold[hidden] {
+  display: none !important;
+}
+
+body.v2-app whatimado-frame .whatimado-frame__resources-sticky {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 2rem;
+  margin: 0;
+  padding: 0.35rem clamp(0.85rem, 2.5vw, 1.1rem);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--v2-teal);
-  box-shadow: none;
+  font: inherit;
+  font-family: var(--v2-font-hero);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
   pointer-events: auto;
 }
 
-body.v2-app whatimado-frame.has-resources-sticky > button.whatimado-frame__resources-sticky {
-  display: inline-flex;
-}
-
-body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky:hover,
-body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky.is-open,
-body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky[aria-expanded="true"] {
-  background-color: #122428;
+body.v2-app whatimado-frame .whatimado-frame__resources-sticky:hover,
+body.v2-app whatimado-frame .whatimado-frame__resources-sticky.is-open,
+body.v2-app whatimado-frame .whatimado-frame__resources-sticky[aria-expanded="true"] {
   color: var(--v2-yellow);
+  background: color-mix(in srgb, var(--v2-teal) 8%, transparent);
 }
 
-body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky svg {
-  width: 0.95rem;
-  height: 0.95rem;
+body.v2-app whatimado-frame .whatimado-frame__resources-sticky .whatimado-frame__resources-sticky-label {
+  display: inline;
+}
+
+body.v2-app whatimado-frame .whatimado-frame__resources-chevron {
+  width: 0.85rem;
+  height: 0.85rem;
   display: block;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  flex: 0 0 auto;
+  transition: transform 0.2s ease;
 }
 
-body.v2-app whatimado-frame > button.whatimado-frame__resources-sticky .whatimado-frame__resources-sticky-label {
-  display: none;
+body.v2-app whatimado-frame .whatimado-frame__resources-sticky.is-open .whatimado-frame__resources-chevron,
+body.v2-app whatimado-frame .whatimado-frame__resources-sticky[aria-expanded="true"] .whatimado-frame__resources-chevron {
+  transform: rotate(180deg);
 }
 
-/* Resources overlay over chat — does not reserve width or push content. */
-whatimado-frame > .whatimado-frame__resources-sheet {
+whatimado-frame .whatimado-frame__resources-sheet {
   display: none;
-  position: absolute;
-  right: clamp(0.85rem, 2.5vw, 1.1rem);
-  bottom: calc(clamp(0.85rem, 2vw, 1rem) + 40px + 0.35rem + 4.6rem);
-  left: auto;
-  z-index: 9;
-  width: min(18rem, calc(100% - 2.4rem));
-  max-height: min(48vh, 20rem);
+  width: 100%;
+  max-height: min(36vh, 14rem);
   margin: 0;
-  padding: 0.55rem 0.65rem 0.7rem;
+  padding: 0.35rem clamp(0.85rem, 2.5vw, 1.1rem) 0.65rem;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid color-mix(in srgb, var(--v2-neon-teal) 45%, transparent);
-  border-radius: var(--v2-btn-radius);
-  background: color-mix(in srgb, #0d1a1d 94%, transparent);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--v2-neon-teal) 22%, transparent);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   pointer-events: auto;
 }
 
-whatimado-frame.has-resources-sticky > .whatimado-frame__resources-sheet:not([hidden]) {
+whatimado-frame .whatimado-frame__resources-fold.is-open > .whatimado-frame__resources-sheet:not([hidden]) {
   display: block;
 }
 
-whatimado-frame > .whatimado-frame__resources-sheet[hidden] {
+whatimado-frame .whatimado-frame__resources-sheet[hidden] {
   display: none !important;
 }
 
@@ -1275,7 +1282,7 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   min-height: 2.55rem;
   height: 2.55rem;
   margin: 0;
-  padding: 0.45rem 0.55rem;
+  padding: 0.45rem 0.85rem;
   border: 1px solid rgba(46, 232, 214, 0.42);
   background: transparent;
   color: var(--v2-text);

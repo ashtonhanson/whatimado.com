@@ -93,17 +93,19 @@ export function applyPhaseToDom(doc, phase, options = {}) {
   const possibilities = doc.getElementById("possibilities");
   if (possibilities) possibilities.classList.toggle("hidden", !vis.possibilities);
 
+  /* Right-rail Resources stays hidden; the prompt-frame fold is the only Resources UI. */
   const resources = doc.getElementById("resources-rail");
-  if (resources) resources.classList.toggle("hidden", !vis.resources);
+  if (resources) resources.classList.add("hidden");
 
   const frame = doc.getElementById("dynamic-frame");
   if (frame && typeof frame.setResourcesSheetContent === "function") {
     const list = doc.getElementById("resources-list");
     const region = doc.getElementById("resources-region");
+    const html = list?.innerHTML || "";
     frame.setResourcesSheetContent({
-      html: list?.innerHTML || "",
+      html,
       region: region?.textContent || "",
-      visible: Boolean(vis.resources)
+      visible: Boolean(vis.resources && html.trim())
     });
   }
 }

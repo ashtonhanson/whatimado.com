@@ -526,10 +526,13 @@ export function initChatFlow(ctx) {
     onConfirmed: (_idea, bullets) => {
       const selected =
         graphStore.nodes.find((node) => node.id === appStore.journey.selectedPathId) || null;
-      if (selected && selected.type !== "start") showSelectedPath(selected, { scroll: false });
+      if (selected && selected.type !== "start") showSelectedPath(selected, { scroll: true });
       offerUnchosenRoadmaps(selected?.id || "");
       layout();
-      void missions.begin(selected, bullets);
+      void Promise.resolve(missions.begin(selected, bullets)).finally(() => {
+        const missionsEl = document.getElementById("missions");
+        if (missionsEl) scrollFrameChildIntoView(missionsEl);
+      });
     }
   });
 
@@ -612,8 +615,11 @@ export function initChatFlow(ctx) {
     scrollChatToRoadmap(node);
     settleFrameAfterPathsReady();
     revealMapForSelectedRoadmap();
-    if (startConfirm) void confirmGate.begin(node);
-    else confirmGate.hide();
+    if (startConfirm) {
+      /* Pull chat to the generating/plan section this selection just opened. */
+      if (selectionPanel) scrollFrameChildIntoView(selectionPanel);
+      void confirmGate.begin(node);
+    } else confirmGate.hide();
   }
 
   /** Settings, Notes, and Roadmaps spokes each rewrite the panel above the missions. */
@@ -1619,7 +1625,8 @@ export function initChatFlow(ctx) {
   }
 
   if (isDemo) {
-    requestAnimationFrame(() => seedHypotheticalChat());
+    /* setTimeout: rAF can be starved while the map/frame settle on first paint. */
+    window.setTimeout(() => seedHypotheticalChat(), 0);
   }
 
   if (!isDemo) {

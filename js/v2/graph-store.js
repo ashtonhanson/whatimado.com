@@ -318,7 +318,7 @@ const MISSION_STEP = 34;
 const TASK_STACK_STEP = 30;
 const MAP_LABEL_FONT = "500 26px sans-serif";
 /** Screen length of every line that leaves You, so each title stays with its own dot after the map is fitted. */
-const SPOKE_SCREEN_PX = { mobile: 110, desktop: 150 };
+const SPOKE_SCREEN_PX = { mobile: 132, desktop: 178 };
 
 /** @returns {boolean} */
 function isMobileMapLayout() {
@@ -396,22 +396,22 @@ function youSpokeRadius() {
   if (!(unit > 0)) return px;
   const radius = px / (unit * 0.5);
   if (!mobile) return radius;
-  /* Analytics is the leftmost spoke (205°). Past this length its dot leaves the map and the title detaches. */
-  const leftCos = Math.cos((205 * Math.PI) / 180);
+  /* Analytics is the leftmost linked spoke (~215°). Past this length its dot leaves the map and the title detaches. */
+  const leftCos = Math.cos((215 * Math.PI) / 180);
   const maxRadius = (YOU_LINKED.x - 28) / -leftCos;
   return Math.min(radius, maxRadius);
 }
 
 /** Phone option spokes reach a little past the cap so the Settings title clears its neighbours. */
-const MOBILE_OPTION_SPOKE_PUSH = 1.15;
+const MOBILE_OPTION_SPOKE_PUSH = 1.28;
 
 /** Settings, Analytics, Notes, and My Paths sit further from You than the chosen path. */
 function optionSpokeRadius() {
   const base = youSpokeRadius();
-  if (!isMobileMapLayout()) return base;
+  if (!isMobileMapLayout()) return base * 1.12;
   const unit = mapPxPerUnit();
-  const wanted = unit > 0 ? 120 / (unit * 0.5) : base * 1.7;
-  const leftCos = Math.cos((205 * Math.PI) / 180);
+  const wanted = unit > 0 ? 140 / (unit * 0.5) : base * 1.85;
+  const leftCos = Math.cos((215 * Math.PI) / 180);
   const maxRadius = (YOU_LINKED.x + 48) / -leftCos;
   return Math.min(Math.max(base, wanted), maxRadius) * MOBILE_OPTION_SPOKE_PUSH;
 }
@@ -430,12 +430,12 @@ function optionRing(degrees, radius) {
   );
 }
 
-/** The selected roadmap runs right, so the options arc 45° apart over You. */
+/** The selected roadmap runs right, so the options arc ~60° apart over You — titles stay readable. */
 const LINKED_OPTION_DEGREES = {
-  "option-analytics": 205,
+  "option-analytics": 220,
   "option-settings": 160,
-  "option-notes": 115,
-  "option-roadmaps": 70
+  "option-notes": 100,
+  "option-roadmaps": 45
 };
 const OPTION_OFFSETS = [
   { dx: -175, dy: -90 },
@@ -454,12 +454,12 @@ const UNLINKED_MISSION_STEP = 32;
 const UNLINKED_COLUMN = { dx: 160, dy: 0 };
 /** The column's top stays this far under the selected roadmap so its line clears the plus. */
 const UNLINKED_COLUMN_PLUS_CLEAR = 40;
-/** The selected roadmap holds straight up, so the options fan out 30° apart on the left. */
+/** The selected roadmap holds straight up, so the options fan out ~40° apart on the left. */
 const UNLINKED_OPTION_DEGREES = {
-  "option-analytics": 105,
+  "option-analytics": 95,
   "option-settings": 135,
-  "option-notes": 165,
-  "option-roadmaps": 195
+  "option-notes": 175,
+  "option-roadmaps": 215
 };
 
 /** 1 fits the three-quarter gap. Top and bottom snaps use the larger spread. */
