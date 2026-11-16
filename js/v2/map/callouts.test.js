@@ -1,6 +1,29 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { placeTitlesAbove, trailNodeIds } from "./callouts.js";
+import { placeTitlesAbove, separateHomeTitles, trailNodeIds } from "./callouts.js";
+
+test("landing titles never overlap, even through the idle float", () => {
+  const dot = (nx, ny) => ({ nx, ny, nr: 6 });
+  const dots = [dot(100, 60), dot(130, 50), dot(160, 60), dot(130, 120)];
+  const items = [
+    { nodeId: "a", kind: "path", nx: 100, ny: 60, nr: 6, w: 50, h: 14, side: "above", left: 75, top: 35 },
+    { nodeId: "b", kind: "sat", kicker: true, nx: 130, ny: 50, nr: 6, w: 60, h: 28, side: "above", left: 100, top: 11 },
+    { nodeId: "c", kind: "path", nx: 160, ny: 60, nr: 6, w: 50, h: 14, side: "above", left: 135, top: 35 },
+    { nodeId: "start", kind: "start", nx: 130, ny: 120, nr: 6, w: 30, h: 14, side: "below", left: 115, top: 131 }
+  ];
+  const drift = 8;
+  separateHomeTitles(items, dots, { left: 0, right: 300, top: 0, bottom: 200 }, 5, [], drift);
+  const shown = items.filter((item) => !item.hidden);
+  assert.equal(shown.length, items.length);
+  for (const a of shown) {
+    for (const b of shown) {
+      if (a === b) continue;
+      const apartX = a.left + a.w <= b.left || b.left + b.w <= a.left;
+      const apartY = a.top + a.h + drift <= b.top || b.top + b.h + drift <= a.top;
+      assert.ok(apartX || apartY, `${a.nodeId} and ${b.nodeId} overlap`);
+    }
+  }
+});
 
 test("sample titles sit above their dots and stay inside the screen", () => {
   const items = [

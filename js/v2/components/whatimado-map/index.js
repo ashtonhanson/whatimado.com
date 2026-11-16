@@ -36,7 +36,14 @@ import {
   svgScaleXY,
   trimLineToNodeEdges
 } from "../../map/geometry.js";
-import { missionNumberLabel, pinSpokeTitles, placeTitlesRoadmapStyle, trailNodeIds, wrapMapLabel } from "../../map/callouts.js";
+import {
+  missionNumberLabel,
+  pinSpokeTitles,
+  placeTitlesRoadmapStyle,
+  separateHomeTitles,
+  trailNodeIds,
+  wrapMapLabel
+} from "../../map/callouts.js";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -1636,18 +1643,36 @@ export class WhatimadoMap extends HTMLElement {
       if (!animate && this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
       return true;
     }
-    const options = {
-      centerNodeId: roadmapFocusLinked ? null : selected?.id,
-      minZoom: mapLayoutZoom(),
-      fixedZoom: mapLayoutZoom(),
-      liftY: desktopBottom ? 0.03 : 0
-    };
+    /* Phone landing constellation above the chat: fill the band so its titles have room apart. */
+    const allGhost = this._liveNodes.every((node) => String(node.id).startsWith("ghost-"));
+    const ghostOnly = mobile && allGhost;
+    /* The menu bar is clear in the middle, so the band starts under the status area; titles dodge the logo and buttons. */
+    const options = ghostOnly
+      ? {
+          minZoom: mapLayoutZoom(),
+          maxZoom: 1.2,
+          bandTop: (this.querySelector(".whatimado-map__stage")?.getBoundingClientRect().top ?? 0) + 8,
+          reserve: { above: 34, below: 6, left: 44, right: 44 }
+        }
+      : {
+          centerNodeId: roadmapFocusLinked ? null : selected?.id,
+          minZoom: mapLayoutZoom(),
+          fixedZoom: mapLayoutZoom(),
+          liftY: desktopBottom ? 0.03 : 0
+        };
     const fit = computeTimelineFrameFit(this, options);
     this._zoom = fit.zoom;
     this._animatePanTo(fit.panX, fit.panY, false);
     this._fitZoomFloor = this._zoom;
-    if (animate) this._easeCameraFrom(from, CAMERA_EASE_MS);
-    else if (this._layoutGlide) this._easeCameraFrom(from, this._layoutGlide.durationMs);
+    let easeMs = 0;
+    if (animate) easeMs = CAMERA_EASE_MS;
+    else if (this._layoutGlide) easeMs = this._layoutGlide.durationMs;
+    if (easeMs) this._easeCameraFrom(from, easeMs);
+    /* Titles hold their spots through camera moves, so a new zoom needs a fresh title layout once settled. */
+    if (allGhost && Math.abs(fit.zoom - (this._calloutZoom ?? from.zoom)) > 0.02) {
+      window.clearTimeout(this._ghostTitleTimer);
+      this._ghostTitleTimer = window.setTimeout(() => this._layoutCallouts(), easeMs + 40);
+    }
     return true;
   }
 
@@ -3434,6 +3459,14 @@ export class WhatimadoMap extends HTMLElement {
         if (!items.length) return;
         /* Placement is relative to each dot only, so moving the map never shifts a title. */
         placeTitlesRoadmapStyle(items, null, TITLE_GAP_PX, { pathsRight: !openHome });
+        if (openHome) {
+          const space = this._homeTitleSpace();
+          separateHomeTitles(items, dots, space.bounds, TITLE_GAP_PX, space.obstacles, space.drift);
+          items.forEach((item) => {
+            if (item.hidden) item.group.classList.add("is-label-crowded");
+          });
+          break;
+        }
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
@@ -3465,6 +3498,73 @@ export class WhatimadoMap extends HTMLElement {
     } finally {
       this._layingOut = false;
     }
+  }
+
+  /**
+   * Where homepage titles may sit: inside the stage and above an open chat frame.
+   * Phone titles may use the clear middle of the menu bar, so its logo and buttons are obstacles.
+   */
+  _homeTitleSpace() {
+    const stage = this.querySelector(".whatimado-map__stage");
+    if (!(stage instanceof Element)) return { bounds: null, obstacles: [], drift: 0 };
+    const rect = stage.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return { bounds: null, obstacles: [], drift: 0 };
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const float = this.querySelector(".whatimado-map__node-float");
+    const floatStyle = float ? getComputedStyle(float) : null;
+    const drift =
+      floatStyle && floatStyle.animationName !== "none"
+        ? Math.abs(parseFloat(floatStyle.getPropertyValue("--node-float-amp")) || 0) *
+          Math.abs(float instanceof SVGGraphicsElement ? float.getScreenCTM()?.d || 1 : 1)
+        : 0;
+    const bounds = {
+      left: rect.left + 4,
+      right: rect.right - 4,
+      top: (mobile ? this.getBoundingClientRect().top : rect.top) + 4,
+      bottom: rect.bottom
+    };
+    const frame = document.getElementById("dynamic-frame");
+    if (!isOpenHomePhase() && frame instanceof HTMLElement) {
+      const frameTop = frame.getBoundingClientRect().top;
+      if (frameTop > bounds.top && frameTop < bounds.bottom) bounds.bottom = frameTop - 4;
+    }
+    const obstacles = [];
+    const chrome = mobile ? ".v2-brand .v2-brand-word, .v2-mobile-header-controls" : ".v2-map-corner-tools:not([hidden])";
+    document.querySelectorAll(chrome).forEach((el) => {
+      this._watchTitleChrome(el);
+      const box = el.getBoundingClientRect();
+      if (box.width > 0 && box.height > 0) {
+        obstacles.push({ left: box.left, right: box.right, top: box.top, bottom: box.bottom });
+      }
+    });
+    return { bounds, obstacles, drift };
+  }
+
+  /**
+   * The logo and header settle after brand fonts load, often after the first
+   * title layout; redo the landing titles when they change size.
+   * @param {Element} el
+   */
+  _watchTitleChrome(el) {
+    if (typeof ResizeObserver !== "function") return;
+    if (!this._titleChromeObserver) {
+      this._titleChromeWatched = new WeakSet();
+      this._titleChromeObserver = new ResizeObserver(() => this._relayoutLandingTitles());
+      document.fonts?.ready.then(() => this._relayoutLandingTitles());
+    }
+    if (this._titleChromeWatched.has(el)) return;
+    this._titleChromeWatched.add(el);
+    this._titleChromeObserver.observe(el);
+  }
+
+  _relayoutLandingTitles() {
+    if (this._titleChromeFrame) return;
+    this._titleChromeFrame = requestAnimationFrame(() => {
+      this._titleChromeFrame = 0;
+      if (!this.isConnected || !this._liveNodes.length) return;
+      if (!this._liveNodes.every((node) => String(node.id).startsWith("ghost-"))) return;
+      this._layoutCallouts();
+    });
   }
 
   /**

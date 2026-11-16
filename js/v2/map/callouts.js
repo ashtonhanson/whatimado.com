@@ -32,6 +32,81 @@ export function wrapMapLabel(text, maxLine = 18) {
 }
 
 /**
+ * Homepage constellation: titles never overlap. Each stays centered above its dot when clear,
+ * otherwise steps to its outer side, the inner side, then below. A title with no clear spot
+ * is marked `hidden` rather than drawn over another.
+ * @param {Array<{ kind?: string, kicker?: unknown, nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string, descent?: number, hidden?: boolean }>} items
+ * @param {Array<{ nx: number, ny: number, nr: number }>} dots
+ * @param {{ left: number, right: number, top?: number, bottom?: number } | null} [bounds]
+ * @param {number} [gap]
+ * @param {Array<{ left: number, right: number, top: number, bottom: number }>} [obstacles] Screen chrome titles must not cover.
+ * @param {number} [drift] Vertical px each dot (and its title) bobs on its own idle float.
+ */
+export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacles = [], drift = 0) {
+  if (!items.length) return;
+  const cx = items.reduce((sum, item) => sum + item.nx, 0) / items.length;
+  const rank = (item) => (item.kind === "start" ? 0 : item.kicker ? 1 : 2);
+  const order = [...items].sort(
+    (a, b) => rank(a) - rank(b) || Math.abs(a.nx - cx) - Math.abs(b.nx - cx)
+  );
+  const pad = 3;
+  /* Neighbors float out of phase, so vertical clearance also covers the full bob. */
+  const padY = pad + Math.max(0, drift);
+  const touches = (a, b) =>
+    a.left < b.right + pad && b.left < a.right + pad && a.top < b.bottom + padY && b.top < a.bottom + padY;
+  /* Earlier passes clamp titles flush to the edge, so allow sub-pixel rounding there. */
+  const slack = 1;
+  const inBounds = (box) =>
+    !bounds ||
+    (box.left >= bounds.left - slack &&
+      box.right <= bounds.right + slack &&
+      (bounds.top == null || box.top >= bounds.top - slack) &&
+      (bounds.bottom == null || box.bottom <= bounds.bottom + slack));
+  /** @type {Array<{ left: number, right: number, top: number, bottom: number }>} */
+  const placed = [...obstacles];
+  for (const item of order) {
+    item.hidden = false;
+    const nr = item.nr || 6;
+    const above = { side: "above", left: item.nx - item.w / 2, top: item.ny - nr - gap - item.h + (item.descent || 0) };
+    const below = { side: "below", left: item.nx - item.w / 2, top: item.ny + nr + gap };
+    const left = { side: "left", left: item.nx - nr - gap - item.w, top: item.ny - item.h / 2 };
+    const right = { side: "right", left: item.nx + nr + gap, top: item.ny - item.h / 2 };
+    const current = { side: item.side || "above", left: item.left, top: item.top };
+    const outward = item.nx < cx ? [left, right] : [right, left];
+    /* A centered spot may slide a few px sideways to clear an obstacle before changing sides. */
+    const nudged = (spot) => [0, 6, -6, 12, -12].map((dx) => ({ ...spot, left: spot.left + dx }));
+    /* Kicker titles (Mission 1) read as one stack and only fit above or below. */
+    const candidates = item.kind === "start"
+      ? [current, ...nudged(above), right, left]
+      : item.kicker
+        ? [current, ...nudged(above), ...nudged(below)]
+        : [current, ...nudged(above), ...outward, ...nudged(below)];
+    const clear = candidates.find((spot) => {
+      const box = { left: spot.left, right: spot.left + item.w, top: spot.top, bottom: spot.top + item.h };
+      if (!inBounds(box)) return false;
+      if (placed.some((other) => touches(box, other))) return false;
+      return !dots.some((dot) => {
+        if (Math.hypot(dot.nx - item.nx, dot.ny - item.ny) < 1) return false;
+        return touches(box, {
+          left: dot.nx - dot.nr,
+          right: dot.nx + dot.nr,
+          top: dot.ny - dot.nr,
+          bottom: dot.ny + dot.nr
+        });
+      });
+    });
+    if (!clear) {
+      item.hidden = true;
+      continue;
+    }
+    item.side = clear.side;
+    item.left = clear.left;
+    item.top = clear.top;
+    placed.push({ left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h });
+  }
+}
+
+/**
  * Settings and Analytics titles sit above their own dots and stay fully on screen.
  * @param {Array<{ nodeId?: string, nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string }>} items
  * @param {{ left: number, right: number } | null} [bounds]

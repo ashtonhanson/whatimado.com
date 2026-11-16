@@ -1,6 +1,6 @@
 /** One-question clarifying prompts. Skip PHI. Chips collect structured facts separately. */
 
-import { isClosedTestingFlow } from "./persona-signals.js";
+import { isClosedTestingFlow, mentionsHousingInstability, mentionsReentryHardship } from "./persona-signals.js";
 
 export function isFounderOrProjectPrompt(text) {
   const raw = String(text || "");
@@ -24,6 +24,26 @@ function mentionsStability(text) {
     String(text || "")
   );
 }
+
+/**
+ * Housing loss or reentry: their own words say gear and a workspace cannot be assumed.
+ * @param {string} userText
+ * @param {string} [transcript] Only the User lines count; advisor wording must not trip it.
+ */
+export function lacksBasicResources(userText, transcript = "") {
+  const userLines = String(transcript || "")
+    .split(/\n\n/)
+    .filter((line) => line.startsWith("User:"))
+    .join("\n");
+  const blob = `${userText || ""}\n${userLines}`;
+  return mentionsHousingInstability(blob) || mentionsReentryHardship(blob);
+}
+
+const RESOURCE_REALITY =
+  "RESOURCE REALITY: They are without stable housing or rebuilding basics. Never assume they own or can privately use a computer, software, " +
+  "internet, a phone plan, a car, savings, or a place to work, and never ask what is stopping them as if work were a choice. " +
+  "If a skill needs gear (design, illustration, coding, editing), ask what they can reach today, like a phone, a library or workforce center computer, " +
+  "or a shelter program, or what they could show of their past work.\n";
 
 /**
  * Stay in the ability conversation long enough to catch a misunderstanding.
@@ -60,12 +80,14 @@ export function buildClarifyingPrompt(userText, options = {}) {
     "If they said they want to start their own business, do not ask hired vs own. " +
     "Do not offer a generic skills menu (customer service, writing, hands-on, creative, teaching). " +
     "Keep it like a natural conversation, not a checklist. Only bring up vehicle, ID, or shelter if a clear gap appears.\n";
+  const resources = lacksBasicResources(userText, transcript) ? RESOURCE_REALITY : "";
 
   if (turn >= 2) {
     return (
       "You are whatimado — a warm career and life planning peer, not a licensed professional.\n" +
       "PRIVACY: Do not collect or repeat medical, substance-use, or mental-health details.\n" +
       knownFacts +
+      resources +
       "Restate in one sentence what you think they can already do or enjoy.\n" +
       "Then ask exactly ONE short question to check whether you misunderstood. Invite them to correct you.\n" +
       "Do not list career options. Do not ask about ID, housing, transport, children, or where they live unless they raised a gap. Plain text only.\n\n" +
@@ -87,6 +109,7 @@ export function buildClarifyingPrompt(userText, options = {}) {
     return (
       "You are whatimado, an empathetic career/life planning peer. This person may be rebuilding basics before job boards.\n" +
       knownFacts +
+      resources +
       "Ask ONE short question that builds on what they already said — a skill, schedule, asset, or what feels workable.\n" +
       "Do not re-ask vehicle, ID, housing, or children if they already covered it. Do not ask about medical, substance-use, or mental-health history. Plain text only.\n\n" +
       `User: ${safe}${pathNote}`
@@ -97,6 +120,7 @@ export function buildClarifyingPrompt(userText, options = {}) {
     "You are whatimado — a warm career and life planning peer, not a licensed professional.\n" +
     "PRIVACY: Do not collect or repeat medical, substance-use, or mental-health details.\n" +
     knownFacts +
+    resources +
     "Ask exactly ONE short clarifying question that builds on something specific they already said.\n" +
     "Leave room for them to correct a misunderstanding. Do not rush them toward a plan.\n" +
     "Do not ask about ID, housing, transport, children, or where they live unless they raised a gap. Do not list career options yet. Plain text only.\n\n" +

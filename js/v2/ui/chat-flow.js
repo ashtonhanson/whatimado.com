@@ -1442,7 +1442,8 @@ export function initChatFlow(ctx) {
   frameEl?.composerInput?.addEventListener("input", () => {
     if (!frameEl.composerInput?.value.trim()) return;
     dismissGhostMap();
-    if (isPreRoadmapCompose()) ensureTypingFullStage();
+    /* Phone: re-docking the sheet mid-keystroke drops it behind the keyboard. Submit docks it. */
+    if (isPreRoadmapCompose() && !MOBILE_MQ.matches) ensureTypingFullStage();
   });
 
   frameEl?.addEventListener("composer-submit", (event) => {

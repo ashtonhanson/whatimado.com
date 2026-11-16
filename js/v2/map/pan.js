@@ -336,7 +336,7 @@ function svgMeetPaint(mapEl, stageRect) {
  *   centerRoadmapBand?: boolean
  * }} [options]
  */
-export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom, keepLeft = false, liftY = 0, biasX = 0, pinLeftFocus = false, centerRoadmapBand = false } = {}) {
+export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = null, includeNode, minZoom, maxZoom, fixedZoom, keepLeft = false, liftY = 0, biasX = 0, pinLeftFocus = false, centerRoadmapBand = false, bandTop = null } = {}) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const frame = document.getElementById("dynamic-frame");
   if (!stage || !frame) return { panX: 0, panY: 0, zoom: 1 };
@@ -347,7 +347,7 @@ export function computeTimelineFrameFit(mapEl, { centerNodeId = null, reserve = 
 
   const timeline = document.getElementById("map-timeline");
   /* Optical mid uses menu→prompt. Chrome/timeline only shrink the fit box so titles clear controls. */
-  const visualBandTop = menuClearScreenY(stageRect);
+  const visualBandTop = Number.isFinite(bandTop) ? bandTop : menuClearScreenY(stageRect);
   let top = visualBandTop;
   const chrome = stage.querySelector(".whatimado-map__chrome");
   if (chrome instanceof HTMLElement) {
