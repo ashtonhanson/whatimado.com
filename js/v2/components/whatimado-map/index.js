@@ -592,20 +592,22 @@ export class WhatimadoMap extends HTMLElement {
    */
   _syncMobileHeaderMapTools() {
     const headerSlot = document.getElementById("header-map-tools");
-    const railSlot = document.getElementById("rail-map-tools");
+    const cornerSlot = document.getElementById("map-corner-tools");
     const tools = this.querySelector(".whatimado-map__timeline-tools");
     const chrome = this.querySelector(".whatimado-map__chrome");
     const order = [this._helpBtn, this._linkBtn, this._youBtn].filter(Boolean);
     const show = this.classList.contains("is-roadmap-open");
     const mobile = window.matchMedia("(max-width: 900px)").matches;
-    const activeSlot = mobile ? headerSlot : railSlot;
-    const idleSlot = mobile ? railSlot : headerSlot;
+    /* Phone: menu bar. Desktop: upper right corner of the map space. */
+    const activeSlot = mobile ? headerSlot : cornerSlot;
+    const idleSlots = [mobile ? cornerSlot : headerSlot, document.getElementById("rail-map-tools")];
 
     if (tools) tools.hidden = true;
-    if (idleSlot) {
-      idleSlot.hidden = true;
-      idleSlot.setAttribute("aria-hidden", "true");
-    }
+    idleSlots.forEach((slot) => {
+      if (!slot) return;
+      slot.hidden = true;
+      slot.setAttribute("aria-hidden", "true");
+    });
 
     if (!show) {
       if (activeSlot) {
@@ -3406,7 +3408,10 @@ export class WhatimadoMap extends HTMLElement {
             item.side === "above" &&
             item.top < item.ny - item.nr - 16 - item.h - 1
         );
-      const openHome = isOpenHomePhase();
+      /* The landing constellation keeps its homepage titles after the chat starts, until real paths replace it. */
+      const openHome =
+        isOpenHomePhase() ||
+        texts.every((text) => (text.closest(".whatimado-map__node")?.getAttribute("data-node-id") || "").startsWith("ghost-"));
       /* Title box height on screen; the phone landing runs a few sizes smaller. */
       const labelTarget = mobile && openHome ? LABEL_SCREEN_PX - 3 : LABEL_SCREEN_PX;
       /* Phone: You and everything branching off it (spokes, unchosen paths) run two sizes smaller. */

@@ -434,6 +434,11 @@ whatimado-frame .whatimado-frame__composer {
   pointer-events: none;
 }
 
+/* Multiple-choice answers replace the prompt until they are answered. */
+whatimado-frame:has(#v2-intake-chips) .whatimado-frame__composer {
+  display: none !important;
+}
+
 /* One soft glow under the prompt + Send pair (not separate shadows). */
 whatimado-frame .whatimado-frame__composer::before {
   content: "";

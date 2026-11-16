@@ -102,6 +102,8 @@ export function hideIntakeChips(container) {
 export function renderIntakeChips(container, spec) {
   if (!container) return;
   hideIntakeChips(container);
+  const composerInput = frameFor(container)?.querySelector(".whatimado-frame__composer-input");
+  if (composerInput && document.activeElement === composerInput) composerInput.blur();
 
   const wrap = document.createElement("div");
   wrap.id = CHIPS_ID;

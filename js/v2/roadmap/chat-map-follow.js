@@ -178,7 +178,11 @@ function visibilityScore(rect, viewTop, viewBottom, midY) {
   const elMid = (rect.top + rect.bottom) / 2;
   const dist = Math.abs(elMid - midY);
   const viewH = Math.max(1, viewBottom - viewTop);
-  return overlap / viewH - dist / viewH;
+  /* Short rows (mission bars) on a tall desktop column must still score. */
+  const closeness = 1 - dist / viewH;
+  if (closeness <= 0) return 0;
+  const shown = overlap / Math.max(1, rect.height);
+  return closeness * (0.5 + 0.5 * shown);
 }
 
 export { NEAR_BOTTOM_PX };

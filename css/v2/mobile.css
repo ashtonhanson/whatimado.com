@@ -1239,6 +1239,20 @@
     border-top: none;
   }
 
+  /*
+   * iOS scrolls overflow:hidden ancestors to chase the caret while typing,
+   * sliding the prompt out of view. clip is not a scroll container.
+   */
+  .v2-main,
+  whatimado-frame.is-mobile-docked .whatimado-frame__inner,
+  whatimado-frame.is-mobile-docked .whatimado-frame__body-wrap {
+    overflow: clip;
+  }
+
+  body.v2-app.is-mobile-composer-focus .v2-main {
+    overflow: clip !important;
+  }
+
   /* Never let the keyboard-docked sheet collapse to an invisible sliver. */
   whatimado-frame.is-mobile-docked.is-mobile-keyboard {
     z-index: 80;

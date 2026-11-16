@@ -835,6 +835,28 @@ export class WhatimadoFrame extends HTMLElement {
     }
     scheduleComposerDraftSave(value);
     this._autosizeComposer();
+    if (this._dock?.mobileMode && document.body.classList.contains("is-mobile-composer-focus")) {
+      this._relockMobileTypingScroll();
+      requestAnimationFrame(() => this._relockMobileTypingScroll());
+    }
+  }
+
+  /** iOS scrolls the page and clipped ancestors to chase the caret on each keystroke. */
+  _relockMobileTypingScroll() {
+    if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+    for (const el of [
+      document.scrollingElement,
+      document.body,
+      this.closest(".v2-main"),
+      this,
+      this.querySelector(".whatimado-frame__inner")
+    ]) {
+      if (el && (el.scrollTop || el.scrollLeft)) {
+        el.scrollTop = 0;
+        el.scrollLeft = 0;
+      }
+    }
+    this._dock?.syncMobileKeyboard();
   }
 
   /** Grow the prompt textarea with content — expands downward line by line. */
