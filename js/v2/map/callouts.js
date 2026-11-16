@@ -51,7 +51,7 @@ export function pinSpokeTitles(items, bounds = null) {
     item.side = "above";
     const ideal = item.nx - item.w / 2;
     item.left = ideal;
-    item.top = item.ny - nr - gap - item.h;
+    item.top = item.ny - nr - gap - item.h + (item.descent || 0);
     if (!bounds) continue;
     const clamped = Math.min(Math.max(item.left, bounds.left + edge), bounds.right - edge - item.w);
     /* A small nudge keeps the word on screen. A bigger slide would leave the dot. */
@@ -87,11 +87,23 @@ export function placeTitlesAbove(items, bounds = null, gap = 6) {
   for (const item of items) {
     item.side = "above";
     item.left = item.nx - item.w / 2;
-    item.top = item.ny - (item.nr || 6) - gap - item.h;
+    /* Gap runs from the letters' baseline, not the empty descender space under it. */
+    item.top = item.ny - (item.nr || 6) - gap - item.h + (item.descent || 0);
     /* A dot past the stage edge keeps its title with it rather than sliding into view alone. */
     if (!bounds || item.nx < bounds.left || item.nx > bounds.right) continue;
     item.left = Math.min(Math.max(item.left, bounds.left + edge), Math.max(bounds.left + edge, bounds.right - edge - item.w));
   }
+}
+
+/** @param {{ left: number, top: number, w: number, h: number }} a @param {{ left: number, top: number, w: number, h: number }} b */
+function boxesTouch(a, b) {
+  return a.left < b.left + b.w + 2 && a.left + a.w + 2 > b.left && a.top < b.top + b.h + 2 && a.top + a.h + 2 > b.top;
+}
+
+/** @param {{ nx: number, ny: number, nr?: number }} dot @param {{ left: number, top: number, w: number, h: number }} box */
+function dotInBox(dot, box) {
+  const r = (dot.nr || 6) + 3;
+  return dot.nx + r > box.left && dot.nx - r < box.left + box.w && dot.ny + r > box.top && dot.ny - r < box.top + box.h;
 }
 
 /**
@@ -99,7 +111,7 @@ export function placeTitlesAbove(items, bounds = null, gap = 6) {
  * @param {{ nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number }} item
  * @param {Array<{ nx: number, ny: number, nr?: number }>} dots
  */
-function stepRightPastDots(item, dots) {
+function stepRightPastDots(item, dots, gap = 5) {
   for (let pass = 0; pass < dots.length; pass += 1) {
     let moved = false;
     for (const dot of dots) {
@@ -107,7 +119,7 @@ function stepRightPastDots(item, dots) {
       const r = (dot.nr || 6) + 3;
       if (dot.nx + r <= item.left || dot.nx - r >= item.left + item.w) continue;
       if (dot.ny + r <= item.top || dot.ny - r >= item.top + item.h) continue;
-      item.left = dot.nx + r + 6;
+      item.left = dot.nx + (dot.nr || 6) + gap;
       moved = true;
     }
     if (!moved) break;
@@ -145,29 +157,63 @@ function stackRightTitles(items) {
 }
 
 /**
- * Task and unchosen path titles sit to the right of their dots; every other
- * title sits with its bottom ~gap px above the node.
+ * Task and unchosen path titles sit gap px to the right of their dots; every other
+ * title sits gap px above the node. The homepage map puts every title above.
  * @param {Array<{ role?: string, nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string }>} items
  * @param {{ left: number, right: number } | null} [bounds]
+ * @param {number} [gap]
+ * @param {{ pathsRight?: boolean }} [options]
  */
-export function placeTitlesRoadmapStyle(items, bounds = null, gap = 5) {
+export function placeTitlesRoadmapStyle(items, bounds = null, gap = 5, { pathsRight = true } = {}) {
   const tasks = [];
   const rest = [];
   for (const item of items) {
-    if (item.role === "task" || item.kind === "path") tasks.push(item);
+    if (item.role === "task" || (pathsRight && item.kind === "path")) tasks.push(item);
     else rest.push(item);
   }
   placeTitlesAbove(rest, bounds, gap);
   for (const item of tasks) {
     item.side = "right";
-    item.left = item.nx + (item.nr || 6) + 8;
+    item.left = item.nx + (item.nr || 6) + gap;
     item.top = item.ny - item.h / 2;
   }
-  for (let round = 0; round < 2; round += 1) {
-    tasks.forEach((item) => stepRightPastDots(item, items));
-    stackRightTitles(tasks);
+  /* A dot in the way on the right sends a path title above its own dot when that spot is clear,
+     so it never drifts away from the node it names. You's title has not picked above or
+     below yet, so it cannot block anything here. */
+  const settled = rest.filter((item) => item.kind !== "start");
+  for (const item of tasks) {
+    if (item.role === "task") continue;
+    const nominal = item.left;
+    stepRightPastDots(item, items, gap);
+    if (item.left <= nominal + 0.5 && !settled.some((other) => boxesTouch(item, other))) {
+      settled.push(item);
+      continue;
+    }
+    const above = {
+      left: item.nx - item.w / 2,
+      top: item.ny - (item.nr || 6) - gap - item.h + (item.descent || 0),
+      w: item.w,
+      h: item.h
+    };
+    const clear =
+      !items.some((dot) => dot !== item && dotInBox(dot, above)) &&
+      !settled.some((other) => boxesTouch(above, other));
+    if (clear) {
+      item.side = "above";
+      item.left = above.left;
+      item.top = above.top;
+      settled.push(item);
+    }
   }
-  tasks.forEach((item) => stepRightPastDots(item, items));
+  const right = tasks.filter((item) => item.side === "right");
+  right.forEach((item) => {
+    item.left = item.nx + (item.nr || 6) + gap;
+  });
+  for (let round = 0; round < 2; round += 1) {
+    right.forEach((item) => stepRightPastDots(item, items, gap));
+    stackRightTitles(right);
+  }
+  right.forEach((item) => stepRightPastDots(item, items, gap));
   /* Spokes fan out above You, so its title drops below the dot when one sits in the way. */
   const you = items.find((item) => item.kind === "start");
   if (!you) return;

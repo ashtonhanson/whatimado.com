@@ -1,5 +1,5 @@
 import { initBrand } from "./config.js";
-import { initChatFlow } from "./ui/chat-flow.js?v=20261114-follow-goal";
+import { initChatFlow } from "./ui/chat-flow.js?v=20261115-title-steady";
 import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
 import { initMobileNav } from "./mobile-nav.js";
@@ -11,8 +11,8 @@ import { trackEvent } from "./state/analytics.js";
 import { initShareMeta } from "./share-meta.js";
 
 await initBrand();
-await import("./components/whatimado-frame.js?v=20261114-follow-goal");
-await import("./components/whatimado-map.js?v=20261114-follow-goal");
+await import("./components/whatimado-frame.js?v=20261115-title-steady");
+await import("./components/whatimado-map.js?v=20261115-title-steady");
 
 /** @type {import("./components/whatimado-frame.js").WhatimadoFrame|null} */
 const frameEl = document.getElementById("dynamic-frame");

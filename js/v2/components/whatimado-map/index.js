@@ -70,6 +70,8 @@ const EDGE_TUCK = 0.6;
 const EDGE_THICK_SCALE = 2.4;
 /** Painted height of one title line, in screen px, at every zoom. */
 const LABEL_SCREEN_PX = 20;
+/** Screen px between a dot's edge and its title, above or to the right. */
+const TITLE_GAP_PX = 5;
 /** "My Paths" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
@@ -166,6 +168,25 @@ function screenBoxesOverlap(a, b, pad) {
  * If two titles touch, lift the higher node's title. Horizontal position stays on that node.
  * @param {Array<{ left: number, top: number, w: number, h: number, nx: number, ny: number, nr?: number, side?: string }>} items
  */
+/**
+ * Screen px between the last line's baseline and the bottom of the text box.
+ * @param {SVGTextElement} text
+ * @param {DOMRect} rect
+ */
+function labelDescent(text, rect) {
+  const spans = text.querySelectorAll("tspan");
+  const last = spans[spans.length - 1];
+  const ctm = text.getScreenCTM();
+  if (!(last instanceof SVGTSpanElement) || !ctm || !last.getNumberOfChars()) return 0;
+  try {
+    const start = last.getStartPositionOfChar(0);
+    const baseline = start.matrixTransform(ctm).y;
+    return Math.max(0, Math.min(rect.height / 2, rect.bottom - baseline));
+  } catch {
+    return 0;
+  }
+}
+
 function holdTitlesOnNodes(items) {
   const homeTop = new Map(items.map((item) => [item, item.top]));
   for (let pass = 0; pass < 8; pass++) {
@@ -2085,6 +2106,31 @@ export class WhatimadoMap extends HTMLElement {
       "transform",
       `translate(${this._panX}, ${shiftY + this._panY}) translate(${SCALE_CENTER_X}, ${SCALE_CENTER_Y}) scale(${z}) translate(${-SCALE_CENTER_X}, ${-SCALE_CENTER_Y})`
     );
+    this._holdLabelScreenSize(z);
+  }
+
+  /**
+   * Between title fits, a camera zoom would grow or shrink every title and its gap.
+   * Counter-scale each title about the dot edge it hangs from so both stay put on screen.
+   * @param {number} z
+   */
+  _holdLabelScreenSize(z) {
+    const fitZoom = this._calloutZoom;
+    if (!this._liveLayer || !Number.isFinite(fitZoom) || !(z > 0)) return;
+    const k = fitZoom / z;
+    const still = Math.abs(k - 1) < 0.0005;
+    this._liveLayer
+      .querySelectorAll(".whatimado-map__label, .whatimado-map__kicker, .whatimado-map__goal-title, .whatimado-map__goal-income")
+      .forEach((el) => {
+        if (still) {
+          el.removeAttribute("transform");
+          return;
+        }
+        const ax = el.dataset.anchorX;
+        const ay = el.dataset.anchorY;
+        if (ax == null || ay == null) return;
+        el.setAttribute("transform", `translate(${ax} ${ay}) scale(${k.toFixed(4)}) translate(${-ax} ${-ay})`);
+      });
   }
 
   _detachGlobalPanListeners() {
@@ -3108,6 +3154,11 @@ export class WhatimadoMap extends HTMLElement {
       } catch {
         return;
       }
+      group.querySelectorAll(".whatimado-map__goal-title, .whatimado-map__goal-income").forEach((el) => {
+        if (!(el instanceof SVGElement)) return;
+        el.dataset.anchorX = (box.x + box.width / 2).toFixed(2);
+        el.dataset.anchorY = (box.y + box.height / 2).toFixed(2);
+      });
       const gap = fontPx * 0.3;
       const titleSize = fontPx * 1.05;
       const incomeSize = fontPx * 0.9;
@@ -3241,6 +3292,8 @@ export class WhatimadoMap extends HTMLElement {
 
     this._layingOut = true;
     try {
+      this._calloutZoom = this._zoom;
+      this._holdLabelScreenSize(this._zoom);
       const dotBoost = this._syncRoadmapDotSize();
       const restCenter = (body) => {
         const host = body?.closest(".whatimado-map__node");
@@ -3294,6 +3347,7 @@ export class WhatimadoMap extends HTMLElement {
         const labelH = Math.max(4, rect.height);
         return {
           text,
+          descent: labelDescent(text, rect),
           tspan: text.querySelector("tspan"),
           kicker: kickerH ? kicker : null,
           kickerH,
@@ -3374,7 +3428,7 @@ export class WhatimadoMap extends HTMLElement {
         items = buildItems();
         if (!items.length) return;
         /* Placement is relative to each dot only, so moving the map never shifts a title. */
-        placeTitlesRoadmapStyle(items, null, 5);
+        placeTitlesRoadmapStyle(items, null, TITLE_GAP_PX, { pathsRight: !openHome });
         items.forEach((item) => clearTitleFromNodes(item, dots));
         holdTitlesOnNodes(items);
         items.forEach((item) => clearTitleFromNodes(item, dots));
@@ -3451,8 +3505,23 @@ export class WhatimadoMap extends HTMLElement {
     };
 
     items.forEach((item) => {
+      /* Titles beside a dot are left-justified; titles above or below are centered. */
+      item.text.setAttribute("text-anchor", item.side === "right" ? "start" : item.side === "left" ? "end" : "middle");
       const ctm = item.group.getScreenCTM();
       if (!ctm) return;
+      const body = item.group.querySelector(".whatimado-map__node-body");
+      if (body) {
+        const cx = parseFloat(body.getAttribute("cx") || "0");
+        const cy = parseFloat(body.getAttribute("cy") || "0");
+        const r = item.nr / (Math.hypot(ctm.a, ctm.b) || 1);
+        const [ax, ay] =
+          item.side === "right" ? [cx + r, cy] : item.side === "left" ? [cx - r, cy] : item.side === "below" ? [cx, cy + r] : [cx, cy - r];
+        [item.text, item.kicker].forEach((el) => {
+          if (!el) return;
+          el.dataset.anchorX = ax.toFixed(2);
+          el.dataset.anchorY = ay.toFixed(2);
+        });
+      }
       const point = svg.createSVGPoint();
       point.x = item.left + item.w / 2;
       point.y = item.top + item.kickerH + item.labelH * 0.86;
