@@ -1,1 +1,1 @@
-export { WhatimadoMap } from "./whatimado-map/index.js?v=20261123-sky-orbs";
+export { WhatimadoMap } from "./whatimado-map/index.js?v=20261123-follow-orbs6";

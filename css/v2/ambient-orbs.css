@@ -6,8 +6,9 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 0;
-  height: 0;
+  /* Fallback band until JS sizes to the live stage ∩ prompt. */
+  width: 100%;
+  height: min(52vh, var(--whatimado-frame-top, 42vh));
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
@@ -18,33 +19,34 @@
   top: 0;
   left: 0;
   border-radius: 50%;
-  filter: blur(36px);
-  opacity: 0.62;
+  filter: blur(26px);
+  opacity: 0.92;
   will-change: transform;
   background: radial-gradient(
     circle at 35% 30%,
-    rgba(200, 230, 255, 0.72) 0%,
-    rgba(110, 185, 232, 0.48) 40%,
-    rgba(110, 185, 232, 0.16) 68%,
+    rgba(210, 235, 255, 0.95) 0%,
+    rgba(110, 185, 232, 0.7) 38%,
+    rgba(110, 185, 232, 0.28) 66%,
     transparent 78%
   );
   box-shadow:
-    0 0 70px rgba(143, 208, 255, 0.42),
-    inset 0 0 40px rgba(255, 255, 255, 0.14);
-  mix-blend-mode: screen;
+    0 0 80px rgba(143, 208, 255, 0.55),
+    0 0 140px rgba(110, 185, 232, 0.28),
+    inset 0 0 40px rgba(255, 255, 255, 0.18);
   transform: translate3d(0, 0, 0) scale(1);
 }
 
 .v2-ambient-orb--a {
-  width: min(46vw, 400px);
-  height: min(46vw, 400px);
+  /* Size is set from JS to fit the live map band; these are only first-paint defaults. */
+  width: min(36vw, 260px);
+  height: min(36vw, 260px);
   z-index: 1;
 }
 
 .v2-ambient-orb--b {
-  width: min(54vw, 480px);
-  height: min(54vw, 480px);
-  opacity: 0.5;
+  width: min(42vw, 300px);
+  height: min(42vw, 300px);
+  opacity: 0.78;
   z-index: 2;
 }
 
@@ -77,20 +79,24 @@
 }
 
 @media (max-width: 900px) {
+  .v2-ambient-orbs {
+    height: min(46vh, var(--whatimado-frame-top, 40vh));
+  }
+
   .v2-ambient-orb {
-    filter: blur(30px);
-    opacity: 0.55;
+    filter: blur(22px);
+    opacity: 0.88;
   }
 
   .v2-ambient-orb--a {
-    width: min(64vw, 320px);
-    height: min(64vw, 320px);
+    width: min(68vw, 340px);
+    height: min(68vw, 340px);
   }
 
   .v2-ambient-orb--b {
-    width: min(74vw, 380px);
-    height: min(74vw, 380px);
-    opacity: 0.44;
+    width: min(78vw, 400px);
+    height: min(78vw, 400px);
+    opacity: 0.72;
   }
 
   .v2-map-context-frame {

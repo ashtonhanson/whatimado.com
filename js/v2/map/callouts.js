@@ -166,8 +166,9 @@ export function placeTitlesAbove(items, bounds = null, gap = 6) {
   for (const item of items) {
     item.side = "above";
     item.left = item.nx - item.w / 2;
-    /* Gap runs from the letters' baseline, not the empty descender space under it. */
-    item.top = item.ny - (item.nr || 6) - gap - item.h + (item.descent || 0);
+    /* Gap from the dot edge to the title box; keep a little extra air under uppercase labels. */
+    const clear = Math.max(gap, 10);
+    item.top = item.ny - (item.nr || 6) - clear - item.h + (item.descent || 0) * 0.35;
     /* A dot past the stage edge keeps its title with it rather than sliding into view alone. */
     if (!bounds || item.nx < bounds.left || item.nx > bounds.right) continue;
     item.left = Math.min(Math.max(item.left, bounds.left + edge), Math.max(bounds.left + edge, bounds.right - edge - item.w));

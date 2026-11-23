@@ -43,7 +43,7 @@ import {
   separateHomeTitles,
   trailNodeIds,
   wrapMapLabel
-} from "../../map/callouts.js";
+} from "../../map/callouts.js?v=20261123-follow-orbs6";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -78,7 +78,7 @@ const EDGE_THICK_SCALE = 2.4;
 /** Painted height of one title line, in screen px, at every zoom. */
 const LABEL_SCREEN_PX = 20;
 /** Screen px between a dot's edge and its title, above or to the right. */
-const TITLE_GAP_PX = 5;
+const TITLE_GAP_PX = 16;
 /** "My Paths" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
@@ -1015,7 +1015,7 @@ export class WhatimadoMap extends HTMLElement {
   /** True when chat-scroll may drive the camera. */
   canChatFollow() {
     if (this._cameraHeld) return false;
-    if (this._chatFollowPaused || this._userPanned) return false;
+    if (this._chatFollowPaused) return false;
     if (this._panPointer || this._pinch) return false;
     /* Focus-pin packs the band while typing; keyboard freeze must not be fought. */
     if (this.dataset.focusPinned === "1") return false;
@@ -1026,29 +1026,29 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Smooth horizontal pan so the chat-visible mission/task sits in the open band.
-   * Y locks after the first settle — the focal band already covers the vertical row
-   * of nodes and titles, so focus switches only slide left/right.
+   * Pan so the chat-visible mission/task sits in the open band above the prompt.
+   * Chat reclaiming focus clears a sticky user-pan so scroll can drive the camera again.
    * @param {string|null|undefined} id
    * @param {{ animate?: boolean, soft?: boolean }} [options]
    */
   followChatNode(id, { animate = true, soft = false } = {}) {
     if (!this.canChatFollow()) return;
     if (!id || !this._liveNodes.some((node) => node.id === id)) return;
+    /* Chat focus reclaims the camera after a manual pan/zoom. */
+    this._userPanned = false;
 
+    const target = computePanForNodeAboveFrame(this, id);
     const alreadyHere =
       this._chatFollowId === id &&
       this._chatFollowTargetId === id &&
-      this._nodeCenteredOnFollowX(id);
+      this._nodeCenteredOnFollowX(id) &&
+      Math.abs(target.panY - this._panY) < 8;
     if (soft && (alreadyHere || this._gravityRaf != null)) return;
     if (!soft && alreadyHere) return;
     /* Same target already easing in — do not restart mid-glide. */
     if (animate && this._chatFollowTargetId === id && this._gravityRaf != null) return;
 
     const keptZoom = this._zoom;
-    const target = computePanForNodeAboveFrame(this, id);
-    /* Chat scroll only slides the map sideways; height stays where the snap fit put it. */
-    const panY = this._panY;
     this._chatFollowHasY = true;
     this._chatFollowId = id;
     this._chatFollowTargetId = id;
@@ -1056,14 +1056,14 @@ export class WhatimadoMap extends HTMLElement {
 
     if (!animate) {
       this._panX = target.panX;
-      this._panY = panY;
+      this._panY = target.panY;
       this._applyPanTransform();
       return;
     }
 
     /* Longer inout ease — retargetable, no title reflow. Always glide (never hard-snap). */
     const duration = this._driftReducedMotion ? 480 : 860;
-    this._animatePanTo(target.panX, panY, true, {
+    this._animatePanTo(target.panX, target.panY, true, {
       duration,
       ease: "inout",
       layout: false,
@@ -1086,9 +1086,9 @@ export class WhatimadoMap extends HTMLElement {
     if (resumeMs <= 0) return;
     this._chatFollowResumeTimer = window.setTimeout(() => {
       this._chatFollowResumeTimer = null;
-      /* The user moved the map: it stays where they put it until the crosshair or a new path. */
-      if (this._userPanned) return;
+      /* Always lift the temporary pause so chat can reclaim; skip auto-resume when they parked the camera. */
       this._chatFollowPaused = false;
+      if (this._userPanned) return;
       this.dispatchEvent(new CustomEvent("chat-follow-resume", { bubbles: true }));
     }, resumeMs);
   }
@@ -1709,6 +1709,7 @@ export class WhatimadoMap extends HTMLElement {
       } else {
         this._gravityRaf = null;
         this.classList.remove("is-camera-easing");
+        this._layoutCallouts();
       }
     };
     this._zoom = from.zoom;
@@ -4011,14 +4012,14 @@ export class WhatimadoMap extends HTMLElement {
             ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan><tspan x="${cx}" dy="1.15em">per year</tspan></text>` : ""}`
               : ""}
             ${kickerText
-              ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`
+              ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy - r - (TITLE_GAP_PX + 28)}">${escapeHtml(kickerText)}</tspan></text>`
               : ""}
-            ${titleLines.length ? `<rect class="whatimado-map__label-hit" x="${cx}" y="${cy}" width="0" height="0" />` : ""}
+            ${titleLines.length ? `<rect class="whatimado-map__label-hit" x="${cx}" y="${cy - r - (TITLE_GAP_PX + 10)}" width="0" height="0" />` : ""}
             ${titleLines.length
               ? `<text class="whatimado-map__label" text-anchor="middle">${titleLines
                   .map(
                     (line, lineIndex) =>
-                      `<tspan x="${cx}"${lineIndex ? ' dy="1.15em"' : ` y="${cy}"`}>${escapeHtml(line)}</tspan>`
+                      `<tspan x="${cx}"${lineIndex ? ' dy="1.15em"' : ` y="${cy - r - (TITLE_GAP_PX + 10)}"`}>${escapeHtml(line)}</tspan>`
                   )
                   .join("")}</text>`
               : ""}
