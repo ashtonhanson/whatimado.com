@@ -178,19 +178,28 @@ function computeOpenHomeBandPan(mapEl, gapPx, belowPadPx) {
   if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
 
   const textTop = brand?.getBoundingClientRect().top ?? kicker?.getBoundingClientRect().top ?? stageRect.bottom;
-  const top = menuClearScreenY(stageRect) + OPEN_HOME_LABEL_ABOVE_PX;
+  /* Phone: less top reserve so the fan can grow; titles still clear the menu. */
+  const labelAbove = MOBILE_MQ.matches ? 28 : OPEN_HOME_LABEL_ABOVE_PX;
+  const top = menuClearScreenY(stageRect) + labelAbove;
   const bottom = textTop - gapPx - belowPadPx;
 
   const dots = getNodeBounds(mapEl);
   const shiftY = readGraphShiftY();
   const { scaleY } = unitsPerPixel(mapEl, stageRect);
   const availablePx = Math.max(24, bottom - top);
-  const naturalPx = Math.max(1, dots.maxY - dots.minY) / scaleY;
+  /* Phone home: fit to dot centers (not float/radius padding) so You spokes can grow longer. */
+  let naturalPx = Math.max(1, dots.maxY - dots.minY) / scaleY;
+  if (MOBILE_MQ.matches) {
+    const ys = mapEl._liveNodes.filter((n) => n.type !== "goal").map((n) => n.y * VIEW_H);
+    const span = Math.max(1, Math.max(...ys) - Math.min(...ys));
+    naturalPx = span / scaleY;
+  }
   /* Larger open band (frame.css) lets the homepage constellation grow; +15px on top of the fit. */
+  const grow = MOBILE_MQ.matches ? 1.28 : (naturalPx + 15) / Math.max(1, naturalPx);
   const fitted = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(OPEN_HOME_ZOOM_MAX, availablePx / naturalPx));
   const zoom = Math.max(
     OPEN_HOME_ZOOM_MIN,
-    Math.min(OPEN_HOME_ZOOM_MAX, fitted * ((naturalPx + 15) / Math.max(1, naturalPx)))
+    Math.min(OPEN_HOME_ZOOM_MAX, fitted * grow)
   );
   const graphTop = top + Math.max(0, availablePx - naturalPx * zoom) / 2;
   const yPrime = (graphTop - stageRect.top) * scaleY;

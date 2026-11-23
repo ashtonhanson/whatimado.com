@@ -1,4 +1,4 @@
-import { GHOST_GRAPH, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
+import { getGhostGraph, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js?v=20261123-home-spread16";
 import { goalIncomeRange } from "../../map/goal-income.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
@@ -43,7 +43,7 @@ import {
   separateHomeTitles,
   trailNodeIds,
   wrapMapLabel
-} from "../../map/callouts.js?v=20261123-titles-above13";
+} from "../../map/callouts.js?v=20261123-home-spread16";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -59,7 +59,7 @@ import {
   chatFollowCenterX,
   computeTimelineFrameFit,
   isOpenHomePhase
-} from "../../map/pan.js?v=20261123-titles-above13";
+} from "../../map/pan.js?v=20261123-home-spread16";
 
 /** How long the camera eases into a snap or crosshair home. */
 const CAMERA_EASE_MS = 360;
@@ -79,8 +79,8 @@ const EDGE_THICK_SCALE = 2.4;
 const LABEL_SCREEN_PX = 20;
 /** Screen px between a dot's edge and its title, above or to the right. */
 const TITLE_GAP_PX = 5;
-/* Landing titles need extra air — descent compensation otherwise parks them on the dots. */
-const HOME_TITLE_GAP_PX = 12;
+/* Landing titles need a little air above the dot without floating far off it. */
+const HOME_TITLE_GAP_PX = 8;
 /** "My Paths" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
@@ -737,9 +737,10 @@ export class WhatimadoMap extends HTMLElement {
 
   /** Floating nodes on load — edges live on the live layer so they persist after ghost dismiss */
   loadAmbientLiveGraph() {
-    this._liveNodes = GHOST_GRAPH.nodes;
+    const ghost = getGhostGraph();
+    this._liveNodes = ghost.nodes;
     this._anchorId = "ghost-start";
-    this._renderLayer(this._liveLayer, GHOST_GRAPH.nodes, GHOST_GRAPH.edges, {
+    this._renderLayer(this._liveLayer, ghost.nodes, ghost.edges, {
       layer: "live"
     });
     this._applyAnchorStyles();
