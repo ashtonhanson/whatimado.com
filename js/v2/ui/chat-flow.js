@@ -53,6 +53,7 @@ import { createDraftsController } from "../roadmap/drafts.js";
 import { createTaskChatController } from "../roadmap/task-chat.js";
 import { highlightIdsForChatFocus, hoverChatTargetId, resolveMapNodeActivation } from "../roadmap/map-chat-focus.js";
 import { bindChatMapFollow } from "../roadmap/chat-map-follow.js";
+import { syncMapContextFrame } from "../ambient-orbs.js";
 
 const PATHS_READY_TURN = 3;
 
@@ -323,12 +324,16 @@ export function initChatFlow(ctx) {
 
   function paintOpenContext(id) {
     document.querySelectorAll(".is-open-context").forEach((el) => el.classList.remove("is-open-context"));
-    if (!id) return;
+    if (!id) {
+      syncMapContextFrame();
+      return;
+    }
     const node = graphStore.nodes.find((entry) => entry.id === id);
     if (node?.type === "task") {
       markTaskCard(node.id);
       const mission = graphStore.nodes.find((entry) => entry.id === node.parentId && entry.type === "mission");
       markMissionStage(mission);
+      syncMapContextFrame();
       return;
     }
     if (node?.type === "mission") {
@@ -338,6 +343,7 @@ export function initChatFlow(ctx) {
         (entry) => entry.type === "task" && entry.id === progressId && entry.parentId === node.id
       );
       if (task) markTaskCard(task.id);
+      syncMapContextFrame();
       return;
     }
     if (node?.type === "path") {
@@ -346,6 +352,7 @@ export function initChatFlow(ctx) {
         ?.classList.add("is-open-context");
       selectionPanel?.classList.add("is-open-context");
     }
+    syncMapContextFrame();
   }
 
   /** Scroll the chat to the roadmap card that matches this path node. */

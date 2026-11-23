@@ -161,6 +161,19 @@ export function visibleChatWorkId(frameEl) {
     });
   }
 
+  /* Framed selection panel — same path id drives map highlight when it is in view. */
+  const selection = body.querySelector("#selection-panel");
+  if (selection instanceof HTMLElement && !selection.classList.contains("hidden")) {
+    const pathId =
+      selection.getAttribute("data-path-id") ||
+      appStore.journey?.selectedPathId ||
+      appStore.journey?.roadmapPathId ||
+      "";
+    if (pathId) {
+      consider(pathId, visibilityScore(selection.getBoundingClientRect(), viewTop, viewBottom, midY), 2.5);
+    }
+  }
+
   return best?.id || "";
 }
 

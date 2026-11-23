@@ -1,9 +1,21 @@
 /**
- * Random sky-blue orb drift behind the node map.
- * Orbs stay in .v2-main under whatimado-map, wander independently, and swap layer order.
+ * Sky-blue orbs cycle smoothly behind the node map band (above the prompt).
+ * A matching context frame lights when a framed chat section is open.
  */
 
-/** @typedef {{ el: HTMLElement, x: number, y: number, tx: number, ty: number, scale: number, tScale: number, speed: number, z: number }} OrbState */
+/** @typedef {{
+ *   el: HTMLElement,
+ *   angle: number,
+ *   omega: number,
+ *   rx: number,
+ *   ry: number,
+ *   tRx: number,
+ *   tRy: number,
+ *   scale: number,
+ *   tScale: number,
+ *   phase: number,
+ *   z: number
+ * }} OrbState */
 
 const REDUCE_MQ = "(prefers-reduced-motion: reduce)";
 
@@ -16,22 +28,36 @@ function rand(min, max) {
 }
 
 /**
- * @param {HTMLElement} host
- * @param {HTMLElement} orbEl
+ * Visible constellation band: map stage clipped by the prompt frame top.
+ * @param {HTMLElement} main
  */
-function pickTarget(host, orbEl) {
-  const hw = host.clientWidth || 1;
-  const hh = host.clientHeight || 1;
-  const ow = orbEl.offsetWidth || 320;
-  const oh = orbEl.offsetHeight || 320;
-  /* Keep most of the glow inside the map visual band; allow dipping behind the prompt. */
-  const maxX = Math.max(8, hw - ow * 0.35);
-  const maxY = Math.max(8, hh - oh * 0.25);
-  return {
-    x: rand(-ow * 0.2, maxX),
-    y: rand(-oh * 0.12, maxY * 0.92),
-    scale: rand(0.88, 1.14)
-  };
+function mapBandRect(main) {
+  const map = document.querySelector("whatimado-map");
+  const stage = map?.querySelector(".whatimado-map__stage");
+  const frame = document.querySelector("whatimado-frame");
+  const mainRect = main.getBoundingClientRect();
+  const stageRect = (stage || map)?.getBoundingClientRect();
+  if (!stageRect || stageRect.width < 40 || stageRect.height < 40) {
+    return { top: 0, left: 0, width: main.clientWidth, height: Math.max(120, main.clientHeight * 0.4) };
+  }
+  const frameTop = frame?.getBoundingClientRect().top ?? stageRect.bottom;
+  const top = Math.max(0, stageRect.top - mainRect.top);
+  const left = Math.max(0, stageRect.left - mainRect.left);
+  const width = Math.max(40, stageRect.width);
+  const bottom = Math.min(stageRect.bottom, frameTop - 8);
+  const height = Math.max(80, bottom - stageRect.top);
+  return { top, left, width, height };
+}
+
+/**
+ * @param {HTMLElement} el
+ * @param {{ top: number, left: number, width: number, height: number }} band
+ */
+function placeBandEl(el, band) {
+  el.style.top = `${Math.round(band.top)}px`;
+  el.style.left = `${Math.round(band.left)}px`;
+  el.style.width = `${Math.round(band.width)}px`;
+  el.style.height = `${Math.round(band.height)}px`;
 }
 
 /**
@@ -53,9 +79,29 @@ function shuffleLayers(orbs) {
   });
 }
 
+/** Framed chat sections that already carry an open-context highlight. */
+export function framedOpenContextActive() {
+  return Boolean(
+    document.querySelector(
+      "#mission-stages .v2-mission.is-open-context:not(.is-done) .v2-mission-done-acc__bar"
+    ) ||
+      document.querySelector(".v2-path-card.is-open-context") ||
+      document.querySelector("#selection-panel.is-open-context")
+  );
+}
+
+/** Show/hide the map-band frame that mirrors the open chat section. */
+export function syncMapContextFrame() {
+  const frame = document.querySelector(".v2-map-context-frame");
+  if (!(frame instanceof HTMLElement)) return;
+  frame.classList.toggle("is-active", framedOpenContextActive());
+}
+
 export function initAmbientOrbs() {
+  const main = document.querySelector(".v2-main");
   const host = document.querySelector(".v2-ambient-orbs");
-  if (!(host instanceof HTMLElement)) return;
+  const contextFrame = document.querySelector(".v2-map-context-frame");
+  if (!(main instanceof HTMLElement) || !(host instanceof HTMLElement)) return;
 
   const els = [...host.querySelectorAll(".v2-ambient-orb")].filter(
     (el) => el instanceof HTMLElement
@@ -64,48 +110,76 @@ export function initAmbientOrbs() {
 
   /** @type {OrbState[]} */
   const orbs = els.map((el, i) => {
-    const start = pickTarget(host, el);
-    el.style.transform = `translate3d(${start.x}px, ${start.y}px, 0) scale(${start.scale})`;
+    const phase = i * Math.PI + rand(-0.2, 0.2);
     el.style.zIndex = String(i + 1);
     return {
       el,
-      x: start.x,
-      y: start.y,
-      tx: start.x,
-      ty: start.y,
-      scale: start.scale,
-      tScale: start.scale,
-      speed: rand(0.008, 0.018),
+      angle: phase,
+      omega: (i % 2 === 0 ? 1 : -1) * rand(0.00035, 0.00055),
+      rx: 120,
+      ry: 70,
+      tRx: 120,
+      tRy: 70,
+      scale: 1,
+      tScale: 1,
+      phase,
       z: i + 1
     };
   });
 
   let raf = 0;
-  let lastSwap = performance.now();
+  let lastRetarget = 0;
+  let lastSwap = 0;
   let reduced = window.matchMedia(REDUCE_MQ).matches;
+  let band = mapBandRect(main);
 
-  const retarget = () => {
-    for (const orb of orbs) {
-      const next = pickTarget(host, orb.el);
-      orb.tx = next.x;
-      orb.ty = next.y;
-      orb.tScale = next.scale;
-      orb.speed = rand(0.007, 0.02);
+  const layoutBand = () => {
+    band = mapBandRect(main);
+    placeBandEl(host, band);
+    if (contextFrame instanceof HTMLElement) {
+      const inset = Math.max(8, Math.min(18, band.width * 0.02));
+      placeBandEl(contextFrame, {
+        top: band.top + inset,
+        left: band.left + inset,
+        width: Math.max(40, band.width - inset * 2),
+        height: Math.max(40, band.height - inset * 2)
+      });
     }
   };
 
+  const retargetOrbit = () => {
+    const minAxis = Math.min(band.width, band.height);
+    for (const orb of orbs) {
+      orb.tRx = rand(minAxis * 0.16, minAxis * 0.34);
+      orb.tRy = rand(minAxis * 0.1, minAxis * 0.26);
+      orb.tScale = rand(0.9, 1.12);
+      /* Keep opposite-ish motion so they cycle around each other. */
+      const dir = orb.omega >= 0 ? 1 : -1;
+      orb.omega = dir * rand(0.00028, 0.00062);
+    }
+  };
+
+  const paintOrb = (orb) => {
+    const ow = orb.el.offsetWidth || 320;
+    const oh = orb.el.offsetHeight || 320;
+    const cx = band.width * 0.5 - ow * 0.5;
+    const cy = band.height * 0.48 - oh * 0.5;
+    const x = cx + Math.cos(orb.angle) * orb.rx;
+    const y = cy + Math.sin(orb.angle) * orb.ry;
+    orb.el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${orb.scale})`;
+  };
+
   const paintStatic = () => {
+    layoutBand();
     orbs.forEach((orb, i) => {
-      const parked =
-        i === 0
-          ? { x: host.clientWidth * 0.08, y: host.clientHeight * 0.12, scale: 1 }
-          : { x: host.clientWidth * 0.42, y: host.clientHeight * 0.28, scale: 1.05 };
-      orb.x = parked.x;
-      orb.y = parked.y;
-      orb.scale = parked.scale;
-      orb.el.style.transform = `translate3d(${parked.x}px, ${parked.y}px, 0) scale(${parked.scale})`;
+      orb.angle = i * Math.PI + 0.35;
+      orb.rx = Math.min(band.width, band.height) * (0.2 + i * 0.06);
+      orb.ry = Math.min(band.width, band.height) * (0.12 + i * 0.04);
+      orb.scale = 1 + i * 0.04;
+      paintOrb(orb);
     });
     shuffleLayers(orbs);
+    syncMapContextFrame();
   };
 
   const tick = (now) => {
@@ -114,27 +188,21 @@ export function initAmbientOrbs() {
       return;
     }
 
-    for (const orb of orbs) {
-      const dx = orb.tx - orb.x;
-      const dy = orb.ty - orb.y;
-      const ds = orb.tScale - orb.scale;
-      orb.x += dx * orb.speed;
-      orb.y += dy * orb.speed;
-      orb.scale += ds * orb.speed;
-      orb.el.style.transform = `translate3d(${orb.x}px, ${orb.y}px, 0) scale(${orb.scale})`;
-
-      if (Math.hypot(dx, dy) < 18 && Math.abs(ds) < 0.02) {
-        const next = pickTarget(host, orb.el);
-        orb.tx = next.x;
-        orb.ty = next.y;
-        orb.tScale = next.scale;
-        orb.speed = rand(0.007, 0.02);
-      }
+    if (now - lastRetarget > 7000) {
+      retargetOrbit();
+      lastRetarget = now;
     }
-
-    if (now - lastSwap > rand(5200, 11000)) {
+    if (now - lastSwap > rand(6500, 12000)) {
       shuffleLayers(orbs);
       lastSwap = now;
+    }
+
+    for (const orb of orbs) {
+      orb.angle += orb.omega;
+      orb.rx += (orb.tRx - orb.rx) * 0.012;
+      orb.ry += (orb.tRy - orb.ry) * 0.012;
+      orb.scale += (orb.tScale - orb.scale) * 0.02;
+      paintOrb(orb);
     }
 
     raf = window.requestAnimationFrame(tick);
@@ -143,13 +211,16 @@ export function initAmbientOrbs() {
   const start = () => {
     if (raf) window.cancelAnimationFrame(raf);
     raf = 0;
+    layoutBand();
     if (reduced) {
       paintStatic();
       return;
     }
-    retarget();
+    retargetOrbit();
+    lastRetarget = performance.now();
     lastSwap = performance.now();
     raf = window.requestAnimationFrame(tick);
+    syncMapContextFrame();
   };
 
   const mq = window.matchMedia(REDUCE_MQ);
@@ -161,8 +232,27 @@ export function initAmbientOrbs() {
   else mq.addListener?.(onMotionChange);
 
   window.addEventListener("resize", () => {
+    layoutBand();
     if (reduced) paintStatic();
-    else retarget();
+    else retargetOrbit();
+  });
+
+  /* Prompt snap / dock changes the band height. */
+  const frame = document.querySelector("whatimado-frame");
+  if (frame) {
+    const mo = new MutationObserver(() => {
+      layoutBand();
+      syncMapContextFrame();
+    });
+    mo.observe(frame, { attributes: true, attributeFilter: ["data-snap", "class", "style"] });
+  }
+
+  /* Open-context class toggles elsewhere. */
+  const bodyMo = new MutationObserver(() => syncMapContextFrame());
+  bodyMo.observe(document.body, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class"]
   });
 
   start();
