@@ -32,22 +32,25 @@ export function wrapMapLabel(text, maxLine = 18) {
 }
 
 /**
- * Homepage constellation: titles never overlap. Each stays centered above its dot when clear,
- * otherwise steps to its outer side, the inner side, then below. A title with no clear spot
- * is marked `hidden` rather than drawn over another.
+ * Homepage constellation: titles never overlap. Prefer centered above each dot
+ * (desktop + mobile landing). Optional side flips remain for non-aboveOnly callers.
  * @param {Array<{ kind?: string, kicker?: unknown, nx: number, ny: number, nr?: number, w: number, h: number, left: number, top: number, side?: string, descent?: number, hidden?: boolean }>} items
  * @param {Array<{ nx: number, ny: number, nr: number }>} dots
  * @param {{ left: number, right: number, top?: number, bottom?: number } | null} [bounds]
  * @param {number} [gap]
  * @param {Array<{ left: number, right: number, top: number, bottom: number }>} [obstacles] Screen chrome titles must not cover.
  * @param {number} [drift] Vertical px each dot (and its title) bobs on its own idle float.
+ * @param {{ aboveOnly?: boolean }} [options] Landing page: keep every title above its node.
  */
-export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacles = [], drift = 0) {
+export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacles = [], drift = 0, { aboveOnly = false } = {}) {
   if (!items.length) return;
   const cx = items.reduce((sum, item) => sum + item.nx, 0) / items.length;
   const rank = (item) => (item.kind === "start" ? 0 : item.kicker ? 1 : 2);
+  /* aboveOnly: seat outer fan titles first so Skills/Train nudge around Mission, not hide Stabilize/Explore. */
   const order = [...items].sort(
-    (a, b) => rank(a) - rank(b) || Math.abs(a.nx - cx) - Math.abs(b.nx - cx)
+    (a, b) =>
+      rank(a) - rank(b) ||
+      (aboveOnly ? Math.abs(b.nx - cx) - Math.abs(a.nx - cx) : Math.abs(a.nx - cx) - Math.abs(b.nx - cx))
   );
   const pad = 3;
   /* Neighbors float out of phase, so vertical clearance also covers the full bob. */
@@ -67,20 +70,36 @@ export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacle
   for (const item of order) {
     item.hidden = false;
     const nr = item.nr || 6;
-    const above = { side: "above", left: item.nx - item.w / 2, top: item.ny - nr - gap - item.h + (item.descent || 0) };
+    /* Cap descent so titles keep a real gap above the dot instead of sitting on it. */
+    const above = {
+      side: "above",
+      left: item.nx - item.w / 2,
+      top: item.ny - nr - gap - item.h + Math.min(item.descent || 0, 2)
+    };
     const below = { side: "below", left: item.nx - item.w / 2, top: item.ny + nr + gap };
     const left = { side: "left", left: item.nx - nr - gap - item.w, top: item.ny - item.h / 2 };
     const right = { side: "right", left: item.nx + nr + gap, top: item.ny - item.h / 2 };
     const current = { side: item.side || "above", left: item.left, top: item.top };
     const outward = item.nx < cx ? [left, right] : [right, left];
-    /* A centered spot may slide a few px sideways to clear an obstacle before changing sides. */
-    const nudged = (spot) => [0, 6, -6, 12, -12].map((dx) => ({ ...spot, left: spot.left + dx }));
-    /* Mission kickers stay above their dots — never flip under when the chat frame rises. */
-    const candidates = item.kind === "start"
-      ? [current, ...nudged(above), right, left]
-      : item.kicker
-        ? [current, ...nudged(above), ...outward]
-        : [current, ...nudged(above), ...outward, ...nudged(below)];
+    /* Prefer sliding outward first so fan titles clear Mission without stacking on it. */
+    const nudgeXs = aboveOnly
+      ? item.nx < cx
+        ? [0, -8, -16, -24, -32, -40, 8, 16, 24]
+        : [0, 8, 16, 24, 32, 40, -8, -16, -24]
+      : [0, 6, -6, 12, -12];
+    const nudged = (spot) => nudgeXs.map((dx) => ({ ...spot, left: spot.left + dx }));
+    /* aboveOnly may also lift a title higher (still above) when the fan is tight. */
+    const aboveVariants = aboveOnly
+      ? [0, 10, 20, 30].flatMap((lift) => nudged({ ...above, top: above.top - lift }))
+      : nudged(above);
+    /* Landing (aboveOnly): every title stays above its dot, matching desktop. */
+    const candidates = aboveOnly
+      ? [...aboveVariants, current]
+      : item.kind === "start"
+        ? [current, ...nudged(above), right, left]
+        : item.kicker
+          ? [current, ...nudged(above), ...outward]
+          : [current, ...nudged(above), ...outward, ...nudged(below)];
     const clear = candidates.find((spot) => {
       const box = { left: spot.left, right: spot.left + item.w, top: spot.top, bottom: spot.top + item.h };
       if (!inBounds(box)) return false;
@@ -96,17 +115,25 @@ export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacle
       });
     });
     if (!clear) {
-      /* Mission / Next Step / You stay visible when the band is tight — clamp to the preferred side. */
-      if (item.kicker || item.kind === "start") {
+      /* Mission / You / landing titles stay above the dot when the band is tight. */
+      if (aboveOnly || item.kicker || item.kind === "start") {
         item.hidden = false;
-        const fallback = item.kind === "start" ? below : above;
-        item.side = fallback.side;
-        const edge = bounds?.left != null ? bounds.left : fallback.left;
-        const rightEdge = bounds?.right != null ? bounds.right : fallback.left + item.w;
-        item.left = Math.min(Math.max(fallback.left, edge), Math.max(edge, rightEdge - item.w));
-        let top = fallback.top;
+        item.side = "above";
+        const edge = bounds?.left != null ? bounds.left : above.left;
+        const rightEdge = bounds?.right != null ? bounds.right : above.left + item.w;
+        item.left = Math.min(Math.max(above.left, edge), Math.max(edge, rightEdge - item.w));
+        let top = above.top;
         if (bounds?.top != null) top = Math.max(top, bounds.top);
         if (bounds?.bottom != null) top = Math.min(top, bounds.bottom - item.h);
+        /* Lift until clear of already-placed titles when possible. */
+        for (let lift = 0; lift <= 40; lift += 4) {
+          const trialTop = top - lift;
+          if (bounds?.top != null && trialTop < bounds.top - slack) break;
+          const box = { left: item.left, right: item.left + item.w, top: trialTop, bottom: trialTop + item.h };
+          if (placed.some((other) => touches(box, other))) continue;
+          top = trialTop;
+          break;
+        }
         item.top = top;
         placed.push({ left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h });
         continue;
@@ -181,8 +208,8 @@ export function placeTitlesAbove(items, bounds = null, gap = 6) {
   for (const item of items) {
     item.side = "above";
     item.left = item.nx - item.w / 2;
-    /* Gap runs from the letters' baseline, not the empty descender space under it. */
-    item.top = item.ny - (item.nr || 6) - gap - item.h + (item.descent || 0);
+    /* Baseline nudge, capped so Mission/task titles keep a clear gap above the dot. */
+    item.top = item.ny - (item.nr || 6) - gap - item.h + Math.min(item.descent || 0, 2);
     /* A dot past the stage edge keeps its title with it rather than sliding into view alone. */
     if (!bounds || item.nx < bounds.left || item.nx > bounds.right) continue;
     item.left = Math.min(Math.max(item.left, bounds.left + edge), Math.max(bounds.left + edge, bounds.right - edge - item.w));
@@ -285,7 +312,7 @@ export function placeTitlesRoadmapStyle(items, bounds = null, gap = 5, { pathsRi
     }
     const above = {
       left: item.nx - item.w / 2,
-      top: item.ny - (item.nr || 6) - gap - item.h + (item.descent || 0),
+      top: item.ny - (item.nr || 6) - gap - item.h + Math.min(item.descent || 0, 2),
       w: item.w,
       h: item.h
     };

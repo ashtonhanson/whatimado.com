@@ -1213,6 +1213,12 @@ whatimado-map .whatimado-map__label-hit {
   cursor: pointer;
 }
 
+/* Hide titles until the first settled layout so seed/on-node + shrink never flash. */
+whatimado-map.is-titles-pending .whatimado-map__label,
+whatimado-map.is-titles-pending .whatimado-map__kicker {
+  opacity: 0;
+}
+
 /* Hovering or pulling the selected node lifts that same smoke glow rather than replacing it */
 whatimado-map .whatimado-map__node--live.is-selected.is-hover .whatimado-map__node-body,
 whatimado-map .whatimado-map__node--live.is-selected.is-dragging .whatimado-map__node-body,

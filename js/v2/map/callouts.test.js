@@ -39,6 +39,23 @@ test("sample titles sit above their dots and stay inside the screen", () => {
   assert.ok(items.every((item) => item.side === "above"));
 });
 
+test("landing aboveOnly keeps visible titles above their own dots", () => {
+  const dot = (nx, ny) => ({ nx, ny, nr: 6 });
+  const dots = [dot(100, 60), dot(130, 50), dot(160, 60), dot(130, 120)];
+  const items = [
+    { nodeId: "a", kind: "path", nx: 100, ny: 60, nr: 6, w: 50, h: 14, side: "above", left: 75, top: 35 },
+    { nodeId: "b", kind: "sat", kicker: true, nx: 130, ny: 50, nr: 6, w: 60, h: 28, side: "above", left: 100, top: 11 },
+    { nodeId: "c", kind: "path", nx: 160, ny: 60, nr: 6, w: 50, h: 14, side: "above", left: 135, top: 35 },
+    { nodeId: "start", kind: "start", nx: 130, ny: 120, nr: 6, w: 30, h: 14, side: "above", left: 115, top: 95 }
+  ];
+  separateHomeTitles(items, dots, { left: 0, right: 300, top: 0, bottom: 200 }, 5, [], 0, { aboveOnly: true });
+  const shown = items.filter((item) => !item.hidden);
+  assert.ok(shown.length >= 2);
+  assert.ok(shown.every((item) => item.side === "above"));
+  assert.ok(items.find((item) => item.kicker) && !items.find((item) => item.kicker).hidden);
+  assert.ok(items.find((item) => item.kind === "start") && !items.find((item) => item.kind === "start").hidden);
+});
+
 test("trail runs from You through the roadmap and mission down to the task", () => {
   const edges = [
     { from: "start", to: "option-settings" },

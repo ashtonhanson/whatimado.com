@@ -43,7 +43,7 @@ import {
   separateHomeTitles,
   trailNodeIds,
   wrapMapLabel
-} from "../../map/callouts.js?v=20261123-titles-focus9";
+} from "../../map/callouts.js?v=20261123-titles-above13";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -59,7 +59,7 @@ import {
   chatFollowCenterX,
   computeTimelineFrameFit,
   isOpenHomePhase
-} from "../../map/pan.js?v=20261123-titles-focus9";
+} from "../../map/pan.js?v=20261123-titles-above13";
 
 /** How long the camera eases into a snap or crosshair home. */
 const CAMERA_EASE_MS = 360;
@@ -79,6 +79,8 @@ const EDGE_THICK_SCALE = 2.4;
 const LABEL_SCREEN_PX = 20;
 /** Screen px between a dot's edge and its title, above or to the right. */
 const TITLE_GAP_PX = 5;
+/* Landing titles need extra air — descent compensation otherwise parks them on the dots. */
+const HOME_TITLE_GAP_PX = 12;
 /** "My Paths" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
@@ -883,7 +885,7 @@ export class WhatimadoMap extends HTMLElement {
     if (t >= 1) {
       this._layoutGlide = null;
       this.querySelectorAll(".whatimado-map__node--live.is-entering").forEach((el) => el.classList.remove("is-entering"));
-      this._layoutCallouts();
+      this._scheduleSettledCallouts({ hideUntil: this.classList.contains("is-titles-pending") });
       return out;
     }
     const left = (1 - t) ** 3;
@@ -3359,6 +3361,7 @@ export class WhatimadoMap extends HTMLElement {
       }
       this._calloutRetryRaf = null;
       this._layoutCallouts();
+      this.classList.remove("is-titles-pending");
     };
     this._calloutRetryRaf = requestAnimationFrame(wait);
   }
@@ -3377,6 +3380,36 @@ export class WhatimadoMap extends HTMLElement {
       return;
     }
     this._layoutCallouts();
+  }
+
+  /**
+   * Wait until camera ease + node glide are done, then place titles once at final zoom.
+   * Avoids the shrink-on-node flash when a roadmap first paints.
+   * @param {{ hideUntil?: boolean }} [options]
+   */
+  _scheduleSettledCallouts({ hideUntil = false } = {}) {
+    if (hideUntil) this.classList.add("is-titles-pending");
+    window.clearTimeout(this._settleTitleTimer);
+    const attempt = () => {
+      this._settleTitleTimer = null;
+      if (!this.isConnected) return;
+      if (this._userIsMovingMap() || this._layoutGlide) {
+        this._settleTitleTimer = window.setTimeout(attempt, 48);
+        return;
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!this.isConnected) return;
+          if (this._userIsMovingMap() || this._layoutGlide) {
+            this._settleTitleTimer = window.setTimeout(attempt, 48);
+            return;
+          }
+          this._layoutCallouts();
+          this.classList.remove("is-titles-pending");
+        });
+      });
+    };
+    this._settleTitleTimer = window.setTimeout(attempt, 0);
   }
 
   /**
@@ -3505,7 +3538,11 @@ export class WhatimadoMap extends HTMLElement {
             : "";
         const kicker = group?.querySelector(".whatimado-map__kicker");
         const kickerRect = kicker instanceof SVGTextElement ? kicker.getBoundingClientRect() : null;
-        const kickerH = kickerRect && kickerRect.width > 0 ? kickerRect.height + KICKER_GAP_PX : 0;
+        /* Mission kickers can measure 0×0 before fonts paint — reserve space so the stack stays above the dot. */
+        const kickerH =
+          kicker instanceof SVGTextElement
+            ? Math.max(kickerRect?.width > 0 ? kickerRect.height : 0, 11) + KICKER_GAP_PX
+            : 0;
         const labelH = Math.max(4, rect.height);
         return {
           text,
@@ -3573,7 +3610,7 @@ export class WhatimadoMap extends HTMLElement {
         isOpenHomePhase() ||
         texts.every((text) => (text.closest(".whatimado-map__node")?.getAttribute("data-node-id") || "").startsWith("ghost-"));
       /* Title box height on screen; the phone landing runs a few sizes smaller. */
-      const labelTarget = mobile && openHome ? LABEL_SCREEN_PX - 3 : LABEL_SCREEN_PX;
+      const labelTarget = mobile && openHome ? LABEL_SCREEN_PX - 5 : LABEL_SCREEN_PX;
       /* Phone: You and everything branching off it (spokes, unchosen paths) run two sizes smaller. */
       const youSpoke = (text) => {
         const group = text.closest(".whatimado-map__node");
@@ -3593,10 +3630,15 @@ export class WhatimadoMap extends HTMLElement {
         items = buildItems();
         if (!items.length) return;
         /* Placement is relative to each dot only, so moving the map never shifts a title. */
-        placeTitlesRoadmapStyle(items, null, TITLE_GAP_PX, { pathsRight: !openHome });
+        placeTitlesRoadmapStyle(items, null, openHome ? HOME_TITLE_GAP_PX : TITLE_GAP_PX, {
+          pathsRight: !openHome
+        });
         if (openHome) {
           const space = this._homeTitleSpace();
-          separateHomeTitles(items, dots, space.bounds, TITLE_GAP_PX, space.obstacles, space.drift);
+          /* Mobile + desktop landing: every title stays above its node (nudge sideways only). */
+          separateHomeTitles(items, dots, space.bounds, HOME_TITLE_GAP_PX, space.obstacles, space.drift, {
+            aboveOnly: true
+          });
           items.forEach((item) => {
             if (item.hidden) item.group.classList.add("is-label-crowded");
           });
@@ -3630,6 +3672,7 @@ export class WhatimadoMap extends HTMLElement {
       }
       this._writeCallouts(items);
       this._calloutZoom = this._zoom;
+      this.classList.remove("is-titles-pending");
     } finally {
       this._layingOut = false;
     }
@@ -4063,7 +4106,19 @@ export class WhatimadoMap extends HTMLElement {
 
     if (options.layer === "live") {
       this._applyAnchorStyles();
-      this._layoutCallouts();
+      const roadmapish = this._liveNodes.some(
+        (node) => node.type === "mission" || node.type === "task" || node.type === "path"
+      );
+      const openHome =
+        isOpenHomePhase() ||
+        this._liveNodes.every((node) => String(node.id).startsWith("ghost-"));
+      /* Roadmap paint: hide seed titles and place once after glide/camera settle. */
+      if (roadmapish && !openHome) {
+        this._scheduleSettledCallouts({ hideUntil: true });
+      } else {
+        this._layoutCallouts();
+        this._scheduleSettledCallouts({ hideUntil: false });
+      }
       this._syncAlternateVisibility();
     }
 
