@@ -43,7 +43,7 @@ import {
   separateHomeTitles,
   trailNodeIds,
   wrapMapLabel
-} from "../../map/callouts.js?v=20261123-follow-orbs6";
+} from "../../map/callouts.js?v=20261123-orbs-smooth7";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -1026,8 +1026,9 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Pan so the chat-visible mission/task sits in the open band above the prompt.
-   * Chat reclaiming focus clears a sticky user-pan so scroll can drive the camera again.
+   * Smooth horizontal pan so the chat-visible mission/task sits in the open band.
+   * Same glide on mobile and desktop: X only (Y stays on the snap fit) so focus
+   * switches do not hitch. Chat reclaim clears a sticky user-pan.
    * @param {string|null|undefined} id
    * @param {{ animate?: boolean, soft?: boolean }} [options]
    */
@@ -1037,18 +1038,19 @@ export class WhatimadoMap extends HTMLElement {
     /* Chat focus reclaims the camera after a manual pan/zoom. */
     this._userPanned = false;
 
-    const target = computePanForNodeAboveFrame(this, id);
     const alreadyHere =
       this._chatFollowId === id &&
       this._chatFollowTargetId === id &&
-      this._nodeCenteredOnFollowX(id) &&
-      Math.abs(target.panY - this._panY) < 8;
+      this._nodeCenteredOnFollowX(id);
     if (soft && (alreadyHere || this._gravityRaf != null)) return;
     if (!soft && alreadyHere) return;
     /* Same target already easing in — do not restart mid-glide. */
     if (animate && this._chatFollowTargetId === id && this._gravityRaf != null) return;
 
     const keptZoom = this._zoom;
+    const target = computePanForNodeAboveFrame(this, id);
+    /* Match mobile: only slide sideways; height stays where the snap fit put it. */
+    const panY = this._panY;
     this._chatFollowHasY = true;
     this._chatFollowId = id;
     this._chatFollowTargetId = id;
@@ -1056,14 +1058,14 @@ export class WhatimadoMap extends HTMLElement {
 
     if (!animate) {
       this._panX = target.panX;
-      this._panY = target.panY;
+      this._panY = panY;
       this._applyPanTransform();
       return;
     }
 
-    /* Longer inout ease — retargetable, no title reflow. Always glide (never hard-snap). */
-    const duration = this._driftReducedMotion ? 480 : 860;
-    this._animatePanTo(target.panX, target.panY, true, {
+    /* Same duration/ease on desktop and mobile — retargetable glide, no title reflow. */
+    const duration = this._driftReducedMotion ? 520 : 920;
+    this._animatePanTo(target.panX, panY, true, {
       duration,
       ease: "inout",
       layout: false,

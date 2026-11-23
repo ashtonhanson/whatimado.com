@@ -1,6 +1,5 @@
 /**
- * Sky-blue orbs cycle smoothly behind the node map band (above the prompt).
- * A matching context frame lights when a framed chat section is open.
+ * Soft sky-blue orbs drift behind the node map band (above the prompt).
  */
 
 /** @typedef {{
@@ -13,7 +12,6 @@
  *   tRy: number,
  *   scale: number,
  *   tScale: number,
- *   phase: number,
  *   z: number
  * }} OrbState */
 
@@ -38,14 +36,14 @@ function mapBandRect(main) {
   const mainRect = main.getBoundingClientRect();
   const stageRect = (stage || map)?.getBoundingClientRect();
   if (!stageRect || stageRect.width < 40 || stageRect.height < 40) {
-    return { top: 0, left: 0, width: main.clientWidth, height: Math.max(120, main.clientHeight * 0.4) };
+    return { top: 0, left: 0, width: main.clientWidth, height: Math.max(140, main.clientHeight * 0.42) };
   }
   const frameTop = frame?.getBoundingClientRect().top ?? stageRect.bottom;
   const top = Math.max(0, stageRect.top - mainRect.top);
   const left = Math.max(0, stageRect.left - mainRect.left);
   const width = Math.max(40, stageRect.width);
-  const bottom = Math.min(stageRect.bottom, frameTop - 8);
-  const height = Math.max(80, bottom - stageRect.top);
+  const bottom = Math.min(stageRect.bottom, frameTop - 4);
+  const height = Math.max(100, bottom - stageRect.top);
   return { top, left, width, height };
 }
 
@@ -79,28 +77,15 @@ function shuffleLayers(orbs) {
   });
 }
 
-/** Framed chat sections that already carry an open-context highlight. */
-export function framedOpenContextActive() {
-  return Boolean(
-    document.querySelector(
-      "#mission-stages .v2-mission.is-open-context:not(.is-done) .v2-mission-done-acc__bar"
-    ) ||
-      document.querySelector(".v2-path-card.is-open-context") ||
-      document.querySelector("#selection-panel.is-open-context")
-  );
-}
-
-/** Show/hide the map-band frame that mirrors the open chat section. */
-export function syncMapContextFrame() {
-  const frame = document.querySelector(".v2-map-context-frame");
-  if (!(frame instanceof HTMLElement)) return;
-  frame.classList.toggle("is-active", framedOpenContextActive());
+function shellIsReady() {
+  const mobile = window.matchMedia("(max-width: 900px)").matches;
+  if (mobile) return document.body.classList.contains("is-mobile-shell-ready");
+  return document.body.classList.contains("is-shell-ready");
 }
 
 export function initAmbientOrbs() {
   const main = document.querySelector(".v2-main");
   const host = document.querySelector(".v2-ambient-orbs");
-  const contextFrame = document.querySelector(".v2-map-context-frame");
   if (!(main instanceof HTMLElement) || !(host instanceof HTMLElement)) return;
 
   const els = [...host.querySelectorAll(".v2-ambient-orb")].filter(
@@ -110,19 +95,18 @@ export function initAmbientOrbs() {
 
   /** @type {OrbState[]} */
   const orbs = els.map((el, i) => {
-    const phase = i * Math.PI + rand(-0.2, 0.2);
+    const phase = i * Math.PI + rand(-0.35, 0.35);
     el.style.zIndex = String(i + 1);
     return {
       el,
       angle: phase,
-      omega: (i % 2 === 0 ? 1 : -1) * rand(0.00035, 0.00055),
-      rx: 120,
-      ry: 70,
-      tRx: 120,
-      tRy: 70,
+      omega: (i % 2 === 0 ? 1 : -1) * rand(0.00055, 0.00095),
+      rx: 160,
+      ry: 90,
+      tRx: 160,
+      tRy: 90,
       scale: 1,
       tScale: 1,
-      phase,
       z: i + 1
     };
   });
@@ -132,12 +116,13 @@ export function initAmbientOrbs() {
   let lastSwap = 0;
   let reduced = window.matchMedia(REDUCE_MQ).matches;
   let band = mapBandRect(main);
+  let running = false;
 
   const sizeOrbsToBand = () => {
-    const minAxis = Math.max(120, Math.min(band.width, band.height));
-    const base = minAxis * 0.7;
+    /* Larger than the band so soft edges read as a background wash. */
+    const base = Math.max(220, Math.min(band.width, band.height) * 1.45);
     orbs.forEach((orb, i) => {
-      const dim = Math.round(base * (i === 0 ? 1 : 1.18));
+      const dim = Math.round(base * (i === 0 ? 1 : 1.22));
       orb.el.style.width = `${dim}px`;
       orb.el.style.height = `${dim}px`;
     });
@@ -147,33 +132,22 @@ export function initAmbientOrbs() {
     band = mapBandRect(main);
     placeBandEl(host, band);
     sizeOrbsToBand();
-    if (contextFrame instanceof HTMLElement) {
-      const inset = Math.max(8, Math.min(18, band.width * 0.02));
-      placeBandEl(contextFrame, {
-        top: band.top + inset,
-        left: band.left + inset,
-        width: Math.max(40, band.width - inset * 2),
-        height: Math.max(40, band.height - inset * 2)
-      });
-    }
   };
 
   const retargetOrbit = () => {
     const minAxis = Math.min(band.width, band.height);
     for (const orb of orbs) {
-      /* Keep travel inside the band so overflow:hidden does not erase them. */
-      orb.tRx = rand(minAxis * 0.06, minAxis * 0.18);
-      orb.tRy = rand(minAxis * 0.05, minAxis * 0.14);
-      orb.tScale = rand(0.92, 1.08);
-      /* Keep opposite-ish motion so they cycle around each other. */
+      orb.tRx = rand(minAxis * 0.18, minAxis * 0.42);
+      orb.tRy = rand(minAxis * 0.14, minAxis * 0.36);
+      orb.tScale = rand(0.94, 1.16);
       const dir = orb.omega >= 0 ? 1 : -1;
-      orb.omega = dir * rand(0.00028, 0.00062);
+      orb.omega = dir * rand(0.0005, 0.0011);
     }
   };
 
   const paintOrb = (orb) => {
-    const ow = orb.el.offsetWidth || 200;
-    const oh = orb.el.offsetHeight || 200;
+    const ow = orb.el.offsetWidth || 280;
+    const oh = orb.el.offsetHeight || 280;
     const cx = band.width * 0.5 - ow * 0.5;
     const cy = band.height * 0.5 - oh * 0.5;
     const x = cx + Math.cos(orb.angle) * orb.rx;
@@ -184,37 +158,36 @@ export function initAmbientOrbs() {
   const paintStatic = () => {
     layoutBand();
     orbs.forEach((orb, i) => {
-      orb.angle = i * Math.PI + 0.35;
+      orb.angle = i * Math.PI + 0.4;
       const minAxis = Math.min(band.width, band.height);
-      orb.rx = minAxis * (0.1 + i * 0.04);
-      orb.ry = minAxis * (0.08 + i * 0.03);
-      orb.scale = 1 + i * 0.03;
+      orb.rx = minAxis * (0.2 + i * 0.08);
+      orb.ry = minAxis * (0.14 + i * 0.06);
+      orb.scale = 1 + i * 0.04;
       paintOrb(orb);
     });
     shuffleLayers(orbs);
-    syncMapContextFrame();
   };
 
   const tick = (now) => {
-    if (reduced) {
+    if (reduced || !running) {
       raf = 0;
       return;
     }
 
-    if (now - lastRetarget > 7000) {
+    if (now - lastRetarget > 5500) {
       retargetOrbit();
       lastRetarget = now;
     }
-    if (now - lastSwap > rand(6500, 12000)) {
+    if (now - lastSwap > rand(5000, 9000)) {
       shuffleLayers(orbs);
       lastSwap = now;
     }
 
     for (const orb of orbs) {
       orb.angle += orb.omega;
-      orb.rx += (orb.tRx - orb.rx) * 0.012;
-      orb.ry += (orb.tRy - orb.ry) * 0.012;
-      orb.scale += (orb.tScale - orb.scale) * 0.02;
+      orb.rx += (orb.tRx - orb.rx) * 0.016;
+      orb.ry += (orb.tRy - orb.ry) * 0.016;
+      orb.scale += (orb.tScale - orb.scale) * 0.025;
       paintOrb(orb);
     }
 
@@ -225,6 +198,11 @@ export function initAmbientOrbs() {
     if (raf) window.cancelAnimationFrame(raf);
     raf = 0;
     layoutBand();
+    if (!shellIsReady()) {
+      running = false;
+      return;
+    }
+    running = true;
     if (reduced) {
       paintStatic();
       return;
@@ -233,7 +211,6 @@ export function initAmbientOrbs() {
     lastRetarget = performance.now();
     lastSwap = performance.now();
     raf = window.requestAnimationFrame(tick);
-    syncMapContextFrame();
   };
 
   const mq = window.matchMedia(REDUCE_MQ);
@@ -250,23 +227,16 @@ export function initAmbientOrbs() {
     else retargetOrbit();
   });
 
-  /* Prompt snap / dock changes the band height. */
   const frame = document.querySelector("whatimado-frame");
   if (frame) {
-    const mo = new MutationObserver(() => {
-      layoutBand();
-      syncMapContextFrame();
-    });
+    const mo = new MutationObserver(() => layoutBand());
     mo.observe(frame, { attributes: true, attributeFilter: ["data-snap", "class", "style"] });
   }
 
-  /* Open-context class toggles elsewhere. */
-  const bodyMo = new MutationObserver(() => syncMapContextFrame());
-  bodyMo.observe(document.body, {
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["class"]
+  const bodyMo = new MutationObserver(() => {
+    if (shellIsReady()) start();
   });
+  bodyMo.observe(document.body, { attributes: true, attributeFilter: ["class"] });
 
   start();
 }

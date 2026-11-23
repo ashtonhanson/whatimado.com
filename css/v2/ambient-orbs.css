@@ -1,17 +1,25 @@
 /**
- * Sky-blue orbs + open-context frame, clipped to the node-map band
- * (above the prompt). Motion is driven by js/v2/ambient-orbs.js.
+ * Soft sky-blue orbs behind the node-map band (above the prompt).
+ * Motion is driven by js/v2/ambient-orbs.js. Hidden until shell/map ready.
  */
 .v2-ambient-orbs {
   position: absolute;
   top: 0;
   left: 0;
-  /* Fallback band until JS sizes to the live stage ∩ prompt. */
   width: 100%;
   height: min(52vh, var(--whatimado-frame-top, 42vh));
   z-index: 0;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
+  opacity: 0;
+}
+
+/* Desktop: wait until map + frame have connected. */
+@media (min-width: 901px) {
+  body.v2-app.is-shell-ready .v2-ambient-orbs {
+    opacity: 1;
+    transition: opacity 0.45s var(--v2-hero-motion-ease, ease);
+  }
 }
 
 .v2-ambient-orb {
@@ -19,87 +27,58 @@
   top: 0;
   left: 0;
   border-radius: 50%;
-  filter: blur(26px);
-  opacity: 0.92;
+  filter: blur(48px);
+  opacity: 0.46;
   will-change: transform;
   background: radial-gradient(
     circle at 35% 30%,
-    rgba(210, 235, 255, 0.95) 0%,
-    rgba(110, 185, 232, 0.7) 38%,
-    rgba(110, 185, 232, 0.28) 66%,
+    rgba(190, 225, 255, 0.55) 0%,
+    rgba(110, 185, 232, 0.32) 42%,
+    rgba(110, 185, 232, 0.1) 68%,
     transparent 78%
   );
   box-shadow:
-    0 0 80px rgba(143, 208, 255, 0.55),
-    0 0 140px rgba(110, 185, 232, 0.28),
-    inset 0 0 40px rgba(255, 255, 255, 0.18);
+    0 0 90px rgba(143, 208, 255, 0.22),
+    0 0 160px rgba(110, 185, 232, 0.12);
   transform: translate3d(0, 0, 0) scale(1);
 }
 
 .v2-ambient-orb--a {
-  /* Size is set from JS to fit the live map band; these are only first-paint defaults. */
-  width: min(36vw, 260px);
-  height: min(36vw, 260px);
+  width: min(70vw, 560px);
+  height: min(70vw, 560px);
   z-index: 1;
 }
 
 .v2-ambient-orb--b {
-  width: min(42vw, 300px);
-  height: min(42vw, 300px);
-  opacity: 0.78;
+  width: min(82vw, 680px);
+  height: min(82vw, 680px);
+  opacity: 0.39;
   z-index: 2;
-}
-
-/* Mirrors the framed open chat section inside the visible map band. */
-.v2-map-context-frame {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  z-index: 2;
-  box-sizing: border-box;
-  pointer-events: none;
-  border-radius: calc(var(--v2-frame-radius, 16px) + 4px);
-  border: 1.5px solid color-mix(in srgb, var(--v2-yellow) 72%, transparent);
-  background: transparent;
-  box-shadow:
-    inset 0 0 0 1.5px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
-    0 0 10px color-mix(in srgb, var(--v2-yellow) 55%, transparent),
-    0 0 28px color-mix(in srgb, var(--v2-yellow) 28%, transparent),
-    inset 0 0 42px color-mix(in srgb, var(--v2-yellow) 8%, transparent);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.35s ease, visibility 0.35s ease;
-}
-
-.v2-map-context-frame.is-active {
-  opacity: 1;
-  visibility: visible;
 }
 
 @media (max-width: 900px) {
   .v2-ambient-orbs {
-    height: min(46vh, var(--whatimado-frame-top, 40vh));
+    height: min(48vh, var(--whatimado-frame-top, 40vh));
+  }
+
+  body.v2-app.is-mobile-shell-ready .v2-ambient-orbs {
+    opacity: 1;
+    transition: opacity 0.45s var(--v2-hero-motion-ease, ease);
   }
 
   .v2-ambient-orb {
-    filter: blur(22px);
-    opacity: 0.88;
+    filter: blur(42px);
+    opacity: 0.44;
   }
 
   .v2-ambient-orb--a {
-    width: min(68vw, 340px);
-    height: min(68vw, 340px);
+    width: min(88vw, 420px);
+    height: min(88vw, 420px);
   }
 
   .v2-ambient-orb--b {
-    width: min(78vw, 400px);
-    height: min(78vw, 400px);
-    opacity: 0.72;
-  }
-
-  .v2-map-context-frame {
-    border-radius: calc(var(--v2-prompt-radius, 14px) + 2px);
+    width: min(98vw, 500px);
+    height: min(98vw, 500px);
+    opacity: 0.36;
   }
 }

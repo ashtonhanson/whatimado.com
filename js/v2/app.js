@@ -1,5 +1,5 @@
 import { initBrand } from "./config.js";
-import { initChatFlow } from "./ui/chat-flow.js?v=20261123-follow-orbs6";
+import { initChatFlow } from "./ui/chat-flow.js?v=20261123-orbs-smooth7";
 import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
 import { initMobileNav } from "./mobile-nav.js";
@@ -9,11 +9,11 @@ import { initPages } from "./ui/pages.js";
 import { initAuth } from "./state/auth.js";
 import { trackEvent } from "./state/analytics.js";
 import { initShareMeta } from "./share-meta.js";
-import { initAmbientOrbs } from "./ambient-orbs.js?v=20261123-follow-orbs6";
+import { initAmbientOrbs } from "./ambient-orbs.js?v=20261123-orbs-smooth7";
 
 await initBrand();
-await import("./components/whatimado-frame.js?v=20261123-follow-orbs6");
-await import("./components/whatimado-map.js?v=20261123-follow-orbs6");
+await import("./components/whatimado-frame.js?v=20261123-orbs-smooth7");
+await import("./components/whatimado-map.js?v=20261123-orbs-smooth7");
 
 /** @type {import("./components/whatimado-frame.js").WhatimadoFrame|null} */
 const frameEl = document.getElementById("dynamic-frame");
@@ -41,9 +41,17 @@ initShareMeta();
 void initAuth();
 trackEvent("app_loaded");
 
-/** Safety: never leave the mobile shell permanently hidden if dock init stalls. */
-if (window.matchMedia("(max-width: 900px)").matches) {
+const isMobile = window.matchMedia("(max-width: 900px)").matches;
+if (isMobile) {
+  /** Safety: never leave the mobile shell permanently hidden if dock init stalls. */
   window.setTimeout(() => {
     document.body.classList.add("is-mobile-shell-ready");
   }, 1200);
+} else {
+  /* Desktop: fade map/frame/orbs together once custom elements have connected. */
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.body.classList.add("is-shell-ready");
+    });
+  });
 }
