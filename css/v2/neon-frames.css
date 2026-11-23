@@ -1,12 +1,12 @@
 /* Neon frame borders — slim pulsing glow + border undulation */
 
 :root {
-  --v2-neon-teal: #42fff0;
-  --v2-neon-teal-bright: #7dffef;
-  --v2-neon-glow-soft: rgba(66, 255, 240, 0.22);
-  --v2-neon-glow-mid: rgba(66, 255, 240, 0.38);
-  --v2-neon-glow-strong: rgba(66, 255, 240, 0.55);
-  --v2-frame-border-color: rgba(66, 255, 240, 0.14);
+  --v2-neon-teal: #8fd0ff;
+  --v2-neon-teal-bright: #9ad8ff;
+  --v2-neon-glow-soft: rgba(143, 208, 255, 0.22);
+  --v2-neon-glow-mid: rgba(143, 208, 255, 0.38);
+  --v2-neon-glow-strong: rgba(143, 208, 255, 0.55);
+  --v2-frame-border-color: rgba(143, 208, 255, 0.14);
   --v2-neon-border-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   /* Tunable frame glow — slim/refined defaults */
   --v2-frame-glow-pulse-duration: 5.5s;
@@ -23,11 +23,12 @@ whatimado-frame .whatimado-frame__inner {
   position: relative;
   border-width: var(--v2-frame-border-stroke);
   border-color: var(--v2-frame-border-color);
-  box-shadow: none;
+  box-shadow: var(--v2-frame-shadow);
 }
 
 whatimado-frame.is-docked .whatimado-frame__inner {
   box-shadow:
+    var(--v2-frame-shadow),
     0 calc(8px + var(--v2-frame-elevation, 0) * 16px) calc(24px + var(--v2-frame-elevation, 0) * 20px)
       rgba(0, 0, 0, calc(0.18 + var(--v2-frame-elevation, 0) * 0.22));
 }
@@ -35,14 +36,14 @@ whatimado-frame.is-docked .whatimado-frame__inner {
 .v2-rail--right {
   border-width: var(--v2-frame-border-stroke);
   border-color: var(--v2-frame-border-color);
-  box-shadow: none;
+  box-shadow: var(--v2-frame-shadow);
 }
 
 .v2-rail--left {
   z-index: 50;
   border-width: var(--v2-frame-border-stroke);
   border-color: var(--v2-frame-border-color);
-  box-shadow: none;
+  box-shadow: var(--v2-frame-shadow);
 }
 
 whatimado-frame .whatimado-frame__inner::before,
@@ -57,13 +58,13 @@ whatimado-frame .whatimado-frame__inner::before,
   padding: 1px;
   background: linear-gradient(
     90deg,
-    rgba(66, 255, 240, 0.03) 0%,
-    rgba(125, 255, 239, 0.14) 20%,
-    rgba(66, 255, 240, 0.04) 40%,
-    rgba(125, 255, 239, 0.11) 60%,
-    rgba(66, 255, 240, 0.03) 80%,
-    rgba(125, 255, 239, 0.12) 92%,
-    rgba(66, 255, 240, 0.03) 100%
+    rgba(143, 208, 255, 0.03) 0%,
+    rgba(180, 220, 255, 0.16) 20%,
+    rgba(143, 208, 255, 0.04) 40%,
+    rgba(143, 208, 255, 0.14) 60%,
+    rgba(143, 208, 255, 0.03) 80%,
+    rgba(180, 220, 255, 0.14) 92%,
+    rgba(143, 208, 255, 0.03) 100%
   );
   background-size: 320% 100%;
   -webkit-mask: var(--v2-neon-border-mask);
@@ -87,9 +88,9 @@ whatimado-frame .whatimado-frame__inner::after,
   background: linear-gradient(
     100deg,
     transparent 36%,
-    rgba(125, 255, 239, 0.12) 44%,
-    rgba(180, 255, 248, 0.55) 50%,
-    rgba(125, 255, 239, 0.12) 56%,
+    rgba(143, 208, 255, 0.14) 44%,
+    rgba(210, 235, 255, 0.55) 50%,
+    rgba(143, 208, 255, 0.14) 56%,
     transparent 64%
   );
   background-size: 400% 100%;
@@ -148,10 +149,21 @@ whatimado-frame .whatimado-frame__composer,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  whatimado-frame .whatimado-frame__inner,
+  /* Keep static bevel/flare; only stop animated glow travel. */
+  whatimado-frame .whatimado-frame__inner {
+    box-shadow: var(--v2-frame-shadow);
+  }
+
+  whatimado-frame.is-docked .whatimado-frame__inner {
+    box-shadow:
+      var(--v2-frame-shadow),
+      0 calc(8px + var(--v2-frame-elevation, 0) * 16px) calc(24px + var(--v2-frame-elevation, 0) * 20px)
+        rgba(0, 0, 0, calc(0.18 + var(--v2-frame-elevation, 0) * 0.22));
+  }
+
   .v2-rail--left,
   .v2-rail--right {
-    box-shadow: none;
+    box-shadow: var(--v2-frame-shadow);
   }
 
   whatimado-frame .whatimado-frame__inner::before,

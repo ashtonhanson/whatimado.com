@@ -1,11 +1,13 @@
 /**
  * Shared frosted glass — sidebars use rail tokens; prompt frame uses lighter frame glass.
+ * Soft bevel + flare keep the current look with a sky-blue shine.
  */
 .v2-rail--left,
 .v2-rail--right {
   background: var(--v2-glass-bg);
   backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
   -webkit-backdrop-filter: blur(var(--v2-glass-blur)) saturate(var(--v2-glass-saturate));
+  box-shadow: var(--v2-bevel), var(--v2-flare);
 }
 
 @media (max-width: 900px) {
@@ -15,33 +17,38 @@
     background: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    box-shadow: none;
   }
 }
 
 @media (min-width: 901px) {
   .v2-rail--left,
   .v2-rail--right {
-    --v2-glass-blur: 18px;
-    background: rgba(4, 12, 14, 0.42);
+    --v2-glass-blur: 20px;
+    background: rgba(4, 10, 16, 0.38);
   }
 }
 
 whatimado-frame .whatimado-frame__inner {
-  background: var(--v2-frame-glass-bg);
+  background: color-mix(in srgb, var(--v2-frame-glass-bg) 88%, rgba(110, 185, 232, 0.06));
   backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
   -webkit-backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
+  box-shadow: var(--v2-bevel), var(--v2-flare);
+  border-color: color-mix(in srgb, var(--v2-border) 75%, transparent);
 }
 
 whatimado-frame.is-docked .whatimado-frame__inner {
-  background: var(--v2-frame-glass-bg);
+  background: color-mix(in srgb, var(--v2-frame-glass-bg) 88%, rgba(110, 185, 232, 0.06));
   backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
   -webkit-backdrop-filter: blur(var(--v2-frame-glass-blur)) saturate(var(--v2-glass-saturate));
+  box-shadow: var(--v2-bevel), var(--v2-flare);
 }
 
 @media (min-width: 901px) {
   whatimado-frame .whatimado-frame__inner,
   whatimado-frame.is-docked .whatimado-frame__inner {
-    --v2-frame-glass-blur: 18px;
+    --v2-frame-glass-blur: 22px;
+    --v2-frame-glass-alpha: 0.14;
   }
 
   /* Full-stage compose / top snap: solid cover — do not rely on frost to hide the map. */
@@ -51,4 +58,15 @@ whatimado-frame.is-docked .whatimado-frame__inner {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+}
+
+/* Shared bevel flare on interactive chrome that already uses glass borders. */
+.v2-path-card,
+.v2-mission,
+.v2-text-box--response,
+.v2-text-box--chrome,
+.v2-active-path,
+.whatimado-map__roadmap-sticky,
+.v2-brand .v2-brand-word {
+  box-shadow: var(--v2-bevel), var(--v2-flare);
 }

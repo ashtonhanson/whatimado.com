@@ -1,5 +1,5 @@
 import { initBrand } from "./config.js";
-import { initChatFlow } from "./ui/chat-flow.js?v=20261115-focus-map";
+import { initChatFlow } from "./ui/chat-flow.js?v=20261123-sky-orbs";
 import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
 import { initMobileNav } from "./mobile-nav.js";
@@ -11,8 +11,8 @@ import { trackEvent } from "./state/analytics.js";
 import { initShareMeta } from "./share-meta.js";
 
 await initBrand();
-await import("./components/whatimado-frame.js?v=20261115-focus-map");
-await import("./components/whatimado-map.js?v=20261115-focus-map");
+await import("./components/whatimado-frame.js?v=20261123-sky-orbs");
+await import("./components/whatimado-map.js?v=20261123-sky-orbs");
 
 /** @type {import("./components/whatimado-frame.js").WhatimadoFrame|null} */
 const frameEl = document.getElementById("dynamic-frame");

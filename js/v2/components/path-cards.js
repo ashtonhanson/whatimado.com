@@ -28,7 +28,7 @@ export function renderPathCards(container, spec) {
       const selected = path.id === selectedId;
       const meta = [path.cost, path.timeline, path.income].filter(Boolean);
       return `
-      <article class="v2-path-card${selected ? " is-selected" : ""}" data-path-id="${escapeHtml(path.id)}" style="--path-accent: ${escapeHtml(path.accent || "#2ee8d6")}">
+      <article class="v2-path-card${selected ? " is-selected" : ""}" data-path-id="${escapeHtml(path.id)}" style="--path-accent: ${escapeHtml(path.accent || "#6eb9e8")}">
         <button type="button" class="v2-path-card__open" data-path-open="${escapeHtml(path.id)}">
           ${path.ideaType ? `<p class="v2-path-card__type">${escapeHtml(path.ideaType)}</p>` : ""}
           <h3>${escapeHtml(path.title || path.label)}</h3>

@@ -1,31 +1,46 @@
 :root {
-  /* ── Brand: color ── see docs/v2-brand-system.md */
-  --v2-bg: #060a0c;
-  --v2-bg-gradient: radial-gradient(ellipse 120% 80% at 50% 20%, #0f2a2e 0%, #060a0c 55%, #040608 100%);
-  --v2-teal: #2ee8d6;
-  --v2-teal-dim: #1a9e92;
-  --v2-teal-glow: 0 0 24px rgba(46, 232, 214, 0.35);
-  --v2-neon-teal: #42fff0;
+  /* ── Brand: color ── see docs/v2-brand-system.md (sky blue replaces teal) */
+  --v2-bg: #060910;
+  --v2-bg-gradient: radial-gradient(ellipse 120% 80% at 50% 20%, #0f2438 0%, #060910 55%, #04060c 100%);
+  --v2-sky: #6eb9e8;
+  --v2-sky-dim: #3a7aa3;
+  --v2-sky-glow: 0 0 24px rgba(110, 185, 232, 0.38);
+  --v2-neon-sky: #8fd0ff;
+  /* Legacy token names keep working; values are sky blue. */
+  --v2-teal: var(--v2-sky);
+  --v2-teal-dim: var(--v2-sky-dim);
+  --v2-teal-glow: var(--v2-sky-glow);
+  --v2-neon-teal: var(--v2-neon-sky);
   --v2-yellow: #f5d547;
   --v2-yellow-bright: #ffe566;
   --v2-yellow-dim: #e6c030;
-  --v2-brand-do: #2f6660;
-  --v2-text: #e8f4f2;
-  --v2-text-muted: #8aa8a3;
-  --v2-border: rgba(66, 255, 240, 0.48);
-  --v2-border-dashed: rgba(66, 255, 240, 0.32);
+  --v2-brand-do: #3a5f7a;
+  --v2-text: #e8f2f8;
+  --v2-text-muted: #8aa0b0;
+  --v2-border: rgba(143, 208, 255, 0.48);
+  --v2-border-dashed: rgba(143, 208, 255, 0.32);
   /* Frosted glass — identical on frame + both sidebars (see glass.css) */
-  --v2-glass-alpha: 0.36;
-  --v2-glass-bg: rgba(4, 12, 14, var(--v2-glass-alpha));
-  --v2-glass-blur: 11px;
-  --v2-glass-saturate: 1.12;
-  --v2-glass-bg-soft: rgba(4, 12, 14, 0.18);
-  --v2-glass-tint: rgba(46, 232, 214, 0.22);
-  /* Prompt frame — lighter glass than sidebars */
-  --v2-frame-glass-alpha: 0.24;
-  --v2-frame-glass-bg: rgba(4, 12, 14, var(--v2-frame-glass-alpha));
-  --v2-frame-glass-blur: 3px;
-  --v2-frame-glass-tint: rgba(46, 232, 214, 0.14);
+  --v2-glass-alpha: 0.32;
+  --v2-glass-bg: rgba(4, 10, 16, var(--v2-glass-alpha));
+  --v2-glass-blur: 14px;
+  --v2-glass-saturate: 1.18;
+  --v2-glass-bg-soft: rgba(4, 10, 16, 0.16);
+  --v2-glass-tint: rgba(110, 185, 232, 0.2);
+  /* Prompt frame — more transparent so map orbs frost through */
+  --v2-frame-glass-alpha: 0.16;
+  --v2-frame-glass-bg: rgba(4, 10, 16, var(--v2-frame-glass-alpha));
+  --v2-frame-glass-blur: 14px;
+  --v2-frame-glass-tint: rgba(110, 185, 232, 0.12);
+  /* Soft modern bevel + shine/flare (partially transparent glow) */
+  --v2-bevel:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.38),
+    inset 1px 0 0 rgba(143, 208, 255, 0.08),
+    inset -1px 0 0 rgba(0, 0, 0, 0.18);
+  --v2-flare:
+    0 0 18px rgba(143, 208, 255, 0.22),
+    0 0 42px rgba(110, 185, 232, 0.12),
+    inset 0 0 28px rgba(143, 208, 255, 0.06);
   /* Bottom snap — authoritative offset from clean screenshot (frame top at bottom anchor) */
   --v2-bottom-snap-top-offset: clamp(4.85rem, 12.5vh, 5.75rem);
   --v2-bottom-snap-gap: clamp(0.45rem, 1.1vh, 0.65rem);
@@ -39,7 +54,7 @@
   --v2-radius-lg: 22px;
   --v2-radius-pill: 999px;
   --v2-frame-radius: calc(var(--v2-radius) + 2px);
-  --v2-frame-shadow: 0 0 20px rgba(66, 255, 240, 0.18), 0 0 36px rgba(46, 232, 214, 0.08);
+  --v2-frame-shadow: var(--v2-bevel), var(--v2-flare);
 
   /* ── Brand: layout ── */
   --v2-rail-w: clamp(16rem, 20vw, 19rem);

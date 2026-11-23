@@ -292,7 +292,7 @@ const MAP_TEMPLATE = `
       <defs>
         <filter id="whatimado-node-shadow" x="-80%" y="-80%" width="260%" height="260%">
           <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.5)" />
-          <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(46,232,214,0.35)" />
+          <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(110, 185, 232,0.35)" />
         </filter>
         <filter id="whatimado-node-shadow-primary" x="-90%" y="-90%" width="280%" height="280%">
           <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.55)" />

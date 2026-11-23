@@ -87,7 +87,7 @@ export function mapNodeLabel(value, { compact = false } = {}) {
 }
 
 /** HUD hover accents — distinct hues; yellow reserved for selected state */
-export const PATH_ACCENT_PALETTE = ["#3df0de", "#2ee8d6", "#1ec9b8", "#5ce0d4"];
+export const PATH_ACCENT_PALETTE = ["#3df0de", "#6eb9e8", "#1ec9b8", "#5ce0d4"];
 
 /** @param {number} index */
 export function pathAccentForIndex(index) {
