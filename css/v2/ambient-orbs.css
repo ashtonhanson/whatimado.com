@@ -1,6 +1,6 @@
 /**
- * Two faded sky-blue orbs drifting in the map background.
- * They sit under the constellation and can slide behind the frosted prompt frame.
+ * Two faded sky-blue orbs in the map background.
+ * Position/layering is driven by js/v2/ambient-orbs.js (random drift + z-order).
  */
 .v2-ambient-orbs {
   position: absolute;
@@ -12,6 +12,8 @@
 
 .v2-ambient-orb {
   position: absolute;
+  top: 0;
+  left: 0;
   border-radius: 50%;
   filter: blur(42px);
   opacity: 0.42;
@@ -27,68 +29,20 @@
     0 0 60px rgba(143, 208, 255, 0.28),
     inset 0 0 40px rgba(255, 255, 255, 0.12);
   mix-blend-mode: screen;
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
 .v2-ambient-orb--a {
   width: min(48vw, 420px);
   height: min(48vw, 420px);
-  top: 4%;
-  left: 8%;
-  animation: v2-orb-drift-a 28s ease-in-out infinite alternate;
+  z-index: 1;
 }
 
 .v2-ambient-orb--b {
   width: min(56vw, 520px);
   height: min(56vw, 520px);
-  top: 18%;
-  right: 2%;
   opacity: 0.34;
-  animation: v2-orb-drift-b 34s ease-in-out infinite alternate;
-}
-
-@keyframes v2-orb-drift-a {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  35% {
-    transform: translate3d(18%, 28%, 0) scale(1.06);
-  }
-  70% {
-    transform: translate3d(-6%, 52%, 0) scale(0.94);
-  }
-  100% {
-    transform: translate3d(12%, 70%, 0) scale(1.08);
-  }
-}
-
-@keyframes v2-orb-drift-b {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  40% {
-    transform: translate3d(-22%, 36%, 0) scale(1.1);
-  }
-  75% {
-    transform: translate3d(-8%, 62%, 0) scale(0.92);
-  }
-  100% {
-    transform: translate3d(-28%, 78%, 0) scale(1.05);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .v2-ambient-orb--a,
-  .v2-ambient-orb--b {
-    animation: none;
-  }
-
-  .v2-ambient-orb--a {
-    transform: translate3d(6%, 22%, 0);
-  }
-
-  .v2-ambient-orb--b {
-    transform: translate3d(-14%, 40%, 0);
-  }
+  z-index: 2;
 }
 
 @media (max-width: 900px) {
@@ -105,5 +59,6 @@
   .v2-ambient-orb--b {
     width: min(78vw, 400px);
     height: min(78vw, 400px);
+    opacity: 0.3;
   }
 }

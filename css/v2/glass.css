@@ -60,13 +60,19 @@ whatimado-frame.is-docked .whatimado-frame__inner {
   }
 }
 
-/* Shared bevel flare on interactive chrome that already uses glass borders. */
+/* Shared bevel flare on interactive chrome — not on mission task rows. */
 .v2-path-card,
-.v2-mission,
 .v2-text-box--response,
 .v2-text-box--chrome,
-.v2-active-path,
 .whatimado-map__roadmap-sticky,
 .v2-brand .v2-brand-word {
   box-shadow: var(--v2-bevel), var(--v2-flare);
+}
+
+/* Mission task descriptions stay borderless (dashed divider only). */
+.v2-mission,
+.v2-mission__panel,
+.v2-mission__content,
+.v2-active-path {
+  box-shadow: none;
 }
