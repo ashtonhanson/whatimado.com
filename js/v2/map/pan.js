@@ -153,41 +153,23 @@ function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY) {
   return { panX, panY, zoom };
 }
 
+/** Titles stay near 13px at any zoom, so the landing fit reserves pixels for the top title and the one under You. */
+/* Room for Mission kicker + Next Step above the top home dots. */
+const OPEN_HOME_LABEL_ABOVE_PX = 40;
+const OPEN_HOME_LABEL_BELOW_PX = 18;
+/** Laptop bands are shorter than the constellation; shrink it rather than push titles past the top edge. */
+const OPEN_HOME_ZOOM_MIN = 0.6;
+/** Desktop homepage asks for a 2× constellation; allow the camera to grow past the old 1.15 fit cap. */
+const OPEN_HOME_ZOOM_MAX = 2.3;
+
 /**
- * Open-home camera: center the constellation between the menu and Path Finder.
+ * Open-home camera: fit dots between the menu and Path Finder, with headroom for
+ * Mission / Next Step titles above the top dots (same on mobile and desktop).
  * @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl
  * @param {number} gapPx
- * @param {number} driftSlackPx
+ * @param {number} belowPadPx
  */
-function computeOpenHomeCamera(mapEl, gapPx, driftSlackPx) {
-  const stage = mapEl.querySelector(".whatimado-map__stage");
-  const kicker = document.getElementById("frame-kicker");
-  const brand = kicker?.querySelector(".v2-kicker-brand");
-  if (!stage) return { panX: 0, panY: 0, zoom: 1 };
-
-  const stageRect = stage.getBoundingClientRect();
-  if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
-
-  const brandRect = brand?.getBoundingClientRect();
-  const kickerRect = kicker?.getBoundingClientRect();
-  const textTop = brandRect?.top ?? kickerRect?.top ?? stageRect.bottom;
-  const bottom = textTop - gapPx - driftSlackPx;
-  return computeCenteredBandCamera(mapEl, menuClearScreenY(stageRect), bottom);
-}
-
-/** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
-export function computeMobileOpenHomePan(mapEl) {
-  const gapPx = Math.max(14, measureCssVarLength("--v2-mobile-you-hero-gap") || 14);
-  const driftSlackPx = Math.max(10, measureCssVarLength("--v2-mobile-open-drift-slack") || 10);
-  return computeOpenHomeCamera(mapEl, gapPx, driftSlackPx);
-}
-
-/** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
-export function computeOpenHomeGravityPan(mapEl) {
-  if (MOBILE_MQ.matches) {
-    return computeMobileOpenHomePan(mapEl);
-  }
-
+function computeOpenHomeBandPan(mapEl, gapPx, belowPadPx) {
   const stage = mapEl.querySelector(".whatimado-map__stage");
   const kicker = document.getElementById("frame-kicker");
   const brand = kicker?.querySelector(".v2-kicker-brand");
@@ -195,11 +177,9 @@ export function computeOpenHomeGravityPan(mapEl) {
   const stageRect = stage.getBoundingClientRect();
   if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
 
-  const gapPx =
-    Math.max(14, measureCssVarLength("--v2-hero-node-gap") || 14) + (measureCssVarLength("--v2-hero-you-clear") || 0);
   const textTop = brand?.getBoundingClientRect().top ?? kicker?.getBoundingClientRect().top ?? stageRect.bottom;
   const top = menuClearScreenY(stageRect) + OPEN_HOME_LABEL_ABOVE_PX;
-  const bottom = textTop - gapPx - OPEN_HOME_LABEL_BELOW_PX;
+  const bottom = textTop - gapPx - belowPadPx;
 
   const dots = getNodeBounds(mapEl);
   const shiftY = readGraphShiftY();
@@ -221,13 +201,23 @@ export function computeOpenHomeGravityPan(mapEl) {
   };
 }
 
-/** Titles stay near 13px at any zoom, so the landing fit reserves pixels for the top title and the one under You. */
-const OPEN_HOME_LABEL_ABOVE_PX = 18;
-const OPEN_HOME_LABEL_BELOW_PX = 26;
-/** Laptop bands are shorter than the constellation; shrink it rather than push titles past the top edge. */
-const OPEN_HOME_ZOOM_MIN = 0.6;
-/** Desktop homepage asks for a 2× constellation; allow the camera to grow past the old 1.15 fit cap. */
-const OPEN_HOME_ZOOM_MAX = 2.3;
+/** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
+export function computeMobileOpenHomePan(mapEl) {
+  const gapPx = Math.max(14, measureCssVarLength("--v2-mobile-you-hero-gap") || 14);
+  const driftSlackPx = Math.max(10, measureCssVarLength("--v2-mobile-open-drift-slack") || 10);
+  return computeOpenHomeBandPan(mapEl, gapPx, OPEN_HOME_LABEL_BELOW_PX + driftSlackPx);
+}
+
+/** @param {import("../components/whatimado-map/index.js").WhatimadoMap} mapEl */
+export function computeOpenHomeGravityPan(mapEl) {
+  if (MOBILE_MQ.matches) {
+    return computeMobileOpenHomePan(mapEl);
+  }
+
+  const gapPx =
+    Math.max(14, measureCssVarLength("--v2-hero-node-gap") || 14) + (measureCssVarLength("--v2-hero-you-clear") || 0);
+  return computeOpenHomeBandPan(mapEl, gapPx, OPEN_HOME_LABEL_BELOW_PX);
+}
 
 /** A short band at home can shrink the roadmap below pinch-zoom's floor rather than tuck it under the prompt. */
 const FIT_ZOOM_MIN = 0.5;

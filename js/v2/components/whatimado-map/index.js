@@ -43,7 +43,7 @@ import {
   separateHomeTitles,
   trailNodeIds,
   wrapMapLabel
-} from "../../map/callouts.js?v=20261123-orbs-smooth7";
+} from "../../map/callouts.js?v=20261123-titles-focus9";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -59,7 +59,7 @@ import {
   chatFollowCenterX,
   computeTimelineFrameFit,
   isOpenHomePhase
-} from "../../map/pan.js";
+} from "../../map/pan.js?v=20261123-titles-focus9";
 
 /** How long the camera eases into a snap or crosshair home. */
 const CAMERA_EASE_MS = 360;
@@ -78,7 +78,7 @@ const EDGE_THICK_SCALE = 2.4;
 /** Painted height of one title line, in screen px, at every zoom. */
 const LABEL_SCREEN_PX = 20;
 /** Screen px between a dot's edge and its title, above or to the right. */
-const TITLE_GAP_PX = 16;
+const TITLE_GAP_PX = 5;
 /** "My Paths" over the selected path title, relative to the title size. */
 const KICKER_SCALE = 0.8;
 const KICKER_GAP_PX = 3;
@@ -1026,9 +1026,8 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
-   * Smooth horizontal pan so the chat-visible mission/task sits in the open band.
-   * Same glide on mobile and desktop: X only (Y stays on the snap fit) so focus
-   * switches do not hitch. Chat reclaim clears a sticky user-pan.
+   * Glide the chat-visible mission/task into the focal band centered above the prompt.
+   * Same smooth path on mobile and desktop. Chat reclaim clears a sticky user-pan.
    * @param {string|null|undefined} id
    * @param {{ animate?: boolean, soft?: boolean }} [options]
    */
@@ -1041,7 +1040,7 @@ export class WhatimadoMap extends HTMLElement {
     const alreadyHere =
       this._chatFollowId === id &&
       this._chatFollowTargetId === id &&
-      this._nodeCenteredOnFollowX(id);
+      this._nodeSitsInOpenBand(id);
     if (soft && (alreadyHere || this._gravityRaf != null)) return;
     if (!soft && alreadyHere) return;
     /* Same target already easing in — do not restart mid-glide. */
@@ -1049,8 +1048,6 @@ export class WhatimadoMap extends HTMLElement {
 
     const keptZoom = this._zoom;
     const target = computePanForNodeAboveFrame(this, id);
-    /* Match mobile: only slide sideways; height stays where the snap fit put it. */
-    const panY = this._panY;
     this._chatFollowHasY = true;
     this._chatFollowId = id;
     this._chatFollowTargetId = id;
@@ -1058,14 +1055,15 @@ export class WhatimadoMap extends HTMLElement {
 
     if (!animate) {
       this._panX = target.panX;
-      this._panY = panY;
+      this._panY = target.panY;
       this._applyPanTransform();
+      this._pullNodeIntoOpenBand(id);
       return;
     }
 
     /* Same duration/ease on desktop and mobile — retargetable glide, no title reflow. */
     const duration = this._driftReducedMotion ? 520 : 920;
-    this._animatePanTo(target.panX, panY, true, {
+    this._animatePanTo(target.panX, target.panY, true, {
       duration,
       ease: "inout",
       layout: false,
@@ -1330,7 +1328,7 @@ export class WhatimadoMap extends HTMLElement {
 
       if (Math.hypot(this._panVelX, this._panVelY) < GLIDE_MIN_SPEED) {
         this._stopPanGlide();
-        this._layoutCallouts();
+        this._layoutCalloutsAfterUserMove();
         return;
       }
 
@@ -1711,7 +1709,6 @@ export class WhatimadoMap extends HTMLElement {
       } else {
         this._gravityRaf = null;
         this.classList.remove("is-camera-easing");
-        this._layoutCallouts();
       }
     };
     this._zoom = from.zoom;
@@ -2231,7 +2228,7 @@ export class WhatimadoMap extends HTMLElement {
     }
     this._pinch = null;
     this.classList.remove("is-pinch-zooming");
-    this._layoutCallouts();
+    this._layoutCalloutsAfterUserMove();
   }
 
   /** Apply camera transform: built-in graph shift + user pan offset + pinch zoom */
@@ -2347,7 +2344,7 @@ export class WhatimadoMap extends HTMLElement {
       this._panVelY = vy;
       this._startPanGlide();
     } else {
-      this._layoutCallouts();
+      this._layoutCalloutsAfterUserMove();
     }
   }
 
@@ -3367,6 +3364,22 @@ export class WhatimadoMap extends HTMLElement {
   }
 
   /**
+   * After a user pan/pinch: only reflow titles when zoom changed.
+   * Open-home titles stay pinned in SVG — re-running collision against screen
+   * bounds after every move is what made Mission/Next Step jump around.
+   */
+  _layoutCalloutsAfterUserMove() {
+    const openHome =
+      isOpenHomePhase() ||
+      (this._liveNodes.length > 0 &&
+        this._liveNodes.every((node) => String(node.id).startsWith("ghost-")));
+    if (openHome && Math.abs((this._zoom || 1) - (this._calloutZoom ?? this._zoom ?? 1)) < 0.02) {
+      return;
+    }
+    this._layoutCallouts();
+  }
+
+  /**
    * The map is being dragged, gliding, pinched, or camera-eased. Titles already
    * sit in SVG space, so they ride with their nodes and are not placed again.
    */
@@ -4014,14 +4027,14 @@ export class WhatimadoMap extends HTMLElement {
             ${goalIncomeMain ? `<text class="whatimado-map__goal-income" text-anchor="middle"><tspan x="${cx}" y="${cy + starOuter + (mobileMap ? 28 : r * 1.4)}">${escapeHtml(goalIncomeMain)}</tspan><tspan x="${cx}" dy="1.15em">per year</tspan></text>` : ""}`
               : ""}
             ${kickerText
-              ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy - r - (TITLE_GAP_PX + 28)}">${escapeHtml(kickerText)}</tspan></text>`
+              ? `<text class="whatimado-map__kicker" text-anchor="middle"><tspan x="${cx}" y="${cy}">${escapeHtml(kickerText)}</tspan></text>`
               : ""}
-            ${titleLines.length ? `<rect class="whatimado-map__label-hit" x="${cx}" y="${cy - r - (TITLE_GAP_PX + 10)}" width="0" height="0" />` : ""}
+            ${titleLines.length ? `<rect class="whatimado-map__label-hit" x="${cx}" y="${cy}" width="0" height="0" />` : ""}
             ${titleLines.length
               ? `<text class="whatimado-map__label" text-anchor="middle">${titleLines
                   .map(
                     (line, lineIndex) =>
-                      `<tspan x="${cx}"${lineIndex ? ' dy="1.15em"' : ` y="${cy - r - (TITLE_GAP_PX + 10)}"`}>${escapeHtml(line)}</tspan>`
+                      `<tspan x="${cx}"${lineIndex ? ' dy="1.15em"' : ` y="${cy}"`}>${escapeHtml(line)}</tspan>`
                   )
                   .join("")}</text>`
               : ""}

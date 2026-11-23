@@ -96,6 +96,21 @@ export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacle
       });
     });
     if (!clear) {
+      /* Mission / Next Step / You stay visible when the band is tight — clamp to the preferred side. */
+      if (item.kicker || item.kind === "start") {
+        item.hidden = false;
+        const fallback = item.kind === "start" ? below : above;
+        item.side = fallback.side;
+        const edge = bounds?.left != null ? bounds.left : fallback.left;
+        const rightEdge = bounds?.right != null ? bounds.right : fallback.left + item.w;
+        item.left = Math.min(Math.max(fallback.left, edge), Math.max(edge, rightEdge - item.w));
+        let top = fallback.top;
+        if (bounds?.top != null) top = Math.max(top, bounds.top);
+        if (bounds?.bottom != null) top = Math.min(top, bounds.bottom - item.h);
+        item.top = top;
+        placed.push({ left: item.left, right: item.left + item.w, top: item.top, bottom: item.top + item.h });
+        continue;
+      }
       item.hidden = true;
       continue;
     }
@@ -166,9 +181,8 @@ export function placeTitlesAbove(items, bounds = null, gap = 6) {
   for (const item of items) {
     item.side = "above";
     item.left = item.nx - item.w / 2;
-    /* Gap from the dot edge to the title box; keep a little extra air under uppercase labels. */
-    const clear = Math.max(gap, 10);
-    item.top = item.ny - (item.nr || 6) - clear - item.h + (item.descent || 0) * 0.35;
+    /* Gap runs from the letters' baseline, not the empty descender space under it. */
+    item.top = item.ny - (item.nr || 6) - gap - item.h + (item.descent || 0);
     /* A dot past the stage edge keeps its title with it rather than sliding into view alone. */
     if (!bounds || item.nx < bounds.left || item.nx > bounds.right) continue;
     item.left = Math.min(Math.max(item.left, bounds.left + edge), Math.max(bounds.left + edge, bounds.right - edge - item.w));
