@@ -671,6 +671,51 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   display: none;
 }
 
+/* 3/4 prompt: pack demo + Path Finder + subtitle into the band above the frame. */
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] .v2-frame-kicker:not(.is-dismissing) {
+  top: var(--v2-open-compact-kicker-top, var(--v2-kicker-top));
+  height: var(--v2-open-compact-kicker-h, var(--v2-kicker-reserve));
+  justify-content: flex-end;
+  gap: 0;
+  animation: none;
+  transition:
+    top 0.28s cubic-bezier(0.32, 0.94, 0.42, 1),
+    height 0.28s cubic-bezier(0.32, 0.94, 0.42, 1);
+}
+
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] .v2-kicker-demo {
+  margin-bottom: calc(var(--v2-home-compact-gap, 0.65rem) * 0.85);
+  font-size: calc(1rem * var(--v2-home-compact-scale, 1));
+  letter-spacing: calc(0.14em * var(--v2-home-compact-scale, 1));
+  line-height: 1.15;
+}
+
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] .v2-kicker-brand {
+  font-size: calc(clamp(1.1rem, 2.8vw, 1.5rem) * var(--v2-home-compact-scale, 1));
+  letter-spacing: calc(0.18em * var(--v2-home-compact-scale, 1));
+  line-height: 1.15;
+}
+
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] .v2-kicker-sub {
+  margin-top: calc(var(--v2-home-compact-gap, 0.65rem) * 0.85);
+  font-size: calc(clamp(0.88rem, 2.2vw, 1rem) * var(--v2-home-compact-scale, 1));
+  line-height: 1.25;
+}
+
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] whatimado-map .whatimado-map__svg {
+  height: var(--v2-open-compact-map-h, var(--v2-map-svg-h));
+}
+
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] whatimado-map,
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] whatimado-map .whatimado-map__stage {
+  overflow: hidden !important;
+}
+
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] whatimado-map .whatimado-map__kicker,
+body.v2-app[data-phase="open"][data-home-snap="three-quarter"] whatimado-map .whatimado-map__label {
+  font-size: calc(1em * var(--v2-home-compact-scale, 1));
+}
+
 .v2-home-prompt {
   display: none;
 }

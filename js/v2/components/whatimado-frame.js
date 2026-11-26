@@ -1,4 +1,4 @@
-import { FrameDockController, SNAP } from "../frame-dock.js";
+import { FrameDockController, SNAP } from "../frame-dock.js?v=20261126-home-snap10";
 import { FrameBreatheController } from "../frame-breathe.js";
 
 import { buildFrameTemplate } from "../frame/template.js";

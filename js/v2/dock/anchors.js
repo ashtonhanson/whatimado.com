@@ -187,7 +187,30 @@ export function resolveMobileSnap(topPx, velocityY, anchors) {
 
 export function measureAnchors(mainEl, frameEl, cache = {}) {
   const mainH = mainEl.clientHeight;
+  const mainRect = mainEl.getBoundingClientRect();
   const topLock = measureTopLock(mainEl);
+  const openHome =
+    document.body.dataset.phase === "open" && !document.body.classList.contains("is-hero-dismissing");
+
+  /**
+   * Open landing: three snaps —
+   * TOP (near menu), HOME (3/4 sheet — frame top at 25vh), BOTTOM (default landing).
+   */
+  if (openHome) {
+    const threeQuarter = Math.max(topLock + 24, viewportHeight() * 0.25 - mainRect.top);
+    const stored = Number(frameEl?.dataset?.openLandingTop);
+    const landing =
+      Number.isFinite(stored) && stored > threeQuarter + 32
+        ? stored
+        : Math.max(threeQuarter + 48, measureHomeBase(mainEl));
+    return {
+      topLock,
+      homeBase: threeQuarter,
+      bottomCushion: landing,
+      mainH
+    };
+  }
+
   const homeBase = measureHomeBase(mainEl);
 
   /**

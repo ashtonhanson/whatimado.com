@@ -258,13 +258,14 @@ export class FrameDockController {
     this._defaultFrameHeight = null;
     this._dockTransition = false;
 
+    this._clearOpenHomeCompact();
     document.documentElement.style.removeProperty("--v2-docked-frame-top");
     document.documentElement.style.removeProperty("--whatimado-frame-top");
     this.frameEl.style.removeProperty("top");
     this.frameEl.classList.add("is-docked", "is-mobile-docked");
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
     document.body.classList.remove("is-frame-dragging");
-    this.frameEl.removeAttribute("data-snap");
+    this.frameEl.dataset.snap = SNAP.MOBILE_FOCUS;
     document.body.classList.remove("is-hero-dismissing");
 
     requestAnimationFrame(() => {
@@ -469,12 +470,13 @@ export class FrameDockController {
       ) ||
       48;
 
-    /** Draggable from landing — stay at the current vh until the user actually pulls */
+    /** Landing snap is BOTTOM; HOME is the 3/4 sheet (frame top at 25vh). */
     this._docked = true;
-    this.activeSnap = SNAP.HOME;
+    this.activeSnap = SNAP.BOTTOM;
     this._anchors = null;
     this._defaultFrameHeight = null;
 
+    this._clearOpenHomeCompact();
     if (MOBILE_MQ.matches) {
       document.documentElement.style.removeProperty("--v2-kicker-reserve");
       document.documentElement.style.removeProperty("--whatimado-frame-top-default");
@@ -492,14 +494,91 @@ export class FrameDockController {
     this.frameEl.classList.add("is-docked");
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
     document.body.classList.remove("is-frame-dragging");
-    this.frameEl.removeAttribute("data-snap");
+    this.frameEl.dataset.snap = SNAP.BOTTOM;
     this.frameEl.style.removeProperty("top");
     document.body.classList.remove("is-hero-dismissing");
 
     /* Desktop landing may sit below openVh (frame.css keeps room for the map), so read where it rendered. */
     const measuredTop = this.frameEl.getBoundingClientRect().top - this.mainEl.getBoundingClientRect().top;
     this._topPx = Number.isFinite(measuredTop) && measuredTop > 0 ? measuredTop : (this.mainEl.clientHeight * openVh) / 100;
+    this.frameEl.dataset.openLandingTop = String(Math.round(this._topPx));
     this._setMapDim(0);
+  }
+
+  /** Drop three-quarter compact vars so the default landing CSS can take over. */
+  _clearOpenHomeCompact() {
+    document.body.removeAttribute("data-home-snap");
+    document.documentElement.style.removeProperty("--v2-home-compact-scale");
+    document.documentElement.style.removeProperty("--v2-home-compact-gap");
+    document.documentElement.style.removeProperty("--v2-open-compact-kicker-top");
+    document.documentElement.style.removeProperty("--v2-open-compact-kicker-h");
+    document.documentElement.style.removeProperty("--v2-open-compact-map-h");
+    document.documentElement.style.removeProperty("--v2-kicker-top");
+    document.documentElement.style.removeProperty("--v2-map-svg-h");
+  }
+
+  /**
+   * Pack map + demo + Path Finder into the band above a raised prompt (3/4 snap).
+   * @param {number} frameTopPx Dock top in main coords (mobile may paint slightly lower)
+   */
+  _applyOpenHomeCompact(frameTopPx) {
+    if (!this.mainEl) return;
+    const sectionGap = measureCssVarLength("--v2-home-section-gap") || 20;
+    const mainTop = this.mainEl.getBoundingClientRect().top;
+    /* Prefer the painted frame edge so padding matches what the user sees. */
+    const paintedTop = this.frameEl.getBoundingClientRect().top - mainTop;
+    const frameEdge = Number.isFinite(paintedTop) && paintedTop > 0 ? paintedTop : frameTopPx;
+    const mapEl = document.querySelector("whatimado-map");
+    const svg = mapEl?.querySelector(".whatimado-map__svg");
+    const svgTop = (svg?.getBoundingClientRect().top ?? mapEl?.getBoundingClientRect().top ?? 0) - mainTop;
+    const bandTop = Math.max(0, Number.isFinite(svgTop) ? svgTop : 0);
+    const total = Math.max(96, frameEdge - bandTop);
+    const scale = Math.max(0.52, Math.min(1, total / 260));
+    const gap = Math.max(10, Math.min(sectionGap, Math.round(sectionGap * Math.max(0.7, scale))));
+    const inner = Math.max(80, total - gap * 2);
+
+    document.body.dataset.homeSnap = "three-quarter";
+    document.documentElement.style.setProperty("--v2-home-compact-scale", String(scale));
+    document.documentElement.style.setProperty("--v2-home-compact-gap", `${gap}px`);
+
+    /* Measure kicker content at this scale, then give leftover height to the map. */
+    const kicker = document.getElementById("frame-kicker");
+    document.documentElement.style.setProperty("--v2-kicker-top", `${frameEdge - gap - 140}px`);
+    document.documentElement.style.setProperty("--v2-kicker-reserve", "140px");
+    document.documentElement.style.setProperty("--v2-open-compact-kicker-h", "140px");
+    void kicker?.offsetHeight;
+    let measuredKicker = kicker?.scrollHeight || 0;
+    if (kicker) {
+      const demo = kicker.querySelector(".v2-kicker-demo");
+      const sub = kicker.querySelector(".v2-kicker-sub");
+      if (demo && sub) {
+        measuredKicker = Math.max(
+          measuredKicker,
+          Math.ceil(sub.getBoundingClientRect().bottom - demo.getBoundingClientRect().top)
+        );
+      }
+    }
+    const kickerH = Math.min(Math.max(measuredKicker + 6, 72), Math.round(inner * 0.48));
+    const mapH = Math.max(64, inner - kickerH);
+
+    document.documentElement.style.setProperty("--v2-open-compact-map-h", `${mapH}px`);
+    document.documentElement.style.setProperty("--v2-open-compact-kicker-h", `${kickerH}px`);
+    document.documentElement.style.setProperty("--v2-map-svg-h", `${mapH}px`);
+    document.documentElement.style.setProperty("--v2-kicker-reserve", `${kickerH}px`);
+
+    void mapEl?.offsetHeight;
+    const liveSvgBottom =
+      (svg?.getBoundingClientRect().bottom ?? bandTop + mapH + mainTop) - mainTop;
+    const kickerTop = Math.max(bandTop + mapH + gap, liveSvgBottom + gap);
+    const maxKickerTop = Math.max(bandTop, frameEdge - gap - kickerH);
+    const pinnedTop = Math.min(kickerTop, maxKickerTop);
+
+    document.documentElement.style.setProperty("--v2-open-compact-kicker-top", `${pinnedTop}px`);
+    document.documentElement.style.setProperty("--v2-kicker-top", `${pinnedTop}px`);
+    this.onLayout();
+    requestAnimationFrame(() => {
+      document.querySelector("whatimado-map")?.unlockFrameCoupling?.();
+    });
   }
 
   /** After first prompt — fade home copy; stay at landing so the map stays fully visible */
@@ -779,12 +858,18 @@ export class FrameDockController {
     let target;
 
     if (this._mobileMode && !this._mobileChatSheet) {
-      // Pre-chat landing — same floored home strip as first paint.
-      snap = SNAP.MOBILE_FOCUS;
-      target = anchors.mapFocusTop ?? anchors.typingTop ?? anchors.homePromptTop;
-      this.frameEl.classList.add("is-mobile-typing");
-      this.frameEl.classList.remove("is-mobile-reading", "is-mobile-expanded");
-      document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
+      /* Open home: focus = landing under kicker, collapsed = 3/4 (25vh), expanded = under menu. */
+      const openAnchors = {
+        ...anchors,
+        typingTop: anchors.homePromptTop,
+        mapFocusTop: anchors.homePromptTop
+      };
+      snap = resolveMobileSnap(this._topPx, velocityY, openAnchors);
+      target = {
+        [SNAP.MOBILE_EXPANDED]: anchors.expandedTop ?? anchors.topLock,
+        [SNAP.MOBILE_COLLAPSED]: anchors.readingTop ?? anchors.collapsedTop,
+        [SNAP.MOBILE_FOCUS]: anchors.homePromptTop ?? anchors.mapFocusTop
+      }[snap];
       this._applyMobileSnapClasses(snap);
     } else if (this._mobileMode) {
       snap = resolveMobileSnap(this._topPx, velocityY, anchors);
@@ -796,11 +881,8 @@ export class FrameDockController {
       this._applyMobileSnapClasses(snap);
     } else {
       snap = resolveSnap(this._topPx, velocityY, anchors);
-      /*
-       * Open home: dragging down then back toward ~3/8–home must rebuild the
-       * CSS landing (map band, kicker, section gaps), not leave a pixel top.
-       */
-      if (openHome && snap === SNAP.HOME) {
+      /* Open home BOTTOM = default landing; HOME = 3/4 sheet at 25vh. */
+      if (openHome && snap === SNAP.BOTTOM) {
         this.enterOpenLayout();
         this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
         return;
@@ -814,19 +896,41 @@ export class FrameDockController {
 
     this.activeSnap = snap;
 
+    /* Only the 3/4 sheet packs the home stack; top/expanded covers the map. */
+    const compactSnaps = snap === SNAP.HOME || snap === SNAP.MOBILE_COLLAPSED;
+    const landingSnaps = snap === SNAP.MOBILE_FOCUS || snap === SNAP.BOTTOM;
+
+    const afterSettle = () => {
+      if (openHome && compactSnaps) {
+        this._applyOpenHomeCompact(this._topPx);
+      } else if (openHome && landingSnaps) {
+        this._clearOpenHomeCompact();
+        if (this._mobileMode && !this._mobileChatSheet) {
+          /* Restore landing kicker/map CSS band without restarting the whole open shell. */
+          document.documentElement.style.removeProperty("--v2-kicker-reserve");
+          document.documentElement.style.removeProperty("--whatimado-frame-top-default");
+        }
+      }
+      if (this._mobileMode) this._syncMobileSheetMap({ fit: true });
+      this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
+    };
+
     if (this._motionEnabled) {
       this._easeToAnchor(target, snap, {
         durationMs: this._mobileMode ? MOBILE_GLIDE_EASE_MS : SNAP_EASE_MS,
-        onTick: this._mobileMode ? () => this._syncMobileSheetMap() : undefined,
-        onComplete: () => {
-          if (this._mobileMode) this._syncMobileSheetMap({ fit: true });
-          this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
-        }
+        onTick: this._mobileMode
+          ? () => {
+              this._syncMobileSheetMap();
+              if (openHome && compactSnaps) this._applyOpenHomeCompact(this._topPx);
+            }
+          : openHome && compactSnaps
+            ? () => this._applyOpenHomeCompact(this._topPx)
+            : undefined,
+        onComplete: afterSettle
       });
     } else {
       this._applyTop(target, { snap });
-      if (this._mobileMode) this._syncMobileSheetMap({ fit: true });
-      this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
+      afterSettle();
     }
   }
 
@@ -955,12 +1059,18 @@ export class FrameDockController {
     if (this._mobileMode) {
       const bottomInset = measureCssVarLength("--v2-mobile-bottom-inset") || 0;
       /* Open-home typing strip must floor so the absolute composer is not clipped by a 15px inner. */
+      const openHome =
+        document.body.dataset.phase === "open" && !this._mobileChatSheet;
       const openHomePrompt =
-        document.body.dataset.phase === "open" &&
-        this.frameEl.classList.contains("is-mobile-typing") &&
-        !this._mobileChatSheet;
+        openHome && this.frameEl.classList.contains("is-mobile-typing");
+      /* Open-home 3/4 + expanded are full sheets covering down to the safe-area floor. */
+      const openHomeSheet =
+        openHome &&
+        (this.frameEl.classList.contains("is-mobile-reading") ||
+          this.frameEl.classList.contains("is-mobile-expanded"));
       const floored =
         openHomePrompt ||
+        openHomeSheet ||
         (this._mobileChatSheet &&
           (this.frameEl.classList.contains("is-mobile-sheet-floored") ||
             this.frameEl.classList.contains("is-mobile-reading") ||
