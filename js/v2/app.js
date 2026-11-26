@@ -1,5 +1,5 @@
 import { initBrand } from "./config.js";
-import { initChatFlow } from "./ui/chat-flow.js?v=20261126-demo-kicker1";
+import { initChatFlow } from "./ui/chat-flow.js?v=20261126-demo-kicker2";
 import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
 import { initMobileNav } from "./mobile-nav.js";
@@ -9,11 +9,11 @@ import { initPages } from "./ui/pages.js";
 import { initAuth } from "./state/auth.js";
 import { trackEvent } from "./state/analytics.js";
 import { initShareMeta } from "./share-meta.js";
-import { initAmbientOrbs } from "./ambient-orbs.js?v=20261126-demo-kicker1";
+import { initAmbientOrbs } from "./ambient-orbs.js?v=20261126-demo-kicker2";
 
 await initBrand();
-await import("./components/whatimado-frame.js?v=20261126-demo-kicker1");
-await import("./components/whatimado-map.js?v=20261126-demo-kicker1");
+await import("./components/whatimado-frame.js?v=20261126-demo-kicker2");
+await import("./components/whatimado-map.js?v=20261126-demo-kicker2");
 
 /** @type {import("./components/whatimado-frame.js").WhatimadoFrame|null} */
 const frameEl = document.getElementById("dynamic-frame");

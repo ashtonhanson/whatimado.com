@@ -157,6 +157,8 @@ function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY) {
 /* Room for Mission kicker + Next Step above the top home dots. */
 const OPEN_HOME_LABEL_ABOVE_PX = 40;
 const OPEN_HOME_LABEL_BELOW_PX = 18;
+/** Extra air under You so the home demo label never sits on the constellation. */
+const OPEN_HOME_DEMO_CLEAR_PX = 36;
 /** Laptop bands are shorter than the constellation; shrink it rather than push titles past the top edge. */
 const OPEN_HOME_ZOOM_MIN = 0.6;
 /** Desktop homepage asks for a 2× constellation; allow the camera to grow past the old 1.15 fit cap. */
@@ -187,7 +189,8 @@ function computeOpenHomeBandPan(mapEl, gapPx, belowPadPx) {
   /* Phone: less top reserve so the fan can grow; titles still clear the menu. */
   const labelAbove = MOBILE_MQ.matches ? 28 : OPEN_HOME_LABEL_ABOVE_PX;
   const top = menuClearScreenY(stageRect) + labelAbove;
-  const bottom = textTop - gapPx - belowPadPx;
+  const demoClear = demo ? OPEN_HOME_DEMO_CLEAR_PX : 0;
+  const bottom = textTop - gapPx - belowPadPx - demoClear;
 
   const dots = getNodeBounds(mapEl);
   const shiftY = readGraphShiftY();
