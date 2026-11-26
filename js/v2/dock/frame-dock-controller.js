@@ -483,8 +483,11 @@ export class FrameDockController {
     }
     document.documentElement.style.removeProperty("--v2-map-dim");
     document.documentElement.style.removeProperty("--v2-docked-frame-top");
-    /* +15px grows the desktop homepage map band without changing the chat snap. */
-    document.documentElement.style.setProperty("--whatimado-frame-top", `calc(${openVh}vh + 15px)`);
+    /* +15px grows the map band; section gap matches map → demo → Path Finder → prompt. */
+    document.documentElement.style.setProperty(
+      "--whatimado-frame-top",
+      `calc(${openVh}vh + 15px + var(--v2-home-section-gap, 1.25rem))`
+    );
 
     this.frameEl.classList.add("is-docked");
     this.frameEl.classList.remove("is-dragging", "is-animating", "is-gliding", "is-settling");
@@ -769,13 +772,19 @@ export class FrameDockController {
     const anchors = this._refreshAnchors();
     if (!anchors) return;
 
+    const openHome =
+      document.body.dataset.phase === "open" && !document.body.classList.contains("is-hero-dismissing");
+
     let snap;
     let target;
 
     if (this._mobileMode && !this._mobileChatSheet) {
-      // Pre-chat landing — stay under the kicker as a compact bar.
+      // Pre-chat landing — same floored home strip as first paint.
       snap = SNAP.MOBILE_FOCUS;
-      target = anchors.homePromptTop;
+      target = anchors.mapFocusTop ?? anchors.typingTop ?? anchors.homePromptTop;
+      this.frameEl.classList.add("is-mobile-typing");
+      this.frameEl.classList.remove("is-mobile-reading", "is-mobile-expanded");
+      document.body.classList.remove("is-mobile-reading", "is-mobile-expanded");
       this._applyMobileSnapClasses(snap);
     } else if (this._mobileMode) {
       snap = resolveMobileSnap(this._topPx, velocityY, anchors);
@@ -787,6 +796,15 @@ export class FrameDockController {
       this._applyMobileSnapClasses(snap);
     } else {
       snap = resolveSnap(this._topPx, velocityY, anchors);
+      /*
+       * Open home: dragging down then back toward ~3/8–home must rebuild the
+       * CSS landing (map band, kicker, section gaps), not leave a pixel top.
+       */
+      if (openHome && snap === SNAP.HOME) {
+        this.enterOpenLayout();
+        this.frameEl.dispatchEvent(new CustomEvent("dock-settled", { bubbles: true }));
+        return;
+      }
       target = {
         [SNAP.TOP]: anchors.topLock,
         [SNAP.HOME]: anchors.homeBase,

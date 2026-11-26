@@ -1518,15 +1518,27 @@ export function initChatFlow(ctx) {
 
   /* Sheet moves refit the map only while the user has not placed it themselves. */
   frameEl?.addEventListener("dock-settled", () => {
+    const openHome =
+      document.body.dataset.phase === "open" && !document.body.classList.contains("is-hero-dismissing");
+    if (openHome) {
+      /* Dragging back to the landing snap restores the home constellation fit. */
+      mapEl?.unlockFrameCoupling?.();
+      return;
+    }
     mapEl?.lockFromFrame();
     mapEl?.syncSnapCamera({ animate: true });
   });
 
   frameEl?.addEventListener("frame-drag-end", () => {
-    window.setTimeout(
-      () => mapEl?.syncSnapCamera({ animate: true }),
-      MOBILE_MQ.matches ? MOBILE_GLIDE_EASE_MS + 40 : 40
-    );
+    window.setTimeout(() => {
+      const openHome =
+        document.body.dataset.phase === "open" && !document.body.classList.contains("is-hero-dismissing");
+      if (openHome) {
+        mapEl?.unlockFrameCoupling?.();
+        return;
+      }
+      mapEl?.syncSnapCamera({ animate: true });
+    }, MOBILE_MQ.matches ? MOBILE_GLIDE_EASE_MS + 40 : 40);
   });
 
   document.getElementById("nav-home")?.addEventListener("click", () => {

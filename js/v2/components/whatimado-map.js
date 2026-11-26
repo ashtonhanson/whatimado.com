@@ -1,1 +1,1 @@
-export { WhatimadoMap } from "./whatimado-map/index.js?v=20261126-demo-gap4";
+export { WhatimadoMap } from "./whatimado-map/index.js?v=20261126-home-snap1";
