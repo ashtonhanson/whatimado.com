@@ -44,7 +44,7 @@ import {
   separateHomeTitles,
   trailNodeIds,
   wrapMapLabel
-} from "../../map/callouts.js?v=20261126-demo-gap3";
+} from "../../map/callouts.js?v=20261126-demo-gap4";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -60,7 +60,7 @@ import {
   chatFollowCenterX,
   computeTimelineFrameFit,
   isOpenHomePhase
-} from "../../map/pan.js?v=20261126-demo-gap3";
+} from "../../map/pan.js?v=20261126-demo-gap4";
 
 /** How long the camera eases into a snap or crosshair home. */
 const CAMERA_EASE_MS = 360;
