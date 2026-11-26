@@ -601,6 +601,7 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   pointer-events: none;
 }
 
+.v2-frame-kicker.is-dismissing .v2-kicker-demo,
 .v2-frame-kicker.is-dismissing .v2-kicker-brand,
 .v2-frame-kicker.is-dismissing .v2-kicker-sub {
   opacity: 0;
@@ -615,6 +616,18 @@ body.v2-app[data-phase="open"] .v2-frame-kicker:not(.is-dismissing) {
   .v2-frame-kicker {
     transition: opacity 0.15s ease;
   }
+}
+
+/* Matches map Mission kickers (.whatimado-map__kicker) under the home constellation. */
+.v2-kicker-demo {
+  margin: 0 0 1.05rem;
+  font-family: var(--v2-font-hero);
+  font-size: 1rem; /* ~Mission kicker screen size (label 20px × 0.8) */
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--v2-text-muted, #9aa8a6);
 }
 
 .v2-kicker-brand {

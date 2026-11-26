@@ -177,7 +177,13 @@ function computeOpenHomeBandPan(mapEl, gapPx, belowPadPx) {
   const stageRect = stage.getBoundingClientRect();
   if (stageRect.height <= 0 || stageRect.width <= 0) return { panX: 0, panY: 0, zoom: 1 };
 
-  const textTop = brand?.getBoundingClientRect().top ?? kicker?.getBoundingClientRect().top ?? stageRect.bottom;
+  const demo = kicker?.querySelector(".v2-kicker-demo");
+  /* Clear the demo label (then Path Finder) so the constellation keeps air above the hero. */
+  const textTop =
+    demo?.getBoundingClientRect().top ??
+    brand?.getBoundingClientRect().top ??
+    kicker?.getBoundingClientRect().top ??
+    stageRect.bottom;
   /* Phone: less top reserve so the fan can grow; titles still clear the menu. */
   const labelAbove = MOBILE_MQ.matches ? 28 : OPEN_HOME_LABEL_ABOVE_PX;
   const top = menuClearScreenY(stageRect) + labelAbove;
