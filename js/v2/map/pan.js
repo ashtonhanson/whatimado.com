@@ -190,15 +190,10 @@ function computeOpenHomeBandPan(mapEl, gapPx, belowPadPx) {
   /* Phone home: fit to dot centers (not float/radius padding) so You spokes can grow longer. */
   let naturalPx = Math.max(1, dots.maxY - dots.minY) / scaleY;
   if (MOBILE_MQ.matches) {
-    const ys = (mapEl._liveNodes || [])
-      .filter((n) => n.type !== "goal")
-      .map((n) => n.y * VIEW_H);
-    if (ys.length) {
-      const span = Math.max(1, Math.max(...ys) - Math.min(...ys));
-      naturalPx = span / scaleY;
-    }
+    const ys = mapEl._liveNodes.filter((n) => n.type !== "goal").map((n) => n.y * VIEW_H);
+    const span = Math.max(1, Math.max(...ys) - Math.min(...ys));
+    naturalPx = span / scaleY;
   }
-  if (!Number.isFinite(naturalPx) || naturalPx <= 0) naturalPx = 1;
   /* Larger open band (frame.css) lets the homepage constellation grow; +15px on top of the fit. */
   const grow = MOBILE_MQ.matches ? 1.28 : (naturalPx + 15) / Math.max(1, naturalPx);
   const fitted = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(OPEN_HOME_ZOOM_MAX, availablePx / naturalPx));

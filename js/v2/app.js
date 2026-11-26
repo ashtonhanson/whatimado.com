@@ -1,5 +1,5 @@
 import { initBrand } from "./config.js";
-import { initChatFlow } from "./ui/chat-flow.js?v=20261123-home-keepmap17";
+import { initChatFlow } from "./ui/chat-flow.js?v=20261123-home-spread16";
 import { initNeonShine } from "./neon-shine.js";
 import { initNavRailToggle } from "./rail-toggle.js";
 import { initMobileNav } from "./mobile-nav.js";
@@ -9,11 +9,11 @@ import { initPages } from "./ui/pages.js";
 import { initAuth } from "./state/auth.js";
 import { trackEvent } from "./state/analytics.js";
 import { initShareMeta } from "./share-meta.js";
-import { initAmbientOrbs } from "./ambient-orbs.js?v=20261123-home-keepmap17";
+import { initAmbientOrbs } from "./ambient-orbs.js?v=20261123-home-spread16";
 
 await initBrand();
-await import("./components/whatimado-frame.js?v=20261123-home-keepmap17");
-await import("./components/whatimado-map.js?v=20261123-home-keepmap17");
+await import("./components/whatimado-frame.js?v=20261123-home-spread16");
+await import("./components/whatimado-map.js?v=20261123-home-spread16");
 
 /** @type {import("./components/whatimado-frame.js").WhatimadoFrame|null} */
 const frameEl = document.getElementById("dynamic-frame");
@@ -63,14 +63,10 @@ if (isMobile) {
   readyWatch.observe(document.body, { attributes: true, attributeFilter: ["class"] });
 } else {
   /* Desktop: fade map/frame/orbs together once custom elements have connected. */
-  const markShellReady = () => {
-    if (document.body.classList.contains("is-shell-ready")) return;
-    document.body.classList.add("is-shell-ready");
-    settleHomeTitles();
-  };
   requestAnimationFrame(() => {
-    requestAnimationFrame(markShellReady);
+    requestAnimationFrame(() => {
+      document.body.classList.add("is-shell-ready");
+      settleHomeTitles();
+    });
   });
-  /* Safety: never leave the map permanently at opacity 0 if rAF is starved. */
-  window.setTimeout(markShellReady, 1200);
 }

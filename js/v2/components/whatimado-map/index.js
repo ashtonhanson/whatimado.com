@@ -1,4 +1,4 @@
-import { getGhostGraph, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js?v=20261123-home-keepmap17";
+import { getGhostGraph, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js?v=20261123-home-spread16";
 import { goalIncomeRange } from "../../map/goal-income.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
@@ -43,7 +43,7 @@ import {
   separateHomeTitles,
   trailNodeIds,
   wrapMapLabel
-} from "../../map/callouts.js?v=20261123-home-keepmap17";
+} from "../../map/callouts.js?v=20261123-home-spread16";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -59,7 +59,7 @@ import {
   chatFollowCenterX,
   computeTimelineFrameFit,
   isOpenHomePhase
-} from "../../map/pan.js?v=20261123-home-keepmap17";
+} from "../../map/pan.js?v=20261123-home-spread16";
 
 /** How long the camera eases into a snap or crosshair home. */
 const CAMERA_EASE_MS = 360;
@@ -930,15 +930,6 @@ export class WhatimadoMap extends HTMLElement {
 
   /** Sync live layer from graph-store */
   syncLiveFromStore() {
-    /* Empty store must not wipe the landing silhouette while still on open home. */
-    if (!graphStore.nodes.length) {
-      if (isOpenHomePhase() && !this._ghostDismissed) {
-        this.loadAmbientLiveGraph();
-        this._applyAnchorStyles();
-        this._syncRoadmapSticky();
-        return;
-      }
-    }
     this.loadLiveGraph(graphStore.nodes, graphStore.edges);
     this._applyAnchorStyles();
     this._syncRoadmapSticky();
