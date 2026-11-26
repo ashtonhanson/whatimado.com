@@ -1,4 +1,5 @@
-import { getGhostGraph, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js?v=20261126-home-spread18";
+/* Keep graph-store unversioned so every importer shares one store instance. */
+import { getGhostGraph, graphStore, mapLayoutZoom, mapNodeLabel, placeLinkedBranch, relayoutLinkedSpread, ROADMAP_MORE_ID, roadmapFocusLinked, setRoadmapFocusLinked, showRoadmapBranch, spineAlternatePaths } from "../../graph-store.js";
 import { goalIncomeRange } from "../../map/goal-income.js";
 import { appStore } from "../../state/store.js";
 import { measureAnchors } from "../../dock/anchors.js";
@@ -43,7 +44,7 @@ import {
   separateHomeTitles,
   trailNodeIds,
   wrapMapLabel
-} from "../../map/callouts.js?v=20261126-home-spread18";
+} from "../../map/callouts.js?v=20261126-map-store-fix";
 import { segmentVerticalSpines } from "../../map/spines.js";
 import {
   clientToSvg,
@@ -59,7 +60,7 @@ import {
   chatFollowCenterX,
   computeTimelineFrameFit,
   isOpenHomePhase
-} from "../../map/pan.js?v=20261126-home-spread18";
+} from "../../map/pan.js?v=20261126-map-store-fix";
 
 /** How long the camera eases into a snap or crosshair home. */
 const CAMERA_EASE_MS = 360;
@@ -3953,10 +3954,11 @@ export class WhatimadoMap extends HTMLElement {
   _renderLayer(layer, nodes, edges, options) {
     if (!layer) return;
     if (options.layer === "live") {
-      this.classList.toggle(
-        "is-roadmap-open",
-        nodes.some((node) => node.type === "path" && node.id === this._selectedId)
-      );
+      /* Stay open for a chosen roadmap even when focus moves to a mission/task. */
+      const roadmapOpen =
+        nodes.some((node) => node.type === "mission" || node.type === "task") ||
+        nodes.some((node) => node.type === "path" && node.id === this._selectedId);
+      this.classList.toggle("is-roadmap-open", roadmapOpen);
       this._syncMobileHeaderMapTools();
     }
 
