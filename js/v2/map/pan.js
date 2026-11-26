@@ -157,8 +157,6 @@ function computeCenteredBandCamera(mapEl, topScreenY, bottomScreenY) {
 /* Room for Mission kicker + Next Step above the top home dots. */
 const OPEN_HOME_LABEL_ABOVE_PX = 40;
 const OPEN_HOME_LABEL_BELOW_PX = 18;
-/** Extra air under You so the home demo label never sits on the constellation. */
-const OPEN_HOME_DEMO_CLEAR_PX = 36;
 /** Laptop bands are shorter than the constellation; shrink it rather than push titles past the top edge. */
 const OPEN_HOME_ZOOM_MIN = 0.6;
 /** Desktop homepage asks for a 2× constellation; allow the camera to grow past the old 1.15 fit cap. */
@@ -189,8 +187,14 @@ function computeOpenHomeBandPan(mapEl, gapPx, belowPadPx) {
   /* Phone: less top reserve so the fan can grow; titles still clear the menu. */
   const labelAbove = MOBILE_MQ.matches ? 28 : OPEN_HOME_LABEL_ABOVE_PX;
   const top = menuClearScreenY(stageRect) + labelAbove;
-  const demoClear = demo ? OPEN_HOME_DEMO_CLEAR_PX : 0;
-  const bottom = textTop - gapPx - belowPadPx - demoClear;
+  /*
+   * With the home demo label, map → demo uses the same --v2-home-section-gap as
+   * demo → Path Finder. Without it, keep the older You → hero clearance stack.
+   */
+  const sectionGap = measureCssVarLength("--v2-home-section-gap") || 20;
+  const bottom = demo
+    ? textTop - sectionGap
+    : textTop - gapPx - belowPadPx;
 
   const dots = getNodeBounds(mapEl);
   const shiftY = readGraphShiftY();
@@ -208,14 +212,16 @@ function computeOpenHomeBandPan(mapEl, gapPx, belowPadPx) {
     }
   }
   if (!Number.isFinite(naturalPx) || naturalPx <= 0) naturalPx = 1;
-  /* Larger open band (frame.css) lets the homepage constellation grow; +15px on top of the fit. */
+  /* Grow within the band only — never spill into the demo / Path Finder stack. */
   const grow = MOBILE_MQ.matches ? 1.32 : (naturalPx + 15) / Math.max(1, naturalPx);
-  const fitted = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(OPEN_HOME_ZOOM_MAX, availablePx / naturalPx));
+  const maxFit = availablePx / naturalPx;
+  const fitted = Math.max(OPEN_HOME_ZOOM_MIN, Math.min(OPEN_HOME_ZOOM_MAX, maxFit));
   const zoom = Math.max(
     OPEN_HOME_ZOOM_MIN,
-    Math.min(OPEN_HOME_ZOOM_MAX, fitted * grow)
+    Math.min(OPEN_HOME_ZOOM_MAX, Math.min(maxFit, fitted * grow))
   );
-  const graphTop = top + Math.max(0, availablePx - naturalPx * zoom) / 2;
+  const fittedPx = naturalPx * zoom;
+  const graphTop = top + Math.max(0, availablePx - fittedPx) / 2;
   const yPrime = (graphTop - stageRect.top) * scaleY;
   return {
     panX: VIEW_W / 2 - SCALE_CENTER_X - zoom * (dots.cx - SCALE_CENTER_X),
