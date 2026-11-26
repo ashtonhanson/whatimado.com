@@ -1,1 +1,1 @@
-export { WhatimadoMap } from "./whatimado-map/index.js?v=20261123-titles-above13";
+export { WhatimadoMap } from "./whatimado-map/index.js?v=20261126-home-spread18";
