@@ -88,9 +88,9 @@ export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacle
         : [0, 8, 16, 24, 32, 40, -8, -16, -24]
       : [0, 6, -6, 12, -12];
     const nudged = (spot) => nudgeXs.map((dx) => ({ ...spot, left: spot.left + dx }));
-    /* aboveOnly may lift a little (still above) when the fan is tight — keep lifts small so titles stay near their dots. */
+    /* aboveOnly may also lift a title higher (still above) when the fan is tight. */
     const aboveVariants = aboveOnly
-      ? [0, 6, 12].flatMap((lift) => nudged({ ...above, top: above.top - lift }))
+      ? [0, 10, 20, 30].flatMap((lift) => nudged({ ...above, top: above.top - lift }))
       : nudged(above);
     /* Landing (aboveOnly): every title stays above its dot, matching desktop. */
     const candidates = aboveOnly
@@ -125,8 +125,8 @@ export function separateHomeTitles(items, dots, bounds = null, gap = 5, obstacle
         let top = above.top;
         if (bounds?.top != null) top = Math.max(top, bounds.top);
         if (bounds?.bottom != null) top = Math.min(top, bounds.bottom - item.h);
-        /* Lift until clear of already-placed titles when possible (cap so titles stay near the dot). */
-        for (let lift = 0; lift <= 16; lift += 4) {
+        /* Lift until clear of already-placed titles when possible. */
+        for (let lift = 0; lift <= 40; lift += 4) {
           const trialTop = top - lift;
           if (bounds?.top != null && trialTop < bounds.top - slack) break;
           const box = { left: item.left, right: item.left + item.w, top: trialTop, bottom: trialTop + item.h };

@@ -253,28 +253,6 @@ export const GHOST_GRAPH = {
   ]
 };
 
-/**
- * Phone landing: widen You's fan so spokes read longer and titles land on their
- * own dots. Keep the same vertical span as desktop so open-home zoom does not
- * shrink the whole constellation.
- */
-export function getGhostGraph() {
-  const mobile =
-    typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;
-  if (!mobile) return GHOST_GRAPH;
-  return {
-    nodes: [
-      { id: "ghost-start", type: "start", label: "You", x: 0.5, y: 0.82 },
-      { id: "ghost-stabilize", type: "path", label: "Stabilize", x: 0.04, y: 0.5 },
-      { id: "ghost-skills", type: "path", label: "Skills", x: 0.22, y: 0.26 },
-      { id: "ghost-train", type: "path", label: "Train", x: 0.78, y: 0.26 },
-      { id: "ghost-explore", type: "path", label: "Explore", x: 0.96, y: 0.5 },
-      { id: "ghost-mission", type: "mission", label: "Next step", x: 0.5, y: 0.08 }
-    ],
-    edges: GHOST_GRAPH.edges
-  };
-}
-
 /** @param {string} id */
 export function selectGraphNode(id) {
   graphStore.selectedId = id;
